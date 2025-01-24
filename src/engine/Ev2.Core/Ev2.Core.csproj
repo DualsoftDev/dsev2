@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>Dual.Ev2</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\..\ds\DsDotNet\src\Engine\Engine.Common\Engine.Common.fsproj" />
+	  <ProjectReference Include="..\..\..\..\ds\Submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+	</ItemGroup>
+
+</Project>
