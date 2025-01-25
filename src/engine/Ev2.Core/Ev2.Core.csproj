@@ -7,8 +7,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\..\ds\DsDotNet\src\Engine\Engine.Common\Engine.Common.fsproj" />
 	  <ProjectReference Include="..\..\..\..\ds\Submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+	  <ProjectReference Include="..\..\..\submodules\ds\DsDotNet\src\Engine\Engine.Common\Engine.Common.fsproj" />
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
 	</ItemGroup>
 
 </Project>
