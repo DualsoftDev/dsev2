@@ -39,6 +39,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "engine-legacy", "engine-leg
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Core.FS", "src\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj", "{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit-test", "unit-test", "{322F9673-46AC-4124-8D96-2AF12A4F89EB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTest.Core", "src\unit-test\UnitTest.Core\UnitTest.Core.fsproj", "{9C40C272-8026-47F1-B2E1-1F003BC3EC52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -89,6 +93,10 @@ Global
 		{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C40C272-8026-47F1-B2E1-1F003BC3EC52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C40C272-8026-47F1-B2E1-1F003BC3EC52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C40C272-8026-47F1-B2E1-1F003BC3EC52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C40C272-8026-47F1-B2E1-1F003BC3EC52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -107,5 +115,6 @@ Global
 		{432C0ED9-F0C4-4B38-8084-B4E217931E44} = {3DF60941-BDDE-445C-B28C-0874203046C2}
 		{6BBBFE3E-7E6D-41B8-9EA9-DB99E63D80F8} = {501C4A8E-671F-420E-8C2D-3C1D8A1EA676}
 		{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4} = {3DF60941-BDDE-445C-B28C-0874203046C2}
+		{9C40C272-8026-47F1-B2E1-1F003BC3EC52} = {322F9673-46AC-4124-8D96-2AF12A4F89EB}
 	EndGlobalSection
 EndGlobal

@@ -10,6 +10,13 @@ open Newtonsoft.Json
 
 [<AutoOpen>]
 module GraphModule =
+    type CausalEdgeType =
+        | Start
+        | Reset
+        | StartReset
+        | SelfReset
+        | Interlock
+
     /// <summary>
     /// IFlow 또는 IWork를 나타내는 인터페이스
     /// </summary>

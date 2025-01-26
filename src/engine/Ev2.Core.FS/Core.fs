@@ -1,19 +1,15 @@
-﻿namespace Dual.Ev2
+﻿namespace rec Dual.Ev2
+
+open Newtonsoft.Json
 
 open Dual.Common.Base.FS
 open Dual.Common.Base.CS
-open Dual.Common.Core
 open Dual.Common.Core.FS
-open System.Collections.Generic
-
-open System.Text.Json.Serialization
 
 open Engine.Common.GraphModule
-open Newtonsoft.Json
-
 
 [<AutoOpen>]
-module rec Core =
+module Core =
     type DsSystem(name:string) =
         inherit DsNamedObject(name)
         interface ISystem
@@ -53,6 +49,9 @@ module rec Core =
 
 
 
+// 동일 파일 내에 있어야 확장을 C# 에서 볼 수 있음.
+//[<AutoOpen>]
+//module CoreCreate =
 
     type DsSystem with
         static member Create(name:string) = new DsSystem(name)
@@ -60,7 +59,7 @@ module rec Core =
             if x.Flows.Exists(fun f -> (f :> INamed).Name = flowName) then
                 getNull<DsFlow>();
             else
-                DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f);
+                DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
 
     type DsFlow with
         member x.CreateWork(workName:string) = 
@@ -83,18 +82,6 @@ module rec Core =
         member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(x, name, "Command")  |? getNull<DsCoin>()
         member x.CreateOperator(name:string): DsCoin = tryCreateCoin(x, name, "Operator") |? getNull<DsCoin>()
 
-    let tryCreateCoin(x:IWithGraph, coinName:string, coinType:string) =
-        let coins, graph = x.GetCoins(), x.GetGraph()
-
-        if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
-            None
-        else
-            let c = DsCoin(x, coinName)
-            coins.Add c
-            c.Parent <- x
-            c.CoinType <- coinType
-            graph.AddVertex(c)
-            Some c
 
     type IWithGraph with
         member x.GetGraph(): DsGraph =
@@ -120,20 +107,25 @@ module rec Core =
 
 
 
-    type IDsObject with
-        member x.DefaultSerialize(): string =
-            let settings = JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
-            JsonConvert.SerializeObject(x, Formatting.Indented, settings);
+    let private tryCreateCoin(x:IWithGraph, coinName:string, coinType:string) =
+        let coins, graph = x.GetCoins(), x.GetGraph()
 
-    type DsSystem with
-        member x.PrepareSerialize() = x.Flows.Iter(_.PrepareSerialize())
-        member x.Serialize(): string =
-            x.PrepareSerialize()
-            x.DefaultSerialize()
+        if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
+            None
+        else
+            let c = DsCoin(x, coinName)
+            coins.Add c
+            c.Parent <- x
+            c.CoinType <- coinType
+            graph.AddVertex(c)
+            Some c
 
-    type DsFlow with
-        member x.PrepareSerialize() =
-            x.Works.Iter(_.PrepareSerialize())
-            x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
-    type DsWork with
-        member x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
+
+
+
+
+
+
+
+
+
