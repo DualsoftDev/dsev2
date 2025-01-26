@@ -44,6 +44,21 @@ module GraphModule =
     type DsGraph = TDsGraph<Vertex, Edge>
 
 
+    type EdgeDTO(source:string, target:string, edgeType:EdgeType) =
+        member val Source = source with get, set
+        member val Target = target with get, set
+        member val EdgeType = edgeType with get, set
+
+    type GraphDTO(vertices:string seq, edges:EdgeDTO seq) =
+        member val Vertices = vertices |> ResizeArray with get, set
+        member val Edges = edges |> ResizeArray with get, set
+        static member FromGraph(graph:DsGraph) =
+            let vs = graph.Vertices.Map(_.Name)
+            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Name, e.Target.Name, e.EdgeType))
+            GraphDTO(vs, es)
+
+
+
 
 [<AutoOpen>]
 module Interfaces =

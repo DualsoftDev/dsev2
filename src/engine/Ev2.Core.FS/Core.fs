@@ -29,6 +29,7 @@ module rec Core =
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Works = ResizeArray<DsWork>() with get, set
         [<JsonProperty(Order = 3)>] member val Coins = ResizeArray<DsCoin>() with get, set
+        [<JsonProperty(Order = 4)>] member val GraphDTO = getNull<GraphDTO>() with get, set
 
     type DsWork(flow:DsFlow, name:string) =
         inherit Vertex(name)
@@ -38,6 +39,7 @@ module rec Core =
         [<JsonIgnore>] member val Flow = flow with get, set
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Coins = ResizeArray<DsCoin>() with get, set
+        [<JsonProperty(Order = 3)>] member val GraphDTO = getNull<GraphDTO>() with get, set
 
     type DsCoin(parent:IWithGraph, name:string) =
         inherit Vertex(name)
@@ -52,8 +54,6 @@ module rec Core =
 
 
 
-
-
     type DsSystem with
         static member Create(name:string) = new DsSystem(name)
         member x.CreateFlow(flowName:string) = 
@@ -61,6 +61,7 @@ module rec Core =
                 getNull<DsFlow>();
             else
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f);
+
     type DsFlow with
         member x.CreateWork(workName:string) = 
             if x.Works.Exists(fun w -> (w :> INamed).Name = workName) then
@@ -83,10 +84,7 @@ module rec Core =
         member x.CreateOperator(name:string): DsCoin = tryCreateCoin(x, name, "Operator") |? getNull<DsCoin>()
 
     let tryCreateCoin(x:IWithGraph, coinName:string, coinType:string) =
-        let coins, graph =
-            match x with
-            | :? DsFlow as flow -> flow.Coins, flow.Graph
-            | :? DsWork as work -> work.Coins, work.Graph
+        let coins, graph = x.GetCoins(), x.GetGraph()
 
         if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
             None
@@ -98,18 +96,44 @@ module rec Core =
             graph.AddVertex(c)
             Some c
 
-    let tryCreateEdge(x:IWithGraph, src:Vertex, dst:Vertex) =
-        let coins, graph =
+    type IWithGraph with
+        member x.GetGraph(): DsGraph =
             match x with
-            | :? DsFlow as flow -> flow.Coins, flow.Graph
-            | :? DsWork as work -> work.Coins, work.Graph
+            | :? DsFlow as flow -> flow.Graph
+            | :? DsWork as work -> work.Graph
+            | _ -> failwith "ERROR"
 
-        if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
-            None
-        else
-            let c = DsCoin(x, coinName)
-            coins.Add c
-            c.Parent <- x
-            c.CoinType <- coinType
-            graph.AddVertex(c)
-            Some c
+        member x.GetCoins(): ResizeArray<DsCoin> =
+            match x with
+            | :? DsFlow as flow -> flow.Coins
+            | :? DsWork as work -> work.Coins
+            | _ -> failwith "ERROR"
+
+        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:EdgeType) =
+            let g = x.GetGraph()
+            Edge.Create(g, src, dst, edgeType)
+
+        member x.CreateEdge(src:string, dst:string, edgeType:EdgeType) =
+            let g = x.GetGraph()
+            let s, e = g.FindVertex(src), g.FindVertex(dst)
+            x.CreateEdge(s, e, edgeType)
+
+
+
+    type IDsObject with
+        member x.DefaultSerialize(): string =
+            let settings = JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
+            JsonConvert.SerializeObject(x, Formatting.Indented, settings);
+
+    type DsSystem with
+        member x.PrepareSerialize() = x.Flows.Iter(_.PrepareSerialize())
+        member x.Serialize(): string =
+            x.PrepareSerialize()
+            x.DefaultSerialize()
+
+    type DsFlow with
+        member x.PrepareSerialize() =
+            x.Works.Iter(_.PrepareSerialize())
+            x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
+    type DsWork with
+        member x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
