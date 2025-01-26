@@ -32,11 +32,15 @@ module Serialization =
           "Coins": [
             {
               "Name": "call1",
-              "CoinType": "Call"
+              "CoinType": {
+                "Case": "Action"
+              }
             },
             {
               "Name": "call2",
-              "CoinType": "Call"
+              "CoinType": {
+                "Case": "Action"
+              }
             }
           ],
           "GraphDTO": {

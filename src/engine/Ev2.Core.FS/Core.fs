@@ -37,13 +37,19 @@ module Core =
         [<JsonProperty(Order = 2)>] member val Coins = ResizeArray<DsCoin>() with get, set
         [<JsonProperty(Order = 3)>] member val GraphDTO = getNull<GraphDTO>() with get, set
 
+    type CoinType =
+        | Undefined
+        | Action
+        | Command
+        | Operator
+
     type DsCoin(parent:IWithGraph, name:string) =
         inherit Vertex(name)
         interface IWork
         interface IWithGraph
 
         [<JsonIgnore>] member val Parent:IWithGraph = getNull<IWithGraph>() with get, set
-        [<JsonProperty(Order = 2)>] member val CoinType = "" with get, set  // 임시
+        [<JsonProperty(Order = 2)>] member val CoinType = Undefined with get, set
 
 
 
@@ -73,14 +79,14 @@ module Core =
 
 
     type DsFlow with
-        member x.CreateCall(name:string):     DsCoin = tryCreateCoin(x, name, "Call")     |? getNull<DsCoin>()
-        member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(x, name, "Command")  |? getNull<DsCoin>()
-        member x.CreateOperator(name:string): DsCoin = tryCreateCoin(x, name, "Operator") |? getNull<DsCoin>()
+        member x.CreateCall(name:string):     DsCoin = tryCreateCoin(x, name, CoinType.Action)   |? getNull<DsCoin>()
+        member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(x, name, CoinType.Command)  |? getNull<DsCoin>()
+        member x.CreateOperator(name:string): DsCoin = tryCreateCoin(x, name, CoinType.Operator) |? getNull<DsCoin>()
 
     type DsWork with
-        member x.CreateCall(name:string):     DsCoin = tryCreateCoin(x, name, "Call")     |? getNull<DsCoin>()
-        member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(x, name, "Command")  |? getNull<DsCoin>()
-        member x.CreateOperator(name:string): DsCoin = tryCreateCoin(x, name, "Operator") |? getNull<DsCoin>()
+        member x.CreateCall(name:string):     DsCoin = tryCreateCoin(x, name, CoinType.Action)   |? getNull<DsCoin>()
+        member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(x, name, CoinType.Command)  |? getNull<DsCoin>()
+        member x.CreateOperator(name:string): DsCoin = tryCreateCoin(x, name, CoinType.Operator) |? getNull<DsCoin>()
 
 
     type IWithGraph with
@@ -107,7 +113,7 @@ module Core =
 
 
 
-    let private tryCreateCoin(x:IWithGraph, coinName:string, coinType:string) =
+    let private tryCreateCoin(x:IWithGraph, coinName:string, coinType:CoinType) =
         let coins, graph = x.GetCoins(), x.GetGraph()
 
         if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
