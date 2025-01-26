@@ -9,6 +9,7 @@ open NUnit.Framework
 open Dual.Ev2
 open Engine.Common
 open Dual.Common.Base.CS
+open Dual.Common.Core.FS
 
 module Serialization =
     let system =
@@ -18,7 +19,7 @@ module Serialization =
         let call1 = work1.CreateCall("call1")
         let call2 = work1.CreateCall("call2")
 
-        work1.CsCreateEdge(call1, call2, EdgeType.Start)
+        work1.CreateEdge(call1, call2, CausalEdgeType.Start) |> verifyNonNull
         system
     let json = """{
   "Name": "system1",
@@ -47,7 +48,9 @@ module Serialization =
               {
                 "Source": "call1",
                 "Target": "call2",
-                "EdgeType": 1
+                "EdgeType": {
+                  "Case": "Start"
+                }
               }
             ]
           }

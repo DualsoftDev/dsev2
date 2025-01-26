@@ -96,11 +96,11 @@ module Core =
             | :? DsWork as work -> work.Coins
             | _ -> failwith "ERROR"
 
-        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:EdgeType) =
+        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType) =
             let g = x.GetGraph()
             Edge.Create(g, src, dst, edgeType)
 
-        member x.CreateEdge(src:string, dst:string, edgeType:EdgeType) =
+        member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType) =
             let g = x.GetGraph()
             let s, e = g.FindVertex(src), g.FindVertex(dst)
             x.CreateEdge(s, e, edgeType)
@@ -117,7 +117,7 @@ module Core =
             coins.Add c
             c.Parent <- x
             c.CoinType <- coinType
-            graph.AddVertex(c)
+            graph.AddVertex(c) |> verify
             Some c
 
 

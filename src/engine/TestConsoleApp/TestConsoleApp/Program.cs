@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using static Engine.Common.GraphModule;
 using static Dual.Ev2.Ev2CSharpExtensions;
+using static Dual.Ev2.GraphModule;
 //using System.Windows.Forms;
 
 
@@ -29,7 +30,7 @@ class Program
         var op1 = flow1.CreateOperator("FlowOp1");
         var cmd1 = work1.CreateOperator("WorkCmd1");
 
-        work1.CsCreateEdge(call1, call2, EdgeType.Start);
+        work1.CsCreateEdge(call1, call2, CausalEdgeType.Start);
 
 
         //var settings = new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
