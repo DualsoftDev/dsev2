@@ -172,16 +172,15 @@ module CoreGraph =
 
     type DsGraph = TGraph<Vertex, Edge>
 
+    /// DsGraph 의 edge type
     [<AbstractClass>]
-    type EdgeBase<'V>(source:'V, target:'V, edgeType:CausalEdgeType) =   // copied from Engine.Common.DsEdgeBase<>
-        inherit EdgeBase<'V, CausalEdgeType>(source, target, edgeType)
+    type EdgeBase<'V> internal (source:'V, target:'V, edgeType:CausalEdgeType) =   // copied from Engine.Common.DsEdgeBase<>
+        inherit Dual.Common.Core.FS.GraphModule.EdgeBase<'V, CausalEdgeType>(source, target, edgeType)
         member _.EdgeType = edgeType
 
     type Edge internal (source:Vertex, target:Vertex, edgeType:CausalEdgeType) =
         inherit EdgeBase<Vertex>(source, target, edgeType)
-        member _.EdgeType = edgeType
-
-
+        //member _.EdgeType = edgeType
         //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
 
 
@@ -201,6 +200,7 @@ module CoreGraph =
         | VCFlow of DsFlow
         | VCWork of DsWork
         with
+            /// VertexContainer Union type 의 내부 알맹이 공통 구조인 DsNamedObject 를 반환
             member x.AsNamedObject():DsNamedObject =
                 match x with
                 | VCFlow f -> f :> DsNamedObject
@@ -235,12 +235,15 @@ module CoreGraph =
         | VDCommand  of DsCommand
         | VDOperator of DsOperator
         with
+            /// VertexDetail Union type 의 내부 알맹이 공통 구조인 vertex 를 반환
             member x.AsVertex():Vertex =
                 match x with
                 | VDWork     w -> w :> Vertex
                 | VDAction   a -> a :> Vertex
                 | VDCommand  c -> c :> Vertex
                 | VDOperator o -> o :> Vertex
+
+            /// vertex subclass 로부터 VertexDetail Union type 생성 반환
             static member FromVertex(v:Vertex) =
                 match v with
                 | :? DsWork     as w -> VDWork     w
@@ -258,12 +261,14 @@ module CoreGraph =
 
 
     type GraphExtension =
+        /// Graph 상에 인과 edge 생성
         [<Extension>]
         static member CreateEdge(graph:DsGraph, src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge =
             Edge(src, dst, edgeType)
             |> tee(fun e ->
                 graph.AddEdge(e) |> verifyM $"Duplicated edge [{src.Name}{edgeType}{dst.Name}]" )
 
+        /// Graph 상에 인과 edge 생성
         [<Extension>]
         static member CreateEdge(graph:DsGraph, src:string, dst:string, edgeType:CausalEdgeType): Edge =
             let s, e = graph.FindVertex(src), graph.FindVertex(dst)
@@ -321,7 +326,7 @@ module CoreGraph =
 
         /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
         ///
-        /// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
+        /// e.g : system1.TryFindLqdnObj(["flow1"; "work1"; "call1"]) === call1
         [<Extension>]
         static member TryFindLqdnObj(fqdnObj:DsNamedObject, lqdn:string seq) =
             match tryHeadAndTail lqdn with
@@ -334,6 +339,9 @@ module CoreGraph =
             | None ->
                 Some fqdnObj
 
+        /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
+        ///
+        /// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
         [<Extension>] static member TryFindLqdnObj(fqdnObj:DsNamedObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
 
 
