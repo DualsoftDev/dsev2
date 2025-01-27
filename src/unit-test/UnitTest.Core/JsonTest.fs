@@ -74,12 +74,12 @@ module Json =
     type T() =
         [<Test>]
         member _.``Minimal`` () =
-            let jsonText = system.Serialize();
+            let jsonText = system.ToJson();
             DcClipboard.Write(jsonText)
 
             jsonText === json
 
-            let system2 = DsSystem.Deserialize(jsonText)
+            let system2 = DsSystem.FromJson(jsonText)
             let f1 = system2.Flows[0]
             let f1w1 = f1.Works[0]
             f1.System === system2
@@ -94,7 +94,7 @@ module Json =
             VertexDetail.FromVertex(e.Target) === f1w1c2
             e.EdgeType === CausalEdgeType.Start
 
-            let json2 = system2.Serialize()
+            let json2 = system2.ToJson()
             jsonText === json2
 
         /// Flow 바로 아래에 존재하는 coin 생성 및 연결 test
@@ -110,7 +110,7 @@ module Json =
             f1.CreateEdge(f1c1, f1w1, CausalEdgeType.Start) |> verifyNonNull
             f1.CreateEdge(f1c2, f1w1, CausalEdgeType.Start) |> verifyNonNull
 
-            let jsonText = system2.Serialize()
+            let jsonText = system2.ToJson()
             DcClipboard.Write(jsonText);
             let str = """"Edges": [
         {
@@ -141,7 +141,7 @@ module Json =
             jsonText.Contains(str) === true
 
 
-            let json2 = system2.Serialize()
+            let json2 = system2.ToJson()
             jsonText === json2
 
 
@@ -154,7 +154,7 @@ module Json =
         ///   -  System, Flow, Work 객체 얻기 test
         [<Test>]
         member _.``Fqdn && Lqdn search`` () =
-            let system = DsSystem.Deserialize(json)
+            let system = DsSystem.FromJson(json)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
             let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()
@@ -211,13 +211,13 @@ module Json =
 
         [<Test>]
         member _.``Coins`` () =
-            let system = DsSystem.Deserialize(json)
+            let system = DsSystem.FromJson(json)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
             let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()
             let f1w1s1 = f1w1.AddVertex(new DsSafety("F1W1Saf1", [|"F2.W1.C999"; "F2.W1.C998"; |]))
             f1w1.CreateEdge(f1w1s1, f1w1c1, CausalEdgeType.Start) |> verifyNonNull
-            let jsonText = system.Serialize()
+            let jsonText = system.ToJson()
             DcClipboard.Write(jsonText)
 
             //jsonText === json

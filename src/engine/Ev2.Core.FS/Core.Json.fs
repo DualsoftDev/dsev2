@@ -5,6 +5,7 @@ open Newtonsoft.Json
 open Dual.Common.Core.FS
 open System.Xml.Serialization
 open System.IO
+open Dual.Common.Base.FS
 
 (*
  * Graph<'V, 'E> 의 JSON serialize 가 복잡하므로, GraphDTO 형태를 경유해서 serialize/deserialize 수행한다.
@@ -12,46 +13,47 @@ open System.IO
 
 [<AutoOpen>]
 module CoreJson =
-    type IDsObject with
-        member x.DefaultSerialize(): string =
-            let settings = JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
-            JsonConvert.SerializeObject(x, Formatting.Indented, settings);
+    //type IDsObject with
+    //    member x.DefaultToJson(): string =
+    //        let settings = JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
+    //        JsonConvert.SerializeObject(x, Formatting.Indented, settings);
 
     type DsSystem with
-        member x.Serialize(): string =
-            x.PrepareSerialize()
-            x.DefaultSerialize()
-        static member Deserialize(json:string): DsSystem =
+        member x.ToJson(): string =
+            x.PrepareToJson()
+            EmJson.ToJson(x)
+
+        static member FromJson(json:string): DsSystem =
             let system = JsonConvert.DeserializeObject<DsSystem>(json)
-            system.PrepareDeserialize()
+            system.PrepareFromJson()
             system
 
 
     type DsSystem with
-        member internal x.PrepareSerialize() = x.Flows.Iter(_.PrepareSerialize())
-        member internal x.PrepareDeserialize() = x.Flows.Iter(_.PrepareDeserialize(x))
+        member internal x.PrepareToJson() = x.Flows.Iter(_.PrepareToJson())
+        member internal x.PrepareFromJson() = x.Flows.Iter(_.PrepareFromJson(x))
 
     type DsFlow with
         /// Graph -> Json DTO
-        member internal x.PrepareSerialize() =
-            x.Works.Iter(_.PrepareSerialize())
+        member internal x.PrepareToJson() =
+            x.Works.Iter(_.PrepareToJson())
             x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
-        member internal x.PrepareDeserialize(system:DsSystem) =
+        member internal x.PrepareFromJson(system:DsSystem) =
             x.System <- system
             let g = x.Graph
-            x.Works.Iter(_.PrepareDeserialize(x))
+            x.Works.Iter(_.PrepareFromJson(x))
 
             x.Vertices.Map(_.AsVertex()) |> g.AddVertices |> ignore            
             x.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 
     type DsWork with
         /// Graph -> Json DTO
-        member internal x.PrepareSerialize() = x.Edges <- EdgeDTO.FromGraph(x.Graph)
+        member internal x.PrepareToJson() = x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
-        member internal x.PrepareDeserialize(parentFlow:DsFlow) =
+        member internal x.PrepareFromJson(parentFlow:DsFlow) =
             x.Container <- VCFlow parentFlow
             let vs = x.Vertices.Map(_.AsVertex())
             let g = x.Graph
