@@ -20,8 +20,8 @@ module Core =
     type DsSystem(name:string) =
         inherit DsNamedObject(name)
         interface ISystem
-        [<JsonProperty(Order = 2)>]
-        member val Flows = ResizeArray<DsFlow>() with get, set
+
+        [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
     type DsFlow(system:DsSystem, name:string) =
         inherit DsNamedObject(name)
@@ -29,9 +29,8 @@ module Core =
                 
         [<JsonIgnore>] member val System = system with get, set
         [<JsonIgnore>] member val Graph = DsGraph()
-        //[<JsonProperty(Order = 2)>] member val Works = ResizeArray<DsWork>() with get, set
         [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
-        [<JsonProperty(Order = 4)>] member val GraphDTO = getNull<GraphDTO>() with get, set
+        [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
     type DsWork(flow:DsFlow, name:string) =
         inherit Vertex(name, VCFlow flow)
@@ -39,19 +38,8 @@ module Core =
 
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
-        [<JsonProperty(Order = 3)>] member val GraphDTO = getNull<GraphDTO>() with get, set
+        [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
-    //type CoinType =
-    //    | Undefined
-    //    | Action
-    //    | Command
-    //    | Operator
-
-    //type DsCoin(parent:VertexContainer, name:string) =
-    //    inherit Vertex(name)
-    //    interface ICoin
-
-    //    [<JsonProperty(Order = 2)>] member val CoinType = CoinType.Undefined with get, set
 
     type DsAction(name:string) =
         inherit Vertex(name)
@@ -78,6 +66,8 @@ module Core =
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
 
     type DsFlow with
+        [<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
+
         member x.CreateWork(workName:string) = 
             if x.Vertices.Exists(fun w -> w.AsVertex().Name = workName) then
                 getNull<DsWork>();
@@ -87,13 +77,17 @@ module Core =
                 x.Graph.AddVertex w |> ignore
                 w
 
-        [<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
             if vertex.Container <> VCNone then
                 failwith "ERROR: Vertex already has parent container"
             if x.Graph.AddVertex vertex then
                 failwith "ERROR: Failed to add.  duplicated?"
             vertex
+        
+        /// Flow 내에서 edge 생성
+        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
+        /// Flow 내에서 edge 생성
+        member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
 
     type DsWork with
         member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
@@ -104,49 +98,20 @@ module Core =
                 failwith "ERROR: Failed to add.  duplicated?"
             VertexDetail.FromVertex(vertex) |> x.Vertices.Add
             vertex
-                
-
-    //    member x.CreateAction(name:string):   DsCoin = tryCreateCoin(VCFlow x, name, fun () -> DsAction(name))   |? getNull<DsCoin>()
-    //    member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(VCFlow x, name, fun () -> DsCommand(name))  |? getNull<DsCoin>()
-    //    member x.CreateOperator(name:string): DsCoin = tryCreateCoin(VCFlow x, name, fun () -> DsOperator(name)) |? getNull<DsCoin>()
-
-    //type DsWork with
-    //    member x.CreateAction(name:string):   DsCoin = tryCreateCoin(VCWork x, name, CoinType.Action)   |? getNull<DsCoin>()
-    //    member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(VCWork x, name, CoinType.Command)  |? getNull<DsCoin>()
-    //    member x.CreateOperator(name:string): DsCoin = tryCreateCoin(VCWork x, name, CoinType.Operator) |? getNull<DsCoin>()
-    //    member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType) = x.Graph.CreateEdge(src, dst, edgeType)
-    //    member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType) = x.Graph.CreateEdge(src, dst, edgeType)
-
-
-    //type VertexContainer with
-    //    member x.GetGraph(): DsGraph =
-    //        match x with
-    //        | VCFlow flow -> flow.Graph
-    //        | VCWork work -> work.Graph
-    //        | _ -> failwith "ERROR"
-
-    //    member x.GetCoins(): ResizeArray<DsCoin> =
-    //        match x with
-    //        | VCFlow flow -> flow.Coins
-    //        | VCWork work -> work.Coins
-    //        | _ -> failwith "ERROR"
-
-
-    //let private tryCreateCoin(x:VertexContainer, coinName:string, coin:Vertex) =
-    //    let coins, graph = x.GetCoins(), x.GetGraph()
-
-    //    if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
-    //        None
-    //    else
-    //        let c = DsCoin(x, coinName)
-    //        coins.Add c
-    //        c.Container <- x
-    //        c.CoinType <- coinType
-    //        graph.AddVertex(c) |> verify
-    //        Some c
+        /// Work 내에서 edge 생성
+        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
+        /// Work 내에서 edge 생성
+        member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
 
 
 
+
+(*
+ * Graph 구조의 Json serialize 는 직접 수행하지 않는다.
+ * 내부 Graph 구조를 Vertex 와 Edge 로 나누어, 다음 속성을 경유해서 JSON serialize 수행한다.
+    - Vertex 는 {Flow, Work}.Vertices 에 (VertexDetail type)
+    - Edge 는 {Flow, Work}.Edges 에 (EdgeDTO type)
+ *)
 [<AutoOpen>]
 module CoreGraph =
 
@@ -218,18 +183,14 @@ module CoreGraph =
 
 
 
+    /// Edge 구조 serialization 용도.
     type EdgeDTO(source:string, target:string, edgeType:CausalEdgeType) =
         member val Source = source with get, set
         member val Target = target with get, set
         member val EdgeType = edgeType with get, set
-
-    type GraphDTO(vertices:string seq, edges:EdgeDTO seq) =
-        member val Vertices = vertices |> ResizeArray with get, set
-        member val Edges = edges |> ResizeArray with get, set
         static member FromGraph(graph:DsGraph) =
-            let vs = graph.Vertices.Map(_.Name)
-            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Name, e.Target.Name, e.EdgeType))
-            GraphDTO(vs, es)
+            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Name, e.Target.Name, e.EdgeType)).ToArray()
+            es
 
     /// Vertex 의 parent 구분용 type
     type VertexContainer =
@@ -237,11 +198,11 @@ module CoreGraph =
         | VCFlow of DsFlow
         | VCWork of DsWork
 
-    /// Vertex 의 Polymorphic types
+    /// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다.
     type VertexDetail =
-        | VDWork of DsWork
-        | VDAction of DsAction
-        | VDCommand of DsCommand
+        | VDWork     of DsWork
+        | VDAction   of DsAction
+        | VDCommand  of DsCommand
         | VDOperator of DsOperator
         with
             member x.AsVertex():Vertex =

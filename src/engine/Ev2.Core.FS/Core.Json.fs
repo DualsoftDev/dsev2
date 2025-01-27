@@ -1,9 +1,7 @@
 ﻿namespace rec Dual.Ev2
 
-open System.Linq
 open Newtonsoft.Json
 
-open Dual.Common.Base.CS
 open Dual.Common.Core.FS
 
 (*
@@ -34,7 +32,7 @@ module CoreJson =
         /// Graph -> Json DTO
         member internal x.PrepareSerialize() =
             x.Works.Iter(_.PrepareSerialize())
-            x.GraphDTO <- GraphDTO.FromGraph(x.Graph)
+            x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareDeserialize(system:DsSystem) =
@@ -42,20 +40,12 @@ module CoreJson =
             let g = x.Graph
             x.Works.Iter(_.PrepareDeserialize(x))
 
-            let vs =
-                let coins = x.Vertices |> Seq.cast<Vertex>
-                let works = x.Works |> Seq.cast<Vertex>
-                (coins @ works).ToArray()
-            g.AddVertices vs |> ignore
-
-            if !! x.GraphDTO.Vertices.SetEqual(g.Vertices.Map(_.Name)) then
-                failwith "ERROR: mismatch"
-            
-            x.GraphDTO.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
+            x.Vertices.Map(_.AsVertex()) |> g.AddVertices |> ignore            
+            x.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 
     type DsWork with
         /// Graph -> Json DTO
-        member internal x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.Graph)
+        member internal x.PrepareSerialize() = x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareDeserialize(parentFlow:DsFlow) =
@@ -64,6 +54,4 @@ module CoreJson =
             let g = x.Graph
             vs.Iter(fun c -> c.Container <- VCWork x)
             vs |> g.AddVertices |> ignore
-            if !! x.GraphDTO.Vertices.SetEqual(g.Vertices.Map(_.Name)) then
-                failwith "ERROR: mismatch"
-            x.GraphDTO.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType) |> ignore)
+            x.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType) |> ignore)
