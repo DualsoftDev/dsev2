@@ -1,5 +1,6 @@
 ﻿namespace Dual.Ev2
 
+open Newtonsoft.Json
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 
@@ -59,4 +60,5 @@ module Interfaces =
     /// 호출 인터페이스
     type ICall =
         inherit ICoin
+
 

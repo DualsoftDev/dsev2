@@ -33,12 +33,12 @@ module CoreJson =
         /// Graph -> Json DTO
         member internal x.PrepareSerialize() =
             x.Works.Iter(_.PrepareSerialize())
-            x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
+            x.GraphDTO <- GraphDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareDeserialize(system:DsSystem) =
             x.System <- system
-            let g = x.GetGraph()
+            let g = x.Graph
             x.Works.Iter(_.PrepareDeserialize(x))
 
             let vs =
@@ -50,18 +50,19 @@ module CoreJson =
             if !! x.GraphDTO.Vertices.SetEqual(g.Vertices.Map(_.Name)) then
                 failwith "ERROR: mismatch"
             
-            x.GraphDTO.Edges.Map(fun e -> x.CreateEdge(e.Source, e.Target, e.EdgeType)) |> g.AddEdges |> ignore
+            x.GraphDTO.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 
     type DsWork with
         /// Graph -> Json DTO
-        member internal x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
+        member internal x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareDeserialize(flow:DsFlow) =
+            x.Container <- Flow flow
             x.Flow <- flow
-            x.Coins.Iter(fun c -> c.Parent <- x)
-            let g = x.GetGraph()
+            x.Coins.Iter(fun c -> c.Container <- Work x)
+            let g = x.Graph
             x.Coins |> Seq.cast<Vertex> |> g.AddVertices |> ignore
             if !! x.GraphDTO.Vertices.SetEqual(g.Vertices.Map(_.Name)) then
                 failwith "ERROR: mismatch"
-            x.GraphDTO.Edges.Map(fun e -> x.CreateEdge(e.Source, e.Target, e.EdgeType)) |> g.AddEdges |> ignore
+            x.GraphDTO.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType) |> ignore)
