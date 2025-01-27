@@ -26,24 +26,6 @@ module CoreJson =
             system.PrepareDeserialize()
             system
 
-        // XML Serialization
-        member x.SerializeToXml(): string =
-            // System.InvalidOperationException: 'Dual.Ev2.Core.DsSystem cannot be serialized because it does not have a parameterless constructor.'
-            (* XML serialize 위해 추기 필요한 요소
-              1. parameterless constructor 추가
-             *)
-            let serializer = XmlSerializer(typeof<DsSystem>)
-            use stringWriter = new StringWriter()
-            serializer.Serialize(stringWriter, x)
-            stringWriter.ToString()
-
-        static member DeserializeFromXml(xml: string): DsSystem =
-            let serializer = XmlSerializer(typeof<DsSystem>)
-            use stringReader = new StringReader(xml)
-            let system = serializer.Deserialize(stringReader) :?> DsSystem
-            system.PrepareDeserialize()
-            system
-
 
     type DsSystem with
         member internal x.PrepareSerialize() = x.Flows.Iter(_.PrepareSerialize())

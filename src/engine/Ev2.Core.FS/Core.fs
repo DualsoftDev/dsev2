@@ -21,14 +21,12 @@ module Core =
     type DsSystem(name:string) =
         inherit DsNamedObject(name)
         interface ISystem
-        new() = DsSystem("")    // for XML
         [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
     type DsFlow(system:DsSystem, name:string) =
         inherit DsNamedObject(name)
         interface IFlow
                 
-        new() = DsFlow(getNull<DsSystem>(), "")    // for XML
         [<JsonIgnore>] member val System = system with get, set
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
@@ -38,7 +36,6 @@ module Core =
         inherit Vertex(name, VCFlow flow)
         interface IWork
 
-        new() = DsWork(getNull<DsFlow>(), "")    // for XML
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
@@ -203,7 +200,6 @@ module CoreGraph =
 
     /// Edge 구조 serialization 용도.
     type EdgeDTO(source:string, target:string, edgeType:CausalEdgeType) =
-        new() = EdgeDTO(null, null, CausalEdgeType.Start)    // for XML
         member val Source = source with get, set
         member val Target = target with get, set
         member val EdgeType = edgeType with get, set
