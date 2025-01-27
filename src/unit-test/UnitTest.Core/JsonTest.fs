@@ -31,13 +31,13 @@ module Json =
       "Name": "F1",
       "Vertices": [
         {
-          "Case": "VDWork",
+          "Case": "Work",
           "Fields": [
             {
               "Name": "F1W1",
               "Vertices": [
                 {
-                  "Case": "VDAction",
+                  "Case": "Action",
                   "Fields": [
                     {
                       "Name": "F1W1C1"
@@ -45,7 +45,7 @@ module Json =
                   ]
                 },
                 {
-                  "Case": "VDAction",
+                  "Case": "Action",
                   "Fields": [
                     {
                       "Name": "F1W1C2"
@@ -145,8 +145,15 @@ module Json =
             jsonText === json2
 
 
+        /// - Ds object (DsNamedObject) 로부터
+        ///
+        ///   -  FQDN 얻기 test, 
+        ///
+        ///   -  Lqdn 이용해서 하부의 객체 얻기 test, 
+        ///
+        ///   -  System, Flow, Work 객체 얻기 test
         [<Test>]
-        member _.``FQDN`` () =
+        member _.``Fqdn && Lqdn search`` () =
             let system = DsSystem.Deserialize(json)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
@@ -200,6 +207,21 @@ module Json =
             f1w1c1.GetSystem() === system
             f1w1c1.GetFlow() === f1
             f1w1c1.TryGetWork().Value === f1w1
+
+
+        [<Test>]
+        member _.``Coins`` () =
+            let system = DsSystem.Deserialize(json)
+            let f1 = system.Flows[0]
+            let f1w1 = f1.Works[0]
+            let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()
+            let f1w1s1 = f1w1.AddVertex(new DsSafety("F1W1Saf1", [|"F2.W1.C999"; "F2.W1.C998"; |]))
+            f1w1.CreateEdge(f1w1s1, f1w1c1, CausalEdgeType.Start) |> verifyNonNull
+            let jsonText = system.Serialize()
+            DcClipboard.Write(jsonText)
+
+            //jsonText === json
+
 
 
 

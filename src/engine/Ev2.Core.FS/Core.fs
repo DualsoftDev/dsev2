@@ -16,17 +16,19 @@ module Core =
         | StartReset
         | SelfReset
         | Interlock
+        | Group
 
     type DsSystem(name:string) =
         inherit DsNamedObject(name)
         interface ISystem
-
+        new() = DsSystem("")    // for XML
         [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
     type DsFlow(system:DsSystem, name:string) =
         inherit DsNamedObject(name)
         interface IFlow
                 
+        new() = DsFlow(getNull<DsSystem>(), "")    // for XML
         [<JsonIgnore>] member val System = system with get, set
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
@@ -36,19 +38,32 @@ module Core =
         inherit Vertex(name, VCFlow flow)
         interface IWork
 
+        new() = DsWork(getNull<DsFlow>(), "")    // for XML
         [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
 
-    type DsAction(name:string) =
+    [<AbstractClass>]
+    type DsCoin(name:string) =
         inherit Vertex(name)
+
+    type DsAction(name:string) =
+        inherit DsCoin(name)
+
+    type DsAutoPre(name:string) =
+        inherit DsCoin(name)
+
+    type DsSafety(name:string, safeties:string []) =
+        inherit DsCoin(name)
+        new(name) = DsSafety(name, [||])
+        member val Safeties = safeties with get, set
 
     type DsCommand(name:string) =
-        inherit Vertex(name)
+        inherit DsCoin(name)
 
     type DsOperator(name:string) =
-        inherit Vertex(name)
+        inherit DsCoin(name)
 
 
 
@@ -73,7 +88,7 @@ module Core =
                 getNull<DsWork>();
             else
                 let w = DsWork(x, workName)
-                x.Vertices.Add (VDWork w)
+                x.Vertices.Add (Work w)
                 x.Graph.AddVertex w |> ignore
                 w
 
@@ -93,6 +108,7 @@ module Core =
 
     type DsWork with
         [<JsonIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
+
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
             if vertex.Container <> VCNone then
                 failwith "ERROR: Vertex already has parent container"
@@ -170,7 +186,6 @@ module CoreGraph =
             x.Islands @ lasts
 
 
-    type DsGraph = TGraph<Vertex, Edge>
 
     /// DsGraph 의 edge type
     [<AbstractClass>]
@@ -178,15 +193,17 @@ module CoreGraph =
         inherit Dual.Common.Core.FS.GraphModule.EdgeBase<'V, CausalEdgeType>(source, target, edgeType)
         member _.EdgeType = edgeType
 
+    type DsGraph = TGraph<Vertex, Edge>
+
     type Edge internal (source:Vertex, target:Vertex, edgeType:CausalEdgeType) =
         inherit EdgeBase<Vertex>(source, target, edgeType)
-        //member _.EdgeType = edgeType
         //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
 
 
 
     /// Edge 구조 serialization 용도.
     type EdgeDTO(source:string, target:string, edgeType:CausalEdgeType) =
+        new() = EdgeDTO(null, null, CausalEdgeType.Start)    // for XML
         member val Source = source with get, set
         member val Target = target with get, set
         member val EdgeType = edgeType with get, set
@@ -228,28 +245,34 @@ module CoreGraph =
                 | _ -> None
 
 
-    /// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다.
+    /// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다. (e.g "Case": "Action", "Fields": [...])
     type VertexDetail =
-        | VDWork     of DsWork
-        | VDAction   of DsAction
-        | VDCommand  of DsCommand
-        | VDOperator of DsOperator
+        | Work     of DsWork
+        | Action   of DsAction
+        | AutoPre  of DsAutoPre
+        | Safety   of DsSafety
+        | Command  of DsCommand
+        | Operator of DsOperator
         with
             /// VertexDetail Union type 의 내부 알맹이 공통 구조인 vertex 를 반환
             member x.AsVertex():Vertex =
                 match x with
-                | VDWork     w -> w :> Vertex
-                | VDAction   a -> a :> Vertex
-                | VDCommand  c -> c :> Vertex
-                | VDOperator o -> o :> Vertex
+                | Work     y -> y :> Vertex
+                | Action   y -> y :> Vertex
+                | AutoPre  y -> y :> Vertex
+                | Safety   y -> y :> Vertex
+                | Command  y -> y :> Vertex
+                | Operator y -> y :> Vertex
 
             /// vertex subclass 로부터 VertexDetail Union type 생성 반환
             static member FromVertex(v:Vertex) =
                 match v with
-                | :? DsWork     as w -> VDWork     w
-                | :? DsAction   as a -> VDAction   a
-                | :? DsCommand  as c -> VDCommand  c
-                | :? DsOperator as o -> VDOperator o
+                | :? DsWork     as y -> Work     y
+                | :? DsAction   as y -> Action   y
+                | :? DsAutoPre  as y -> AutoPre  y
+                | :? DsSafety   as y -> Safety   y
+                | :? DsCommand  as y -> Command  y
+                | :? DsOperator as y -> Operator y
                 | _ -> failwith "ERROR"
 
     /// INamedVertex를 구현한 Vertex 추상 클래스
