@@ -80,8 +80,10 @@ module Core =
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
             if vertex.Container <> VCNone then
                 failwith "ERROR: Vertex already has parent container"
-            if x.Graph.AddVertex vertex then
+            if !! x.Graph.AddVertex(vertex) then
                 failwith "ERROR: Failed to add.  duplicated?"
+            VertexDetail.FromVertex(vertex) |> x.Vertices.Add
+            vertex.Container <- VCFlow x
             vertex
         
         /// Flow 내에서 edge 생성
@@ -90,13 +92,14 @@ module Core =
         member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
 
     type DsWork with
-        member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
+        [<JsonIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
             if vertex.Container <> VCNone then
                 failwith "ERROR: Vertex already has parent container"
             if !! x.Graph.AddVertex(vertex) then
                 failwith "ERROR: Failed to add.  duplicated?"
             VertexDetail.FromVertex(vertex) |> x.Vertices.Add
+            vertex.Container <- VCWork x
             vertex
         /// Work 내에서 edge 생성
         member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
@@ -197,6 +200,33 @@ module CoreGraph =
         | VCNone
         | VCFlow of DsFlow
         | VCWork of DsWork
+        with
+            member x.AsNamedObject():DsNamedObject =
+                match x with
+                | VCFlow f -> f :> DsNamedObject
+                | VCWork w -> w :> DsNamedObject
+                | _ -> failwith "ERROR"
+
+            /// VertexContainer 의 상위 System
+            member x.System:DsSystem =
+                match x with
+                | VCFlow f -> f.System
+                | VCWork w -> w.Flow.System
+                | _ -> failwith "ERROR"
+
+            /// VertexContainer 의 상위 Flow
+            member x.Flow:DsFlow=
+                match x with
+                | VCFlow f -> f
+                | VCWork w -> w.Flow
+                | _ -> failwith "ERROR"
+
+            /// VertexContainer 의 상위 Work
+            member x.OptWork:DsWork option =
+                match x with
+                | VCWork w -> Some w
+                | _ -> None
+
 
     /// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다.
     type VertexDetail =
@@ -213,9 +243,9 @@ module CoreGraph =
                 | VDOperator o -> o :> Vertex
             static member FromVertex(v:Vertex) =
                 match v with
-                | :? DsWork     as w -> VDWork w
-                | :? DsAction   as a -> VDAction a
-                | :? DsCommand  as c -> VDCommand c
+                | :? DsWork     as w -> VDWork     w
+                | :? DsAction   as a -> VDAction   a
+                | :? DsCommand  as c -> VDCommand  c
                 | :? DsOperator as o -> VDOperator o
                 | _ -> failwith "ERROR"
 
@@ -241,6 +271,72 @@ module CoreGraph =
 
 
         [<Extension>] static member HasVertexWithName(graph:DsGraph, name:string) = graph.Vertices.Any(fun v -> v.Name = name)
+
+
+        /// fqdnObj 기준 상위로 System 찾기
+        [<Extension>]
+        static member GetSystem(fqdnObj:DsNamedObject):DsSystem =
+            match fqdnObj with
+            | :? DsSystem   as s -> s
+            | :? DsFlow     as f -> f.System
+            | :? DsWork     as w -> w.Flow.System
+            | :? DsAction   as a -> a.Container.System
+            | :? DsCommand  as c -> c.Container.System
+            | :? DsOperator as o -> o.Container.System
+            | _ -> failwith "ERROR"
+
+        /// fqdnObj 기준 상위로 Flow 찾기
+        [<Extension>]
+        static member GetFlow(fqdnObj:DsNamedObject):DsFlow =
+            match fqdnObj with
+            | :? DsFlow     as f -> f
+            | :? DsWork     as w -> w.Flow
+            | :? DsAction   as a -> a.Container.Flow
+            | :? DsCommand  as c -> c.Container.Flow
+            | :? DsOperator as o -> o.Container.Flow
+            | _ -> failwith "ERROR"
+
+        /// fqdnObj 기준 상위로 Work 찾기
+        [<Extension>]
+        static member TryGetWork(fqdnObj:DsNamedObject):DsWork option =
+            match fqdnObj with
+            | :? DsWork     as w -> Some w
+            | :? DsAction   as a -> a.Container.OptWork
+            | :? DsCommand  as c -> c.Container.OptWork
+            | :? DsOperator as o -> o.Container.OptWork
+            | _ -> None
+
+        /// System 이름부터 시작하는 FQDN
+        [<Extension>]
+        static member Fqdn(fqdnObj:DsNamedObject) =
+            match fqdnObj with
+            | :? DsSystem   as s -> s.Name
+            | :? DsFlow     as f -> $"{f.System.Name}.{f.Name}"
+            | :? DsWork     as w -> $"{w.Flow.System.Name}.{w.Flow.Name}.{w.Name}"
+            | :? DsAction   as a -> $"{a.Container.AsNamedObject().Fqdn()}.{a.Name}"
+            | :? DsCommand  as c -> $"{c.Container.AsNamedObject().Fqdn()}.{c.Name}"
+            | :? DsOperator as o -> $"{o.Container.AsNamedObject().Fqdn()}.{o.Name}"
+            | _ -> failwith "ERROR"
+
+
+        /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
+        ///
+        /// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
+        [<Extension>]
+        static member TryFindLqdnObj(fqdnObj:DsNamedObject, lqdn:string seq) =
+            match tryHeadAndTail lqdn with
+            | Some (h, t) ->
+                match fqdnObj with
+                | :? DsSystem   as s -> s.Flows.TryFind(fun f -> f.Name = h).Bind(_.TryFindLqdnObj(t))
+                | :? DsFlow     as f -> f.Vertices.Map(_.AsVertex()).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+                | :? DsWork     as w -> w.Vertices.Map(_.AsVertex()).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+                | _ -> failwith "ERROR"
+            | None ->
+                Some fqdnObj
+
+        [<Extension>] static member TryFindLqdnObj(fqdnObj:DsNamedObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
+
+
 
 
 
