@@ -1,5 +1,6 @@
 ﻿namespace rec Dual.Ev2
 
+open System.Linq
 open Newtonsoft.Json
 
 open Dual.Common.Base.CS
@@ -42,7 +43,7 @@ module CoreJson =
             x.Works.Iter(_.PrepareDeserialize(x))
 
             let vs =
-                let coins = x.Coins |> Seq.cast<Vertex>
+                let coins = x.Vertices |> Seq.cast<Vertex>
                 let works = x.Works |> Seq.cast<Vertex>
                 (coins @ works).ToArray()
             g.AddVertices vs |> ignore
@@ -57,12 +58,12 @@ module CoreJson =
         member internal x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
-        member internal x.PrepareDeserialize(flow:DsFlow) =
-            x.Container <- Flow flow
-            x.Flow <- flow
-            x.Coins.Iter(fun c -> c.Container <- Work x)
+        member internal x.PrepareDeserialize(parentFlow:DsFlow) =
+            x.Container <- VCFlow parentFlow
+            let vs = x.Vertices.Map(_.AsVertex())
             let g = x.Graph
-            x.Coins |> Seq.cast<Vertex> |> g.AddVertices |> ignore
+            vs.Iter(fun c -> c.Container <- VCWork x)
+            vs |> g.AddVertices |> ignore
             if !! x.GraphDTO.Vertices.SetEqual(g.Vertices.Map(_.Name)) then
                 failwith "ERROR: mismatch"
             x.GraphDTO.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType) |> ignore)

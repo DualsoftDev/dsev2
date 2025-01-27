@@ -17,10 +17,10 @@ module Serialization =
         let system = DsSystem.Create("system1")
         let flow1 = system.CreateFlow("flow1")
         let work1 = flow1.CreateWork("work1")
-        let call1 = work1.CreateCall("call1")
-        let call2 = work1.CreateCall("call2")
+        let call1 = work1.AddVertex(new DsAction("call1"))
+        let call2 = work1.AddVertex(new DsAction("call2"))
 
-        work1.CreateEdge(call1, call2, CausalEdgeType.Start) |> verifyNonNull
+        work1.Graph.CreateEdge(call1, call2, CausalEdgeType.Start) |> verifyNonNull
         system
     let json = """{
   "Name": "system1",
@@ -82,15 +82,15 @@ module Serialization =
         let system2 = DsSystem.Deserialize(jsonText)
         system2.Flows[0].System === system2
         system2.Flows[0].Works[0].Flow === system2.Flows[0]
-        system2.Flows[0].Works[0].Coins[0].Container === Work system2.Flows[0].Works[0]
-        system2.Flows[0].Works[0].Coins[1].Container === Work system2.Flows[0].Works[0]
+        system2.Flows[0].Works[0].Vertices[0].AsVertex().Container === VCWork system2.Flows[0].Works[0]
+        system2.Flows[0].Works[0].Vertices[1].AsVertex().Container === VCWork system2.Flows[0].Works[0]
 
         //let xxx = system2.Flows[0].Works[0].Graph
         //let yyy = xxx.Edges
         system2.Flows[0].Works[0].Graph.Edges.Count === 1
         let e = system2.Flows[0].Works[0].Graph.Edges.First()
-        e.Source === system2.Flows[0].Works[0].Coins[0]
-        e.Target === system2.Flows[0].Works[0].Coins[1]
+        e.Source === system2.Flows[0].Works[0].Vertices[0]
+        e.Target === system2.Flows[0].Works[0].Vertices[1]
         e.EdgeType === CausalEdgeType.Start
 
         let json2 = system2.Serialize()

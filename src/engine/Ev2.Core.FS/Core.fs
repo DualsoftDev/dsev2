@@ -29,31 +29,38 @@ module Core =
                 
         [<JsonIgnore>] member val System = system with get, set
         [<JsonIgnore>] member val Graph = DsGraph()
-        [<JsonProperty(Order = 2)>] member val Works = ResizeArray<DsWork>() with get, set
-        [<JsonProperty(Order = 3)>] member val Coins = ResizeArray<DsCoin>() with get, set
+        //[<JsonProperty(Order = 2)>] member val Works = ResizeArray<DsWork>() with get, set
+        [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val GraphDTO = getNull<GraphDTO>() with get, set
 
     type DsWork(flow:DsFlow, name:string) =
-        inherit Vertex(name)
+        inherit Vertex(name, VCFlow flow)
         interface IWork
 
-        [<JsonIgnore>] member val Flow = flow with get, set
         [<JsonIgnore>] member val Graph = DsGraph()
-        [<JsonProperty(Order = 2)>] member val Coins = ResizeArray<DsCoin>() with get, set
+        [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 3)>] member val GraphDTO = getNull<GraphDTO>() with get, set
 
-    type CoinType =
-        | Undefined
-        | Action
-        | Command
-        | Operator
+    //type CoinType =
+    //    | Undefined
+    //    | Action
+    //    | Command
+    //    | Operator
 
-    type DsCoin(parent:VertexContainer, name:string) =
+    //type DsCoin(parent:VertexContainer, name:string) =
+    //    inherit Vertex(name)
+    //    interface ICoin
+
+    //    [<JsonProperty(Order = 2)>] member val CoinType = CoinType.Undefined with get, set
+
+    type DsAction(name:string) =
         inherit Vertex(name)
-        interface ICoin
 
-        [<JsonProperty(Order = 2)>] member val CoinType = CoinType.Undefined with get, set
+    type DsCommand(name:string) =
+        inherit Vertex(name)
 
+    type DsOperator(name:string) =
+        inherit Vertex(name)
 
 
 
@@ -72,54 +79,71 @@ module Core =
 
     type DsFlow with
         member x.CreateWork(workName:string) = 
-            if x.Works.Exists(fun w -> (w :> INamed).Name = workName) then
+            if x.Vertices.Exists(fun w -> w.AsVertex().Name = workName) then
                 getNull<DsWork>();
             else
                 let w = DsWork(x, workName)
-                x.Works.Add w
+                x.Vertices.Add (VDWork w)
                 x.Graph.AddVertex w |> ignore
                 w
 
-
-    type DsFlow with
-        member x.CreateCall(name:string):     DsCoin = tryCreateCoin(Flow x, name, CoinType.Action)   |? getNull<DsCoin>()
-        member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(Flow x, name, CoinType.Command)  |? getNull<DsCoin>()
-        member x.CreateOperator(name:string): DsCoin = tryCreateCoin(Flow x, name, CoinType.Operator) |? getNull<DsCoin>()
+        [<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
+        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
+            if vertex.Container <> VCNone then
+                failwith "ERROR: Vertex already has parent container"
+            if x.Graph.AddVertex vertex then
+                failwith "ERROR: Failed to add.  duplicated?"
+            vertex
 
     type DsWork with
-        member x.CreateCall(name:string):     DsCoin = tryCreateCoin(Work x, name, CoinType.Action)   |? getNull<DsCoin>()
-        member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(Work x, name, CoinType.Command)  |? getNull<DsCoin>()
-        member x.CreateOperator(name:string): DsCoin = tryCreateCoin(Work x, name, CoinType.Operator) |? getNull<DsCoin>()
-        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType) = x.Graph.CreateEdge(src, dst, edgeType)
-        member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType) = x.Graph.CreateEdge(src, dst, edgeType)
+        member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
+        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
+            if vertex.Container <> VCNone then
+                failwith "ERROR: Vertex already has parent container"
+            if !! x.Graph.AddVertex(vertex) then
+                failwith "ERROR: Failed to add.  duplicated?"
+            VertexDetail.FromVertex(vertex) |> x.Vertices.Add
+            vertex
+                
+
+    //    member x.CreateAction(name:string):   DsCoin = tryCreateCoin(VCFlow x, name, fun () -> DsAction(name))   |? getNull<DsCoin>()
+    //    member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(VCFlow x, name, fun () -> DsCommand(name))  |? getNull<DsCoin>()
+    //    member x.CreateOperator(name:string): DsCoin = tryCreateCoin(VCFlow x, name, fun () -> DsOperator(name)) |? getNull<DsCoin>()
+
+    //type DsWork with
+    //    member x.CreateAction(name:string):   DsCoin = tryCreateCoin(VCWork x, name, CoinType.Action)   |? getNull<DsCoin>()
+    //    member x.CreateCommand(name:string):  DsCoin = tryCreateCoin(VCWork x, name, CoinType.Command)  |? getNull<DsCoin>()
+    //    member x.CreateOperator(name:string): DsCoin = tryCreateCoin(VCWork x, name, CoinType.Operator) |? getNull<DsCoin>()
+    //    member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType) = x.Graph.CreateEdge(src, dst, edgeType)
+    //    member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType) = x.Graph.CreateEdge(src, dst, edgeType)
 
 
-    type VertexContainer with
-        member x.GetGraph(): DsGraph =
-            match x with
-            | Flow flow -> flow.Graph
-            | Work work -> work.Graph
-            | _ -> failwith "ERROR"
+    //type VertexContainer with
+    //    member x.GetGraph(): DsGraph =
+    //        match x with
+    //        | VCFlow flow -> flow.Graph
+    //        | VCWork work -> work.Graph
+    //        | _ -> failwith "ERROR"
 
-        member x.GetCoins(): ResizeArray<DsCoin> =
-            match x with
-            | Flow flow -> flow.Coins
-            | Work work -> work.Coins
-            | _ -> failwith "ERROR"
+    //    member x.GetCoins(): ResizeArray<DsCoin> =
+    //        match x with
+    //        | VCFlow flow -> flow.Coins
+    //        | VCWork work -> work.Coins
+    //        | _ -> failwith "ERROR"
 
 
-    let private tryCreateCoin(x:VertexContainer, coinName:string, coinType:CoinType) =
-        let coins, graph = x.GetCoins(), x.GetGraph()
+    //let private tryCreateCoin(x:VertexContainer, coinName:string, coin:Vertex) =
+    //    let coins, graph = x.GetCoins(), x.GetGraph()
 
-        if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
-            None
-        else
-            let c = DsCoin(x, coinName)
-            coins.Add c
-            c.Container <- x
-            c.CoinType <- coinType
-            graph.AddVertex(c) |> verify
-            Some c
+    //    if coins.Exists(fun w -> (w :> INamed).Name = coinName) then
+    //        None
+    //    else
+    //        let c = DsCoin(x, coinName)
+    //        coins.Add c
+    //        c.Container <- x
+    //        c.CoinType <- coinType
+    //        graph.AddVertex(c) |> verify
+    //        Some c
 
 
 
@@ -207,20 +231,39 @@ module CoreGraph =
             let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Name, e.Target.Name, e.EdgeType))
             GraphDTO(vs, es)
 
+    /// Vertex 의 parent 구분용 type
     type VertexContainer =
-        | NoContainer
-        | Flow of DsFlow
-        | Work of DsWork
-        //with
-        //    static member Create() =
-        //        ()
+        | VCNone
+        | VCFlow of DsFlow
+        | VCWork of DsWork
+
+    /// Vertex 의 Polymorphic types
+    type VertexDetail =
+        | VDWork of DsWork
+        | VDAction of DsAction
+        | VDCommand of DsCommand
+        | VDOperator of DsOperator
+        with
+            member x.AsVertex():Vertex =
+                match x with
+                | VDWork     w -> w :> Vertex
+                | VDAction   a -> a :> Vertex
+                | VDCommand  c -> c :> Vertex
+                | VDOperator o -> o :> Vertex
+            static member FromVertex(v:Vertex) =
+                match v with
+                | :? DsWork     as w -> VDWork w
+                | :? DsAction   as a -> VDAction a
+                | :? DsCommand  as c -> VDCommand c
+                | :? DsOperator as o -> VDOperator o
+                | _ -> failwith "ERROR"
 
     /// INamedVertex를 구현한 Vertex 추상 클래스
     [<AbstractClass>]
-    type Vertex(name: string) =
+    type Vertex(name: string, ?container:VertexContainer) =
         inherit DsNamedObject(name)
         interface INamedVertex
-        [<JsonIgnore>] member val Container:VertexContainer = VertexContainer.NoContainer with get, set
+        [<JsonIgnore>] member val Container = container |? VCNone with get, set
 
 
     type GraphExtension =
@@ -236,6 +279,7 @@ module CoreGraph =
             graph.CreateEdge(s, e, edgeType)
 
 
+        [<Extension>] static member HasVertexWithName(graph:DsGraph, name:string) = graph.Vertices.Any(fun v -> v.Name = name)
 
 
 

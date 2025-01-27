@@ -130,7 +130,7 @@ namespace Dual.Ev2
 
     public partial class DsWork
     {
-        public DsCall CreateCall(string callName)
+        public DsCall CreateAction(string callName)
         {
             if (Coins.Exists(c => c.Name == callName))
                 return null;
