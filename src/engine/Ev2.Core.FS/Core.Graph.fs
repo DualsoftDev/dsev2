@@ -16,11 +16,6 @@ module GraphModule =
         | SelfReset
         | Interlock
 
-    type INamedVertex =
-        inherit IVertex
-        inherit INamed
-
-
     /// 이름 속성을 가진 추상 클래스
     [<AbstractClass>]
     type DsNamedObject(name: string) =
@@ -29,18 +24,10 @@ module GraphModule =
         interface INamed with
             member x.Name with get() = x.Name and set(v) = x.Name <- v
 
-    /// INamedVertex를 구현한 Vertex 추상 클래스
-    [<AbstractClass>]
-    type Vertex(name: string) =
-        inherit DsNamedObject(name)
-        interface INamedVertex
-
-
-
     /// Template class for DS Graph<'V, 'E>.   coppied from Engine.Common.TDGraph<>
     type TGraph<'V, 'E
             when 'V :> INamed and 'V : equality
-            and 'E :> Ev2EdgeBase<'V> and 'E: equality> (
+            and 'E :> EdgeBase<'V> and 'E: equality> (
             vertices_:'V seq,
             edges_:'E seq,
             vertexHandlers:GraphVertexAddRemoveHandlers option) =
@@ -81,13 +68,16 @@ module GraphModule =
             x.Islands @ lasts
 
 
+
+    type DsGraph = TGraph<Vertex, Edge>
+
     [<AbstractClass>]
-    type Ev2EdgeBase<'V>(source:'V, target:'V, edgeType:CausalEdgeType) =   // copied from Engine.Common.DsEdgeBase<>
+    type EdgeBase<'V>(source:'V, target:'V, edgeType:CausalEdgeType) =   // copied from Engine.Common.DsEdgeBase<>
         inherit EdgeBase<'V, CausalEdgeType>(source, target, edgeType)
         member _.EdgeType = edgeType
 
     type Edge private (source:Vertex, target:Vertex, edgeType:CausalEdgeType) =
-        inherit Ev2EdgeBase<Vertex>(source, target, edgeType)
+        inherit EdgeBase<Vertex>(source, target, edgeType)
         member _.EdgeType = edgeType
 
         static member Create(graph:TGraph<_,_>, source, target, edgeType:CausalEdgeType) =
@@ -97,7 +87,6 @@ module GraphModule =
 
         //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
 
-    type DsGraph = TGraph<Vertex, Edge>
 
 
     type EdgeDTO(source:string, target:string, edgeType:CausalEdgeType) =
@@ -114,6 +103,11 @@ module GraphModule =
             GraphDTO(vs, es)
 
 
+    /// INamedVertex를 구현한 Vertex 추상 클래스
+    [<AbstractClass>]
+    type Vertex(name: string) =
+        inherit DsNamedObject(name)
+        interface INamedVertex
 
 
 

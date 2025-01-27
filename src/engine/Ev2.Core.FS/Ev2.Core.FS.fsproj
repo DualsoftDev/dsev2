@@ -8,8 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Interfaces.fs" />
+		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Core.fs" />
 		<Compile Include="Core.Json.fs" />
 		<Compile Include="CShaprExtension.fs" />

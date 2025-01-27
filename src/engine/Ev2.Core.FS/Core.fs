@@ -59,7 +59,7 @@ module Core =
 
 
 
-// 동일 파일 내에 있어야 확장을 C# 에서 볼 수 있음.
+// 동일 module 내에 있어야 확장을 C# 에서 볼 수 있음.
 //[<AutoOpen>]
 //module CoreCreate =
 

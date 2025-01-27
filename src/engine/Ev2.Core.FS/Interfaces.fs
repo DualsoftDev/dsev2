@@ -1,6 +1,7 @@
 ﻿namespace Dual.Ev2
 
 open Dual.Common.Base.FS
+open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module Interfaces =
@@ -18,6 +19,11 @@ module Interfaces =
     type IContain =
         inherit IContainer
         inherit IContainee
+
+
+    type INamedVertex =
+        inherit IVertex
+        inherit INamed
 
 
     /// 기본 객체 인터페이스
