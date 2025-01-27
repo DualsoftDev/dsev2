@@ -1,23 +1,9 @@
-﻿namespace rec Dual.Ev2
-
-open System.Linq
-open Newtonsoft.Json
+﻿namespace Dual.Ev2
 
 open Dual.Common.Base.FS
-open Dual.Common.Core.FS
-
-
-open Engine.Common.GraphModule
-
 
 [<AutoOpen>]
 module Interfaces =
-    /// <summary>
-    /// IFlow 또는 IWork를 나타내는 인터페이스
-    /// </summary>
-    type IWithGraph =
-        inherit IContainer
-
     /// <summary>
     /// 내부에 IContainee 형식의 다른 요소를 포함할 수 있는 parent 역할을 수행
     /// </summary>

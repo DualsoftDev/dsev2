@@ -511,3 +511,6 @@ $RECYCLE.BIN/
 *.osts
 *.dsz
 
+Directory.Build.props
+packages
+packages/

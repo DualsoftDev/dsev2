@@ -2,12 +2,13 @@ namespace T.Core
 
 
 open System
+open System.Linq
 open Xunit
 open Dual.Common.UnitTest.FS
 open NUnit.Framework
 
 open Dual.Ev2
-open Engine.Common
+//open Engine.Common
 open Dual.Common.Base.CS
 open Dual.Common.Core.FS
 
@@ -79,6 +80,19 @@ module Serialization =
         jsonText === json
 
         let system2 = DsSystem.Deserialize(jsonText)
+        system2.Flows[0].System === system2
+        system2.Flows[0].Works[0].Flow === system2.Flows[0]
+        system2.Flows[0].Works[0].Coins[0].Parent === system2.Flows[0].Works[0]
+        system2.Flows[0].Works[0].Coins[1].Parent === system2.Flows[0].Works[0]
+
+        //let xxx = system2.Flows[0].Works[0].GetGraph()
+        //let yyy = xxx.Edges
+        system2.Flows[0].Works[0].GetGraph().Edges.Count === 1
+        let e = system2.Flows[0].Works[0].GetGraph().Edges.First()
+        e.Source === system2.Flows[0].Works[0].Coins[0]
+        e.Target === system2.Flows[0].Works[0].Coins[1]
+        e.EdgeType === CausalEdgeType.Start
+
         let json2 = system2.Serialize()
         jsonText === json2
 

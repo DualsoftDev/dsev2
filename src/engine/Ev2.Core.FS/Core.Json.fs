@@ -5,7 +5,9 @@ open Newtonsoft.Json
 open Dual.Common.Base.CS
 open Dual.Common.Core.FS
 
-
+(*
+ * Graph<'V, 'E> 의 JSON serialize 가 복잡하므로, GraphDTO 형태를 경유해서 serialize/deserialize 수행한다.
+ *)
 
 [<AutoOpen>]
 module CoreJson =
@@ -25,7 +27,7 @@ module CoreJson =
 
     type DsSystem with
         member internal x.PrepareSerialize() = x.Flows.Iter(_.PrepareSerialize())
-        member internal x.PrepareDeserialize() = x.Flows.Iter(_.PrepareDeserialize())
+        member internal x.PrepareDeserialize() = x.Flows.Iter(_.PrepareDeserialize(x))
 
     type DsFlow with
         /// Graph -> Json DTO
@@ -34,9 +36,10 @@ module CoreJson =
             x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
 
         /// Json DTO -> Graph
-        member internal x.PrepareDeserialize() =
+        member internal x.PrepareDeserialize(system:DsSystem) =
+            x.System <- system
             let g = x.GetGraph()
-            x.Works.Iter(_.PrepareDeserialize())
+            x.Works.Iter(_.PrepareDeserialize(x))
 
             let vs =
                 let coins = x.Coins |> Seq.cast<Vertex>
@@ -54,7 +57,9 @@ module CoreJson =
         member internal x.PrepareSerialize() = x.GraphDTO <- GraphDTO.FromGraph(x.GetGraph())
 
         /// Json DTO -> Graph
-        member internal x.PrepareDeserialize() =
+        member internal x.PrepareDeserialize(flow:DsFlow) =
+            x.Flow <- flow
+            x.Coins.Iter(fun c -> c.Parent <- x)
             let g = x.GetGraph()
             x.Coins |> Seq.cast<Vertex> |> g.AddVertices |> ignore
             if !! x.GraphDTO.Vertices.SetEqual(g.Vertices.Map(_.Name)) then

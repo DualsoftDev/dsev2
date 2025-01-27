@@ -6,10 +6,15 @@ open Dual.Common.Base.FS
 open Dual.Common.Base.CS
 open Dual.Common.Core.FS
 
-open Engine.Common.GraphModule
-
 [<AutoOpen>]
 module Core =
+    /// <summary>
+    /// IFlow 또는 IWork를 나타내는 인터페이스
+    /// </summary>
+    type IWithGraph =
+        inherit IContainer
+
+
     type DsSystem(name:string) =
         inherit DsNamedObject(name)
         interface ISystem
@@ -45,8 +50,7 @@ module Core =
 
     type DsCoin(parent:IWithGraph, name:string) =
         inherit Vertex(name)
-        interface IWork
-        interface IWithGraph
+        interface ICoin
 
         [<JsonIgnore>] member val Parent:IWithGraph = getNull<IWithGraph>() with get, set
         [<JsonProperty(Order = 2)>] member val CoinType = Undefined with get, set

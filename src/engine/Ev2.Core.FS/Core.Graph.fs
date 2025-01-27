@@ -7,9 +7,6 @@ open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 
 
-open Engine.Common.GraphModule
-
-
 [<AutoOpen>]
 module GraphModule =
     type CausalEdgeType =
@@ -18,6 +15,10 @@ module GraphModule =
         | StartReset
         | SelfReset
         | Interlock
+
+    type INamedVertex =
+        inherit IVertex
+        inherit INamed
 
 
     /// 이름 속성을 가진 추상 클래스
