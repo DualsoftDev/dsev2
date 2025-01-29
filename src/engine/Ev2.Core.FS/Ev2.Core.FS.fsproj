@@ -11,6 +11,7 @@
 	<ItemGroup>
 		<None Include="Fsx\loadlib.fsx" />
 		<Compile Include="Interfaces.fs" />
+		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Core.fs" />
 		<Compile Include="Core.Json.fs" />
 		<Compile Include="Core.AasXml.fs" />
