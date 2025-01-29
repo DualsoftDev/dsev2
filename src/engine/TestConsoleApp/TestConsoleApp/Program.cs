@@ -40,7 +40,7 @@ class Program
         Console.WriteLine("Hello, World!");
 
 
-        Dual.Ev2.AasXml.test();
+        Dual.Ev2.AasXml.test2();
     }
 }
 

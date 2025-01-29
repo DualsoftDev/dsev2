@@ -6,6 +6,7 @@ open Newtonsoft.Json
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 open System.Runtime.CompilerServices
+open System.Xml.Serialization
 
 
 [<AutoOpen>]
@@ -26,9 +27,9 @@ module Core =
     type DsFlow(system:DsSystem, name:string) =
         inherit DsNamedObject(name)
         interface IFlow
-                
-        [<JsonIgnore>] member val System = system with get, set
-        [<JsonIgnore>] member val Graph = DsGraph()
+
+        [<JsonIgnore>][<XmlIgnore>] member val System = system with get, set
+        [<JsonIgnore>][<XmlIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
@@ -36,7 +37,7 @@ module Core =
         inherit Vertex(name, VCFlow flow)
         interface IWork
 
-        [<JsonIgnore>] member val Graph = DsGraph()
+        [<JsonIgnore>][<XmlIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
@@ -71,16 +72,16 @@ module Core =
 
     type DsSystem with
         static member Create(name:string) = new DsSystem(name)
-        member x.CreateFlow(flowName:string) = 
+        member x.CreateFlow(flowName:string) =
             if x.Flows.Exists(fun f -> (f :> INamed).Name = flowName) then
                 getNull<DsFlow>();
             else
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
 
     type DsFlow with
-        [<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
+        [<JsonIgnore>][<XmlIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
 
-        member x.CreateWork(workName:string) = 
+        member x.CreateWork(workName:string) =
             if x.Vertices.Exists(fun w -> w.AsVertex().Name = workName) then
                 getNull<DsWork>();
             else
@@ -97,14 +98,14 @@ module Core =
             VertexDetail.FromVertex(vertex) |> x.Vertices.Add
             vertex.Container <- VCFlow x
             vertex
-        
+
         /// Flow 내에서 edge 생성
         member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
         /// Flow 내에서 edge 생성
         member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
 
     type DsWork with
-        [<JsonIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
+        [<JsonIgnore>][<XmlIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
 
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
             if vertex.Container <> VCNone then
@@ -271,12 +272,22 @@ module CoreGraph =
                 | :? DsOperator as y -> Operator y
                 | _ -> failwith "ERROR"
 
+            member x.Case:string =
+                match x with
+                | Work     _ -> "Work"
+                | Action   _ -> "Action"
+                | AutoPre  _ -> "AutoPre"
+                | Safety   _ -> "Safety"
+                | Command  _ -> "Command"
+                | Operator _ -> "Operator"
+
+
     /// INamedVertex를 구현한 Vertex 추상 클래스
     [<AbstractClass>]
     type Vertex(name: string, ?container:VertexContainer) =
         inherit DsNamedObject(name)
         interface INamedVertex
-        [<JsonIgnore>] member val Container = container |? VCNone with get, set
+        [<JsonIgnore>][<XmlIgnore>] member val Container = container |? VCNone with get, set
 
 
     type GraphExtension =

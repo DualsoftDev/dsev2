@@ -17,42 +17,6 @@ open Dual.Common.UnitTest.FS
 open Dual.Common.Base.FS
 
 module Xml =
-    module testModule =
-        // 테스트 JSON 데이터
-        let json = """
-        {
-          "Name": "system1",
-          "Flows": [
-            {
-              "Name": "F1",
-              "Vertices": [
-                {
-                  "Case": "Work",
-                  "Fields": [
-                    {
-                      "Name": "F1W1",
-                      "Vertices": [
-                        { "Case": "Action", "Fields": { "Name": "F1W1C1" } },
-                        { "Case": "Action", "Fields": { "Name": "F1W1C2" } }
-                      ],
-                      "Edges": [
-                        { "Source": "F1W1C1", "Target": "F1W1C2", "EdgeType": { "Case": "Start" } }
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "Edges": []
-            }
-          ]
-        }
-            """
-        [<Test>]
-        let testMe() =
-            // JSON -> XmlDocument 변환 실행
-            let xmlDocument = EmJson.JsonToXmlDocument(json, "System")
-            printfn "Generated XML:\n%s" (xmlDocument.OuterXml)
-
     let json = Json.json
 
     /// Json Test
@@ -73,6 +37,20 @@ module Xml =
 
 
             let xxx = EmJson.ToXml(system2, rootName="System")
+            ()
+
+        [<Test>]
+        member _.``AAS`` () =
+            let system2 = DsSystem.FromJson(json)
+            let xxx = createAasSubmodel system2
+            ()
+
+
+        [<Test>]
+        member _.testMe() =
+            // JSON -> XmlDocument 변환 실행
+            let xmlDocument = EmJson.JsonToXmlDocument(json, "System")
+            printfn "Generated XML:\n%s" (xmlDocument.OuterXml)
             ()
 
 
