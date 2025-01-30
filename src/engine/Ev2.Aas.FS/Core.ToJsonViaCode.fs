@@ -4,10 +4,11 @@
 
 open Dual.Common.Core.FS
 open Dual.Ev2
+open System.Collections.Generic
 
-type JObj = System.Text.Json.Nodes.JsonObject
-type JArr = System.Text.Json.Nodes.JsonArray
-type JNode = System.Text.Json.Nodes.JsonNode
+//type JObj = System.Text.Json.Nodes.JsonObject
+//type JArr = System.Text.Json.Nodes.JsonArray
+//type JNode = System.Text.Json.Nodes.JsonNode
 
 module CoreToJsonViaCode =
     type DsNamedObject with

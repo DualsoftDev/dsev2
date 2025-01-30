@@ -39,9 +39,6 @@ class Program
         DcClipboard.Write(json);
 
         Console.WriteLine("Hello, World!");
-
-
-        Dual.Ev2.AasXml.test2();
     }
 }
 

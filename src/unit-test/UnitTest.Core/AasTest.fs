@@ -2,6 +2,7 @@
 
 open System
 open Dual.Ev2
+open Dual.Ev2.Aas
 open Dual.Ev2.Aas.CoreToJsonViaCode
 open NUnit.Framework
 open System.Text.Json
@@ -29,7 +30,7 @@ module Aas1 =
     /// Json Test
     type T() =
         let loadAssetAdministrationShells(aasJson:string) =
-            let aasNode = JNode.Parse(aasJson)
+            let aasNode:JNode = JNode.Parse(aasJson)
             let container:Aas.Environment = Aas.Jsonization.Deserialize.EnvironmentFrom(aasNode)
             let xxx = container.AssetAdministrationShells[0]
             xxx
@@ -92,4 +93,13 @@ module Aas1 =
                 let jnode = system2.ToJsonViaCode()
                 let settings = JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
                 jnode.ToJsonString(settings)
+            ()
+
+
+        [<Test>]
+        member _.``SimpleAasConversionTest`` () =
+            let edgeDTO = EdgeDTO("source", "target", CausalEdgeType.Start)
+            let json = edgeDTO.ToSMC()
+            let settings = JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
+            let xxx = json.ToJsonString(settings)
             ()

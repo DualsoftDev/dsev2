@@ -39,12 +39,6 @@ module Xml =
             let xxx = EmJson.ToXml(system2, rootName="System")
             ()
 
-        [<Test>]
-        member _.``AAS`` () =
-            let system2 = DsSystem.FromJson(json)
-            let xxx = createAasSubmodel system2
-            ()
-
 
         [<Test>]
         member _.testMe() =
