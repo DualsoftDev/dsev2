@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+	  <RootNamespace>Dual.Ev2.Aas</RootNamespace>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Core.ToJsonViaCode.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="JsonData\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup />
+
+</Project>

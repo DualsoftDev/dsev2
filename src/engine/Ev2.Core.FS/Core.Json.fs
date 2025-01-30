@@ -8,16 +8,16 @@ open System.IO
 open Dual.Common.Base.FS
 
 (*
+ * 코드 없이(최소한의 코드로) Newtonsoft.Json 을 이용해서 serialize/deserialize 하는 것이 목적.
+ * 하부의 다른 class 가 추가되더라도 수정 최소화 할 수 있게 설계.
+ *
  * Graph<'V, 'E> 의 JSON serialize 가 복잡하므로, GraphDTO 형태를 경유해서 serialize/deserialize 수행한다.
+ *
+ * AAS 관련 serialize/deserialize 는 형태의 변형이 많이 필요하므로 별도로 구현.  see Ev2.Aas.FS project
  *)
 
 [<AutoOpen>]
 module CoreJson =
-    //type IDsObject with
-    //    member x.DefaultToJson(): string =
-    //        let settings = JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
-    //        JsonConvert.SerializeObject(x, Formatting.Indented, settings);
-
     type DsSystem with
         member x.ToJson(): string =
             x.PrepareToJson()
@@ -45,7 +45,7 @@ module CoreJson =
             let g = x.Graph
             x.Works.Iter(_.PrepareFromJson(x))
 
-            x.Vertices.Map(_.AsVertex()) |> g.AddVertices |> ignore            
+            x.Vertices.Map(_.AsVertex()) |> g.AddVertices |> ignore
             x.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 
     type DsWork with
