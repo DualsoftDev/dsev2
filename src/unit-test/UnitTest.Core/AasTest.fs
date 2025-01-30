@@ -8,6 +8,7 @@ open NUnit.Framework
 open System.Text.Json
 open Dual.Common.Core.FS
 open Dual.Common.UnitTest.FS
+open Dual.Common.Base.CS
 
 
 
@@ -43,20 +44,7 @@ module Aas1 =
             writer.Flush()
             outputBuilder.ToString()
 
-        [<Test>]
-        member _.``CoreToJsonViaCodeTest`` () =
-            let system2 = DsSystem.FromJson(json)
-            let json =
-                let jnode = system2.ToJsonViaCode()
-                let settings = JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
-                jnode.ToJsonString(settings)
-            ()
-
-
-        [<Test>]
-        member _.``AasJsonRead`` () =
-            let aasJson = """
-{
+        let aasJson = """{
   "assetAdministrationShells": [
     {
       "assetInformation": {
@@ -67,9 +55,8 @@ module Aas1 =
       "modelType": "AssetAdministrationShell"
     }
   ]
-}
-"""
-            let aasXml = """<assetAdministrationShell xmlns="https://admin-shell.io/aas/3/0">
+}"""
+        let aasXml = """<assetAdministrationShell xmlns="https://admin-shell.io/aas/3/0">
   <id>something_142922d6</id>
   <assetInformation>
     <assetKind>NotApplicable</assetKind>
@@ -77,8 +64,16 @@ module Aas1 =
   </assetInformation>
 </assetAdministrationShell>"""
 
+        [<Test>]
+        member _.``AasBuildJson`` () =
+            let assetInformation = JObj().Set("assetKind", "NotApplicable").Set("globalAssetId", "something_eea66fa1")
+            let assetAdministrationShell = JObj().Set("assetInformation", assetInformation).Set("id", "something_142922d6").Set("modelType", "AssetAdministrationShell")
+            let assetAdministrationShells = JObj().Set("assetAdministrationShells", JArr [|assetAdministrationShell|])
+            let json = assetAdministrationShells.Stringify()
+            json === aasJson
 
-
+        [<Test>]
+        member _.``AasJsonRead`` () =
 
             let shell = loadAssetAdministrationShells(aasJson) :?> Aas.AssetAdministrationShell
             let xml = toXml(shell :> Aas.IClass)
@@ -89,17 +84,22 @@ module Aas1 =
 
 
             let system2 = DsSystem.FromJson(json)
-            let json =
-                let jnode = system2.ToJsonViaCode()
-                let settings = JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
-                jnode.ToJsonString(settings)
+            let json = system2.ToJsonViaCode().Stringify()
             ()
+
+        [<Test>]
+        member _.``CoreToJsonViaCodeTest`` () =
+            let system2 = DsSystem.FromJson(json)
+            let json = system2.ToJsonViaCode().Stringify()
+            ()
+
 
 
         [<Test>]
         member _.``SimpleAasConversionTest`` () =
             let edgeDTO = EdgeDTO("source", "target", CausalEdgeType.Start)
-            let json = edgeDTO.ToSMC()
-            let settings = JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
-            let xxx = json.ToJsonString(settings)
+            let json = edgeDTO.ToSMEC().Stringify()
+            DcClipboard.Write(json)
+
+            let xxx = loadAssetAdministrationShells(json)
             ()
