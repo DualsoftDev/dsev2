@@ -18,27 +18,29 @@ module CoreToAas =
             let wrap = wrap |? false
 
             let source =
-                J.CreateProperties(
-                    category = Category.CONSTANT,
+                J.CreateValueProperty(
                     idShort = "Source",
-                    modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, x.Source)
+                    value = x.Source
                 )
 
             let target =
-                J.CreateProperties(
-                    category = Category.CONSTANT,
+                J.CreateValueProperty(
                     idShort = "Target",
-                    modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, x.Target)
+                    value = x.Target
+                )
+
+            let et =
+                J.CreateValueProperty(
+                    idShort = "EdgeType",
+                    value = x.EdgeType.ToString()
                 )
 
             let edge =
                 J.CreateProperties(
                     idShort = "Edge",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, x.EdgeType.ToString())
-                ).SetValues([| source; target; |])
+                    values = [| et; source; target; |]
+                )
 
             if wrap then
                 edge |> wrapWith N.SubmodelElementCollection
@@ -74,7 +76,7 @@ module CoreToAas =
                 J.CreateProperties(
                     idShort = "Vertices",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "Vertices"),
+                    //semantic = J.CreateSemantic(semanticType, keyType, "Vertices"),
                     values = vs
                 )
 
@@ -83,7 +85,7 @@ module CoreToAas =
                 J.CreateProperties(
                     idShort = "Edges",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "Edges"),
+                    //semantic = J.CreateSemantic(semanticType, keyType, "Edges"),
                     values = es
                 )
 
@@ -91,7 +93,7 @@ module CoreToAas =
                 J.CreateProperties(
                     idShort = "Graph",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "Graph"),
+                    //semantic = J.CreateSemantic(semanticType, keyType, "Graph"),
                     values = [|vs; es|]
                 )
             graph
@@ -152,9 +154,9 @@ module CoreToAas =
 
 
     type DsNamedObject with
-        member internal x.DsNamedObjectToProperties(typeName:string): JObj =
-            let semantic = J.CreateSemantic(semanticType, keyType, x.Name)
-            J.CreateProperties(idShort = typeName, modelType = modelType, semantic = semantic)
+        member internal x.DsNamedObjectToProperties(typeName:string, ?modelType:ModelType): JObj =
+            let modelType = modelType |? ModelType.SubmodelElementCollection
+            J.CreateProperties(idShort = typeName, modelType = modelType, values=[J.CreateValueProperty("Name", x.Name)])
 
     type VertexDetail with
         member x.ToProperties(): JObj =

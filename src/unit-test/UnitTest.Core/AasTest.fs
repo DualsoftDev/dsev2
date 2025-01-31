@@ -83,85 +83,46 @@ module Aas1 =
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Edge",
-  "semanticId": {
-    "type": "ExternalReference",
-    "keys": [
-      {
-        "type": "ConceptDescription",
-        "value": "Start"
-      }
-    ]
-  },
   "value": [
     {
-      "category": "CONSTANT",
-      "modelType": "SubmodelElementCollection",
-      "idShort": "Source",
-      "semanticId": {
-        "type": "ExternalReference",
-        "keys": [
-          {
-            "type": "ConceptDescription",
-            "value": "Dual__source"
-          }
-        ]
-      }
+      "modelType": "Property",
+      "idShort": "EdgeType",
+      "valueType": "xs:string",
+      "value": "Start"
     },
     {
-      "category": "CONSTANT",
-      "modelType": "SubmodelElementCollection",
+      "modelType": "Property",
+      "idShort": "Source",
+      "valueType": "xs:string",
+      "value": "Dual__source"
+    },
+    {
+      "modelType": "Property",
       "idShort": "Target",
-      "semanticId": {
-        "type": "ExternalReference",
-        "keys": [
-          {
-            "type": "ConceptDescription",
-            "value": "Dual__target"
-          }
-        ]
-      }
+      "valueType": "xs:string",
+      "value": "Dual__target"
     }
   ]
 }"""
 
             let xmlAnswer = """<submodelElementCollection xmlns="https://admin-shell.io/aas/3/0">
   <idShort>Edge</idShort>
-  <semanticId>
-    <type>ExternalReference</type>
-    <keys>
-      <key>
-        <type>ConceptDescription</type>
-        <value>Start</value>
-      </key>
-    </keys>
-  </semanticId>
   <value>
-    <submodelElementCollection>
-      <category>CONSTANT</category>
+    <property>
+      <idShort>EdgeType</idShort>
+      <valueType>xs:string</valueType>
+      <value>Start</value>
+    </property>
+    <property>
       <idShort>Source</idShort>
-      <semanticId>
-        <type>ExternalReference</type>
-        <keys>
-          <key>
-            <type>ConceptDescription</type>
-            <value>Dual__source</value>
-          </key>
-        </keys>
-      </semanticId>
-    </submodelElementCollection>
-    <submodelElementCollection>
-      <category>CONSTANT</category>
+      <valueType>xs:string</valueType>
+      <value>Dual__source</value>
+    </property>
+    <property>
       <idShort>Target</idShort>
-      <semanticId>
-        <type>ExternalReference</type>
-        <keys>
-          <key>
-            <type>ConceptDescription</type>
-            <value>Dual__target</value>
-          </key>
-        </keys>
-      </semanticId>
-    </submodelElementCollection>
+      <valueType>xs:string</valueType>
+      <value>Dual__target</value>
+    </property>
   </value>
 </submodelElementCollection>"""
             let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
@@ -185,16 +146,13 @@ module Aas1 =
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Action",
-  "semanticId": {
-    "type": "ExternalReference",
-    "keys": [
-      {
-        "type": "ConceptDescription",
-        "value": "action1"
-      }
-    ]
-  },
   "value": [
+    {
+      "modelType": "Property",
+      "idShort": "Name",
+      "valueType": "xs:string",
+      "value": "action1"
+    },
     {
       "modelType": "Property",
       "idShort": "IsDisable",
@@ -217,15 +175,14 @@ module Aas1 =
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Command",
-  "semanticId": {
-    "type": "ExternalReference",
-    "keys": [
-      {
-        "type": "ConceptDescription",
-        "value": "command1"
-      }
-    ]
-  }
+  "value": [
+    {
+      "modelType": "Property",
+      "idShort": "Name",
+      "valueType": "xs:string",
+      "value": "command1"
+    }
+  ]
 }"""
             let json = Command.ToProperties().Stringify()
             DcClipboard.Write(json)
@@ -241,55 +198,25 @@ module Aas1 =
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Work",
-  "semanticId": {
-    "type": "ExternalReference",
-    "keys": [
-      {
-        "type": "ConceptDescription",
-        "value": "F1W1"
-      }
-    ]
-  },
   "value": [
     {
       "modelType": "SubmodelElementCollection",
       "idShort": "Graph",
-      "semanticId": {
-        "type": "ExternalReference",
-        "keys": [
-          {
-            "type": "ConceptDescription",
-            "value": "Graph"
-          }
-        ]
-      },
       "value": [
         {
           "modelType": "SubmodelElementCollection",
           "idShort": "Vertices",
-          "semanticId": {
-            "type": "ExternalReference",
-            "keys": [
-              {
-                "type": "ConceptDescription",
-                "value": "Vertices"
-              }
-            ]
-          },
           "value": [
             {
               "modelType": "SubmodelElementCollection",
               "idShort": "Action",
-              "semanticId": {
-                "type": "ExternalReference",
-                "keys": [
-                  {
-                    "type": "ConceptDescription",
-                    "value": "F1W1C1"
-                  }
-                ]
-              },
               "value": [
+                {
+                  "modelType": "Property",
+                  "idShort": "Name",
+                  "valueType": "xs:string",
+                  "value": "F1W1C1"
+                },
                 {
                   "modelType": "Property",
                   "idShort": "IsDisable",
@@ -301,16 +228,13 @@ module Aas1 =
             {
               "modelType": "SubmodelElementCollection",
               "idShort": "Action",
-              "semanticId": {
-                "type": "ExternalReference",
-                "keys": [
-                  {
-                    "type": "ConceptDescription",
-                    "value": "F1W1C2"
-                  }
-                ]
-              },
               "value": [
+                {
+                  "modelType": "Property",
+                  "idShort": "Name",
+                  "valueType": "xs:string",
+                  "value": "F1W1C2"
+                },
                 {
                   "modelType": "Property",
                   "idShort": "IsDisable",
@@ -324,56 +248,28 @@ module Aas1 =
         {
           "modelType": "SubmodelElementCollection",
           "idShort": "Edges",
-          "semanticId": {
-            "type": "ExternalReference",
-            "keys": [
-              {
-                "type": "ConceptDescription",
-                "value": "Edges"
-              }
-            ]
-          },
           "value": [
             {
               "modelType": "SubmodelElementCollection",
               "idShort": "Edge",
-              "semanticId": {
-                "type": "ExternalReference",
-                "keys": [
-                  {
-                    "type": "ConceptDescription",
-                    "value": "Start"
-                  }
-                ]
-              },
               "value": [
                 {
-                  "category": "CONSTANT",
-                  "modelType": "SubmodelElementCollection",
-                  "idShort": "Source",
-                  "semanticId": {
-                    "type": "ExternalReference",
-                    "keys": [
-                      {
-                        "type": "ConceptDescription",
-                        "value": "F1W1C1"
-                      }
-                    ]
-                  }
+                  "modelType": "Property",
+                  "idShort": "EdgeType",
+                  "valueType": "xs:string",
+                  "value": "Start"
                 },
                 {
-                  "category": "CONSTANT",
-                  "modelType": "SubmodelElementCollection",
+                  "modelType": "Property",
+                  "idShort": "Source",
+                  "valueType": "xs:string",
+                  "value": "F1W1C1"
+                },
+                {
+                  "modelType": "Property",
                   "idShort": "Target",
-                  "semanticId": {
-                    "type": "ExternalReference",
-                    "keys": [
-                      {
-                        "type": "ConceptDescription",
-                        "value": "F1W1C2"
-                      }
-                    ]
-                  }
+                  "valueType": "xs:string",
+                  "value": "F1W1C2"
                 }
               ]
             }
@@ -400,94 +296,37 @@ module Aas1 =
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Flow",
-  "semanticId": {
-    "type": "ExternalReference",
-    "keys": [
-      {
-        "type": "ConceptDescription",
-        "value": "F1"
-      }
-    ]
-  },
   "value": [
     {
       "modelType": "SubmodelElementCollection",
       "idShort": "Graph",
-      "semanticId": {
-        "type": "ExternalReference",
-        "keys": [
-          {
-            "type": "ConceptDescription",
-            "value": "Graph"
-          }
-        ]
-      },
       "value": [
         {
           "modelType": "SubmodelElementCollection",
           "idShort": "Vertices",
-          "semanticId": {
-            "type": "ExternalReference",
-            "keys": [
-              {
-                "type": "ConceptDescription",
-                "value": "Vertices"
-              }
-            ]
-          },
           "value": [
             {
               "modelType": "SubmodelElementCollection",
               "idShort": "Work",
-              "semanticId": {
-                "type": "ExternalReference",
-                "keys": [
-                  {
-                    "type": "ConceptDescription",
-                    "value": "F1W1"
-                  }
-                ]
-              },
               "value": [
                 {
                   "modelType": "SubmodelElementCollection",
                   "idShort": "Graph",
-                  "semanticId": {
-                    "type": "ExternalReference",
-                    "keys": [
-                      {
-                        "type": "ConceptDescription",
-                        "value": "Graph"
-                      }
-                    ]
-                  },
                   "value": [
                     {
                       "modelType": "SubmodelElementCollection",
                       "idShort": "Vertices",
-                      "semanticId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "ConceptDescription",
-                            "value": "Vertices"
-                          }
-                        ]
-                      },
                       "value": [
                         {
                           "modelType": "SubmodelElementCollection",
                           "idShort": "Action",
-                          "semanticId": {
-                            "type": "ExternalReference",
-                            "keys": [
-                              {
-                                "type": "ConceptDescription",
-                                "value": "F1W1C1"
-                              }
-                            ]
-                          },
                           "value": [
+                            {
+                              "modelType": "Property",
+                              "idShort": "Name",
+                              "valueType": "xs:string",
+                              "value": "F1W1C1"
+                            },
                             {
                               "modelType": "Property",
                               "idShort": "IsDisable",
@@ -499,16 +338,13 @@ module Aas1 =
                         {
                           "modelType": "SubmodelElementCollection",
                           "idShort": "Action",
-                          "semanticId": {
-                            "type": "ExternalReference",
-                            "keys": [
-                              {
-                                "type": "ConceptDescription",
-                                "value": "F1W1C2"
-                              }
-                            ]
-                          },
                           "value": [
+                            {
+                              "modelType": "Property",
+                              "idShort": "Name",
+                              "valueType": "xs:string",
+                              "value": "F1W1C2"
+                            },
                             {
                               "modelType": "Property",
                               "idShort": "IsDisable",
@@ -522,56 +358,28 @@ module Aas1 =
                     {
                       "modelType": "SubmodelElementCollection",
                       "idShort": "Edges",
-                      "semanticId": {
-                        "type": "ExternalReference",
-                        "keys": [
-                          {
-                            "type": "ConceptDescription",
-                            "value": "Edges"
-                          }
-                        ]
-                      },
                       "value": [
                         {
                           "modelType": "SubmodelElementCollection",
                           "idShort": "Edge",
-                          "semanticId": {
-                            "type": "ExternalReference",
-                            "keys": [
-                              {
-                                "type": "ConceptDescription",
-                                "value": "Start"
-                              }
-                            ]
-                          },
                           "value": [
                             {
-                              "category": "CONSTANT",
-                              "modelType": "SubmodelElementCollection",
-                              "idShort": "Source",
-                              "semanticId": {
-                                "type": "ExternalReference",
-                                "keys": [
-                                  {
-                                    "type": "ConceptDescription",
-                                    "value": "F1W1C1"
-                                  }
-                                ]
-                              }
+                              "modelType": "Property",
+                              "idShort": "EdgeType",
+                              "valueType": "xs:string",
+                              "value": "Start"
                             },
                             {
-                              "category": "CONSTANT",
-                              "modelType": "SubmodelElementCollection",
+                              "modelType": "Property",
+                              "idShort": "Source",
+                              "valueType": "xs:string",
+                              "value": "F1W1C1"
+                            },
+                            {
+                              "modelType": "Property",
                               "idShort": "Target",
-                              "semanticId": {
-                                "type": "ExternalReference",
-                                "keys": [
-                                  {
-                                    "type": "ConceptDescription",
-                                    "value": "F1W1C2"
-                                  }
-                                ]
-                              }
+                              "valueType": "xs:string",
+                              "value": "F1W1C2"
                             }
                           ]
                         }
@@ -585,16 +393,7 @@ module Aas1 =
         },
         {
           "modelType": "SubmodelElementCollection",
-          "idShort": "Edges",
-          "semanticId": {
-            "type": "ExternalReference",
-            "keys": [
-              {
-                "type": "ConceptDescription",
-                "value": "Edges"
-              }
-            ]
-          }
+          "idShort": "Edges"
         }
       ]
     }

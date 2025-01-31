@@ -104,11 +104,23 @@ module JsonExtensionModule =
         member x.Set(key:N, jns:JNode seq): JObj = x |> tee(fun x -> if jns.NonNullAny()   then x[key.ToString()] <- JArr (jns.ToArray()))
 
         member x.SetValues(jns:JNode seq) = x.Set(N.Value, jns)
+
+        /// JObj 의 value 속성에 JNode 를 append 추가.  SetValues 는 덮어쓰기 용
+        member x.AddValues(jns:JNode seq) =
+
+            let key = N.Value.ToString()
+            match x.TryGetPropertyValue(key) with
+            | true, (:? JArr as ja) ->
+                for jn in jns do ja.Add(jn) // 개별적으로 추가
+                x
+            | _ ->
+                x.SetValues(jns) // 새로운 JsonArray 생성
+
         (*
           <valueType>xs:integer</valueType>
           <value></value>
         *)
-        member x.SetTypedValue<'T when 'T: struct>(value:'T) =
+        member x.SetTypedValue<'T>(value:'T) =
             match box value with
             | :? string  as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v)
             | :? int     as v -> x.Set(N.ValueType, "xs:integer").Set(N.Value, v.ToString())
@@ -161,7 +173,7 @@ module JsonExtensionModule =
                 x.ToJsonString(settings)
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
-        member x.AddProperties<'T when 'T: struct>(
+        member x.AddProperties<'T>(
             ?category:Category,
             ?idShort:string,
             ?id:string,
@@ -178,7 +190,7 @@ module JsonExtensionModule =
                 id        .Iter(fun y -> j.Set(N.Id,        y)            |> ignore)
                 semantic  .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
                 typedValue.Iter(fun y -> j.SetTypedValue(y)               |> ignore)
-                values    .Iter(fun y -> j.SetValues(y)                   |> ignore)
+                values    .Iter(fun y -> j.AddValues(y)                   |> ignore)
             )
 
     type AasCore.Aas3_0.IClass with
@@ -207,7 +219,7 @@ module JsonExtensionModule =
 
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
-        static member CreateProperties<'T when 'T: struct>(
+        static member CreateProperties<'T>(
             ?category:Category,
             ?idShort:string,
             ?id:string,
@@ -234,7 +246,7 @@ module JsonExtensionModule =
 
         // </property>
         *)
-        static member CreateValueProperty<'T when 'T: struct>(idShort:string, value:'T): JObj =
+        static member CreateValueProperty<'T>(idShort:string, value:'T): JObj =
             J.CreateProperties(idShort = idShort, typedValue = value, modelType = ModelType.Property)
 
 
