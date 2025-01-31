@@ -62,3 +62,43 @@ value 는 단일 type 인 경우(string, integer, ..)와 복합 type 인 경우 
             </property>
           </value>
 
+
+
+
+
+
+
+AAS data type namespace : https://github.com/admin-shell-io/aas-specs-api/blob/main/Part1-MetaModel-Schemas/openapi.yaml#L282
+    DataTypeDefXsd:
+      type: string
+      enum:
+        - 'xs:anyURI'
+        - 'xs:base64Binary'
+        - 'xs:boolean'
+        - 'xs:byte'
+        - 'xs:date'
+        - 'xs:dateTime'
+        - 'xs:decimal'
+        - 'xs:double'
+        - 'xs:duration'
+        - 'xs:float'
+        - 'xs:gDay'
+        - 'xs:gMonth'
+        - 'xs:gMonthDay'
+        - 'xs:gYear'
+        - 'xs:gYearMonth'
+        - 'xs:hexBinary'
+        - 'xs:int'
+        - 'xs:integer'
+        - 'xs:long'
+        - 'xs:negativeInteger'
+        - 'xs:nonNegativeInteger'
+        - 'xs:nonPositiveInteger'
+        - 'xs:positiveInteger'
+        - 'xs:short'
+        - 'xs:string'
+        - 'xs:time'
+        - 'xs:unsignedByte'
+        - 'xs:unsignedInt'
+        - 'xs:unsignedLong'
+        - 'xs:unsignedShort'

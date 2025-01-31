@@ -15,7 +15,9 @@ module Aas =
     type Jsonization = AasCore.Aas3_0.Jsonization
     type Environment = AasCore.Aas3_0.Environment
     type AssetAdministrationShell = AasCore.Aas3_0.AssetAdministrationShell
+    type Submodel = AasCore.Aas3_0.Submodel
     type SubmodelElementCollection = AasCore.Aas3_0.SubmodelElementCollection
+    type SubmodelElementList = AasCore.Aas3_0.SubmodelElementList
     type Xmlization = AasCore.Aas3_0.Xmlization
     type IClass = AasCore.Aas3_0.IClass
 
@@ -32,12 +34,41 @@ module JsonExtensionModule =
         | GlobalReference
 
 
+    (* 확인 필요 *)
     type KeyType =
         | ConceptDescription
+
+        | AssetAdministrationShell
+        | Blob
+        | EventElement
+        | ExternalReference
+        | FragmentReference
         | GlobalReference
+        //| ModelReference
+        | Property
+        | Submodel
+        | SubmodelElementList
+
 
     type ModelType =
+        | AnnotatedRelationshipElement
+        | AssetAdministrationShell
+        | BasicEventElement
+        | Blob
+        | Capability
+        | ConceptDescription
+        | DataSpecificationIec61360
+        | Entity
+        | File
+        | MultiLanguageProperty
+        | Operation
+        | Property
+        | Range
+        | ReferenceElement
+        | RelationshipElement
+        | Submodel
         | SubmodelElementCollection
+        | SubmodelElementList
 
     /// Json/Xml node type.  속성 이름 혹은 node 이름
     type N =
@@ -63,14 +94,14 @@ module JsonExtensionModule =
             s[0..0].ToLower() + s[1..]  // 첫 글자만 소문자로 변환
 
 
-    let wrapWith(nodeType:N) (child:JNode): JNode = JObj().Set(nodeType, child)
+    let wrapWith(nodeType:N) (child:JNode): JObj = JObj().Set(nodeType, child)
 
 
-    type System.Text.Json.Nodes.JsonNode with
-        member x.Set(key:N, value:string): JNode = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
-        member x.Set(key:N, ja:JArr):      JNode = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
-        member x.Set(key:N, jn:JNode):     JNode = x |> tee(fun x -> if isItNotNull jn     then x[key.ToString()] <- jn)
-        member x.Set(key:N, jns:JNode seq):JNode = x |> tee(fun x -> if jns.NonNullAny()   then x[key.ToString()] <- JArr (jns.ToArray()))
+    type System.Text.Json.Nodes.JsonObject with
+        member x.Set(key:N, value:string):  JObj = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
+        member x.Set(key:N, ja:JArr):       JObj = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
+        member x.Set(key:N, jn:JNode):      JObj = x |> tee(fun x -> if isItNotNull jn     then x[key.ToString()] <- jn)
+        member x.Set(key:N, jns:JNode seq): JObj = x |> tee(fun x -> if jns.NonNullAny()   then x[key.ToString()] <- JArr (jns.ToArray()))
 
         member x.SetValues(jns:JNode seq) = x.Set(N.Value, jns)
         (*
@@ -79,9 +110,12 @@ module JsonExtensionModule =
         *)
         member x.SetTypedValue<'T when 'T: struct>(value:'T) =
             match box value with
-            | :? string  as value -> x.Set(N.ValueType, "xs:string") .Set(N.Value, value)
-            | :? int     as value -> x.Set(N.ValueType, "xs:integer").Set(N.Value, value.ToString())
-            | :? double  as value -> x.Set(N.ValueType, "xs:double") .Set(N.Value, value.ToString())
+            | :? string  as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v)
+            | :? int     as v -> x.Set(N.ValueType, "xs:integer").Set(N.Value, v.ToString())
+            | :? double  as v -> x.Set(N.ValueType, "xs:double") .Set(N.Value, v.ToString())
+            | :? single  as v -> x.Set(N.ValueType, "xs:float")  .Set(N.Value, v.ToString())
+            | :? bool    as v -> x.Set(N.ValueType, "xs:boolean").Set(N.Value, v.ToString())
+
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
 
         member x.SetModelType(modelType:ModelType) = x.Set(N.ModelType, modelType.ToString())
@@ -103,7 +137,7 @@ module JsonExtensionModule =
             ]
         *)
         member x.SetKeys(keyType:KeyType, keyValue:string) =
-            x.Set(N.Keys, JArr [| JObj().Set(N.Type, keyType.ToString()).Set(N.Value, keyValue) |]  )
+            x.Set(N.Keys, JArr [| JObj().Set(N.Type, keyType.ToString()).Set(N.Value, keyValue) :> JNode |]  )
         (*
           <semanticId>
             <type>ExternalReference</type>
@@ -126,6 +160,26 @@ module JsonExtensionModule =
                 let settings = settings |? JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
                 x.ToJsonString(settings)
 
+        /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
+        member x.AddProperties<'T when 'T: struct>(
+            ?category:Category,
+            ?idShort:string,
+            ?id:string,
+            ?modelType:ModelType,
+            ?semantic:JObj,
+            ?typedValue:'T,
+            ?values:JNode seq
+        ): JObj =
+            assert(typedValue.IsNone || values.IsNone)
+            x |> tee(fun j ->
+                category  .Iter(fun y -> j.Set(N.Category,  y.ToString()) |> ignore)
+                modelType .Iter(fun y -> j.Set(N.ModelType, y.ToString()) |> ignore)
+                idShort   .Iter(fun y -> j.Set(N.IdShort,   y)            |> ignore)
+                id        .Iter(fun y -> j.Set(N.Id,        y)            |> ignore)
+                semantic  .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
+                typedValue.Iter(fun y -> j.SetTypedValue(y)               |> ignore)
+                values    .Iter(fun y -> j.SetValues(y)                   |> ignore)
+            )
 
     type AasCore.Aas3_0.IClass with
         member x.ToXml() =
@@ -141,13 +195,15 @@ module JsonExtensionModule =
 
     [<AbstractClass; Sealed>]
     type J() =
+        static member CreateJArr(jns:#JNode seq): JArr = jns |> Seq.cast<JNode> |> toArray |> JArr
+
         static member WrapWith(nodeType:N, child:JNode): JNode = wrapWith nodeType child
 
         /// "semanticId" 에 할당하기 위힌 노드를 생성
         static member CreateSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JObj =
             JObj()
                 .Set(N.Type, semanticIdType.ToString())
-                .SetKeys(keyType, keyValue) :?> JObj
+                .SetKeys(keyType, keyValue)
 
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
@@ -160,16 +216,26 @@ module JsonExtensionModule =
             ?typedValue:'T,
             ?values:JNode seq
         ): JObj =
-            assert(typedValue.IsNone || values.IsNone)
-            JObj() |> tee(fun j ->
-                category  .Iter(fun y -> j.Set(N.Category,  y.ToString()) |> ignore)
-                modelType .Iter(fun y -> j.Set(N.ModelType, y.ToString()) |> ignore)
-                idShort   .Iter(fun y -> j.Set(N.IdShort,   y)            |> ignore)
-                id        .Iter(fun y -> j.Set(N.Id,        y)            |> ignore)
-                semantic  .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
-                typedValue.Iter(fun y -> j.SetTypedValue(y)               |> ignore)
-                values    .Iter(fun y -> j.SetValues(y)                   |> ignore)
-            )
+            JObj().AddProperties(
+                ?category   = category,
+                ?idShort    = idShort,
+                ?id         = id,
+                ?modelType  = modelType,
+                ?semantic   = semantic,
+                ?typedValue = typedValue,
+                ?values     = values)
+
+        (* value 속성을 가진 <property> JObj 를 생성
+        // <property>
+
+          <idShort>something3fdd3eb4</idShort>
+          <valueType>xs:double</valueType>
+          <value>1234.01234</value>
+
+        // </property>
+        *)
+        static member CreateValueProperty<'T when 'T: struct>(idShort:string, value:'T): JObj =
+            J.CreateProperties(idShort = idShort, typedValue = value, modelType = ModelType.Property)
 
 
         /// Json string 을 aas core 의 IClass subtype 객체로 변환

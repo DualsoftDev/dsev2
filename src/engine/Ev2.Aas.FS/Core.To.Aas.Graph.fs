@@ -14,7 +14,7 @@ module CoreToAas =
 
     type EdgeDTO with
         /// Convert EdgeDTO to submodelElementCollection
-        member x.ToSMEC(?wrap:bool): JNode =
+        member x.ToSMEC(?wrap:bool): JObj =
             let wrap = wrap |? false
 
             let source =
@@ -63,13 +63,13 @@ module CoreToAas =
 
     type IGraph with
         /// IGraph.ToProperties() -> JNode
-        member x.GraphToProperties(): JNode =
+        member x.GraphToProperties(): JObj =
             match x with
             | :? DsFlow as y -> y.PrepareToJson()
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
-            let vs = x.GetVertexDetails() |> map _.ToProperties()
+            let vs = x.GetVertexDetails() |> map _.ToProperties() |> Seq.cast<JNode>
             let vs =
                 J.CreateProperties(
                     idShort = "Vertices",
@@ -78,7 +78,7 @@ module CoreToAas =
                     values = vs
                 )
 
-            let es = x.GetEdgeDTOs()  |> map _.ToSMEC()
+            let es = x.GetEdgeDTOs()  |> map _.ToSMEC()  |> Seq.cast<JNode>
             let es =
                 J.CreateProperties(
                     idShort = "Edges",
@@ -104,52 +104,60 @@ module CoreToAas =
 
     type DsSystem with
         /// DsFlow -> JNode
-        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("System")
+        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("System")
 
 
     type DsFlow with
         /// DsFlow -> JNode
-        member x.ToProperties(): JNode =
+        member x.ToProperties(): JObj =
             let jGraph = x.GraphToProperties()
             x.DsNamedObjectToProperties("Flow")
                 .SetValues([|jGraph|])
 
     type DsWork with
         /// DsWork -> JNode
-        member x.ToProperties(): JNode =
+        member x.ToProperties(): JObj =
             let jGraph = x.GraphToProperties()
             x.DsNamedObjectToProperties("Work")
                 .SetValues([|jGraph|])
 
     type DsAction with
         /// DsAction -> JNode
-        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Action")
+        member x.ToProperties(): JObj =
+            x.DsNamedObjectToProperties("Action")
+                .AddProperties(values=[
+                    J.CreateProperties(
+                        idShort = "IsDisable",
+                        modelType = ModelType.Property,
+                        typedValue = x.IsDisabled
+                    )
+                ])
 
 
     type DsAutoPre with
         /// DsAutoPre -> JNode
-        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("AutoPre")
+        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("AutoPre")
 
     type DsSafety with
         /// DsSafety -> JNode
-        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Safety")
+        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("Safety")
 
     type DsCommand with
         /// DsCommand -> JNode
-        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Command")
+        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("Command")
 
     type DsOperator with
         /// DsOperator -> JNode
-        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Operator")
+        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("Operator")
 
 
     type DsNamedObject with
-        member internal x.DsNamedObjectToProperties(typeName:string): JNode =
+        member internal x.DsNamedObjectToProperties(typeName:string): JObj =
             let semantic = J.CreateSemantic(semanticType, keyType, x.Name)
             J.CreateProperties(idShort = typeName, modelType = modelType, semantic = semantic)
 
     type VertexDetail with
-        member x.ToProperties(): JNode =
+        member x.ToProperties(): JObj =
             match x with
             | Work     y -> y.ToProperties()
             | Action   y -> y.ToProperties()

@@ -8,10 +8,6 @@ open Dual.Common.UnitTest.FS
 open Dual.Common.Base.CS
 
 
-
-type JNode = System.Text.Json.Nodes.JsonNode
-
-
 module Aas1 =
     let [<Literal>] aas = "http://www.admin-shell.io/aas/3/0"
     let json = Json.json
@@ -52,7 +48,7 @@ module Aas1 =
         member _.``AasShell: JObj -> string conversion test`` () =
             let assetInformation = JObj().Set(N.AssetKind, "NotApplicable").Set(N.GlobalAssetId, "something_eea66fa1")
             let assetAdministrationShell = JObj().Set(N.Id, "something_142922d6").Set(N.AssetInformation, assetInformation).Set(N.ModelType, "AssetAdministrationShell")
-            let assetAdministrationShells = JObj().Set(N.AssetAdministrationShells, JArr [|assetAdministrationShell|])
+            let assetAdministrationShells = JObj().Set(N.AssetAdministrationShells, J.CreateJArr( [assetAdministrationShell] ))
             let json = assetAdministrationShells.Stringify()
             json === aasJson
 
@@ -197,10 +193,21 @@ module Aas1 =
         "value": "action1"
       }
     ]
-  }
+  },
+  "value": [
+    {
+      "modelType": "Property",
+      "idShort": "IsDisable",
+      "valueType": "xs:boolean",
+      "value": "False"
+    }
+  ]
 }"""
             let json = action.ToProperties().Stringify()
             json === jsonAnswer
+
+            let xml = J.CreateIClass<Aas.SubmodelElementCollection>(jsonAnswer).ToXml()
+
             ()
 
 
@@ -281,7 +288,15 @@ module Aas1 =
                     "value": "F1W1C1"
                   }
                 ]
-              }
+              },
+              "value": [
+                {
+                  "modelType": "Property",
+                  "idShort": "IsDisable",
+                  "valueType": "xs:boolean",
+                  "value": "False"
+                }
+              ]
             },
             {
               "modelType": "SubmodelElementCollection",
@@ -294,7 +309,15 @@ module Aas1 =
                     "value": "F1W1C2"
                   }
                 ]
-              }
+              },
+              "value": [
+                {
+                  "modelType": "Property",
+                  "idShort": "IsDisable",
+                  "valueType": "xs:boolean",
+                  "value": "False"
+                }
+              ]
             }
           ]
         },
@@ -463,7 +486,15 @@ module Aas1 =
                                 "value": "F1W1C1"
                               }
                             ]
-                          }
+                          },
+                          "value": [
+                            {
+                              "modelType": "Property",
+                              "idShort": "IsDisable",
+                              "valueType": "xs:boolean",
+                              "value": "False"
+                            }
+                          ]
                         },
                         {
                           "modelType": "SubmodelElementCollection",
@@ -476,7 +507,15 @@ module Aas1 =
                                 "value": "F1W1C2"
                               }
                             ]
-                          }
+                          },
+                          "value": [
+                            {
+                              "modelType": "Property",
+                              "idShort": "IsDisable",
+                              "valueType": "xs:boolean",
+                              "value": "False"
+                            }
+                          ]
                         }
                       ]
                     },
