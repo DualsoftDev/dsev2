@@ -221,6 +221,7 @@ module Aas1 =
   }
 }"""
             let json = Command.ToProperties().Stringify()
+            DcClipboard.Write(json)
             json === jsonAnswer
             ()
 
@@ -230,92 +231,140 @@ module Aas1 =
 
             let system2 = DsSystem.FromJson(json)
             let work = system2.Flows[0].Works[0]
-            let json = work.ToProperties().Stringify()
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
-  "idShort": "Graph",
+  "idShort": "Work",
   "semanticId": {
     "type": "ExternalReference",
     "keys": [
       {
         "type": "ConceptDescription",
-        "value": "Graph"
+        "value": "F1W1"
       }
     ]
   },
   "value": [
     {
       "modelType": "SubmodelElementCollection",
-      "idShort": "Action",
+      "idShort": "Graph",
       "semanticId": {
         "type": "ExternalReference",
         "keys": [
           {
             "type": "ConceptDescription",
-            "value": "F1W1C1"
-          }
-        ]
-      }
-    },
-    {
-      "modelType": "SubmodelElementCollection",
-      "idShort": "Action",
-      "semanticId": {
-        "type": "ExternalReference",
-        "keys": [
-          {
-            "type": "ConceptDescription",
-            "value": "F1W1C2"
-          }
-        ]
-      }
-    },
-    {
-      "modelType": "SubmodelElementCollection",
-      "idShort": "Edge",
-      "semanticId": {
-        "type": "ExternalReference",
-        "keys": [
-          {
-            "type": "ConceptDescription",
-            "value": "Start"
+            "value": "Graph"
           }
         ]
       },
       "value": [
         {
-          "category": "CONSTANT",
           "modelType": "SubmodelElementCollection",
-          "idShort": "Source",
+          "idShort": "Vertices",
           "semanticId": {
             "type": "ExternalReference",
             "keys": [
               {
                 "type": "ConceptDescription",
-                "value": "F1W1C1"
+                "value": "Vertices"
               }
             ]
-          }
+          },
+          "value": [
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Action",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "ConceptDescription",
+                    "value": "F1W1C1"
+                  }
+                ]
+              }
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Action",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "ConceptDescription",
+                    "value": "F1W1C2"
+                  }
+                ]
+              }
+            }
+          ]
         },
         {
-          "category": "CONSTANT",
           "modelType": "SubmodelElementCollection",
-          "idShort": "Target",
+          "idShort": "Edges",
           "semanticId": {
             "type": "ExternalReference",
             "keys": [
               {
                 "type": "ConceptDescription",
-                "value": "F1W1C2"
+                "value": "Edges"
               }
             ]
-          }
+          },
+          "value": [
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Edge",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "ConceptDescription",
+                    "value": "Start"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "category": "CONSTANT",
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Source",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "ConceptDescription",
+                        "value": "F1W1C1"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "category": "CONSTANT",
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Target",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "ConceptDescription",
+                        "value": "F1W1C2"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     }
   ]
 }"""
+            let json = work.ToProperties().Stringify()
+            DcClipboard.Write(json)
             json === jsonAnswer
+
+            let xml = J.CreateIClass<Aas.SubmodelElementCollection>(json).ToXml()
             ()
 
 
@@ -325,34 +374,197 @@ module Aas1 =
 
             let system2 = DsSystem.FromJson(json)
             let flow = system2.Flows[0]
-            let json = flow.ToProperties().Stringify()
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
-  "idShort": "Graph",
+  "idShort": "Flow",
   "semanticId": {
     "type": "ExternalReference",
     "keys": [
       {
         "type": "ConceptDescription",
-        "value": "Graph"
+        "value": "F1"
       }
     ]
   },
   "value": [
     {
       "modelType": "SubmodelElementCollection",
-      "idShort": "Work",
+      "idShort": "Graph",
       "semanticId": {
         "type": "ExternalReference",
         "keys": [
           {
             "type": "ConceptDescription",
-            "value": "F1W1"
+            "value": "Graph"
           }
         ]
-      }
+      },
+      "value": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Vertices",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "ConceptDescription",
+                "value": "Vertices"
+              }
+            ]
+          },
+          "value": [
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Work",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "ConceptDescription",
+                    "value": "F1W1"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Graph",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "ConceptDescription",
+                        "value": "Graph"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Vertices",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "ConceptDescription",
+                            "value": "Vertices"
+                          }
+                        ]
+                      },
+                      "value": [
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Action",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "ConceptDescription",
+                                "value": "F1W1C1"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Action",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "ConceptDescription",
+                                "value": "F1W1C2"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Edges",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "ConceptDescription",
+                            "value": "Edges"
+                          }
+                        ]
+                      },
+                      "value": [
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Edge",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "ConceptDescription",
+                                "value": "Start"
+                              }
+                            ]
+                          },
+                          "value": [
+                            {
+                              "category": "CONSTANT",
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Source",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "ConceptDescription",
+                                    "value": "F1W1C1"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "category": "CONSTANT",
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Target",
+                              "semanticId": {
+                                "type": "ExternalReference",
+                                "keys": [
+                                  {
+                                    "type": "ConceptDescription",
+                                    "value": "F1W1C2"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Edges",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "ConceptDescription",
+                "value": "Edges"
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }"""
+            let json = flow.ToProperties().Stringify()
+            DcClipboard.Write(json)
             json === jsonAnswer
+
+            let xml = J.CreateIClass<Aas.SubmodelElementCollection>(json).ToXml()
+
             ()

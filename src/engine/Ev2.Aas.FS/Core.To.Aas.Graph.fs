@@ -38,18 +38,13 @@ module CoreToAas =
                     idShort = "Edge",
                     modelType = modelType,
                     semantic = J.CreateSemantic(semanticType, keyType, x.EdgeType.ToString())
-                ).SetValue([| source; target; |])
+                ).SetValues([| source; target; |])
 
             if wrap then
                 edge |> wrapWith N.SubmodelElementCollection
             else
                 edge
 
-    type VertexDetail with
-        member x.ToProperties(): JNode =
-            let v = x.AsVertex()
-            let semantic = J.CreateSemantic(semanticType, keyType, v.Name)
-            J.CreateProperties(idShort = x.Case, modelType = modelType, semantic = semantic)
 
     (*
 					<category></category>
@@ -67,22 +62,38 @@ module CoreToAas =
 
 
     type IGraph with
-        member internal x.IPrepareToJson() =
+        /// IGraph.ToProperties() -> JNode
+        member x.GraphToProperties(): JNode =
             match x with
             | :? DsFlow as y -> y.PrepareToJson()
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
-        member x.ToProperties(): JNode =
-            x.IPrepareToJson()
+            //let vs = x.GetVertexDetails() |> map _.ToProperties()
+            //let es = x.GetEdgeDTOs()  |> map _.ToSMEC()
+
             let vs = x.GetVertexDetails() |> map _.ToProperties()
+            let vs =
+                J.CreateProperties(
+                    idShort = "Vertices",
+                    modelType = modelType,
+                    semantic = J.CreateSemantic(semanticType, keyType, "Vertices")
+                ).SetValues(vs)
+
             let es = x.GetEdgeDTOs()  |> map _.ToSMEC()
+            let es =
+                J.CreateProperties(
+                    idShort = "Edges",
+                    modelType = modelType,
+                    semantic = J.CreateSemantic(semanticType, keyType, "Edges")
+                ).SetValues(es)
+
             let graph =
                 J.CreateProperties(
                     idShort = "Graph",
                     modelType = modelType,
                     semantic = J.CreateSemantic(semanticType, keyType, "Graph")
-                ).SetValue( (vs @ es).ToArray() )
+                ).SetValues([|vs; es|])
             graph
 
 
@@ -103,6 +114,12 @@ module CoreToAas =
 
 
     type DsFlow with
+        /// DsFlow -> JNode
+        member x.ToProperties(): JNode =
+            let jGraph = x.GraphToProperties()
+            x.DsNamedObjectToProperties("Flow")
+                .SetValues([|jGraph|])
+
         /// Convert DsFlow to submodelElementCollection
         member x.ToSMEC():JNode =
             let sm = JObj()
@@ -115,6 +132,11 @@ module CoreToAas =
 
 
     type DsWork with
+        /// DsWork -> JNode
+        member x.ToProperties(): JNode =
+            let jGraph = x.GraphToProperties()
+            x.DsNamedObjectToProperties("Work")
+                .SetValues([|jGraph|])
         /// Convert DsWork to submodelElementCollection
         member x.ToSMEC():JNode =
             let jo = JObj()
@@ -126,6 +148,9 @@ module CoreToAas =
             jo
 
     type DsAction with
+        /// DsAction -> JNode
+        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Action")
+
         /// Convert EdgeDTO to submodelElementCollection
         member x.ToSMEC():JNode =
             let jo = JObj()
@@ -134,6 +159,9 @@ module CoreToAas =
 
 
     type DsAutoPre with
+        /// DsAutoPre -> JNode
+        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("AutoPre")
+
         /// Convert DsAutoPre to submodelElementCollection
         member x.ToSMEC():JNode =
             let jo = JObj()
@@ -141,6 +169,9 @@ module CoreToAas =
             jo
 
     type DsSafety with
+        /// DsSafety -> JNode
+        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Safety")
+
         /// Convert DsSafety to submodelElementCollection
         member x.ToSMEC():JNode =
             let jo = JObj()
@@ -148,6 +179,9 @@ module CoreToAas =
             jo
 
     type DsCommand with
+        /// DsCommand -> JNode
+        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Command")
+
         /// Convert DsCommand to submodelElementCollection
         member x.ToSMEC():JNode =
             let jo = JObj()
@@ -155,12 +189,20 @@ module CoreToAas =
             jo
 
     type DsOperator with
+        /// DsOperator -> JNode
+        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Operator")
+
         /// Convert DsOperator to submodelElementCollection
         member x.ToSMEC():JNode =
             let jo = JObj()
             jo["type"] <- "Operator"
             jo
 
+
+    type DsNamedObject with
+        member internal x.DsNamedObjectToProperties(typeName:string): JNode =
+            let semantic = J.CreateSemantic(semanticType, keyType, x.Name)
+            J.CreateProperties(idShort = typeName, modelType = modelType, semantic = semantic)
 
     type VertexDetail with
         /// Convert VertexDetail to submodelElementCollection
@@ -174,5 +216,14 @@ module CoreToAas =
             | Command  y -> y.ToSMEC()
             | Operator y -> y.ToSMEC()
 
+    type VertexDetail with
+        member x.ToProperties(): JNode =
+            match x with
+            | Work     y -> y.ToProperties()
+            | Action   y -> y.ToProperties()
+            | AutoPre  y -> y.ToProperties()
+            | Safety   y -> y.ToProperties()
+            | Command  y -> y.ToProperties()
+            | Operator y -> y.ToProperties()
 
 

@@ -68,11 +68,11 @@ module JsonExtensionModule =
 
     type System.Text.Json.Nodes.JsonNode with
         member x.Set(key:N, value:string): JNode = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
-        member x.Set(key:N, arr:JArr):     JNode = x |> tee(fun x -> if arr.NonNullAny()   then x[key.ToString()] <- arr)
-        member x.Set(key:N, jobj:JNode):   JNode = x |> tee(fun x -> if isItNotNull jobj   then x[key.ToString()] <- jobj)
-        member x.Set(key:N, arr:JNode[]):  JNode = x |> tee(fun x -> if arr.NonNullAny()   then x[key.ToString()] <- JArr arr)
+        member x.Set(key:N, ja:JArr):      JNode = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
+        member x.Set(key:N, jn:JNode):     JNode = x |> tee(fun x -> if isItNotNull jn     then x[key.ToString()] <- jn)
+        member x.Set(key:N, jns:JNode seq):JNode = x |> tee(fun x -> if jns.NonNullAny()   then x[key.ToString()] <- JArr (jns.ToArray()))
 
-        member x.SetValue(arr:JNode[]) = x.Set(N.Value, arr)
+        member x.SetValues(jns:JNode seq) = x.Set(N.Value, jns)
         (*
           <valueType>xs:integer</valueType>
           <value></value>
