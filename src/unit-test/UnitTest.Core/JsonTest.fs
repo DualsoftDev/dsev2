@@ -40,7 +40,9 @@ module Json =
                   "Case": "Action",
                   "Fields": [
                     {
-                      "Name": "F1W1C1"
+                      "Name": "F1W1C1",
+                      "IsDisabled": false,
+                      "IsPush": false
                     }
                   ]
                 },
@@ -48,7 +50,9 @@ module Json =
                   "Case": "Action",
                   "Fields": [
                     {
-                      "Name": "F1W1C2"
+                      "Name": "F1W1C2",
+                      "IsDisabled": false,
+                      "IsPush": false
                     }
                   ]
                 }
@@ -97,7 +101,7 @@ module Json =
             let json2 = system2.ToJson()
             jsonText === json2
 
-        /// Flow ¹Ù·Î ¾Æ·¡¿¡ Á¸ÀçÇÏ´Â coin »ı¼º ¹× ¿¬°á test
+        /// Flow ë°”ë¡œ ì•„ë˜ì— ì¡´ì¬í•˜ëŠ” coin ìƒì„± ë° ì—°ê²° test
         [<Test>]
         member _.``FlowDirectCoin`` () =
             let system2 = EmJson.Duplicate(system, JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore))
@@ -145,13 +149,13 @@ module Json =
             jsonText === json2
 
 
-        /// - Ds object (DsNamedObject) ·ÎºÎÅÍ
+        /// - Ds object (DsNamedObject) ë¡œë¶€í„°
         ///
-        ///   -  FQDN ¾ò±â test, 
+        ///   -  FQDN ì–»ê¸° test,
         ///
-        ///   -  Lqdn ÀÌ¿ëÇØ¼­ ÇÏºÎÀÇ °´Ã¼ ¾ò±â test, 
+        ///   -  Lqdn ì´ìš©í•´ì„œ í•˜ë¶€ì˜ ê°ì²´ ì–»ê¸° test,
         ///
-        ///   -  System, Flow, Work °´Ã¼ ¾ò±â test
+        ///   -  System, Flow, Work ê°ì²´ ì–»ê¸° test
         [<Test>]
         member _.``Fqdn && Lqdn search`` () =
             let system = DsSystem.FromJson(json)
@@ -165,7 +169,7 @@ module Json =
             f1w1c1.Fqdn() === "system1.F1.F1W1.F1W1C1"
             f1w1c2.Fqdn() === "system1.F1.F1W1.F1W1C2"
 
-            /// °´Ã¼¿¡¼­ ±× ÇÏºÎÀÇ LQDN À¸·Î Ã£±â
+            /// ê°ì²´ì—ì„œ ê·¸ í•˜ë¶€ì˜ LQDN ìœ¼ë¡œ ì°¾ê¸°
             system.TryFindLqdnObj("F1")            .Value === f1
             system.TryFindLqdnObj("F999")                 === None
             system.TryFindLqdnObj("F1.F1W1")       .Value === f1w1
@@ -183,7 +187,7 @@ module Json =
 
             system.GetSystem() === system
             f1.System === system
-            f1w1.GetSystem() === system 
+            f1w1.GetSystem() === system
             f1w1c1.GetSystem() === system
 
             (fun () -> system.GetFlow() |> ignore) |> ShouldFail

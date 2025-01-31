@@ -162,6 +162,10 @@ module JsonExtensionModule =
                 semantic .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
             )
 
+        //static member CreatePrimitiveProperty<'T when 'T: struct> (data:'T) =
+        //    match data.GetType().Name with
+        //    | "Int32"   -> JObj().SetTypedValue(data :?> int)
+
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
         static member CreateIClass<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClass<'T> json :?> 'T
 
@@ -221,6 +225,9 @@ module JsonExtensionModule =
             | "DataSpecificationIec61360"           -> Aas.Jsonization.Deserialize.DataSpecificationIec61360From          (jnode)
 
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
+
+
+            (* Aas.IClass subclass 가 아닌 case *)
 
             //| "ModellingKind" -> Aas.Jsonization.Deserialize.ModellingKindFrom(jnode)
             //| "QualifierKind" -> Aas.Jsonization.Deserialize.QualifierKindFrom(jnode)

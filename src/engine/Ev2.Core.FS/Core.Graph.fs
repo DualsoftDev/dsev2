@@ -1,4 +1,4 @@
-﻿namespace rec Dual.Ev2
+namespace rec Dual.Ev2
 
 open System.Linq
 open Newtonsoft.Json
@@ -20,7 +20,7 @@ type CausalEdgeType =
 /// 이름 속성을 가진 추상 클래스
 [<AbstractClass>]
 type DsNamedObject(name: string) =
-    [<JsonProperty(Order = -1)>]
+    [<JsonProperty(Order = -100)>]
     member val Name = name with get, set
     interface INamed with
         member x.Name with get() = x.Name and set(v) = x.Name <- v

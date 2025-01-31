@@ -103,14 +103,8 @@ module CoreToAas =
 
 
     type DsSystem with
-        member x.ToSubmodel():JNode =
-            let sm = JObj()
-            sm["category"] <- "CONSTANT"
-            sm["idShort"] <- "Identification"
-
-            let arr = JArr (x.Flows.Map(_.ToSMEC()).ToArray())
-            sm["submodelElements"] <- arr
-            sm
+        /// DsFlow -> JNode
+        member x.ToProperties(): JNode = x.DsNamedObjectToProperties("System")
 
 
     type DsFlow with
@@ -120,101 +114,39 @@ module CoreToAas =
             x.DsNamedObjectToProperties("Flow")
                 .SetValues([|jGraph|])
 
-        /// Convert DsFlow to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let sm = JObj()
-            sm["idShort"] <- "Flow"
-            let vs = JArr (x.Vertices.Map(_.ToSMEC()).ToArray())
-            let es = JArr (x.Edges.Map(_.ToSMEC()).ToArray())
-            sm["vertices"] <- vs
-            sm["edges"] <- es
-            sm
-
-
     type DsWork with
         /// DsWork -> JNode
         member x.ToProperties(): JNode =
             let jGraph = x.GraphToProperties()
             x.DsNamedObjectToProperties("Work")
                 .SetValues([|jGraph|])
-        /// Convert DsWork to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["idShort"] <- "Work"
-            let vs = JArr (x.Vertices.Map(_.ToSMEC()).ToArray())
-            let es = JArr (x.Edges.Map(_.ToSMEC()).ToArray())
-            jo["vertices"] <- vs
-            jo["edges"] <- es
-            jo
 
     type DsAction with
         /// DsAction -> JNode
         member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Action")
-
-        /// Convert EdgeDTO to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Action"
-            jo
 
 
     type DsAutoPre with
         /// DsAutoPre -> JNode
         member x.ToProperties(): JNode = x.DsNamedObjectToProperties("AutoPre")
 
-        /// Convert DsAutoPre to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "AutoPre"
-            jo
-
     type DsSafety with
         /// DsSafety -> JNode
         member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Safety")
-
-        /// Convert DsSafety to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Safety"
-            jo
 
     type DsCommand with
         /// DsCommand -> JNode
         member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Command")
 
-        /// Convert DsCommand to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Command"
-            jo
-
     type DsOperator with
         /// DsOperator -> JNode
         member x.ToProperties(): JNode = x.DsNamedObjectToProperties("Operator")
-
-        /// Convert DsOperator to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Operator"
-            jo
 
 
     type DsNamedObject with
         member internal x.DsNamedObjectToProperties(typeName:string): JNode =
             let semantic = J.CreateSemantic(semanticType, keyType, x.Name)
             J.CreateProperties(idShort = typeName, modelType = modelType, semantic = semantic)
-
-    type VertexDetail with
-        /// Convert VertexDetail to submodelElementCollection
-        /// VertexDetail to AAS json
-        member x.ToSMEC() =
-            match x with
-            | Work     y -> y.ToSMEC()
-            | Action   y -> y.ToSMEC()
-            | AutoPre  y -> y.ToSMEC()
-            | Safety   y -> y.ToSMEC()
-            | Command  y -> y.ToSMEC()
-            | Operator y -> y.ToSMEC()
 
     type VertexDetail with
         member x.ToProperties(): JNode =

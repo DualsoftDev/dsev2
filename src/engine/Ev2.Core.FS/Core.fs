@@ -41,6 +41,8 @@ module Core =
 
     type DsAction(name:string) =
         inherit DsCoin(name)
+        member val IsDisabled = false with get, set
+        member val IsPush = false with get, set
 
     type DsAutoPre(name:string) =
         inherit DsCoin(name)
