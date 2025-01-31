@@ -1,4 +1,4 @@
-﻿namespace rec Dual.Ev2.Aas
+namespace rec Dual.Ev2.Aas
 
 (* Core 를 AAS Json/Xml 로 변환하기 위한 실제 코드 *)
 
@@ -18,6 +18,17 @@ module JsonExtensionModule =
         | CONSTANT
         | VARIABLE
 
+    //let [<Literal>] ExternalReference = "ExternalReference"
+    //let [<Literal>] GlobalReference = "GlobalReference"
+    type SemanticIdType =
+        | ExternalReference
+        | GlobalReference
+
+
+    type KeyType =
+        | ConceptDescription
+        | GlobalReference
+
 
     let wrapWith(newContainerName:string) (child:JNode): JNode = JObj().Set(newContainerName, child)
 
@@ -28,16 +39,14 @@ module JsonExtensionModule =
         member x.Set(key:string, jobj:JNode):   JNode = x |> tee(fun x -> if isItNotNull jobj   then x[key] <- jobj)
         member x.Set(key:string, arr:JNode[]):  JNode = x |> tee(fun x -> if arr.NonNullAny()   then x[key] <- JArr arr)
 
+        member x.SetValue(arr:JNode[]) = x.Set("value", arr)
         (*
           <valueType>xs:integer</valueType>
           <value></value>
         *)
-        member x.SetValue(value:string) =
-            x.Set("valueType", "xs:string").Set("value", value)
-        member x.SetValue(value:int) =
-            x.Set("valueType", "xs:integer").Set("value", value)
-        member x.SetValue(value:double) =
-            x.Set("valueType", "xs:double").Set("value", value)
+        member x.SetTypedValue(value:string) = x.Set("valueType", "xs:string") .Set("value", value)
+        member x.SetTypedValue(value:int)    = x.Set("valueType", "xs:integer").Set("value", value.ToString())
+        member x.SetTypedValue(value:double) = x.Set("valueType", "xs:double") .Set("value", value.ToString())
 
         (*
             <keys>
@@ -46,13 +55,17 @@ module JsonExtensionModule =
                 <value>0173-1#02-ABI500#001/0173-1#01-AHF579#001*01</value>
               </key>
             </keys>
+
+
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "urn:something00:f4547d0c"
+              }
+            ]
         *)
-        member x.SetKeys(keyType:string, keyValue:string) =
-            let key =
-                JObj()
-                    .Set("type", keyType)
-                    .Set("value", keyValue)
-            x.Set("keys", JArr [| JObj().Set("key", key) |]  )
+        member x.SetKeys(keyType:KeyType, keyValue:string) =
+            x.Set("keys", JArr [| JObj().Set("type", keyType.ToString()).Set("value", keyValue) |]  )
         (*
           <semanticId>
             <type>ExternalReference</type>
@@ -64,13 +77,14 @@ module JsonExtensionModule =
             </keys>
           </semanticId>
         *)
-        member x.SetSemanticId(semanticIdType:string, keyType:string, keyValue:string): JNode =
+        member x.SetSemanticId(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JNode =
             x.Set("semanticId",
                 JObj()
-                    .Set("type", semanticIdType)
+                    .Set("type", semanticIdType.ToString())
                     .SetKeys(keyType, keyValue))
 
-        member x.SetCatId(cat:Category, id:string, idShort:string): JNode =
+        member x.SetCatId(cat:Category, idShort:string, ?id:string): JNode =
+            let id = id |? null
             x.Set("category", cat.ToString())
                 .Set("idShort", idShort)
                 .Set("id", id)
@@ -85,31 +99,42 @@ module JsonExtensionModule =
 module CoreToAas =
     type EdgeDTO with
         /// Convert EdgeDTO to submodelElementCollection
-        member x.ToSMEC():JNode =
+        member x.ToSMEC(?wrap:bool):JNode =
+            let wrap = wrap |? false
             let source =
                 JObj()
-                    .SetCatId(CONSTANT, "some-guid", "Source")
-                    .Set("kind", "some-kind")
-                    .SetSemanticId("semanticIdType", "keyType", "keyValue")
-                    .SetKeys("kkt", "kkv")
-                    |> wrapWith "property"
-                    |> wrapWith "submodelElements"
+                    .SetCatId(CONSTANT, "Source")
+                    .Set("modelType", "SubmodelElementCollection")
+                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Source)
 
             let target =
                 JObj()
-                    .SetCatId(CONSTANT, "some-guid", "Target")
-                    .Set("kind", "some-kind")
-                    .SetKeys("Submodel", "0173-1#01-AHF578#001")
-                    |> wrapWith "property"
-                    |> wrapWith "submodelElements"
+                    .SetCatId(CONSTANT, "Target")
+                    .Set("modelType", "SubmodelElementCollection")
+                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Target)
+                    //.Set("kind", "some-kind")
+                    //.SetKeys("Submodel", "0173-1#01-AHF578#001")
+                    //|> wrapWith "property"
+                    //|> wrapWith "submodelElements"
+
+            let edge =
+                JObj()
+                    .SetCatId(CONSTANT, "EdgeType")
+                    .Set("modelType", "SubmodelElementCollection")
+                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.EdgeType.ToString())
+                    //|> wrapWith "property"
 
             let smec =
                 JObj()
-                    .SetCatId(CONSTANT, "Edge", null)
-                    .Set("source", source)
-                    .Set("target", target)
-                    .Set("type", x.EdgeType.ToString())
-            smec
+                    //.SetCatId(CONSTANT, "Edge")
+                    .Set("modelType", "SubmodelElementCollection")
+                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, "keyValue")
+                    .Set("value", JArr [| source; target; edge |])
+
+            if wrap then
+                smec |> wrapWith "submodelElementCollection"
+            else
+                smec
 
     (*
 					<category></category>

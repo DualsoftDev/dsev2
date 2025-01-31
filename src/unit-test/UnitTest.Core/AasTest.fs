@@ -1,4 +1,4 @@
-﻿namespace T.Core
+namespace T.Core
 
 open System
 open Dual.Ev2
@@ -19,6 +19,7 @@ module Aas =
     type Jsonization = AasCore.Aas3_0.Jsonization
     type Environment = AasCore.Aas3_0.Environment
     type AssetAdministrationShell = AasCore.Aas3_0.AssetAdministrationShell
+    type SubmodelElementCollection = AasCore.Aas3_0.SubmodelElementCollection
     type Xmlization = AasCore.Aas3_0.Xmlization
     type IClass = AasCore.Aas3_0.IClass
 
@@ -97,9 +98,57 @@ module Aas1 =
 
         [<Test>]
         member _.``SimpleAasConversionTest`` () =
-            let edgeDTO = EdgeDTO("source", "target", CausalEdgeType.Start)
+            let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
             let json = edgeDTO.ToSMEC().Stringify()
             DcClipboard.Write(json)
 
-            let xxx = loadAssetAdministrationShells(json)
+
+            let xxx = """
+{
+  "category": "CONSTANT",
+  "idShort": "Edge",
+  "modelType": "SubmodelElementCollection",
+  "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+      {
+        "type": "ConceptDescription",
+        "value": "keyValue"
+      }
+    ]
+  },
+  "value": [
+    {
+        "category": "CONSTANT",
+        "idShort": "Source",
+        "modelType": "SubmodelElementCollection",
+        "semanticId": {
+          "type": "ExternalReference",
+          "keys": [
+            {
+              "type": "ConceptDescription",
+              "value": "keyValue"
+            }
+          ]
+        }
+    },
+    {
+        "category": "CONSTANT",
+        "idShort": "Target",
+        "modelType": "SubmodelElementCollection"
+    },
+    {
+        "category": "CONSTANT",
+        "idShort": "EdgeType",
+        "modelType": "SubmodelElementCollection"
+    }
+  ]
+}
+"""
+            let smec:Aas.SubmodelElementCollection = Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom(JNode.Parse(xxx))
+
+
+
+            let smec:Aas.SubmodelElementCollection = Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom(JNode.Parse(json))
+            let xxx = toXml smec
             ()

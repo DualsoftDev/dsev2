@@ -23,14 +23,40 @@ submodels
 						value
                             property
         				        category..value
+            file
+			property
+	submodel
 
 
+- Json/Xml íŠ¹ì´ì‚¬í•­
+          "semanticId": {
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "urn:something00:f4547d0c"
+              }
+            ],
+            "type": "ExternalReference"
+          },
 
-value ´Â ´ÜÀÏ type ÀÎ °æ¿ì(string, integer, ..)¿Í º¹ÇÕ type ÀÎ °æ¿ì ´Ù¸£°Ô Ã³¸®ÇØ¾ß ÇÔ
-    - ´ÜÀÏ key
+
+semanticId.Type =
+	| ExternalReference
+	| GlobalReference
+
+keys.key.type =
+	| GlobalReference
+	| ConceptDescription		https://admin-shell.io/zvei/nameplate/1/0/ContactInformations/AddressInformation
+
+qualifier.Type = 
+	| SMT/Cardinality
+
+
+value ëŠ” ë‹¨ì¼ type ì¸ ê²½ìš°(string, integer, ..)ì™€ ë³µí•© type ì¸ ê²½ìš° ë‹¤ë¥´ê²Œ ì²˜ë¦¬í•´ì•¼ í•¨
+    - ë‹¨ì¼ key
                   <valueType>xs:string</valueType>
                   <value></value>
-    - º¹ÇÕ type
+    - ë³µí•© type
           <value>
             <property>
             </property>
