@@ -16,14 +16,13 @@
 	<ItemGroup>
 		<Content Include="AasSyntax.md" />
 		<Compile Include="Core.Aas.fs" />
+		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.ToJsonViaCode.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Remove="JsonData\**" />
 	</ItemGroup>
-
-	<ItemGroup />
 
 	<ItemGroup>
 		<ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />

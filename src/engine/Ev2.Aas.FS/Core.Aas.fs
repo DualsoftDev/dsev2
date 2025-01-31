@@ -32,8 +32,20 @@ module JsonExtensionModule =
     type ModelType =
         | SubmodelElementCollection
 
+    /// Json/Xml node type.  속성 이름 혹은 node 이름
     type NodeType =
         | Category
+        | SemanticId
+        | Type
+        | Keys
+        | Key
+        | Value
+        | ValueType
+        | ModelType
+        | Description
+        | Id
+        | IdShort
+        | SubmodelElements
         | SubmodelElementCollection
         override x.ToString() =
             let s = string x
@@ -102,170 +114,26 @@ module JsonExtensionModule =
 
     [<AbstractClass; Sealed>]
     type J() =
+        static member CreateSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JObj =
+            JObj()
+                .Set("type", semanticIdType.ToString())
+                .SetKeys(keyType, keyValue) :?> JObj
+
+
+        /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
         static member CreateProperties(
             ?category:Category,
             ?idShort:string,
             ?id:string,
-            ?modelType:ModelType
+            ?modelType:ModelType,
+            ?semantic:JObj
         ): JObj =
             JObj() |> tee(fun j ->
                 category .Iter(fun y -> j.Set("category",  y.ToString()) |> ignore)
                 modelType.Iter(fun y -> j.Set("modelType", y.ToString()) |> ignore)
                 idShort  .Iter(fun y -> j.Set("idShort",   y)            |> ignore)
                 id       .Iter(fun y -> j.Set("id",        y)            |> ignore)
+                semantic .Iter(fun y -> j.Set("semanticId",y)            |> ignore)
             )
-
-
-        //static member CreateSemantic(
-        //    ?semanticIdType:SemanticIdType,
-        //    ?ktv: KeyType * string
-        //): JObj =
-        //    JObj() |> tee(fun j ->
-        //        semanticIdType .Iter(fun y -> j.Set("semanticId", y.ToString()) |> ignore)
-        //        ktv.Iter(fun ktv -> j.SetKeys ktv |> ignore)
-        //    )
-
-[<AutoOpen>]
-module CoreToAas =
-    type EdgeDTO with
-        /// Convert EdgeDTO to submodelElementCollection
-        member x.ToSMEC(?wrap:bool):JNode =
-            let wrap = wrap |? false
-            let source =
-                J.CreateProperties(
-                    category = Category.CONSTANT,
-                    idShort = "Source",
-                    modelType = ModelType.SubmodelElementCollection
-                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Source)
-
-            let target =
-                J.CreateProperties(
-                    category = Category.CONSTANT,
-                    idShort = "Target",
-                    modelType = ModelType.SubmodelElementCollection
-                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Target)
-
-                    //.Set("kind", "some-kind")
-                    //.SetKeys("Submodel", "0173-1#01-AHF578#001")
-                    //|> wrapWith "property"
-                    //|> wrapWith "submodelElements"
-
-            let edge =
-                J.CreateProperties(
-                    category = Category.CONSTANT,
-                    idShort = "EdgeType",
-                    modelType = ModelType.SubmodelElementCollection
-                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.EdgeType.ToString())
-                    //|> wrapWith "property"
-
-            let smec =
-                J.CreateProperties(
-                    idShort = "Edge",
-                    modelType = ModelType.SubmodelElementCollection
-                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, "keyValue")
-                 .Set("value", JArr [| source; target; edge |])
-
-            if wrap then
-                smec |> wrapWith NodeType.SubmodelElementCollection
-            else
-                smec
-
-    (*
-					<category></category>
-					<idShort>Document01</idShort>
-					<semanticId>
-						<type>ExternalReference</type>
-						<keys>
-							<key>
-								<type>ConceptDescription</type>
-								<value>0173-1#02-ABI500#001/0173-1#01-AHF579#001*01</value>
-							</key>
-						</keys>
-					</semanticId>
-    *)
-
-    type DsSystem with
-        member x.ToSubmodel():JNode =
-            let sm = JObj()
-            sm["category"] <- "CONSTANT"
-            sm["idShort"] <- "Identification"
-
-            let arr = JArr (x.Flows.Map(_.ToSMEC()).ToArray())
-            sm["submodelElements"] <- arr
-            sm
-
-
-    type DsFlow with
-        /// Convert DsFlow to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let sm = JObj()
-            sm["idShort"] <- "Flow"
-            let vs = JArr (x.Vertices.Map(_.ToSMEC()).ToArray())
-            let es = JArr (x.Edges.Map(_.ToSMEC()).ToArray())
-            sm["vertices"] <- vs
-            sm["edges"] <- es
-            sm
-
-
-    type DsWork with
-        /// Convert DsWork to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["idShort"] <- "Work"
-            let vs = JArr (x.Vertices.Map(_.ToSMEC()).ToArray())
-            let es = JArr (x.Edges.Map(_.ToSMEC()).ToArray())
-            jo["vertices"] <- vs
-            jo["edges"] <- es
-            jo
-
-    type DsAction with
-        /// Convert EdgeDTO to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Action"
-            jo
-
-
-    type DsAutoPre with
-        /// Convert DsAutoPre to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "AutoPre"
-            jo
-
-    type DsSafety with
-        /// Convert DsSafety to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Safety"
-            jo
-
-    type DsCommand with
-        /// Convert DsCommand to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Command"
-            jo
-
-    type DsOperator with
-        /// Convert DsOperator to submodelElementCollection
-        member x.ToSMEC():JNode =
-            let jo = JObj()
-            jo["type"] <- "Operator"
-            jo
-
-
-    type VertexDetail with
-        /// Convert VertexDetail to submodelElementCollection
-        /// VertexDetail to AAS json
-        member x.ToSMEC() =
-            match x with
-            | Work     y -> y.ToSMEC()
-            | Action   y -> y.ToSMEC()
-            | AutoPre  y -> y.ToSMEC()
-            | Safety   y -> y.ToSMEC()
-            | Command  y -> y.ToSMEC()
-            | Operator y -> y.ToSMEC()
-
 
 
