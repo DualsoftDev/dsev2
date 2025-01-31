@@ -14,16 +14,6 @@ open Dual.Common.Base.CS
 
 type JNode = System.Text.Json.Nodes.JsonNode
 
-module Aas =
-    open AasCore.Aas3_0
-    type Jsonization = AasCore.Aas3_0.Jsonization
-    type Environment = AasCore.Aas3_0.Environment
-    type AssetAdministrationShell = AasCore.Aas3_0.AssetAdministrationShell
-    type SubmodelElementCollection = AasCore.Aas3_0.SubmodelElementCollection
-    type Xmlization = AasCore.Aas3_0.Xmlization
-    type IClass = AasCore.Aas3_0.IClass
-
-
 
 module Aas1 =
     let [<Literal>] aas = "http://www.admin-shell.io/aas/3/0"
@@ -32,18 +22,9 @@ module Aas1 =
     /// Json Test
     type T() =
         let loadAssetAdministrationShells(aasJson:string) =
-            let aasNode:JNode = JNode.Parse(aasJson)
-            let container:Aas.Environment = Aas.Jsonization.Deserialize.EnvironmentFrom(aasNode)
+            let container:Aas.Environment = J.CreateIClass<Aas.Environment>(aasJson)
             let xxx = container.AssetAdministrationShells[0]
             xxx
-
-        let toXml(iclass:Aas.IClass) =
-            let outputBuilder = System.Text.StringBuilder()
-            let settings = System.Xml.XmlWriterSettings(Encoding = System.Text.Encoding.UTF8, OmitXmlDeclaration = true, Indent = true)
-            use writer = System.Xml.XmlWriter.Create(outputBuilder, settings)
-            Aas.Xmlization.Serialize.To(iclass, writer)
-            writer.Flush()
-            outputBuilder.ToString()
 
         let aasJson = """{
   "assetAdministrationShells": [
@@ -67,9 +48,9 @@ module Aas1 =
 
         [<Test>]
         member _.``AasBuildJson`` () =
-            let assetInformation = JObj().Set("assetKind", "NotApplicable").Set("globalAssetId", "something_eea66fa1")
-            let assetAdministrationShell = JObj().Set("assetInformation", assetInformation).Set("id", "something_142922d6").Set("modelType", "AssetAdministrationShell")
-            let assetAdministrationShells = JObj().Set("assetAdministrationShells", JArr [|assetAdministrationShell|])
+            let assetInformation = JObj().Set(N.AssetKind, "NotApplicable").Set(N.GlobalAssetId, "something_eea66fa1")
+            let assetAdministrationShell = JObj().Set(N.AssetInformation, assetInformation).Set(N.Id, "something_142922d6").Set(N.ModelType, "AssetAdministrationShell")
+            let assetAdministrationShells = JObj().Set(N.AssetAdministrationShells, JArr [|assetAdministrationShell|])
             let json = assetAdministrationShells.Stringify()
             json === aasJson
 
@@ -77,7 +58,7 @@ module Aas1 =
         member _.``AasJsonRead`` () =
 
             let shell = loadAssetAdministrationShells(aasJson) :?> Aas.AssetAdministrationShell
-            let xml = toXml(shell :> Aas.IClass)
+            let xml = shell.ToXml()
             xml === aasXml
 
 
@@ -98,57 +79,100 @@ module Aas1 =
 
         [<Test>]
         member _.``SimpleAasConversionTest`` () =
-            let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
-            let json = edgeDTO.ToSMEC().Stringify()
-            DcClipboard.Write(json)
-
-
-            let xxx = """
-{
-  "category": "CONSTANT",
-  "idShort": "Edge",
+            let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
+  "idShort": "Edge",
   "semanticId": {
     "type": "ExternalReference",
     "keys": [
       {
         "type": "ConceptDescription",
-        "value": "keyValue"
+        "value": "Start"
       }
     ]
   },
   "value": [
     {
-        "category": "CONSTANT",
-        "idShort": "Source",
-        "modelType": "SubmodelElementCollection",
-        "semanticId": {
-          "type": "ExternalReference",
-          "keys": [
-            {
-              "type": "ConceptDescription",
-              "value": "keyValue"
-            }
-          ]
-        }
+      "category": "CONSTANT",
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Source",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "ConceptDescription",
+            "value": "Dual__source"
+          }
+        ]
+      }
     },
     {
-        "category": "CONSTANT",
-        "idShort": "Target",
-        "modelType": "SubmodelElementCollection"
-    },
-    {
-        "category": "CONSTANT",
-        "idShort": "EdgeType",
-        "modelType": "SubmodelElementCollection"
+      "category": "CONSTANT",
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Target",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "ConceptDescription",
+            "value": "Dual__target"
+          }
+        ]
+      }
     }
   ]
-}
-"""
-            let smec:Aas.SubmodelElementCollection = Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom(JNode.Parse(xxx))
+}"""
 
-
+            let xmlAnswer = """<submodelElementCollection xmlns="https://admin-shell.io/aas/3/0">
+  <idShort>Edge</idShort>
+  <semanticId>
+    <type>ExternalReference</type>
+    <keys>
+      <key>
+        <type>ConceptDescription</type>
+        <value>Start</value>
+      </key>
+    </keys>
+  </semanticId>
+  <value>
+    <submodelElementCollection>
+      <category>CONSTANT</category>
+      <idShort>Source</idShort>
+      <semanticId>
+        <type>ExternalReference</type>
+        <keys>
+          <key>
+            <type>ConceptDescription</type>
+            <value>Dual__source</value>
+          </key>
+        </keys>
+      </semanticId>
+    </submodelElementCollection>
+    <submodelElementCollection>
+      <category>CONSTANT</category>
+      <idShort>Target</idShort>
+      <semanticId>
+        <type>ExternalReference</type>
+        <keys>
+          <key>
+            <type>ConceptDescription</type>
+            <value>Dual__target</value>
+          </key>
+        </keys>
+      </semanticId>
+    </submodelElementCollection>
+  </value>
+</submodelElementCollection>"""
+            let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
+            let json = edgeDTO.ToSMEC().Stringify()
+            DcClipboard.Write(json)
+            json === jsonAnswer
 
             let smec:Aas.SubmodelElementCollection = Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom(JNode.Parse(json))
-            let xxx = toXml smec
+            let xml = smec.ToXml()
+            xml === xmlAnswer
+
+            let smec:Aas.SubmodelElementCollection = J.CreateIClass<Aas.SubmodelElementCollection>(json)
+            let xml = smec.ToXml()
+            xml === xmlAnswer
             ()

@@ -1,14 +1,10 @@
-﻿namespace rec Dual.Ev2.Aas
+namespace rec Dual.Ev2.Aas
 
 (* Core 를 AAS Json/Xml 로 변환하기 위한 몸풀기용 연습 코드 *)
 
 open Dual.Common.Core.FS
 open Dual.Ev2
-open System.Collections.Generic
 
-//type JObj = System.Text.Json.Nodes.JsonObject
-//type JArr = System.Text.Json.Nodes.JsonArray
-//type JNode = System.Text.Json.Nodes.JsonNode
 
 module CoreToJsonViaCode =
     type DsNamedObject with

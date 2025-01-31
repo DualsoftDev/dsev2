@@ -30,31 +30,17 @@ module CoreToAas =
                     semantic = J.CreateSemantic(semanticType, keyType, x.Target)
                 )
 
-                    //.Set("kind", "some-kind")
-                    //.SetKeys("Submodel", "0173-1#01-AHF578#001")
-                    //|> wrapWith "property"
-                    //|> wrapWith "submodelElements"
-
             let edge =
-                J.CreateProperties(
-                    category = Category.CONSTANT,
-                    idShort = "EdgeType",
-                    modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, x.EdgeType.ToString())
-                )
-                    //|> wrapWith "property"
-
-            let smec =
                 J.CreateProperties(
                     idShort = "Edge",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "keyValue")
-                ).SetValue([| source; target; edge |])
+                    semantic = J.CreateSemantic(semanticType, keyType, x.EdgeType.ToString())
+                ).SetValue([| source; target; |])
 
             if wrap then
-                smec |> wrapWith NodeType.SubmodelElementCollection
+                edge |> wrapWith N.SubmodelElementCollection
             else
-                smec
+                edge
 
     (*
 					<category></category>
