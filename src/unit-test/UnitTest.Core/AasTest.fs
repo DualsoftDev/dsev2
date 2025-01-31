@@ -223,3 +223,136 @@ module Aas1 =
             let json = Command.ToProperties().Stringify()
             json === jsonAnswer
             ()
+
+
+        [<Test>]
+        member _.``Work: instance -> JObj -> Json ConversionTest`` () =
+
+            let system2 = DsSystem.FromJson(json)
+            let work = system2.Flows[0].Works[0]
+            let json = work.ToProperties().Stringify()
+            let jsonAnswer = """{
+  "modelType": "SubmodelElementCollection",
+  "idShort": "Graph",
+  "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+      {
+        "type": "ConceptDescription",
+        "value": "Graph"
+      }
+    ]
+  },
+  "value": [
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Action",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "ConceptDescription",
+            "value": "F1W1C1"
+          }
+        ]
+      }
+    },
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Action",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "ConceptDescription",
+            "value": "F1W1C2"
+          }
+        ]
+      }
+    },
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Edge",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "ConceptDescription",
+            "value": "Start"
+          }
+        ]
+      },
+      "value": [
+        {
+          "category": "CONSTANT",
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Source",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "ConceptDescription",
+                "value": "F1W1C1"
+              }
+            ]
+          }
+        },
+        {
+          "category": "CONSTANT",
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Target",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "ConceptDescription",
+                "value": "F1W1C2"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}"""
+            json === jsonAnswer
+            ()
+
+
+        [<Todo("Fix me")>]
+        [<Test>]
+        member _.``Flow: instance -> JObj -> Json ConversionTest`` () =
+
+            let system2 = DsSystem.FromJson(json)
+            let flow = system2.Flows[0]
+            let json = flow.ToProperties().Stringify()
+            let jsonAnswer = """{
+  "modelType": "SubmodelElementCollection",
+  "idShort": "Graph",
+  "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+      {
+        "type": "ConceptDescription",
+        "value": "Graph"
+      }
+    ]
+  },
+  "value": [
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Work",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "ConceptDescription",
+            "value": "F1W1"
+          }
+        ]
+      }
+    }
+  ]
+}"""
+            json === jsonAnswer
+            ()

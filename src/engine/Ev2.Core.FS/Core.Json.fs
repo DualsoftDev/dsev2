@@ -1,4 +1,4 @@
-﻿namespace rec Dual.Ev2
+namespace rec Dual.Ev2
 
 open Newtonsoft.Json
 
@@ -35,7 +35,7 @@ module CoreJson =
 
     type DsFlow with
         /// Graph -> Json DTO
-        member internal x.PrepareToJson() =
+        member (*internal*) x.PrepareToJson() =
             x.Works.Iter(_.PrepareToJson())
             x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
@@ -50,7 +50,7 @@ module CoreJson =
 
     type DsWork with
         /// Graph -> Json DTO
-        member internal x.PrepareToJson() = x.Edges <- EdgeDTO.FromGraph(x.Graph)
+        member (*internal*) x.PrepareToJson() = x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareFromJson(parentFlow:DsFlow) =

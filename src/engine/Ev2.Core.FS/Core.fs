@@ -70,12 +70,14 @@ module Core =
             | :? DsFlow as f -> f.Graph
             | :? DsWork as w -> w.Graph
             | _ -> failwith "ERROR"
-        member x.GetVertices(): ResizeArray<VertexDetail> =
+
+        member x.GetVertexDetails(): ResizeArray<VertexDetail> =
             match x with
             | :? DsFlow as f -> f.Vertices
             | :? DsWork as w -> w.Vertices
             | _ -> failwith "ERROR"
-        member x.GetEdges(): EdgeDTO[] =
+
+        member x.GetEdgeDTOs(): EdgeDTO[] =
             match x with
             | :? DsFlow as f -> f.Edges
             | :? DsWork as w -> w.Edges
@@ -92,7 +94,7 @@ module Core =
                 failwith "ERROR: Vertex already has parent container"
             if !! x.GetGraph().AddVertex(vertex) then
                 failwith "ERROR: Failed to add.  duplicated?"
-            VertexDetail.FromVertex(vertex) |> x.GetVertices().Add
+            VertexDetail.FromVertex(vertex) |> x.GetVertexDetails().Add
             vertex.Container <- x.GetVertexContainer()
             vertex
 

@@ -8,12 +8,15 @@ open System.Linq
 
 [<AutoOpen>]
 module CoreToAas =
+    let private semanticType = SemanticIdType.ExternalReference
+    let private keyType = KeyType.ConceptDescription
+    let private modelType = ModelType.SubmodelElementCollection
+
     type EdgeDTO with
         /// Convert EdgeDTO to submodelElementCollection
         member x.ToSMEC(?wrap:bool):JNode =
             let wrap = wrap |? false
 
-            let semanticType, keyType, modelType = SemanticIdType.ExternalReference, KeyType.ConceptDescription, ModelType.SubmodelElementCollection
             let source =
                 J.CreateProperties(
                     category = Category.CONSTANT,
@@ -44,7 +47,6 @@ module CoreToAas =
 
     type VertexDetail with
         member x.ToProperties(): JNode =
-            let semanticType, keyType, modelType = SemanticIdType.ExternalReference, KeyType.ConceptDescription, ModelType.SubmodelElementCollection
             let v = x.AsVertex()
             let semantic = J.CreateSemantic(semanticType, keyType, v.Name)
             J.CreateProperties(idShort = x.Case, modelType = modelType, semantic = semantic)
@@ -62,6 +64,32 @@ module CoreToAas =
 						</keys>
 					</semanticId>
     *)
+
+
+    type IGraph with
+        member internal x.IPrepareToJson() =
+            match x with
+            | :? DsFlow as y -> y.PrepareToJson()
+            | :? DsWork as y -> y.PrepareToJson()
+            | _ -> failwith "ERROR"
+
+        member x.ToProperties(): JNode =
+            x.IPrepareToJson()
+            let vs = x.GetVertexDetails() |> map _.ToProperties()
+            let es = x.GetEdgeDTOs()  |> map _.ToSMEC()
+            let graph =
+                J.CreateProperties(
+                    idShort = "Graph",
+                    modelType = modelType,
+                    semantic = J.CreateSemantic(semanticType, keyType, "Graph")
+                ).SetValue( (vs @ es).ToArray() )
+            graph
+
+
+
+
+
+
 
     type DsSystem with
         member x.ToSubmodel():JNode =
