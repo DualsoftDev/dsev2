@@ -1,12 +1,9 @@
 namespace T.Core
 
-open System
 open Dual.Ev2
 open Dual.Ev2.Aas
 open Dual.Ev2.Aas.CoreToJsonViaCode
 open NUnit.Framework
-open System.Text.Json
-open Dual.Common.Core.FS
 open Dual.Common.UnitTest.FS
 open Dual.Common.Base.CS
 
@@ -23,46 +20,54 @@ module Aas1 =
     type T() =
         let loadAssetAdministrationShells(aasJson:string) =
             let container:Aas.Environment = J.CreateIClass<Aas.Environment>(aasJson)
-            let xxx = container.AssetAdministrationShells[0]
-            xxx
+            //let xxx = container.AssetAdministrationShells[0]
+            //xxx
+            container
 
         let aasJson = """{
   "assetAdministrationShells": [
     {
+      "id": "something_142922d6",
       "assetInformation": {
         "assetKind": "NotApplicable",
         "globalAssetId": "something_eea66fa1"
       },
-      "id": "something_142922d6",
       "modelType": "AssetAdministrationShell"
     }
   ]
 }"""
-        let aasXml = """<assetAdministrationShell xmlns="https://admin-shell.io/aas/3/0">
-  <id>something_142922d6</id>
-  <assetInformation>
-    <assetKind>NotApplicable</assetKind>
-    <globalAssetId>something_eea66fa1</globalAssetId>
-  </assetInformation>
-</assetAdministrationShell>"""
+        let aasXml = """<environment xmlns="https://admin-shell.io/aas/3/0">
+  <assetAdministrationShells>
+    <assetAdministrationShell>
+      <id>something_142922d6</id>
+      <assetInformation>
+        <assetKind>NotApplicable</assetKind>
+        <globalAssetId>something_eea66fa1</globalAssetId>
+      </assetInformation>
+    </assetAdministrationShell>
+  </assetAdministrationShells>
+</environment>"""
 
         [<Test>]
-        member _.``AasBuildJson`` () =
+        member _.``AasShell: JObj -> string conversion test`` () =
             let assetInformation = JObj().Set(N.AssetKind, "NotApplicable").Set(N.GlobalAssetId, "something_eea66fa1")
-            let assetAdministrationShell = JObj().Set(N.AssetInformation, assetInformation).Set(N.Id, "something_142922d6").Set(N.ModelType, "AssetAdministrationShell")
+            let assetAdministrationShell = JObj().Set(N.Id, "something_142922d6").Set(N.AssetInformation, assetInformation).Set(N.ModelType, "AssetAdministrationShell")
             let assetAdministrationShells = JObj().Set(N.AssetAdministrationShells, JArr [|assetAdministrationShell|])
             let json = assetAdministrationShells.Stringify()
             json === aasJson
 
         [<Test>]
-        member _.``AasJsonRead`` () =
+        member _.``AasShell: Json -> JObj -> {Xml, Json} conversion test`` () =
 
-            let shell = loadAssetAdministrationShells(aasJson) :?> Aas.AssetAdministrationShell
-            let xml = shell.ToXml()
+            //let shell = loadAssetAdministrationShells(aasJson) :?> Aas.AssetAdministrationShell
+            let env = loadAssetAdministrationShells(aasJson)
+            let xml = env.ToXml()
             xml === aasXml
 
 
-            let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(shell);
+            let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(env);
+            let json = jsonObject.Stringify()
+            json === aasJson
 
 
             let system2 = DsSystem.FromJson(json)
@@ -78,7 +83,7 @@ module Aas1 =
 
 
         [<Test>]
-        member _.``SimpleAasConversionTest`` () =
+        member _.``Edge: instance -> JObj -> Json -> Xml ConversionTest`` () =
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Edge",
@@ -175,4 +180,46 @@ module Aas1 =
             let smec:Aas.SubmodelElementCollection = J.CreateIClass<Aas.SubmodelElementCollection>(json)
             let xml = smec.ToXml()
             xml === xmlAnswer
+            ()
+
+
+        [<Test>]
+        member _.``Action: instance -> JObj -> Json ConversionTest`` () =
+            let action:VertexDetail = Action <| DsAction("action1")
+            let jsonAnswer = """{
+  "modelType": "SubmodelElementCollection",
+  "idShort": "Action",
+  "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+      {
+        "type": "ConceptDescription",
+        "value": "action1"
+      }
+    ]
+  }
+}"""
+            let json = action.ToProperties().Stringify()
+            json === jsonAnswer
+            ()
+
+
+        [<Test>]
+        member _.``Command: instance -> JObj -> Json ConversionTest`` () =
+            let Command:VertexDetail = Command <| DsCommand("command1")
+            let jsonAnswer = """{
+  "modelType": "SubmodelElementCollection",
+  "idShort": "Command",
+  "semanticId": {
+    "type": "ExternalReference",
+    "keys": [
+      {
+        "type": "ConceptDescription",
+        "value": "command1"
+      }
+    ]
+  }
+}"""
+            let json = Command.ToProperties().Stringify()
+            json === jsonAnswer
             ()

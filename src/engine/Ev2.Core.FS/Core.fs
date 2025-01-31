@@ -1,4 +1,4 @@
-﻿namespace rec Dual.Ev2
+namespace rec Dual.Ev2
 
 open System.Linq
 open Newtonsoft.Json
@@ -63,6 +63,40 @@ module Core =
 //[<AutoOpen>]
 //module CoreCreate =
 
+    /// flow, work 의 graph 기능 공통 구현
+    type internal IGraph with
+        member x.GetGraph(): DsGraph =
+            match x with
+            | :? DsFlow as f -> f.Graph
+            | :? DsWork as w -> w.Graph
+            | _ -> failwith "ERROR"
+        member x.GetVertices(): ResizeArray<VertexDetail> =
+            match x with
+            | :? DsFlow as f -> f.Vertices
+            | :? DsWork as w -> w.Vertices
+            | _ -> failwith "ERROR"
+        member x.GetEdges(): EdgeDTO[] =
+            match x with
+            | :? DsFlow as f -> f.Edges
+            | :? DsWork as w -> w.Edges
+            | _ -> failwith "ERROR"
+
+        member x.GetVertexContainer(): VertexContainer =
+            match x with
+            | :? DsFlow as f -> VCFlow f
+            | :? DsWork as w -> VCWork w
+            | _ -> VCNone
+
+        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
+            if vertex.Container <> VCNone then
+                failwith "ERROR: Vertex already has parent container"
+            if !! x.GetGraph().AddVertex(vertex) then
+                failwith "ERROR: Failed to add.  duplicated?"
+            VertexDetail.FromVertex(vertex) |> x.GetVertices().Add
+            vertex.Container <- x.GetVertexContainer()
+            vertex
+
+
     type DsSystem with
         static member Create(name:string) = new DsSystem(name)
         member x.CreateFlow(flowName:string) =
@@ -83,14 +117,7 @@ module Core =
                 x.Graph.AddVertex w |> ignore
                 w
 
-        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
-            if vertex.Container <> VCNone then
-                failwith "ERROR: Vertex already has parent container"
-            if !! x.Graph.AddVertex(vertex) then
-                failwith "ERROR: Failed to add.  duplicated?"
-            VertexDetail.FromVertex(vertex) |> x.Vertices.Add
-            vertex.Container <- VCFlow x
-            vertex
+        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) = (x :> IGraph).AddVertex vertex
 
         /// Flow 내에서 edge 생성
         member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
@@ -100,14 +127,8 @@ module Core =
     type DsWork with
         [<JsonIgnore>][<XmlIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
 
-        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
-            if vertex.Container <> VCNone then
-                failwith "ERROR: Vertex already has parent container"
-            if !! x.Graph.AddVertex(vertex) then
-                failwith "ERROR: Failed to add.  duplicated?"
-            VertexDetail.FromVertex(vertex) |> x.Vertices.Add
-            vertex.Container <- VCWork x
-            vertex
+        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) = (x :> IGraph).AddVertex vertex
+
         /// Work 내에서 edge 생성
         member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
         /// Work 내에서 edge 생성

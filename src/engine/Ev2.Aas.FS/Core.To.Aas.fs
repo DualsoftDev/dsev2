@@ -42,6 +42,13 @@ module CoreToAas =
             else
                 edge
 
+    type VertexDetail with
+        member x.ToProperties(): JNode =
+            let semanticType, keyType, modelType = SemanticIdType.ExternalReference, KeyType.ConceptDescription, ModelType.SubmodelElementCollection
+            let v = x.AsVertex()
+            let semantic = J.CreateSemantic(semanticType, keyType, v.Name)
+            J.CreateProperties(idShort = x.Case, modelType = modelType, semantic = semantic)
+
     (*
 					<category></category>
 					<idShort>Document01</idShort>

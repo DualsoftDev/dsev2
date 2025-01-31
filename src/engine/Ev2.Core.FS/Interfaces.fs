@@ -1,18 +1,17 @@
-﻿namespace Dual.Ev2
+namespace Dual.Ev2
 
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module Interfaces =
-    /// <summary>
     /// 내부에 IContainee 형식의 다른 요소를 포함할 수 있는 parent 역할을 수행
-    /// </summary>
     type IContainer = interface end
 
-    /// <summary>
+    /// Graph 의 interface.  subclasses: Flow, Work
+    type IGraph = interface end
+
     /// IContainer에 포함될 수 있는 요소의 인터페이스. child 역할을 수행
-    /// </summary>
     type IContainee = interface end
 
     /// IContainer와 IContainee 역할을 모두 수행하는 인터페이스
@@ -43,12 +42,14 @@ module Interfaces =
     type IFlow =
         inherit IDsDsNamedObject
         inherit IContain
+        inherit IGraph
 
     /// 작업 인터페이스
     type IWork =
         inherit IDsDsNamedObject
         inherit IContain
         inherit INamedVertex
+        inherit IGraph
 
     /// 코인 인터페이스
     type ICoin =
