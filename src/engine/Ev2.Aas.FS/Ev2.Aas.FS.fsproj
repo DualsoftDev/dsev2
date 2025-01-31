@@ -1,25 +1,32 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-	  <RootNamespace>Dual.Ev2.Aas</RootNamespace>
-	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup>
+		<!--
+		<TargetFramework>netstandard2.0</TargetFramework>
+		System.Text.Json (9.1) 을 nuget package 에서 다운로드 해야 될 듯.. 이 경우, 기존 System.Text.Json 버젼과 충돌 예상되어 일단 보류
+		-->
+		<TargetFramework>net8.0</TargetFramework>
 
-  <ItemGroup>
-    <Content Include="AasSyntax.md" />
-    <Compile Include="Core.Aas.fs" />
-    <Compile Include="Core.ToJsonViaCode.fs" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Remove="JsonData\**" />
-  </ItemGroup>
+		<LangVersion>8.0</LangVersion>
+		<RootNamespace>Dual.Ev2.Aas</RootNamespace>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
 
-  <ItemGroup />
+	<ItemGroup>
+		<Content Include="AasSyntax.md" />
+		<Compile Include="Core.Aas.fs" />
+		<Compile Include="Core.ToJsonViaCode.fs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Remove="JsonData\**" />
+	</ItemGroup>
+
+	<ItemGroup />
+
+	<ItemGroup>
+		<ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
+	</ItemGroup>
 
 </Project>

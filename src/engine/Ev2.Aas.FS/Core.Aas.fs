@@ -29,8 +29,18 @@ module JsonExtensionModule =
         | ConceptDescription
         | GlobalReference
 
+    type ModelType =
+        | SubmodelElementCollection
 
-    let wrapWith(newContainerName:string) (child:JNode): JNode = JObj().Set(newContainerName, child)
+    type NodeType =
+        | Category
+        | SubmodelElementCollection
+        override x.ToString() =
+            let s = string x
+            s[0..0].ToLower() + s[1..]  // 첫 글자만 소문자로 변환
+
+
+    let wrapWith(nodeType:NodeType) (child:JNode): JNode = JObj().Set(nodeType.ToString(), child)
 
 
     type System.Text.Json.Nodes.JsonNode with
@@ -47,6 +57,7 @@ module JsonExtensionModule =
         member x.SetTypedValue(value:string) = x.Set("valueType", "xs:string") .Set("value", value)
         member x.SetTypedValue(value:int)    = x.Set("valueType", "xs:integer").Set("value", value.ToString())
         member x.SetTypedValue(value:double) = x.Set("valueType", "xs:double") .Set("value", value.ToString())
+        member x.SetModelType(modelType:ModelType) = x.Set("modelType", modelType.ToString())
 
         (*
             <keys>
@@ -77,23 +88,42 @@ module JsonExtensionModule =
             </keys>
           </semanticId>
         *)
-        member x.SetSemanticId(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JNode =
+        member x.SetSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JNode =
             x.Set("semanticId",
                 JObj()
                     .Set("type", semanticIdType.ToString())
                     .SetKeys(keyType, keyValue))
 
-        member x.SetCatId(cat:Category, idShort:string, ?id:string): JNode =
-            let id = id |? null
-            x.Set("category", cat.ToString())
-                .Set("idShort", idShort)
-                .Set("id", id)
-
-        //static member WrapWith(newContainerName:string, child:JNode): JNode = wrapWith newContainerName child
+        //static member WrapWith(nodeType:NodeType, child:JNode): JNode = wrapWith (nodeType.ToString()) child
 
         member x.Stringify(?settings:JsonSerializerOptions):string =
                 let settings = settings |? JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
                 x.ToJsonString(settings)
+
+    [<AbstractClass; Sealed>]
+    type J() =
+        static member CreateProperties(
+            ?category:Category,
+            ?idShort:string,
+            ?id:string,
+            ?modelType:ModelType
+        ): JObj =
+            JObj() |> tee(fun j ->
+                category .Iter(fun y -> j.Set("category",  y.ToString()) |> ignore)
+                modelType.Iter(fun y -> j.Set("modelType", y.ToString()) |> ignore)
+                idShort  .Iter(fun y -> j.Set("idShort",   y)            |> ignore)
+                id       .Iter(fun y -> j.Set("id",        y)            |> ignore)
+            )
+
+
+        //static member CreateSemantic(
+        //    ?semanticIdType:SemanticIdType,
+        //    ?ktv: KeyType * string
+        //): JObj =
+        //    JObj() |> tee(fun j ->
+        //        semanticIdType .Iter(fun y -> j.Set("semanticId", y.ToString()) |> ignore)
+        //        ktv.Iter(fun ktv -> j.SetKeys ktv |> ignore)
+        //    )
 
 [<AutoOpen>]
 module CoreToAas =
@@ -102,37 +132,41 @@ module CoreToAas =
         member x.ToSMEC(?wrap:bool):JNode =
             let wrap = wrap |? false
             let source =
-                JObj()
-                    .SetCatId(CONSTANT, "Source")
-                    .Set("modelType", "SubmodelElementCollection")
-                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Source)
+                J.CreateProperties(
+                    category = Category.CONSTANT,
+                    idShort = "Source",
+                    modelType = ModelType.SubmodelElementCollection
+                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Source)
 
             let target =
-                JObj()
-                    .SetCatId(CONSTANT, "Target")
-                    .Set("modelType", "SubmodelElementCollection")
-                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Target)
+                J.CreateProperties(
+                    category = Category.CONSTANT,
+                    idShort = "Target",
+                    modelType = ModelType.SubmodelElementCollection
+                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.Target)
+
                     //.Set("kind", "some-kind")
                     //.SetKeys("Submodel", "0173-1#01-AHF578#001")
                     //|> wrapWith "property"
                     //|> wrapWith "submodelElements"
 
             let edge =
-                JObj()
-                    .SetCatId(CONSTANT, "EdgeType")
-                    .Set("modelType", "SubmodelElementCollection")
-                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.EdgeType.ToString())
+                J.CreateProperties(
+                    category = Category.CONSTANT,
+                    idShort = "EdgeType",
+                    modelType = ModelType.SubmodelElementCollection
+                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, x.EdgeType.ToString())
                     //|> wrapWith "property"
 
             let smec =
-                JObj()
-                    //.SetCatId(CONSTANT, "Edge")
-                    .Set("modelType", "SubmodelElementCollection")
-                    .SetSemanticId(SemanticIdType.ExternalReference, KeyType.ConceptDescription, "keyValue")
-                    .Set("value", JArr [| source; target; edge |])
+                J.CreateProperties(
+                    idShort = "Edge",
+                    modelType = ModelType.SubmodelElementCollection
+                ).SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, "keyValue")
+                 .Set("value", JArr [| source; target; edge |])
 
             if wrap then
-                smec |> wrapWith "submodelElementCollection"
+                smec |> wrapWith NodeType.SubmodelElementCollection
             else
                 smec
 
