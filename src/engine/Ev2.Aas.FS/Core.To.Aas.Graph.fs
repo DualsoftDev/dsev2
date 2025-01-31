@@ -14,7 +14,7 @@ module CoreToAas =
 
     type EdgeDTO with
         /// Convert EdgeDTO to submodelElementCollection
-        member x.ToSMEC(?wrap:bool):JNode =
+        member x.ToSMEC(?wrap:bool): JNode =
             let wrap = wrap |? false
 
             let source =
@@ -69,31 +69,31 @@ module CoreToAas =
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
-            //let vs = x.GetVertexDetails() |> map _.ToProperties()
-            //let es = x.GetEdgeDTOs()  |> map _.ToSMEC()
-
             let vs = x.GetVertexDetails() |> map _.ToProperties()
             let vs =
                 J.CreateProperties(
                     idShort = "Vertices",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "Vertices")
-                ).SetValues(vs)
+                    semantic = J.CreateSemantic(semanticType, keyType, "Vertices"),
+                    values = vs
+                )
 
             let es = x.GetEdgeDTOs()  |> map _.ToSMEC()
             let es =
                 J.CreateProperties(
                     idShort = "Edges",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "Edges")
-                ).SetValues(es)
+                    semantic = J.CreateSemantic(semanticType, keyType, "Edges"),
+                    values = es
+                )
 
             let graph =
                 J.CreateProperties(
                     idShort = "Graph",
                     modelType = modelType,
-                    semantic = J.CreateSemantic(semanticType, keyType, "Graph")
-                ).SetValues([|vs; es|])
+                    semantic = J.CreateSemantic(semanticType, keyType, "Graph"),
+                    values = [|vs; es|]
+                )
             graph
 
 

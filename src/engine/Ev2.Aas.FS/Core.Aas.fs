@@ -77,9 +77,13 @@ module JsonExtensionModule =
           <valueType>xs:integer</valueType>
           <value></value>
         *)
-        member x.SetTypedValue(value:string) = x.Set(N.ValueType, "xs:string") .Set(N.Value, value)
-        member x.SetTypedValue(value:int)    = x.Set(N.ValueType, "xs:integer").Set(N.Value, value.ToString())
-        member x.SetTypedValue(value:double) = x.Set(N.ValueType, "xs:double") .Set(N.Value, value.ToString())
+        member x.SetTypedValue<'T when 'T: struct>(value:'T) =
+            match box value with
+            | :? string  as value -> x.Set(N.ValueType, "xs:string") .Set(N.Value, value)
+            | :? int     as value -> x.Set(N.ValueType, "xs:integer").Set(N.Value, value.ToString())
+            | :? double  as value -> x.Set(N.ValueType, "xs:double") .Set(N.Value, value.ToString())
+            | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
+
         member x.SetModelType(modelType:ModelType) = x.Set(N.ModelType, modelType.ToString())
 
         (*
@@ -147,24 +151,26 @@ module JsonExtensionModule =
 
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
-        static member CreateProperties(
+        static member CreateProperties<'T when 'T: struct>(
             ?category:Category,
             ?idShort:string,
             ?id:string,
             ?modelType:ModelType,
-            ?semantic:JObj
+            ?semantic:JObj,
+            ?typedValue:'T,
+            ?values:JNode seq
         ): JObj =
+            assert(typedValue.IsNone || values.IsNone)
             JObj() |> tee(fun j ->
-                category .Iter(fun y -> j.Set(N.Category,  y.ToString()) |> ignore)
-                modelType.Iter(fun y -> j.Set(N.ModelType, y.ToString()) |> ignore)
-                idShort  .Iter(fun y -> j.Set(N.IdShort,   y)            |> ignore)
-                id       .Iter(fun y -> j.Set(N.Id,        y)            |> ignore)
-                semantic .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
+                category  .Iter(fun y -> j.Set(N.Category,  y.ToString()) |> ignore)
+                modelType .Iter(fun y -> j.Set(N.ModelType, y.ToString()) |> ignore)
+                idShort   .Iter(fun y -> j.Set(N.IdShort,   y)            |> ignore)
+                id        .Iter(fun y -> j.Set(N.Id,        y)            |> ignore)
+                semantic  .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
+                typedValue.Iter(fun y -> j.SetTypedValue(y)               |> ignore)
+                values    .Iter(fun y -> j.SetValues(y)                   |> ignore)
             )
 
-        //static member CreatePrimitiveProperty<'T when 'T: struct> (data:'T) =
-        //    match data.GetType().Name with
-        //    | "Int32"   -> JObj().SetTypedValue(data :?> int)
 
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
         static member CreateIClass<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClass<'T> json :?> 'T
