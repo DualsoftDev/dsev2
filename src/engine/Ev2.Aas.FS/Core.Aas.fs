@@ -106,7 +106,7 @@ module JsonExtensionModule =
         member x.SetValues(jns:JNode seq) = x.Set(N.Value, jns)
 
         /// JObj 의 value 속성에 JNode 를 append 추가.  SetValues 는 덮어쓰기 용
-        member x.AddValues(jns:JNode seq) =
+        member x.AddValues(jns:#JNode seq) =
 
             let key = N.Value.ToString()
             match x.TryGetPropertyValue(key) with
@@ -114,7 +114,7 @@ module JsonExtensionModule =
                 for jn in jns do ja.Add(jn) // 개별적으로 추가
                 x
             | _ ->
-                x.SetValues(jns) // 새로운 JsonArray 생성
+                x.SetValues(jns |> Seq.cast<JNode>) // 새로운 JsonArray 생성
 
         (*
           <valueType>xs:integer</valueType>
@@ -173,24 +173,30 @@ module JsonExtensionModule =
                 x.ToJsonString(settings)
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
+        ///
+        /// value 와 values 는 양립할 수 없다.
+        /// value : single typed value
+        /// values : multiple values
+        // semantic = J.CreateSemantic(semanticType, keyType, "Vertices"),
+
         member x.AddProperties<'T>(
             ?category:Category,
             ?idShort:string,
             ?id:string,
             ?modelType:ModelType,
             ?semantic:JObj,
-            ?typedValue:'T,
+            ?value:'T,
             ?values:JNode seq
         ): JObj =
-            assert(typedValue.IsNone || values.IsNone)
+            assert(value.IsNone || values.IsNone)
             x |> tee(fun j ->
-                category  .Iter(fun y -> j.Set(N.Category,  y.ToString()) |> ignore)
-                modelType .Iter(fun y -> j.Set(N.ModelType, y.ToString()) |> ignore)
-                idShort   .Iter(fun y -> j.Set(N.IdShort,   y)            |> ignore)
-                id        .Iter(fun y -> j.Set(N.Id,        y)            |> ignore)
-                semantic  .Iter(fun y -> j.Set(N.SemanticId,y)            |> ignore)
-                typedValue.Iter(fun y -> j.SetTypedValue(y)               |> ignore)
-                values    .Iter(fun y -> j.AddValues(y)                   |> ignore)
+                category  .Iter(fun y  -> j.Set(N.Category,  y.ToString()) |> ignore)
+                modelType .Iter(fun y  -> j.Set(N.ModelType, y.ToString()) |> ignore)
+                idShort   .Iter(fun y  -> j.Set(N.IdShort,   y)            |> ignore)
+                id        .Iter(fun y  -> j.Set(N.Id,        y)            |> ignore)
+                semantic  .Iter(fun y  -> j.Set(N.SemanticId,y)            |> ignore)
+                value     .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
+                values    .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
             )
 
     type AasCore.Aas3_0.IClass with
@@ -207,6 +213,7 @@ module JsonExtensionModule =
 
     [<AbstractClass; Sealed>]
     type J() =
+        /// JNode[] -> JArr 변환
         static member CreateJArr(jns:#JNode seq): JArr = jns |> Seq.cast<JNode> |> toArray |> JArr
 
         static member WrapWith(nodeType:N, child:JNode): JNode = wrapWith nodeType child
@@ -219,6 +226,10 @@ module JsonExtensionModule =
 
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
+        ///
+        /// value 와 values 는 양립할 수 없다.
+        /// value : single typed value
+        /// values : multiple values
         static member CreateProperties<'T>(
             ?category:Category,
             ?idShort:string,
@@ -234,7 +245,7 @@ module JsonExtensionModule =
                 ?id         = id,
                 ?modelType  = modelType,
                 ?semantic   = semantic,
-                ?typedValue = typedValue,
+                ?value = typedValue,
                 ?values     = values)
 
         (* value 속성을 가진 <property> JObj 를 생성

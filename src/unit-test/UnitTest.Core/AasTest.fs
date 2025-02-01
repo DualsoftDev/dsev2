@@ -126,7 +126,7 @@ module Aas1 =
   </value>
 </submodelElementCollection>"""
             let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
-            let json = edgeDTO.ToSMEC().Stringify()
+            let json = edgeDTO.ToProperties().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
 
@@ -199,6 +199,12 @@ module Aas1 =
   "modelType": "SubmodelElementCollection",
   "idShort": "Work",
   "value": [
+    {
+      "modelType": "Property",
+      "idShort": "Name",
+      "valueType": "xs:string",
+      "value": "F1W1"
+    },
     {
       "modelType": "SubmodelElementCollection",
       "idShort": "Graph",
@@ -287,7 +293,6 @@ module Aas1 =
             ()
 
 
-        [<Todo("Fix me")>]
         [<Test>]
         member _.``Flow: instance -> JObj -> Json ConversionTest`` () =
 
@@ -297,6 +302,12 @@ module Aas1 =
   "modelType": "SubmodelElementCollection",
   "idShort": "Flow",
   "value": [
+    {
+      "modelType": "Property",
+      "idShort": "Name",
+      "valueType": "xs:string",
+      "value": "F1"
+    },
     {
       "modelType": "SubmodelElementCollection",
       "idShort": "Graph",
@@ -309,6 +320,12 @@ module Aas1 =
               "modelType": "SubmodelElementCollection",
               "idShort": "Work",
               "value": [
+                {
+                  "modelType": "Property",
+                  "idShort": "Name",
+                  "valueType": "xs:string",
+                  "value": "F1W1"
+                },
                 {
                   "modelType": "SubmodelElementCollection",
                   "idShort": "Graph",
@@ -400,6 +417,155 @@ module Aas1 =
   ]
 }"""
             let json = flow.ToProperties().Stringify()
+            DcClipboard.Write(json)
+            json === jsonAnswer
+
+            let xml = J.CreateIClass<Aas.SubmodelElementCollection>(json).ToXml()
+
+            ()
+
+
+        [<Test>]
+        member _.``System: instance -> JObj -> Json ConversionTest`` () =
+
+            let system2 = DsSystem.FromJson(json)
+            let jsonAnswer = """{
+  "modelType": "SubmodelElementCollection",
+  "idShort": "System",
+  "value": [
+    {
+      "modelType": "Property",
+      "idShort": "Name",
+      "valueType": "xs:string",
+      "value": "system1"
+    },
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Flows",
+      "value": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Flow",
+          "value": [
+            {
+              "modelType": "Property",
+              "idShort": "Name",
+              "valueType": "xs:string",
+              "value": "F1"
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Graph",
+              "value": [
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Vertices",
+                  "value": [
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Work",
+                      "value": [
+                        {
+                          "modelType": "Property",
+                          "idShort": "Name",
+                          "valueType": "xs:string",
+                          "value": "F1W1"
+                        },
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Graph",
+                          "value": [
+                            {
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Vertices",
+                              "value": [
+                                {
+                                  "modelType": "SubmodelElementCollection",
+                                  "idShort": "Action",
+                                  "value": [
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "Name",
+                                      "valueType": "xs:string",
+                                      "value": "F1W1C1"
+                                    },
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "IsDisable",
+                                      "valueType": "xs:boolean",
+                                      "value": "False"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "modelType": "SubmodelElementCollection",
+                                  "idShort": "Action",
+                                  "value": [
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "Name",
+                                      "valueType": "xs:string",
+                                      "value": "F1W1C2"
+                                    },
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "IsDisable",
+                                      "valueType": "xs:boolean",
+                                      "value": "False"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Edges",
+                              "value": [
+                                {
+                                  "modelType": "SubmodelElementCollection",
+                                  "idShort": "Edge",
+                                  "value": [
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "EdgeType",
+                                      "valueType": "xs:string",
+                                      "value": "Start"
+                                    },
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "Source",
+                                      "valueType": "xs:string",
+                                      "value": "F1W1C1"
+                                    },
+                                    {
+                                      "modelType": "Property",
+                                      "idShort": "Target",
+                                      "valueType": "xs:string",
+                                      "value": "F1W1C2"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Edges"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}"""
+            let json = system2.ToProperties().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
 
