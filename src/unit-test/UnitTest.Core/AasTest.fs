@@ -126,7 +126,7 @@ module Aas1 =
   </value>
 </submodelElementCollection>"""
             let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
-            let json = edgeDTO.ToProperties().Stringify()
+            let json = edgeDTO.ToSMC().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
 
@@ -161,7 +161,7 @@ module Aas1 =
     }
   ]
 }"""
-            let json = action.ToProperties().Stringify()
+            let json = action.ToSMC().Stringify()
             json === jsonAnswer
 
             let xml = J.CreateIClass<Aas.SubmodelElementCollection>(jsonAnswer).ToXml()
@@ -184,7 +184,7 @@ module Aas1 =
     }
   ]
 }"""
-            let json = Command.ToProperties().Stringify()
+            let json = Command.ToSMC().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
             ()
@@ -285,7 +285,7 @@ module Aas1 =
     }
   ]
 }"""
-            let json = work.ToProperties().Stringify()
+            let json = work.ToSMC().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
 
@@ -416,7 +416,7 @@ module Aas1 =
     }
   ]
 }"""
-            let json = flow.ToProperties().Stringify()
+            let json = flow.ToSMC().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
 
@@ -565,7 +565,7 @@ module Aas1 =
     }
   ]
 }"""
-            let json = system2.ToProperties().Stringify()
+            let json = system2.ToSMC().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
 

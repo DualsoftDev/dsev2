@@ -4,39 +4,33 @@ namespace rec Dual.Ev2.Aas
 
 open Dual.Common.Core.FS
 open Dual.Ev2
-open System.Linq
+open System
 
 [<AutoOpen>]
-module CoreToAas =
-    /// ModelType.SubmodelElementCollection
-    let private smc = ModelType.SubmodelElementCollection
-    //let private sme = ModelType.SubmodelElement
-    let private sml = ModelType.SubmodelElementList
-    let private sm = ModelType.Submodel
-
+module CoreGraphToAas =
     type EdgeDTO with
         /// Convert EdgeDTO to submodelElementCollection
-        member x.ToProperties(): JObj =
+        member x.ToSMC(): JObj =
             let source =
-                J.CreateValueProperty(
+                J.CreateProp(
                     idShort = "Source",
                     value = x.Source
                 )
 
             let target =
-                J.CreateValueProperty(
+                J.CreateProp(
                     idShort = "Target",
                     value = x.Target
                 )
 
             let et =
-                J.CreateValueProperty(
+                J.CreateProp(
                     idShort = "EdgeType",
                     value = x.EdgeType.ToString()
                 )
 
             let edge =
-                J.CreateProperties(
+                J.CreateJObj(
                     idShort = "Edge",
                     modelType = smc,
                     values = [| et; source; target; |]
@@ -61,31 +55,31 @@ module CoreToAas =
 
 
     type IGraph with
-        /// IGraph.ToProperties() -> JNode
-        member x.GraphToProperties(): JObj =
+        /// IGraph.ToSMC() -> JNode
+        member x.GraphToSMC(): JObj =
             match x with
             | :? DsFlow as y -> y.PrepareToJson()
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
-            let vs = x.GetVertexDetails() |> map _.ToProperties() |> Seq.cast<JNode>
+            let vs = x.GetVertexDetails() |> map _.ToSMC() |> Seq.cast<JNode>
             let vs =
-                J.CreateProperties(
+                J.CreateJObj(
                     idShort = "Vertices",
                     modelType = smc,
                     values = vs
                 )
 
-            let es = x.GetEdgeDTOs()  |> map _.ToProperties()  |> Seq.cast<JNode>
+            let es = x.GetEdgeDTOs()  |> map _.ToSMC()  |> Seq.cast<JNode>
             let es =
-                J.CreateProperties(
+                J.CreateJObj(
                     idShort = "Edges",
                     modelType = smc,
                     values = es
                 )
 
             let graph =
-                J.CreateProperties(
+                J.CreateJObj(
                     idShort = "Graph",
                     modelType = smc,
                     values = [|vs; es|]
@@ -95,43 +89,46 @@ module CoreToAas =
 
 
 
-
-
+[<AutoOpen>]
+module CoreToAas =
 
     type DsSystem with
         /// DsFlow -> JNode
-        member x.ToProperties(): JObj =
-            let fs = x.Flows |> map _.ToProperties() |> Seq.cast<JNode>
+        member x.ToSMC(): JObj =
+            let fs = x.Flows |> map _.ToSMC() |> Seq.cast<JNode>
             let value =
-                J.CreateProperties(
+                J.CreateJObj(
                     idShort = "Flows",
                     modelType = smc,
                     values = fs
                 )
-            x.DsNamedObjectToProperties("System")
+            x.DsNamedObjectToSMC("System")
                 .AddValues([|value|])
+
+        [<Obsolete("TODO")>] member x.ToENV(): JObj = null
+        [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
 
 
     type DsFlow with
         /// DsFlow -> JNode
-        member x.ToProperties(): JObj =
-            let jGraph = x.GraphToProperties()
-            x.DsNamedObjectToProperties("Flow")
+        member x.ToSMC(): JObj =
+            let jGraph = x.GraphToSMC()
+            x.DsNamedObjectToSMC("Flow")
                 .AddValues([|jGraph|])
 
     type DsWork with
         /// DsWork -> JNode
-        member x.ToProperties(): JObj =
-            let jGraph = x.GraphToProperties()
-            x.DsNamedObjectToProperties("Work")
+        member x.ToSMC(): JObj =
+            let jGraph = x.GraphToSMC()
+            x.DsNamedObjectToSMC("Work")
                 .AddValues([|jGraph|])
 
     type DsAction with
         /// DsAction -> JNode
-        member x.ToProperties(): JObj =
-            x.DsNamedObjectToProperties("Action")
+        member x.ToSMC(): JObj =
+            x.DsNamedObjectToSMC("Action")
                 .AddProperties(values=[
-                    J.CreateProperties(
+                    J.CreateJObj(
                         idShort = "IsDisable",
                         modelType = ModelType.Property,
                         typedValue = x.IsDisabled
@@ -141,34 +138,33 @@ module CoreToAas =
 
     type DsAutoPre with
         /// DsAutoPre -> JNode
-        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("AutoPre")
+        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("AutoPre")
 
     type DsSafety with
         /// DsSafety -> JNode
-        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("Safety")
+        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Safety")
 
     type DsCommand with
         /// DsCommand -> JNode
-        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("Command")
+        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Command")
 
     type DsOperator with
         /// DsOperator -> JNode
-        member x.ToProperties(): JObj = x.DsNamedObjectToProperties("Operator")
+        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Operator")
 
 
     type DsNamedObject with
-        member internal x.DsNamedObjectToProperties(typeName:string, ?modelType:ModelType): JObj =
-            let modelType = modelType |? smc
-            J.CreateProperties(idShort = typeName, modelType = modelType, values=[J.CreateValueProperty("Name", x.Name)])
+        member internal x.DsNamedObjectToSMC(typeName:string): JObj =
+            J.CreateJObj(idShort = typeName, modelType = smc, values=[J.CreateProp("Name", x.Name)])
 
     type VertexDetail with
-        member x.ToProperties(): JObj =
+        member x.ToSMC(): JObj =
             match x with
-            | Work     y -> y.ToProperties()
-            | Action   y -> y.ToProperties()
-            | AutoPre  y -> y.ToProperties()
-            | Safety   y -> y.ToProperties()
-            | Command  y -> y.ToProperties()
-            | Operator y -> y.ToProperties()
+            | Work     y -> y.ToSMC()
+            | Action   y -> y.ToSMC()
+            | AutoPre  y -> y.ToSMC()
+            | Safety   y -> y.ToSMC()
+            | Command  y -> y.ToSMC()
+            | Operator y -> y.ToSMC()
 
 

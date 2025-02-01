@@ -16,8 +16,9 @@
 	<ItemGroup>
 		<Content Include="AasSyntax.md" />
 		<Compile Include="Core.Aas.fs" />
-		<Compile Include="Core.To.Aas.Graph.fs" />
-		<Compile Include="Core.ToJsonViaCode.fs" />
+		<Compile Include="Core.To.Aas.fs" />
+		<Compile Include="Core.To.Json.ViaCode.fs" />
+		<Compile Include="Core.From.Aas.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

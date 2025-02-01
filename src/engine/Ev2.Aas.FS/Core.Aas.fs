@@ -13,14 +13,22 @@ type JNode = System.Text.Json.Nodes.JsonNode
 module Aas =
     open AasCore.Aas3_0
     type Jsonization = AasCore.Aas3_0.Jsonization
+    type Xmlization = AasCore.Aas3_0.Xmlization
+
     type Environment = AasCore.Aas3_0.Environment
     type AssetAdministrationShell = AasCore.Aas3_0.AssetAdministrationShell
     type Submodel = AasCore.Aas3_0.Submodel
     type SubmodelElementCollection = AasCore.Aas3_0.SubmodelElementCollection
     type SubmodelElementList = AasCore.Aas3_0.SubmodelElementList
-    type Xmlization = AasCore.Aas3_0.Xmlization
     type IClass = AasCore.Aas3_0.IClass
 
+[<AutoOpen>]
+module CoreAas =
+    /// heterogeneous.  struct
+    let internal smc = ModelType.SubmodelElementCollection
+    /// homogenious.  list, set
+    let internal sml = ModelType.SubmodelElementList
+    let internal sm = ModelType.Submodel
 
 [<AutoOpen>]
 module JsonExtensionModule =
@@ -67,7 +75,9 @@ module JsonExtensionModule =
         | ReferenceElement
         | RelationshipElement
         | Submodel
+        /// heterogeneous.  struct
         | SubmodelElementCollection
+        /// homogenious.  list, set
         | SubmodelElementList
 
     /// Json/Xml node type.  속성 이름 혹은 node 이름
@@ -87,8 +97,13 @@ module JsonExtensionModule =
         | Description
         | Id
         | IdShort
+        | Submodel
         | SubmodelElements
+        /// heterogeneous.  struct
         | SubmodelElementCollection
+        /// homogenious.  list, set
+        | SubmodelElementList
+        /// Json node 이름으로 변경을 위해서, camelCase 로 변환 필요
         override x.ToString() =
             let s = sprintf "%A" x
             s[0..0].ToLower() + s[1..]  // 첫 글자만 소문자로 변환
@@ -149,7 +164,11 @@ module JsonExtensionModule =
             ]
         *)
         member x.SetKeys(keyType:KeyType, keyValue:string) =
-            x.Set(N.Keys, JArr [| JObj().Set(N.Type, keyType.ToString()).Set(N.Value, keyValue) :> JNode |]  )
+            let keys =
+                JObj()
+                    .Set(N.Type, keyType.ToString())
+                    .Set(N.Value, keyValue) :> JNode
+            x.Set(N.Keys, JArr [| keys |]  )
         (*
           <semanticId>
             <type>ExternalReference</type>
@@ -200,6 +219,7 @@ module JsonExtensionModule =
             )
 
     type AasCore.Aas3_0.IClass with
+        /// AasCore.IClass 객체를 XML 문자열로 변환
         member x.ToXml() =
             let outputBuilder = System.Text.StringBuilder()
             let settings = System.Xml.XmlWriterSettings(Encoding = System.Text.Encoding.UTF8, OmitXmlDeclaration = true, Indent = true)
@@ -210,7 +230,7 @@ module JsonExtensionModule =
 
 
 
-
+    // Json 관련 static method 들을 모아놓은 static class
     [<AbstractClass; Sealed>]
     type J() =
         /// JNode[] -> JArr 변환
@@ -230,7 +250,7 @@ module JsonExtensionModule =
         /// value 와 values 는 양립할 수 없다.
         /// value : single typed value
         /// values : multiple values
-        static member CreateProperties<'T>(
+        static member CreateJObj<'T>(
             ?category:Category,
             ?idShort:string,
             ?id:string,
@@ -248,7 +268,8 @@ module JsonExtensionModule =
                 ?value = typedValue,
                 ?values     = values)
 
-        (* value 속성을 가진 <property> JObj 를 생성
+        /// value 속성을 가진 JObj 를 생성
+        (*
         // <property>
 
           <idShort>something3fdd3eb4</idShort>
@@ -257,8 +278,8 @@ module JsonExtensionModule =
 
         // </property>
         *)
-        static member CreateValueProperty<'T>(idShort:string, value:'T): JObj =
-            J.CreateProperties(idShort = idShort, typedValue = value, modelType = ModelType.Property)
+        static member CreateProp<'T>(idShort:string, value:'T): JObj =
+            J.CreateJObj(idShort = idShort, typedValue = value, modelType = ModelType.Property)
 
 
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
@@ -267,57 +288,57 @@ module JsonExtensionModule =
         static member private createIClass<'T>(json:string): Aas.IClass =
             let jnode = JNode.Parse(json)
             match typeof<'T>.Name with
-            | "IHasSemantics"                       -> Aas.Jsonization.Deserialize.IHasSemanticsFrom                      (jnode)
-            | "IHasExtensions"                      -> Aas.Jsonization.Deserialize.IHasExtensionsFrom                     (jnode)
-            | "IReferable"                          -> Aas.Jsonization.Deserialize.IReferableFrom                         (jnode)
-            | "IIdentifiable"                       -> Aas.Jsonization.Deserialize.IIdentifiableFrom                      (jnode)
-            | "IHasKind"                            -> Aas.Jsonization.Deserialize.IHasKindFrom                           (jnode)
-            | "IHasDataSpecification"               -> Aas.Jsonization.Deserialize.IHasDataSpecificationFrom              (jnode)
-            | "IQualifiable"                        -> Aas.Jsonization.Deserialize.IQualifiableFrom                       (jnode)
-            | "ISubmodelElement"                    -> Aas.Jsonization.Deserialize.ISubmodelElementFrom                   (jnode)
-            | "IRelationshipElement"                -> Aas.Jsonization.Deserialize.IRelationshipElementFrom               (jnode)
-            | "IDataElement"                        -> Aas.Jsonization.Deserialize.IDataElementFrom                       (jnode)
-            | "IEventElement"                       -> Aas.Jsonization.Deserialize.IEventElementFrom                      (jnode)
-            | "IAbstractLangString"                 -> Aas.Jsonization.Deserialize.IAbstractLangStringFrom                (jnode)
-            | "IDataSpecificationContent"           -> Aas.Jsonization.Deserialize.IDataSpecificationContentFrom          (jnode)
-            | "Extension"                           -> Aas.Jsonization.Deserialize.ExtensionFrom                          (jnode)
             | "AdministrativeInformation"           -> Aas.Jsonization.Deserialize.AdministrativeInformationFrom          (jnode)
-            | "Qualifier"                           -> Aas.Jsonization.Deserialize.QualifierFrom                          (jnode)
+            | "AnnotatedRelationshipElement"        -> Aas.Jsonization.Deserialize.AnnotatedRelationshipElementFrom       (jnode)
             | "AssetAdministrationShell"            -> Aas.Jsonization.Deserialize.AssetAdministrationShellFrom           (jnode)
             | "AssetInformation"                    -> Aas.Jsonization.Deserialize.AssetInformationFrom                   (jnode)
+            | "BasicEventElement"                   -> Aas.Jsonization.Deserialize.BasicEventElementFrom                  (jnode)
+            | "Blob"                                -> Aas.Jsonization.Deserialize.BlobFrom                               (jnode)
+            | "Capability"                          -> Aas.Jsonization.Deserialize.CapabilityFrom                         (jnode)
+            | "ConceptDescription"                  -> Aas.Jsonization.Deserialize.ConceptDescriptionFrom                 (jnode)
+            | "DataSpecificationIec61360"           -> Aas.Jsonization.Deserialize.DataSpecificationIec61360From          (jnode)
+            | "EmbeddedDataSpecification"           -> Aas.Jsonization.Deserialize.EmbeddedDataSpecificationFrom          (jnode)
+            | "Entity"                              -> Aas.Jsonization.Deserialize.EntityFrom                             (jnode)
+            | "Environment"                         -> Aas.Jsonization.Deserialize.EnvironmentFrom                        (jnode)
+            | "EventPayload"                        -> Aas.Jsonization.Deserialize.EventPayloadFrom                       (jnode)
+            | "Extension"                           -> Aas.Jsonization.Deserialize.ExtensionFrom                          (jnode)
+            | "File"                                -> Aas.Jsonization.Deserialize.FileFrom                               (jnode)
+            | "IAbstractLangString"                 -> Aas.Jsonization.Deserialize.IAbstractLangStringFrom                (jnode)
+            | "IDataElement"                        -> Aas.Jsonization.Deserialize.IDataElementFrom                       (jnode)
+            | "IDataSpecificationContent"           -> Aas.Jsonization.Deserialize.IDataSpecificationContentFrom          (jnode)
+            | "IEventElement"                       -> Aas.Jsonization.Deserialize.IEventElementFrom                      (jnode)
+            | "IHasDataSpecification"               -> Aas.Jsonization.Deserialize.IHasDataSpecificationFrom              (jnode)
+            | "IHasExtensions"                      -> Aas.Jsonization.Deserialize.IHasExtensionsFrom                     (jnode)
+            | "IHasKind"                            -> Aas.Jsonization.Deserialize.IHasKindFrom                           (jnode)
+            | "IHasSemantics"                       -> Aas.Jsonization.Deserialize.IHasSemanticsFrom                      (jnode)
+            | "IIdentifiable"                       -> Aas.Jsonization.Deserialize.IIdentifiableFrom                      (jnode)
+            | "IQualifiable"                        -> Aas.Jsonization.Deserialize.IQualifiableFrom                       (jnode)
+            | "IReferable"                          -> Aas.Jsonization.Deserialize.IReferableFrom                         (jnode)
+            | "IRelationshipElement"                -> Aas.Jsonization.Deserialize.IRelationshipElementFrom               (jnode)
+            | "ISubmodelElement"                    -> Aas.Jsonization.Deserialize.ISubmodelElementFrom                   (jnode)
+            | "Key"                                 -> Aas.Jsonization.Deserialize.KeyFrom                                (jnode)
+            | "LangStringDefinitionTypeIec61360"    -> Aas.Jsonization.Deserialize.LangStringDefinitionTypeIec61360From   (jnode)
+            | "LangStringNameType"                  -> Aas.Jsonization.Deserialize.LangStringNameTypeFrom                 (jnode)
+            | "LangStringPreferredNameTypeIec61360" -> Aas.Jsonization.Deserialize.LangStringPreferredNameTypeIec61360From(jnode)
+            | "LangStringShortNameTypeIec61360"     -> Aas.Jsonization.Deserialize.LangStringShortNameTypeIec61360From    (jnode)
+            | "LangStringTextType"                  -> Aas.Jsonization.Deserialize.LangStringTextTypeFrom                 (jnode)
+            | "LevelType"                           -> Aas.Jsonization.Deserialize.LevelTypeFrom                          (jnode)
+            | "MultiLanguageProperty"               -> Aas.Jsonization.Deserialize.MultiLanguagePropertyFrom              (jnode)
+            | "Operation"                           -> Aas.Jsonization.Deserialize.OperationFrom                          (jnode)
+            | "OperationVariable"                   -> Aas.Jsonization.Deserialize.OperationVariableFrom                  (jnode)
+            | "Property"                            -> Aas.Jsonization.Deserialize.PropertyFrom                           (jnode)
+            | "Qualifier"                           -> Aas.Jsonization.Deserialize.QualifierFrom                          (jnode)
+            | "Range"                               -> Aas.Jsonization.Deserialize.RangeFrom                              (jnode)
+            | "Reference"                           -> Aas.Jsonization.Deserialize.ReferenceFrom                          (jnode)
+            | "ReferenceElement"                    -> Aas.Jsonization.Deserialize.ReferenceElementFrom                   (jnode)
+            | "RelationshipElement"                 -> Aas.Jsonization.Deserialize.RelationshipElementFrom                (jnode)
             | "Resource"                            -> Aas.Jsonization.Deserialize.ResourceFrom                           (jnode)
             | "SpecificAssetId"                     -> Aas.Jsonization.Deserialize.SpecificAssetIdFrom                    (jnode)
             | "Submodel"                            -> Aas.Jsonization.Deserialize.SubmodelFrom                           (jnode)
-            | "RelationshipElement"                 -> Aas.Jsonization.Deserialize.RelationshipElementFrom                (jnode)
-            | "SubmodelElementList"                 -> Aas.Jsonization.Deserialize.SubmodelElementListFrom                (jnode)
             | "SubmodelElementCollection"           -> Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom          (jnode)
-            | "Property"                            -> Aas.Jsonization.Deserialize.PropertyFrom                           (jnode)
-            | "MultiLanguageProperty"               -> Aas.Jsonization.Deserialize.MultiLanguagePropertyFrom              (jnode)
-            | "Range"                               -> Aas.Jsonization.Deserialize.RangeFrom                              (jnode)
-            | "ReferenceElement"                    -> Aas.Jsonization.Deserialize.ReferenceElementFrom                   (jnode)
-            | "Blob"                                -> Aas.Jsonization.Deserialize.BlobFrom                               (jnode)
-            | "File"                                -> Aas.Jsonization.Deserialize.FileFrom                               (jnode)
-            | "AnnotatedRelationshipElement"        -> Aas.Jsonization.Deserialize.AnnotatedRelationshipElementFrom       (jnode)
-            | "Entity"                              -> Aas.Jsonization.Deserialize.EntityFrom                             (jnode)
-            | "EventPayload"                        -> Aas.Jsonization.Deserialize.EventPayloadFrom                       (jnode)
-            | "BasicEventElement"                   -> Aas.Jsonization.Deserialize.BasicEventElementFrom                  (jnode)
-            | "Operation"                           -> Aas.Jsonization.Deserialize.OperationFrom                          (jnode)
-            | "OperationVariable"                   -> Aas.Jsonization.Deserialize.OperationVariableFrom                  (jnode)
-            | "Capability"                          -> Aas.Jsonization.Deserialize.CapabilityFrom                         (jnode)
-            | "ConceptDescription"                  -> Aas.Jsonization.Deserialize.ConceptDescriptionFrom                 (jnode)
-            | "Reference"                           -> Aas.Jsonization.Deserialize.ReferenceFrom                          (jnode)
-            | "Key"                                 -> Aas.Jsonization.Deserialize.KeyFrom                                (jnode)
-            | "LangStringNameType"                  -> Aas.Jsonization.Deserialize.LangStringNameTypeFrom                 (jnode)
-            | "LangStringTextType"                  -> Aas.Jsonization.Deserialize.LangStringTextTypeFrom                 (jnode)
-            | "Environment"                         -> Aas.Jsonization.Deserialize.EnvironmentFrom                        (jnode)
-            | "EmbeddedDataSpecification"           -> Aas.Jsonization.Deserialize.EmbeddedDataSpecificationFrom          (jnode)
-            | "LevelType"                           -> Aas.Jsonization.Deserialize.LevelTypeFrom                          (jnode)
-            | "ValueReferencePair"                  -> Aas.Jsonization.Deserialize.ValueReferencePairFrom                 (jnode)
+            | "SubmodelElementList"                 -> Aas.Jsonization.Deserialize.SubmodelElementListFrom                (jnode)
             | "ValueList"                           -> Aas.Jsonization.Deserialize.ValueListFrom                          (jnode)
-            | "LangStringPreferredNameTypeIec61360" -> Aas.Jsonization.Deserialize.LangStringPreferredNameTypeIec61360From(jnode)
-            | "LangStringShortNameTypeIec61360"     -> Aas.Jsonization.Deserialize.LangStringShortNameTypeIec61360From    (jnode)
-            | "LangStringDefinitionTypeIec61360"    -> Aas.Jsonization.Deserialize.LangStringDefinitionTypeIec61360From   (jnode)
-            | "DataSpecificationIec61360"           -> Aas.Jsonization.Deserialize.DataSpecificationIec61360From          (jnode)
+            | "ValueReferencePair"                  -> Aas.Jsonization.Deserialize.ValueReferencePairFrom                 (jnode)
 
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
 
