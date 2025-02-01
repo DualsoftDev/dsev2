@@ -12,7 +12,7 @@ open Dual.Common.Core.FS
 
 open Dual.Ev2
 
-module Json =
+module DsJson =
     /// System1 > Flow1 > Work1 > {Call1 -> Call2}
     let system =
         let system = DsSystem.Create("system1")
@@ -24,7 +24,7 @@ module Json =
         work1.CreateEdge(call1, call2, CausalEdgeType.Start) |> verifyNonNull
         system
 
-    let json = """{
+    let dsJson = """{
   "Name": "system1",
   "Flows": [
     {
@@ -74,6 +74,8 @@ module Json =
     }
   ]
 }"""
+
+
     /// Json Test
     type T() =
         [<Test>]
@@ -81,7 +83,7 @@ module Json =
             let jsonText = system.ToJson();
             DcClipboard.Write(jsonText)
 
-            jsonText === json
+            jsonText === dsJson
 
             let system2 = DsSystem.FromJson(jsonText)
             let f1 = system2.Flows[0]
@@ -158,7 +160,7 @@ module Json =
         ///   -  System, Flow, Work 객체 얻기 test
         [<Test>]
         member _.``Fqdn && Lqdn search`` () =
-            let system = DsSystem.FromJson(json)
+            let system = DsSystem.FromJson(dsJson)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
             let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()
@@ -215,7 +217,7 @@ module Json =
 
         [<Test>]
         member _.``Coins`` () =
-            let system = DsSystem.FromJson(json)
+            let system = DsSystem.FromJson(dsJson)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
             let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()

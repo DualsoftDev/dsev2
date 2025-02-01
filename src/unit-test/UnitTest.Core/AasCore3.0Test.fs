@@ -24,7 +24,7 @@ module AasCore3_0Test =
   <id>something_48c66017</id>
 </submodel>"""
 
-            let xml = J.CreateIClass<Aas.Submodel>(json).ToXml()
+            let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
             xml === xmlAnswer
             ()
 
@@ -55,7 +55,7 @@ module AasCore3_0Test =
   </submodelElements>
 </submodel>"""
 
-            let xml = J.CreateIClass<Aas.Submodel>(json).ToXml()
+            let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
             xml === xmlAnswer
             ()
 
@@ -118,7 +118,7 @@ module AasCore3_0Test =
     </submodelElementCollection>
   </submodelElements>
 </submodel>"""
-            let xml = J.CreateIClass<Aas.Submodel>(json).ToXml()
+            let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
             xml === xmlAnswer
             ()
 
@@ -143,7 +143,7 @@ module AasCore3_0Test =
       ]
     }
 """
-            //let xml = J.CreateIClass<Aas.SubmodelElementList>(false_in_letters).ToXml()
-            let xml = J.CreateIClass<Aas.Submodel>(json).ToXml()
+            //let xml = J.CreateIClassFromJson<Aas.SubmodelElementList>(false_in_letters).ToXml()
+            let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
             ()
 

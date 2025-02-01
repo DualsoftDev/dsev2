@@ -1,4 +1,4 @@
-﻿namespace T.Core
+namespace T.Core
 
 
 open NUnit.Framework
@@ -17,7 +17,7 @@ open Dual.Common.UnitTest.FS
 open Dual.Common.Base.FS
 
 module Xml =
-    let json = Json.json
+    let json = DsJson.dsJson
 
     /// Json Test
     type T() =

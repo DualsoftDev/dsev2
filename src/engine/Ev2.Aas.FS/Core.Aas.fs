@@ -219,14 +219,20 @@ module JsonExtensionModule =
             )
 
     type AasCore.Aas3_0.IClass with
+        member x.ToJson(): string =
+            let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(x);
+            jsonObject.Stringify()
+
         /// AasCore.IClass 객체를 XML 문자열로 변환
-        member x.ToXml() =
+        member x.ToXml(): string =
             let outputBuilder = System.Text.StringBuilder()
             let settings = System.Xml.XmlWriterSettings(Encoding = System.Text.Encoding.UTF8, OmitXmlDeclaration = true, Indent = true)
             use writer = System.Xml.XmlWriter.Create(outputBuilder, settings)
             AasCore.Aas3_0.Xmlization.Serialize.To(x, writer)
             writer.Flush()
             outputBuilder.ToString()
+
+        // see J.CreateIClassFromJson<'T>(), J.CreateIClassFromXml<'T>() for FromJson(), FromXml() methods
 
 
 
@@ -283,9 +289,9 @@ module JsonExtensionModule =
 
 
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
-        static member CreateIClass<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClass<'T> json :?> 'T
+        static member CreateIClassFromJson<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClassFromJson<'T> json :?> 'T
 
-        static member private createIClass<'T>(json:string): Aas.IClass =
+        static member private createIClassFromJson<'T>(json:string): Aas.IClass =
             let jnode = JNode.Parse(json)
             match typeof<'T>.Name with
             | "AdministrativeInformation"           -> Aas.Jsonization.Deserialize.AdministrativeInformationFrom          (jnode)
@@ -356,3 +362,71 @@ module JsonExtensionModule =
             //| "KeyTypes" -> Aas.Jsonization.Deserialize.KeyTypesFrom(jnode)
             //| "DataTypeDefXsd" -> Aas.Jsonization.Deserialize.DataTypeDefXsdFrom(jnode)
             //| "DataTypeIec61360" -> Aas.Jsonization.Deserialize.DataTypeIec61360From(jnode)
+
+
+
+        /// Json string 을 aas core 의 IClass subtype 객체로 변환
+        static member CreateIClassFromXml<'T when 'T :> Aas.IClass>(xml:string) : 'T = J.createIClassFromXml<'T> xml :?> 'T
+
+        static member private createIClassFromXml<'T>(xml:string): Aas.IClass =
+            use stringReader = new System.IO.StringReader(xml)
+            use xmlReader = System.Xml.XmlReader.Create(stringReader);
+            // This step is necessary to skip the non-content. Otherwise,
+            // the deserialization would have thrown an exception.
+            xmlReader.MoveToContent() |> ignore
+
+            match typeof<'T>.Name with
+            | "AdministrativeInformation"           -> Aas.Xmlization.Deserialize.AdministrativeInformationFrom          (xmlReader)
+            | "AnnotatedRelationshipElement"        -> Aas.Xmlization.Deserialize.AnnotatedRelationshipElementFrom       (xmlReader)
+            | "AssetAdministrationShell"            -> Aas.Xmlization.Deserialize.AssetAdministrationShellFrom           (xmlReader)
+            | "AssetInformation"                    -> Aas.Xmlization.Deserialize.AssetInformationFrom                   (xmlReader)
+            | "BasicEventElement"                   -> Aas.Xmlization.Deserialize.BasicEventElementFrom                  (xmlReader)
+            | "Blob"                                -> Aas.Xmlization.Deserialize.BlobFrom                               (xmlReader)
+            | "Capability"                          -> Aas.Xmlization.Deserialize.CapabilityFrom                         (xmlReader)
+            | "ConceptDescription"                  -> Aas.Xmlization.Deserialize.ConceptDescriptionFrom                 (xmlReader)
+            | "DataSpecificationIec61360"           -> Aas.Xmlization.Deserialize.DataSpecificationIec61360From          (xmlReader)
+            | "EmbeddedDataSpecification"           -> Aas.Xmlization.Deserialize.EmbeddedDataSpecificationFrom          (xmlReader)
+            | "Entity"                              -> Aas.Xmlization.Deserialize.EntityFrom                             (xmlReader)
+            | "Environment"                         -> Aas.Xmlization.Deserialize.EnvironmentFrom                        (xmlReader)
+            | "EventPayload"                        -> Aas.Xmlization.Deserialize.EventPayloadFrom                       (xmlReader)
+            | "Extension"                           -> Aas.Xmlization.Deserialize.ExtensionFrom                          (xmlReader)
+            | "File"                                -> Aas.Xmlization.Deserialize.FileFrom                               (xmlReader)
+            | "IAbstractLangString"                 -> Aas.Xmlization.Deserialize.IAbstractLangStringFrom                (xmlReader)
+            | "IDataElement"                        -> Aas.Xmlization.Deserialize.IDataElementFrom                       (xmlReader)
+            | "IDataSpecificationContent"           -> Aas.Xmlization.Deserialize.IDataSpecificationContentFrom          (xmlReader)
+            | "IEventElement"                       -> Aas.Xmlization.Deserialize.IEventElementFrom                      (xmlReader)
+            | "IHasDataSpecification"               -> Aas.Xmlization.Deserialize.IHasDataSpecificationFrom              (xmlReader)
+            | "IHasExtensions"                      -> Aas.Xmlization.Deserialize.IHasExtensionsFrom                     (xmlReader)
+            | "IHasKind"                            -> Aas.Xmlization.Deserialize.IHasKindFrom                           (xmlReader)
+            | "IHasSemantics"                       -> Aas.Xmlization.Deserialize.IHasSemanticsFrom                      (xmlReader)
+            | "IIdentifiable"                       -> Aas.Xmlization.Deserialize.IIdentifiableFrom                      (xmlReader)
+            | "IQualifiable"                        -> Aas.Xmlization.Deserialize.IQualifiableFrom                       (xmlReader)
+            | "IReferable"                          -> Aas.Xmlization.Deserialize.IReferableFrom                         (xmlReader)
+            | "IRelationshipElement"                -> Aas.Xmlization.Deserialize.IRelationshipElementFrom               (xmlReader)
+            | "ISubmodelElement"                    -> Aas.Xmlization.Deserialize.ISubmodelElementFrom                   (xmlReader)
+            | "Key"                                 -> Aas.Xmlization.Deserialize.KeyFrom                                (xmlReader)
+            | "LangStringDefinitionTypeIec61360"    -> Aas.Xmlization.Deserialize.LangStringDefinitionTypeIec61360From   (xmlReader)
+            | "LangStringNameType"                  -> Aas.Xmlization.Deserialize.LangStringNameTypeFrom                 (xmlReader)
+            | "LangStringPreferredNameTypeIec61360" -> Aas.Xmlization.Deserialize.LangStringPreferredNameTypeIec61360From(xmlReader)
+            | "LangStringShortNameTypeIec61360"     -> Aas.Xmlization.Deserialize.LangStringShortNameTypeIec61360From    (xmlReader)
+            | "LangStringTextType"                  -> Aas.Xmlization.Deserialize.LangStringTextTypeFrom                 (xmlReader)
+            | "LevelType"                           -> Aas.Xmlization.Deserialize.LevelTypeFrom                          (xmlReader)
+            | "MultiLanguageProperty"               -> Aas.Xmlization.Deserialize.MultiLanguagePropertyFrom              (xmlReader)
+            | "Operation"                           -> Aas.Xmlization.Deserialize.OperationFrom                          (xmlReader)
+            | "OperationVariable"                   -> Aas.Xmlization.Deserialize.OperationVariableFrom                  (xmlReader)
+            | "Property"                            -> Aas.Xmlization.Deserialize.PropertyFrom                           (xmlReader)
+            | "Qualifier"                           -> Aas.Xmlization.Deserialize.QualifierFrom                          (xmlReader)
+            | "Range"                               -> Aas.Xmlization.Deserialize.RangeFrom                              (xmlReader)
+            | "Reference"                           -> Aas.Xmlization.Deserialize.ReferenceFrom                          (xmlReader)
+            | "ReferenceElement"                    -> Aas.Xmlization.Deserialize.ReferenceElementFrom                   (xmlReader)
+            | "RelationshipElement"                 -> Aas.Xmlization.Deserialize.RelationshipElementFrom                (xmlReader)
+            | "Resource"                            -> Aas.Xmlization.Deserialize.ResourceFrom                           (xmlReader)
+            | "SpecificAssetId"                     -> Aas.Xmlization.Deserialize.SpecificAssetIdFrom                    (xmlReader)
+            | "Submodel"                            -> Aas.Xmlization.Deserialize.SubmodelFrom                           (xmlReader)
+            | "SubmodelElementCollection"           -> Aas.Xmlization.Deserialize.SubmodelElementCollectionFrom          (xmlReader)
+            | "SubmodelElementList"                 -> Aas.Xmlization.Deserialize.SubmodelElementListFrom                (xmlReader)
+            | "ValueList"                           -> Aas.Xmlization.Deserialize.ValueListFrom                          (xmlReader)
+            | "ValueReferencePair"                  -> Aas.Xmlization.Deserialize.ValueReferencePairFrom                 (xmlReader)
+
+            | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
+

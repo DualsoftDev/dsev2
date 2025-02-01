@@ -10,9 +10,11 @@
 
 	<ItemGroup>
 		<Compile Include="AasCore3.0Test.fs" />
-		<Compile Include="JsonTest.fs" />
-		<Compile Include="XmlTest.fs" />
+		<Compile Include="DsJsonTest.fs" />
+		<Compile Include="DsXmlTest.fs" />
 		<Compile Include="AasTest.fs" />
+		<Compile Include="ToAasTest.fs" />
+		<Compile Include="FromAasTest.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 
