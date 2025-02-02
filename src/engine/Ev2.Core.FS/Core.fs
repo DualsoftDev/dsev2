@@ -11,12 +11,13 @@ open System.Xml.Serialization
 
 [<AutoOpen>]
 module Core =
-
+    /// DS system
     type DsSystem(name:string) =
         inherit DsNamedObject(name)
         interface ISystem
         [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
+    /// DS flow
     type DsFlow(system:DsSystem, name:string) =
         inherit DsNamedObject(name)
         interface IFlow
@@ -26,6 +27,7 @@ module Core =
         [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
+    /// DS work
     type DsWork(flow:DsFlow, name:string) =
         inherit Vertex(name, VCFlow flow)
         interface IWork
@@ -35,26 +37,32 @@ module Core =
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
 
+    /// DS coin.  base class for Ds{Action, AutoPre, Safety, Command, Operator}
     [<AbstractClass>]
     type DsCoin(name:string) =
         inherit Vertex(name)
 
+    /// DS action.  외부 device 호출
     type DsAction(name:string) =
         inherit DsCoin(name)
         member val IsDisabled = false with get, set
         member val IsPush = false with get, set
 
+    /// DS auto-pre.  자동 운전시에만 참조하는 조건
     type DsAutoPre(name:string) =
         inherit DsCoin(name)
 
+    /// DS safety.  안전 인과 조건
     type DsSafety(name:string, safeties:string []) =
         inherit DsCoin(name)
         new(name) = DsSafety(name, [||])
         member val Safeties = safeties with get, set
 
+    /// DS command
     type DsCommand(name:string) =
         inherit DsCoin(name)
 
+    /// DS operator
     type DsOperator(name:string) =
         inherit DsCoin(name)
 
@@ -67,35 +75,42 @@ module Core =
 
     /// flow, work 의 graph 기능 공통 구현
     type internal IGraph with
+        /// Flow 혹은 Work 의 Graph 반환
         member x.GetGraph(): DsGraph =
             match x with
             | :? DsFlow as f -> f.Graph
             | :? DsWork as w -> w.Graph
             | _ -> failwith "ERROR"
 
+        /// Flow 혹은 Work 의 vertex 반환
         member x.GetVertexDetails(): ResizeArray<VertexDetail> =
             match x with
             | :? DsFlow as f -> f.Vertices
             | :? DsWork as w -> w.Vertices
             | _ -> failwith "ERROR"
 
+        /// Flow 혹은 Work 의 edges 반환
         member x.GetEdgeDTOs(): EdgeDTO[] =
             match x with
             | :? DsFlow as f -> f.Edges
             | :? DsWork as w -> w.Edges
             | _ -> failwith "ERROR"
 
+        /// Flow 혹은 Work 의 VertexContainer wrapper 반환
         member x.GetVertexContainer(): VertexContainer =
             match x with
             | :? DsFlow as f -> VCFlow f
             | :? DsWork as w -> VCWork w
             | _ -> VCNone
 
+        /// Flow 혹은 Work 의 graph 에 vertex 추가
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
             if vertex.Container <> VCNone then
                 failwith "ERROR: Vertex already has parent container"
+
             if !! x.GetGraph().AddVertex(vertex) then
                 failwith "ERROR: Failed to add.  duplicated?"
+
             VertexDetail.FromVertex(vertex) |> x.GetVertexDetails().Add
             vertex.Container <- x.GetVertexContainer()
             vertex

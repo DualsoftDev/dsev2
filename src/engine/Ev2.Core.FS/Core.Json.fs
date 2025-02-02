@@ -3,8 +3,6 @@ namespace rec Dual.Ev2
 open Newtonsoft.Json
 
 open Dual.Common.Core.FS
-open System.Xml.Serialization
-open System.IO
 open Dual.Common.Base.FS
 
 (*
