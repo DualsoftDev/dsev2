@@ -400,7 +400,7 @@ module ToAasTest =
 
 
         [<Test>]
-        member _.``System: instance -> JObj -> Json ConversionTest`` () =
+        member _.``System: instance -> JObj(SMC) -> Json ConversionTest`` () =
 
             let system2 = DsSystem.FromJson(dsJson)
             let jsonAnswer = """{
@@ -545,4 +545,26 @@ module ToAasTest =
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
 
+            ()
+
+
+
+        [<Test>]
+        member _.``System: instance -> JObj(SM) -> Json ConversionTest`` () =
+
+            let system2 = DsSystem.FromJson(dsJson)
+            let json = system2.ToSM().Stringify()
+            DcClipboard.Write(json)
+
+            let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
+
+            ()
+
+
+    /// Json Test
+    type T2() =
+        [<Test>]
+        member _.``System: instance -> Aas Test`` () =
+            let system2 = DsSystem.FromJson(dsJson)
+            let sm = system2.ToSM()
             ()

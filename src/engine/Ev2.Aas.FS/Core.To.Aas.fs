@@ -93,7 +93,7 @@ module CoreGraphToAas =
 module CoreToAas =
 
     type DsSystem with
-        /// DsFlow -> JNode
+        /// DsSystem -> JNode(SMC: Submodel Element Collection)
         member x.ToSMC(): JObj =
             let fs = x.Flows |> map _.ToSMC() |> Seq.cast<JNode>
             let value =
@@ -104,6 +104,19 @@ module CoreToAas =
                 )
             x.DsNamedObjectToSMC("System")
                 .AddValues([|value|])
+
+        member x.ToSM(): JObj =
+            let sm =
+                J.CreateJObj(
+                    category = Category.CONSTANT,
+                    modelType = ModelType.Submodel,
+                    idShort = "Identification",
+                    id = CoreAas.ridIdentification,
+                    kind = KindType.Instance,
+                    semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, CoreAas.ridIdentification)
+                ).AddValues([|x.ToSMC()|])
+            sm
+
 
         [<Obsolete("TODO")>] member x.ToENV(): JObj = null
         [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null

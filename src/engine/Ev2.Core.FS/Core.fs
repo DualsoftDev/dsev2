@@ -22,8 +22,8 @@ module Core =
         inherit DsNamedObject(name)
         interface IFlow
 
-        [<JsonIgnore>][<XmlIgnore>] member val System = system with get, set
-        [<JsonIgnore>][<XmlIgnore>] member val Graph = DsGraph()
+        [<JsonIgnore>] member val System = system with get, set
+        [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
@@ -32,7 +32,7 @@ module Core =
         inherit Vertex(name, VCFlow flow)
         interface IWork
 
-        [<JsonIgnore>][<XmlIgnore>] member val Graph = DsGraph()
+        [<JsonIgnore>] member val Graph = DsGraph()
         [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
         [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
 
@@ -125,7 +125,7 @@ module Core =
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
 
     type DsFlow with
-        [<JsonIgnore>][<XmlIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
+        [<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
 
         member x.CreateWork(workName:string) =
             if x.Vertices.Exists(fun w -> w.AsVertex().Name = workName) then
@@ -144,7 +144,7 @@ module Core =
         member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
 
     type DsWork with
-        [<JsonIgnore>][<XmlIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
+        [<JsonIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
 
         member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) = (x :> IGraph).AddVertex vertex
 
@@ -261,7 +261,7 @@ module CoreGraph =
     type Vertex(name: string, ?container:VertexContainer) =
         inherit DsNamedObject(name)
         interface INamedVertex
-        [<JsonIgnore>][<XmlIgnore>] member val Container = container |? VCNone with get, set
+        [<JsonIgnore>] member val Container = container |? VCNone with get, set
 
 
     type GraphExtension =

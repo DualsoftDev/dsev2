@@ -29,6 +29,8 @@ module CoreAas =
     /// homogenious.  list, set
     let internal sml = ModelType.SubmodelElementList
     let internal sm = ModelType.Submodel
+    let internal ridIdentification = "https://www.hsu-hh.de/aut/aas/identification"
+
 
 [<AutoOpen>]
 module JsonExtensionModule =
@@ -40,6 +42,7 @@ module JsonExtensionModule =
     type SemanticIdType =
         | ExternalReference
         | GlobalReference
+        | ModelReference
 
 
     (* 확인 필요 *)
@@ -80,6 +83,12 @@ module JsonExtensionModule =
         /// homogenious.  list, set
         | SubmodelElementList
 
+    type KindType =
+        | Template
+        | Instance
+        | TemplateQualifier
+
+
     /// Json/Xml node type.  속성 이름 혹은 node 이름
     type N =
         | AssetKind
@@ -91,6 +100,7 @@ module JsonExtensionModule =
         | Type
         | Keys
         | Key
+        | Kind
         | Value
         | ValueType
         | ModelType
@@ -180,11 +190,12 @@ module JsonExtensionModule =
             </keys>
           </semanticId>
         *)
-        member x.SetSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JNode =
-            x.Set(N.SemanticId,
-                JObj()
-                    .Set(N.Type, semanticIdType.ToString())
-                    .SetKeys(keyType, keyValue))
+        member x.SetSemantic(semantic:JObj): JObj = x.Set(N.SemanticId, semantic)
+        member x.SetSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JObj =
+            JObj()
+                .Set(N.Type, semanticIdType.ToString())
+                .SetKeys(keyType, keyValue)
+            |> x.SetSemantic
 
         /// JsonNode(=> JNode) 를 Json string 으로 변환
         member x.Stringify(?settings:JsonSerializerOptions):string =
@@ -205,7 +216,8 @@ module JsonExtensionModule =
             ?modelType:ModelType,
             ?semantic:JObj,
             ?value:'T,
-            ?values:JNode seq
+            ?values:JNode seq,
+            ?kind:KindType
         ): JObj =
             assert(value.IsNone || values.IsNone)
             x |> tee(fun j ->
@@ -216,6 +228,7 @@ module JsonExtensionModule =
                 semantic  .Iter(fun y  -> j.Set(N.SemanticId,y)            |> ignore)
                 value     .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
                 values    .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
+                kind      .Iter(fun y ->  j.Set(N.Kind, y.ToString())      |> ignore)
             )
 
     type AasCore.Aas3_0.IClass with
@@ -263,7 +276,8 @@ module JsonExtensionModule =
             ?modelType:ModelType,
             ?semantic:JObj,
             ?typedValue:'T,
-            ?values:JNode seq
+            ?values:JNode seq,
+            ?kind:KindType
         ): JObj =
             JObj().AddProperties(
                 ?category   = category,
@@ -284,9 +298,8 @@ module JsonExtensionModule =
 
         // </property>
         *)
-        static member CreateProp<'T>(idShort:string, value:'T): JObj =
-            J.CreateJObj(idShort = idShort, typedValue = value, modelType = ModelType.Property)
-
+        static member CreateProp<'T>(idShort:string, value:'T, ?category:Category, ?semantic:JObj): JObj =
+            J.CreateJObj(idShort = idShort, typedValue = value, modelType = ModelType.Property, ?semantic=semantic, ?category=category)
 
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
         static member CreateIClassFromJson<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClassFromJson<'T> json :?> 'T
