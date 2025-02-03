@@ -121,6 +121,23 @@ module JsonExtensionModule =
 
     let wrapWith(nodeType:N) (child:JNode): JObj = JObj().Set(nodeType, child)
 
+    type AasCore.Aas3_0.IClass with
+        member x.ToJson(): string =
+            let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(x);
+            jsonObject.Stringify()
+
+        /// AasCore.IClass 객체를 XML 문자열로 변환
+        member x.ToXml(): string =
+            let outputBuilder = System.Text.StringBuilder()
+            let settings = System.Xml.XmlWriterSettings(Encoding = System.Text.Encoding.UTF8, OmitXmlDeclaration = true, Indent = true)
+            use writer = System.Xml.XmlWriter.Create(outputBuilder, settings)
+            AasCore.Aas3_0.Xmlization.Serialize.To(x, writer)
+            writer.Flush()
+            outputBuilder.ToString()
+
+        // see J.CreateIClassFromJson<'T>(), J.CreateIClassFromXml<'T>() for FromJson(), FromXml() methods
+
+
 
     type System.Text.Json.Nodes.JsonObject with
         member x.Set(key:N, value:string):  JObj = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
@@ -217,7 +234,9 @@ module JsonExtensionModule =
             ?semantic:JObj,
             ?value:'T,
             ?values:JNode seq,
-            ?kind:KindType
+            ?kind:KindType,
+            ?smc:JObj seq,
+            ?sml:JObj seq
         ): JObj =
             assert(value.IsNone || values.IsNone)
             x |> tee(fun j ->
@@ -229,31 +248,16 @@ module JsonExtensionModule =
                 value     .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
                 values    .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
                 kind      .Iter(fun y ->  j.Set(N.Kind, y.ToString())      |> ignore)
+                smc       .Iter(fun ys -> j.Set(N.SubmodelElementCollection, J.CreateJArr ys) |> ignore)
+                sml       .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
             )
-
-    type AasCore.Aas3_0.IClass with
-        member x.ToJson(): string =
-            let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(x);
-            jsonObject.Stringify()
-
-        /// AasCore.IClass 객체를 XML 문자열로 변환
-        member x.ToXml(): string =
-            let outputBuilder = System.Text.StringBuilder()
-            let settings = System.Xml.XmlWriterSettings(Encoding = System.Text.Encoding.UTF8, OmitXmlDeclaration = true, Indent = true)
-            use writer = System.Xml.XmlWriter.Create(outputBuilder, settings)
-            AasCore.Aas3_0.Xmlization.Serialize.To(x, writer)
-            writer.Flush()
-            outputBuilder.ToString()
-
-        // see J.CreateIClassFromJson<'T>(), J.CreateIClassFromXml<'T>() for FromJson(), FromXml() methods
-
 
 
     // Json 관련 static method 들을 모아놓은 static class
     [<AbstractClass; Sealed>]
     type J() =
-        /// JNode[] -> JArr 변환
-        static member CreateJArr(jns:#JNode seq): JArr = jns |> Seq.cast<JNode> |> toArray |> JArr
+        /// JObj[] -> JArr 변환
+        static member CreateJArr(jns:JObj seq): JArr = jns |> Seq.cast<JNode> |> toArray |> JArr
 
         static member WrapWith(nodeType:N, child:JNode): JNode = wrapWith nodeType child
 
@@ -277,7 +281,9 @@ module JsonExtensionModule =
             ?semantic:JObj,
             ?typedValue:'T,
             ?values:JNode seq,
-            ?kind:KindType
+            ?kind:KindType,
+            ?smc:JObj seq,
+            ?sml:JObj seq
         ): JObj =
             JObj().AddProperties(
                 ?category   = category,
@@ -285,8 +291,12 @@ module JsonExtensionModule =
                 ?id         = id,
                 ?modelType  = modelType,
                 ?semantic   = semantic,
-                ?value = typedValue,
-                ?values     = values)
+                ?value      = typedValue,
+                ?values     = values,
+                ?kind       = kind,
+                ?smc        = smc,
+                ?sml        = sml
+            )
 
         /// value 속성을 가진 JObj 를 생성
         (*
