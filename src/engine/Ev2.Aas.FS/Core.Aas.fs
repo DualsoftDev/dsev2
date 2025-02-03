@@ -22,12 +22,12 @@ module Aas =
     type SubmodelElementList = AasCore.Aas3_0.SubmodelElementList
     type IClass = AasCore.Aas3_0.IClass
 
-[<AutoOpen>]
-module CoreAas =
-    /// heterogeneous.  struct
+module A =
+    /// ModelType.SubmodelElementCollection.   heterogeneous.  struct
     let internal smc = ModelType.SubmodelElementCollection
-    /// homogenious.  list, set
+    /// ModelType.SubmodelElementList.   homogenious.  list, set
     let internal sml = ModelType.SubmodelElementList
+    /// ModelType.Submodel
     let internal sm = ModelType.Submodel
     let internal ridIdentification = "https://www.hsu-hh.de/aut/aas/identification"
 
@@ -78,6 +78,7 @@ module JsonExtensionModule =
         | ReferenceElement
         | RelationshipElement
         | Submodel
+        | SubmodelElement
         /// heterogeneous.  struct
         | SubmodelElementCollection
         /// homogenious.  list, set
@@ -108,6 +109,7 @@ module JsonExtensionModule =
         | Id
         | IdShort
         | Submodel
+        | SubmodelElement
         | SubmodelElements
         /// heterogeneous.  struct
         | SubmodelElementCollection
@@ -252,6 +254,13 @@ module JsonExtensionModule =
                 sml       .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
             )
 
+        member x.WrapWith(
+            ?modelType:ModelType
+        ): JObj =
+            JObj()
+            |> tee(fun j ->
+                modelType .Iter(fun y  -> j.Set(N.ModelType, y.ToString()) |> ignore)
+            )
 
     // Json 관련 static method 들을 모아놓은 static class
     [<AbstractClass; Sealed>]
@@ -259,7 +268,7 @@ module JsonExtensionModule =
         /// JObj[] -> JArr 변환
         static member CreateJArr(jns:JObj seq): JArr = jns |> Seq.cast<JNode> |> toArray |> JArr
 
-        static member WrapWith(nodeType:N, child:JNode): JNode = wrapWith nodeType child
+        //static member WrapWith(nodeType:N, child:JNode): JNode = wrapWith nodeType child
 
         /// "semanticId" 에 할당하기 위힌 노드를 생성
         static member CreateSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JObj =
@@ -298,15 +307,11 @@ module JsonExtensionModule =
                 ?sml        = sml
             )
 
-        /// value 속성을 가진 JObj 를 생성
+        /// value 속성을 가진 <property> JObj 를 생성
         (*
-        // <property>
-
           <idShort>something3fdd3eb4</idShort>
           <valueType>xs:double</valueType>
           <value>1234.01234</value>
-
-        // </property>
         *)
         static member CreateProp<'T>(idShort:string, value:'T, ?category:Category, ?semantic:JObj): JObj =
             J.CreateJObj(idShort = idShort, typedValue = value, modelType = ModelType.Property, ?semantic=semantic, ?category=category)

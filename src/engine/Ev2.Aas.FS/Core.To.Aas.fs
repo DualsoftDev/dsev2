@@ -32,7 +32,7 @@ module CoreGraphToAas =
             let edge =
                 J.CreateJObj(
                     idShort = "Edge",
-                    modelType = smc,
+                    modelType = A.smc,
                     values = [| et; source; target; |]
                 )
 
@@ -66,7 +66,7 @@ module CoreGraphToAas =
             let vs =
                 J.CreateJObj(
                     idShort = "Vertices",
-                    modelType = smc,
+                    modelType = A.smc,
                     values = vs
                 )
 
@@ -74,14 +74,14 @@ module CoreGraphToAas =
             let es =
                 J.CreateJObj(
                     idShort = "Edges",
-                    modelType = smc,
+                    modelType = A.smc,
                     values = es
                 )
 
             let graph =
                 J.CreateJObj(
                     idShort = "Graph",
-                    modelType = smc,
+                    modelType = A.smc,
                     values = [|vs; es|]
                 )
             graph
@@ -99,22 +99,27 @@ module CoreToAas =
             let value =
                 J.CreateJObj(
                     idShort = "Flows",
-                    modelType = smc,
+                    modelType = A.smc,
                     values = fs
                 )
             x.DsNamedObjectToSMC("System")
                 .AddValues([|value|])
 
         member x.ToSM(): JObj =
+            let sml =
+                let sysName = J.CreateProp("Name", x.Name)
+                let flows = x.Flows.Map _.ToSMC()
+                ([sysName] @ flows) //|> map (fun smc -> smc.WrapWith(modelType = ModelType.SubmodelElement))
             let sm =
                 J.CreateJObj(
                     category = Category.CONSTANT,
                     modelType = ModelType.Submodel,
                     idShort = "Identification",
-                    id = CoreAas.ridIdentification,
+                    id = A.ridIdentification,
                     kind = KindType.Instance,
-                    semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, CoreAas.ridIdentification)
-                ).AddValues([|x.ToSMC()|])
+                    semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, A.ridIdentification),
+                    sml = sml
+                )//.AddValues([|x.ToSMC()|])
             sm
 
 
@@ -167,8 +172,9 @@ module CoreToAas =
 
 
     type DsNamedObject with
-        member internal x.DsNamedObjectToSMC(typeName:string): JObj =
-            J.CreateJObj(idShort = typeName, modelType = smc, values=[J.CreateProp("Name", x.Name)])
+        member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
+            let modelType = modelType |? A.smc
+            J.CreateJObj(idShort = typeName, modelType = modelType, values=[J.CreateProp("Name", x.Name)])
 
     type VertexDetail with
         member x.ToSMC(): JObj =
