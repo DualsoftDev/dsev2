@@ -32,7 +32,7 @@ module CoreGraphBase =
 
     /// Template class for DS Graph<'V, 'E>.   coppied from Engine.Common.TDGraph<>
     type TGraph<'V, 'E
-            when 'V :> INamed and 'V : equality
+            when 'V :> IVertexKey and 'V : equality
             and 'E :> EdgeBase<'V> and 'E: equality> (
             vertices_:'V seq,
             edges_:'E seq,

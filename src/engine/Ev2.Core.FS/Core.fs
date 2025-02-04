@@ -261,6 +261,9 @@ module CoreGraph =
     type Vertex(name: string, ?container:VertexContainer) =
         inherit DsNamedObject(name)
         interface INamedVertex
+        interface IVertexKey with
+            member x.VertexKey with get() = x.Name and set(v) = x.Name <- v
+
         [<JsonIgnore>] member val Container = container |? VCNone with get, set
 
 
