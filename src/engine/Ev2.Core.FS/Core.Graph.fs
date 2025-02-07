@@ -7,6 +7,7 @@ open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 open System.Runtime.CompilerServices
 open System.Xml.Serialization
+open System
 
 type CausalEdgeType =
     | Start
@@ -20,11 +21,16 @@ type CausalEdgeType =
 /// 이름 속성을 가진 추상 클래스
 [<AbstractClass>]
 type DsNamedObject(name: string) =
-    [<JsonProperty(Order = -100)>]
-    member val Name = name with get, set
+    [<JsonProperty(Order = -100)>] member val Name = name with get, set
     interface INamed with
         member x.Name with get() = x.Name and set(v) = x.Name <- v
 
+[<AbstractClass>]
+type DsNamedGuidObject(name: string, ?guid:Guid) =
+    inherit DsNamedObject(name)
+    interface IGuid with
+        member x.Guid with get () = x.Guid and set v = x.Guid <- v
+    [<JsonProperty(Order = -99)>] member val Guid = guid |? Guid.NewGuid() with get, set
 
 
 [<AutoOpen>]

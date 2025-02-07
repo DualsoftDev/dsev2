@@ -171,7 +171,7 @@ module CoreToAas =
         member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Operator")
 
 
-    type DsNamedObject with
+    type DsNamedGuidObject with
         member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
             let modelType = modelType |? A.smc
             J.CreateJObj(idShort = typeName, modelType = modelType, values=[J.CreateProp("Name", x.Name)])

@@ -26,21 +26,25 @@ module DsJson =
 
     let dsJson = """{
   "Name": "system1",
+  "Guid": "00000000-0000-0000-0000-000000000000",
   "Flows": [
     {
       "Name": "F1",
+      "Guid": "00000000-0000-0000-0000-000000000000",
       "Vertices": [
         {
           "Case": "Work",
           "Fields": [
             {
               "Name": "F1W1",
+              "Guid": "00000000-0000-0000-0000-000000000000",
               "Vertices": [
                 {
                   "Case": "Action",
                   "Fields": [
                     {
                       "Name": "F1W1C1",
+                      "Guid": "00000000-0000-0000-0000-000000000000",
                       "IsDisabled": false,
                       "IsPush": false
                     }
@@ -51,6 +55,7 @@ module DsJson =
                   "Fields": [
                     {
                       "Name": "F1W1C2",
+                      "Guid": "00000000-0000-0000-0000-000000000000",
                       "IsDisabled": false,
                       "IsPush": false
                     }
@@ -83,7 +88,8 @@ module DsJson =
             let jsonText = system.ToJson();
             DcClipboard.Write(jsonText)
 
-            jsonText === dsJson
+            let xxx = jsonText.ZeroFillGuid()
+            jsonText.ZeroFillGuid() === dsJson
 
             let system2 = DsSystem.FromJson(jsonText)
             let f1 = system2.Flows[0]

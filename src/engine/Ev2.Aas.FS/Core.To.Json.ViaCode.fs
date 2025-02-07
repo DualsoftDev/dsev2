@@ -7,7 +7,7 @@ open Dual.Ev2
 
 
 module CoreToJsonViaCode =
-    type DsNamedObject with
+    type DsNamedGuidObject with
         member x.NamedToJsonViaCode(): JObj =
             let jo = JObj()
             jo["name"] <- x.Name
