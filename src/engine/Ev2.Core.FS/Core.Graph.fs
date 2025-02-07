@@ -30,8 +30,17 @@ type DsNamedGuidObject(name: string, ?guid:Guid) =
     inherit DsNamedObject(name)
     interface IGuid with
         member x.Guid with get () = x.Guid and set v = x.Guid <- v
-    [<JsonProperty(Order = -99)>] member val Guid = guid |? Guid.NewGuid() with get, set
+    [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
 
+[<AbstractClass>]
+type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid) =
+    inherit DsNamedGuidObject(name, ?guid=vertexGuid)
+
+    interface INamedVertex
+    interface IVertexKey with
+        member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
+    /// Vertex 가 가리키는 실제 객체의 Guid
+    [<JsonProperty(Order = -98)>] member val ContentGuid = contentGuid |?? (fun () -> Guid.NewGuid()) with get, set
 
 [<AutoOpen>]
 module CoreGraphBase =

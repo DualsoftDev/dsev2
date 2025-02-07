@@ -156,13 +156,6 @@ module Core =
 
 
 module 새버젼=
-    [<AbstractClass>]
-    type GuidVertex(name: string, ?guid:Guid) =
-        inherit DsNamedGuidObject(name, ?guid=guid)
-
-        interface INamedVertex
-        interface IVertexKey with
-            member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
 
     type FlowGraph = TGraph<VWork, VwEdge>
 
@@ -202,6 +195,7 @@ module 새버젼=
 module CoreGraph =
 
     type DsGraph = TGraph<Vertex, Edge>
+
 
     type Edge internal (source:Vertex, target:Vertex, edgeType:CausalEdgeType) =
         inherit EdgeBase<Vertex>(source, target, edgeType)
