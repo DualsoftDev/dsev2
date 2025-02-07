@@ -14,13 +14,13 @@ open System
 module Core =
     /// DS system
     type DsSystem(name:string) =
-        inherit DsNamedGuidObject(name)
+        inherit NamedGuidObject(name)
         interface ISystem
         [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
     /// DS flow
     type DsFlow(system:DsSystem, name:string) =
-        inherit DsNamedGuidObject(name)
+        inherit NamedGuidObject(name)
         interface IFlow
 
         [<JsonIgnore>] member val System = system with get, set
@@ -219,10 +219,10 @@ module CoreGraph =
         | VCWork of DsWork
         with
             /// VertexContainer Union type 의 내부 알맹이 공통 구조인 DsNamedObject 를 반환
-            member x.AsNamedObject():DsNamedGuidObject =
+            member x.AsNamedObject():NamedGuidObject =
                 match x with
-                | VCFlow f -> f :> DsNamedGuidObject
-                | VCWork w -> w :> DsNamedGuidObject
+                | VCFlow f -> f :> NamedGuidObject
+                | VCWork w -> w :> NamedGuidObject
                 | _ -> failwith "ERROR"
 
             /// VertexContainer 의 상위 System
@@ -289,7 +289,7 @@ module CoreGraph =
     /// INamedVertex를 구현한 Vertex 추상 클래스
     [<AbstractClass>]
     type Vertex(name: string, ?container:VertexContainer) =
-        inherit DsNamedGuidObject(name)
+        inherit NamedGuidObject(name)
         interface INamedVertex
         interface IVertexKey with
             member x.VertexKey with get() = x.Name and set(v) = x.Name <- v
@@ -317,7 +317,7 @@ module CoreGraph =
 
         /// fqdnObj 기준 상위로 System 찾기
         [<Extension>]
-        static member GetSystem(fqdnObj:DsNamedGuidObject):DsSystem =
+        static member GetSystem(fqdnObj:NamedGuidObject):DsSystem =
             match fqdnObj with
             | :? DsSystem   as s -> s
             | :? DsFlow     as f -> f.System
@@ -329,7 +329,7 @@ module CoreGraph =
 
         /// fqdnObj 기준 상위로 Flow 찾기
         [<Extension>]
-        static member GetFlow(fqdnObj:DsNamedGuidObject):DsFlow =
+        static member GetFlow(fqdnObj:NamedGuidObject):DsFlow =
             match fqdnObj with
             | :? DsFlow     as f -> f
             | :? DsWork     as w -> w.Flow
@@ -340,7 +340,7 @@ module CoreGraph =
 
         /// fqdnObj 기준 상위로 Work 찾기
         [<Extension>]
-        static member TryGetWork(fqdnObj:DsNamedGuidObject):DsWork option =
+        static member TryGetWork(fqdnObj:NamedGuidObject):DsWork option =
             match fqdnObj with
             | :? DsWork     as w -> Some w
             | :? DsAction   as a -> a.Container.OptWork
@@ -350,7 +350,7 @@ module CoreGraph =
 
         /// System 이름부터 시작하는 FQDN
         [<Extension>]
-        static member Fqdn(fqdnObj:DsNamedGuidObject) =
+        static member Fqdn(fqdnObj:NamedGuidObject) =
             match fqdnObj with
             | :? DsSystem   as s -> s.Name
             | :? DsFlow     as f -> $"{f.System.Name}.{f.Name}"
@@ -365,7 +365,7 @@ module CoreGraph =
         ///
         /// e.g : system1.TryFindLqdnObj(["flow1"; "work1"; "call1"]) === call1
         [<Extension>]
-        static member TryFindLqdnObj(fqdnObj:DsNamedGuidObject, lqdn:string seq) =
+        static member TryFindLqdnObj(fqdnObj:NamedGuidObject, lqdn:string seq) =
             match tryHeadAndTail lqdn with
             | Some (h, t) ->
                 match fqdnObj with
@@ -379,7 +379,7 @@ module CoreGraph =
         /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
         ///
         /// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
-        [<Extension>] static member TryFindLqdnObj(fqdnObj:DsNamedGuidObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
+        [<Extension>] static member TryFindLqdnObj(fqdnObj:NamedGuidObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
 
 
 

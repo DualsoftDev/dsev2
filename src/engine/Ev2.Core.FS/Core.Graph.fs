@@ -20,21 +20,21 @@ type CausalEdgeType =
 
 /// 이름 속성을 가진 추상 클래스
 [<AbstractClass>]
-type DsNamedObject(name: string) =
+type NamedObject(name: string) =
     [<JsonProperty(Order = -100)>] member val Name = name with get, set
     interface INamed with
         member x.Name with get() = x.Name and set(v) = x.Name <- v
 
 [<AbstractClass>]
-type DsNamedGuidObject(name: string, ?guid:Guid) =
-    inherit DsNamedObject(name)
+type NamedGuidObject(name: string, ?guid:Guid) =
+    inherit NamedObject(name)
     interface IGuid with
         member x.Guid with get () = x.Guid and set v = x.Guid <- v
     [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
 
 [<AbstractClass>]
 type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid) =
-    inherit DsNamedGuidObject(name, ?guid=vertexGuid)
+    inherit NamedGuidObject(name, ?guid=vertexGuid)
 
     interface INamedVertex
     interface IVertexKey with
