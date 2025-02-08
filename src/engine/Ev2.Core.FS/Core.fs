@@ -10,8 +10,14 @@ open System
 
 [<AutoOpen>]
 module Core =
+    let private getGuid (container:DsItem option) =
+        match container with
+        | None -> Guid.NewGuid()
+        | Some c when isItNull(c) -> Guid.NewGuid()
+        | Some c -> c.Guid
+
     type DsItem(name:string, ?container:DsItem) =
-        inherit NamedGuidObject(name)
+        inherit NamedGuidObject(name, getGuid(container))
         [<JsonIgnore>] member val Container = container |? getNull<DsItem>() with get, set
 
     /// DS system
@@ -47,6 +53,8 @@ module Core =
     type DsWork(flow:DsFlow, name:string) =
         inherit DsItemWithGraph(name, container=flow)
         interface IWork
+        //new(name) = DsWork(getNull<DsFlow>(), name)
+        //new() = DsWork(getNull<DsFlow>(), null)
 
         [<JsonIgnore>]
         member x.Flow
@@ -99,8 +107,9 @@ module Core =
 //module CoreCreate =
 
 
-    type GuidVertex with
-        [<JsonIgnore>] member internal x.Content = x.ContentImpl :?> DsItem
+    type GuidVertex with    // Content
+        [<JsonIgnore>] member internal x.Content = x.ContentImpl |> box :?> DsItem
+        [<JsonIgnore>] member internal x.Name = x.Content.Name
 
 
     type DsSystem with
@@ -160,7 +169,7 @@ module Core =
             match x, dsItem with
             | (:? DsFlow, :? DsWork)
             | (:? DsWork, :? DsAction) ->
-                GuidVertex(dsItem.Name, content=dsItem)
+                GuidVertex(dsItem)
                 |> tee( x.AddVertexBase >> ignore)
             | _ ->
                 failwith "ERROR"
@@ -223,12 +232,12 @@ module CoreGraph =
 
 
     type VertexDTO = {
-        mutable Name:string
+        //mutable Name:string
         mutable Guid:Guid
         mutable ContentGuid:Guid
     } with
         static member FromGraph(graph:DsGraph): VertexDTO[] =
-            let vs = graph.Vertices.Map(fun v -> { Name = v.Name; Guid = v.Guid; ContentGuid = v.Content.Guid }).ToArray()
+            let vs = graph.Vertices.Map(fun v -> { Guid = v.Guid; ContentGuid = v.Content.Guid }).ToArray()
             vs
 
     ///// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다. (e.g "Case": "Action", "Fields": [...])
@@ -346,7 +355,7 @@ module CoreGraph =
         ///
         /// e.g : system1.TryFindLqdnObj(["flow1"; "work1"; "call1"]) === call1
         [<Extension>]
-        static member TryFindLqdnObj(fqdnObj:NamedGuidObject, lqdn:string seq) =
+        static member TryFindLqdnObj(fqdnObj:GuidObject, lqdn:string seq) =
             match tryHeadAndTail lqdn with
             | Some (h, t) ->
                 match fqdnObj with
@@ -360,7 +369,7 @@ module CoreGraph =
         /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
         ///
         /// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
-        [<Extension>] static member TryFindLqdnObj(fqdnObj:NamedGuidObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
+        [<Extension>] static member TryFindLqdnObj(fqdnObj:GuidObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
 
 
 

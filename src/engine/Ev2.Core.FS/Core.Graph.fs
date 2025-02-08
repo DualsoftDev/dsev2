@@ -26,17 +26,22 @@ type NamedObject(name: string) =
         member x.Name with get() = x.Name and set(v) = x.Name <- v
 
 [<AbstractClass>]
-type NamedGuidObject(name: string, ?guid:Guid) =
-    inherit NamedObject(name)
+type GuidObject(?guid:Guid) =
     interface IGuid with
         member x.Guid with get () = x.Guid and set v = x.Guid <- v
     [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
 
+[<AbstractClass>]
+type NamedGuidObject(name: string, ?guid:Guid) =
+    inherit GuidObject(?guid=guid)
+    [<JsonProperty(Order = -100)>] member val Name = name with get, set
+    interface INamed with
+        member x.Name with get() = x.Name and set(v) = x.Name <- v
 
-type GuidVertex(name: string, content:NamedGuidObject, ?vertexGuid:Guid) =  // content: 실체는 DsItem
-    inherit NamedGuidObject(name, ?guid=vertexGuid)
 
-    interface INamedVertex
+type GuidVertex(content:GuidObject, ?vertexGuid:Guid) =  // content: 실체는 DsItem
+    inherit GuidObject(?guid=vertexGuid)
+
     interface IVertexKey with
         member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
     member internal x.ContentImpl = content

@@ -4,16 +4,17 @@ namespace rec Dual.Ev2.Aas
 
 open Dual.Common.Core.FS
 open Dual.Ev2
+open Dual.Common.Base.FS
 
 
 module CoreToJsonViaCode =
-    type NamedGuidObject with
+    type INamed with
         member x.NamedToJsonViaCode(): JObj =
             let jo = JObj()
             jo["name"] <- x.Name
             jo
 
-    type GuidVertex with
+    type GuidVertex with    // ToJsonViaCode
         member x.ToJsonViaCode(): JObj =
             assert(false)
             null
@@ -29,7 +30,6 @@ module CoreToJsonViaCode =
     type VertexDTO with
         member x.ToJsonViaCode(): JObj =
             let jo = JObj()
-            jo["name"] <- x.Name
             jo["guid"] <- x.Guid
             jo["contentGuid"] <- x.ContentGuid
             jo

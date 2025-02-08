@@ -5,6 +5,7 @@ namespace rec Dual.Ev2.Aas
 open Dual.Common.Core.FS
 open Dual.Ev2
 open System
+open Dual.Common.Base.FS
 
 [<AutoOpen>]
 module CoreGraphToAas =
@@ -45,7 +46,6 @@ module CoreGraphToAas =
                 idShort = "Vertex",
                 modelType = A.smc,
                 values = [|
-                    J.CreateProp("Name", x.Name)
                     J.CreateProp("Guid", x.Guid.ToString())
                     J.CreateProp("ContentGuid", x.ContentGuid.ToString())
                 |]
@@ -66,7 +66,7 @@ module CoreGraphToAas =
     *)
 
 
-    type GuidVertex with
+    type GuidVertex with    // ToSMC()
         /// Convert GridVertex to submodelElementCollection
         member x.ToSMC(): JObj =
             assert(false)
@@ -189,7 +189,7 @@ module CoreToAas =
         member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Operator")
 
 
-    type NamedGuidObject with
+    type INamed with
         member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
             let modelType = modelType |? A.smc
             J.CreateJObj(idShort = typeName, modelType = modelType, values=[J.CreateProp("Name", x.Name)])

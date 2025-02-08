@@ -28,45 +28,43 @@ module DsJson =
 
     let dsJson = """{
   "Name": "system1",
-  "Guid": "150f8f04-f2ec-45ce-a8d5-a1d943ffeeb0",
+  "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
   "Flows": [
     {
       "Name": "F1",
-      "Guid": "da898253-1aa4-45a4-aec9-de5d98af615d",
+      "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
       "Works": [
         {
           "Name": "F1W1",
-          "Guid": "1b8f21d0-89b2-47db-8e51-7aa22044c548",
+          "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
           "Actions": [
             {
               "Name": "F1W1C1",
-              "Guid": "3861d208-ac99-4efc-9c68-06d5314dcb33",
+              "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
               "IsDisabled": false,
               "IsPush": false
             },
             {
               "Name": "F1W1C2",
-              "Guid": "d5b74923-dba5-4cab-b1e0-b58904d3bb84",
+              "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
               "IsDisabled": false,
               "IsPush": false
             }
           ],
           "VertexDTOs": [
             {
-              "Name": "F1W1C1",
-              "Guid": "a699ab5c-25b5-4387-8c1d-244aa8247823",
-              "ContentGuid": "3861d208-ac99-4efc-9c68-06d5314dcb33"
+              "Guid": "0f866b00-8ef8-4a44-9bde-f124f14110cb",
+              "ContentGuid": "951b7709-868a-4cad-a74f-3458cc649244"
             },
             {
-              "Name": "F1W1C2",
-              "Guid": "de94063d-6cc7-43e6-90da-6162dc36ce31",
-              "ContentGuid": "d5b74923-dba5-4cab-b1e0-b58904d3bb84"
+              "Guid": "d33a35d7-ce45-407d-940e-5d7a0dc8f87a",
+              "ContentGuid": "951b7709-868a-4cad-a74f-3458cc649244"
             }
           ],
           "EdgeDTOs": [
             {
-              "Source": "a699ab5c-25b5-4387-8c1d-244aa8247823",
-              "Target": "de94063d-6cc7-43e6-90da-6162dc36ce31",
+              "Source": "0f866b00-8ef8-4a44-9bde-f124f14110cb",
+              "Target": "d33a35d7-ce45-407d-940e-5d7a0dc8f87a",
               "EdgeType": {
                 "Case": "Start"
               }
@@ -76,9 +74,8 @@ module DsJson =
       ],
       "VertexDTOs": [
         {
-          "Name": "F1W1",
-          "Guid": "99ff2d4f-0dc1-4da4-836e-63dab3c5b1ca",
-          "ContentGuid": "1b8f21d0-89b2-47db-8e51-7aa22044c548"
+          "Guid": "249712fa-113f-407d-837a-faff6b80e62c",
+          "ContentGuid": "951b7709-868a-4cad-a74f-3458cc649244"
         }
       ],
       "EdgeDTOs": []

@@ -45,7 +45,7 @@ module CoreJson =
             for v in x.VertexDTOs do
                 match x.Works.TryFind(fun a -> a.Guid = v.ContentGuid) with
                 | Some w ->
-                    let gv = GuidVertex(v.Name, w, v.Guid)
+                    let gv = GuidVertex(w, v.Guid)
                     x.Graph.Vertices.Add gv |> ignore
                 | None -> failwith $"Work not found for VertexDTO: {v}"
 
@@ -63,7 +63,7 @@ module CoreJson =
             for v in x.VertexDTOs do
                 match x.Actions.TryFind(fun a -> a.Guid = v.ContentGuid) with
                 | Some a ->
-                    let gv = GuidVertex(v.Name, a, v.Guid)
+                    let gv = GuidVertex(a, v.Guid)
                     x.Graph.Vertices.Add gv |> ignore
                 | None -> failwith $"Action not found for VertexDTO: {v}"
 
