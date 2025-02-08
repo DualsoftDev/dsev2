@@ -28,56 +28,61 @@ module DsJson =
 
     let dsJson = """{
   "Name": "system1",
-  "Guid": "00000000-0000-0000-0000-000000000000",
+  "Guid": "5904f1a1-3ffa-42b1-ae6c-1be49de907db",
+  "Container": null,
   "Flows": [
     {
       "Name": "F1",
-      "Guid": "00000000-0000-0000-0000-000000000000",
-      "Vertices": [
+      "Guid": "73695d86-d642-4ba2-9b3f-7aa0e8f66b96",
+      "Works": [
         {
-          "Case": "Work",
-          "Fields": [
+          "Name": "F1W1",
+          "Guid": "2d3ccb5a-8957-4b34-93e2-8618027ebbcf",
+          "Actions": [
             {
-              "Name": "F1W1",
-              "Guid": "00000000-0000-0000-0000-000000000000",
-              "Vertices": [
-                {
-                  "Case": "Action",
-                  "Fields": [
-                    {
-                      "Name": "F1W1C1",
-                      "Guid": "00000000-0000-0000-0000-000000000000",
-                      "IsDisabled": false,
-                      "IsPush": false
-                    }
-                  ]
-                },
-                {
-                  "Case": "Action",
-                  "Fields": [
-                    {
-                      "Name": "F1W1C2",
-                      "Guid": "00000000-0000-0000-0000-000000000000",
-                      "IsDisabled": false,
-                      "IsPush": false
-                    }
-                  ]
-                }
-              ],
-              "Edges": [
-                {
-                  "Source": "F1W1C1",
-                  "Target": "F1W1C2",
-                  "EdgeType": {
-                    "Case": "Start"
-                  }
-                }
-              ]
+              "Name": "F1W1C1",
+              "Guid": "08bd0cfc-2010-478a-813a-546aa373879c",
+              "IsDisabled": false,
+              "IsPush": false
+            },
+            {
+              "Name": "F1W1C2",
+              "Guid": "726f5fc9-8145-47f8-acf8-7addb0adad31",
+              "IsDisabled": false,
+              "IsPush": false
+            }
+          ],
+          "VertexDTOs": [
+            {
+              "Name": "F1W1C1",
+              "Guid": "587c251a-035d-42e6-a9ee-1d812089477d",
+              "ContentGuid": "08bd0cfc-2010-478a-813a-546aa373879c"
+            },
+            {
+              "Name": "F1W1C2",
+              "Guid": "6c1bc1d3-5cb0-4d8d-8a7e-5b05a89ef044",
+              "ContentGuid": "726f5fc9-8145-47f8-acf8-7addb0adad31"
+            }
+          ],
+          "EdgeDTOs": [
+            {
+              "Source": "587c251a-035d-42e6-a9ee-1d812089477d",
+              "Target": "6c1bc1d3-5cb0-4d8d-8a7e-5b05a89ef044",
+              "EdgeType": {
+                "Case": "Start"
+              }
             }
           ]
         }
       ],
-      "Edges": []
+      "VertexDTOs": [
+        {
+          "Name": "F1W1",
+          "Guid": "8b7ff089-764f-4fbd-9603-9694b9f173cd",
+          "ContentGuid": "2d3ccb5a-8957-4b34-93e2-8618027ebbcf"
+        }
+      ],
+      "EdgeDTOs": []
     }
   ]
 }"""
@@ -92,14 +97,16 @@ module DsJson =
             DcClipboard.Write(jsonText)
 
             let xxx = jsonText.ZeroFillGuid()
-            jsonText.ZeroFillGuid() === dsJson
+            jsonText.ZeroFillGuid() === dsJson.ZeroFillGuid()
 
             let system2 = DsSystem.FromJson(jsonText)
             let f1 = system2.Flows[0]
             let f1w1 = f1.Works[0]
             f1.System === system2
             f1w1.Flow === f1
-            let f1w1c1, f1w1c2 = f1w1.Vertices[0], f1w1.Vertices[1]
+
+            let vs = f1w1.Vertices.ToArray()
+            let f1w1c1, f1w1c2 = vs[0], vs[1]
             f1w1c1.Content.Container === f1w1
             f1w1c2.Content.Container === f1w1
 
@@ -172,8 +179,9 @@ module DsJson =
             let system = DsSystem.FromJson(dsJson)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
-            let f1w1c1 = f1w1.Vertices[0].Content :?> DsAction
-            let f1w1c2 = f1w1.Vertices[1].Content :?> DsAction
+            let vs = f1w1.Vertices.ToArray()
+            let f1w1c1 = vs[0].Content :?> DsAction
+            let f1w1c2 = vs[1].Content :?> DsAction
 
             system.Fqdn() === "system1"
             f1    .Fqdn() === "system1.F1"
@@ -230,8 +238,9 @@ module DsJson =
             let system = DsSystem.FromJson(dsJson)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
-            let f1w1c1 = f1w1.Vertices[0].Content :?> DsAction
-            let f1w1c2 = f1w1.Vertices[1].Content :?> DsAction
+            let vs = f1w1.Vertices.ToArray()
+            let f1w1c1 = vs[0].Content :?> DsAction
+            let f1w1c2 = vs[1].Content :?> DsAction
 
             //let f1w1s1 = f1w1.AddVertex(new DsSafety("F1W1Saf1", [|"F2.W1.C999"; "F2.W1.C998"; |]))
             //f1w1.CreateEdge(f1w1s1, f1w1c1, CausalEdgeType.Start) |> verifyNonNull

@@ -38,6 +38,18 @@ module CoreGraphToAas =
 
             edge
 
+    type VertexDTO with
+        /// Convert EdgeDTO to submodelElementCollection
+        member x.ToSMC(): JObj =
+            J.CreateJObj(
+                idShort = "Vertex",
+                modelType = A.smc,
+                values = [|
+                    J.CreateProp("Name", x.Name)
+                    J.CreateProp("Guid", x.Guid.ToString())
+                    J.CreateProp("ContentGuid", x.ContentGuid.ToString())
+                |]
+            )
 
     (*
 		<category></category>
@@ -68,7 +80,7 @@ module CoreGraphToAas =
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
-            let vs = x.Vertices |> map _.ToSMC() |> Seq.cast<JNode>
+            let vs = x.VertexDTOs |> map _.ToSMC() |> Seq.cast<JNode>
             let vs =
                 J.CreateJObj(
                     idShort = "Vertices",
@@ -76,7 +88,7 @@ module CoreGraphToAas =
                     values = vs
                 )
 
-            let es = x.Edges  |> map _.ToSMC()  |> Seq.cast<JNode>
+            let es = x.EdgeDTOs  |> map _.ToSMC()  |> Seq.cast<JNode>
             let es =
                 J.CreateJObj(
                     idShort = "Edges",

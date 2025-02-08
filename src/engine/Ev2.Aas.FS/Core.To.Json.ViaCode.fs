@@ -26,6 +26,15 @@ module CoreToJsonViaCode =
             jo["type"] <- x.EdgeType.ToString()
             jo
 
+    type VertexDTO with
+        member x.ToJsonViaCode(): JObj =
+            let jo = JObj()
+            jo["name"] <- x.Name
+            jo["guid"] <- x.Guid
+            jo["contentGuid"] <- x.ContentGuid
+            jo
+
+
     type DsSystem with
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
@@ -38,8 +47,8 @@ module CoreToJsonViaCode =
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
             jo["type"] <- "Flow"
-            let vs = J.CreateJArr(x.Vertices.Map(_.ToJsonViaCode()))
-            let es = J.CreateJArr(x.Edges.Map(_.ToJsonViaCode()))
+            let vs = J.CreateJArr(x.VertexDTOs.Map(_.ToJsonViaCode()))
+            let es = J.CreateJArr(x.EdgeDTOs.Map(_.ToJsonViaCode()))
             jo["vertices"] <- vs
             jo["edges"] <- es
             jo
@@ -49,8 +58,8 @@ module CoreToJsonViaCode =
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
             jo["type"] <- "Work"
-            let vs = J.CreateJArr(x.Vertices.Map(_.ToJsonViaCode()))
-            let es = J.CreateJArr(x.Edges.Map(_.ToJsonViaCode()))
+            let vs = J.CreateJArr(x.VertexDTOs.Map(_.ToJsonViaCode()))
+            let es = J.CreateJArr(x.EdgeDTOs.Map(_.ToJsonViaCode()))
             jo["vertices"] <- vs
             jo["edges"] <- es
             jo

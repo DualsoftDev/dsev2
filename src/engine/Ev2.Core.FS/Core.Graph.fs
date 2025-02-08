@@ -33,22 +33,13 @@ type NamedGuidObject(name: string, ?guid:Guid) =
     [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
 
 
-type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid, ?content:NamedGuidObject) =  // content: 실체는 DsItem
+type GuidVertex(name: string, content:NamedGuidObject, ?vertexGuid:Guid) =  // content: 실체는 DsItem
     inherit NamedGuidObject(name, ?guid=vertexGuid)
-
-    let mutable content:NamedGuidObject = content |? getNull<NamedGuidObject>()
 
     interface INamedVertex
     interface IVertexKey with
         member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
-
-    /// Vertex 가 가리키는 실제 객체의 Guid
-    [<JsonProperty(Order = -98)>] member val ContentGuid = contentGuid |?? (fun () -> Guid.NewGuid()) with get, set
-    member internal x.ContentImpl
-        with get() =
-            assert(content.Guid = x.ContentGuid)
-            content
-        and set(v) = content <- v
+    member internal x.ContentImpl = content
 
 type GuidEdge internal (source:GuidVertex, target:GuidVertex, edgeType:CausalEdgeType) =
     inherit EdgeBase<GuidVertex>(source, target, edgeType)

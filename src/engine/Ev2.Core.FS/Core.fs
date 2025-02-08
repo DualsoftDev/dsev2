@@ -26,8 +26,11 @@ module Core =
         //[<Obsolete("삭제대상")>] [<JsonIgnore>] member val Graph = DsGraphObsolete()
         [<JsonIgnore>] member val Graph = TGraph<GuidVertex, GuidEdge>()
 
-        [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<GuidVertex>() with get, set
-        [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
+        [<JsonIgnore>] member x.Vertices = x.Graph.Vertices
+        [<JsonIgnore>] member x.Edges = x.Graph.Edges
+
+        [<JsonProperty(Order = 3)>] member val VertexDTOs:VertexDTO[] = [||] with get, set
+        [<JsonProperty(Order = 4)>] member val EdgeDTOs:EdgeDTO[] = [||] with get, set
 
     /// DS flow
     type DsFlow(system:DsSystem, name:string) =
@@ -90,9 +93,7 @@ module Core =
 
 
     type GuidVertex with
-        member internal x.Content
-            with get() = x.ContentImpl :?> DsItem
-            and set(v:DsItem) = x.ContentImpl <- v
+        [<JsonIgnore>] member internal x.Content = x.ContentImpl :?> DsItem
 
 
     type DsSystem with
@@ -122,11 +123,24 @@ module Core =
 
     type DsItemWithGraph with
 
+        member x.BasePrepareFromJson() =
+            let g = x.Graph
+            for v in x.VertexDTOs do
+                let content = g.FindVertex(v.Guid.ToString())
+                let vv = GuidVertex(v.Name, content, v.Guid)
+                g.AddVertex vv |> ignore
+
+            x.EdgeDTOs.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
+
+        member x.BasePrepareToJson() =
+            x.EdgeDTOs <- EdgeDTO.FromGraph(x.Graph)
+            x.VertexDTOs <- VertexDTO.FromGraph(x.Graph)
+
+
         member internal x.AddVertexBase(vertex:GuidVertex): bool =
             match x, vertex.Content with
             | (:? DsFlow, :? DsWork)
             | (:? DsWork, :? DsAction) ->
-                x.Vertices.Add vertex
                 x.Graph.AddVertex vertex
             | _ ->
                 failwith "ERROR"
@@ -136,10 +150,7 @@ module Core =
             | (:? DsFlow, :? DsWork)
             | (:? DsWork, :? DsAction) ->
                 GuidVertex(dsItem.Name, content=dsItem)
-                |> tee(fun (v:GuidVertex) ->
-                    x.AddVertexBase v |> ignore
-                    v.Content <- dsItem
-                    )
+                |> tee( x.AddVertexBase >> ignore)
             | _ ->
                 failwith "ERROR"
 
@@ -173,7 +184,9 @@ module Core =
             else
                 DsAction(actionName, x) |> tee(fun w -> x.Actions.Add w)
 
-        member x.AddVertex(action:DsAction): GuidVertex = x.AddVertexBase(action)
+        member x.AddVertex(action:DsAction): GuidVertex =
+            x.AddVertexBase(action)
+            |> tee (fun _gv -> x.Actions.Add action)
 
 (*
  * Graph 구조의 Json serialize 는 직접 수행하지 않는다.
@@ -193,9 +206,19 @@ module CoreGraph =
         member val Source = source with get, set
         member val Target = target with get, set
         member val EdgeType = edgeType with get, set
-        static member FromGraph(graph:DsGraph) =
+        static member FromGraph(graph:DsGraph): EdgeDTO[] =
             let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Guid, e.Target.Guid, e.EdgeType)).ToArray()
             es
+
+
+    type VertexDTO = {
+        mutable Name:string
+        mutable Guid:Guid
+        mutable ContentGuid:Guid
+    } with
+        static member FromGraph(graph:DsGraph): VertexDTO[] =
+            let vs = graph.Vertices.Map(fun v -> { Name = v.Name; Guid = v.Guid; ContentGuid = v.Content.Guid }).ToArray()
+            vs
 
     ///// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다. (e.g "Case": "Action", "Fields": [...])
     //type VertexDetailObsolete =
@@ -317,8 +340,8 @@ module CoreGraph =
             | Some (h, t) ->
                 match fqdnObj with
                 | :? DsSystem   as s -> s.Flows.TryFind(fun f -> f.Name = h).Bind(_.TryFindLqdnObj(t))
-                | :? DsFlow     as f -> f.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
-                | :? DsWork     as w -> w.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+                | :? DsFlow     as f -> f.Graph.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+                | :? DsWork     as w -> w.Graph.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
                 | _ -> failwith "ERROR"
             | None ->
                 Some fqdnObj
