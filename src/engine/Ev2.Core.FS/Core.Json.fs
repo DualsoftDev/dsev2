@@ -42,6 +42,13 @@ module CoreJson =
             x.System <- system
             let g = x.Graph
             x.Works.Iter(_.PrepareFromJson(x))
+            for v in x.VertexDTOs do
+                match x.Works.TryFind(fun a -> a.Guid = v.ContentGuid) with
+                | Some w ->
+                    let gv = GuidVertex(v.Name, w, v.Guid)
+                    x.Graph.Vertices.Add gv |> ignore
+                | None -> failwith $"Work not found for VertexDTO: {v}"
+
 
             x.BasePrepareFromJson()
 
@@ -52,4 +59,15 @@ module CoreJson =
         /// Json DTO -> Graph
         member internal x.PrepareFromJson(parentFlow:DsFlow) =
             x.Container <- parentFlow
+            x.Actions.Iter (fun a -> a.Container <- x)
+            for v in x.VertexDTOs do
+                match x.Actions.TryFind(fun a -> a.Guid = v.ContentGuid) with
+                | Some a ->
+                    let gv = GuidVertex(v.Name, a, v.Guid)
+                    x.Graph.Vertices.Add gv |> ignore
+                | None -> failwith $"Action not found for VertexDTO: {v}"
+
+
             x.BasePrepareFromJson()
+
+            ()

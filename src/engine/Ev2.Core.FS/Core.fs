@@ -12,7 +12,7 @@ open System
 module Core =
     type DsItem(name:string, ?container:DsItem) =
         inherit NamedGuidObject(name)
-        member val Container = container |? getNull<DsItem>() with get, set
+        [<JsonIgnore>] member val Container = container |? getNull<DsItem>() with get, set
 
     /// DS system
     type DsSystem(name:string) =
@@ -37,7 +37,10 @@ module Core =
         inherit DsItemWithGraph(name, container=system)
         interface IFlow
 
-        [<JsonIgnore>] member x.System with get() = system and set (v:DsSystem) = x.Container <- v
+        [<JsonIgnore>]
+        member x.System
+            with get() = x.Container :?> DsSystem
+            and set (v:DsSystem) = x.Container <- v
         member val Works = ResizeArray<DsWork>() with get, set
 
     /// DS work
@@ -45,7 +48,10 @@ module Core =
         inherit DsItemWithGraph(name, container=flow)
         interface IWork
 
-        [<JsonIgnore>] member x.Flow with get() = flow and set (v:DsFlow) = x.Container <- v
+        [<JsonIgnore>]
+        member x.Flow
+            with get() = x.Container :?> DsFlow
+            and set (v:DsFlow) = x.Container <- v
         member val Actions = ResizeArray<DsAction>() with get, set
 
 
@@ -58,6 +64,7 @@ module Core =
     type DsAction(name:string, ?work:DsWork) =
         inherit DsCoin(name, ?work=work)
         new(name) = DsAction(name, getNull<DsWork>())   // for C#
+        new() = DsAction(null, getNull<DsWork>())   // for JSON
         member val IsDisabled = false with get, set
         member val IsPush = false with get, set
         [<JsonIgnore>] member x.Work = x.Container :?> DsWork
@@ -125,10 +132,14 @@ module Core =
 
         member x.BasePrepareFromJson() =
             let g = x.Graph
-            for v in x.VertexDTOs do
-                let content = g.FindVertex(v.Guid.ToString())
-                let vv = GuidVertex(v.Name, content, v.Guid)
-                g.AddVertex vv |> ignore
+            //for v in x.VertexDTOs do
+            //    let content = g.FindVertex(v.Guid.ToString())
+            //    if isItNull(content) then
+            //        assert(false)
+            //        let vv = GuidVertex(v.Name, content, v.Guid)
+            //        let rr = g.AddVertex vv
+            //        let xxx = rr
+            //        ()
 
             x.EdgeDTOs.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 

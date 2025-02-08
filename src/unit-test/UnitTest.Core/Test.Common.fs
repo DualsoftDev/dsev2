@@ -31,12 +31,16 @@ type String with
 
     member x.ZeroFillGuid() =
         let jsonText = x
+        let isGuid (value: string) =
+            let guidPattern = @"^[{(]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[)}]?$"
+            Regex.IsMatch(value, guidPattern)
+
         let rec replaceGuid (token: JToken) : JToken =
             match token with
             | :? JObject as obj ->
                 let newObj = JObject()
                 for prop in obj.Properties() do
-                    if prop.Name = "Guid" then
+                    if prop.Value.Type = JTokenType.String && isGuid (prop.Value.ToString()) then
                         newObj.Add(prop.Name, JValue("00000000-0000-0000-0000-000000000000"))
                     else
                         newObj.Add(prop.Name, replaceGuid prop.Value)
