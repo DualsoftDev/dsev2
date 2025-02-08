@@ -17,7 +17,7 @@ module DsJson =
     let createSystem() =
         let system = DsSystem.Create("system1")
         let flow1 = system.CreateFlow("F1")
-        let work1 = flow1.AddWork("F1W1")
+        let work1, vWork1 = flow1.CsAddWork("F1W1");
         let call1 = work1.AddVertex(new DsAction("F1W1C1", work1))
         let call2 = work1.AddVertex(new DsAction("F1W1C2", work1))
 
@@ -87,6 +87,7 @@ module DsJson =
     type T() =
         [<Test>]
         member _.``Minimal`` () =
+            let xxx = createSystem()
             let jsonText = system.ToJson();
             DcClipboard.Write(jsonText)
 
@@ -102,10 +103,10 @@ module DsJson =
             f1w1c1.Content.Container === f1w1
             f1w1c2.Content.Container === f1w1
 
-            f1w1.GuidGraph.Edges.Count === 1
-            let e = f1w1.GuidGraph.Edges.First()
-            VertexDetailObsolete.FromDsItem(e.Source.Content) === f1w1c1
-            VertexDetailObsolete.FromDsItem(e.Target.Content) === f1w1c2
+            f1w1.Graph.Edges.Count === 1
+            let e = f1w1.Graph.Edges.First()
+            e.Source === f1w1c1
+            e.Target === f1w1c2
             e.EdgeType === CausalEdgeType.Start
 
             let json2 = system2.ToJson()

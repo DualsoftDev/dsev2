@@ -35,25 +35,25 @@ module CoreJson =
         /// Graph -> Json DTO
         member (*internal*) x.PrepareToJson() =
             x.Works.Iter(_.PrepareToJson())
-            x.Edges <- EdgeDTO.FromGraph(x.GuidGraph)
+            x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareFromJson(system:DsSystem) =
             x.System <- system
-            let g = x.GuidGraph
+            let g = x.Graph
             x.Works.Iter(_.PrepareFromJson(x))
             x.Vertices |> x.AddVertices |> ignore
             x.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 
     type DsWork with
         /// Graph -> Json DTO
-        member (*internal*) x.PrepareToJson() = x.Edges <- EdgeDTO.FromGraph(x.GuidGraph)
+        member (*internal*) x.PrepareToJson() = x.Edges <- EdgeDTO.FromGraph(x.Graph)
 
         /// Json DTO -> Graph
         member internal x.PrepareFromJson(parentFlow:DsFlow) =
             x.Container <- parentFlow
             let contents = x.Vertices.Map(_.Content)
-            let g = x.GuidGraph
+            let g = x.Graph
             contents.Iter(fun c -> c.Container <- x)
             x.Vertices |> g.AddVertices |> ignore
             x.Edges.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType) |> ignore)

@@ -32,8 +32,8 @@ type NamedGuidObject(name: string, ?guid:Guid) =
         member x.Guid with get () = x.Guid and set v = x.Guid <- v
     [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
 
-//[<AbstractClass>]
-type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid, ?content:NamedGuidObject) =
+
+type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid, ?content:NamedGuidObject) =  // content: 실체는 DsItem
     inherit NamedGuidObject(name, ?guid=vertexGuid)
 
     let mutable content:NamedGuidObject = content |? getNull<NamedGuidObject>()

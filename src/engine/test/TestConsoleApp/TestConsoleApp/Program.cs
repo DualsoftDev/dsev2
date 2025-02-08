@@ -17,12 +17,14 @@ class Program
     {
         DsSystem system = DsSystem.Create("system1");
         var flow1 = system.CreateFlow("flow1");
-        var work1 = flow1.CsAddWork("work1");
-        var call1 = work1.AddVertex(new DsAction("call1"));
-        var call2 = work1.AddVertex(new DsAction("call2"));
-        var work2 = flow1.CsAddWork("work2");
-        var call21 = work2.AddVertex(new DsAction("call21"));
-        var call22 = work2.AddVertex(new DsAction("call22"));
+        var (work1, vWork1) = flow1.CsAddWork("work1");
+        var (call1, call2) = (new DsAction("call1"), new DsAction("call2"));
+        GuidVertex vCall1 = work1.AddVertex(call1);
+        GuidVertex vCall2 = work1.AddVertex(call2);
+        var (work2, vWork2) = flow1.CsAddWork("work2");
+        var (call21, call22) = (new DsAction("call21"), new DsAction("call22"));
+        var vCall21 = work2.AddVertex(call21);
+        var vCall22 = work2.AddVertex(call22);
 
         //var op1 = flow1.AddVertex(new DsOperator("FlowOp1"));
         //var cmd1 = work1.AddVertex(new DsOperator("WorkCmd1"));

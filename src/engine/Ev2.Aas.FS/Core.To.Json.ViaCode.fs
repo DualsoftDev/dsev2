@@ -87,16 +87,3 @@ module CoreToJsonViaCode =
             jo
 
 
-    type VertexDetailObsolete with
-        /// VertexDetailObsolete to AAS json
-        member x.ToJsonViaCode() =
-            match x with
-            | Work     y -> y.ToJsonViaCode()
-            | Action   y -> y.ToJsonViaCode()
-            | AutoPre  y -> y.ToJsonViaCode()
-            | Safety   y -> y.ToJsonViaCode()
-            | Command  y -> y.ToJsonViaCode()
-            | Operator y -> y.ToJsonViaCode()
-
-
-

@@ -146,26 +146,6 @@ module ToAasTest =
             ()
 
 
-        [<Test>]
-        member _.``Command: instance -> JObj -> Json ConversionTest`` () =
-            let Command:VertexDetailObsolete = Command <| DsCommand("command1")
-            let jsonAnswer = """{
-  "modelType": "SubmodelElementCollection",
-  "idShort": "Command",
-  "value": [
-    {
-      "modelType": "Property",
-      "idShort": "Name",
-      "valueType": "xs:string",
-      "value": "command1"
-    }
-  ]
-}"""
-            let json = Command.ToSMC().Stringify()
-            DcClipboard.Write(json)
-            json === jsonAnswer
-            ()
-
 
         [<Test>]
         member _.``Work: instance -> JObj -> Json ConversionTest`` () =

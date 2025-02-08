@@ -182,14 +182,3 @@ module CoreToAas =
             let modelType = modelType |? A.smc
             J.CreateJObj(idShort = typeName, modelType = modelType, values=[J.CreateProp("Name", x.Name)])
 
-    type VertexDetailObsolete with
-        member x.ToSMC(): JObj =
-            match x with
-            | Work     y -> y.ToSMC()
-            | Action   y -> y.ToSMC()
-            | AutoPre  y -> y.ToSMC()
-            | Safety   y -> y.ToSMC()
-            | Command  y -> y.ToSMC()
-            | Operator y -> y.ToSMC()
-
-
