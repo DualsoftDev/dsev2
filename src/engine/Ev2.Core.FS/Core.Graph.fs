@@ -32,15 +32,28 @@ type NamedGuidObject(name: string, ?guid:Guid) =
         member x.Guid with get () = x.Guid and set v = x.Guid <- v
     [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
 
-[<AbstractClass>]
-type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid) =
+//[<AbstractClass>]
+type GuidVertex(name: string, ?vertexGuid:Guid, ?contentGuid:Guid, ?content:NamedGuidObject) =
     inherit NamedGuidObject(name, ?guid=vertexGuid)
+
+    let mutable content:NamedGuidObject = content |? getNull<NamedGuidObject>()
 
     interface INamedVertex
     interface IVertexKey with
         member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
+
     /// Vertex 가 가리키는 실제 객체의 Guid
     [<JsonProperty(Order = -98)>] member val ContentGuid = contentGuid |?? (fun () -> Guid.NewGuid()) with get, set
+    member internal x.ContentImpl
+        with get() =
+            assert(content.Guid = x.ContentGuid)
+            content
+        and set(v) = content <- v
+
+type GuidEdge internal (source:GuidVertex, target:GuidVertex, edgeType:CausalEdgeType) =
+    inherit EdgeBase<GuidVertex>(source, target, edgeType)
+    //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
+
 
 [<AutoOpen>]
 module CoreGraphBase =
@@ -90,7 +103,7 @@ module CoreGraphBase =
 
 
 
-    /// DsGraph 의 edge type
+    /// DsGraphObsolete 의 edge type
     [<AbstractClass>]
     type EdgeBase<'V> internal (source:'V, target:'V, edgeType:CausalEdgeType) =   // copied from Engine.Common.DsEdgeBase<>
         inherit Dual.Common.Core.FS.GraphModule.EdgeBase<'V, CausalEdgeType>(source, target, edgeType)

@@ -6,6 +6,7 @@ open Dual.Ev2.Aas.CoreToJsonViaCode
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Dual.Common.Base.CS
+open System
 
 
 module ToAasTest =
@@ -99,7 +100,8 @@ module ToAasTest =
     </property>
   </value>
 </submodelElementCollection>"""
-            let edgeDTO = EdgeDTO("Dual__source", "Dual__target", CausalEdgeType.Start)
+            let guid1, guid2 = Guid.NewGuid(), Guid.NewGuid()
+            let edgeDTO = EdgeDTO(guid1, guid2, CausalEdgeType.Start)
             let json = edgeDTO.ToSMC().Stringify()
             DcClipboard.Write(json)
             json === jsonAnswer
@@ -116,7 +118,8 @@ module ToAasTest =
 
         [<Test>]
         member _.``Action: instance -> JObj -> Json ConversionTest`` () =
-            let action:VertexDetail = Action <| DsAction("action1")
+            //let action:VertexDetailObsolete = Action <| DsAction("action1")
+            let action = DsAction("action1")
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Action",
@@ -145,7 +148,7 @@ module ToAasTest =
 
         [<Test>]
         member _.``Command: instance -> JObj -> Json ConversionTest`` () =
-            let Command:VertexDetail = Command <| DsCommand("command1")
+            let Command:VertexDetailObsolete = Command <| DsCommand("command1")
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Command",

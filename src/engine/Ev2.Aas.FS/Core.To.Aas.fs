@@ -54,7 +54,13 @@ module CoreGraphToAas =
     *)
 
 
-    type IGraph with
+    type GuidVertex with
+        /// Convert GridVertex to submodelElementCollection
+        member x.ToSMC(): JObj =
+            assert(false)
+            null
+
+    type DsItemWithGraph with
         /// IGraph.ToSMC() -> JNode
         member x.GraphToSMC(): JObj =
             match x with
@@ -62,7 +68,7 @@ module CoreGraphToAas =
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
-            let vs = x.GetVertexDetails() |> map _.ToSMC() |> Seq.cast<JNode>
+            let vs = x.Vertices |> map _.ToSMC() |> Seq.cast<JNode>
             let vs =
                 J.CreateJObj(
                     idShort = "Vertices",
@@ -70,7 +76,7 @@ module CoreGraphToAas =
                     values = vs
                 )
 
-            let es = x.GetEdgeDTOs()  |> map _.ToSMC()  |> Seq.cast<JNode>
+            let es = x.Edges  |> map _.ToSMC()  |> Seq.cast<JNode>
             let es =
                 J.CreateJObj(
                     idShort = "Edges",
@@ -127,14 +133,14 @@ module CoreToAas =
         [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
 
 
-    type DsFlow with
+    type DsFlow with    // ToSMC
         /// DsFlow -> JNode
         member x.ToSMC(): JObj =
             let jGraph = x.GraphToSMC()
             x.DsNamedObjectToSMC("Flow")
                 .AddValues([|jGraph|])
 
-    type DsWork with
+    type DsWork with    // ToSMC
         /// DsWork -> JNode
         member x.ToSMC(): JObj =
             let jGraph = x.GraphToSMC()
@@ -176,7 +182,7 @@ module CoreToAas =
             let modelType = modelType |? A.smc
             J.CreateJObj(idShort = typeName, modelType = modelType, values=[J.CreateProp("Name", x.Name)])
 
-    type VertexDetail with
+    type VertexDetailObsolete with
         member x.ToSMC(): JObj =
             match x with
             | Work     y -> y.ToSMC()

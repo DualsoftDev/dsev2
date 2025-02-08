@@ -15,6 +15,7 @@
 		<Compile Include="Core.fs" />
 		<Compile Include="Core.Json.fs" />
 		<Compile Include="CShaprExtension.fs" />
+		<Compile Include="AssemblyInfo.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

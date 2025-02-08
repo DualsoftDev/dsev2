@@ -8,46 +8,64 @@ open Dual.Common.Core.FS
 open System.Runtime.CompilerServices
 open System.Xml.Serialization
 open System
+open System.ComponentModel
 
 
 [<AutoOpen>]
 module Core =
+    type DsItem(name:string, ?container:DsItem) =
+        inherit NamedGuidObject(name)
+        member val Container = container |? getNull<DsItem>() with get, set
+
     /// DS system
     type DsSystem(name:string) =
-        inherit NamedGuidObject(name)
+        inherit DsItem(name)
         interface ISystem
         [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
+    type DsItemWithGraph(name:string, ?container:DsItem) =
+        inherit DsItem(name, ?container=container)
+        interface IGraph
+        //[<Obsolete("삭제대상")>] [<JsonIgnore>] member val Graph = DsGraphObsolete()
+        [<JsonIgnore>] member val GuidGraph= TGraph<GuidVertex, GuidEdge>()
+
+        [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<GuidVertex>() with get, set
+        [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
+
     /// DS flow
     type DsFlow(system:DsSystem, name:string) =
-        inherit NamedGuidObject(name)
+        inherit DsItemWithGraph(name, container=system)
         interface IFlow
 
-        [<JsonIgnore>] member val System = system with get, set
-        [<JsonIgnore>] member val Graph = DsGraph()
-        [<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
-        [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
+        [<JsonIgnore>] member x.System with get() = system and set (v:DsSystem) = x.Container <- v
+        //[<JsonProperty(Order = 3)>] member val Vertices = ResizeArray<VertexDetailObsolete>() with get, set
+        //[<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
+        member val Works = ResizeArray<DsWork>() with get, set
+        //[<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
 
     /// DS work
     type DsWork(flow:DsFlow, name:string) =
-        inherit Vertex(name, VCFlow flow)
+        inherit DsItemWithGraph(name, container=flow)
         interface IWork
 
-        [<JsonIgnore>] member val Graph = DsGraph()
-        [<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetail>() with get, set
-        [<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
+        [<JsonIgnore>] member x.Flow with get() = flow and set (v:DsFlow) = x.Container <- v
+        //[<JsonProperty(Order = 2)>] member val Vertices = ResizeArray<VertexDetailObsolete>() with get, set
+        //[<JsonProperty(Order = 4)>] member val Edges:EdgeDTO[] = [||] with get, set
+        member val Actions = ResizeArray<DsAction>() with get, set
 
 
     /// DS coin.  base class for Ds{Action, AutoPre, Safety, Command, Operator}
     [<AbstractClass>]
-    type DsCoin(name:string) =
-        inherit Vertex(name)
+    type DsCoin(name:string, ?work:DsWork) =
+        inherit DsItem(name, ?container=work.Cast<DsItem>())
 
     /// DS action.  외부 device 호출
-    type DsAction(name:string) =
-        inherit DsCoin(name)
+    type DsAction(name:string, ?work:DsWork) =
+        inherit DsCoin(name, ?work=work)
+        new(name) = DsAction(name, getNull<DsWork>())   // for C#
         member val IsDisabled = false with get, set
         member val IsPush = false with get, set
+        [<JsonIgnore>] member x.Work = x.Container :?> DsWork
 
     /// DS auto-pre.  자동 운전시에만 참조하는 조건
     type DsAutoPre(name:string) =
@@ -70,51 +88,60 @@ module Core =
 
 
 
+
+
+
+
 // 동일 module 내에 있어야 확장을 C# 에서 볼 수 있음.
 //[<AutoOpen>]
 //module CoreCreate =
 
-    /// flow, work 의 graph 기능 공통 구현
-    type internal IGraph with
-        /// Flow 혹은 Work 의 Graph 반환
-        member x.GetGraph(): DsGraph =
-            match x with
-            | :? DsFlow as f -> f.Graph
-            | :? DsWork as w -> w.Graph
-            | _ -> failwith "ERROR"
 
-        /// Flow 혹은 Work 의 vertex 반환
-        member x.GetVertexDetails(): ResizeArray<VertexDetail> =
-            match x with
-            | :? DsFlow as f -> f.Vertices
-            | :? DsWork as w -> w.Vertices
-            | _ -> failwith "ERROR"
+    type GuidVertex with
+        member internal x.Content with get() = x.ContentImpl :?> DsItem and set(v:DsItem) = x.ContentImpl <- v
 
-        /// Flow 혹은 Work 의 edges 반환
-        member x.GetEdgeDTOs(): EdgeDTO[] =
-            match x with
-            | :? DsFlow as f -> f.Edges
-            | :? DsWork as w -> w.Edges
-            | _ -> failwith "ERROR"
 
-        /// Flow 혹은 Work 의 VertexContainer wrapper 반환
-        member x.GetVertexContainer(): VertexContainer =
-            match x with
-            | :? DsFlow as f -> VCFlow f
-            | :? DsWork as w -> VCWork w
-            | _ -> VCNone
+    ///// flow, work 의 graph 기능 공통 구현
+    //type internal IGraph with
+    //    /// Flow 혹은 Work 의 Graph 반환
+    //    member x.GetGraph(): DsGraphObsolete =
+    //        match x with
+    //        | :? DsFlow as f -> f.Graph
+    //        | :? DsWork as w -> w.Graph
+    //        | _ -> failwith "ERROR"
 
-        /// Flow 혹은 Work 의 graph 에 vertex 추가
-        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
-            if vertex.Container <> VCNone then
-                failwith "ERROR: Vertex already has parent container"
+    //    ///// Flow 혹은 Work 의 vertex 반환
+    //    //member x.GetVertexDetailObsoletes(): ResizeArray<VertexDetailObsolete> =
+    //    //    match x with
+    //    //    | :? DsFlow as f -> f.Vertices
+    //    //    | :? DsWork as w -> w.Vertices
+    //    //    | _ -> failwith "ERROR"
 
-            if !! x.GetGraph().AddVertex(vertex) then
-                failwith "ERROR: Failed to add.  duplicated?"
+    //    ///// Flow 혹은 Work 의 edges 반환
+    //    //member x.GetEdgeDTOs(): EdgeDTO[] =
+    //    //    match x with
+    //    //    | :? DsFlow as f -> f.Edges
+    //    //    | :? DsWork as w -> w.Edges
+    //    //    | _ -> failwith "ERROR"
 
-            VertexDetail.FromVertex(vertex) |> x.GetVertexDetails().Add
-            vertex.Container <- x.GetVertexContainer()
-            vertex
+    //    ///// Flow 혹은 Work 의 VertexContainer wrapper 반환
+    //    //member x.GetVertexContainer(): VertexContainer =
+    //    //    match x with
+    //    //    | :? DsFlow as f -> VCFlow f
+    //    //    | :? DsWork as w -> VCWork w
+    //    //    | _ -> VCNone
+
+    //    ///// Flow 혹은 Work 의 graph 에 vertex 추가
+    //    //member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) =
+    //    //    if vertex.Container <> VCNone then
+    //    //        failwith "ERROR: Vertex already has parent container"
+
+    //    //    if !! x.GetGraph().AddVertex(vertex) then
+    //    //        failwith "ERROR: Failed to add.  duplicated?"
+
+    //    //    VertexDetailObsolete.FromDsItem(vertex) |> x.GetVertexDetailObsoletes().Add
+    //    //    vertex.Container <- x.GetVertexContainer()
+    //    //    vertex
 
 
     type DsSystem with
@@ -125,35 +152,77 @@ module Core =
             else
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
 
-    type DsFlow with
-        [<JsonIgnore>] member x.Works = x.Vertices.Map(_.AsVertex()).OfType<DsWork>().ToArray()
+    type DsFlow with    // AddWork, AddVertex, CreateEdge
 
-        member x.CreateWork(workName:string) =
-            if x.Vertices.Exists(fun w -> w.AsVertex().Name = workName) then
-                getNull<DsWork>();
+        member x.AddWork(workName:string, ?returnNullOnError:bool): DsWork =
+            if x.Works.Exists(fun w -> w.Name = workName) then
+                let returnNullOnError = returnNullOnError |? false
+                if returnNullOnError then
+                    getNull<DsWork>();
+                else
+                    failwith $"Duplicated work name [{workName}]"
             else
-                let w = DsWork(x, workName)
-                x.Vertices.Add (Work w)
-                x.Graph.AddVertex w |> ignore
-                w
+                DsWork(x, workName) |> tee(fun w -> x.Works.Add w)
 
-        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) = (x :> IGraph).AddVertex vertex
+        member x.AddVertex(work:DsWork): GuidVertex = x.AddVertexBase(work)
+
+    type DsItemWithGraph with
+
+        member internal x.AddVertex(vertex:GuidVertex): bool =
+            match x, vertex.Content with
+            | (:? DsFlow, :? DsWork)
+            | (:? DsWork, :? DsAction) ->
+                x.GuidGraph.AddVertex vertex
+            | _ ->
+                failwith "ERROR"
+
+        member internal x.AddVertexBase(dsItem:DsItem): GuidVertex =
+            match x, dsItem with
+            | (:? DsFlow, :? DsWork)
+            | (:? DsWork, :? DsAction) ->
+                GuidVertex(dsItem.Name, content=dsItem) |> tee(fun v -> x.GuidGraph.AddVertex v |> ignore)
+            | _ ->
+                failwith "ERROR"
+
+        member x.AddVertices(vertices:GuidVertex seq) =
+            let allOk = vertices.ForAll(fun v ->
+                match x, v.Content with
+                | (:? DsFlow, :? DsWork)
+                | (:? DsWork, :? DsAction) -> true
+                | _ ->
+                    false
+            )
+            if allOk then
+                x.GuidGraph.AddVertices vertices
+            else
+                failwith "ERROR"
+
 
         /// Flow 내에서 edge 생성
-        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
+        member x.CreateEdge(src:GuidVertex, dst:GuidVertex, edgeType:CausalEdgeType): GuidEdge = x.GuidGraph.CreateEdge(src.Guid, dst.Guid, edgeType)
         /// Flow 내에서 edge 생성
-        member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
+        member x.CreateEdge(src:Guid, dst:Guid, edgeType:CausalEdgeType): GuidEdge = x.CreateEdge(src, dst, edgeType)
 
     type DsWork with
-        [<JsonIgnore>] member x.Flow = match x.Container with | VCFlow f -> f | _ -> getNull<DsFlow>()
+        member x.AddAction(actionName:string, ?returnNullOnError:bool): DsAction =
+            if x.Actions.Exists(fun w -> w.Name = actionName) then
+                let returnNullOnError = returnNullOnError |? false
+                if returnNullOnError then
+                    getNull<DsAction>();
+                else
+                    failwith $"Duplicated action name [{actionName}]"
+            else
+                DsAction(actionName, x) |> tee(fun w -> x.Actions.Add w)
 
-        member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) = (x :> IGraph).AddVertex vertex
+        member x.AddVertex(action:DsAction): GuidVertex = x.AddVertexBase(action)
 
-        /// Work 내에서 edge 생성
-        member x.CreateEdge(src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
-        /// Work 내에서 edge 생성
-        member x.CreateEdge(src:string, dst:string, edgeType:CausalEdgeType): Edge = x.Graph.CreateEdge(src, dst, edgeType)
+        ////member x.AddVertex<'V when 'V :> Vertex>(vertex:'V) = (x :> IGraph).AddVertex vertex
+        //member x.AddVertex(action:DsAction): GuidVertex =
+        //    GuidVertex(action.Name, content=action) |> tee(fun v -> x.GuidGraph.AddVertex v |> ignore)
 
+        //member x.AddVertex(actionVertex:GuidVertex) =
+        //    assert(actionVertex.Content :? DsAction)
+        //    x.GuidGraph.AddVertex actionVertex
 
 module 새버젼=
 
@@ -188,15 +257,18 @@ module 새버젼=
 (*
  * Graph 구조의 Json serialize 는 직접 수행하지 않는다.
  * 내부 Graph 구조를 Vertex 와 Edge 로 나누어, 다음 속성을 경유해서 JSON serialize 수행한다.
-    - Vertex 는 {Flow, Work}.Vertices 에 (VertexDetail type)
+    - Vertex 는 {Flow, Work}.Vertices 에 (VertexDetailObsolete type)
     - Edge 는 {Flow, Work}.Edges 에 (EdgeDTO type)
  *)
 [<AutoOpen>]
 module CoreGraph =
 
-    type DsGraph = TGraph<Vertex, Edge>
+    //type DsGraphObsolete = TGraph<Vertex, Edge>
+
+    type DsGraph = TGraph<GuidVertex, GuidEdge>
 
 
+    [<Obsolete("삭제 대상")>]
     type Edge internal (source:Vertex, target:Vertex, edgeType:CausalEdgeType) =
         inherit EdgeBase<Vertex>(source, target, edgeType)
         //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
@@ -204,12 +276,12 @@ module CoreGraph =
 
 
     /// Edge 구조 serialization 용도.
-    type EdgeDTO(source:string, target:string, edgeType:CausalEdgeType) =
+    type EdgeDTO(source:Guid, target:Guid, edgeType:CausalEdgeType) =
         member val Source = source with get, set
         member val Target = target with get, set
         member val EdgeType = edgeType with get, set
         static member FromGraph(graph:DsGraph) =
-            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Name, e.Target.Name, e.EdgeType)).ToArray()
+            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Guid, e.Target.Guid, e.EdgeType)).ToArray()
             es
 
     /// Vertex 의 parent 구분용 type
@@ -247,7 +319,7 @@ module CoreGraph =
 
 
     /// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다. (e.g "Case": "Action", "Fields": [...])
-    type VertexDetail =
+    type VertexDetailObsolete =
         | Work     of DsWork
         | Action   of DsAction
         | AutoPre  of DsAutoPre
@@ -255,18 +327,18 @@ module CoreGraph =
         | Command  of DsCommand
         | Operator of DsOperator
         with
-            /// VertexDetail Union type 의 내부 알맹이 공통 구조인 vertex 를 반환
-            member x.AsVertex():Vertex =
+            /// VertexDetailObsolete Union type 의 내부 알맹이 공통 구조인 vertex 를 반환
+            member x.AsDsItem():DsItem =
                 match x with
-                | Work     y -> y :> Vertex
-                | Action   y -> y :> Vertex
-                | AutoPre  y -> y :> Vertex
-                | Safety   y -> y :> Vertex
-                | Command  y -> y :> Vertex
-                | Operator y -> y :> Vertex
+                | Work     y -> y :> DsItem
+                | Action   y -> y :> DsItem
+                | AutoPre  y -> y :> DsItem
+                | Safety   y -> y :> DsItem
+                | Command  y -> y :> DsItem
+                | Operator y -> y :> DsItem
 
-            /// vertex subclass 로부터 VertexDetail Union type 생성 반환
-            static member FromVertex(v:Vertex) =
+            /// vertex subclass 로부터 VertexDetailObsolete Union type 생성 반환
+            static member FromDsItem(v:DsItem) =
                 match v with
                 | :? DsWork     as y -> Work     y
                 | :? DsAction   as y -> Action   y
@@ -298,66 +370,81 @@ module CoreGraph =
 
 
     type GraphExtension =
+        //[<Obsolete("삭제 대상")>]
+        ///// Graph 상에 인과 edge 생성
+        //[<Extension>]
+        //static member CreateEdge(graph:DsGraphObsolete, src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge =
+        //    Edge(src, dst, edgeType)
+        //    |> tee(fun e ->
+        //        graph.AddEdge(e) |> verifyM $"Duplicated edge [{src.Name}{edgeType}{dst.Name}]" )
+
+
         /// Graph 상에 인과 edge 생성
         [<Extension>]
-        static member CreateEdge(graph:DsGraph, src:Vertex, dst:Vertex, edgeType:CausalEdgeType): Edge =
-            Edge(src, dst, edgeType)
+        static member CreateEdge(graph:DsItemWithGraph, src:GuidVertex, dst:GuidVertex, edgeType:CausalEdgeType): GuidEdge =
+            GuidEdge(src, dst, edgeType)
             |> tee(fun e ->
-                graph.AddEdge(e) |> verifyM $"Duplicated edge [{src.Name}{edgeType}{dst.Name}]" )
+                graph.GuidGraph.AddEdge(e) |> verifyM $"Duplicated edge [{src.Name}{edgeType}{dst.Name}]" )
 
         /// Graph 상에 인과 edge 생성
         [<Extension>]
-        static member CreateEdge(graph:DsGraph, src:string, dst:string, edgeType:CausalEdgeType): Edge =
-            let s, e = graph.FindVertex(src), graph.FindVertex(dst)
-            graph.CreateEdge(s, e, edgeType)
+        static member CreateEdge(graph:DsGraph, src:Guid, dst:Guid, edgeType:CausalEdgeType): GuidEdge =
+            let s, e = graph.FindVertex(src.ToString()), graph.FindVertex(dst.ToString())
+            GuidEdge(s, e, edgeType) |> tee(fun e -> graph.AddEdge e |> ignore)
+        [<Extension>]
+        static member CreateEdge(graph:DsItemWithGraph, src:Guid, dst:Guid, edgeType:CausalEdgeType): GuidEdge = graph.GuidGraph.CreateEdge(src, dst, edgeType)
 
 
-        [<Extension>] static member HasVertexWithName(graph:DsGraph, name:string) = graph.Vertices.Any(fun v -> v.Name = name)
+        //[<Extension>] static member HasVertexWithName(graph:DsGraphObsolete, name:string) = graph.Vertices.Any(fun v -> v.Name = name)
 
 
         /// fqdnObj 기준 상위로 System 찾기
         [<Extension>]
-        static member GetSystem(fqdnObj:NamedGuidObject):DsSystem =
+        static member GetSystem(fqdnObj:DsItem):DsSystem =
             match fqdnObj with
             | :? DsSystem   as s -> s
-            | :? DsFlow     as f -> f.System
-            | :? DsWork     as w -> w.Flow.System
-            | :? DsAction   as a -> a.Container.System
-            | :? DsCommand  as c -> c.Container.System
-            | :? DsOperator as o -> o.Container.System
+
+            | :? DsFlow
+            | :? DsWork
+            | :? DsAction
+            | :? DsCommand
+            | :? DsOperator ->
+                fqdnObj.Container.GetFlow().System
+
             | _ -> failwith "ERROR"
 
         /// fqdnObj 기준 상위로 Flow 찾기
         [<Extension>]
-        static member GetFlow(fqdnObj:NamedGuidObject):DsFlow =
-            match fqdnObj with
+        static member GetFlow(dsItem:DsItem):DsFlow =
+            match dsItem with
             | :? DsFlow     as f -> f
             | :? DsWork     as w -> w.Flow
-            | :? DsAction   as a -> a.Container.Flow
-            | :? DsCommand  as c -> c.Container.Flow
-            | :? DsOperator as o -> o.Container.Flow
+
+            | :? DsAction
+            | :? DsCommand
+            | :? DsOperator -> (dsItem.Container :?> DsWork).Flow
             | _ -> failwith "ERROR"
 
         /// fqdnObj 기준 상위로 Work 찾기
         [<Extension>]
-        static member TryGetWork(fqdnObj:NamedGuidObject):DsWork option =
+        static member GetWork(fqdnObj:DsItem):DsWork =
             match fqdnObj with
-            | :? DsWork     as w -> Some w
-            | :? DsAction   as a -> a.Container.OptWork
-            | :? DsCommand  as c -> c.Container.OptWork
-            | :? DsOperator as o -> o.Container.OptWork
-            | _ -> None
+            | :? DsWork     as w -> w
+            | :? DsAction   as a -> (a.Container :?> DsAction).Work
+            //| :? DsCommand  as c -> c.Container.OptWork
+            //| :? DsOperator as o -> o.Container.OptWork
+            | _ -> getNull<DsWork>()
 
         /// System 이름부터 시작하는 FQDN
         [<Extension>]
-        static member Fqdn(fqdnObj:NamedGuidObject) =
+        static member Fqdn(fqdnObj:DsItem) =
             match fqdnObj with
             | :? DsSystem   as s -> s.Name
             | :? DsFlow     as f -> $"{f.System.Name}.{f.Name}"
             | :? DsWork     as w -> $"{w.Flow.System.Name}.{w.Flow.Name}.{w.Name}"
-            | :? DsAction   as a -> $"{a.Container.AsNamedObject().Fqdn()}.{a.Name}"
-            | :? DsCommand  as c -> $"{c.Container.AsNamedObject().Fqdn()}.{c.Name}"
-            | :? DsOperator as o -> $"{o.Container.AsNamedObject().Fqdn()}.{o.Name}"
+            | :? DsAction   as a -> $"{a.Container.Fqdn()}.{a.Name}"
+            | :? DsCommand  as c -> $"{c.Container.Fqdn()}.{c.Name}"
+            | :? DsOperator as o -> $"{o.Container.Fqdn()}.{o.Name}"
             | _ -> failwith "ERROR"
 
 
@@ -370,8 +457,8 @@ module CoreGraph =
             | Some (h, t) ->
                 match fqdnObj with
                 | :? DsSystem   as s -> s.Flows.TryFind(fun f -> f.Name = h).Bind(_.TryFindLqdnObj(t))
-                | :? DsFlow     as f -> f.Vertices.Map(_.AsVertex()).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
-                | :? DsWork     as w -> w.Vertices.Map(_.AsVertex()).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+                | :? DsFlow     as f -> f.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+                | :? DsWork     as w -> w.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
                 | _ -> failwith "ERROR"
             | None ->
                 Some fqdnObj

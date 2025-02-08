@@ -13,6 +13,11 @@ module CoreToJsonViaCode =
             jo["name"] <- x.Name
             jo
 
+    type GuidVertex with
+        member x.ToJsonViaCode(): JObj =
+            assert(false)
+            null
+
     type EdgeDTO with
         member x.ToJsonViaCode(): JObj =
             let jo = JObj()
@@ -29,7 +34,7 @@ module CoreToJsonViaCode =
             jo["flows"] <- arr
             jo
 
-    type DsFlow with
+    type DsFlow with    // ToJsonViaCode
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
             jo["type"] <- "Flow"
@@ -40,7 +45,7 @@ module CoreToJsonViaCode =
             jo
 
 
-    type DsWork with
+    type DsWork with    // ToJsonViaCode
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
             jo["type"] <- "Work"
@@ -82,8 +87,8 @@ module CoreToJsonViaCode =
             jo
 
 
-    type VertexDetail with
-        /// VertexDetail to AAS json
+    type VertexDetailObsolete with
+        /// VertexDetailObsolete to AAS json
         member x.ToJsonViaCode() =
             match x with
             | Work     y -> y.ToJsonViaCode()

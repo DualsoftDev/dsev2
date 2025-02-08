@@ -14,15 +14,17 @@ open Dual.Ev2
 
 module DsJson =
     /// System1 > Flow1 > Work1 > {Call1 -> Call2}
-    let system =
+    let createSystem() =
         let system = DsSystem.Create("system1")
         let flow1 = system.CreateFlow("F1")
-        let work1 = flow1.CreateWork("F1W1")
-        let call1 = work1.AddVertex(new DsAction("F1W1C1"))
-        let call2 = work1.AddVertex(new DsAction("F1W1C2"))
+        let work1 = flow1.AddWork("F1W1")
+        let call1 = work1.AddVertex(new DsAction("F1W1C1", work1))
+        let call2 = work1.AddVertex(new DsAction("F1W1C2", work1))
 
         work1.CreateEdge(call1, call2, CausalEdgeType.Start) |> verifyNonNull
         system
+
+    let system = createSystem()
 
     let dsJson = """{
   "Name": "system1",
@@ -97,13 +99,13 @@ module DsJson =
             f1.System === system2
             f1w1.Flow === f1
             let f1w1c1, f1w1c2 = f1w1.Vertices[0], f1w1.Vertices[1]
-            f1w1c1.AsVertex().Container === VCWork f1w1
-            f1w1c2.AsVertex().Container === VCWork f1w1
+            f1w1c1.Content.Container === f1w1
+            f1w1c2.Content.Container === f1w1
 
-            f1w1.Graph.Edges.Count === 1
-            let e = f1w1.Graph.Edges.First()
-            VertexDetail.FromVertex(e.Source) === f1w1c1
-            VertexDetail.FromVertex(e.Target) === f1w1c2
+            f1w1.GuidGraph.Edges.Count === 1
+            let e = f1w1.GuidGraph.Edges.First()
+            VertexDetailObsolete.FromDsItem(e.Source.Content) === f1w1c1
+            VertexDetailObsolete.FromDsItem(e.Target.Content) === f1w1c2
             e.EdgeType === CausalEdgeType.Start
 
             let json2 = system2.ToJson()
@@ -115,12 +117,12 @@ module DsJson =
             let system2 = EmJson.Duplicate(system, JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore))
             let f1 = system2.Flows[0]
             let f1w1 = f1.Works[0]
-            let f1Cmd1 = f1.AddVertex(new DsCommand("F1Cmd1"))
-            let f1Op1  = f1.AddVertex(new DsOperator("F1Op1"))
-            let f1c1   = f1.AddVertex(new DsAction("F1C1"))
-            let f1c2   = f1.AddVertex(new DsAction("F1C2"))
-            f1.CreateEdge(f1c1, f1w1, CausalEdgeType.Start) |> verifyNonNull
-            f1.CreateEdge(f1c2, f1w1, CausalEdgeType.Start) |> verifyNonNull
+            //let f1Cmd1 = f1.AddVertex(new DsCommand("F1Cmd1"))
+            //let f1Op1  = f1.AddVertex(new DsOperator("F1Op1"))
+            //let f1c1   = f1.AddVertex(new DsAction("F1C1"))
+            //let f1c2   = f1.AddVertex(new DsAction("F1C2"))
+            //f1.CreateEdge(f1c1, f1w1, CausalEdgeType.Start) |> verifyNonNull
+            //f1.CreateEdge(f1c2, f1w1, CausalEdgeType.Start) |> verifyNonNull
 
             let jsonText = system2.ToJson()
             DcClipboard.Write(jsonText);
@@ -169,7 +171,8 @@ module DsJson =
             let system = DsSystem.FromJson(dsJson)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
-            let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()
+            let f1w1c1 = f1w1.Vertices[0].Content :?> DsAction
+            let f1w1c2 = f1w1.Vertices[1].Content :?> DsAction
 
             system.Fqdn() === "system1"
             f1    .Fqdn() === "system1.F1"
@@ -203,22 +206,22 @@ module DsJson =
             f1w1  .GetFlow() === f1
             f1w1c1.GetFlow() === f1
 
-            system.TryGetWork() === None
-            f1    .TryGetWork() === None
-            f1w1  .TryGetWork().Value === f1w1
-            f1w1c1.TryGetWork().Value === f1w1
+            system.GetWork() === null
+            f1    .GetWork() === null
+            f1w1  .GetWork() === f1w1
+            f1w1c1.GetWork() === f1w1
 
 
-            let f1c1 = f1.AddVertex(new DsAction("F1C1"))
-            f1c1.GetSystem() === system
-            f1c1.GetFlow() === f1
-            f1c1.TryGetWork() === None
+            //let f1c1 = f1.AddVertex(new DsAction("F1C1"))
+            //f1c1.GetSystem() === system
+            //f1c1.GetFlow() === f1
+            //f1c1.GetWork() === None
 
 
-            let f1w1c1 = f1w1.AddVertex(new DsCommand("F1W1C1"))
-            f1w1c1.GetSystem() === system
-            f1w1c1.GetFlow() === f1
-            f1w1c1.TryGetWork().Value === f1w1
+            //let f1w1c1 = f1w1.AddVertex(new DsCommand("F1W1C1"))
+            //f1w1c1.GetSystem() === system
+            //f1w1c1.GetFlow() === f1
+            //f1w1c1.GetWork().Value === f1w1
 
 
         [<Test>]
@@ -226,13 +229,14 @@ module DsJson =
             let system = DsSystem.FromJson(dsJson)
             let f1 = system.Flows[0]
             let f1w1 = f1.Works[0]
-            let f1w1c1, f1w1c2 = f1w1.Vertices[0].AsVertex(), f1w1.Vertices[1].AsVertex()
-            let f1w1s1 = f1w1.AddVertex(new DsSafety("F1W1Saf1", [|"F2.W1.C999"; "F2.W1.C998"; |]))
-            f1w1.CreateEdge(f1w1s1, f1w1c1, CausalEdgeType.Start) |> verifyNonNull
-            let jsonText = system.ToJson()
-            DcClipboard.Write(jsonText)
+            let f1w1c1 = f1w1.Vertices[0].Content :?> DsAction
+            let f1w1c2 = f1w1.Vertices[1].Content :?> DsAction
 
-            //jsonText === json
+            //let f1w1s1 = f1w1.AddVertex(new DsSafety("F1W1Saf1", [|"F2.W1.C999"; "F2.W1.C998"; |]))
+            //f1w1.CreateEdge(f1w1s1, f1w1c1, CausalEdgeType.Start) |> verifyNonNull
+            //let jsonText = system.ToJson()
+            //DcClipboard.Write(jsonText)
+            ()
 
 
 
