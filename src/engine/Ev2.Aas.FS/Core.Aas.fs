@@ -4,6 +4,7 @@ namespace rec Dual.Ev2.Aas
 
 open Dual.Common.Core.FS
 open System.Text.Json
+open System
 
 type JObj = System.Text.Json.Nodes.JsonObject
 type JArr = System.Text.Json.Nodes.JsonArray
@@ -171,6 +172,7 @@ module JsonExtensionModule =
             | :? double  as v -> x.Set(N.ValueType, "xs:double") .Set(N.Value, v.ToString())
             | :? single  as v -> x.Set(N.ValueType, "xs:float")  .Set(N.Value, v.ToString())
             | :? bool    as v -> x.Set(N.ValueType, "xs:boolean").Set(N.Value, v.ToString())
+            | :? Guid    as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v.ToString())
 
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
 

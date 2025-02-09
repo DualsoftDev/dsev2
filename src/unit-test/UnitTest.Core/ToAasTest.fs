@@ -69,13 +69,13 @@ module ToAasTest =
       "modelType": "Property",
       "idShort": "Source",
       "valueType": "xs:string",
-      "value": "Dual__source"
+      "value": "053c20dc-e3c6-4bbe-930f-82756d311f8f"
     },
     {
       "modelType": "Property",
       "idShort": "Target",
       "valueType": "xs:string",
-      "value": "Dual__target"
+      "value": "569cbc28-15c9-4437-b87b-88f6f880e6e0"
     }
   ]
 }"""
@@ -91,12 +91,12 @@ module ToAasTest =
     <property>
       <idShort>Source</idShort>
       <valueType>xs:string</valueType>
-      <value>Dual__source</value>
+      <value>b337a224-d593-46ba-b5a0-a29264ba31bc</value>
     </property>
     <property>
       <idShort>Target</idShort>
       <valueType>xs:string</valueType>
-      <value>Dual__target</value>
+      <value>d7788816-bddb-4c7a-8ea8-78aa673dfa85</value>
     </property>
   </value>
 </submodelElementCollection>"""
@@ -104,15 +104,16 @@ module ToAasTest =
             let edgeDTO = EdgeDTO(guid1, guid2, CausalEdgeType.Start)
             let json = edgeDTO.ToSMC().Stringify()
             DcClipboard.Write(json)
-            json === jsonAnswer
+            json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let smec:Aas.SubmodelElementCollection = Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom(JNode.Parse(json))
             let xml = smec.ToXml()
-            xml === xmlAnswer
+            let xxx = xml.ZeroFillGuidOnXml()
+            xml.ZeroFillGuidOnXml() === xmlAnswer.ZeroFillGuidOnXml()
 
             let smec:Aas.SubmodelElementCollection = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json)
             let xml = smec.ToXml()
-            xml === xmlAnswer
+            xml.ZeroFillGuidOnXml() === xmlAnswer.ZeroFillGuidOnXml()
             ()
 
 
@@ -163,6 +164,12 @@ module ToAasTest =
       "value": "F1W1"
     },
     {
+      "modelType": "Property",
+      "idShort": "Guid",
+      "valueType": "xs:string",
+      "value": "9a7c646f-cc24-454b-991f-cca08a62ad83"
+    },
+    {
       "modelType": "SubmodelElementCollection",
       "idShort": "Graph",
       "value": [
@@ -172,37 +179,37 @@ module ToAasTest =
           "value": [
             {
               "modelType": "SubmodelElementCollection",
-              "idShort": "Action",
+              "idShort": "Vertex",
               "value": [
                 {
                   "modelType": "Property",
-                  "idShort": "Name",
+                  "idShort": "Guid",
                   "valueType": "xs:string",
-                  "value": "F1W1C1"
+                  "value": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c"
                 },
                 {
                   "modelType": "Property",
-                  "idShort": "IsDisable",
-                  "valueType": "xs:boolean",
-                  "value": "False"
+                  "idShort": "ContentGuid",
+                  "valueType": "xs:string",
+                  "value": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
                 }
               ]
             },
             {
               "modelType": "SubmodelElementCollection",
-              "idShort": "Action",
+              "idShort": "Vertex",
               "value": [
                 {
                   "modelType": "Property",
-                  "idShort": "Name",
+                  "idShort": "Guid",
                   "valueType": "xs:string",
-                  "value": "F1W1C2"
+                  "value": "79f5bd27-b753-4d12-8c31-644992e14ec1"
                 },
                 {
                   "modelType": "Property",
-                  "idShort": "IsDisable",
-                  "valueType": "xs:boolean",
-                  "value": "False"
+                  "idShort": "ContentGuid",
+                  "valueType": "xs:string",
+                  "value": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
                 }
               ]
             }
@@ -226,15 +233,69 @@ module ToAasTest =
                   "modelType": "Property",
                   "idShort": "Source",
                   "valueType": "xs:string",
-                  "value": "F1W1C1"
+                  "value": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c"
                 },
                 {
                   "modelType": "Property",
                   "idShort": "Target",
                   "valueType": "xs:string",
-                  "value": "F1W1C2"
+                  "value": "79f5bd27-b753-4d12-8c31-644992e14ec1"
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Works",
+      "value": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Action",
+          "value": [
+            {
+              "modelType": "Property",
+              "idShort": "Name",
+              "valueType": "xs:string",
+              "value": "F1W1C1"
+            },
+            {
+              "modelType": "Property",
+              "idShort": "Guid",
+              "valueType": "xs:string",
+              "value": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
+            },
+            {
+              "modelType": "Property",
+              "idShort": "IsDisable",
+              "valueType": "xs:boolean",
+              "value": "False"
+            }
+          ]
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Action",
+          "value": [
+            {
+              "modelType": "Property",
+              "idShort": "Name",
+              "valueType": "xs:string",
+              "value": "F1W1C2"
+            },
+            {
+              "modelType": "Property",
+              "idShort": "Guid",
+              "valueType": "xs:string",
+              "value": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
+            },
+            {
+              "modelType": "Property",
+              "idShort": "IsDisable",
+              "valueType": "xs:boolean",
+              "value": "False"
             }
           ]
         }
@@ -244,7 +305,7 @@ module ToAasTest =
 }"""
             let json = work.ToSMC().Stringify()
             DcClipboard.Write(json)
-            json === jsonAnswer
+            json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
             ()
@@ -266,6 +327,12 @@ module ToAasTest =
       "value": "F1"
     },
     {
+      "modelType": "Property",
+      "idShort": "Guid",
+      "valueType": "xs:string",
+      "value": "70ca4de9-84e5-43e4-ba41-6a6574b74595"
+    },
+    {
       "modelType": "SubmodelElementCollection",
       "idShort": "Graph",
       "value": [
@@ -275,91 +342,19 @@ module ToAasTest =
           "value": [
             {
               "modelType": "SubmodelElementCollection",
-              "idShort": "Work",
+              "idShort": "Vertex",
               "value": [
                 {
                   "modelType": "Property",
-                  "idShort": "Name",
+                  "idShort": "Guid",
                   "valueType": "xs:string",
-                  "value": "F1W1"
+                  "value": "fb1cd059-3d73-4f5f-acb4-dea10ad276d2"
                 },
                 {
-                  "modelType": "SubmodelElementCollection",
-                  "idShort": "Graph",
-                  "value": [
-                    {
-                      "modelType": "SubmodelElementCollection",
-                      "idShort": "Vertices",
-                      "value": [
-                        {
-                          "modelType": "SubmodelElementCollection",
-                          "idShort": "Action",
-                          "value": [
-                            {
-                              "modelType": "Property",
-                              "idShort": "Name",
-                              "valueType": "xs:string",
-                              "value": "F1W1C1"
-                            },
-                            {
-                              "modelType": "Property",
-                              "idShort": "IsDisable",
-                              "valueType": "xs:boolean",
-                              "value": "False"
-                            }
-                          ]
-                        },
-                        {
-                          "modelType": "SubmodelElementCollection",
-                          "idShort": "Action",
-                          "value": [
-                            {
-                              "modelType": "Property",
-                              "idShort": "Name",
-                              "valueType": "xs:string",
-                              "value": "F1W1C2"
-                            },
-                            {
-                              "modelType": "Property",
-                              "idShort": "IsDisable",
-                              "valueType": "xs:boolean",
-                              "value": "False"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "modelType": "SubmodelElementCollection",
-                      "idShort": "Edges",
-                      "value": [
-                        {
-                          "modelType": "SubmodelElementCollection",
-                          "idShort": "Edge",
-                          "value": [
-                            {
-                              "modelType": "Property",
-                              "idShort": "EdgeType",
-                              "valueType": "xs:string",
-                              "value": "Start"
-                            },
-                            {
-                              "modelType": "Property",
-                              "idShort": "Source",
-                              "valueType": "xs:string",
-                              "value": "F1W1C1"
-                            },
-                            {
-                              "modelType": "Property",
-                              "idShort": "Target",
-                              "valueType": "xs:string",
-                              "value": "F1W1C2"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
+                  "modelType": "Property",
+                  "idShort": "ContentGuid",
+                  "valueType": "xs:string",
+                  "value": "9a7c646f-cc24-454b-991f-cca08a62ad83"
                 }
               ]
             }
@@ -370,12 +365,168 @@ module ToAasTest =
           "idShort": "Edges"
         }
       ]
+    },
+    {
+      "modelType": "SubmodelElementCollection",
+      "idShort": "Works",
+      "value": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "idShort": "Work",
+          "value": [
+            {
+              "modelType": "Property",
+              "idShort": "Name",
+              "valueType": "xs:string",
+              "value": "F1W1"
+            },
+            {
+              "modelType": "Property",
+              "idShort": "Guid",
+              "valueType": "xs:string",
+              "value": "9a7c646f-cc24-454b-991f-cca08a62ad83"
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Graph",
+              "value": [
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Vertices",
+                  "value": [
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Vertex",
+                      "value": [
+                        {
+                          "modelType": "Property",
+                          "idShort": "Guid",
+                          "valueType": "xs:string",
+                          "value": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c"
+                        },
+                        {
+                          "modelType": "Property",
+                          "idShort": "ContentGuid",
+                          "valueType": "xs:string",
+                          "value": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Vertex",
+                      "value": [
+                        {
+                          "modelType": "Property",
+                          "idShort": "Guid",
+                          "valueType": "xs:string",
+                          "value": "79f5bd27-b753-4d12-8c31-644992e14ec1"
+                        },
+                        {
+                          "modelType": "Property",
+                          "idShort": "ContentGuid",
+                          "valueType": "xs:string",
+                          "value": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Edges",
+                  "value": [
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Edge",
+                      "value": [
+                        {
+                          "modelType": "Property",
+                          "idShort": "EdgeType",
+                          "valueType": "xs:string",
+                          "value": "Start"
+                        },
+                        {
+                          "modelType": "Property",
+                          "idShort": "Source",
+                          "valueType": "xs:string",
+                          "value": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c"
+                        },
+                        {
+                          "modelType": "Property",
+                          "idShort": "Target",
+                          "valueType": "xs:string",
+                          "value": "79f5bd27-b753-4d12-8c31-644992e14ec1"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Works",
+              "value": [
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Action",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Name",
+                      "valueType": "xs:string",
+                      "value": "F1W1C1"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Guid",
+                      "valueType": "xs:string",
+                      "value": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "IsDisable",
+                      "valueType": "xs:boolean",
+                      "value": "False"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Action",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Name",
+                      "valueType": "xs:string",
+                      "value": "F1W1C2"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Guid",
+                      "valueType": "xs:string",
+                      "value": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "IsDisable",
+                      "valueType": "xs:boolean",
+                      "value": "False"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }"""
             let json = flow.ToSMC().Stringify()
             DcClipboard.Write(json)
-            json === jsonAnswer
+            json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
 
@@ -397,6 +548,12 @@ module ToAasTest =
       "value": "system1"
     },
     {
+      "modelType": "Property",
+      "idShort": "Guid",
+      "valueType": "xs:string",
+      "value": "d428dc1c-9806-4366-84c9-fddc1ab5b98b"
+    },
+    {
       "modelType": "SubmodelElementCollection",
       "idShort": "Flows",
       "value": [
@@ -411,6 +568,12 @@ module ToAasTest =
               "value": "F1"
             },
             {
+              "modelType": "Property",
+              "idShort": "Guid",
+              "valueType": "xs:string",
+              "value": "70ca4de9-84e5-43e4-ba41-6a6574b74595"
+            },
+            {
               "modelType": "SubmodelElementCollection",
               "idShort": "Graph",
               "value": [
@@ -420,91 +583,19 @@ module ToAasTest =
                   "value": [
                     {
                       "modelType": "SubmodelElementCollection",
-                      "idShort": "Work",
+                      "idShort": "Vertex",
                       "value": [
                         {
                           "modelType": "Property",
-                          "idShort": "Name",
+                          "idShort": "Guid",
                           "valueType": "xs:string",
-                          "value": "F1W1"
+                          "value": "fb1cd059-3d73-4f5f-acb4-dea10ad276d2"
                         },
                         {
-                          "modelType": "SubmodelElementCollection",
-                          "idShort": "Graph",
-                          "value": [
-                            {
-                              "modelType": "SubmodelElementCollection",
-                              "idShort": "Vertices",
-                              "value": [
-                                {
-                                  "modelType": "SubmodelElementCollection",
-                                  "idShort": "Action",
-                                  "value": [
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "Name",
-                                      "valueType": "xs:string",
-                                      "value": "F1W1C1"
-                                    },
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "IsDisable",
-                                      "valueType": "xs:boolean",
-                                      "value": "False"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "modelType": "SubmodelElementCollection",
-                                  "idShort": "Action",
-                                  "value": [
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "Name",
-                                      "valueType": "xs:string",
-                                      "value": "F1W1C2"
-                                    },
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "IsDisable",
-                                      "valueType": "xs:boolean",
-                                      "value": "False"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "modelType": "SubmodelElementCollection",
-                              "idShort": "Edges",
-                              "value": [
-                                {
-                                  "modelType": "SubmodelElementCollection",
-                                  "idShort": "Edge",
-                                  "value": [
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "EdgeType",
-                                      "valueType": "xs:string",
-                                      "value": "Start"
-                                    },
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "Source",
-                                      "valueType": "xs:string",
-                                      "value": "F1W1C1"
-                                    },
-                                    {
-                                      "modelType": "Property",
-                                      "idShort": "Target",
-                                      "valueType": "xs:string",
-                                      "value": "F1W1C2"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
+                          "modelType": "Property",
+                          "idShort": "ContentGuid",
+                          "valueType": "xs:string",
+                          "value": "9a7c646f-cc24-454b-991f-cca08a62ad83"
                         }
                       ]
                     }
@@ -513,6 +604,162 @@ module ToAasTest =
                 {
                   "modelType": "SubmodelElementCollection",
                   "idShort": "Edges"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "Works",
+              "value": [
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "idShort": "Work",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "idShort": "Name",
+                      "valueType": "xs:string",
+                      "value": "F1W1"
+                    },
+                    {
+                      "modelType": "Property",
+                      "idShort": "Guid",
+                      "valueType": "xs:string",
+                      "value": "9a7c646f-cc24-454b-991f-cca08a62ad83"
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Graph",
+                      "value": [
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Vertices",
+                          "value": [
+                            {
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Vertex",
+                              "value": [
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "Guid",
+                                  "valueType": "xs:string",
+                                  "value": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c"
+                                },
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "ContentGuid",
+                                  "valueType": "xs:string",
+                                  "value": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
+                                }
+                              ]
+                            },
+                            {
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Vertex",
+                              "value": [
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "Guid",
+                                  "valueType": "xs:string",
+                                  "value": "79f5bd27-b753-4d12-8c31-644992e14ec1"
+                                },
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "ContentGuid",
+                                  "valueType": "xs:string",
+                                  "value": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Edges",
+                          "value": [
+                            {
+                              "modelType": "SubmodelElementCollection",
+                              "idShort": "Edge",
+                              "value": [
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "EdgeType",
+                                  "valueType": "xs:string",
+                                  "value": "Start"
+                                },
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "Source",
+                                  "valueType": "xs:string",
+                                  "value": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c"
+                                },
+                                {
+                                  "modelType": "Property",
+                                  "idShort": "Target",
+                                  "valueType": "xs:string",
+                                  "value": "79f5bd27-b753-4d12-8c31-644992e14ec1"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "SubmodelElementCollection",
+                      "idShort": "Works",
+                      "value": [
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Action",
+                          "value": [
+                            {
+                              "modelType": "Property",
+                              "idShort": "Name",
+                              "valueType": "xs:string",
+                              "value": "F1W1C1"
+                            },
+                            {
+                              "modelType": "Property",
+                              "idShort": "Guid",
+                              "valueType": "xs:string",
+                              "value": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
+                            },
+                            {
+                              "modelType": "Property",
+                              "idShort": "IsDisable",
+                              "valueType": "xs:boolean",
+                              "value": "False"
+                            }
+                          ]
+                        },
+                        {
+                          "modelType": "SubmodelElementCollection",
+                          "idShort": "Action",
+                          "value": [
+                            {
+                              "modelType": "Property",
+                              "idShort": "Name",
+                              "valueType": "xs:string",
+                              "value": "F1W1C2"
+                            },
+                            {
+                              "modelType": "Property",
+                              "idShort": "Guid",
+                              "valueType": "xs:string",
+                              "value": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
+                            },
+                            {
+                              "modelType": "Property",
+                              "idShort": "IsDisable",
+                              "valueType": "xs:boolean",
+                              "value": "False"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
@@ -524,7 +771,7 @@ module ToAasTest =
 }"""
             let json = system2.ToSMC().Stringify()
             DcClipboard.Write(json)
-            json === jsonAnswer
+            json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
 

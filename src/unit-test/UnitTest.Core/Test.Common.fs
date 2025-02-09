@@ -3,8 +3,12 @@ module TestCommon
 
 open System
 open System.Text.RegularExpressions
+open System.Xml.Linq
 open Newtonsoft.Json.Linq
 
+let private isGuid (value: string) =
+    let guidPattern = @"^[{(]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[)}]?$"
+    Regex.IsMatch(value, guidPattern)
 
 type String with
     member x.RemoveLineContaining(pattern:string) = Regex.Replace(x, @"^.*" + pattern + @".*$\r?\n?", "", RegexOptions.Multiline);
@@ -31,9 +35,6 @@ type String with
 
     member x.ZeroFillGuid() =
         let jsonText = x
-        let isGuid (value: string) =
-            let guidPattern = @"^[{(]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[)}]?$"
-            Regex.IsMatch(value, guidPattern)
 
         let rec replaceGuid (token: JToken) : JToken =
             match token with
@@ -55,3 +56,15 @@ type String with
         let parsedJson = JObject.Parse(jsonText)
         replaceGuid parsedJson |> fun j -> j.ToString()
 
+    member x.ZeroFillGuidOnXml() =
+        let xmlText = x
+        let doc = XDocument.Parse(xmlText)
+
+        let rec replaceGuid (element: XElement) =
+            for node in element.Elements() do
+                if node.Name.LocalName = "value" && isGuid node.Value then
+                    node.Value <- "00000000-0000-0000-0000-000000000000"
+                replaceGuid node
+
+        replaceGuid doc.Root
+        doc.ToString()

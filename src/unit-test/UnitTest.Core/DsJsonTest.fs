@@ -28,43 +28,43 @@ module DsJson =
 
     let dsJson = """{
   "Name": "system1",
-  "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
+  "Guid": "d428dc1c-9806-4366-84c9-fddc1ab5b98b",
   "Flows": [
     {
       "Name": "F1",
-      "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
+      "Guid": "70ca4de9-84e5-43e4-ba41-6a6574b74595",
       "Works": [
         {
           "Name": "F1W1",
-          "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
+          "Guid": "9a7c646f-cc24-454b-991f-cca08a62ad83",
           "Actions": [
             {
               "Name": "F1W1C1",
-              "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
+              "Guid": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e",
               "IsDisabled": false,
               "IsPush": false
             },
             {
               "Name": "F1W1C2",
-              "Guid": "951b7709-868a-4cad-a74f-3458cc649244",
+              "Guid": "6f6c0275-bd7b-4faa-8e8f-6636ca158625",
               "IsDisabled": false,
               "IsPush": false
             }
           ],
           "VertexDTOs": [
             {
-              "Guid": "0f866b00-8ef8-4a44-9bde-f124f14110cb",
-              "ContentGuid": "951b7709-868a-4cad-a74f-3458cc649244"
+              "Guid": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c",
+              "ContentGuid": "73b49a57-a497-4a8a-8c9a-533dceeb7b5e"
             },
             {
-              "Guid": "d33a35d7-ce45-407d-940e-5d7a0dc8f87a",
-              "ContentGuid": "951b7709-868a-4cad-a74f-3458cc649244"
+              "Guid": "79f5bd27-b753-4d12-8c31-644992e14ec1",
+              "ContentGuid": "6f6c0275-bd7b-4faa-8e8f-6636ca158625"
             }
           ],
           "EdgeDTOs": [
             {
-              "Source": "0f866b00-8ef8-4a44-9bde-f124f14110cb",
-              "Target": "d33a35d7-ce45-407d-940e-5d7a0dc8f87a",
+              "Source": "6926aadb-bfd8-4a08-a37f-25eeaa521b4c",
+              "Target": "79f5bd27-b753-4d12-8c31-644992e14ec1",
               "EdgeType": {
                 "Case": "Start"
               }
@@ -74,8 +74,8 @@ module DsJson =
       ],
       "VertexDTOs": [
         {
-          "Guid": "249712fa-113f-407d-837a-faff6b80e62c",
-          "ContentGuid": "951b7709-868a-4cad-a74f-3458cc649244"
+          "Guid": "fb1cd059-3d73-4f5f-acb4-dea10ad276d2",
+          "ContentGuid": "9a7c646f-cc24-454b-991f-cca08a62ad83"
         }
       ],
       "EdgeDTOs": []
@@ -119,53 +119,6 @@ module DsJson =
             let json2 = system2.ToJson()
             jsonText === json2
 
-        /// Flow 바로 아래에 존재하는 coin 생성 및 연결 test
-        [<Test>]
-        member _.``FlowDirectCoin`` () =
-            let system2 = EmJson.Duplicate(system, JsonSerializerSettings(ReferenceLoopHandling = ReferenceLoopHandling.Ignore))
-            let f1 = system2.Flows[0]
-            let f1w1 = f1.Works[0]
-            //let f1Cmd1 = f1.AddVertex(new DsCommand("F1Cmd1"))
-            //let f1Op1  = f1.AddVertex(new DsOperator("F1Op1"))
-            //let f1c1   = f1.AddVertex(new DsAction("F1C1"))
-            //let f1c2   = f1.AddVertex(new DsAction("F1C2"))
-            //f1.CreateEdge(f1c1, f1w1, CausalEdgeType.Start) |> verifyNonNull
-            //f1.CreateEdge(f1c2, f1w1, CausalEdgeType.Start) |> verifyNonNull
-
-            let jsonText = system2.ToJson()
-            DcClipboard.Write(jsonText);
-            let str = """"Edges": [
-        {
-          "Source": "F1C1",
-          "Target": "F1W1",
-          "EdgeType": {
-            "Case": "Start"
-          }
-        }"""
-            jsonText.Contains(str) === true
-
-            let str = """"Edges": [
-        {
-          "Source": "F1C1",
-          "Target": "F1W1",
-          "EdgeType": {
-            "Case": "Start"
-          }
-        },
-        {
-          "Source": "F1C2",
-          "Target": "F1W1",
-          "EdgeType": {
-            "Case": "Start"
-          }
-        }
-      ]"""
-            jsonText.Contains(str) === true
-
-
-            let json2 = system2.ToJson()
-            jsonText === json2
-
 
         /// - Ds object (DsNamedObject) 로부터
         ///
@@ -186,6 +139,11 @@ module DsJson =
             system.Fqdn() === "system1"
             f1    .Fqdn() === "system1.F1"
             f1w1  .Fqdn() === "system1.F1.F1W1"
+
+
+            let fqdn1 = f1w1c1.Fqdn()
+            let fqdn2 = f1w1c2.Fqdn()
+
             f1w1c1.Fqdn() === "system1.F1.F1W1.F1W1C1"
             f1w1c2.Fqdn() === "system1.F1.F1W1.F1W1C2"
 

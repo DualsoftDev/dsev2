@@ -42,6 +42,7 @@ module CoreGraphToAas =
     type VertexDTO with
         /// Convert EdgeDTO to submodelElementCollection
         member x.ToSMC(): JObj =
+            let xx = x
             J.CreateJObj(
                 idShort = "Vertex",
                 modelType = A.smc,
@@ -149,15 +150,31 @@ module CoreToAas =
         /// DsFlow -> JNode
         member x.ToSMC(): JObj =
             let jGraph = x.GraphToSMC()
+            let ws = x.Works |> map _.ToSMC() |> Seq.cast<JNode>
+            let works =
+                J.CreateJObj(
+                    idShort = "Works",
+                    modelType = A.smc,
+                    values = ws
+                )
+
             x.DsNamedObjectToSMC("Flow")
-                .AddValues([|jGraph|])
+                .AddValues([|jGraph; works|])
 
     type DsWork with    // ToSMC
         /// DsWork -> JNode
         member x.ToSMC(): JObj =
             let jGraph = x.GraphToSMC()
+            let acts = x.Actions |> map _.ToSMC() |> Seq.cast<JNode>
+            let actions =
+                J.CreateJObj(
+                    idShort = "Works",
+                    modelType = A.smc,
+                    values = acts
+                )
+
             x.DsNamedObjectToSMC("Work")
-                .AddValues([|jGraph|])
+                .AddValues([|jGraph; actions|])
 
     type DsAction with
         /// DsAction -> JNode
@@ -192,5 +209,13 @@ module CoreToAas =
     type INamed with
         member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
             let modelType = modelType |? A.smc
-            J.CreateJObj(idShort = typeName, modelType = modelType, values=[J.CreateProp("Name", x.Name)])
+            let vals:JNode seq = [
+                    J.CreateProp("Name", x.Name)
+                    match x with
+                    | :? IGuid as guid ->
+                        J.CreateProp("Guid", guid.Guid.ToString())
+                    | _ ->
+                        ()
+                ]
+            J.CreateJObj( idShort = typeName, modelType = modelType, values=vals)
 

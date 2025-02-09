@@ -10,15 +10,15 @@ open System
 
 [<AutoOpen>]
 module Core =
-    let private getGuid (container:DsItem option) =
+    let private getContainer (container:DsItem option): DsItem =
         match container with
-        | None -> Guid.NewGuid()
-        | Some c when isItNull(c) -> Guid.NewGuid()
-        | Some c -> c.Guid
+        | None -> getNull<DsItem>()
+        | Some c when isItNull(c) -> getNull<DsItem>()
+        | Some c -> c
 
     type DsItem(name:string, ?container:DsItem) =
-        inherit NamedGuidObject(name, getGuid(container))
-        [<JsonIgnore>] member val Container = container |? getNull<DsItem>() with get, set
+        inherit NamedGuidObject(name, Guid.NewGuid())
+        [<JsonIgnore>] member val Container = getContainer container with get, set
 
     /// DS system
     type DsSystem(name:string) =
@@ -330,10 +330,10 @@ module CoreGraph =
 
         /// fqdnObj 기준 상위로 Work 찾기
         [<Extension>]
-        static member GetWork(fqdnObj:DsItem):DsWork =
-            match fqdnObj with
+        static member GetWork(dsItem:DsItem):DsWork =
+            match dsItem with
             | :? DsWork     as w -> w
-            | :? DsAction   as a -> (a.Container :?> DsAction).Work
+            | :? DsAction   as a -> a.Work
             //| :? DsCommand  as c -> c.Container.OptWork
             //| :? DsOperator as o -> o.Container.OptWork
             | _ -> getNull<DsWork>()
