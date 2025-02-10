@@ -50,6 +50,10 @@ type GuidEdge internal (source:GuidVertex, target:GuidVertex, edgeType:CausalEdg
     inherit EdgeBase<GuidVertex>(source, target, edgeType)
     //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
 
+type GuidVertex with    // Content
+    [<JsonIgnore>] member internal x.Content = x.ContentImpl |> box :?> DsItem
+    [<JsonIgnore>] member internal x.Name = x.Content.Name
+
 
 [<AutoOpen>]
 module CoreGraphBase =
@@ -104,3 +108,40 @@ module CoreGraphBase =
     type EdgeBase<'V> internal (source:'V, target:'V, edgeType:CausalEdgeType) =   // copied from Engine.Common.DsEdgeBase<>
         inherit Dual.Common.Core.FS.GraphModule.EdgeBase<'V, CausalEdgeType>(source, target, edgeType)
         member _.EdgeType = edgeType
+
+
+
+[<AutoOpen>]
+module CoreProlog =
+    let internal getContainer (container:DsItem option): DsItem =
+        match container with
+        | None -> getNull<DsItem>()
+        | Some c when isItNull(c) -> getNull<DsItem>()
+        | Some c -> c
+
+    type DsItem(name:string, ?container:DsItem) =
+        inherit NamedGuidObject(name, Guid.NewGuid())
+        [<JsonIgnore>] member val Container = getContainer container with get, set
+
+
+    type DsGraph = TGraph<GuidVertex, GuidEdge>
+
+    /// Edge 구조 serialization 용도.
+    type EdgeDTO(source:Guid, target:Guid, edgeType:CausalEdgeType) =
+        member val Source = source with get, set
+        member val Target = target with get, set
+        member val EdgeType = edgeType with get, set
+        static member FromGraph(graph:DsGraph): EdgeDTO[] =
+            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Guid, e.Target.Guid, e.EdgeType)).ToArray()
+            es
+
+
+    type VertexDTO = {
+        //mutable Name:string
+        mutable Guid:Guid
+        mutable ContentGuid:Guid
+    } with
+        static member FromGraph(graph:DsGraph): VertexDTO[] =
+            let vs = graph.Vertices.Map(fun v -> { Guid = v.Guid; ContentGuid = v.Content.Guid }).ToArray()
+            vs
+

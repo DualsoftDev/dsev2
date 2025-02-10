@@ -10,16 +10,6 @@ open System
 
 [<AutoOpen>]
 module Core =
-    let private getContainer (container:DsItem option): DsItem =
-        match container with
-        | None -> getNull<DsItem>()
-        | Some c when isItNull(c) -> getNull<DsItem>()
-        | Some c -> c
-
-    type DsItem(name:string, ?container:DsItem) =
-        inherit NamedGuidObject(name, Guid.NewGuid())
-        [<JsonIgnore>] member val Container = getContainer container with get, set
-
     /// DS system
     type DsSystem(name:string) =
         inherit DsItem(name)
@@ -106,10 +96,6 @@ module Core =
 //[<AutoOpen>]
 //module CoreCreate =
 
-
-    type GuidVertex with    // Content
-        [<JsonIgnore>] member internal x.Content = x.ContentImpl |> box :?> DsItem
-        [<JsonIgnore>] member internal x.Name = x.Content.Name
 
 
     type DsSystem with
@@ -217,67 +203,7 @@ module Core =
 [<AutoOpen>]
 module CoreGraph =
 
-    type DsGraph = TGraph<GuidVertex, GuidEdge>
 
-
-
-    /// Edge 구조 serialization 용도.
-    type EdgeDTO(source:Guid, target:Guid, edgeType:CausalEdgeType) =
-        member val Source = source with get, set
-        member val Target = target with get, set
-        member val EdgeType = edgeType with get, set
-        static member FromGraph(graph:DsGraph): EdgeDTO[] =
-            let es = graph.Edges.Map(fun e -> EdgeDTO(e.Source.Guid, e.Target.Guid, e.EdgeType)).ToArray()
-            es
-
-
-    type VertexDTO = {
-        //mutable Name:string
-        mutable Guid:Guid
-        mutable ContentGuid:Guid
-    } with
-        static member FromGraph(graph:DsGraph): VertexDTO[] =
-            let vs = graph.Vertices.Map(fun v -> { Guid = v.Guid; ContentGuid = v.Content.Guid }).ToArray()
-            vs
-
-    ///// Vertex 의 Polymorphic types.  Json serialize 시의 type 구분용으로도 사용된다. (e.g "Case": "Action", "Fields": [...])
-    //type VertexDetailObsolete =
-    //    | Work     of DsWork
-    //    | Action   of DsAction
-    //    | AutoPre  of DsAutoPre
-    //    | Safety   of DsSafety
-    //    | Command  of DsCommand
-    //    | Operator of DsOperator
-    //    with
-    //        /// VertexDetailObsolete Union type 의 내부 알맹이 공통 구조인 vertex 를 반환
-    //        member x.AsDsItem():DsItem =
-    //            match x with
-    //            | Work     y -> y :> DsItem
-    //            | Action   y -> y :> DsItem
-    //            | AutoPre  y -> y :> DsItem
-    //            | Safety   y -> y :> DsItem
-    //            | Command  y -> y :> DsItem
-    //            | Operator y -> y :> DsItem
-
-    //        /// vertex subclass 로부터 VertexDetailObsolete Union type 생성 반환
-    //        static member FromDsItem(v:DsItem) =
-    //            match v with
-    //            | :? DsWork     as y -> Work     y
-    //            | :? DsAction   as y -> Action   y
-    //            | :? DsAutoPre  as y -> AutoPre  y
-    //            | :? DsSafety   as y -> Safety   y
-    //            | :? DsCommand  as y -> Command  y
-    //            | :? DsOperator as y -> Operator y
-    //            | _ -> failwith "ERROR"
-
-    //        member x.Case:string =
-    //            match x with
-    //            | Work     _ -> "Work"
-    //            | Action   _ -> "Action"
-    //            | AutoPre  _ -> "AutoPre"
-    //            | Safety   _ -> "Safety"
-    //            | Command  _ -> "Command"
-    //            | Operator _ -> "Operator"
 
 
 
