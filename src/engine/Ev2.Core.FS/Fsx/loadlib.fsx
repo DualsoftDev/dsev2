@@ -11,6 +11,8 @@ open System.Collections.Generic
 
 #r @"F:\Git\ds\Submodules\nuget\bin\net8.0\Dual.Common.Core.dll"
 #r @"F:\Git\ds\Submodules\nuget\bin\net8.0\Dual.Common.Core.FS.dll"
+#r @"F:\Git\ds\Submodules\nuget\bin\net8.0\Dual.Common.Base.CS.dll"
+#r @"F:\Git\ds\Submodules\nuget\bin\net8.0\Dual.Common.Base.FS.dll"
 
 #r "nuget: Newtonsoft.Json"
 #r "nuget: AasCore.Aas3_0"
@@ -20,6 +22,8 @@ open System
 open System.IO
 open Dual.Common
 open Dual.Common.Core.FS
+open Dual.Common.Base.CS
+open Dual.Common.Base.FS
 
 open AasCore.Aas3_0
 

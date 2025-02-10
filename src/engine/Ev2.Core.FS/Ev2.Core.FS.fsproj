@@ -10,7 +10,9 @@
 
 	<ItemGroup>
 		<None Include="Fsx\loadlib.fsx" />
+		<None Include="fsx\jsonTest.fsx" />
 		<Compile Include="Interfaces.fs" />
+		<Compile Include="Device.fs" />
 		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Core.fs" />
 		<Compile Include="Core.Create.fs" />

@@ -18,46 +18,8 @@ type CausalEdgeType =
     | Group
 
 
-/// 이름 속성을 가진 추상 클래스
-[<AbstractClass>]
-type NamedObject(name: string) =
-    [<JsonProperty(Order = -100)>] member val Name = name with get, set
-    interface INamed with
-        member x.Name with get() = x.Name and set(v) = x.Name <- v
-
-[<AbstractClass>]
-type GuidObject(?guid:Guid) =
-    interface IGuid with
-        member x.Guid with get () = x.Guid and set v = x.Guid <- v
-    [<JsonProperty(Order = -99)>] member val Guid = guid |?? (fun () -> Guid.NewGuid()) with get, set
-
-[<AbstractClass>]
-type NamedGuidObject(name: string, ?guid:Guid) =
-    inherit GuidObject(?guid=guid)
-    [<JsonProperty(Order = -100)>] member val Name = name with get, set
-    interface INamed with
-        member x.Name with get() = x.Name and set(v) = x.Name <- v
-
-
-type GuidVertex(content:GuidObject, ?vertexGuid:Guid) =  // content: 실체는 DsItem
-    inherit GuidObject(?guid=vertexGuid)
-
-    interface IVertexKey with
-        member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
-    member internal x.ContentImpl = content
-
-type GuidEdge internal (source:GuidVertex, target:GuidVertex, edgeType:CausalEdgeType) =
-    inherit EdgeBase<GuidVertex>(source, target, edgeType)
-    //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
-
-type GuidVertex with    // Content
-    [<JsonIgnore>] member internal x.Content = x.ContentImpl |> box :?> DsItem
-    [<JsonIgnore>] member internal x.Name = x.Content.Name
-
-
 [<AutoOpen>]
 module CoreGraphBase =
-
     /// Template class for DS Graph<'V, 'E>.   coppied from Engine.Common.TDGraph<>
     type TGraph<'V, 'E
             when 'V :> IVertexKey and 'V : equality
@@ -118,6 +80,23 @@ module CoreProlog =
         | None -> getNull<DsItem>()
         | Some c when isItNull(c) -> getNull<DsItem>()
         | Some c -> c
+
+    type GuidVertex(content:GuidObject, ?vertexGuid:Guid) =  // content: 실체는 DsItem
+        inherit GuidObject(?guid=vertexGuid)
+
+        interface IVertexKey with
+            member x.VertexKey with get() = x.Guid.ToString() and set(v) = x.Guid <- Guid(v)
+        member internal x.ContentImpl = content
+
+    type GuidEdge internal (source:GuidVertex, target:GuidVertex, edgeType:CausalEdgeType) =
+        inherit EdgeBase<GuidVertex>(source, target, edgeType)
+        //override x.ToString() = $"{x.Source.QualifiedName} {x.EdgeType.ToText()} {x.Target.QualifiedName}"
+
+    type GuidVertex with    // Content
+        [<JsonIgnore>] member internal x.Content = x.ContentImpl |> box :?> DsItem
+        [<JsonIgnore>] member internal x.Name = x.Content.Name
+
+
 
     type DsItem(name:string, ?container:DsItem) =
         inherit NamedGuidObject(name, Guid.NewGuid())

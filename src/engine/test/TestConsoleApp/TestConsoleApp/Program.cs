@@ -25,6 +25,8 @@ class Program
         var (call21, vCall21) = work2.CsAddAction("call21");
         var (call22, vCall22) = work2.CsAddAction("call22");
 
+        DeviceModule.testMe();
+
         //var op1 = flow1.AddVertex(new DsOperator("FlowOp1"));
         //var cmd1 = work1.AddVertex(new DsOperator("WorkCmd1"));
 
