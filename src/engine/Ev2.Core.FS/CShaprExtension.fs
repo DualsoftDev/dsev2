@@ -12,3 +12,6 @@ type Ev2CSharpExtensions =
     [<Extension>] static member CsSerialize(dsSystem:DsSystem) = dsSystem.ToJson()
 
     [<Extension>] static member CsAddWork(flow:DsFlow, workName:string) = flow.AddWork(workName)
+
+    [<Extension>] static member CsCreateFlow(dsSystem:DsSystem, flowName:string) = dsSystem.CreateFlow(flowName)
+    [<Extension>] static member CsAddAction(work:DsWork, actionName:string) = work.AddAction(actionName)

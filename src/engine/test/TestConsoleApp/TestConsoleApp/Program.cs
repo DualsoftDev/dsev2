@@ -8,6 +8,7 @@ using Dual.Ev2;
 using static Dual.Ev2.Core;
 using static Dual.Ev2.Ev2CSharpExtensions;
 using Dual.Common.Base.FS;
+using static Dual.Ev2.Interfaces;
 
 
 class Program
@@ -15,16 +16,14 @@ class Program
     [STAThread] // STAThread 속성 지정
     static void Main()
     {
-        DsSystem system = DsSystem.Create("system1");
-        var flow1 = system.CreateFlow("flow1");
+        DsSystem system = new DsSystem("system1");
+        var flow1 = system.CsCreateFlow("flow1");
         var (work1, vWork1) = flow1.CsAddWork("work1");
-        var (call1, call2) = (new DsAction("call1"), new DsAction("call2"));
-        GuidVertex vCall1 = work1.AddVertex(call1);
-        GuidVertex vCall2 = work1.AddVertex(call2);
+        var (call1, vCall1) = work1.CsAddAction("call1");
+        var (call2, vCall2) = work1.CsAddAction("call2");
         var (work2, vWork2) = flow1.CsAddWork("work2");
-        var (call21, call22) = (new DsAction("call21"), new DsAction("call22"));
-        var vCall21 = work2.AddVertex(call21);
-        var vCall22 = work2.AddVertex(call22);
+        var (call21, vCall21) = work2.CsAddAction("call21");
+        var (call22, vCall22) = work2.CsAddAction("call22");
 
         //var op1 = flow1.AddVertex(new DsOperator("FlowOp1"));
         //var cmd1 = work1.AddVertex(new DsOperator("WorkCmd1"));

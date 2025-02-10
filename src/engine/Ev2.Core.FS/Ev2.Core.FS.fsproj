@@ -13,6 +13,7 @@
 		<Compile Include="Interfaces.fs" />
 		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Core.fs" />
+		<Compile Include="Core.Create.fs" />
 		<Compile Include="Core.Json.fs" />
 		<Compile Include="CShaprExtension.fs" />
 		<Compile Include="AssemblyInfo.fs" />

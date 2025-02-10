@@ -145,3 +145,15 @@ module CoreProlog =
             let vs = graph.Vertices.Map(fun v -> { Guid = v.Guid; ContentGuid = v.Content.Guid }).ToArray()
             vs
 
+    type DsItemWithGraph(name:string, ?container:DsItem) =
+        inherit DsItem(name, ?container=container)
+        interface IGraph
+
+        [<JsonIgnore>] member val Graph = TGraph<GuidVertex, GuidEdge>()
+
+        [<JsonIgnore>] member x.Vertices = x.Graph.Vertices
+        [<JsonIgnore>] member x.Edges = x.Graph.Edges
+
+        [<JsonProperty(Order = 3)>] member val VertexDTOs:VertexDTO[] = [||] with get, set
+        [<JsonProperty(Order = 4)>] member val EdgeDTOs:EdgeDTO[] = [||] with get, set
+
