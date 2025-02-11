@@ -133,6 +133,12 @@ module ToAasTest =
     },
     {
       "modelType": "Property",
+      "idShort": "Guid",
+      "valueType": "xs:string",
+      "value": "47adffca-451a-4a23-b1ac-90582564634b"
+    },
+    {
+      "modelType": "Property",
       "idShort": "IsDisable",
       "valueType": "xs:boolean",
       "value": "False"
@@ -140,7 +146,7 @@ module ToAasTest =
   ]
 }"""
             let json = action.ToSMC().Stringify()
-            json === jsonAnswer
+            json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(jsonAnswer).ToXml()
 

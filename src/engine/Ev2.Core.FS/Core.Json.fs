@@ -22,7 +22,7 @@ module CoreJson =
             EmJson.ToJson(x)
 
         static member FromJson(json:string): DsSystem =
-            let system = JsonConvert.DeserializeObject<DsSystem>(json)
+            let system = EmJson.FromJson<DsSystem>(json)
             system.PrepareFromJson()
             system
 

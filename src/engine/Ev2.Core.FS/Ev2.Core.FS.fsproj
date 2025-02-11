@@ -11,7 +11,7 @@
 	<ItemGroup>
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />
-		<None Include="fsx\test2.fsx" />
+		<None Include="fsx\objectHolderV2.fsx" />
 		<Compile Include="Interfaces.fs" />
 		<Compile Include="Device.fs" />
 		<Compile Include="Core.Graph.fs" />

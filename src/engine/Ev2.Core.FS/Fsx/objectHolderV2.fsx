@@ -1,10 +1,3 @@
-open System.Diagnostics.CodeAnalysis
-
-
-
-
-
-
 
 #r "nuget: Newtonsoft.Json"
 open Newtonsoft.Json
@@ -17,14 +10,6 @@ open Newtonsoft.Json.Linq
 open System.Reflection
 
 
-///// 기존 Newtonsoft.Json.JsonConverterAttribute 와 충돌 방지
-//[<AttributeUsage(AttributeTargets.Class, AllowMultiple = false)>]
-//[<AllowNullLiteral>]
-//type MyCustomJsonConverterAttribute(converterType: Type) =
-//    inherit Attribute()
-//    member val ConverterType = converterType with get
-
-
 
 /// 기존 Newtonsoft.Json.JsonConverterAttribute 와 충돌 방지
 [<AttributeUsage(AttributeTargets.Class, AllowMultiple = false)>]
@@ -34,7 +19,7 @@ type CustomJsonConverterAttribute(converterTypeName: string) =
     member val ConverterTypeName = converterTypeName with get
 
 type ObjectHolder (typ: Type, ?value: obj) =
-    member val TypeName = typ.AssemblyQualifiedName with get
+    member val TypeName = typ.Name with get
     //member val Value = value |? null with get, set
     member val Value = defaultArg value null with get, set
     [<JsonIgnore>] member x.Type: Type = typ // Type 정보를 반환
@@ -43,19 +28,12 @@ type ObjectHolder (typ: Type, ?value: obj) =
 
     static member internal JsonSettings =
         let settings = JsonSerializerSettings()
-        settings.TypeNameHandling <- TypeNameHandling.Auto
+        settings.TypeNameHandling <- TypeNameHandling.None  // TypeName 자동 추가 방지
         settings.NullValueHandling <- NullValueHandling.Ignore
         settings.Converters.Add(ObjectHolderConverter())
         settings
-
-    //member x.ToJson () : string =
-    //    JsonConvert.SerializeObject(x, ObjectHolder.JsonSettings)  // 명확한 타입 지정
-
-    //static member FromJson (json: string) : ObjectHolder =
-    //    JsonConvert.DeserializeObject<ObjectHolder>(json, ObjectHolder.JsonSettings)
-
 and
-    [<CustomJsonConverterAttribute("ObjectHolderConverter")>] // 문자열로 클래스 이름 지정
+    [<CustomJsonConverter("ObjectHolderConverter")>] // 문자열로 클래스 이름 지정
     ObjectHolderConverter() =
     inherit JsonConverter<ObjectHolder>()
 
@@ -70,7 +48,27 @@ and
     override this.ReadJson(reader, objectType, existingValue, hasExistingValue, serializer) =
         let obj = JObject.Load(reader)
         let typeName = obj["TypeName"].ToObject<string>()
-        let typ = Type.GetType(typeName) // 타입 정보를 가져옴
+        /// 간소화된 TypeName을 실제 Type으로 변환
+        let typ =
+            match typeName with
+            | "Int32"       -> typeof<int>
+            | "UInt32"      -> typeof<uint32>
+            | "Int16"       -> typeof<int16>
+            | "UInt16"      -> typeof<uint16>
+            | "Int64"       -> typeof<int64>
+            | "UInt64"      -> typeof<uint64>
+            | "Byte"        -> typeof<byte>
+            | "SByte"       -> typeof<sbyte>
+            | "Single"      -> typeof<single>  // float32
+            | "Double"      -> typeof<double>  // float64
+            | "Decimal"     -> typeof<decimal>
+            | "Boolean"     -> typeof<bool>
+            | "Char"        -> typeof<char>
+            | "String"      -> typeof<string>
+            | "DateTime"    -> typeof<DateTime>
+            | "Guid"        -> typeof<Guid>
+            | _ -> Type.GetType(typeName)  // 그 외 타입은 기존 방식 유지
+
         let value =
             match obj.TryGetValue("Value") with
             | (true, token) when token.Type <> JTokenType.Null -> token.ToObject(typ, serializer)
@@ -79,16 +77,15 @@ and
 
 /// ObjectHolder 를 포함하는 클래스
 type ContainerClass() =
+    member val Holder0 = ObjectHolder(typeof<int>, null) with get, set
     member val Holder1 = ObjectHolder(typeof<int>, 100) with get, set
     member val Holder2 = ObjectHolder(typeof<string>, "Hello, World!") with get, set
     member val Holder3 = ObjectHolder(typeof<uint64>, 9999UL) with get, set
+    member val Num = 1234 with get
 
-    //member this.ToJson () : string =
-    //    JsonConvert.SerializeObject(this :> obj, ObjectHolder.JsonSettings)  // 명확한 타입 지정
-
-    //static member FromJson (json: string) : ContainerClass =
-    //    JsonConvert.DeserializeObject<ContainerClass>(json, ObjectHolder.JsonSettings)
-
+type CC(cc:ContainerClass) =
+    member val CC = cc with get, set
+    member val Num = "Hello" with get
 
 module GlobalJsonSettings =
     let private collectConverters () =
@@ -124,9 +121,15 @@ module GlobalJsonSettings =
 
 let container = ContainerClass()
 //let json = container.ToJson()
-let json = JsonConvert.SerializeObject(container, GlobalJsonSettings.JsonSettings)
+let json = JsonConvert.SerializeObject(container, Formatting.Indented, GlobalJsonSettings.JsonSettings)
 
 printfn "Serialized JSON: %s" json
+
+let cc = CC(container)
+let json = JsonConvert.SerializeObject(cc, Formatting.Indented, GlobalJsonSettings.JsonSettings)
+printfn "Serialized JSON: %s" json
+let cc2 = JsonConvert.DeserializeObject<CC>(json, GlobalJsonSettings.JsonSettings)
+let json = JsonConvert.SerializeObject(cc2, Formatting.Indented, GlobalJsonSettings.JsonSettings)
 
 //let deserializedContainer = ContainerClass.FromJson(json)
 let deserializedContainer = JsonConvert.DeserializeObject<ContainerClass>(json)
