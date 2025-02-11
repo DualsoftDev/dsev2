@@ -100,63 +100,44 @@ module DeviceModule =
     [<AbstractClass>]
     type TypedAddress(address: string, typ:Type) =
         [<JsonProperty(Order = -98)>] member val Address = address with get, set
-        [<JsonProperty(Order = -97)>] member val ObjectHolder = ObjectHolder.Create() with get, set
+        [<JsonProperty(Order = -97)>] member val ObjectHolder = ObjectHolder.Create(typ, null) with get, set
 
-    type InputParam<'T>(address: string, ?min:'T, ?max:'T) =
-        inherit TypedAddress(address, typedefof<'T>)
-        member val Min = min with get, set
-        member val Max = max with get, set
+    type InputParam(address: string, typ:Type, ?min:obj, ?max:obj) =
+        inherit TypedAddress(address, typ)
+        do
+            assert(min.IsNone || min.Value.GetType() = typ)
+            assert(max.IsNone || max.Value.GetType() = typ)
+        let min = min |? null
+        let max = max |? null
 
-    type OutputParam<'T>(address: string, ?value:'T) =
-        inherit TypedAddress(address, typedefof<'T>)
+        member val Min = ObjectHolder.Create(typ, min) with get, set
+        member val Max = ObjectHolder.Create(typ, max) with get, set
 
-    type IOParam<'T>(input:InputParam<'T>, output:OutputParam<'T>) =
-        [< JsonConverter(typeof<TypeAwareConverter<obj>> )>]
-        member val Input:InputParam<'T> = input
-        [<JsonConverter(typeof<TypeAwareConverter<obj>> )>]
+    type OutputParam(address: string, typ:Type, ?value:obj) =
+        inherit TypedAddress(address, typ)
+        do
+            assert(value.IsNone || value.Value.GetType() = typ)
+
+    type IOParam(input:InputParam, output:OutputParam) =
+        member val Input:InputParam = input
         member val Output = output
         member val Others = ["Hello"; "World"]
 
 
-
-
-    // ✅ 컨테이너 클래스 (필요한 필드만 `TypeNameHandling.Auto` 적용)
-    type Container() =
-        member val Name = "MainContainer" with get, set
-
-        [<JsonConverter(typeof<TypeAwareConverter<obj list>>)>]
-        member val Parameters: obj list = [] with get, set
-
-
-    let inputParam = InputParam<double>("address", min=0.0, max=1.1)
-    let xxx = EmJson.ToJson(inputParam)
-    let inputParam2 = EmJson.FromJson<InputParam<double>>(xxx)
-    ()
-
-    let f (jobj:JObject) = jobj.["Type"].ToString() |> Type.GetType
-    let inputParam3 = EmJson.FromJson<InputParam<_>>(xxx, f)
-    ()
-
     let testMe() =
         // ✅ 테스트 데이터
-        let param1 = InputParam<uint>("param1", min = 10u, max = 100u)
-        let param2 = OutputParam<uint>("param2", value = 20u)
-        let param3 = InputParam<int>("param1", min = 10, max = 100)
+        let param1 = InputParam("address1", typedefof<UInt32>, min = 10u, max = 100u)
+        let param2 = OutputParam("address1", typedefof<UInt32>, value = 20u)
 
-        let ioParam = IOParam<uint>(input=param1, output=param2)
+        let ioParam = IOParam(param1, param2)
 
 
-        let container = Container()
-        container.Parameters <- [ box param1; box param2 ]  // obj 리스트에 저장
-
-        // 🔹 JSON 직렬화
-        let json = EmJson.ToJson(container)
         let json = EmJson.ToJson(ioParam)
         printfn "Serialized JSON:\n%s\n" json
 
 
         // 🔹 JSON 역직렬화
-        let deserializedContainer = EmJson.FromJson<Container>(json)
+        let deserializedContainer = EmJson.FromJson<IOParam>(json)
         printfn "Deserialized Container: %A" deserializedContainer
 
         ()
