@@ -39,6 +39,12 @@ module CoreToJsonViaCode =
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
             jo["type"] <- "System"
+            let vs = J.CreateJArr(x.VertexDTOs.Map(_.ToJsonViaCode()))
+            let es = J.CreateJArr(x.EdgeDTOs.Map(_.ToJsonViaCode()))
+            jo["vertices"] <- vs
+            jo["edges"] <- es
+
+
             let arr = J.CreateJArr(x.Flows.Map(_.ToJsonViaCode()))
             jo["flows"] <- arr
             jo
@@ -47,10 +53,6 @@ module CoreToJsonViaCode =
         member x.ToJsonViaCode(): JObj =
             let jo = x.NamedToJsonViaCode()
             jo["type"] <- "Flow"
-            let vs = J.CreateJArr(x.VertexDTOs.Map(_.ToJsonViaCode()))
-            let es = J.CreateJArr(x.EdgeDTOs.Map(_.ToJsonViaCode()))
-            jo["vertices"] <- vs
-            jo["edges"] <- es
             jo
 
 

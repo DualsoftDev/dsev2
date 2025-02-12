@@ -11,7 +11,7 @@ open System
 [<AutoOpen>]
 module CoreCreate =
 
-    type DsSystem with  // Create, CreateFlow
+    type DsSystem with  // Create, CreateFlow,
         static member Create(name:string) = new DsSystem(name)
         member x.CreateFlow(flowName:string) =
             if x.Flows.Exists(fun f -> (f :> INamed).Name = flowName) then
@@ -19,18 +19,19 @@ module CoreCreate =
             else
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
 
-    type DsFlow with    // AddWork, AddVertex
-
+    // 편의상, DsFlow 의 확장으로 정의하긴 하지만, 실제 Work 가 추가되는 곳은 DsSystem.Works 이다.
+    type DsFlow with  // AddWork, AddVertex
         member x.AddWork(workName:string): DsWork * GuidVertex =
-            if x.Works.Exists(fun w -> w.Name = workName) then
+            if x.System.Works.Exists(fun w -> w.Name = workName) then
                 failwith $"Duplicated work name [{workName}]"
             else
-                let w = DsWork(x, workName)
-                x.Works.Add w
+                let w = DsWork(x.System, x, workName)
                 let v = x.AddVertex(w)
                 w, v
 
-        member x.AddVertex(work:DsWork): GuidVertex = x.AddVertexBase(work)
+        member x.AddVertex(work:DsWork): GuidVertex =
+            x.System.Works.Add work
+            x.System.AddVertexBase work
 
     type DsItemWithGraph with   // BasePrepareFromJson, BasePrepareToJson, AddVertexBase, AddVertices, CreateEdge
 
@@ -54,15 +55,15 @@ module CoreCreate =
 
         member internal x.AddVertexBase(vertex:GuidVertex): bool =
             match x, vertex.Content with
-            | (:? DsFlow, :? DsWork)
-            | (:? DsWork, :? DsAction) ->
+            | (:? DsSystem, :? DsWork)          // System 에 Work 추가.
+            | (:? DsWork, :? DsAction) ->       // Work 에 Action 추가.
                 x.Graph.AddVertex vertex
             | _ ->
                 failwith "ERROR"
 
         member internal x.AddVertexBase(dsItem:DsItem): GuidVertex =
             match x, dsItem with
-            | (:? DsFlow, :? DsWork)
+            | (:? DsSystem, :? DsWork)
             | (:? DsWork, :? DsAction) ->
                 GuidVertex(dsItem)
                 |> tee( x.AddVertexBase >> ignore)
@@ -72,7 +73,7 @@ module CoreCreate =
         member x.AddVertices(vertices:GuidVertex seq) =
             let allOk = vertices.ForAll(fun v ->
                 match x, v.Content with
-                | (:? DsFlow, :? DsWork)
+                | (:? DsSystem, :? DsWork)
                 | (:? DsWork, :? DsAction) -> true
                 | _ ->
                     false
@@ -101,6 +102,8 @@ module CoreCreate =
         member x.AddVertex(action:DsAction): GuidVertex =
             x.AddVertexBase(action)
             |> tee (fun _gv -> x.Actions.Add action)
+
+        [<JsonIgnore>] member x.System = x.Container :?> Core.DsSystem
 
 (*
  * Graph 구조의 Json serialize 는 직접 수행하지 않는다.
@@ -136,9 +139,9 @@ module CoreGraph =
         static member GetSystem(fqdnObj:DsItem):DsSystem =
             match fqdnObj with
             | :? DsSystem   as s -> s
+            | :? DsWork   as w -> w.System
 
             | :? DsFlow
-            | :? DsWork
             | :? DsAction
             | :? DsCommand
             | :? DsOperator ->
@@ -181,25 +184,30 @@ module CoreGraph =
             | _ -> failwith "ERROR"
 
 
-        /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
-        ///
-        /// e.g : system1.TryFindLqdnObj(["flow1"; "work1"; "call1"]) === call1
-        [<Extension>]
-        static member TryFindLqdnObj(fqdnObj:GuidObject, lqdn:string seq) =
-            match tryHeadAndTail lqdn with
-            | Some (h, t) ->
-                match fqdnObj with
-                | :? DsSystem   as s -> s.Flows.TryFind(fun f -> f.Name = h).Bind(_.TryFindLqdnObj(t))
-                | :? DsFlow     as f -> f.Graph.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
-                | :? DsWork     as w -> w.Graph.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
-                | _ -> failwith "ERROR"
-            | None ->
-                Some fqdnObj
+        //// todo : need fix
 
-        /// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
-        ///
-        /// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
-        [<Extension>] static member TryFindLqdnObj(fqdnObj:GuidObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
+        ///// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
+        /////
+        ///// e.g : system1.TryFindLqdnObj(["flow1"; "work1"; "call1"]) === call1
+        //[<Extension>]
+        //static member TryFindLqdnObj(fqdnObj:GuidObject, lqdn:string seq) =
+        //    match tryHeadAndTail lqdn with
+        //    | Some (h, t) ->
+        //        match fqdnObj with
+        //        | :? DsSystem   as s -> s.Flows.TryFind(fun f -> f.Name = h).Bind(_.TryFindLqdnObj(t))
+        //        | :? DsFlow     as f -> f.Graph.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+        //        | :? DsWork     as w -> w.Graph.Vertices.Map(_.Content).TryFind(fun v -> v.Name = h).Bind(_.TryFindLqdnObj(t))
+        //        | _ -> failwith "ERROR"
+        //    | None ->
+        //        Some fqdnObj
+
+
+
+
+        ///// 자신의 child 이름부터 시작하는 LQDN(Locally Qualified Name) 을 갖는 object 반환
+        /////
+        ///// e.g : system1.TryFindLqdnObj("flow1.work1.call1") === call1
+        //[<Extension>] static member TryFindLqdnObj(fqdnObj:GuidObject, lqdn:string) = fqdnObj.TryFindLqdnObj(lqdn.Split([|'.'|]))
 
 
 

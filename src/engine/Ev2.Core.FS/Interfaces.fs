@@ -7,20 +7,8 @@ open System
 
 [<AutoOpen>]
 module Interfaces =
-    /// 내부에 IContainee 형식의 다른 요소를 포함할 수 있는 parent 역할을 수행
-    type IContainer = interface end
-
     /// Graph 의 interface.  subclasses: Flow, Work
     type IGraph = interface end
-
-    /// IContainer에 포함될 수 있는 요소의 인터페이스. child 역할을 수행
-    type IContainee = interface end
-
-    /// IContainer와 IContainee 역할을 모두 수행하는 인터페이스
-    type IContain =
-        inherit IContainer
-        inherit IContainee
-
 
     type INamedVertex =
         inherit IVertex
@@ -38,18 +26,15 @@ module Interfaces =
     /// 시스템 인터페이스
     type ISystem =
         inherit IDsDsNamedObject
-        inherit IContainer
+        inherit IGraph
 
     /// 흐름 인터페이스
     type IFlow =
         inherit IDsDsNamedObject
-        inherit IContain
-        inherit IGraph
 
     /// 작업 인터페이스
     type IWork =
         inherit IDsDsNamedObject
-        inherit IContain
         inherit INamedVertex
         inherit IGraph
 
@@ -57,7 +42,6 @@ module Interfaces =
     type ICoin =
         inherit IDsObject
         inherit INamedVertex
-        inherit IContainee
 
     /// 호출 인터페이스
     type ICall =

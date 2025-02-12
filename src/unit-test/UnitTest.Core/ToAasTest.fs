@@ -158,7 +158,6 @@ module ToAasTest =
         member _.``Work: instance -> JObj -> Json ConversionTest`` () =
 
             let system2 = DsSystem.FromJson(dsJson)
-            let work = system2.Flows[0].Works[0]
             let jsonAnswer = """{
   "modelType": "SubmodelElementCollection",
   "idShort": "Work",
@@ -309,6 +308,7 @@ module ToAasTest =
     }
   ]
 }"""
+            let work = system2.Works[0]
             let json = work.ToSMC().Stringify()
             DcClipboard.Write(json)
             json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()

@@ -12,32 +12,27 @@ open System
 module Core =
     /// DS system
     type DsSystem(name:string) =
-        inherit DsItem(name)
+        inherit DsItemWithGraph(name)
         interface ISystem
         [<JsonProperty(Order = 2)>] member val Flows = ResizeArray<DsFlow>() with get, set
 
+        [<JsonProperty(Order = 3)>] member val Works = ResizeArray<DsWork>() with get, set
+
     /// DS flow
     type DsFlow(system:DsSystem, name:string) =
-        inherit DsItemWithGraph(name, container=system)
+        inherit DsItem(name)
         interface IFlow
 
-        [<JsonIgnore>]
-        member x.System
-            with get() = x.Container :?> DsSystem
-            and set (v:DsSystem) = x.Container <- v
-        member val Works = ResizeArray<DsWork>() with get, set
+        [<JsonIgnore>] member val System = system with get, set
 
     /// DS work
-    type DsWork(flow:DsFlow, name:string) =
-        inherit DsItemWithGraph(name, container=flow)
+    type DsWork(system:DsSystem, flow:DsFlow, name:string) =
+        inherit DsItemWithGraph(name, container=system)
         interface IWork
         //new(name) = DsWork(getNull<DsFlow>(), name)
         //new() = DsWork(getNull<DsFlow>(), null)
 
-        [<JsonIgnore>]
-        member x.Flow
-            with get() = x.Container :?> DsFlow
-            and set (v:DsFlow) = x.Container <- v
+        member val Flow = flow with get, set
         member val Actions = ResizeArray<DsAction>() with get, set
 
 

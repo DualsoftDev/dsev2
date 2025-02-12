@@ -77,7 +77,7 @@ module CoreGraphToAas =
         /// IGraph.ToSMC() -> JNode
         member x.GraphToSMC(): JObj =
             match x with
-            | :? DsFlow as y -> y.PrepareToJson()
+            | :? DsSystem as y -> y.PrepareToJson()
             | :? DsWork as y -> y.PrepareToJson()
             | _ -> failwith "ERROR"
 
@@ -115,14 +115,24 @@ module CoreToAas =
         /// DsSystem -> JNode(SMC: Submodel Element Collection)
         member x.ToSMC(): JObj =
             let fs = x.Flows |> map _.ToSMC() |> Seq.cast<JNode>
-            let value =
+            let flows =
                 J.CreateJObj(
                     idShort = "Flows",
                     modelType = A.smc,
                     values = fs
                 )
+
+            let jGraph = x.GraphToSMC()
+            let ws = x.Works |> map _.ToSMC() |> Seq.cast<JNode>
+            let works =
+                J.CreateJObj(
+                    idShort = "Works",
+                    modelType = A.smc,
+                    values = ws
+                )
+
             x.DsNamedObjectToSMC("System")
-                .AddValues([|value|])
+                .AddValues([|flows; works|])
 
         member x.ToSM(): JObj =
             let sml =
@@ -149,17 +159,7 @@ module CoreToAas =
     type DsFlow with    // ToSMC
         /// DsFlow -> JNode
         member x.ToSMC(): JObj =
-            let jGraph = x.GraphToSMC()
-            let ws = x.Works |> map _.ToSMC() |> Seq.cast<JNode>
-            let works =
-                J.CreateJObj(
-                    idShort = "Works",
-                    modelType = A.smc,
-                    values = ws
-                )
-
             x.DsNamedObjectToSMC("Flow")
-                .AddValues([|jGraph; works|])
 
     type DsWork with    // ToSMC
         /// DsWork -> JNode

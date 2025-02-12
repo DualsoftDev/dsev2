@@ -1,6 +1,7 @@
 namespace rec Dual.Ev2
 
 open Newtonsoft.Json
+open System.Linq
 
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
@@ -28,19 +29,16 @@ module CoreJson =
 
 
     type DsSystem with
-        member internal x.PrepareToJson() = x.Flows.Iter(_.PrepareToJson())
-        member internal x.PrepareFromJson() = x.Flows.Iter(_.PrepareFromJson(x))
-
-    type DsFlow with
         /// Graph -> Json DTO
         member (*internal*) x.PrepareToJson() =
-            x.Works.Iter(_.PrepareToJson())
             x.BasePrepareToJson()
+            x.Works.Iter(_.PrepareToJson())
+            //x.Flows.Iter(_.PrepareToJson(x))
 
-        /// Json DTO -> Graph
-        member internal x.PrepareFromJson(system:DsSystem) =
-            x.System <- system
+        member (*internal*) x.PrepareFromJson() =
+
             let g = x.Graph
+            x.Flows.Iter(_.PrepareFromJson(x))
             x.Works.Iter(_.PrepareFromJson(x))
             for v in x.VertexDTOs do
                 match x.Works.TryFind(fun a -> a.Guid = v.ContentGuid) with
@@ -49,16 +47,28 @@ module CoreJson =
                     x.Graph.Vertices.Add gv |> ignore
                 | None -> failwith $"Work not found for VertexDTO: {v}"
 
-
             x.BasePrepareFromJson()
+
+            //x.Flows.Iter(_.PrepareFromJson(x))
+
+    type DsFlow with
+        /// Json DTO -> Graph
+        member internal x.PrepareFromJson(system:DsSystem) =
+            x.System <- system
 
     type DsWork with
         /// Graph -> Json DTO
         member (*internal*) x.PrepareToJson() = x.BasePrepareToJson()
 
         /// Json DTO -> Graph
-        member internal x.PrepareFromJson(parentFlow:DsFlow) =
-            x.Container <- parentFlow
+        member internal x.PrepareFromJson(system:DsSystem) =
+            x.Container <- system
+
+            /// 메모리가 두개 생기는 것을 방지하기 위해서
+            /// System 의 Flows 목록은 JSON 에서 읽어서 생성
+            /// Work 의 Flow 는 읽어들인 Guid 를 key 로 해서, 이미 만들어진 System.Flows 에서 찾아서 할당
+            x.Flow <- system.Flows.First(fun f -> f.Guid = x.Flow.Guid)
+
             x.Actions.Iter (fun a -> a.Container <- x)
             for v in x.VertexDTOs do
                 match x.Actions.TryFind(fun a -> a.Guid = v.ContentGuid) with
