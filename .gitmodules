@@ -7,3 +7,5 @@
 [submodule "submodules/aas-core3.0-csharp"]
 	path = submodules/aas-core3.0-csharp
 	url = https://github.com/aas-core-works/aas-core3.0-csharp
+[submodule "submodule/nuget"]
+	branch = bEV2
