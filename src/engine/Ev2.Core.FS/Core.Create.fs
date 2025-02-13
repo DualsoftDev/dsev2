@@ -33,9 +33,9 @@ module CoreCreate =
             x.System.Works.Add work
             x.System.AddVertexBase work
 
-    type DsItemWithGraph with   // BasePrepareFromJson, BasePrepareToJson, AddVertexBase, AddVertices, CreateEdge
+    type DsItemWithGraph with   // BaseReadJsonEpilog, BaseWriteJsonProlog, AddVertexBase, AddVertices, CreateEdge
 
-        member x.BasePrepareFromJson() =
+        member x.BaseReadJsonEpilog() =
             let g = x.Graph
             //for v in x.VertexDTOs do
             //    let content = g.FindVertex(v.Guid.ToString())
@@ -48,7 +48,7 @@ module CoreCreate =
 
             x.EdgeDTOs.Iter(fun e -> g.CreateEdge(e.Source, e.Target, e.EdgeType)|> ignore)
 
-        member x.BasePrepareToJson() =
+        member x.BaseWriteJsonProlog() =
             x.EdgeDTOs <- EdgeDTO.FromGraph(x.Graph)
             x.VertexDTOs <- VertexDTO.FromGraph(x.Graph)
 

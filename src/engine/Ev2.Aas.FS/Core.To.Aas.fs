@@ -77,8 +77,8 @@ module CoreGraphToAas =
         /// IGraph.ToSMC() -> JNode
         member x.GraphToSMC(): JObj =
             match x with
-            | :? DsSystem as y -> y.PrepareToJson()
-            | :? DsWork as y -> y.PrepareToJson()
+            | :? DsSystem as y -> y.WriteJsonProlog()
+            | :? DsWork as y -> y.WriteJsonProlog()
             | _ -> failwith "ERROR"
 
             let vs = x.VertexDTOs |> map _.ToSMC() |> Seq.cast<JNode>

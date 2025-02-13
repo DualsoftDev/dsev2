@@ -19,27 +19,27 @@ open Dual.Common.Base.FS
 module CoreJson =
     type DsSystem with
         member x.ToJson(): string =
-            x.PrepareToJson()
+            x.WriteJsonProlog()
             EmJson.ToJson(x)
 
         static member FromJson(json:string): DsSystem =
             let system = EmJson.FromJson<DsSystem>(json)
-            system.PrepareFromJson()
+            system.ReadJsonEpilog()
             system
 
 
     type DsSystem with
         /// Graph -> Json DTO
-        member (*internal*) x.PrepareToJson() =
-            x.BasePrepareToJson()
-            x.Works.Iter(_.PrepareToJson())
-            //x.Flows.Iter(_.PrepareToJson(x))
+        member (*internal*) x.WriteJsonProlog() =
+            x.BaseWriteJsonProlog()
+            x.Works.Iter(_.WriteJsonProlog())
+            //x.Flows.Iter(_.WriteJsonProlog(x))
 
-        member (*internal*) x.PrepareFromJson() =
+        member (*internal*) x.ReadJsonEpilog() =
 
             let g = x.Graph
-            x.Flows.Iter(_.PrepareFromJson(x))
-            x.Works.Iter(_.PrepareFromJson(x))
+            x.Flows.Iter(_.ReadJsonEpilog(x))
+            x.Works.Iter(_.ReadJsonEpilog(x))
             for v in x.VertexDTOs do
                 match x.Works.TryFind(fun a -> a.Guid = v.ContentGuid) with
                 | Some w ->
@@ -47,21 +47,21 @@ module CoreJson =
                     x.Graph.Vertices.Add gv |> ignore
                 | None -> failwith $"Work not found for VertexDTO: {v}"
 
-            x.BasePrepareFromJson()
+            x.BaseReadJsonEpilog()
 
-            //x.Flows.Iter(_.PrepareFromJson(x))
+            //x.Flows.Iter(_.ReadJsonEpilog(x))
 
     type DsFlow with
         /// Json DTO -> Graph
-        member internal x.PrepareFromJson(system:DsSystem) =
+        member internal x.ReadJsonEpilog(system:DsSystem) =
             x.System <- system
 
     type DsWork with
         /// Graph -> Json DTO
-        member (*internal*) x.PrepareToJson() = x.BasePrepareToJson()
+        member (*internal*) x.WriteJsonProlog() = x.BaseWriteJsonProlog()
 
         /// Json DTO -> Graph
-        member internal x.PrepareFromJson(system:DsSystem) =
+        member internal x.ReadJsonEpilog(system:DsSystem) =
             x.Container <- system
 
             /// 메모리가 두개 생기는 것을 방지하기 위해서
@@ -78,6 +78,6 @@ module CoreJson =
                 | None -> failwith $"Action not found for VertexDTO: {v}"
 
 
-            x.BasePrepareFromJson()
+            x.BaseReadJsonEpilog()
 
             ()
