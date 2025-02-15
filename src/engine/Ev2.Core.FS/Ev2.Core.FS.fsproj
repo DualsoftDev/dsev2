@@ -9,9 +9,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />
 		<Compile Include="Interfaces.fs" />
+		<Compile Include="DsConfig.fs" />
 		<Compile Include="Device.fs" />
 		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Core.fs" />
