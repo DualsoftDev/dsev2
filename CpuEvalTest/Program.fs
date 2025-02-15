@@ -13,29 +13,48 @@ type Var(name: string, dependencies: string[], initialValue: int) =
 /// 변수 컬렉션을 관리하는 타입
 type Vars(varDict: Dictionary<string, Var>) =
     member val VarDict = varDict
-    member val Changes = Dictionary<string, int>()
+    member val Changes = Dictionary<string, int option>()
 
     /// 특정 변수 값을 변경
     member x.AddChange(name, value) =
-        x.Changes.[name] <- value
+        // None 값으로 기존 설정된 Some 값을 overwrite 하지 않는다.
+        match value with
+        | Some v -> x.Changes.[name] <- value
+        | None ->
+            match x.Changes.TryGetValue(name) with
+            | true, Some _ -> ()
+            | _ -> x.Changes.[name] <- None
 
     /// 변수 값 조회 (변경 내역이 있으면 반영)
     member x.GetValue(name) =
         match x.Changes.TryGetValue(name) with
-        | true, value -> value
+        | true, Some(value) -> value
         | _ -> x.VarDict.[name].Value
+
+module Val =
+    let [<Literal>] OFF = 0
+    let [<Literal>] ON = 1
+    let [<Literal>] R = 2
+    let [<Literal>] G = 3
+    let [<Literal>] F = 4
+    let [<Literal>] H = 5
 
 /// 프로그램 실행부
 [<EntryPoint>]
 let main argv =
     let rand = Random()
-    let numVars = 1000
+    let numVars = 3
     let maxDependencies = 10
+
+    let tr = Var("tr", [|                |], Val.OFF)
+    let w1 = Var("w1", [|"tr";       "w2"|], Val.R)
+    let w2 = Var("w2", [|"tr"; "w1";     |], Val.F)
 
     /// 변수 네트워크 생성
     let varDict =
-        let vars =
-            [ for i in 0..numVars-1 do
+        let vars = [
+            yield! [tr; w1; w2]
+            for i in 3..numVars-1 do
                 let dependencies =
                     [ for _ in 0..rand.Next(maxDependencies) do
                         "var" + rand.Next(numVars).ToString() ]
@@ -47,10 +66,11 @@ let main argv =
     let mutable currentSet = Vars(varDict)
 
     /// 초기 변경 사항 추가
-    [0..numVars-1] |> List.iter (fun i -> currentSet.AddChange("var" + i.ToString(), rand.Next(100)))
-    //currentSet.AddChange("var0", 100)
-    //currentSet.AddChange("var2", 9)
-    //currentSet.AddChange("var10", 10)
+    //[0..numVars-1] |> List.iter (fun i -> currentSet.AddChange("var" + i.ToString(), rand.Next(100)))
+
+    currentSet.AddChange("w2", Some Val.F)
+    currentSet.AddChange("w1", Some Val.R)
+    currentSet.AddChange("tr", Some Val.ON)
 
     let mutable counter = 0
     while true do
@@ -60,41 +80,64 @@ let main argv =
 
         /// 특정 변수를 평가하여 새로운 값 계산
         let evalVar (var: Var) =
-            let dependencies = var.Dependencies
-            let depValues = dependencies |> Seq.map (fun d -> currentSet.GetValue d)
-            let newValue = depValues.Sum() + var.Value
+            match var.Name with
+            | "tr" -> var.Value
+            | "w1" | "w2" ->
+                if var.Name = "w2" then
+                    ()
+                let otherWork = if var.Name = "w1" then "w2" else "w1"
+                match var.Value with
+                | Val.R when (currentSet.GetValue "tr" = Val.ON && var.Name = "w1") || (var.Name = "w2" && currentSet.GetValue "w1" = Val.F) -> Val.G
+                | Val.G -> Val.F
+                | Val.F when currentSet.GetValue otherWork = Val.G -> Val.H
+                | Val.H -> Val.R
+                | _ -> var.Value
+            | _ ->
+                let dependencies = var.Dependencies
+                let depValues = dependencies |> Seq.map (fun d -> currentSet.GetValue d)
+                let newValue = depValues.Sum() + var.Value
 
-            //// 의존 변수 목록을 `"varName"(value)` 형태로 변환
-            //let dependencyInfo =
-            //    dependencies
-            //    |> Seq.map (fun d -> let v = currentSet.GetValue d in $"\"{d}\"({v})")
-            //    |> String.concat "; "
+                //// 의존 변수 목록을 `"varName"(value)` 형태로 변환
+                //let dependencyInfo =
+                //    dependencies
+                //    |> Seq.map (fun d -> let v = currentSet.GetValue d in $"\"{d}\"({v})")
+                //    |> String.concat "; "
 
-            // 변수 값 변경 추적
-            //printfn $"[TRACE] \"{var.Name}\"({var.Value}) -> {newValue} (from [| {dependencyInfo} |])"
+                // 변수 값 변경 추적
+                //printfn $"[TRACE] \"{var.Name}\"({var.Value}) -> {newValue} (from [| {dependencyInfo} |])"
 
-            if newValue > (Int32.MaxValue / 100) then 0 else newValue
+                if newValue > (Int32.MaxValue / 100) then 0 else newValue
 
         /// 현재 변경된 변수들을 기준으로 값 업데이트
-        let changedCount =
-            currentSet.Changes
-            |> Seq.fold (fun acc (KeyValue(k, _)) ->
-                let var = currentSet.VarDict.[k]
-                let prevValue = var.Value
-                var.Value <- currentSet.GetValue k // 현재 변경된 값 반영
-                let newValue = evalVar var
+        let mutable changedCount = 0
+        for (KeyValue(k, _)) in currentSet.Changes do
+            let var = currentSet.VarDict.[k]
+            let prevValue = var.Value
+            var.Value <- currentSet.GetValue k // 현재 변경된 값 반영
+            let newValue = evalVar var
 
-                // 변경 감지 후 반영
-                if prevValue <> newValue then
-                    nextSet.AddChange(k, newValue)
-                    acc + 1
-                else acc
-            ) 0
+            // 변경 감지 후 반영
+            if prevValue <> newValue then
+                nextSet.AddChange(k, Some newValue)
+
+                let deps = currentSet.VarDict.Values.Where(fun v -> v.Dependencies.Contains(k)).ToArray()
+                ()
+                for d in deps do
+                    nextSet.AddChange(d.Name, None)
+
+                changedCount <- changedCount + 1
 
         let xxx = currentSet.Changes.Count
         /// 매 X회 반복마다 GC 수행
-        if (counter < 1000 && counter % 100 = 0) || counter % 10000 = 0 then
-            printfn $"Scan {counter} : {changedCount} variables changed"
+        if true then //(counter < 1000 && counter % 100 = 0) || counter % 10000 = 0 then
+            let details =
+                let kvs = [
+                    for c in currentSet.Changes.OrderBy(fun c -> c.Key) do
+                        $"{c.Key}({c.Value})".PadRight(20)
+                ]
+
+                String.Join(", ", kvs)
+            printfn $"Scan {counter} : {details} ({changedCount}) variables changed"
 
             //printfn $"[GC] Running Garbage Collection..."
             GC.Collect()
