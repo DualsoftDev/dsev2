@@ -51,5 +51,3 @@ module rec Common =
             if newValue > int64 (Int32.MaxValue / 2) then 0 else int newValue
             |> Some
 
-
-    type Evaluator = ChangeSet -> Var -> int option
