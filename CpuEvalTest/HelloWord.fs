@@ -78,10 +78,6 @@ module General =
 
 [<AutoOpen>]
 module Main =
-    let externalChanges = Dictionary<string, int option>()
-    let addChange(name, value) =
-        lock externalChanges (fun () ->
-            externalChanges.AddOrReplace(name, value))
     let asyncScanLoop() : Async<unit> =
         async {
             let useHelloWorld = true
@@ -99,11 +95,7 @@ module Main =
                 do! Async.Sleep 10
 
                 // 외부 변경 내역 merge
-                lock externalChanges (fun () ->
-                    for (KeyValue(k, v)) in externalChanges do
-                        ccs.Changes[k] <- v
-                    externalChanges.Clear()
-                )
+                mergeChanges ccs
 
                 if ccs.Changes.Count <> 0 then
 

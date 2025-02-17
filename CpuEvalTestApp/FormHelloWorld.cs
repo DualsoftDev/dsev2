@@ -9,8 +9,8 @@ namespace CpuEvalTestApp
         public FormHelloWorld()
         {
             InitializeComponent();
-            btnTurnOn.Click += (s, e) => Main.addChange("var0", 1);
-            btnTurnOff.Click += (s, e) => Main.addChange("var0", 0);
+            btnTurnOn.Click += (s, e) => Common.addChange("var0", 1);
+            btnTurnOff.Click += (s, e) => Common.addChange("var0", 0);
         }
 
         private async void FormHelloWorld_Load(object sender, EventArgs e)

@@ -57,3 +57,16 @@ module rec Common =
             if newValue > int64 (Int32.MaxValue / 2) then 0 else int newValue
             |> Some
 
+    let externalChanges = Dictionary<string, int option>()
+    let addChange(name, value) =
+        lock externalChanges (fun () ->
+            externalChanges.AddOrReplace(name, value))
+
+
+    /// 외부 변경 내역 merge
+    let mergeChanges(ccs:ChangeSet) =
+        lock externalChanges (fun () ->
+            for (KeyValue(k, v)) in externalChanges do
+                ccs.Changes[k] <- v
+            externalChanges.Clear()
+        )
