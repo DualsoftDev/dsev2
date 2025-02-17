@@ -59,6 +59,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CpuEvalTest", "TestApps\Cpu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpuEvalTestApp", "TestApps\CpuEvalTestApp\CpuEvalTestApp.csproj", "{44B43229-C41F-4630-89C5-83EC55F4DD4C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ScriptingTest", "TestApps\Scripting\ScriptingTest\ScriptingTest.fsproj", "{D420B61F-6080-46B6-B7D4-9DAD0E6A697C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -131,6 +133,10 @@ Global
 		{44B43229-C41F-4630-89C5-83EC55F4DD4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44B43229-C41F-4630-89C5-83EC55F4DD4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44B43229-C41F-4630-89C5-83EC55F4DD4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D420B61F-6080-46B6-B7D4-9DAD0E6A697C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D420B61F-6080-46B6-B7D4-9DAD0E6A697C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D420B61F-6080-46B6-B7D4-9DAD0E6A697C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D420B61F-6080-46B6-B7D4-9DAD0E6A697C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -157,5 +163,6 @@ Global
 		{81E55BCE-F750-44F4-A865-A2ECCBB50E5C} = {54A225D1-EA8A-4B59-B245-F34D02B78A4B}
 		{6C905D9E-AD61-4122-BCC3-E76A8CB6ACB4} = {54A225D1-EA8A-4B59-B245-F34D02B78A4B}
 		{44B43229-C41F-4630-89C5-83EC55F4DD4C} = {54A225D1-EA8A-4B59-B245-F34D02B78A4B}
+		{D420B61F-6080-46B6-B7D4-9DAD0E6A697C} = {29846525-2863-49F1-877D-81767997E0A1}
 	EndGlobalSection
 EndGlobal
