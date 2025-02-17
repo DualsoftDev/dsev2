@@ -47,9 +47,9 @@ module HelloWord =
 
         let changeSet = HelloWorldChangeSet([vtr; vw1; vw2])
         /// 초기 변경 사항 추가
-        changeSet.AddChange(w2, Some Val.F)
-        changeSet.AddChange(w1, Some Val.R)
-        changeSet.AddChange(tr, Some Val.ON)
+        ChangeSet.AddExternalChange(w2, Val.F)
+        ChangeSet.AddExternalChange(w1, Val.R)
+        ChangeSet.AddExternalChange(tr, Val.ON)
 
         changeSet
 
@@ -70,7 +70,7 @@ module General =
         |]
         let changeSet = ChangeSet(variables)
         /// 초기 변경 사항 추가
-        [0..numVars-1] |> List.iter (fun i -> changeSet.AddChange($"var{i}", Some (rand.Next(100))))
+        [0..numVars-1] |> List.iter (fun i -> ChangeSet.AddExternalChange($"var{i}", rand.Next(100)))
 
 
         changeSet
@@ -80,7 +80,7 @@ module General =
 module Main =
     let asyncScanLoop() : Async<unit> =
         async {
-            let useHelloWorld = true
+            let useHelloWorld = false
 
 
             let changeSet = if useHelloWorld then HelloWord.initialize() else General.initialize()
@@ -92,14 +92,12 @@ module Main =
             while true do
                 nScan <- nScan + 1
 
-                do! Async.Sleep 10
+                //do! Async.Sleep 10
 
                 // 외부 변경 내역 merge
                 ccs.MergeChanges()
 
                 if ccs.Changes.Count <> 0 then
-
-                    printf ""
 
                     /// next change set
                     let mutable ncs:ChangeSet = if useHelloWorld then HelloWorldChangeSet(ccs) else ChangeSet(ccs)
@@ -126,11 +124,11 @@ module Main =
                         // 변경 감지 후 반영
                         match newValue with
                         | Some nv when oldValues[k] <> nv ->
-                            ncs.AddChange(k, newValue)
+                            ncs.AddInternalChange(k, newValue)
                             let deps = vars.Values.Where(fun v -> v.Dependencies.Contains(k)).ToArray()
 
                             for d in deps do
-                                ncs.AddChange(d.Name, None)
+                                ncs.AddInternalChange(d.Name, None)
 
                             nChanged <- nChanged + 1
                         | _ -> ()
@@ -138,7 +136,7 @@ module Main =
                     let xxx = changes.Count
                     /// 매 X회 반복마다 GC 수행
                     let checkPoint = if useHelloWorld then 10000 else 100
-                    let checkPoint = 1
+                    //let checkPoint = 1
                     if nScan % checkPoint = 0 then
                         if useHelloWorld then
                             let details =

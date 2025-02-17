@@ -7,10 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="EventDrivenScan.pptx" />
     <Compile Include="Common.fs" />
     <Compile Include="HelloWord.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <ProjectReference Include="..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
