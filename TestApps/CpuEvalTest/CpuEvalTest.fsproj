@@ -17,7 +17,6 @@
     <ProjectReference Include="..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
     <ProjectReference Include="..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
     <ProjectReference Include="..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
-    <ProjectReference Include="..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -51,13 +51,13 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Aas.FS", "src\engine\Ev
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripting", "Scripting", "{29846525-2863-49F1-877D-81767997E0A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasTestApp", "..\ev2\TestApps\AasTestApp\AasTestApp.csproj", "{382FF82F-A246-4C13-B1F3-84EB872375FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasTestApp", "TestApps\AasTestApp\AasTestApp.csproj", "{382FF82F-A246-4C13-B1F3-84EB872375FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsoleApp", "..\ev2\TestApps\TestConsoleApp\TestConsoleApp.csproj", "{81E55BCE-F750-44F4-A865-A2ECCBB50E5C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsoleApp", "TestApps\TestConsoleApp\TestConsoleApp.csproj", "{81E55BCE-F750-44F4-A865-A2ECCBB50E5C}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CpuEvalTest", "..\ev2\TestApps\CpuEvalTest\CpuEvalTest.fsproj", "{6C905D9E-AD61-4122-BCC3-E76A8CB6ACB4}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CpuEvalTest", "TestApps\CpuEvalTest\CpuEvalTest.fsproj", "{6C905D9E-AD61-4122-BCC3-E76A8CB6ACB4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpuEvalTestApp", "..\ev2\TestApps\CpuEvalTestApp\CpuEvalTestApp.csproj", "{44B43229-C41F-4630-89C5-83EC55F4DD4C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpuEvalTestApp", "TestApps\CpuEvalTestApp\CpuEvalTestApp.csproj", "{44B43229-C41F-4630-89C5-83EC55F4DD4C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
