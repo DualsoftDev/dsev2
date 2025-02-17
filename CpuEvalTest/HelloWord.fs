@@ -78,8 +78,10 @@ module General =
 
 [<AutoOpen>]
 module Main =
-    let mutable private ccs = getNull<ChangeSet>()
-    let addChange(name, value) = lock ccs (fun () -> ccs.AddChange(name, value))
+    let externalChanges = Dictionary<string, int option>()
+    let addChange(name, value) =
+        lock externalChanges (fun () ->
+            externalChanges.AddOrReplace(name, value))
     let asyncScanLoop() : Async<unit> =
         async {
             let useHelloWorld = true
@@ -87,7 +89,7 @@ module Main =
 
             let changeSet = if useHelloWorld then HelloWord.initialize() else General.initialize()
             /// current change set
-            ccs <- changeSet
+            let mutable ccs = changeSet
             let vars = ccs.VarDict
 
             let mutable nScan = 0
@@ -96,70 +98,76 @@ module Main =
 
                 do! Async.Sleep 10
 
-                lock ccs (fun () ->
-                    if ccs.Changes.Count <> 0 then
-
-                        printf ""
-
-                        /// next change set
-                        let mutable ncs:ChangeSet = if useHelloWorld then HelloWorldChangeSet(ccs) else ChangeSet(ccs)
-
-
-
-                        let oldValues = ccs.Changes.Keys.Select(fun k -> k, vars[k].Value) |> dict |> Dictionary
-                        for (KeyValue(k, _)) in ccs.Changes do
-                            vars[k].Value <- ccs.GetValue k // 현재 변경된 값 반영
-
-                        /// 현재 변경된 변수들을 기준으로 값 업데이트
-                        let mutable nChanged = 0
-                        for (KeyValue(k, _)) in ccs.Changes do
-                            let var = vars[k]
-                            let newValue = ccs.Evaluate var
-
-                            // 변경 감지 후 반영
-                            match newValue with
-                            | Some nv when oldValues[k] <> nv ->
-                                let cv = ccs.GetValue k
-                                let ov = oldValues[k]
-                                //assert(cv <> nv)
-
-
-                                ncs.AddChange(k, newValue)
-
-                                let deps = vars.Values.Where(fun v -> v.Dependencies.Contains(k)).ToArray()
-                                ()
-                                for d in deps do
-                                    ncs.AddChange(d.Name, None)
-
-                                nChanged <- nChanged + 1
-                            | _ -> ()
-
-                        let xxx = ccs.Changes.Count
-                        /// 매 X회 반복마다 GC 수행
-                        let checkPoint = if useHelloWorld then 10000 else 100
-                        let checkPoint = 1
-                        if nScan % checkPoint = 0 then
-                            if useHelloWorld then
-                                let details =
-                                    let kvs = [
-                                        if !! ccs.Changes.ContainsKey("var0") then
-                                            $"".PadRight(20)
-                                        for c in ccs.Changes.OrderBy(fun c -> c.Key) do
-                                            $"{c.Key}({c.Value})".PadRight(20)
-                                    ]
-
-                                    String.Join(", ", kvs)
-                                printfn $"Scan {nScan} : {details} (current={nChanged}, {ccs.Changes.Values.Count(Option.isNone)}+{ccs.Changes.Values.Count(Option.isSome)}, next={ncs.Changes.Count}) variables changed"
-                            else
-                                printfn $"Scan {nScan} : ({nChanged} / {xxx}) variables changed"
-
-                        if nScan % 100 = 0 then
-                            //printfn $"[GC] Running Garbage Collection..."
-                            GC.Collect()
-
-                        ccs <- ncs
-
+                // 외부 변경 내역 merge
+                lock externalChanges (fun () ->
+                    for (KeyValue(k, v)) in externalChanges do
+                        ccs.Changes[k] <- v
+                    externalChanges.Clear()
                 )
+
+                if ccs.Changes.Count <> 0 then
+
+                    printf ""
+
+                    /// next change set
+                    let mutable ncs:ChangeSet = if useHelloWorld then HelloWorldChangeSet(ccs) else ChangeSet(ccs)
+
+                    let changes =
+                        ccs.Changes.Choose(fun (KeyValue(k, v)) ->
+                            match v with
+                            | None -> Some (k, v)
+                            | Some v when vars[k].Value <> v -> Some (k, Some v)
+                            | _ -> None)
+                            |> Tuple.toDictionary
+
+                    let oldValues = changes.Keys.Select(fun k -> k, vars[k].Value) |> dict |> Dictionary
+                    for (KeyValue(k, _)) in changes do
+                        let cv = ccs.GetValue k
+                        vars[k].Value <- cv // 현재 변경된 값 반영
+
+                    /// 현재 변경된 변수들을 기준으로 값 업데이트
+                    let mutable nChanged = 0
+                    for (KeyValue(k, _)) in changes do
+                        let var = vars[k]
+                        let newValue = ccs.Evaluate var
+
+                        // 변경 감지 후 반영
+                        match newValue with
+                        | Some nv when oldValues[k] <> nv ->
+                            ncs.AddChange(k, newValue)
+                            let deps = vars.Values.Where(fun v -> v.Dependencies.Contains(k)).ToArray()
+
+                            for d in deps do
+                                ncs.AddChange(d.Name, None)
+
+                            nChanged <- nChanged + 1
+                        | _ -> ()
+
+                    let xxx = changes.Count
+                    /// 매 X회 반복마다 GC 수행
+                    let checkPoint = if useHelloWorld then 10000 else 100
+                    let checkPoint = 1
+                    if nScan % checkPoint = 0 then
+                        if useHelloWorld then
+                            let details =
+                                let kvs = [
+                                    if !! changes.ContainsKey("var0") then
+                                        $"".PadRight(20)
+                                    for c in changes.OrderBy(fun c -> c.Key) do
+                                        $"{c.Key}({c.Value})".PadRight(20)
+                                ]
+
+                                String.Join(", ", kvs)
+                            printfn $"Scan {nScan} : {details} (current={nChanged}, {changes.Values.Count(Option.isNone)}+{changes.Values.Count(Option.isSome)}, next={ncs.Changes.Count}) variables changed"
+                        else
+                            printfn $"Scan {nScan} : ({nChanged} / {xxx}) variables changed"
+
+                    if nScan % 100 = 0 then
+                        //printfn $"[GC] Running Garbage Collection..."
+                        GC.Collect()
+
+                    ccs <- ncs
+
 
 
         }

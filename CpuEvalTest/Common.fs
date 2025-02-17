@@ -3,14 +3,24 @@ namespace CpuEvalTest
 open System.Collections.Generic
 open System.Linq
 open System
+open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module rec Common =
     /// 변수 정의
     type Var(name: string, dependencies: string[], initialValue: int) =
+        let mutable initialValue = initialValue
         member val Name = name
         member val Dependencies = dependencies |> HashSet
-        member val Value = initialValue with get, set
+        member x.Value
+            with get() = initialValue
+            and set v =
+                if v <> initialValue then
+                    printfn $"Setting {x.Name} = {v}"
+                    initialValue <-v
+                else
+                    noop()
+
 
     /// 변수 컬렉션(고정) + ChangeSet 을 관리하는 타입
     type ChangeSet(varDict: Dictionary<string, Var>) =
@@ -18,11 +28,7 @@ module rec Common =
         member val Changes = Dictionary<string, int option>()
 
         new (vars:Var seq) =
-            let varDict =
-                vars
-                |> Seq.map (fun v -> v.Name, v)
-                |> dict
-                |> Dictionary
+            let varDict = vars.ToDictionary( (fun v -> v.Name), id)
             ChangeSet(varDict)
         new (oldChangeSet: ChangeSet) = ChangeSet(oldChangeSet.VarDict)
 
