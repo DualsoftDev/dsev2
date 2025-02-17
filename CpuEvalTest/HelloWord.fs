@@ -95,7 +95,7 @@ module Main =
                 do! Async.Sleep 10
 
                 // 외부 변경 내역 merge
-                mergeChanges ccs
+                ccs.MergeChanges()
 
                 if ccs.Changes.Count <> 0 then
 
