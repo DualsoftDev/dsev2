@@ -16,58 +16,60 @@ module MainModule =
 
 
         let changeSet = if useHelloWorld then HelloWord.initialize() else General.initialize()
-        let mutable currentSet = changeSet
-        let vars = currentSet.VarDict
+        /// current change set
+        let mutable ccs = changeSet
+        let vars = ccs.VarDict
 
-        let mutable counter = 0
+        let mutable nScan = 0
         while true do
-            counter <- counter + 1
+            nScan <- nScan + 1
 
-            let mutable nextSet:ChangeSet = if useHelloWorld then HelloWorldChangeSet(currentSet) else ChangeSet(currentSet)
+            /// next change set
+            let mutable ncs:ChangeSet = if useHelloWorld then HelloWorldChangeSet(ccs) else ChangeSet(ccs)
 
 
             /// 현재 변경된 변수들을 기준으로 값 업데이트
-            let mutable changedCount = 0
-            for (KeyValue(k, _)) in currentSet.Changes do
-                let var = currentSet.VarDict.[k]
+            let mutable nChanged = 0
+            for (KeyValue(k, _)) in ccs.Changes do
+                let var = ccs.VarDict.[k]
                 let prevValue = var.Value
-                var.Value <- currentSet.GetValue k // 현재 변경된 값 반영
-                let newValue = currentSet.Evaluate var
+                var.Value <- ccs.GetValue k // 현재 변경된 값 반영
+                let newValue = ccs.Evaluate var
 
                 // 변경 감지 후 반영
                 match newValue with
                 | Some nv when prevValue <> nv ->
-                    nextSet.AddChange(k, newValue)
+                    ncs.AddChange(k, newValue)
 
-                    let deps = currentSet.VarDict.Values.Where(fun v -> v.Dependencies.Contains(k)).ToArray()
+                    let deps = ccs.VarDict.Values.Where(fun v -> v.Dependencies.Contains(k)).ToArray()
                     ()
                     for d in deps do
-                        nextSet.AddChange(d.Name, None)
+                        ncs.AddChange(d.Name, None)
 
-                    changedCount <- changedCount + 1
+                    nChanged <- nChanged + 1
                 | _ -> ()
 
-            let xxx = currentSet.Changes.Count
+            let xxx = ccs.Changes.Count
             /// 매 X회 반복마다 GC 수행
             let checkPoint = if useHelloWorld then 10000 else 100
-            if counter % checkPoint = 0 then
+            if nScan % checkPoint = 0 then
                 if useHelloWorld then
                     let details =
                         let kvs = [
-                            for c in currentSet.Changes.OrderBy(fun c -> c.Key) do
+                            for c in ccs.Changes.OrderBy(fun c -> c.Key) do
                                 $"{c.Key}({c.Value})".PadRight(20)
                         ]
 
                         String.Join(", ", kvs)
-                    printfn $"Scan {counter} : {details} ({changedCount} / {xxx}) variables changed"
+                    printfn $"Scan {nScan} : {details} ({nChanged} / {xxx}) variables changed"
                 else
-                    printfn $"Scan {counter} : ({changedCount} / {xxx}) variables changed"
+                    printfn $"Scan {nScan} : ({nChanged} / {xxx}) variables changed"
 
-            if counter % 100 = 0 then
+            if nScan % 100 = 0 then
                 //printfn $"[GC] Running Garbage Collection..."
                 GC.Collect()
 
-            currentSet <- nextSet
+            ccs <- ncs
 
         1
 
