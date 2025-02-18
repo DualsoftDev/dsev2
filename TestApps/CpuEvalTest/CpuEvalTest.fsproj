@@ -9,7 +9,7 @@
   <ItemGroup>
     <None Include="EventDrivenScan.pptx" />
     <Compile Include="Common.fs" />
-    <Compile Include="HelloWord.fs" />
+    <Compile Include="ScanLoop.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
