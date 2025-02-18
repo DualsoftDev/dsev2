@@ -47,6 +47,10 @@ module Interfaces =
     type ICall =
         inherit ICoin
 
+    /// script 샘플 interface
+    type ICalculator =
+        abstract member Add: int * int -> int
+        abstract member Multiply: int * int -> int
 
 [<AutoOpen>]
 module AbstractClasses =
