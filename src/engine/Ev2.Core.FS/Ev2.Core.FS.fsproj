@@ -34,4 +34,9 @@
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Dual.Common\" />
+	  <Folder Include="Expression,Var,Holder\" />
+	</ItemGroup>
+
 </Project>
