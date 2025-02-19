@@ -206,7 +206,7 @@ module CoreToAas =
         member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Operator")
 
 
-    type INamed with
+    type IWithName with
         member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
             let modelType = modelType |? A.smc
             let vals:JNode seq = [

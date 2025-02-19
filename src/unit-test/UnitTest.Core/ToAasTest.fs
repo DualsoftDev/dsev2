@@ -7,6 +7,7 @@ open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Dual.Common.Base.CS
 open System
+open Dual.Common.Base.FS
 
 
 module ToAasTest =
@@ -41,6 +42,8 @@ module ToAasTest =
             let system2 = DsSystem.FromJson(dsJson)
             let json = system2.ToJson()
             json === dsJson
+            let xxx = system2.Name
+            let yyy = (system2 :> IWithName).Name
 
             let json = system2.ToJsonViaCode().Stringify()
             ()
@@ -589,7 +592,7 @@ module ToAasTest =
             DcClipboard.Write(json)
 
 
-            //json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
+            json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
 

@@ -8,7 +8,7 @@ open Dual.Common.Base.FS
 
 
 module CoreToJsonViaCode =
-    type INamed with
+    type IWithName with
         member x.NamedToJsonViaCode(): JObj =
             let jo = JObj()
             jo["name"] <- x.Name

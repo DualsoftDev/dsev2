@@ -12,16 +12,16 @@ module Interfaces =
 
     type INamedVertex =
         inherit IVertex
-        inherit INamed
+        inherit IWithName
 
 
     /// 기본 객체 인터페이스
     type IDsObject = interface end
 
-    /// IDsObject와 INamed를 구현한 인터페이스
+    /// IDsObject와 INamed 를 구현한 인터페이스
     type IDsDsNamedObject =
         inherit IDsObject
-        inherit INamed
+        inherit IWithName
 
     /// 시스템 인터페이스
     type ISystem =
@@ -58,8 +58,7 @@ module AbstractClasses =
     [<AbstractClass>]
     type NamedObject(name: string) =
         [<JsonProperty(Order = -100)>] member val Name = name with get, set
-        interface INamed with
-            member x.Name with get() = x.Name and set(v) = x.Name <- v
+        interface IWithName
 
     [<AbstractClass>]
     type GuidObject(?guid:Guid) =
@@ -71,5 +70,4 @@ module AbstractClasses =
     type NamedGuidObject(name: string, ?guid:Guid) =
         inherit GuidObject(?guid=guid)
         [<JsonProperty(Order = -100)>] member val Name = name with get, set
-        interface INamed with
-            member x.Name with get() = x.Name and set(v) = x.Name <- v
+        interface IWithName

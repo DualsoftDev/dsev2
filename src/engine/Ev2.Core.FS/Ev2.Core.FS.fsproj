@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Dual.Common\Interfaces.fs" />
 		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />
@@ -35,7 +36,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Dual.Common\" />
 	  <Folder Include="Expression,Var,Holder\" />
 	</ItemGroup>
 

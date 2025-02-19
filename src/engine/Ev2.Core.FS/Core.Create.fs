@@ -14,7 +14,7 @@ module CoreCreate =
     type DsSystem with  // Create, CreateFlow,
         static member Create(name:string) = new DsSystem(name)
         member x.CreateFlow(flowName:string) =
-            if x.Flows.Exists(fun f -> (f :> INamed).Name = flowName) then
+            if x.Flows.Exists(fun f -> (f :> IWithName).Name = flowName) then
                 getNull<DsFlow>();
             else
                 DsFlow(x, flowName).Tee(fun f -> x.Flows.Add f)
