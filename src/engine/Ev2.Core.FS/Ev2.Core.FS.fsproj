@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Expression,Var,Holder\ValueHolder.fs" />
 		<Compile Include="Expression,Var,Holder\TTerminal.fs" />
 		<Compile Include="Dual.Common\Interfaces.fs" />
 		<None Include="database\schema.md" />
