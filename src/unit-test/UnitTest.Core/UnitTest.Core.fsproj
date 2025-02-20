@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Json\Terminal.NonTerminal.Test.fs" />
 		<Compile Include="Test.Common.fs" />
 		<Compile Include="AasCore3.0Test.fs" />
 		<Compile Include="DsJsonTest.fs" />
