@@ -9,7 +9,7 @@ open Dual.Common.Core.FS
 module rec ValueHolderModule =
 
     type ValueHolder(typ: Type, ?value: obj) =
-        member val ObjectHolder = ObjHolder(typ, ?value=value) with get, set
+        member val ObjectHolder = NsJsonS11nSafeObject(typ, ?value=value) with get, set
 
         // 향후 전개 가능한 interface 목록.  실제 interface 의 method 는 구현하지 않고, 확장 method 를 통해 접근
         // e.g IWithName 은 확장을 통해 Name 속성의 get, set 제공
@@ -21,7 +21,7 @@ module rec ValueHolderModule =
 
         /// DynamicDictionary.
         ///
-        /// ObjHolder 의 부가 속성 정의 용.  e.g Name, Address, Rising, Negation 등
+        /// NsJsonS11nSafeObject 의 부가 속성 정의 용.  e.g Name, Address, Rising, Negation 등
         member val PropertiesDto = getNull<DynamicDictionary>() with get, set
         /// PropertiesDto 접근용
         [<JsonIgnore>]
@@ -43,7 +43,7 @@ module rec ValueHolderModule =
         [<JsonIgnore>] member x.Type = x.ObjectHolder.Type
 
 
-        /// ObjHolder.Name with DD
+        /// NsJsonS11nSafeObject.Name with DD
         [<JsonIgnore>]
         member x.Name
             with get() = x.DD.TryGet<string>("Name") |? null
