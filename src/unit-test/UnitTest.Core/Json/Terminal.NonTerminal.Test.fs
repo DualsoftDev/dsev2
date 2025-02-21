@@ -1,7 +1,8 @@
 namespace T
 
-open Dual.Common.Core.FS
 open NUnit.Framework
+
+open Dual.Common.Core.FS
 open Dual.Common.Base.FS
 open Dual.Common.UnitTest.FS
 open Dual.Ev2
@@ -39,18 +40,18 @@ module TerminalTestModule =
             let settings = JsonSerializerSettings(TypeNameHandling = TypeNameHandling.All)
 
             let t = KeyValuePair<int, string>(3, "hello")
-            let json = EmJson.ToJson(t, settings)       // "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
+            let json = EmJson.ToJson(t, settings)
             noop()
 
             let s = Student("John", 13)
-            let json = EmJson.ToJson(s, settings)       // "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
+            let json = EmJson.ToJson(s, settings)
             json === """{
   "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
   "Name": "John",
   "Age": 13
 }"""
             let t = TTerminal(3.14)
-            let json = EmJson.ToJson(t, settings)       // "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
+            let json = EmJson.ToJson(t, settings)
             json === """{
   "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
   "ObjectHolder": {
@@ -74,12 +75,15 @@ module TerminalTestModule =
         [<Test>]
         member _.Minimal() =
             let nt = TNonTerminal(123)
-            nt.Arguments <- [| TTerminal(1) :> ITHolder; THolder(3.14) |]
+            nt.Arguments <- [| TTerminal(1) :> IExpression; TNonTerminal(3.14) |]
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
   "ObjectHolder": {
     "ValueTypeName": "System.Int32",
     "Value": 123
+  },
+  "Operator": {
+    "Case": "OpUnit"
   },
   "Arguments": [
     {
@@ -90,11 +94,15 @@ module TerminalTestModule =
       }
     },
     {
-      "$type": "Dual.Common.Base.FS.THolderModule+THolder`1[[System.Double, System.Private.CoreLib]], Dual.Common.Base.FS",
+      "$type": "Dual.Ev2.TTerminalModule+TNonTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14
-      }
+      },
+      "Operator": {
+        "Case": "OpUnit"
+      },
+      "Arguments": []
     }
   ]
 }"""

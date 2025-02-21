@@ -10,8 +10,10 @@ module InterfacesModule =
     type IWithType<'T> =
         inherit IWithType
 
+    type IExpression =
+        inherit IWithType
+        inherit IWithName
 
-    type IExpression = interface end
     type IExpression<'T> =
         inherit IExpression
         inherit IWithType<'T>
@@ -21,6 +23,7 @@ module ReflectionInterfacesModule =
     type IWithType with
         /// IWithType.Type (no setter)
         member x.Type = getPropertyValueDynmaically(x, "Type") :?> Type
+        member x.DataType = x.Type  // 임시
     type IWithAddress with
         /// IWithAddress.Address
         member x.Address
@@ -32,3 +35,4 @@ module ReflectionInterfacesModule =
         member x.Comment
             with get() = tryGetStringPropertyDynmaically(x, "Comment") |? null
             and set (v:string) = setPropertyValueDynmaically(x, "Comment", v)
+
