@@ -9,9 +9,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Dual.Common\Interfaces.fs" />
 		<Compile Include="Expression,Var,Holder\ValueHolder.fs" />
 		<Compile Include="Expression,Var,Holder\TTerminal.fs" />
-		<Compile Include="Dual.Common\Interfaces.fs" />
 		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />

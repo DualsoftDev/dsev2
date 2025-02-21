@@ -74,7 +74,7 @@ module TerminalTestModule =
         [<Test>]
         member _.Minimal() =
             let nt = TNonTerminal(123)
-            nt.Arguments <- [| TTerminal(1) :> IExpressionEv2; THolder(3.14) |]
+            nt.Arguments <- [| TTerminal(1) :> ITHolder; THolder(3.14) |]
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
   "ObjectHolder": {
@@ -90,7 +90,7 @@ module TerminalTestModule =
       }
     },
     {
-      "$type": "Dual.Common.Core.FS.THolderModule+THolder`1[[System.Double, System.Private.CoreLib]], Dual.Common.Core.FS",
+      "$type": "Dual.Common.Base.FS.THolderModule+THolder`1[[System.Double, System.Private.CoreLib]], Dual.Common.Base.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14

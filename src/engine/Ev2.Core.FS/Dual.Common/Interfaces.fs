@@ -1,22 +1,34 @@
 namespace Dual.Ev2
 
-//[<AutoOpen>]
-//module InterfacesModule =
+open System
+open Dual.Common.Base.FS
+open Dual.Common.Core.FS
 
-//    type INamedEv2 = interface end
+[<AutoOpen>]
+module InterfacesModule =
+    type IWithType = interface end
+    type IWithType<'T> =
+        inherit IWithType
 
-//    type INamedEv2 with
-//        member x.Name
-//            with get() =
-//                let objType = x.GetType()
-//                let prop = objType.GetProperty("Name")
-//                if prop = null then
-//                    failwith "ERROR: No Name Property"
 
-//                prop.GetValue(obj) |> string
-//            and set v =
-//                let objType = x.GetType()
-//                let prop = objType.GetProperty("Name")
-//                if prop = null then
-//                    failwith "ERROR: No Name Property"
-//                prop.SetValue(obj, v)
+    type IExpression = interface end
+    type IExpression<'T> =
+        inherit IExpression
+        inherit IWithType<'T>
+
+[<AutoOpen>]
+module ReflectionInterfacesModule =
+    type IWithType with
+        /// IWithType.Type (no setter)
+        member x.Type = getPropertyValueDynmaically(x, "Type") :?> Type
+    type IWithAddress with
+        /// IWithAddress.Address
+        member x.Address
+            with get() = tryGetStringPropertyDynmaically(x, "Address") |? null
+            and set (v:string) = setPropertyValueDynmaically(x, "Address", v)
+
+    type IWithComment with
+        /// IWithComment.Comment
+        member x.Comment
+            with get() = tryGetStringPropertyDynmaically(x, "Comment") |? null
+            and set (v:string) = setPropertyValueDynmaically(x, "Comment", v)

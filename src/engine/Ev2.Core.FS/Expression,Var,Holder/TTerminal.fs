@@ -11,29 +11,29 @@ module TTerminalModule =
 
     type ITerminal<'T> =
         inherit ITerminal
-        inherit IExpressionEv2<'T>
+        inherit IExpression<'T>
 
     type INonTerminal<'T> =
         inherit INonTerminal
-        inherit IExpressionEv2<'T>
+        inherit IExpression<'T>
 
-    type Arguments = IExpressionEv2 list
+    type Arguments = IExpression list
 
 
     // 기존 Terminal<'T> 에 해당.
     type TTerminal<'T>(value:'T) =
-        inherit THolder<'T>(value)
+        inherit TValueHolder<'T>(value)
         interface ITerminal<'T>
         new() = TTerminal(Unchecked.defaultof<'T>)   // for Json
 
     // 기존 FunctionSpec<'T> 에 해당.
     type TNonTerminal<'T>(value:'T) =
-        inherit THolder<'T>(value)
+        inherit TValueHolder<'T>(value)
         interface INonTerminal<'T>
 
         new() = TNonTerminal(Unchecked.defaultof<'T>)   // for Json
 
-        member val Arguments: IExpressionEv2[] = [||] with get, set
+        member val Arguments: ITHolder[] = [||] with get, set
 
     type INonTerminal<'T> with
         /// INonTerminal.FunctionBody

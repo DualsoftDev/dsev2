@@ -16,7 +16,7 @@ module rec ValueHolderModule =
         interface IWithName
         interface IWithAddress
         interface IWithType
-        interface IExpressionEv2
+        interface IExpression
 
 
         /// DynamicDictionary.
@@ -63,3 +63,8 @@ module rec ValueHolderModule =
         member x.IsLiteral
             with get() = x.DD.TryGet<bool>("IsLiteral") |? false
             and set (v:bool) = x.DD.Set<bool>("IsLiteral", v)
+
+    type TValueHolder<'T>(value:'T) =
+        inherit THolder<'T>(value)
+        interface IWithType<'T>
+        interface IExpression<'T>
