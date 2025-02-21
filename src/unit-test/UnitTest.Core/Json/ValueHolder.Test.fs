@@ -44,7 +44,6 @@ module ValueHolderTestModule =
             let json = EmJson.ToJson(h4)
             let jsonAnswer = """{
   "ObjectHolder": {
-    "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
     "ValueTypeName": "System.UInt64",
     "Value": 9999
   }
@@ -75,7 +74,6 @@ module ValueHolderTestModule =
             DcClipboard.Write(json)
             let jsonAnswer = """{
   "ObjectHolder": {
-    "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
     "ValueTypeName": "System.Double",
     "Value": 3.14
   },
@@ -100,7 +98,6 @@ module ValueHolderTestModule =
             DcClipboard.Write(json)
             let jsonAnswer = """{
   "ObjectHolder": {
-    "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
     "ValueTypeName": "System.Double",
     "Value": 3.14
   },
@@ -130,33 +127,30 @@ module ValueHolderTestModule =
             let json1Answer = """{
   "Holder0": {
     "ObjectHolder": {
-      "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
       "ValueTypeName": "System.Int32",
       "Value": null
     }
   },
   "Holder1": {
     "ObjectHolder": {
-      "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
       "ValueTypeName": "System.Int32",
       "Value": 123
     }
   },
   "Holder2": {
-    "$type": "Dual.Common.Core.FS.THolderModule+THolder`1[System.Double], Dual.Common.Core.FS",
-    "ValueTypeName": "System.Double",
-    "Value": 3.14
+    "ObjectHolder": {
+      "ValueTypeName": "System.Double",
+      "Value": 3.14
+    }
   },
   "Holder3": {
     "ObjectHolder": {
-      "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
       "ValueTypeName": "System.String",
       "Value": "Hello, World!"
     }
   },
   "Holder4": {
     "ObjectHolder": {
-      "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
       "ValueTypeName": "System.UInt64",
       "Value": 9999
     }
@@ -164,14 +158,12 @@ module ValueHolderTestModule =
   "Holders": [
     {
       "ObjectHolder": {
-        "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
         "ValueTypeName": "System.Int32",
         "Value": null
       }
     },
     {
       "ObjectHolder": {
-        "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
         "ValueTypeName": "System.String",
         "Value": "Hello, World!"
       }
@@ -191,33 +183,30 @@ module ValueHolderTestModule =
   "CC": {
     "Holder0": {
       "ObjectHolder": {
-        "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
         "ValueTypeName": "System.Int32",
         "Value": null
       }
     },
     "Holder1": {
       "ObjectHolder": {
-        "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
         "ValueTypeName": "System.Int32",
         "Value": 123
       }
     },
     "Holder2": {
-      "$type": "Dual.Common.Core.FS.THolderModule+THolder`1[System.Double], Dual.Common.Core.FS",
-      "ValueTypeName": "System.Double",
-      "Value": 3.14
+      "ObjectHolder": {
+        "ValueTypeName": "System.Double",
+        "Value": 3.14
+      }
     },
     "Holder3": {
       "ObjectHolder": {
-        "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
         "ValueTypeName": "System.String",
         "Value": "Hello, World!"
       }
     },
     "Holder4": {
       "ObjectHolder": {
-        "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
         "ValueTypeName": "System.UInt64",
         "Value": 9999
       }
@@ -225,14 +214,12 @@ module ValueHolderTestModule =
     "Holders": [
       {
         "ObjectHolder": {
-          "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
           "ValueTypeName": "System.Int32",
           "Value": null
         }
       },
       {
         "ObjectHolder": {
-          "$type": "Dual.Common.Core.FS.ObjHolderModule+ObjHolder, Dual.Common.Core.FS",
           "ValueTypeName": "System.String",
           "Value": "Hello, World!"
         }

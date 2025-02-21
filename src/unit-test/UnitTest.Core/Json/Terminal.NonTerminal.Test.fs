@@ -21,12 +21,13 @@ module TerminalTestModule =
         member _.Minimal() =
             let json = EmJson.ToJson(t)
             let jsonAnswer = """{
-  "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[System.Int32], Ev2.Core.FS",
-  "ValueTypeName": "System.Int32",
-  "Value": 123
+  "ObjectHolder": {
+    "ValueTypeName": "System.Int32",
+    "Value": 123
+  }
 }"""
             json === jsonAnswer
-            let hh0 = EmJson.FromJson<ObjHolder>(json)
+            let hh0 = EmJson.FromJson<TTerminal<int>>(json)
             let json2 = EmJson.ToJson(hh0)
             json2 === jsonAnswer
 
@@ -51,9 +52,11 @@ module TerminalTestModule =
             let t = TTerminal(3.14)
             let json = EmJson.ToJson(t, settings)       // "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
             json === """{
-  "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[System.Double], Ev2.Core.FS",
-  "ValueTypeName": "System.Double",
-  "Value": 3.14
+  "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+  "ObjectHolder": {
+    "ValueTypeName": "System.Double",
+    "Value": 3.14
+  }
 }"""
 
 
@@ -74,19 +77,24 @@ module TerminalTestModule =
             nt.Arguments <- [| TTerminal(1) :> IExpressionEv2; THolder(3.14) |]
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
-  "$type": "Dual.Ev2.TTerminalModule+TNonTerminal`1[System.Int32], Ev2.Core.FS",
-  "ValueTypeName": "System.Int32",
-  "Value": 123,
+  "ObjectHolder": {
+    "ValueTypeName": "System.Int32",
+    "Value": 123
+  },
   "Arguments": [
     {
-      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[System.Int32], Ev2.Core.FS",
-      "ValueTypeName": "System.Int32",
-      "Value": 1
+      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Int32, System.Private.CoreLib]], Ev2.Core.FS",
+      "ObjectHolder": {
+        "ValueTypeName": "System.Int32",
+        "Value": 1
+      }
     },
     {
-      "$type": "Dual.Common.Core.FS.THolderModule+THolder`1[System.Double], Dual.Common.Core.FS",
-      "ValueTypeName": "System.Double",
-      "Value": 3.14
+      "$type": "Dual.Common.Core.FS.THolderModule+THolder`1[[System.Double, System.Private.CoreLib]], Dual.Common.Core.FS",
+      "ObjectHolder": {
+        "ValueTypeName": "System.Double",
+        "Value": 3.14
+      }
     }
   ]
 }"""
