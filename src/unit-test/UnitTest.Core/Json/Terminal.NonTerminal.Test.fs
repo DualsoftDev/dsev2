@@ -37,7 +37,7 @@ module TerminalTestModule =
     type TypeSimplifyTest() =
         [<Test>]
         member _.SimpleSerialization() =
-            let settings = JsonSerializerSettings(TypeNameHandling = TypeNameHandling.All)
+            let settings = JsonSerializerSettings(TypeNameHandling = TypeNameHandling.All, NullValueHandling = NullValueHandling.Ignore)
 
             let t = KeyValuePair<int, string>(3, "hello")
             let json = EmJson.ToJson(t, settings)
@@ -78,10 +78,6 @@ module TerminalTestModule =
             nt.Arguments <- [| TTerminal(1) :> IExpression; TNonTerminal(3.14) |]
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
-  "ObjectHolder": {
-    "ValueTypeName": "System.Int32",
-    "Value": 123
-  },
   "Operator": {
     "Case": "OpUnit"
   },
@@ -95,16 +91,20 @@ module TerminalTestModule =
     },
     {
       "$type": "Dual.Ev2.TTerminalModule+TNonTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
-      "ObjectHolder": {
-        "ValueTypeName": "System.Double",
-        "Value": 3.14
-      },
       "Operator": {
         "Case": "OpUnit"
       },
-      "Arguments": []
+      "Arguments": [],
+      "ObjectHolder": {
+        "ValueTypeName": "System.Double",
+        "Value": 3.14
+      }
     }
-  ]
+  ],
+  "ObjectHolder": {
+    "ValueTypeName": "System.Int32",
+    "Value": 123
+  }
 }"""
             json === jsonAnswer
             let hh0 = EmJson.FromJson<TNonTerminal<int>>(json)

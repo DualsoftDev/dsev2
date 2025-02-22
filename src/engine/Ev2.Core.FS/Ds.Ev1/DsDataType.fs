@@ -56,8 +56,46 @@ module DsDataType =
     let typeMaxValue        typ = getTypeInfo typ |> Tuple.item 1
     let typeDefaultToString typ = getTypeInfo typ |> Tuple.item 2
 
+(*
+    /// DataType Enum
+    type DataType =
+        | DuBOOL | DuCHAR | DuFLOAT32 | DuFLOAT64 | DuINT16 | DuINT32
+        | DuINT64 | DuINT8 | DuSTRING | DuUINT16 | DuUINT32 | DuUINT64 | DuUINT8
 
+    /// DataType => DefaultValue *  MaxValue     *      DefaultToString * SystemType * PLCType * Type *               BitSize
+    let dataTypeInfo = dict [
+        DuBOOL,    (box false,      box true,            "false",        BOOL,       PLCBOOL,    typedefof<bool>,    1)
+        DuCHAR,    (box ' ',        box '\uFFFF',        "' '",          CHAR,       CHAR,       typedefof<char>,    8)
+        DuFLOAT32, (box 0.0f,       box Single.MaxValue, "0.0f",         FLOAT32,    FLOAT32,    typedefof<single>, 32)
+        DuFLOAT64, (box 0.0,        box Double.MaxValue, "0.0",          FLOAT64,    FLOAT64,    typedefof<double>, 64)
+        DuINT16,   (box 0s,         box Int16.MaxValue,  "0s",           INT16,      INT16,      typedefof<int16>,  16)
+        DuINT32,   (box 0,          box Int32.MaxValue,  "0",            INT32,      INT32,      typedefof<int32>,  32)
+        DuINT64,   (box 0L,         box Int64.MaxValue,  "0L",           INT64,      INT64,      typedefof<int64>,  64)
+        DuINT8,    (box 0y,         box SByte.MaxValue,  "0y",           INT8,       INT8,       typedefof<sbyte>,   8)
+        DuSTRING,  (box "",         box "",              "\"\"",         STRING,     STRING,     typedefof<string>, 32 * 8)
+        DuUINT16,  (box 0us,        box UInt16.MaxValue, "0us",          UINT16,     PLCUINT16,  typedefof<uint16>, 16)
+        DuUINT32,  (box 0u,         box UInt32.MaxValue, "0u",           UINT32,     PLCUINT32,  typedefof<uint32>, 32)
+        DuUINT64,  (box 0UL,        box UInt64.MaxValue, "0UL",          UINT64,     PLCUINT64,  typedefof<uint64>, 64)
+        DuUINT8,   (box 0uy,        box Byte.MaxValue,   "0uy",          UINT8,      PLCUINT8,   typedefof<byte>,    8)
+    ]
 
+    /// 문자열을 DataType으로 변환하는 매핑
+    let stringToDataType = dict [
+        BOOL,    DuBOOL
+        CHAR,    DuCHAR
+        FLOAT32, DuFLOAT32
+        FLOAT64, DuFLOAT64
+        INT16,   DuINT16
+        INT32,   DuINT32
+        INT64,   DuINT64
+        INT8,    DuINT8
+        STRING,  DuSTRING
+        UINT16,  DuUINT16
+        UINT32,  DuUINT32
+        UINT64,  DuUINT64
+        UINT8,   DuUINT8
+    ]
+*)
 
     type DataType =
         | DuBOOL

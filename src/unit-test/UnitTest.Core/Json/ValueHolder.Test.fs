@@ -60,6 +60,12 @@ module ValueHolderTestModule =
             h.Type === typ
             (h :> IWithType).Type === typ
 
+            // ValueHolder.Name 직접 접근
+            h.Name === null
+
+            // IWithName.Name -> 동적 property fetch "Name" -> ValueHolder.Name 접근
+            (h :> IWithName).Name === null
+
             h.Name === null
             (h :> IWithName).Name === null
             h.Name <- "PI"

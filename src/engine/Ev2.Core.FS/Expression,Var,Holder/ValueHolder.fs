@@ -9,6 +9,7 @@ open Dual.Common.Core.FS
 module rec ValueHolderModule =
 
     type ValueHolder(typ: Type, ?value: obj) =
+        // NsJsonS11nSafeObject 에서 상속받아서는 안됨.  Sealed class
         member val ObjectHolder = NsJsonS11nSafeObject(typ, ?value=value) with get, set
 
         // 향후 전개 가능한 interface 목록.  실제 interface 의 method 는 구현하지 않고, 확장 method 를 통해 접근
@@ -16,8 +17,11 @@ module rec ValueHolderModule =
         interface IWithName
         interface IWithAddress
         interface IWithType
-        interface IExpression
 
+        interface IExpression with
+            member x.Evaluate() = x.Evaluate()
+        abstract member Evaluate: unit -> obj
+        default x.Evaluate() = x.ObjectHolder.Value
 
         /// DynamicDictionary.
         ///
@@ -65,6 +69,10 @@ module rec ValueHolderModule =
             and set (v:bool) = x.DD.Set<bool>("IsLiteral", v)
 
     type TValueHolder<'T>(value:'T) =
-        inherit THolder<'T>(value)
+        //inherit THolder<'T>(value)
+        inherit ValueHolder(typedefof<'T>, value)
         interface IWithType<'T>
-        interface IExpression<'T>
+        interface IExpression<'T> with
+            member x.TEvaluate() = x.TEvaluate()
+        abstract member TEvaluate: unit -> 'T
+        default x.TEvaluate() = x.Value :?> 'T
