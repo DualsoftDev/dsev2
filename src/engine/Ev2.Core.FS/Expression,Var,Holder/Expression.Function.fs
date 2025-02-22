@@ -267,7 +267,7 @@ module ExpressionFunctionModule =
     /// Create function expression
     let private cf (f:Args->'T) (name:string) (args:Args) =
         //DuFunction { FunctionBody=f; Name=name; Arguments=args; LambdaDecl=None; LambdaApplication=None}
-        TNonTerminal<'T>.Create(name, f, args)
+        TNonTerminal<'T>.Create(f, args, name)
 
     [<AutoOpen>]
     module internal FunctionImpl =

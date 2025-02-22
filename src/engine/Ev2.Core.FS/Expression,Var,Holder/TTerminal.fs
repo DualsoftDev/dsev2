@@ -47,10 +47,16 @@ module rec TTerminalModule =
         inherit INonTerminal
         inherit IExpression<'T>
 
-    and IEvaluator = Arguments -> obj
-    /// Evaluator : Operator
-    // 기존 FlatExpression.Op 와 어떻게 병합?? (Symbolic)
-    and TEvaluator<'T> = Arguments -> 'T
+    /// IEvaluator: 기본 평가 클래스 (Arguments -> obj)
+    type IEvaluator =
+        abstract Evaluate: Arguments -> obj
+
+    // TEvaluator<'T>: IEvaluator를 상속하여 Arguments -> 'T 를 구현
+    type TEvaluator<'T>(evaluator:Arguments -> 'T) =
+        interface IEvaluator with
+            member x.Evaluate(args) = x.TEvaluate(args) |> box
+
+        member x.TEvaluate(args) = evaluator args
 
 
     type Op =
@@ -67,7 +73,7 @@ module rec TTerminalModule =
     | OpArithmetic of operator: string
 
     /// 정상 범주에서 지원되지 않는 operator
-    | OpOutOfService of IEvaluator
+    | CustomEvaluator of IEvaluator
 
 
     // 기존 FunctionSpec<'T> 에 해당.
@@ -81,21 +87,35 @@ module rec TTerminalModule =
         member val Operator: Op = op with get, set
         member val Arguments: IExpression[] = args with get, set
 
+        override x.Evaluate() = x.TEvaluateImpl() |> box
+        override x.TEvaluate():'T = x.TEvaluateImpl()
+
     type TNonTerminal<'T> with
         new() = TNonTerminal(Unchecked.defaultof<'T>)   // for Json
         new(op:Op, args:IExpression seq) = TNonTerminal(Unchecked.defaultof<'T>, (op, args.ToArray()))
 
-        static member Create(name:string, evaluator:TEvaluator<'T>, args:IExpression seq): TNonTerminal<'T> =
-            let ieval = fun args -> evaluator args :> obj
-            let op = OpOutOfService ieval
+        static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string): TNonTerminal<'T> =
+            let op = TEvaluator<'T>(evaluator) :> IEvaluator |> CustomEvaluator
 
             TNonTerminal<'T>(Unchecked.defaultof<'T>, (op, args.ToArray()))
-                .Tee(fun nt -> nt.DD.Add("Name", name))
+                .Tee(fun nt -> name.Iter(fun n -> nt.DD.Add("Name", n)))
 
-        static member Create(opAndArgs:(Op*IExpression [])): TNonTerminal<'T> =
-            TNonTerminal<'T>(Unchecked.defaultof<'T>, opAndArgs)
+        static member Create(op:Op, args:IExpression seq, ?name:string): TNonTerminal<'T> =
+            do
+                noop()
+            TNonTerminal<'T>(op, args)
+                .Tee(fun nt -> name.Iter(fun n -> nt.DD.Add("Name", n)))
 
-        override x.TEvaluate() = x.Value :?> 'T
+        member private x.TEvaluateImpl(): 'T =
+            match x.Operator with
+            | Op.CustomEvaluator fn ->
+                let tFn = fn :?> TEvaluator<'T>
+                let value = tFn.TEvaluate(x.Arguments.ToFSharpList())
+                x.Value <- box value
+                value
+            | _ ->
+                failwith "ERROR: Not Yet!!"
+
 
     type INonTerminal<'T> with
         /// INonTerminal.FunctionBody

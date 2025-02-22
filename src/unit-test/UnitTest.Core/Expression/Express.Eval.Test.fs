@@ -17,20 +17,25 @@ module ExpressionTestModule =
 
     [<TestFixture>]
     type ExpressionTest() =
-        let t1 = TTerminal(123)
-        let t2 = TTerminal(123)
+        let t1 = TTerminal(3)
+        let t2 = TTerminal(4)
 
         let iExpAdd:IExpression = createCustomFunctionExpression "+" [t1 :> IExpression; t2]
         let tExpAdd = iExpAdd :?> IExpression<int>
         let ntAdd = iExpAdd :?> TNonTerminal<int>
 
-        let opAdd = TNonTerminal<int>(Op.OpArithmetic "+", [t1 :> IExpression; t2])
         [<Test>]
         member _.Minimal() =
-            let nValue:int = opAdd.TEvaluate()
+            iExpAdd.Evaluate()  === 7
+            ntAdd  .Evaluate()  === 7
+            tExpAdd.Evaluate()  === 7
+            ntAdd  .TEvaluate() === 7
+            tExpAdd.TEvaluate() === 7
             let oValue:obj = iExpAdd.Evaluate()
             let nValue2:int = ntAdd.TEvaluate()
             let oValue2:obj = ntAdd.Evaluate()
             noop()
 
+            //let opAdd = TNonTerminal<int>(Op.OpArithmetic "+", [t1 :> IExpression; t2])
+            //let nValue:int = opAdd.TEvaluate()
 
