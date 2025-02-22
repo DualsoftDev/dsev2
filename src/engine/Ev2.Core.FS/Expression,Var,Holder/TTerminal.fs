@@ -40,6 +40,8 @@ module rec TTerminalModule =
 
     type Arguments = IExpression list
     type Args      = Arguments
+    type TArguments<'T> = IExpression<'T> list
+    type TArgs<'T> = TArguments<'T>
 
     type INonTerminal =
         inherit IExpression

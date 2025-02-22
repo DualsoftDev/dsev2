@@ -7,6 +7,7 @@ open System.Linq
 open System.Runtime.CompilerServices
 open Dual.Common.Core.FS
 open System.Collections.Generic
+open System.Reflection
 
 
 module private ExpressionHelperModule =
@@ -28,17 +29,19 @@ module private ExpressionHelperModule =
         let types = args |> Seq.distinctBy(fun a -> a.DataType) |> Seq.map(fun a ->a.BoxedEvaluatedValue, a.DataType)
         types|> Seq.length = 1
     let verifyAllExpressionSameType = isAllExpressionSameType >> verifyM "Type mismatch"
-    let isThisOperatorRequireAllArgumentsSameType: (string -> bool)  =
-        let hash =
-            [   "+" ; "-" ; "*" ; "/" ; "%"
-                ">";">=";"<";"<=";"==";"!=";"<>"
-                "&&" ; "||"
-                "&" ; "|" ; "&&&" ; "|||"
-                "add"; "sub"; "mul"; "div"
-                "gt"; "gte"; "lt"; "lte"
-                "equal"; "notEqual"; "and"; "or"
-            ] |> HashSet<string>
-        fun (name:string) -> hash.Contains (name)
+
+    let private operatorsRequireAllArgumentsSameType =
+        [   "+" ; "-" ; "*" ; "/" ; "%"
+            ">";">=";"<";"<=";"==";"!=";"<>"
+            "&&" ; "||"
+            "&" ; "|" ; "&&&" ; "|||"
+            "add"; "sub"; "mul"; "div"
+            "gt"; "gte"; "lt"; "lte"
+            "equal"; "notEqual"; "and"; "or"
+        ] |> HashSet<string>
+
+    let isThisOperatorRequireAllArgumentsSameType: (string -> bool) = operatorsRequireAllArgumentsSameType.Contains
+
     let verifyArgumentsTypes operator args =
         if isThisOperatorRequireAllArgumentsSameType operator && not <| isAllExpressionSameType args then
             failwith $"Type mismatch for operator   '{operator}'"
@@ -57,56 +60,6 @@ module ExpressionFunctionModule =
     let [<Literal>] FunctionNameRisingAfter  = "risingAfter"
     let [<Literal>] FunctionNameFallingAfter = "fallingAfter"
 
-    /// operator 별로, arguments 가 주어졌을 때, 이를 연산하여 IExpression 을 반환하는 함수를 반환하는 함수
-    let getBinaryFunction (op:string) (opndType:Type) : (Args -> IExpression) =
-        match op with
-        | "&&" | "||" when opndType <> typedefof<bool> -> failwith $"{op} expects bool.  Type mismatch"
-        | "+" when opndType = typeof<string> -> fConcat
-        | "+"  -> fAdd
-        | "-"  -> fSub
-        | "*"  -> fMul
-        | "/"  -> fDiv
-        | "%"  -> fMod
-
-        | ">"  -> fGt
-        | ">=" -> fGte
-        | "<"  -> fLt
-        | "<=" -> fLte
-        | "==" when opndType = typeof<string> -> fEqualString
-        | "=="  -> fEqual
-        | "!=" | "<>" -> fNotEqual
-
-        | "&&" -> fLogicalAnd
-        | "||" -> fLogicalOr
-
-        | ">>" | ">>>" -> fShiftRight
-        | "<<" | "<<<" -> fShiftLeft
-
-
-        | "&" | "&&&" -> fBitwiseAnd
-        | "|" | "|||" -> fBitwiseOr
-        | "^" | "^^^" -> fBitwiseXor
-        | "~" | "~~~" -> failwith "Not binary operation"
-
-        | _ -> failwith $"Undefined operator for getBinaryFunction({op})"
-
-    let createBinaryExpression (opnd1:IExpression) (op:string) (opnd2:IExpression) : IExpression =
-        let t1 = opnd1.DataType
-
-        let args = [opnd1; opnd2]
-        verifyArgumentsTypes op args
-        getBinaryFunction op t1 args  |> iexpr
-
-    let createUnaryExpression (op:string) (opnd:IExpression) : IExpression =
-        (* unary operator 처리.
-           - '! $myTag' 처럼  괄호 없이도 사용가능한 것들만 정의한다.
-           - 괄호도 허용하려면 createCustomFunctionExpression 에서도 정의해야 한다. '! ($myTag)'
-         *)
-        match op with
-        | ("~" | "~~~" ) -> fBitwiseNot [opnd]
-        | "!"  -> fbLogicalNot [opnd]
-        | _ ->
-            failwith $"Undefined operator for createUnaryExpression({op})"
 
 
     let predefinedFunctionNames =
@@ -176,13 +129,13 @@ module ExpressionFunctionModule =
         |] |> HashSet
 
     [<Obsolete("Todo: Uncomment")>]
-    let createCustomFunctionExpression (funName:string) (args:Args) : IExpression =
+    let createCustomFunctionExpression<'T> (funName:string) (args:Args) : IExpression =
         verifyArgumentsTypes funName args
         predefinedFunctionNames.Contains(funName) |> verifyM $"Undefined function: {funName}"
         let t = args[0].DataType.Name
 
         match funName with
-        | ("+" | "add") -> fAdd args
+        | ("+" | "add") -> fAdd<'T> args
         | ("-" | "sub") -> fSub args
         | ("*" | "mul") -> fMul args
         | ("/" | "div") -> fDiv args
@@ -339,180 +292,210 @@ module ExpressionFunctionModule =
              L   | Int64        | int64
              UL  | UInt64       | uint64
         *)
-        let castArgs<'T>  (args:Args) = args.Select(fun x-> x.BoxedEvaluatedValue :?> 'T)
-        let castArg<'T>   (args:Args) = args.ExactlyOne().BoxedEvaluatedValue :?> 'T
-        let shiftArgs<'T> (args:Args) = args.ExpectTyped2<'T, int>()
+        let castArgs<'T>  (args:Args): 'T seq   = args.Select(fun x-> x.BoxedEvaluatedValue :?> 'T)
+        let castArg<'T>   (args:Args): 'T       = args.ExactlyOne().BoxedEvaluatedValue :?> 'T
+        let shiftArgs<'T> (args:Args): 'T * int = args.ExpectTyped2<'T, int>()
 
-        let fAdd (args:Args) : IExpression =
+
+
+
+        // EV1: createBinaryExpression: IExpression -> (op:string) -> IExpression -> IExpression
+        let createBinaryFunction<'T> (op: string) : 'T -> 'T -> 'T =
+            let t = typeof<'T>
+            let tn = t.Name
+
+            fun (x:'T) (y:'T) ->
+                match op with
+                | "+" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  + toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x + toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x + toFloat64 y)
+                    | STRING                            -> box (x.ToString() + y.ToString())
+                    | _ -> failwith "ERROR"
+                | "-" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  - toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x - toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x - toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "*" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  * toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x * toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x * toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "/" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  / toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x / toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x / toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "%" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  % toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x % toUInt64 y)
+                    | _ -> failwith "ERROR"
+
+                | ">" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  > toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x > toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x > toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | ">=" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  >= toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x >= toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x >= toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "<" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  < toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x < toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x < toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "<=" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  <= toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x <= toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x <= toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "==" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  = toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x = toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x = toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "!=" | "<>" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  <> toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x <> toUInt64 y)
+                    | FLOAT32 | FLOAT64                 -> box (toFloat64 x <> toFloat64 y)
+                    | _ -> failwith "ERROR"
+                | "<<" | "<<<" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  <<< toInt32 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x <<< toInt32 y)
+                    | _ -> failwith "ERROR"
+                | ">>" | ">>>" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  >>> toInt32 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x >>> toInt32 y)
+                    | _ -> failwith "ERROR"
+                | "&" | "&&&" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  &&& toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x &&& toUInt64 y)
+                    | _ -> failwith "ERROR"
+                | "|" | "|||" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  ||| toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x ||| toUInt64 y)
+                    | _ -> failwith "ERROR"
+                | "^" | "^^^" ->
+                    match tn with
+                    | INT8   | INT16  | INT32  | INT64  -> box (toInt64 x  ^^^ toInt64 y)
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x ^^^ toUInt64 y)
+                    | _ -> failwith "ERROR"
+
+                | "&&" when t = typeof<bool> -> box (toBool x && toBool y)
+                | "||" when t = typeof<bool> -> box (toBool x || toBool y)
+
+
+                | _ -> failwith $"ERROR: Operator {op}"
+
+                |> fun x -> (tryConvert<'T> x |> Option.get)
+
+        let createUnaryFunction<'T> (op: string) : 'T -> 'T =
+
+            fun (x:'T) ->
+                match op with
+                | "!" ->
+                    match typeof<'T>.Name with
+                    | BOOL  -> (box x) :?> bool |> not |> box
+                    | _ -> failwith "ERROR"
+                | "~" | "~~~" ->
+                    match typeof<'T>.Name with
+                    | INT8   | INT16  | INT32  | INT64  -> box (~~~ (toInt64 x))
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box (~~~ (toUInt64 x))
+                    | _ -> failwith "ERROR"
+                | "abs" ->
+                    match typeof<'T>.Name with
+                    | INT8   | INT16  | INT32  | INT64  -> box (Math.Abs(toInt64 x))
+                    | UINT8  | UINT16 | UINT32 | UINT64 -> box x
+                    | FLOAT32 | FLOAT64                 -> box (Math.Abs(toFloat64 x))
+                    | _ -> failwith "ERROR"
+                |> fun x -> (tryConvert<'T> x |> Option.get)
+
+        let createShiftFunction<'T> (op: string) : 'T -> int -> 'T =
+            fun (x:'T) (y:int) ->
+                match op with
+                | "<<<" ->
+                    // shift 연산은 최대치인 int64 나 uint64 로 변환 후 shift 연산을 수행할 수 없으므로 개별 type 별로 결과를 얻어야 한다.
+                    match typeof<'T>.Name with
+                    | INT8 -> toInt8 x <<< y |> box
+                    | INT16 -> toInt16 x <<< y |> box
+                    | INT32 -> toInt32 x <<< y |> box
+                    | INT64 -> toInt64 x <<< y |> box
+                    | UINT8 -> toUInt8 x <<< y |> box
+                    | UINT16 -> toUInt16 x <<< y |> box
+                    | UINT32 -> toUInt32 x <<< y |> box
+                    | UINT64 -> toUInt64 x <<< y |> box
+                    | _ -> failwith "ERROR"
+                | ">>>" ->
+                    match typeof<'T>.Name with
+                    | INT8 -> toInt8 x >>> y |> box
+                    | INT16 -> toInt16 x >>> y |> box
+                    | INT32 -> toInt32 x >>> y |> box
+                    | INT64 -> toInt64 x >>> y |> box
+                    | UINT8 -> toUInt8 x >>> y |> box
+                    | UINT16 -> toUInt16 x >>> y |> box
+                    | UINT32 -> toUInt32 x >>> y |> box
+                    | UINT64 -> toUInt64 x >>> y |> box
+                    | _ -> failwith "ERROR"
+                | _ -> failwith "ERROR"
+                |> fun x -> (tryConvert<'T> x |> Option.get)
+
+        let createBinaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
             expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | FLOAT32  -> cf (castArgs<single> >> Seq.reduce(+)) "+"  args
-            | FLOAT64  -> cf (castArgs<double> >> Seq.reduce(+)) "+"  args
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(+)) "+"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(+)) "+"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(+)) "+"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(+)) "+"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(+)) "+"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(+)) "+"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(+)) "+"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(+)) "+"  args
-            | _        -> failwithlog "ERROR"
-
-        let fSub (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | FLOAT32  -> cf (castArgs<single> >> Seq.reduce(-)) "-"  args
-            | FLOAT64  -> cf (castArgs<double> >> Seq.reduce(-)) "-"  args
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(-)) "-"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(-)) "-"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(-)) "-"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(-)) "-"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(-)) "-"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(-)) "-"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(-)) "-"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(-)) "-"  args
-            | _        -> failwithlog "ERROR"
+            let op:'T->'T->'T = createBinaryFunction<'T>(mnemonic)
+            let transformer:Args -> 'T = castArgs<'T> >> Seq.reduce op
+            cf transformer mnemonic args
 
 
-        let fMul (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | FLOAT32  -> cf (castArgs<single> >> Seq.reduce(*)) "*"  args
-            | FLOAT64  -> cf (castArgs<double> >> Seq.reduce(*)) "*"  args
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(*)) "*"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(*)) "*"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(*)) "*"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(*)) "*"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(*)) "*"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(*)) "*"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(*)) "*"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(*)) "*"  args
-            | _        -> failwithlog "ERROR"
-
-        let fDiv (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | FLOAT32  -> cf (castArgs<single> >> Seq.reduce(/)) "/"  args
-            | FLOAT64  -> cf (castArgs<double> >> Seq.reduce(/)) "/"  args
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(/)) "/"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(/)) "/"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(/)) "/"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(/)) "/"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(/)) "/"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(/)) "/"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(/)) "/"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(/)) "/"  args
-            | _        -> failwithlog "ERROR"
-
-        let fAbs (args:Args) : IExpression =
+        let createUnaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
             expect1 args |> ignore
-            match args[0].DataType.Name with
-            | FLOAT32  -> cf (castArg<single> >> Math.Abs) "abs"  args
-            | FLOAT64  -> cf (castArg<double> >> Math.Abs) "abs"  args
-            | INT16    -> cf (castArg<int16>  >> Math.Abs) "abs"  args
-            | INT32    -> cf (castArg<int32>  >> Math.Abs) "abs"  args
-            | INT64    -> cf (castArg<int64>  >> Math.Abs) "abs"  args
-            | INT8     -> cf (castArg<int8 >  >> Math.Abs) "abs"  args
-            | UINT16   -> cf (castArg<uint16> >> Math.Abs) "abs"  args
-            | UINT32   -> cf (castArg<uint32> >> Math.Abs) "abs"  args
-            | UINT64   -> cf (castArg<uint64> >> Math.Abs) "abs"  args
-            | UINT8    -> cf (castArg<uint8 > >> Math.Abs) "abs"  args
-            | _        -> failwithlog "ERROR"
-
-        let fMod (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | FLOAT32  -> cf (castArgs<single> >> Seq.reduce(%)) "%"  args
-            | FLOAT64  -> cf (castArgs<double> >> Seq.reduce(%)) "%"  args
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(%)) "%"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(%)) "%"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(%)) "%"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(%)) "%"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(%)) "%"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(%)) "%"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(%)) "%"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(%)) "%"  args
-            | _        -> failwithlog "ERROR"
+            let op:'T->'T = createUnaryFunction<'T>(mnemonic)
+            let transformer:Args -> 'T = castArgs<'T> >> Seq.head >> op
+            cf transformer mnemonic args
 
 
-        let fShiftLeft (args:Args) : IExpression =
+        let createShiftFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
             expect2 args |> ignore
-            match args[0].DataType.Name with
-            | INT16    -> cf (fun xs -> shiftArgs<int16>  xs ||> (<<<)) "<<<"  args
-            | INT32    -> cf (fun xs -> shiftArgs<int32>  xs ||> (<<<)) "<<<"  args
-            | INT64    -> cf (fun xs -> shiftArgs<int64>  xs ||> (<<<)) "<<<"  args
-            | INT8     -> cf (fun xs -> shiftArgs<int8 >  xs ||> (<<<)) "<<<"  args
-            | UINT16   -> cf (fun xs -> shiftArgs<uint16> xs ||> (<<<)) "<<<"  args
-            | UINT32   -> cf (fun xs -> shiftArgs<uint32> xs ||> (<<<)) "<<<"  args
-            | UINT64   -> cf (fun xs -> shiftArgs<uint64> xs ||> (<<<)) "<<<"  args
-            | UINT8    -> cf (fun xs -> shiftArgs<uint8 > xs ||> (<<<)) "<<<"  args
-            | _        -> failwithlog "ERROR"
-
-        let fShiftRight (args:Args) : IExpression =
-            expect2 args |> ignore
-            match args[0].DataType.Name with
-            | INT16    -> cf (fun xs -> shiftArgs<int16>  xs ||> (>>>)) ">>>"  args
-            | INT32    -> cf (fun xs -> shiftArgs<int32>  xs ||> (>>>)) ">>>"  args
-            | INT64    -> cf (fun xs -> shiftArgs<int64>  xs ||> (>>>)) ">>>"  args
-            | INT8     -> cf (fun xs -> shiftArgs<int8 >  xs ||> (>>>)) ">>>"  args
-            | UINT16   -> cf (fun xs -> shiftArgs<uint16> xs ||> (>>>)) ">>>"  args
-            | UINT32   -> cf (fun xs -> shiftArgs<uint32> xs ||> (>>>)) ">>>"  args
-            | UINT64   -> cf (fun xs -> shiftArgs<uint64> xs ||> (>>>)) ">>>"  args
-            | UINT8    -> cf (fun xs -> shiftArgs<uint8 > xs ||> (>>>)) ">>>"  args
-            | _        -> failwithlog "ERROR"
+            let transformer (args:Args) =
+                let (x:'T), (y:int) = shiftArgs<'T> args
+                let op:'T->int->'T = createShiftFunction<'T>(mnemonic)
+                op x y
+            //let transformer:Args -> 'T = (fun xs -> shiftArgs<'T>  xs ||> (>>>))
+            cf transformer mnemonic args
 
 
-        let fBitwiseAnd (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(&&&)) "&&&"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(&&&)) "&&&"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(&&&)) "&&&"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(&&&)) "&&&"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(&&&)) "&&&"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(&&&)) "&&&"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(&&&)) "&&&"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(&&&)) "&&&"  args
-            | _        -> failwithlog "ERROR"
+        let fAdd<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "+" args
+        let fSub<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "-" args
+        let fMul<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "*" args
+        let fDiv<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "/" args
+        let fMod<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "%" args
 
-        let fBitwiseOr (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(|||)) "|||"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(|||)) "|||"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(|||)) "|||"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(|||)) "|||"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(|||)) "|||"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(|||)) "|||"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(|||)) "|||"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(|||)) "|||"  args
-            | _        -> failwithlog "ERROR"
+        let fAbs<'T> (args: Args) : IExpression = createUnaryFunctionExpression<'T> "abs" args
+        let fBitwiseNot<'T> (args: Args) : IExpression = createUnaryFunctionExpression<'T> "~~~" args
+        let fBitwiseAnd<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "&&&" args
+        let fBitwiseOr<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "|||" args
+        let fBitwiseXor<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "^^^" args
 
-        let fBitwiseXor (args:Args) : IExpression =
-            expectGteN 2 args |> ignore
-            match args[0].DataType.Name with
-            | INT16    -> cf (castArgs<int16>  >> Seq.reduce(^^^)) "^^^"  args
-            | INT32    -> cf (castArgs<int32>  >> Seq.reduce(^^^)) "^^^"  args
-            | INT64    -> cf (castArgs<int64>  >> Seq.reduce(^^^)) "^^^"  args
-            | INT8     -> cf (castArgs<int8 >  >> Seq.reduce(^^^)) "^^^"  args
-            | UINT16   -> cf (castArgs<uint16> >> Seq.reduce(^^^)) "^^^"  args
-            | UINT32   -> cf (castArgs<uint32> >> Seq.reduce(^^^)) "^^^"  args
-            | UINT64   -> cf (castArgs<uint64> >> Seq.reduce(^^^)) "^^^"  args
-            | UINT8    -> cf (castArgs<uint8 > >> Seq.reduce(^^^)) "^^^"  args
-            | _        -> failwithlog "ERROR"
+        let fShiftLeft<'T> (args: Args) : IExpression = createShiftFunctionExpression<'T> "<<<" args
+        let fShiftRight<'T> (args: Args) : IExpression = createShiftFunctionExpression<'T> ">>>" args
 
-        let fBitwiseNot (args:Args) : IExpression =
-            expect1 args |> ignore
-            match args[0].DataType.Name with
-            | INT16    -> cf (castArg<int16>  >> (~~~)) "~~~"  args
-            | INT32    -> cf (castArg<int32>  >> (~~~)) "~~~"  args
-            | INT64    -> cf (castArg<int64>  >> (~~~)) "~~~"  args
-            | INT8     -> cf (castArg<int8 >  >> (~~~)) "~~~"  args
-            | UINT16   -> cf (castArg<uint16> >> (~~~)) "~~~"  args
-            | UINT32   -> cf (castArg<uint32> >> (~~~)) "~~~"  args
-            | UINT64   -> cf (castArg<uint64> >> (~~~)) "~~~"  args
-            | UINT8    -> cf (castArg<uint8 > >> (~~~)) "~~~"  args
-            | _        -> failwithlog "ERROR"
 
 
         let fConcat         args = cf _concat         "+"      args

@@ -1,196 +1,142 @@
 namespace Dual.Ev2
 
+open System
 open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module TypeConversionModule =
-    //let (|Float64|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1.0 else 0.0)     // toInt(false) 등에서의 casting 허용 위해 필요
-    //    | :? byte   as n -> Some (double n)
-    //    | :? double as n -> Some (double n)
-    //    | :? int16  as n -> Some (double n)
-    //    | :? int32  as n -> Some (double n)
-    //    | :? int64  as n -> Some (double n)
-    //    | :? sbyte  as n -> Some (double n)
-    //    | :? single as n -> Some (double n)
-    //    | :? uint16 as n -> Some (double n)
-    //    | :? uint32 as n -> Some (double n)
-    //    | :? uint64 as n -> Some (double n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to double"
-    //        None
+    //data 타입 지원 항목 : 알파벳 순 정렬 (Alt+Shift+L, Alt+Shift+S)
+    let [<Literal>] BOOL    = "Boolean"
+    let [<Literal>] CHAR    = "Char"
+    let [<Literal>] FLOAT32 = "Single"
+    let [<Literal>] FLOAT64 = "Double"
+    let [<Literal>] INT16   = "Int16"
+    let [<Literal>] INT32   = "Int32"
+    let [<Literal>] INT64   = "Int64"
+    let [<Literal>] INT8    = "SByte"
+    let [<Literal>] STRING  = "String"
+    let [<Literal>] UINT16  = "UInt16"
+    let [<Literal>] UINT32  = "UInt32"
+    let [<Literal>] UINT64  = "UInt64"
+    let [<Literal>] UINT8   = "Byte"
 
-    //let (|Float32|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1.f else 0.f)
-    //    | :? byte   as n -> Some (float32 n)
-    //    | :? double as n -> Some (float32 n)
-    //    | :? int16  as n -> Some (float32 n)
-    //    | :? int32  as n -> Some (float32 n)
-    //    | :? int64  as n -> Some (float32 n)
-    //    | :? sbyte  as n -> Some (float32 n)
-    //    | :? single as n -> Some (float32 n)
-    //    | :? uint16 as n -> Some (float32 n)
-    //    | :? uint32 as n -> Some (float32 n)
-    //    | :? uint64 as n -> Some (float32 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to float"
-    //        None
 
-    //let (|Byte|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1uy else 0uy)
-    //    | :? byte   as n -> Some (byte n)
-    //    | :? double as n -> Some (byte n)
-    //    | :? int16  as n -> Some (byte n)
-    //    | :? int32  as n -> Some (byte n)
-    //    | :? int64  as n -> Some (byte n)
-    //    | :? sbyte  as n -> Some (byte n)
-    //    | :? single as n -> Some (byte n)
-    //    | :? uint16 as n -> Some (byte n)
-    //    | :? uint32 as n -> Some (byte n)
-    //    | :? uint64 as n -> Some (byte n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to byte"
-    //        None
-
-    //let (|SByte|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1y else 0y)
-    //    | :? byte   as n -> Some (sbyte n)
-    //    | :? double as n -> Some (sbyte n)
-    //    | :? int16  as n -> Some (sbyte n)
-    //    | :? int32  as n -> Some (sbyte n)
-    //    | :? int64  as n -> Some (sbyte n)
-    //    | :? sbyte  as n -> Some (sbyte n)
-    //    | :? single as n -> Some (sbyte n)
-    //    | :? uint16 as n -> Some (sbyte n)
-    //    | :? uint32 as n -> Some (sbyte n)
-    //    | :? uint64 as n -> Some (sbyte n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to sbyte"
-    //        None
-
-    //let (|Int16|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1s else 0s)
-    //    | :? byte   as n -> Some (int16 n)
-    //    | :? double as n -> Some (int16 n)
-    //    | :? int16  as n -> Some (int16 n)
-    //    | :? int32  as n -> Some (int16 n)
-    //    | :? int64  as n -> Some (int16 n)
-    //    | :? sbyte  as n -> Some (int16 n)
-    //    | :? single as n -> Some (int16 n)
-    //    | :? uint16 as n -> Some (int16 n)
-    //    | :? uint32 as n -> Some (int16 n)
-    //    | :? uint64 as n -> Some (int16 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to int16"
-    //        None
-
-    //let (|UInt16|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1us else 0us)
-    //    | :? byte   as n -> Some (uint16 n)
-    //    | :? double as n -> Some (uint16 n)
-    //    | :? int16  as n -> Some (uint16 n)
-    //    | :? int32  as n -> Some (uint16 n)
-    //    | :? int64  as n -> Some (uint16 n)
-    //    | :? sbyte  as n -> Some (uint16 n)
-    //    | :? single as n -> Some (uint16 n)
-    //    | :? uint16 as n -> Some (uint16 n)
-    //    | :? uint32 as n -> Some (uint16 n)
-    //    | :? uint64 as n -> Some (uint16 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to uint16"
-    //        None
-
-    //let (|Int32|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1 else 0)     // toInt(false) 등에서의 casting 허용 위해 필요
-    //    | :? byte   as n -> Some (int32 n)
-    //    | :? double as n -> Some (int32 n)
-    //    | :? int16  as n -> Some (int32 n)
-    //    | :? int32  as n -> Some (int32 n)
-    //    | :? int64  as n -> Some (int32 n)
-    //    | :? sbyte  as n -> Some (int32 n)
-    //    | :? single as n -> Some (int32 n)
-    //    | :? uint16 as n -> Some (int32 n)
-    //    | :? uint32 as n -> Some (int32 n)
-    //    | :? uint64 as n -> Some (int32 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to int32"
-    //        None
-
-    //let (|UInt32|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1u else 0u)
-    //    | :? byte   as n -> Some (uint32 n)
-    //    | :? double as n -> Some (uint32 n)
-    //    | :? int16  as n -> Some (uint32 n)
-    //    | :? int32  as n -> Some (uint32 n)
-    //    | :? int64  as n -> Some (uint32 n)
-    //    | :? sbyte  as n -> Some (uint32 n)
-    //    | :? single as n -> Some (uint32 n)
-    //    | :? uint16 as n -> Some (uint32 n)
-    //    | :? uint32 as n -> Some (uint32 n)
-    //    | :? uint64 as n -> Some (uint32 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to uint32"
-    //        None
-
-    //let (|Int64|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1L else 0L)
-    //    | :? byte   as n -> Some (int64 n)
-    //    | :? double as n -> Some (int64 n)
-    //    | :? int16  as n -> Some (int64 n)
-    //    | :? int32  as n -> Some (int64 n)
-    //    | :? int64  as n -> Some (int64 n)
-    //    | :? sbyte  as n -> Some (int64 n)
-    //    | :? single as n -> Some (int64 n)
-    //    | :? uint16 as n -> Some (int64 n)
-    //    | :? uint32 as n -> Some (int64 n)
-    //    | :? uint64 as n -> Some (int64 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to int64"
-    //        None
-
-    //let (|UInt64|_|) (x:obj) =
-    //    match x with
-    //    | :? bool as b -> Some (if b then 1UL else 0UL)
-    //    | :? byte   as n -> Some (uint64 n)
-    //    | :? double as n -> Some (uint64 n)
-    //    | :? int16  as n -> Some (uint64 n)
-    //    | :? int32  as n -> Some (uint64 n)
-    //    | :? int64  as n -> Some (uint64 n)
-    //    | :? sbyte  as n -> Some (uint64 n)
-    //    | :? single as n -> Some (uint64 n)
-    //    | :? uint16 as n -> Some (uint64 n)
-    //    | :? uint32 as n -> Some (uint64 n)
-    //    | :? uint64 as n -> Some (uint64 n)
-    //    | _ ->
-    //        logWarn $"Cannot convert {x} to uint64"
-    //        None
-
-    let inline tryConvert<'T> (x: obj) : 'T option =
+    let tryConvert<'T> (x: obj) : 'T option =
         try
-            match x with
-            | :? bool as b -> Some (unbox (if b then 1 else 0))  // bool → 숫자 변환
-            | :? byte   as n -> Some (unbox n)
-            | :? double as n -> Some (unbox n)
-            | :? int16  as n -> Some (unbox n)
-            | :? int32  as n -> Some (unbox n)
-            | :? int64  as n -> Some (unbox n)
-            | :? sbyte  as n -> Some (unbox n)
-            | :? single as n -> Some (unbox n)
-            | :? uint16 as n -> Some (unbox n)
-            | :? uint32 as n -> Some (unbox n)
-            | :? uint64 as n -> Some (unbox n)
+            let t = typeof<'T>
+            let sub v = Some (unbox<'T> v)
+            match box x with
+            // 정수 변환 (오버플로우 방지)
+            | :? float as v when t = typeof<int>   -> sub (int v)
+            | :? float as v when t = typeof<int64> -> sub (int64 v)
+            | :? int64 as v when t = typeof<int>   ->
+                if v >= int64 Int32.MinValue && v <= int64 Int32.MaxValue then sub (int v)
+                else None
+            | :? int   as v when t = typeof<int64> -> sub (int64 v)  // ✅ `int -> int64` 변환 추가
+            | :? int   as v when t = typeof<float> -> sub (float v)
+            | :? int64 as v when t = typeof<float> -> sub (float v)
+            | :? int64 as v when t = typeof<int64> -> sub v
+
+            // 문자열 변환
+            | :? string as v ->
+                match v with
+                | _ when t = typeof<int32> ->
+                    match Int32.TryParse(v) with
+                    | true, res -> sub res
+                    | _ -> None
+                | _ when t = typeof<int64> ->
+                    match Int64.TryParse(v) with
+                    | true, res -> sub res
+                    | _ -> None
+                | _ when t = typeof<double> ->
+                    match Double.TryParse(v) with
+                    | true, res -> sub res
+                    | _ -> None
+                | _ when t = typeof<bool> ->
+                    match v.ToLower() with
+                    | "true" -> sub true
+                    | "false" -> sub false
+                    | _ -> None
+                | _ when t = typeof<char> && v.Length = 1 -> sub v.[0]
+                | _ -> None
+
+            // bool 변환
+            | :? bool as v when t = typeof<string> -> sub (v.ToString())
+            | :? bool as v -> sub v
+
+            // char 변환
+            | :? char as v when t = typeof<int> -> sub (int v)
+
+            // 숫자 → 문자열 변환
+            | :? int   as v when t = typeof<string> -> sub (v.ToString())
+            | :? int64 as v when t = typeof<string> -> sub (v.ToString())
+            | :? float as v when t = typeof<string> -> sub (v.ToString())
+
+            // 기본 변환
+            | _ when x <> null -> sub x
+
             | _ -> None
         with
-        | _ -> None  // 변환 실패 시 None 반환
+        | :? InvalidCastException
+        | :? FormatException
+        | :? OverflowException -> None
+
+
+
+    // 테스트 예제
+
+    (*
+    // 테스트 예제
+        // 정수와 실수 변환
+        let myAssert(x) = if x then () else failwith "Assertion failed"
+
+        myAssert(tryConvert<int> 2.9              = Some 2)
+        myAssert(tryConvert<int> -2.9             = Some(-2))
+        myAssert(tryConvert<int> 3.5              = Some(3))
+        myAssert(tryConvert<float> 100            = Some(100.0))
+        myAssert(tryConvert<float> 42.5           = Some(42.5))
+
+        // 문자열 변환
+        myAssert(tryConvert<int> "42"             = Some(42))
+        myAssert(tryConvert<int> "3.14"           = None)
+        myAssert(tryConvert<float> "3.14"         = Some(3.14))
+        myAssert(tryConvert<float> "-99.9"        = Some(-99.9))
+        myAssert(tryConvert<int> "123abc"         = None)
+        myAssert(tryConvert<double> "abc"         = None)
+
+        // `int64`, `int` 간 변환
+        myAssert(tryConvert<int> 123L             = Some(123))
+        myAssert(tryConvert<int64> 123            = Some(123L))
+        myAssert(tryConvert<int> 999999999999L    = None)
+        myAssert(tryConvert<int64> 999999999999L  = Some(999999999999L))
+
+        // `bool` 변환
+        myAssert(tryConvert<bool> "true"          = Some(true))
+        myAssert(tryConvert<bool> "false"         = Some(false))
+        myAssert(tryConvert<bool> "True"          = Some(true))
+        myAssert(tryConvert<bool> "FALSE"         = Some(false))
+        myAssert(tryConvert<bool> "yes"           = None)
+        myAssert(tryConvert<bool> 1               = None)
+        myAssert(tryConvert<bool> 0               = None)
+
+        // 기타 타입 변환
+        myAssert(tryConvert<char> "A"             = Some('A'))
+        myAssert(tryConvert<char> 'B'             = Some('B'))
+        myAssert(tryConvert<char> "Hello"         = None)
+        myAssert(tryConvert<int> '9'              = Some(57))
+        myAssert(tryConvert<int> 'A'              = Some(65))
+
+        // 문자열 변환 추가
+        myAssert(tryConvert<string> 123           = Some("123"))
+        myAssert(tryConvert<string> true          = Some("True"))
+        myAssert(tryConvert<string> 3.14          = Some("3.14"))
+
+        // null 처리
+        myAssert(tryConvert<string> null          = None)
+
+    *)
+
+
 
     let (|Float64|_|) (x: obj) = tryConvert<double> x
     let (|Float32|_|) (x: obj) = tryConvert<float32> x
