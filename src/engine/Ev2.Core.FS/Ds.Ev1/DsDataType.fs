@@ -8,6 +8,20 @@ open System.Collections.Generic
 
 [<AutoOpen>]
 module DsDataType =
+    //data 타입 지원 항목 : 알파벳 순 정렬 (Alt+Shift+L, Alt+Shift+S)
+    let [<Literal>] BOOL    = "Boolean"
+    let [<Literal>] CHAR    = "Char"
+    let [<Literal>] FLOAT32 = "Single"
+    let [<Literal>] FLOAT64 = "Double"
+    let [<Literal>] INT16   = "Int16"
+    let [<Literal>] INT32   = "Int32"
+    let [<Literal>] INT64   = "Int64"
+    let [<Literal>] INT8    = "SByte"
+    let [<Literal>] STRING  = "String"
+    let [<Literal>] UINT16  = "UInt16"
+    let [<Literal>] UINT32  = "UInt32"
+    let [<Literal>] UINT64  = "UInt64"
+    let [<Literal>] UINT8   = "Byte"
 
     let [<Literal>] PLCBOOL    = "bit"
     let [<Literal>] PLCUINT8   = "byte"
@@ -18,19 +32,19 @@ module DsDataType =
 
     /// DefaultValue * MaxValue * DefaultToString
     let private typeInfo = dict [
-        BOOL,     (box false, box true, "false")
-        CHAR,     (box ' ', box '\uFFFF', "' '")  // Unicode 최대값
-        FLOAT32,  (box 0.0f, box Single.MaxValue, "0.0f")
-        FLOAT64,  (box 0.0, box Double.MaxValue, "0.0")
-        INT8,     (box 0y, box SByte.MaxValue, "0y")
-        INT16,    (box 0s, box Int16.MaxValue, "0s")
-        INT32,    (box 0, box Int32.MaxValue, "0")
-        INT64,    (box 0L, box Int64.MaxValue, "0L")
-        STRING,   (box "", box "", "\"\"") // 문자열은 기본값과 최대값이 동일
-        UINT8,    (box 0uy, box Byte.MaxValue, "0uy")
-        UINT16,   (box 0us, box UInt16.MaxValue, "0us")
-        UINT32,   (box 0u, box UInt32.MaxValue, "0u")
-        UINT64,   (box 0UL, box UInt64.MaxValue, "0UL")
+        BOOL,     (box false,   box true,               "false")
+        CHAR,     (box ' ',     box '\uFFFF',           "' '")  // Unicode 최대값
+        FLOAT32,  (box 0.0f,    box Single.MaxValue,    "0.0f")
+        FLOAT64,  (box 0.0,     box Double.MaxValue,    "0.0")
+        INT8,     (box 0y,      box SByte.MaxValue,     "0y")
+        INT16,    (box 0s,      box Int16.MaxValue,     "0s")
+        INT32,    (box 0,       box Int32.MaxValue,     "0")
+        INT64,    (box 0L,      box Int64.MaxValue,     "0L")
+        STRING,   (box "",      box "",                 "\"\"") // 문자열은 기본값과 최대값이 동일
+        UINT8,    (box 0uy,     box Byte.MaxValue,      "0uy")
+        UINT16,   (box  0us,    box UInt16.MaxValue,    "0us")
+        UINT32,   (box 0u,      box UInt32.MaxValue,    "0u")
+        UINT64,   (box 0UL,     box UInt64.MaxValue,    "0UL")
     ]
 
     let private getTypeInfo (typ: System.Type) =

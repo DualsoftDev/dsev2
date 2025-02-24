@@ -5,25 +5,11 @@ open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module TypeConversionModule =
-    //data 타입 지원 항목 : 알파벳 순 정렬 (Alt+Shift+L, Alt+Shift+S)
-    let [<Literal>] BOOL    = "Boolean"
-    let [<Literal>] CHAR    = "Char"
-    let [<Literal>] FLOAT32 = "Single"
-    let [<Literal>] FLOAT64 = "Double"
-    let [<Literal>] INT16   = "Int16"
-    let [<Literal>] INT32   = "Int32"
-    let [<Literal>] INT64   = "Int64"
-    let [<Literal>] INT8    = "SByte"
-    let [<Literal>] STRING  = "String"
-    let [<Literal>] UINT16  = "UInt16"
-    let [<Literal>] UINT32  = "UInt32"
-    let [<Literal>] UINT64  = "UInt64"
-    let [<Literal>] UINT8   = "Byte"
-
-
+    let inline private tryToOption (b, v) = if b then Some v else None
     let tryConvert<'T> (x: obj) : 'T option =
         try
             let t = typeof<'T>
+            /// Unbox<'T> >> Some
             let sub v = Some (unbox<'T> v)
             match box x with
             // 정수 변환 (오버플로우 방지)
@@ -32,26 +18,17 @@ module TypeConversionModule =
             | :? int64 as v when t = typeof<int>   ->
                 if v >= int64 Int32.MinValue && v <= int64 Int32.MaxValue then sub (int v)
                 else None
-            | :? int   as v when t = typeof<int64> -> sub (int64 v)  // ✅ `int -> int64` 변환 추가
+            | :? int   as v when t = typeof<int64> -> sub (int64 v)
             | :? int   as v when t = typeof<float> -> sub (float v)
             | :? int64 as v when t = typeof<float> -> sub (float v)
             | :? int64 as v when t = typeof<int64> -> sub v
 
             // 문자열 변환
             | :? string as v ->
-                match v with
-                | _ when t = typeof<int32> ->
-                    match Int32.TryParse(v) with
-                    | true, res -> sub res
-                    | _ -> None
-                | _ when t = typeof<int64> ->
-                    match Int64.TryParse(v) with
-                    | true, res -> sub res
-                    | _ -> None
-                | _ when t = typeof<double> ->
-                    match Double.TryParse(v) with
-                    | true, res -> sub res
-                    | _ -> None
+                match null with
+                | _ when t = typeof<int32>  -> Int32 .TryParse(v) |> tryToOption |> Option.bind sub
+                | _ when t = typeof<int64>  -> Int64 .TryParse(v) |> tryToOption |> Option.bind sub
+                | _ when t = typeof<double> -> Double.TryParse(v) |> tryToOption |> Option.bind sub
                 | _ when t = typeof<bool> ->
                     match v.ToLower() with
                     | "true" -> sub true
