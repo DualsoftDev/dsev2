@@ -52,6 +52,7 @@ module rec ExpressionInterfaceModule =
     /// 정상 범주에서 지원되지 않는 operator
     | CustomOperator of (Args -> obj)
 
+
     // 기존 Terminal<'T> 에 해당.
     type TTerminalImpl<'T>(value:'T) =
         inherit TValueHolder<'T>(value)

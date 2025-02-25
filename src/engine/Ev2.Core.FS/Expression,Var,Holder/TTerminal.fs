@@ -1,43 +1,20 @@
 namespace Dual.Ev2
 
-open System
 open System.Runtime.Serialization
 open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
-open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 open Dual.Common.Base.CS
-open Dual.Common.Core
 
 [<AutoOpen>]
 module rec TTerminalModule =
 
-    let private evaluateT<'T> (op:Op, args:Args): 'T =
-        match op with
-        | Op.Unit ->
-            failwith "ERROR: Operator not specified"
-
-        | Op.CustomOperator evaluator ->
-            evaluator (args.ToFSharpList()) :?> 'T
-
-        | Op.PredefinedOperator mnemonic ->
-            match mnemonic with
-            | "+" -> fAdd<'T> args
-            //| "&&" -> fAnd<'T>
-            //| Or -> "||"
-            //| Neg -> "!"
-            //| OpCompare op -> op
-            //| OpArithmetic op ->
-            //    match op with
-            //    | "+" -> fAdd<'T>
-
-
-        //| RisingAfter
-        //| FallingAfter ->
-        //    failwith "ERROR: Not Yet!!"
-        | _ ->
-            failwith "ERROR: Not Yet!!"
+    type Op with
+        member x.GetFunction(): (Args -> obj) =
+            match x with
+            | CustomOperator f -> f
+            | PredefinedOperator mnemonic -> cf mnemonic
+            | _ -> failwith "ERROR: Not Yet!!"
 
 
     // 기존 FunctionSpec<'T> 에 해당.
@@ -63,7 +40,7 @@ module rec TTerminalModule =
 
         member internal x.OnDeserialized() =
             lazyValue <- ResettableLazy<'T>(fun () ->
-                let objValue:obj = evaluateT<'T> (x.Operator, x.Arguments.ToFSharpList())
+                let objValue:obj = x.Operator.GetFunction() (x.Arguments.ToFSharpList())
                 objValue :?> 'T
             )
             noop()
@@ -83,11 +60,4 @@ module rec TTerminalModule =
             if x.PropertiesDto = null then
                 x.PropertiesDto <- DynamicDictionary()
             x.PropertiesDto
-
-
-    //type INonTerminal<'T> with
-    //    /// INonTerminal.FunctionBody
-    //    member x.FunctionBody
-    //        with get() = getPropertyValueDynamically(x, "FunctionBody") :?> (TEvaluator<'T>)
-    //        and set (v:Arguments -> 'T) = setPropertyValueDynamically(x, "FunctionBody", v)
 

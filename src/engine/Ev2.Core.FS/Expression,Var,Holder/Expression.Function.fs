@@ -131,8 +131,9 @@ module ExpressionFunctionModule =
     /// (Args -> 'T) 함수를 (Args -> obj) 로 boxing
     let private boxF<'T> (f:Args -> 'T) : (Args -> obj) = fun (args:Args) -> f args |> box
 
+    /// Create (known) function
     [<Obsolete("Todo: Uncomment")>]
-    let createCustomFunction<'T> (funName:string) : Args -> obj =
+    let cf<'T> (funName:string) : Args -> obj =
         predefinedFunctionNames.Contains(funName) |> verifyM $"Undefined function: {funName}"
 
 
@@ -250,11 +251,6 @@ module ExpressionFunctionModule =
         let fbFalling (_args:Args) : bool =      false//    errorPCRunmode(_args, "falling")
         let fbRisingAfter (_args:Args) : bool =  false//    errorPCRunmode(_args, "risingAfter")
         let fbFallingAfter (_args:Args) : bool=  false//    errorPCRunmode(_args, "fallingAfter")
-
-
-        let fSin (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Sin
-        let fCos (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Cos
-        let fTan (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Tan
 
         let fCastUInt8   (args:Args) = args.Select(evalArg >> toUInt8)   .Expect1()
         let fCastInt8    (args:Args) = args.Select(evalArg >> toInt8)    .Expect1()
@@ -423,11 +419,24 @@ module ExpressionFunctionModule =
                     | UINT8  | UINT16 | UINT32 | UINT64 -> box (~~~ (toUInt64 x))
                     | _ -> failwith "ERROR"
                 | "abs" ->
-                    match typeof<'T>.Name with
+                    match tn with
                     | INT8   | INT16  | INT32  | INT64  -> box (Math.Abs(toInt64 x))
                     | UINT8  | UINT16 | UINT32 | UINT64 -> box x
                     | FLOAT32 | FLOAT64                 -> box (Math.Abs(toFloat64 x))
                     | _ -> failwith "ERROR"
+                | ("sin" | "cos" | "tan") ->
+                    let trigono =
+                        match op with
+                        | "sin" -> Math.Sin
+                        | "cos" -> Math.Cos
+                        | "tan" -> Math.Tan
+                        | _ -> failwith "ERROR"
+
+                    match tn with
+                    | FLOAT32 -> box (toFloat32 <| trigono(toFloat64 x))
+                    | FLOAT64 -> box (trigono(toFloat64 x))
+                    | _ -> failwith "ERROR"
+
                 |> fun v ->
                     if t.Name = OBJECT then
                         tryConvert2 (x.GetType()) v |> Option.get :?> 'T
@@ -497,6 +506,11 @@ module ExpressionFunctionModule =
 
         let fAbs<'T>        (args: Args) : 'T = createUnaryArgsFunction< 'T> "abs" args     // Unary
         let fBitwiseNot<'T> (args: Args) : 'T = createUnaryArgsFunction< 'T> "~~~" args     // Unary
+        let fSin<'T>        (args: Args) : 'T = createUnaryArgsFunction< 'T> "sin" args     // Unary
+        let fCos<'T>        (args: Args) : 'T = createUnaryArgsFunction< 'T> "cos" args     // Unary
+        let fTan<'T>        (args: Args) : 'T = createUnaryArgsFunction< 'T> "tan" args     // Unary
+
+
         let fBitwiseAnd<'T> (args: Args) : 'T = createBinaryArgsFunction<'T> "&&&" args
         let fBitwiseOr<'T>  (args: Args) : 'T = createBinaryArgsFunction<'T> "|||" args
         let fBitwiseXor<'T> (args: Args) : 'T = createBinaryArgsFunction<'T> "^^^" args

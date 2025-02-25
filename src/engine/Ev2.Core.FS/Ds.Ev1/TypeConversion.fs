@@ -13,15 +13,22 @@ module TypeConversionModule =
             let sub v = Some (unbox<'T> v)
             match box x with
             // 정수 변환 (오버플로우 방지)
-            | :? float as v when t = typeof<int>   -> sub (int v)
-            | :? float as v when t = typeof<int64> -> sub (int64 v)
+            | :? double as v when t = typeof<int>    -> sub (int     v)
+            | :? double as v when t = typeof<int64>  -> sub (int64   v)
+            | :? double as v when t = typeof<single> -> sub (float32 v)
+            | :? single as v when t = typeof<int>    -> sub (int     v)
+            | :? single as v when t = typeof<int64>  -> sub (int64   v)
+            | :? single as v when t = typeof<double> -> sub (double  v)
+
             | :? int64 as v when t = typeof<int>   ->
                 if v >= int64 Int32.MinValue && v <= int64 Int32.MaxValue then sub (int v)
                 else None
-            | :? int   as v when t = typeof<int64> -> sub (int64 v)
-            | :? int   as v when t = typeof<float> -> sub (float v)
-            | :? int64 as v when t = typeof<float> -> sub (float v)
-            | :? int64 as v when t = typeof<int64> -> sub v
+            | :? int   as v when t = typeof<int64>  -> sub (int64  v)
+            | :? int   as v when t = typeof<double> -> sub (double v)
+            | :? int64 as v when t = typeof<double> -> sub (double v)
+            | :? int   as v when t = typeof<single> -> sub (single v)
+            | :? int64 as v when t = typeof<single> -> sub (single v)
+            | :? int64 as v when t = typeof<int64>  -> sub v
 
             // 문자열 변환
             | :? string as v ->
@@ -72,6 +79,11 @@ module TypeConversionModule =
         myAssert(tryConvert<int> 3.5              = Some(3))
         myAssert(tryConvert<float> 100            = Some(100.0))
         myAssert(tryConvert<float> 42.5           = Some(42.5))
+        myAssert(tryConvert<double> 42.5f         = Some(42.5))
+
+        myAssert(tryConvert<single> 100           = Some(100.0f))
+        myAssert(tryConvert<single> 42.5          = Some(42.5f))
+        myAssert(tryConvert<single> 42.5f         = Some(42.5f))
 
         // 문자열 변환
         myAssert(tryConvert<int> "42"             = Some(42))
