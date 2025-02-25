@@ -74,39 +74,44 @@ module TerminalTestModule =
     type NonTerminalTest() =
         [<Test>]
         member _.Minimal() =
-            let nt = TNonTerminal(123)
-            nt.Arguments <- [| TTerminal(1) :> IExpression; TNonTerminal(3.14) |]
+            let nt =
+                let args = [| TTerminal(1.0) :> IExpression; TTerminal(3.14) |]
+                TNonTerminal<double>.Create(Op.OpArithmetic "+", args)
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
   "Operator": {
-    "Case": "OpUnit"
+    "Case": "OpArithmetic",
+    "Fields": [
+      "+"
+    ]
   },
   "Arguments": [
     {
-      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Int32, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
-        "ValueTypeName": "System.Int32",
-        "Value": 1
+        "ValueTypeName": "System.Double",
+        "Value": 1.0
       }
     },
     {
-      "$type": "Dual.Ev2.TTerminalModule+TNonTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
-      "Operator": {
-        "Case": "OpUnit"
-      },
-      "Arguments": [],
+      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14
       }
     }
-  ],
-  "ObjectHolder": {
-    "ValueTypeName": "System.Int32",
-    "Value": 123
-  }
+  ]
 }"""
+            //let hh0 = EmJson.FromJson<TNonTerminal<double>>(jsonAnswer)
+            //let json = jsonAnswer
+
+
             json === jsonAnswer
-            let hh0 = EmJson.FromJson<TNonTerminal<int>>(json)
+
+            let hh0 = EmJson.FromJson<TNonTerminal<double>>(json)
             let json2 = EmJson.ToJson(hh0)
             json2 === jsonAnswer
+
+
+            nt.Value === 4.14
+            //nt.LazyValue

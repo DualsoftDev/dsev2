@@ -17,6 +17,7 @@ module rec ValueHolderModule =
         interface IWithName
         interface IWithAddress
         interface IWithType
+        interface IWithValue
 
         interface IExpression with
             member x.Evaluate() = x.Evaluate()
@@ -52,6 +53,7 @@ module rec ValueHolderModule =
         member x.Name
             with get() = x.DD.TryGet<string>("Name") |? null
             and set (v:string) = x.DD.Set<string>("Name", v)
+
 
         [<JsonIgnore>]
         member x.Address
