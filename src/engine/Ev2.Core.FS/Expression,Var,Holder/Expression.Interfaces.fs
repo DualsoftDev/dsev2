@@ -53,12 +53,4 @@ module rec ExpressionInterfaceModule =
     | CustomOperator of (Args -> obj)
 
 
-    // 기존 Terminal<'T> 에 해당.
-    type TTerminalImpl<'T>(value:'T) =
-        inherit TValueHolder<'T>(value)
-        interface ITerminal<'T>
-        new() = TTerminalImpl(Unchecked.defaultof<'T>)   // for Json
-
-
-
 

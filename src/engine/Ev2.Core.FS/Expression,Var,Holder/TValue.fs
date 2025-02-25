@@ -7,7 +7,7 @@ open Dual.Common.Core.FS
 open Dual.Common.Base.CS
 
 [<AutoOpen>]
-module rec TTerminalModule =
+module rec TValueModule =
 
     type Op with
         member x.GetFunction(): (Args -> obj) =
@@ -19,7 +19,7 @@ module rec TTerminalModule =
 
     // 기존 FunctionSpec<'T> 에 해당.
     [<DataContract>]
-    type TNonTerminalImpl<'T> internal (op:Op, args:IExpression seq) =
+    type TFunctionImpl<'T> internal (op:Op, args:IExpression seq) =
 
         let args = args.ToFSharpList()
         let mutable lazyValue:ResettableLazy<'T> = null

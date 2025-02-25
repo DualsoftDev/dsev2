@@ -15,8 +15,8 @@ module ExpressionTestModule =
 
     [<TestFixture>]
     type ExpressionTest() =
-        let t1 = TTerminal(3)
-        let t2 = TTerminal(4)
+        let t1 = TValue(3)
+        let t2 = TValue(4)
         let args:Args = [t1 :> IExpression; t2]
 
         [<Test>]
@@ -24,7 +24,7 @@ module ExpressionTestModule =
             let funcCustomAdd = cf<int> "+"
             funcCustomAdd args === 7
 
-            (fAbs<int> [TTerminal(-20)]) === 20
+            (fAbs<int> [TValue(-20)]) === 20
             fAbs<double> [TValueHolder(-3.14)] === 3.14
             fBitwiseNot<int> [TValueHolder(0)] === ~~~0
             fBitwiseNot<uint64> [TValueHolder(32UL)] === ~~~32UL
@@ -39,33 +39,33 @@ module ExpressionTestModule =
 
         [<Test>]
         member _.Invalid() =
-            (fun () -> cf "!"      [TTerminal(32); ]                  |> ignore) |> ShouldFailWithSubstringT "Unable to cast object"
-            (fun () -> cf<int> "+" [TTerminal(2); TTerminal(3.0)]     |> ignore) |> ShouldFailWithSubstringT "Unable to cast object"
-            (fun () -> cf<int> "+" [TTerminal(2); ]                   |> ignore) |> ShouldFailWithSubstringT "Wrong number of arguments"
+            (fun () -> cf "!"      [TValue(32); ]                  |> ignore) |> ShouldFailWithSubstringT "Unable to cast object"
+            (fun () -> cf<int> "+" [TValue(2); TValue(3.0)]     |> ignore) |> ShouldFailWithSubstringT "Unable to cast object"
+            (fun () -> cf<int> "+" [TValue(2); ]                   |> ignore) |> ShouldFailWithSubstringT "Wrong number of arguments"
 
         [<Test>]
         member _.SpecialFunctions() =
-            cf "sin" [TTerminal(3.14/4.0); ] === Math.Sin(3.14/4.0)
-            cf "sin" [TTerminal(3.14f/4.0f); ] === single (Math.Sin(3.14/4.0))
-            (cf "sin" [TTerminal(3.14f/4.0f); ]).GetType() === typeof<single>
+            cf "sin" [TValue(3.14/4.0); ] === Math.Sin(3.14/4.0)
+            cf "sin" [TValue(3.14f/4.0f); ] === single (Math.Sin(3.14/4.0))
+            (cf "sin" [TValue(3.14f/4.0f); ]).GetType() === typeof<single>
 
 
 
         [<Test>]
         member _.PredefinedFunctions() =
-            cf "!" [TTerminal(false); ] === true
+            cf "!" [TValue(false); ] === true
 
             // Binary fuction 에 한해, function type 지정안하면, argument 의 type 으로 결정됨.
-            cf "+" [TTerminal(2); TTerminal(3)] === 5
-            cf "*" [TTerminal(2); TTerminal(3)] === 6
-            cf "&" [TTerminal(33); TTerminal(64)] === (33 &&& 64)
+            cf "+" [TValue(2); TValue(3)] === 5
+            cf "*" [TValue(2); TValue(3)] === 6
+            cf "&" [TValue(33); TValue(64)] === (33 &&& 64)
 
-            cf<int> "+" [TTerminal(2); TTerminal(3)] === 5
-            cf<int> "*" [TTerminal(2); TTerminal(3)] === 6
-            cf<int> "&" [TTerminal(33); TTerminal(64)] === (33 &&& 64)
+            cf<int> "+" [TValue(2); TValue(3)] === 5
+            cf<int> "*" [TValue(2); TValue(3)] === 6
+            cf<int> "&" [TValue(33); TValue(64)] === (33 &&& 64)
 
-            let t = TTerminal(true)
-            let f = TTerminal(false)
+            let t = TValue(true)
+            let f = TValue(false)
             cf<bool> "!" [t] === false
             cf<bool> "!" [f] === true
 
@@ -89,37 +89,37 @@ module ExpressionTestModule =
 
 
 
-            cf<bool> "bool" [TTerminal(2)] === true
-            cf<bool> "bool" [TTerminal(0)] === false
-            cf<bool> "int" [TTerminal(3.14)] === 3
-            cf<bool> "double" [TTerminal(3)] === 3.0
-            cf<double> "sin" [TTerminal(3.14)] === Math.Sin(3.14)
-            cf<bool> ">=" [TTerminal(3); TTerminal(1)] === true
-            cf<bool> "<=" [TTerminal(3); TTerminal(1)] === false
+            cf<bool> "bool" [TValue(2)] === true
+            cf<bool> "bool" [TValue(0)] === false
+            cf<bool> "int" [TValue(3.14)] === 3
+            cf<bool> "double" [TValue(3)] === 3.0
+            cf<double> "sin" [TValue(3.14)] === Math.Sin(3.14)
+            cf<bool> ">=" [TValue(3); TValue(1)] === true
+            cf<bool> "<=" [TValue(3); TValue(1)] === false
 
-            cf<bool> "==" [TTerminal("Hello"); TTerminal("Hello")] === true
-            cf<bool> "==" [TTerminal("Hello"); TTerminal("World")] === false
-            cf<bool> "<>" [TTerminal("Hello"); TTerminal("Hello")] === false
-            cf<bool> "<>" [TTerminal("Hello"); TTerminal("World")] === true
+            cf<bool> "==" [TValue("Hello"); TValue("Hello")] === true
+            cf<bool> "==" [TValue("Hello"); TValue("World")] === false
+            cf<bool> "<>" [TValue("Hello"); TValue("Hello")] === false
+            cf<bool> "<>" [TValue("Hello"); TValue("World")] === true
 
-            cf<bool> "==" [TTerminal(1); TTerminal(1)] === true
-            cf<bool> "==" [TTerminal(1); TTerminal(2)] === false
-            cf<bool> "<>" [TTerminal(1); TTerminal(1)] === false
-            cf<bool> "<>" [TTerminal(1); TTerminal(2)] === true
+            cf<bool> "==" [TValue(1); TValue(1)] === true
+            cf<bool> "==" [TValue(1); TValue(2)] === false
+            cf<bool> "<>" [TValue(1); TValue(1)] === false
+            cf<bool> "<>" [TValue(1); TValue(2)] === true
 
 
             let gt = cf ">="
-            gt [TTerminal(3); TTerminal(1)] === true
+            gt [TValue(3); TValue(1)] === true
 
 
         [<Test>]
         member _.NonTerminal() =
-            let t1 = TTerminal(3)
-            let t2 = TTerminal(4)
-            let t3 = TTerminal(5)
+            let t1 = TValue(3)
+            let t2 = TValue(4)
+            let t3 = TValue(5)
             let args:Args = [t1 :> IExpression; t2; t3]
 
-            let nt = TNonTerminal<int>.Create(Op.PredefinedOperator "+", args)
+            let nt = TFunction<int>.Create(Op.PredefinedOperator "+", args)
             nt.Value === 12
 
             // expression tree 상의 값 수정 해도, invalidate() 수행 전까지는 동일 cache 값 반환

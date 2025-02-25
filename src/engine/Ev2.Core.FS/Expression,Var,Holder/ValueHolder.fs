@@ -43,7 +43,10 @@ module rec ValueHolderModule =
         [<JsonIgnore>]
         member x.Value
             with get() = x.ObjectHolder.Value
-            and set (v:obj) = x.ObjectHolder.Value <- v
+            and set (v:obj) =
+                if x.IsLiteral then
+                    failwith $"ERROR: {x.Name} is CONSTANT.  It's read-only"
+                x.ObjectHolder.Value <- v
 
         [<JsonIgnore>] member x.Type = x.ObjectHolder.Type
 
@@ -71,8 +74,9 @@ module rec ValueHolderModule =
             and set (v:bool) = x.DD.Set<bool>("IsLiteral", v)
 
     type TValueHolder<'T>(value:'T) =
-        //inherit THolder<'T>(value)
         inherit ValueHolder(typedefof<'T>, value)
+        interface IWithAddress
+        interface ITerminal<'T>
         interface IWithType<'T>
         interface IExpression<'T> with
             member x.TValue = x.TValue

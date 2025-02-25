@@ -13,10 +13,10 @@
 		<Compile Include="Ds.Ev1\TypeConversion.fs" />
 		<Compile Include="Ds.Ev1\DsDataType.fs" />
 		<Compile Include="Dual.Common\Interfaces.fs" />
-		<Compile Include="Expression,Var,Holder\ValueHolder.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Interfaces.fs" />
+		<Compile Include="Expression,Var,Holder\ValueHolder.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Function.fs" />
-		<Compile Include="Expression,Var,Holder\TTerminal.fs" />
+		<Compile Include="Expression,Var,Holder\TValue.fs" />
 		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />

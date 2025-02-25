@@ -18,7 +18,7 @@ module TerminalTestModule =
 
     [<TestFixture>]
     type TerminalTest() =
-        let t = TTerminal(123)
+        let t = TValue(123)
         [<Test>]
         member _.Minimal() =
             let json = EmJson.ToJson(t)
@@ -29,9 +29,39 @@ module TerminalTestModule =
   }
 }"""
             json === jsonAnswer
-            let hh0 = EmJson.FromJson<TTerminal<int>>(json)
+            let hh0 = EmJson.FromJson<TValue<int>>(json)
             let json2 = EmJson.ToJson(hh0)
             json2 === jsonAnswer
+
+
+        [<Test>]
+        member _.Properties() =
+            let pi = TValue(3.14)
+            pi.Name <- "PI"
+            pi.Address <- "%IX3.1"
+            pi.Comment <- "This is PI"
+            pi.IsLiteral <- true
+            let json = EmJson.ToJson(pi)
+            let jsonAnswer = """{
+  "ObjectHolder": {
+    "ValueTypeName": "System.Double",
+    "Value": 3.14
+  },
+  "PropertiesDto": {
+    "Name": "PI",
+    "Address": "%IX3.1",
+    "Comment": "This is PI",
+    "IsLiteral": true
+  }
+}"""
+            json === jsonAnswer
+            let hh0 = EmJson.FromJson<TValue<int>>(json)
+            let json2 = EmJson.ToJson(hh0)
+            json2 === jsonAnswer
+
+            (fun () -> pi.Value <- 123.0) |> ShouldFailWithSubstringT "ERROR: PI is CONSTANT.  It's read-only"
+            noop()
+
 
 
     [<TestFixture>]
@@ -51,10 +81,10 @@ module TerminalTestModule =
   "Name": "John",
   "Age": 13
 }"""
-            let t = TTerminal(3.14)
+            let t = TValue(3.14)
             let json = EmJson.ToJson(t, settings)
             json === """{
-  "$type": "Dual.Ev2.T+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+  "$type": "Dual.Ev2.T+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
   "ObjectHolder": {
     "$type": "Dual.Common.Base.FS.NsJsonS11nSafeObjectModule+NsJsonS11nSafeObject, Dual.Common.Base.FS",
     "ValueTypeName": "System.Double",
@@ -65,11 +95,10 @@ module TerminalTestModule =
 
 
 
-            noop()
         [<Test>]
         member _.TypeSerialization() =
             EmJson.GetType("Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS") === typeof<Student>
-            EmJson.GetType("Dual.Ev2.T+TTerminal`1[System.Int32], Ev2.Core.FS") === typeof<TTerminal<int>>
+            EmJson.GetType("Dual.Ev2.T+TValue`1[System.Int32], Ev2.Core.FS") === typeof<TValue<int>>
             EmJson.GetType("System.Int32, System.Private.CoreLib") === typeof<int>
 
     [<TestFixture>]
@@ -79,8 +108,8 @@ module TerminalTestModule =
             Dual.Ev2.ModuleInitializer.Initialize()
 
             let nt =
-                let args = [| TTerminal(1.0) :> IExpression; TTerminal(3.14) |]
-                TNonTerminal<double>.Create(Op.PredefinedOperator "+", args)
+                let args = [| TValue(1.0) :> IExpression; TValue(3.14) |]
+                TFunction<double>.Create(Op.PredefinedOperator "+", args)
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
   "Operator": {
@@ -91,14 +120,14 @@ module TerminalTestModule =
   },
   "Arguments": [
     {
-      "$type": "Dual.Ev2.T+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.T+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 1.0
       }
     },
     {
-      "$type": "Dual.Ev2.T+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.T+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14
@@ -106,13 +135,13 @@ module TerminalTestModule =
     }
   ]
 }"""
-            //let hh0 = EmJson.FromJson<TNonTerminal<double>>(jsonAnswer)
+            //let hh0 = EmJson.FromJson<TFunction<double>>(jsonAnswer)
             //let json = jsonAnswer
 
 
             json === jsonAnswer
 
-            let hh0 = EmJson.FromJson<TNonTerminal<double>>(json)
+            let hh0 = EmJson.FromJson<TFunction<double>>(json)
             let json2 = EmJson.ToJson(hh0)
             json2 === jsonAnswer
 
