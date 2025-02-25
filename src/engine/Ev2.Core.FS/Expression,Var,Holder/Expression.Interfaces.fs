@@ -42,16 +42,16 @@ module rec ExpressionInterfaceModule =
         inherit INonTerminal
         inherit IExpression<'T>
 
-    /// IEvaluator: 기본 평가 클래스 (Arguments -> obj)
-    type IEvaluator =
-        abstract Evaluate: Arguments -> obj
+    ///// IEvaluator: 기본 평가 클래스 (Arguments -> obj)
+    //type IEvaluator =
+    //    abstract Evaluate: Arguments -> obj
 
-    // TEvaluator<'T>: IEvaluator를 상속하여 Arguments -> 'T 를 구현
-    type TEvaluator<'T>(evaluator:Arguments -> 'T) =
-        interface IEvaluator with
-            member x.Evaluate(args) = x.TEvaluate(args) |> box
+    //// TEvaluator<'T>: IEvaluator를 상속하여 Arguments -> 'T 를 구현
+    //type TEvaluator<'T>(evaluator:Arguments -> 'T) =
+    //    interface IEvaluator with
+    //        member x.Evaluate(args) = x.TEvaluate(args) |> box
 
-        member x.TEvaluate(args) = evaluator args
+    //    member x.TEvaluate(args) = evaluator args
 
 
     type Op =
@@ -60,7 +60,7 @@ module rec ExpressionInterfaceModule =
     | PredefinedOperator of operator: string
 
     /// 정상 범주에서 지원되지 않는 operator
-    | CustomOperator of IEvaluator
+    | CustomOperator of (Args -> obj)
 
     // 기존 Terminal<'T> 에 해당.
     type TTerminalImpl<'T>(value:'T) =

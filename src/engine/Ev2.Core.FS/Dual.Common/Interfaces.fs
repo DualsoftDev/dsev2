@@ -19,13 +19,13 @@ module InterfacesModule =
         inherit IWithType
         inherit IWithValue
         inherit IWithName
-        abstract member Evaluate: unit -> obj
+        abstract member Value: obj
 
     type IExpression<'T> =
         inherit IExpression
         inherit IWithType<'T>
         inherit IWithValue<'T>
-        abstract member TEvaluate: unit -> 'T
+        abstract member TValue: 'T
 [<AutoOpen>]
 module ReflectionInterfacesModule =
     type IWithType with

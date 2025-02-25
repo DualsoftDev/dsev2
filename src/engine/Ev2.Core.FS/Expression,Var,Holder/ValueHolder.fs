@@ -20,9 +20,9 @@ module rec ValueHolderModule =
         interface IWithValue
 
         interface IExpression with
-            member x.Evaluate() = x.Evaluate()
-        abstract member Evaluate: unit -> obj
-        default x.Evaluate() = x.ObjectHolder.Value
+            member x.Value = x.Value
+        //abstract member Value: obj
+        //[<JsonIgnore>] default x.Value = x.ObjectHolder.Value
 
         /// DynamicDictionary.
         ///
@@ -75,6 +75,6 @@ module rec ValueHolderModule =
         inherit ValueHolder(typedefof<'T>, value)
         interface IWithType<'T>
         interface IExpression<'T> with
-            member x.TEvaluate() = x.TEvaluate()
-        abstract member TEvaluate: unit -> 'T
-        default x.TEvaluate() = x.Value :?> 'T
+            member x.TValue = x.TValue
+        abstract member TValue: 'T
+        [<JsonIgnore>] default x.TValue = x.Value :?> 'T

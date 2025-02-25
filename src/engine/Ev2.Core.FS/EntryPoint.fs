@@ -1,15 +1,11 @@
 namespace Dual.Ev2
 
-open System
-open System.Runtime.Serialization
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
-open Dual.Common.Base.CS
 
 
+// Json serialize 시의 clean namesapce 를 위해 module 로 선언
 [<AutoOpen>]
 module T =
     type TTerminal<'T>(value:'T) =
@@ -26,7 +22,8 @@ module T =
                 .Tee(fun nt -> name.Iter(fun n -> nt.DD.Add("Name", n)))
 
         static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string): TNonTerminalImpl<'T> =
-            let op = TEvaluator<'T>(evaluator) :> IEvaluator |> CustomOperator
+            let (f:Args -> obj) = fun (args:Arguments) -> evaluator args |> box
+            let op = CustomOperator f
             TNonTerminal.Create(op, args, ?name=name)
 
 module ModuleInitializer =

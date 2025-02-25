@@ -17,9 +17,10 @@ module rec TTerminalModule =
         match op with
         | Op.Unit ->
             failwith "ERROR: Operator not specified"
+
         | Op.CustomOperator evaluator ->
-            let tEvaluator = evaluator :?> TEvaluator<'T>
-            tEvaluator.TEvaluate(args.ToFSharpList())
+            evaluator (args.ToFSharpList()) :?> 'T
+
         | Op.PredefinedOperator mnemonic ->
             match mnemonic with
             | "+" -> fAdd<'T> args
@@ -49,8 +50,8 @@ module rec TTerminalModule =
         interface INonTerminal<'T>
 
         interface IExpression<'T> with
-            member x.Evaluate() = x.Value
-            member x.TEvaluate():'T = x.TValue
+            member x.Value = x.Value
+            member x.TValue = x.TValue
 
 
         [<DataMember>] member val Operator: Op = op with get, set
