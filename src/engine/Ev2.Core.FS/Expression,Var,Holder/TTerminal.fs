@@ -22,7 +22,7 @@ module rec TTerminalModule =
             tEvaluator.TEvaluate(args.ToFSharpList())
         | Op.PredefinedOperator mnemonic ->
             match mnemonic with
-            | "+" -> (fAdd<'T> args) |> _.Evaluate() :?> 'T
+            | "+" -> fAdd<'T> args
             //| "&&" -> fAnd<'T>
             //| Or -> "||"
             //| Neg -> "!"
@@ -47,13 +47,10 @@ module rec TTerminalModule =
         let mutable lazyValue:ResettableLazy<'T> = null
 
         interface INonTerminal<'T>
-        //interface INonTerminal<'T> with
-        //    member x.Operator with get() = x.Operator and set v = x.Operator <- v
-        //    member x.Arguments with get() = x.Arguments and set v = x.Arguments <- v
 
         interface IExpression<'T> with
-            member x.Evaluate() = x.Evaluate()
-            member x.TEvaluate():'T = x.TEvaluate()
+            member x.Evaluate() = x.Value
+            member x.TEvaluate():'T = x.TValue
 
 
         [<DataMember>] member val Operator: Op = op with get, set
@@ -61,8 +58,7 @@ module rec TTerminalModule =
 
         [<JsonIgnore>] member x.Value = lazyValue.Value |> box
         [<JsonIgnore>] member x.TValue = lazyValue.Value
-        member x.Evaluate() = x.Value
-        member x.TEvaluate():'T = x.TValue
+        member x.Invalidate() = lazyValue.Reset()
 
         member internal x.OnDeserialized() =
             lazyValue <- ResettableLazy<'T>(fun () ->

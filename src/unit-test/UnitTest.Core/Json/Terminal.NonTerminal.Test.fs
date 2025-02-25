@@ -116,5 +116,5 @@ module TerminalTestModule =
             json2 === jsonAnswer
 
 
-            Math.Abs(nt.Evaluate() :?> double - 4.14) < 0.001 === true
+            Math.Abs(nt.TValue - 4.14) < 0.001 === true
             //nt.LazyValue

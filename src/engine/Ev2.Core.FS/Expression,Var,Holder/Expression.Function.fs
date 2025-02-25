@@ -7,8 +7,6 @@ open System.Linq
 open System.Runtime.CompilerServices
 open Dual.Common.Core.FS
 open System.Collections.Generic
-open System.Reflection
-open System.Linq.Expressions
 
 
 module private ExpressionHelperModule =
@@ -129,72 +127,77 @@ module ExpressionFunctionModule =
             "createTag"
         |] |> HashSet
 
+
+    //let fEqualAmbiguous<'T> (args:Args) =
+    //    args.ExpectGteN(2).Select(evalArg).Pairwise().All(fun (x, y) -> isEqual x y)
+
+    /// (Args -> 'T) 함수를 (Args -> obj) 로 boxing
+    let private boxF<'T> (f:Args -> 'T) : (Args -> obj) = fun (args:Args) -> f args |> box
+
     [<Obsolete("Todo: Uncomment")>]
-    let createCustomFunctionExpression<'T> (funName:string) (args:Args) : IExpression =
-        verifyArgumentsTypes funName args
+    let createCustomFunction<'T> (funName:string) : Args -> obj =
         predefinedFunctionNames.Contains(funName) |> verifyM $"Undefined function: {funName}"
-        let t = args[0].DataType.Name
+
 
         match funName with
-        | ("+" | "add") -> fAdd<'T> args
-        | ("-" | "sub") -> fSub args
-        | ("*" | "mul") -> fMul args
-        | ("/" | "div") -> fDiv args
+        | ("+" | "add") -> boxF fAdd<'T>
+        | ("-" | "sub") -> boxF fSub<'T>
+        | ("*" | "mul") -> boxF fMul<'T>
+        | ("/" | "div") -> boxF fDiv<'T>
 
-        | (">"  | "gt")  -> fbGt args
-        | (">=" | "gte") -> fbGte args
-        | ("<"  | "lt")  -> fbLt args
-        | ("<=" | "lte") -> fbLte args
+        | (">"  | "gt")  -> boxF fGt
+        | (">=" | "gte") -> boxF fGte
+        | ("<"  | "lt")  -> boxF fLt
+        | ("<=" | "lte") -> boxF fLte
 
-        | ("=="  | "equal") when t = STRING -> fbEqualString args
-        | ("=="  | "equal") -> fbEqual args
-        | ("!=" | "<>" | "notEqual") when t = STRING -> fbNotEqualString args
-        | ("!=" | "<>" | "^^" | "notEqual") -> fbNotEqual args
+        //| ("=="  | "equal") when t = STRING -> fun args -> fbEqualString args |> box
+        //| ("=="  | "equal") -> fun args -> fbEqual args |> box
+        //| ("!=" | "<>" | "notEqual") when t = STRING -> fun args -> fbNotEqualString args|> box
+        //| ("!=" | "<>" | "^^" | "notEqual") -> fun args -> fbNotEqual args|> box
 
-        | ("<<" | "<<<" | "shiftLeft") -> fShiftLeft args
-        | (">>" | ">>>" | "shiftRight") -> fShiftLeft args
+        | ("<<" | "<<<" | "shiftLeft")  -> boxF fShiftLeft<'T>
+        | (">>" | ">>>" | "shiftRight") -> boxF fShiftLeft<'T>
 
-        | ("&&" | "and") -> fbLogicalAnd args
-        | ("||" | "or")  -> fbLogicalOr  args
+        | ("&&" | "and") -> boxF fbLogicalAnd
+        | ("||" | "or")  -> boxF fbLogicalOr
 
         // negateBool 이 현재 위치 이후에 정의되어 있지민, namespace 가 rec 로 정의되어 있어서 OK.
-        | ("!"  | "not") -> negateBool (args.ExactlyOne())        // 따로 or 같이??? neg 는 contact 이나 coil 하나만 받아서 rung 생성하는 용도, not 은 expression 을 받아서 평가하는 용도
+        //| ("!"  | "not") -> negateBool (args.ExactlyOne())        // 따로 or 같이??? neg 는 contact 이나 coil 하나만 받아서 rung 생성하는 용도, not 은 expression 을 받아서 평가하는 용도
+        | ("!"  | "not") -> boxF fbLogicalNot    //fun args -> fbLogicalNot [args.ExactlyOne()] |> box        // 따로 or 같이??? neg 는 contact 이나 coil 하나만 받아서 rung 생성하는 용도, not 은 expression 을 받아서 평가하는 용도
 
-        | ("&" | "&&&") -> fBitwiseAnd  args
-        | ("|" | "|||") -> fBitwiseOr   args
-        | ("^" | "^^^") -> fBitwiseXor  args
-        | ("~" | "~~~") -> fBitwiseNot  args
+        | ("&" | "&&&") -> boxF fBitwiseAnd<'T>
+        | ("|" | "|||") -> boxF fBitwiseOr<'T>
+        | ("^" | "^^^") -> boxF fBitwiseXor<'T>
+        | ("~" | "~~~") -> boxF fBitwiseNot<'T>
 
-        | FunctionNameRising  -> fbRising  args
-        | FunctionNameFalling -> fbFalling args
+        | FunctionNameRising  -> boxF fbRising
+        | FunctionNameFalling -> boxF fbFalling
 
-
-        //| FunctionNameRisingAfter  -> fbRisingAfter  args
-        //| FunctionNameFallingAfter -> fbFallingAfter args
+        | FunctionNameRisingAfter  -> boxF fbRisingAfter
+        | FunctionNameFallingAfter -> boxF fbFallingAfter
 
         //| "neg"     -> fNegate  args
         //| "set"     -> fSet     args
         //| "reset"   -> fReset   args
 
 
-        | ("bool"   | "toBool") -> fCastBool    args |> iexpr
-        | ("sbyte"  | "toSByte" | "toInt8")     -> fCastInt8   args |> iexpr
-        | ("byte"   | "toByte"  | "toUInt8")    -> fCastUInt8  args |> iexpr
-        | ("short"  | "toShort" | "toInt16")    -> fCastInt16  args |> iexpr
-        | ("ushort" | "toUShort"| "toUInt16")   -> fCastUInt16 args |> iexpr
-        | ("int"    | "toInt"   | "toInt32")    -> fCastInt32  args |> iexpr
-        | ("uint"   | "toUInt"  | "toUInt32")   -> fCastUInt32 args |> iexpr
-        | ("long"   | "toLong"  | "toInt64")    -> fCastInt64  args |> iexpr
-        | ("ulong"  | "toULong" | "toUInt64")   -> fCastUInt64 args |> iexpr
+        | ("bool"   | "toBool") -> boxF fCastBool
+        | ("sbyte"  | "toSByte" | "toInt8")     -> boxF fCastInt8
+        | ("byte"   | "toByte"  | "toUInt8")    -> boxF fCastUInt8
+        | ("short"  | "toShort" | "toInt16")    -> boxF fCastInt16
+        | ("ushort" | "toUShort"| "toUInt16")   -> boxF fCastUInt16
+        | ("int"    | "toInt"   | "toInt32")    -> boxF fCastInt32
+        | ("uint"   | "toUInt"  | "toUInt32")   -> boxF fCastUInt32
+        | ("long"   | "toLong"  | "toInt64")    -> boxF fCastInt64
+        | ("ulong"  | "toULong" | "toUInt64")   -> boxF fCastUInt64
 
-        | ("single" | "float" | "float32" | "toSingle"| "toFloat" | "toFloat32") -> fCastFloat32 args |> iexpr
-        | ("double" | "float64" | "toDouble"| "toFloat64" ) -> fCastFloat64  args |> iexpr
+        | ("single" | "float" | "float32" | "toSingle"| "toFloat" | "toFloat32") -> boxF fCastFloat32
+        | ("double" | "float64" | "toDouble"| "toFloat64" ) -> boxF fCastFloat64
 
-        | "sin" -> fSin args |> iexpr
-        | "cos" -> fCos args |> iexpr
-        | "tan" -> fTan args |> iexpr
-
-        | "abs" -> fAbs args |> iexpr
+        | "sin" -> boxF fSin
+        | "cos" -> boxF fCos
+        | "tan" -> boxF fTan
+        | "abs" -> boxF fAbs
 
         // todo : uncomment
 
@@ -218,10 +221,6 @@ module ExpressionFunctionModule =
 
         | _ -> failwith $"NOT yet: {funName}"
 
-
-    let createCustomFunction<'T> (funName:string) : Args -> IExpression =
-        fun (args:Args) ->
-            createCustomFunctionExpression funName args
 
     /// Create function expression
     let private cf (f:Args->'T) (name:string) (args:Args): IExpression<'T> =
@@ -251,43 +250,43 @@ module ExpressionFunctionModule =
         let _notEqualString (args:Args) = not <| _equalString args
 
         let private convertToDoublePair (args:Args) = args.ExpectGteN(2).Select(fun x -> x.BoxedEvaluatedValue |> toFloat64).Pairwise()
-        let _gt  (args:Args) = convertToDoublePair(args).All(fun (x, y) -> x > y)
-        let _lt  (args:Args) = convertToDoublePair(args).All(fun (x, y) -> x < y)
-        let _gte (args:Args) = convertToDoublePair(args).All(fun (x, y) -> x >= y)
-        let _lte (args:Args) = convertToDoublePair(args).All(fun (x, y) -> x <= y)
+        let fGt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x > y)
+        let fLt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x < y)
+        let fGte (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x >= y)
+        let fLte (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x <= y)
 
         let _concat     (args:Args): string = args.ExpectGteN(2).Select(evalArg).Cast<string>().Reduce( + )
-        let _logicalAnd (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( && )
-        let _logicalOr  (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( || )
-        let _logicalNot (args:Args): bool = args.Select(evalArg).Cast<bool>().Expect1() |> not
+        let fbLogicalAnd (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( && )
+        let fbLogicalOr  (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( || )
+        let fbLogicalNot (args:Args): bool = args.Select(evalArg).Cast<bool>().Expect1() |> not
 
         //let errorPCRunmode(_args:Args, funName:string) =  //PC 모드일때만 예외 (위치 수정 필요)
         //    if RuntimeDS.Package.IsPCorPCSIM() then
         //        failwithlog $"""Error: {funName} is a PLC-only formula. ({String.Join(", ", _args.Map(fun a->a.ToText()))})"""
         //    else false
 
-        let _rising (_args:Args) : bool =       false//    errorPCRunmode(_args, "rising")
-        let _falling (_args:Args) : bool =      false//    errorPCRunmode(_args, "falling")
-        let _risingAfter (_args:Args) : bool =  false//    errorPCRunmode(_args, "risingAfter")
-        let _fallingAfter (_args:Args) : bool=  false//    errorPCRunmode(_args, "fallingAfter")
+        let fbRising (_args:Args) : bool =       false//    errorPCRunmode(_args, "rising")
+        let fbFalling (_args:Args) : bool =      false//    errorPCRunmode(_args, "falling")
+        let fbRisingAfter (_args:Args) : bool =  false//    errorPCRunmode(_args, "risingAfter")
+        let fbFallingAfter (_args:Args) : bool=  false//    errorPCRunmode(_args, "fallingAfter")
 
 
-        let _sin (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Sin
-        let _cos (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Cos
-        let _tan (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Tan
+        let fSin (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Sin
+        let fCos (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Cos
+        let fTan (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Tan
 
-        let _castToUInt8   (args:Args) = args.Select(evalArg >> toUInt8)   .Expect1()
-        let _castToInt8    (args:Args) = args.Select(evalArg >> toInt8)    .Expect1()
-        let _castToInt16   (args:Args) = args.Select(evalArg >> toInt16)   .Expect1()
-        let _castToUInt16  (args:Args) = args.Select(evalArg >> toUInt16)  .Expect1()
-        let _castToInt32   (args:Args) = args.Select(evalArg >> toInt32)   .Expect1()
-        let _castToUInt32  (args:Args) = args.Select(evalArg >> toUInt32)  .Expect1()
-        let _castToInt64   (args:Args) = args.Select(evalArg >> toInt64)   .Expect1()
-        let _castToUInt64  (args:Args) = args.Select(evalArg >> toUInt64)  .Expect1()
+        let fCastUInt8   (args:Args) = args.Select(evalArg >> toUInt8)   .Expect1()
+        let fCastInt8    (args:Args) = args.Select(evalArg >> toInt8)    .Expect1()
+        let fCastInt16   (args:Args) = args.Select(evalArg >> toInt16)   .Expect1()
+        let fCastUInt16  (args:Args) = args.Select(evalArg >> toUInt16)  .Expect1()
+        let fCastInt32   (args:Args) = args.Select(evalArg >> toInt32)   .Expect1()
+        let fCastUInt32  (args:Args) = args.Select(evalArg >> toUInt32)  .Expect1()
+        let fCastInt64   (args:Args) = args.Select(evalArg >> toInt64)   .Expect1()
+        let fCastUInt64  (args:Args) = args.Select(evalArg >> toUInt64)  .Expect1()
 
-        let _castToBool    (args:Args) = args.Select(evalArg >> toBool)    .Expect1()
-        let _castToFloat32 (args:Args) = args.Select(evalArg >> toFloat32) .Expect1()
-        let _castToFloat64 (args:Args) = args.Select(evalArg >> toFloat64) .Expect1()
+        let fCastBool    (args:Args) = args.Select(evalArg >> toBool)    .Expect1()
+        let fCastFloat32 (args:Args) = args.Select(evalArg >> toFloat32) .Expect1()
+        let fCastFloat64 (args:Args) = args.Select(evalArg >> toFloat64) .Expect1()
 
     [<AutoOpen>]
     module FunctionModule =
@@ -492,76 +491,53 @@ module ExpressionFunctionModule =
             cf transformer mnemonic args
 
 
-        let fAdd<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "+" args
-        let fSub<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "-" args
-        let fMul<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "*" args
-        let fDiv<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "/" args
-        let fMod<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "%" args
+        let private createBinaryArgsFunction<'T> (mnemonic:string) (args:Args) : 'T =
+            expectGteN 2 args |> ignore
+            let op:'T->'T->'T = createBinaryFunction<'T>(mnemonic)
+            castArgs<'T> args |> Seq.reduce op
 
-        let fAbs<'T> (args: Args) : IExpression = createUnaryFunctionExpression<'T> "abs" args
-        let fBitwiseNot<'T> (args: Args) : IExpression = createUnaryFunctionExpression<'T> "~~~" args
-        let fBitwiseAnd<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "&&&" args
-        let fBitwiseOr<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "|||" args
-        let fBitwiseXor<'T> (args: Args) : IExpression = createBinaryFunctionExpression<'T> "^^^" args
+        let private createUnaryArgsFunction<'T> (mnemonic:string) (args:Args) : 'T =
+            expect1 args |> ignore
+            let op:'T->'T = createUnaryFunction<'T>(mnemonic)
+            castArgs<'T> args |> Seq.head |> op
 
-        let fShiftLeft<'T> (args: Args) : IExpression = createShiftFunctionExpression<'T> "<<<" args
-        let fShiftRight<'T> (args: Args) : IExpression = createShiftFunctionExpression<'T> ">>>" args
+        let private createShiftArgsFunction<'T> (mnemonic:string) (args:Args) : 'T =
+            expect2 args |> ignore
+            let (x:'T), (y:int) = shiftArgs<'T> args
+            createShiftFunction<'T>(mnemonic) x y
+
+
+        let fAdd<'T>        (args: Args) : 'T = createBinaryArgsFunction<'T> "+" args
+        let fSub<'T>        (args: Args) : 'T = createBinaryArgsFunction<'T> "-" args
+        let fMul<'T>        (args: Args) : 'T = createBinaryArgsFunction<'T> "*" args
+        let fDiv<'T>        (args: Args) : 'T = createBinaryArgsFunction<'T> "/" args
+        let fMod<'T>        (args: Args) : 'T = createBinaryArgsFunction<'T> "%" args
+
+        let fAbs<'T>        (args: Args) : 'T = createUnaryArgsFunction< 'T> "abs" args     // Unary
+        let fBitwiseNot<'T> (args: Args) : 'T = createUnaryArgsFunction< 'T> "~~~" args     // Unary
+        let fBitwiseAnd<'T> (args: Args) : 'T = createBinaryArgsFunction<'T> "&&&" args
+        let fBitwiseOr<'T>  (args: Args) : 'T = createBinaryArgsFunction<'T> "|||" args
+        let fBitwiseXor<'T> (args: Args) : 'T = createBinaryArgsFunction<'T> "^^^" args
+        let fShiftLeft<'T>  (args: Args) : 'T = createShiftArgsFunction< 'T> "<<<" args     // Shift
+        let fShiftRight<'T> (args: Args) : 'T = createShiftArgsFunction< 'T> ">>>" args     // Shift
 
 
 
-        let fConcat         (args:Args): IExpression<string> = cf _concat         "+"      args
-
-        let fEqual          (args:Args): IExpression = cf _equal          "=="  args
         let fNotEqual       (args:Args): IExpression = cf _notEqual       "!=" args
-        let fGt             (args:Args): IExpression = cf _gt             ">"  args
-        let fLt             (args:Args): IExpression = cf _lt             "<"  args
-        let fGte            (args:Args): IExpression = cf _gte            ">=" args
-        let fLte            (args:Args): IExpression = cf _lte            "<=" args
+
+        let fConcat         = _concat
+        let fEqual          = _equal
+
+
         let fEqualString    (args:Args): IExpression = cf _equalString    "=="  args
         let fNotEqualString (args:Args): IExpression = cf _notEqualString "!=" args
-        let fLogicalAnd     (args:Args): IExpression = cf _logicalAnd     "&&" args
-        let fLogicalOr      (args:Args): IExpression = cf _logicalOr      "||" args
-        let fLogicalNot     (args:Args): IExpression = cf _logicalNot     "!"  args
-        let fRising         (args:Args): IExpression = cf _rising         FunctionNameRising args
-        let fFalling        (args:Args): IExpression = cf _falling        FunctionNameFalling args
-        let fRisingAfter    (args:Args): IExpression = cf _risingAfter    FunctionNameRisingAfter args
-        let fFallingAfter   (args:Args): IExpression = cf _fallingAfter   FunctionNameFallingAfter args
 
         (* FB: Functions that returns Expression<Bool> *)
         let fbEqual          (args:Args): IExpression<bool> = cf _equal          "=="  args
         let fbNotEqual       (args:Args): IExpression<bool> = cf _notEqual       "!=" args
-        let fbGt             (args:Args): IExpression<bool> = cf _gt             ">"  args
-        let fbLt             (args:Args): IExpression<bool> = cf _lt             "<"  args
-        let fbGte            (args:Args): IExpression<bool> = cf _gte            ">=" args
-        let fbLte            (args:Args): IExpression<bool> = cf _lte            "<=" args
         let fbEqualString    (args:Args): IExpression<bool> = cf _equalString    "=="  args
         let fbNotEqualString (args:Args): IExpression<bool> = cf _notEqualString "!=" args
-        let fbLogicalAnd     (args:Args): IExpression<bool> = cf _logicalAnd     "&&" args
-        let fbLogicalOr      (args:Args): IExpression<bool> = cf _logicalOr      "||" args
-        let fbLogicalNot     (args:Args): IExpression<bool> = cf _logicalNot     "!"  args
 
-        (* FB: Functions that returns Expression<Bool> *)
-        let fbRising        (args:Args): IExpression<bool> = cf _rising          FunctionNameRising args
-        let fbFalling       (args:Args): IExpression<bool> = cf _falling         FunctionNameFalling args
-
-        //let fbRisingAfter   _args: Expression<bool> =  failwith "fbRisingAfter not support expression using fbRising"//cf _risingAfter     FunctionNameRisingAfter args
-        //let fbFallingAfter  _args: Expression<bool> =  failwith "fbFallingAfter not support expression  using fbFalling"//cf _fallingAfter    FunctionNameFallingAfter args
-
-        let fSin            (args:Args): IExpression<double> = cf _sin            "sin"    args
-        let fCos            (args:Args): IExpression<double> = cf _cos            "cos"    args
-        let fTan            (args:Args): IExpression<double> = cf _tan            "tan"    args
-
-        let fCastBool       (args:Args): IExpression<bool> = cf _castToBool     "toBool"   args
-        let fCastUInt8      (args:Args): IExpression<byte> = cf _castToUInt8    "toByte"   args
-        let fCastInt8       (args:Args) = cf _castToInt8     "toSByte"  args
-        let fCastInt16      (args:Args) = cf _castToInt16    "toInt16"  args
-        let fCastUInt16     (args:Args) = cf _castToUInt16   "toUInt16" args
-        let fCastInt32      (args:Args) = cf _castToInt32    "toInt32"  args
-        let fCastUInt32     (args:Args) = cf _castToUInt32   "toUInt32" args
-        let fCastInt64      (args:Args) = cf _castToInt64    "toInt64"  args
-        let fCastUInt64     (args:Args) = cf _castToUInt64   "toUInt64" args
-        let fCastFloat32    (args:Args) = cf _castToFloat32  "toFloat32"  args
-        let fCastFloat64    (args:Args) = cf _castToFloat64  "toFloat64" args
 
 
         [<Obsolete("Todo: Fix")>]
@@ -604,27 +580,10 @@ module ExpressionFunctionModule =
             | :? IExpression<char>   as exp -> tryGetLiteralValueT exp
             | _ -> null
 
-        /// 주어진 expression 에 대한 negated expression 반환
-        ///
-        /// - createUnaryExpression "!" expr 와 기능 유사
-        [<Obsolete("Fix me")>]
-        let negateBool (expr:IExpression) : IExpression<bool> =
-            fbLogicalNot [expr] // 임시로 그냥 아무값 반환
-
-
-            //assert (expr.DataType = typedefof<bool>)
-            //let boolExp = expr :?> IExpression<bool>
-            //match boolExp with
-            //| DuTerminal(DuLiteral {Value = v}) ->
-            //    if v then Expression.False else Expression.True
-            ////| DuFunction({Name="!"; Arguments=[expr]}) ->
-            ////    expr
-            //| _ ->
-            //    fbLogicalNot [expr]
 
     type IExpression with
         /// 주어진 Expression 을 negation : negateBool 함수와 동일
-        member exp.NegateBool() = negateBool exp
+        member exp.NegateBool() = fbLogicalNot [exp]
         /// 주어진 expression 에 대한 literal value 반환.  내부에 변수가 하나라도 포함되어 있으면 null 반환
         member exp.TryGetLiteralValue() = tryGetLiteralValue exp
         /// expression 내부에 변수가 하나도 없이 상수, 혹은 상수의 연산만으로 이루어진 경우에만 true 반환
