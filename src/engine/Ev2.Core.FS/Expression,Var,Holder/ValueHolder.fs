@@ -37,7 +37,7 @@ module rec ValueHolderModule =
 
     type ValueHolder with
         new () = ValueHolder(typeof<obj>, null)
-        [<JsonIgnore>] member x.ValueTypeName = x.ObjectHolder.ValueTypeName
+        [<JsonIgnore>] member x.ValueType = x.ObjectHolder.Type
 
         /// Holded value
         [<JsonIgnore>]

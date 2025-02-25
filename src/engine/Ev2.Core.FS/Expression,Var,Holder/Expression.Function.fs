@@ -215,16 +215,6 @@ module ExpressionFunctionModule =
         | _ -> failwith $"NOT yet: {funName}"
 
 
-    ///// Create function expression
-    //let private cf (f:Args->'T) (name:string) (args:Args): IExpression<'T> =
-    //    //DuFunction { FunctionBody=f; Name=name; Arguments=args; LambdaDecl=None; LambdaApplication=None}
-    //    //TNonTerminal<'T>.Create(f, args, name)
-    //    TExpressionEvaluator<'T>(f, args)
-    //    //fun () ->
-    //    //    {
-    //    //        IExpression<'T> with
-    //    //            f args
-
     [<AutoOpen>]
     module internal FunctionImpl =
         type SeqExt =
@@ -483,30 +473,6 @@ module ExpressionFunctionModule =
                     else
                         tryConvert<'T> v |> Option.get
 
-        //let createBinaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
-        //    expectGteN 2 args |> ignore
-        //    let op:'T->'T->'T = createBinaryFunction<'T>(mnemonic)
-        //    let transformer:Args -> 'T = castArgs<'T> >> Seq.reduce op
-        //    cf transformer mnemonic args
-
-
-        //let createUnaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
-        //    expect1 args |> ignore
-        //    let op:'T->'T = createUnaryFunction<'T>(mnemonic)
-        //    let transformer:Args -> 'T = castArgs<'T> >> Seq.head >> op
-        //    cf transformer mnemonic args
-
-
-        //let createShiftFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
-        //    expect2 args |> ignore
-        //    let transformer (args:Args) =
-        //        let (x:'T), (y:int) = shiftArgs<'T> args
-        //        let op:'T->int->'T = createShiftFunction<'T>(mnemonic)
-        //        op x y
-        //    //let transformer:Args -> 'T = (fun xs -> shiftArgs<'T>  xs ||> (>>>))
-        //    cf transformer mnemonic args
-
-
         let private createBinaryArgsFunction<'T> (mnemonic:string) (args:Args) : 'T =
             expectGteN 2 args |> ignore
             let op:'T->'T->'T = createBinaryFunction<'T>(mnemonic)
@@ -536,18 +502,6 @@ module ExpressionFunctionModule =
         let fBitwiseXor<'T> (args: Args) : 'T = createBinaryArgsFunction<'T> "^^^" args
         let fShiftLeft<'T>  (args: Args) : 'T = createShiftArgsFunction< 'T> "<<<" args     // Shift
         let fShiftRight<'T> (args: Args) : 'T = createShiftArgsFunction< 'T> ">>>" args     // Shift
-
-
-
-
-        //let fEqualString    (args:Args): IExpression = cf _equalString    "=="  args
-        //let fNotEqualString (args:Args): IExpression = cf _notEqualString "!=" args
-
-        //(* FB: Functions that returns Expression<Bool> *)
-        //let fbEqual          (args:Args): IExpression<bool> = cf _equal          "=="  args
-        //let fbNotEqual       (args:Args): IExpression<bool> = cf _notEqual       "!=" args
-        //let fbEqualString    (args:Args): IExpression<bool> = cf _equalString    "=="  args
-        //let fbNotEqualString (args:Args): IExpression<bool> = cf _notEqualString "!=" args
 
 
 

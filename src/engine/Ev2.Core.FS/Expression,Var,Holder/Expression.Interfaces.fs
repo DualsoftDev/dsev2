@@ -10,6 +10,7 @@ module rec ExpressionInterfaceModule =
 
     type ITerminal =
         inherit IExpression
+
     type ITerminal<'T> =
         inherit ITerminal
         inherit IExpression<'T>
@@ -41,17 +42,6 @@ module rec ExpressionInterfaceModule =
     type INonTerminal<'T> =
         inherit INonTerminal
         inherit IExpression<'T>
-
-    ///// IEvaluator: 기본 평가 클래스 (Arguments -> obj)
-    //type IEvaluator =
-    //    abstract Evaluate: Arguments -> obj
-
-    //// TEvaluator<'T>: IEvaluator를 상속하여 Arguments -> 'T 를 구현
-    //type TEvaluator<'T>(evaluator:Arguments -> 'T) =
-    //    interface IEvaluator with
-    //        member x.Evaluate(args) = x.TEvaluate(args) |> box
-
-    //    member x.TEvaluate(args) = evaluator args
 
 
     type Op =

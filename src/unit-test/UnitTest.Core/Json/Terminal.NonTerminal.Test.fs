@@ -56,6 +56,7 @@ module TerminalTestModule =
             json === """{
   "$type": "Dual.Ev2.T+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
   "ObjectHolder": {
+    "$type": "Dual.Common.Base.FS.NsJsonS11nSafeObjectModule+NsJsonS11nSafeObject, Dual.Common.Base.FS",
     "ValueTypeName": "System.Double",
     "Value": 3.14
   }

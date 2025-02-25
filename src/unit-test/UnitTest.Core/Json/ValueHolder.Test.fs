@@ -133,8 +133,7 @@ module ValueHolderTestModule =
             let json1Answer = """{
   "Holder0": {
     "ObjectHolder": {
-      "ValueTypeName": "System.Int32",
-      "Value": null
+      "ValueTypeName": "System.Int32"
     }
   },
   "Holder1": {
@@ -164,8 +163,7 @@ module ValueHolderTestModule =
   "Holders": [
     {
       "ObjectHolder": {
-        "ValueTypeName": "System.Int32",
-        "Value": null
+        "ValueTypeName": "System.Int32"
       }
     },
     {
@@ -189,8 +187,7 @@ module ValueHolderTestModule =
   "CC": {
     "Holder0": {
       "ObjectHolder": {
-        "ValueTypeName": "System.Int32",
-        "Value": null
+        "ValueTypeName": "System.Int32"
       }
     },
     "Holder1": {
@@ -220,8 +217,7 @@ module ValueHolderTestModule =
     "Holders": [
       {
         "ObjectHolder": {
-          "ValueTypeName": "System.Int32",
-          "Value": null
+          "ValueTypeName": "System.Int32"
         }
       },
       {
@@ -235,7 +231,7 @@ module ValueHolderTestModule =
   },
   "Num": "Hello"
 }"""
-            printfn "Serialized JSON: %s" json2
+            tracefn "Serialized JSON: %s" json2
             let cc2 = EmJson.FromJson<CC>(json2)
             let json3 = EmJson.ToJson(cc2)
             DcClipboard.Write(json3)
@@ -243,9 +239,9 @@ module ValueHolderTestModule =
 
             //let deserializedContainer = ContainerClass.FromJson(json)
             let deserializedContainer = JsonConvert.DeserializeObject<ContainerClass>(json1)
-            printfn "Deserialized Holder1: Type = %s, Value = %O" deserializedContainer.Holder1.ValueTypeName deserializedContainer.Holder1.Value
-            printfn "Deserialized Holder2: Type = %s, Value = %O" deserializedContainer.Holder2.ValueTypeName deserializedContainer.Holder2.Value
-            printfn "Deserialized Holder3: Type = %s, Value = %O" deserializedContainer.Holder3.ValueTypeName deserializedContainer.Holder3.Value
+            tracefn "Deserialized Holder1: Type = %s, Value = %O" deserializedContainer.Holder1.ValueType.Name deserializedContainer.Holder1.Value
+            tracefn "Deserialized Holder2: Type = %s, Value = %O" deserializedContainer.Holder2.ValueType.Name deserializedContainer.Holder2.Value
+            tracefn "Deserialized Holder3: Type = %s, Value = %O" deserializedContainer.Holder3.ValueType.Name deserializedContainer.Holder3.Value
 
-            printfn "Deserialized Holder1: Type = %s" deserializedContainer.Holder1.Type.Name
+            tracefn "Deserialized Holder1: Type = %s" deserializedContainer.Holder1.Type.Name
 
