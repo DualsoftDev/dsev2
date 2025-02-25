@@ -8,6 +8,7 @@ open System.Runtime.CompilerServices
 open Dual.Common.Core.FS
 open System.Collections.Generic
 open System.Reflection
+open System.Linq.Expressions
 
 
 module private ExpressionHelperModule =
@@ -217,10 +218,16 @@ module ExpressionFunctionModule =
 
         | _ -> failwith $"NOT yet: {funName}"
 
+
     /// Create function expression
-    let private cf (f:Args->'T) (name:string) (args:Args) =
+    let private cf (f:Args->'T) (name:string) (args:Args): IExpression<'T> =
         //DuFunction { FunctionBody=f; Name=name; Arguments=args; LambdaDecl=None; LambdaApplication=None}
-        TNonTerminal<'T>.Create(f, args, name)
+        //TNonTerminal<'T>.Create(f, args, name)
+        TExpressionEvaluator<'T>(f, args)
+        //fun () ->
+        //    {
+        //        IExpression<'T> with
+        //            f args
 
     [<AutoOpen>]
     module internal FunctionImpl =

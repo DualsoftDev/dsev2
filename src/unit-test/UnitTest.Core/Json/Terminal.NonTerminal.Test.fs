@@ -11,6 +11,7 @@ open Dual.Common.Base.FS.SampleDataTypes
 
 open Newtonsoft.Json
 open System.Collections.Generic
+open System
 
 [<AutoOpen>]
 module TerminalTestModule =
@@ -74,27 +75,29 @@ module TerminalTestModule =
     type NonTerminalTest() =
         [<Test>]
         member _.Minimal() =
+            Dual.Ev2.ModuleInitializer.Initialize()
+
             let nt =
                 let args = [| TTerminal(1.0) :> IExpression; TTerminal(3.14) |]
-                TNonTerminal<double>.Create(Op.OpArithmetic "+", args)
+                TNonTerminal<double>.Create(Op.PredefinedOperator "+", args)
             let json = EmJson.ToJson(nt)
             let jsonAnswer = """{
   "Operator": {
-    "Case": "OpArithmetic",
+    "Case": "PredefinedOperator",
     "Fields": [
       "+"
     ]
   },
   "Arguments": [
     {
-      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.ExpressionInterfaceModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 1.0
       }
     },
     {
-      "$type": "Dual.Ev2.TTerminalModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.ExpressionInterfaceModule+TTerminal`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14
@@ -113,5 +116,5 @@ module TerminalTestModule =
             json2 === jsonAnswer
 
 
-            nt.Value === 4.14
+            Math.Abs(nt.Evaluate() :?> double - 4.14) < 0.001 === true
             //nt.LazyValue
