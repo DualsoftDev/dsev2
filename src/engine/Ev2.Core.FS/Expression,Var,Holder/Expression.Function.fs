@@ -128,9 +128,6 @@ module ExpressionFunctionModule =
         |] |> HashSet
 
 
-    //let fEqualAmbiguous<'T> (args:Args) =
-    //    args.ExpectGteN(2).Select(evalArg).Pairwise().All(fun (x, y) -> isEqual x y)
-
     /// (Args -> 'T) 함수를 (Args -> obj) 로 boxing
     let private boxF<'T> (f:Args -> 'T) : (Args -> obj) = fun (args:Args) -> f args |> box
 
@@ -150,10 +147,8 @@ module ExpressionFunctionModule =
         | ("<"  | "lt")  -> boxF fLt
         | ("<=" | "lte") -> boxF fLte
 
-        //| ("=="  | "equal") when t = STRING -> fun args -> fbEqualString args |> box
-        //| ("=="  | "equal") -> fun args -> fbEqual args |> box
-        //| ("!=" | "<>" | "notEqual") when t = STRING -> fun args -> fbNotEqualString args|> box
-        //| ("!=" | "<>" | "^^" | "notEqual") -> fun args -> fbNotEqual args|> box
+        | ("=="  | "equal") -> boxF fEqual
+        | ("!=" | "<>" | "notEqual") -> boxF fNotEqual
 
         | ("<<" | "<<<" | "shiftLeft")  -> boxF fShiftLeft<'T>
         | (">>" | ">>>" | "shiftRight") -> boxF fShiftLeft<'T>
@@ -161,9 +156,7 @@ module ExpressionFunctionModule =
         | ("&&" | "and") -> boxF fbLogicalAnd
         | ("||" | "or")  -> boxF fbLogicalOr
 
-        // negateBool 이 현재 위치 이후에 정의되어 있지민, namespace 가 rec 로 정의되어 있어서 OK.
-        //| ("!"  | "not") -> negateBool (args.ExactlyOne())        // 따로 or 같이??? neg 는 contact 이나 coil 하나만 받아서 rung 생성하는 용도, not 은 expression 을 받아서 평가하는 용도
-        | ("!"  | "not") -> boxF fbLogicalNot    //fun args -> fbLogicalNot [args.ExactlyOne()] |> box        // 따로 or 같이??? neg 는 contact 이나 coil 하나만 받아서 rung 생성하는 용도, not 은 expression 을 받아서 평가하는 용도
+        | ("!"  | "not") -> boxF fbLogicalNot
 
         | ("&" | "&&&") -> boxF fBitwiseAnd<'T>
         | ("|" | "|||") -> boxF fBitwiseOr<'T>
@@ -222,15 +215,15 @@ module ExpressionFunctionModule =
         | _ -> failwith $"NOT yet: {funName}"
 
 
-    /// Create function expression
-    let private cf (f:Args->'T) (name:string) (args:Args): IExpression<'T> =
-        //DuFunction { FunctionBody=f; Name=name; Arguments=args; LambdaDecl=None; LambdaApplication=None}
-        //TNonTerminal<'T>.Create(f, args, name)
-        TExpressionEvaluator<'T>(f, args)
-        //fun () ->
-        //    {
-        //        IExpression<'T> with
-        //            f args
+    ///// Create function expression
+    //let private cf (f:Args->'T) (name:string) (args:Args): IExpression<'T> =
+    //    //DuFunction { FunctionBody=f; Name=name; Arguments=args; LambdaDecl=None; LambdaApplication=None}
+    //    //TNonTerminal<'T>.Create(f, args, name)
+    //    TExpressionEvaluator<'T>(f, args)
+    //    //fun () ->
+    //    //    {
+    //    //        IExpression<'T> with
+    //    //            f args
 
     [<AutoOpen>]
     module internal FunctionImpl =
@@ -244,10 +237,8 @@ module ExpressionFunctionModule =
                 let arg1 = xs[1] |> evalTo<'V>
                 arg0, arg1
 
-        let _equal   (args:Args) = args.ExpectGteN(2).Select(evalArg).Pairwise().All(fun (x, y) -> isEqual x y)
-        let _notEqual (args:Args) = not <| _equal args
-        let _equalString (args:Args) = args.ExpectGteN(2) .Select(evalArg).Cast<string>().Distinct().Count() = 1
-        let _notEqualString (args:Args) = not <| _equalString args
+        let fEqual   (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Pairwise().All(fun (x, y) -> isEqual x y)
+        let fNotEqual (args:Args): bool = not <| fEqual args
 
         let private convertToDoublePair (args:Args) = args.ExpectGteN(2).Select(fun x -> x.BoxedEvaluatedValue |> toFloat64).Pairwise()
         let fGt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x > y)
@@ -255,7 +246,7 @@ module ExpressionFunctionModule =
         let fGte (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x >= y)
         let fLte (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x <= y)
 
-        let _concat     (args:Args): string = args.ExpectGteN(2).Select(evalArg).Cast<string>().Reduce( + )
+        let fConcat     (args:Args): string = args.ExpectGteN(2).Select(evalArg).Cast<string>().Reduce( + )
         let fbLogicalAnd (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( && )
         let fbLogicalOr  (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( || )
         let fbLogicalNot (args:Args): bool = args.Select(evalArg).Cast<bool>().Expect1() |> not
@@ -312,9 +303,13 @@ module ExpressionFunctionModule =
         // EV1: createBinaryExpression: IExpression -> (op:string) -> IExpression -> IExpression
         let createBinaryFunction<'T> (op: string) : 'T -> 'T -> 'T =
             let t = typeof<'T>
-            let tn = t.Name
 
             fun (x:'T) (y:'T) ->
+                let tn =
+                    if t.Name = OBJECT then
+                        x.GetType().Name
+                    else
+                        t.Name
                 match op with
                 | "+" ->
                     match tn with
@@ -409,22 +404,29 @@ module ExpressionFunctionModule =
                     | UINT8  | UINT16 | UINT32 | UINT64 -> box (toUInt64 x ^^^ toUInt64 y)
                     | _ -> failwith "ERROR"
 
-                | "&&" when t = typeof<bool> -> box (toBool x && toBool y)
-                | "||" when t = typeof<bool> -> box (toBool x || toBool y)
+                | "&&" when tn = BOOL -> box (toBool x && toBool y)
+                | "||" when tn = BOOL -> box (toBool x || toBool y)
 
 
                 | _ -> failwith $"ERROR: Operator {op}"
 
-                |> fun x -> (tryConvert<'T> x |> Option.get)
+                |> fun v ->
+                    if t.Name = OBJECT then
+                        tryConvert2 (x.GetType()) v |> Option.get :?> 'T
+                    else
+                        tryConvert<'T> v |> Option.get
 
         let createUnaryFunction<'T> (op: string) : 'T -> 'T =
-
+            let t = typeof<'T>
             fun (x:'T) ->
+                let tn =
+                    if t.Name = OBJECT then
+                        x.GetType().Name
+                    else
+                        t.Name
+
                 match op with
-                | "!" ->
-                    match typeof<'T>.Name with
-                    | BOOL  -> (box x) :?> bool |> not |> box
-                    | _ -> failwith "ERROR"
+                | "!" when tn = BOOL -> (box x) :?> bool |> not |> box
                 | "~" | "~~~" ->
                     match typeof<'T>.Name with
                     | INT8   | INT16  | INT32  | INT64  -> box (~~~ (toInt64 x))
@@ -436,10 +438,20 @@ module ExpressionFunctionModule =
                     | UINT8  | UINT16 | UINT32 | UINT64 -> box x
                     | FLOAT32 | FLOAT64                 -> box (Math.Abs(toFloat64 x))
                     | _ -> failwith "ERROR"
-                |> fun x -> (tryConvert<'T> x |> Option.get)
+                |> fun v ->
+                    if t.Name = OBJECT then
+                        tryConvert2 (x.GetType()) v |> Option.get :?> 'T
+                    else
+                        tryConvert<'T> v |> Option.get
 
         let createShiftFunction<'T> (op: string) : 'T -> int -> 'T =
+            let t = typeof<'T>
             fun (x:'T) (y:int) ->
+                let tn =
+                    if t.Name = OBJECT then
+                        x.GetType().Name
+                    else
+                        t.Name
                 match op with
                 | "<<<" ->
                     // shift 연산은 최대치인 int64 나 uint64 로 변환 후 shift 연산을 수행할 수 없으므로 개별 type 별로 결과를 얻어야 한다.
@@ -465,30 +477,34 @@ module ExpressionFunctionModule =
                     | UINT64 -> toUInt64 x >>> y |> box
                     | _ -> failwith "ERROR"
                 | _ -> failwith "ERROR"
-                |> fun x -> (tryConvert<'T> x |> Option.get)
+                |> fun v ->
+                    if t.Name = OBJECT then
+                        tryConvert2 (x.GetType()) v |> Option.get :?> 'T
+                    else
+                        tryConvert<'T> v |> Option.get
 
-        let createBinaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
-            expectGteN 2 args |> ignore
-            let op:'T->'T->'T = createBinaryFunction<'T>(mnemonic)
-            let transformer:Args -> 'T = castArgs<'T> >> Seq.reduce op
-            cf transformer mnemonic args
-
-
-        let createUnaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
-            expect1 args |> ignore
-            let op:'T->'T = createUnaryFunction<'T>(mnemonic)
-            let transformer:Args -> 'T = castArgs<'T> >> Seq.head >> op
-            cf transformer mnemonic args
+        //let createBinaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
+        //    expectGteN 2 args |> ignore
+        //    let op:'T->'T->'T = createBinaryFunction<'T>(mnemonic)
+        //    let transformer:Args -> 'T = castArgs<'T> >> Seq.reduce op
+        //    cf transformer mnemonic args
 
 
-        let createShiftFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
-            expect2 args |> ignore
-            let transformer (args:Args) =
-                let (x:'T), (y:int) = shiftArgs<'T> args
-                let op:'T->int->'T = createShiftFunction<'T>(mnemonic)
-                op x y
-            //let transformer:Args -> 'T = (fun xs -> shiftArgs<'T>  xs ||> (>>>))
-            cf transformer mnemonic args
+        //let createUnaryFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
+        //    expect1 args |> ignore
+        //    let op:'T->'T = createUnaryFunction<'T>(mnemonic)
+        //    let transformer:Args -> 'T = castArgs<'T> >> Seq.head >> op
+        //    cf transformer mnemonic args
+
+
+        //let createShiftFunctionExpression<'T> (mnemonic:string) (args:Args) : IExpression<'T> =
+        //    expect2 args |> ignore
+        //    let transformer (args:Args) =
+        //        let (x:'T), (y:int) = shiftArgs<'T> args
+        //        let op:'T->int->'T = createShiftFunction<'T>(mnemonic)
+        //        op x y
+        //    //let transformer:Args -> 'T = (fun xs -> shiftArgs<'T>  xs ||> (>>>))
+        //    cf transformer mnemonic args
 
 
         let private createBinaryArgsFunction<'T> (mnemonic:string) (args:Args) : 'T =
@@ -523,20 +539,15 @@ module ExpressionFunctionModule =
 
 
 
-        let fNotEqual       (args:Args): IExpression = cf _notEqual       "!=" args
 
-        let fConcat         = _concat
-        let fEqual          = _equal
+        //let fEqualString    (args:Args): IExpression = cf _equalString    "=="  args
+        //let fNotEqualString (args:Args): IExpression = cf _notEqualString "!=" args
 
-
-        let fEqualString    (args:Args): IExpression = cf _equalString    "=="  args
-        let fNotEqualString (args:Args): IExpression = cf _notEqualString "!=" args
-
-        (* FB: Functions that returns Expression<Bool> *)
-        let fbEqual          (args:Args): IExpression<bool> = cf _equal          "=="  args
-        let fbNotEqual       (args:Args): IExpression<bool> = cf _notEqual       "!=" args
-        let fbEqualString    (args:Args): IExpression<bool> = cf _equalString    "=="  args
-        let fbNotEqualString (args:Args): IExpression<bool> = cf _notEqualString "!=" args
+        //(* FB: Functions that returns Expression<Bool> *)
+        //let fbEqual          (args:Args): IExpression<bool> = cf _equal          "=="  args
+        //let fbNotEqual       (args:Args): IExpression<bool> = cf _notEqual       "!=" args
+        //let fbEqualString    (args:Args): IExpression<bool> = cf _equalString    "=="  args
+        //let fbNotEqualString (args:Args): IExpression<bool> = cf _notEqualString "!=" args
 
 
 

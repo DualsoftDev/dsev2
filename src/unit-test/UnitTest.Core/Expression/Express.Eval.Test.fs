@@ -37,9 +37,21 @@ module ExpressionTestModule =
 
             fConcat [TValueHolder("Hello"); TValueHolder("World")] === "HelloWorld"
 
+        [<Test>]
+        member _.Invalid() =
+            (fun () -> createCustomFunction "!"      [TTerminal(32); ]                  |> ignore) |> ShouldFailWithSubstringT "Unable to cast object"
+            (fun () -> createCustomFunction<int> "+" [TTerminal(2); TTerminal(3.0)]     |> ignore) |> ShouldFailWithSubstringT "Unable to cast object"
+            (fun () -> createCustomFunction<int> "+" [TTerminal(2); ]                   |> ignore) |> ShouldFailWithSubstringT "Wrong number of arguments"
 
         [<Test>]
         member _.PredefinedFunction() =
+            createCustomFunction "!" [TTerminal(false); ] === true
+
+            // Binary fuction 에 한해, function type 지정안하면, argument 의 type 으로 결정됨.
+            createCustomFunction "+" [TTerminal(2); TTerminal(3)] === 5
+            createCustomFunction "*" [TTerminal(2); TTerminal(3)] === 6
+            createCustomFunction "&" [TTerminal(33); TTerminal(64)] === (33 &&& 64)
+
             createCustomFunction<int> "+" [TTerminal(2); TTerminal(3)] === 5
             createCustomFunction<int> "*" [TTerminal(2); TTerminal(3)] === 6
             createCustomFunction<int> "&" [TTerminal(33); TTerminal(64)] === (33 &&& 64)
@@ -76,6 +88,16 @@ module ExpressionTestModule =
             createCustomFunction<double> "sin" [TTerminal(3.14)] === Math.Sin(3.14)
             createCustomFunction<bool> ">=" [TTerminal(3); TTerminal(1)] === true
             createCustomFunction<bool> "<=" [TTerminal(3); TTerminal(1)] === false
+
+            createCustomFunction "==" [TTerminal("Hello"); TTerminal("Hello")] === true
+            createCustomFunction "==" [TTerminal("Hello"); TTerminal("World")] === false
+            createCustomFunction "<>" [TTerminal("Hello"); TTerminal("Hello")] === false
+            createCustomFunction "<>" [TTerminal("Hello"); TTerminal("World")] === true
+
+            createCustomFunction "==" [TTerminal(1); TTerminal(1)] === true
+            createCustomFunction "==" [TTerminal(1); TTerminal(2)] === false
+            createCustomFunction "<>" [TTerminal(1); TTerminal(1)] === false
+            createCustomFunction "<>" [TTerminal(1); TTerminal(2)] === true
 
 
             let gt = createCustomFunction ">="

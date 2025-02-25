@@ -1,14 +1,9 @@
 namespace Dual.Ev2
 
 open System
-open System.Runtime.Serialization
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
-open Dual.Common.Base.CS
-open Dual.Common.Core
 
 [<AutoOpen>]
 module rec ExpressionInterfaceModule =
@@ -42,8 +37,6 @@ module rec ExpressionInterfaceModule =
 
     type INonTerminal =
         inherit IExpression
-        //abstract member Operator: Op with get, set
-        //abstract member Arguments: IExpression[] with get, set
 
     type INonTerminal<'T> =
         inherit INonTerminal
@@ -60,24 +53,10 @@ module rec ExpressionInterfaceModule =
 
         member x.TEvaluate(args) = evaluator args
 
-    type TExpressionEvaluator<'T>(evaluator:Arguments -> 'T, args:Args) =
-        inherit TEvaluator<'T>(evaluator)
-        interface IExpression<'T> with
-            member x.Evaluate() = x.TEvaluate(args) |> box
-            member x.TEvaluate() = x.TEvaluate(args)
-
 
     type Op =
     | Unit // Logical XOR 는 function 인 '<>' 로 구현됨
 
-    //| And
-    //| Or
-    //| Neg
-
-    //| RisingAfter
-    //| FallingAfter
-
-    //| OpCompare of operator: string
     | PredefinedOperator of operator: string
 
     /// 정상 범주에서 지원되지 않는 operator

@@ -84,9 +84,9 @@ module rec TTerminalModule =
             x.PropertiesDto
 
 
-    type INonTerminal<'T> with
-        /// INonTerminal.FunctionBody
-        member x.FunctionBody
-            with get() = getPropertyValueDynamically(x, "FunctionBody") :?> (TEvaluator<'T>)
-            and set (v:Arguments -> 'T) = setPropertyValueDynamically(x, "FunctionBody", v)
+    //type INonTerminal<'T> with
+    //    /// INonTerminal.FunctionBody
+    //    member x.FunctionBody
+    //        with get() = getPropertyValueDynamically(x, "FunctionBody") :?> (TEvaluator<'T>)
+    //        and set (v:Arguments -> 'T) = setPropertyValueDynamically(x, "FunctionBody", v)
 

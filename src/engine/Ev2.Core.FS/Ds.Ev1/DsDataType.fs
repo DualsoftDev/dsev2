@@ -22,6 +22,7 @@ module DsDataType =
     let [<Literal>] UINT32  = "UInt32"
     let [<Literal>] UINT64  = "UInt64"
     let [<Literal>] UINT8   = "Byte"
+    let [<Literal>] OBJECT  = "Object"
 
     let [<Literal>] PLCBOOL    = "bit"
     let [<Literal>] PLCUINT8   = "byte"
