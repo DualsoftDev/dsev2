@@ -84,7 +84,7 @@ module TerminalTestModule =
             let t = TValue(3.14)
             let json = EmJson.ToJson(t, settings)
             json === """{
-  "$type": "Dual.Ev2.T+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+  "$type": "Dual.Ev2.TExpressionModule+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
   "ObjectHolder": {
     "$type": "Dual.Common.Base.FS.NsJsonS11nSafeObjectModule+NsJsonS11nSafeObject, Dual.Common.Base.FS",
     "ValueTypeName": "System.Double",
@@ -98,7 +98,7 @@ module TerminalTestModule =
         [<Test>]
         member _.TypeSerialization() =
             EmJson.GetType("Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS") === typeof<Student>
-            EmJson.GetType("Dual.Ev2.T+TValue`1[System.Int32], Ev2.Core.FS") === typeof<TValue<int>>
+            EmJson.GetType("Dual.Ev2.TExpressionModule+TValue`1[System.Int32], Ev2.Core.FS") === typeof<TValue<int>>
             EmJson.GetType("System.Int32, System.Private.CoreLib") === typeof<int>
 
     [<TestFixture>]
@@ -120,14 +120,14 @@ module TerminalTestModule =
   },
   "Arguments": [
     {
-      "$type": "Dual.Ev2.T+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.TExpressionModule+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 1.0
       }
     },
     {
-      "$type": "Dual.Ev2.T+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
+      "$type": "Dual.Ev2.TExpressionModule+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14

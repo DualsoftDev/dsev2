@@ -25,17 +25,17 @@ module ExpressionTestModule =
             funcCustomAdd args === 7
 
             (fAbs<int> [TValue(-20)]) === 20
-            fAbs<double> [TValueHolder(-3.14)] === 3.14
-            fBitwiseNot<int> [TValueHolder(0)] === ~~~0
-            fBitwiseNot<uint64> [TValueHolder(32UL)] === ~~~32UL
-            fBitwiseAnd<uint64> [TValueHolder(29UL); TValueHolder(252UL)] === (29UL&&&252UL)
+            fAbs<double> [TValue(-3.14)] === 3.14
+            fBitwiseNot<int> [TValue(0)] === ~~~0
+            fBitwiseNot<uint64> [TValue(32UL)] === ~~~32UL
+            fBitwiseAnd<uint64> [TValue(29UL); TValue(252UL)] === (29UL&&&252UL)
 
-            (fShiftLeft<uint64> [TValueHolder(1UL); TValueHolder(2)]) === (1UL<<<2)
+            (fShiftLeft<uint64> [TValue(1UL); TValue(2)]) === (1UL<<<2)
 
-            [1..10] |> map TValueHolder<int> |> List.cast<IExpression> |> fAdd<int> === 55
+            [1..10] |> map TValue<int> |> List.cast<IExpression> |> fAdd<int> === 55
 
 
-            fConcat [TValueHolder("Hello"); TValueHolder("World")] === "HelloWorld"
+            fConcat [TValue("Hello"); TValue("World")] === "HelloWorld"
 
         [<Test>]
         member _.Invalid() =
