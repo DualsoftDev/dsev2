@@ -11,21 +11,26 @@ module InterfacesModule =
     type IWithType<'T> =
         inherit IWithType
 
-    type IWithValue = interface end
-    type IWithValue<'T> =
-        inherit IWithValue
+
+    type IStorage = interface end
+
+    type IValue =
+        abstract member Value: obj with get, set
+
+    type IValue<'T> =
+        inherit IValue
+        abstract member TValue: 'T with get, set
 
     type IExpression =
         inherit IWithType
-        inherit IWithValue
+        inherit IValue
         inherit IWithName
-        abstract member Value: obj
 
     type IExpression<'T> =
         inherit IExpression
         inherit IWithType<'T>
-        inherit IWithValue<'T>
-        abstract member TValue: 'T
+        inherit IValue<'T>
+
 [<AutoOpen>]
 module ReflectionInterfacesModule =
     type IWithType with
@@ -33,10 +38,13 @@ module ReflectionInterfacesModule =
         member x.Type = getPropertyValueDynamically(x, "Type") :?> Type
         member x.DataType = x.Type  // 임시
 
-    type IWithValue with
+    type IValue with
         /// IWithType.Type (no setter)
-        member x.Value = getPropertyValueDynamically(x, "Value")
-    type IWithValue<'T> with
+        member x.Value
+            with get() = getPropertyValueDynamically(x, "Value")
+            and set (v:obj) = setPropertyValueDynamically(x, "Value", v)
+
+    type IValue<'T> with
         /// IWithType.Type (no setter)
         member x.TValue = getPropertyValueDynamically(x, "Value") :?> 'T
 

@@ -12,10 +12,11 @@
 		<Compile Include="ForwardDecl.fs" />
 		<Compile Include="Ds.Ev1\TypeConversion.fs" />
 		<Compile Include="Ds.Ev1\DsDataType.fs" />
+		<Compile Include="Ds.Ev1\TagKind.fs" />
 		<Compile Include="Dual.Common\Interfaces.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Interfaces.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Function.fs" />
-		<Compile Include="Expression,Var,Holder\ValueHolder.fs" />
+		<Compile Include="Expression,Var,Holder\TValue,TFunction.fs" />
 		<Compile Include="Expression,Var,Holder\DsEv1_Timer_Counter.fs" />
 		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />

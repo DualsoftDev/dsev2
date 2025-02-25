@@ -9,7 +9,6 @@ open System.Runtime.Serialization
 open Dual.Common.Base.CS
 [<AutoOpen>]
 module rec TExpressionModule =
-
     type ValueHolder(typ: Type, ?value: obj) =
         // NsJsonS11nSafeObject 에서 상속받아서는 안됨.  Sealed class
         member val ObjectHolder = NsJsonS11nSafeObject(typ, ?value=value) with get, set
@@ -19,12 +18,11 @@ module rec TExpressionModule =
         interface IWithName
         interface IWithAddress
         interface IWithType
-        interface IWithValue
+        interface IStorage
+        interface IValue with
+            member x.Value with get() = x.Value and set v = x.Value <- v
 
-        interface IExpression with
-            member x.Value = x.Value
-        //abstract member Value: obj
-        //[<JsonIgnore>] default x.Value = x.ObjectHolder.Value
+        interface IExpression
 
         /// DynamicDictionary.
         ///
@@ -75,6 +73,17 @@ module rec TExpressionModule =
             with get() = x.DD.TryGet<bool>("IsLiteral") |? false
             and set (v:bool) = x.DD.Set<bool>("IsLiteral", v)
 
+        /// Timer/Counter 등의 member 변수.  DN,
+        [<JsonIgnore>]
+        member x.IsMemberVariable
+            with get() = x.DD.TryGet<bool>("IsMemberVariable") |? false
+            and set (v:bool) = x.DD.Set<bool>("IsMemberVariable", v)
+
+        [<JsonIgnore>]
+        member x.TagKind
+            with get() = x.DD.TryGet<uint64>("TagKind") |? 0UL
+            and set (v:uint64) = x.DD.Set<uint64>("TagKind", v)
+
     type TValue<'T>(value:'T) =
         inherit ValueHolder(typedefof<'T>, value)
         new() = TValue(Unchecked.defaultof<'T>)   // for Json
@@ -82,10 +91,12 @@ module rec TExpressionModule =
         interface IWithAddress
         interface ITerminal<'T>
         interface IWithType<'T>
-        interface IExpression<'T> with
-            member x.TValue = x.TValue
-        abstract member TValue: 'T
-        [<JsonIgnore>] default x.TValue = x.Value :?> 'T
+        interface IExpression<'T>
+
+        interface IValue<'T> with
+            member x.TValue with get() = x.TValue and set v = x.Value <- v
+        abstract member TValue: 'T with get, set
+        [<JsonIgnore>] default x.TValue with get() = x.Value :?> 'T and set v = x.Value <- v
 
 
 
@@ -109,8 +120,8 @@ module rec TExpressionModule =
         interface INonTerminal<'T>
 
         interface IExpression<'T> with
-            member x.Value = x.Value
-            member x.TValue = x.TValue
+            member x.Value with get() = x.Value and set v = x.Value <- v
+            member x.TValue with get() = x.TValue and set v = x.Value <- v
 
 
         [<DataMember>] member val Operator: Op = op with get, set
