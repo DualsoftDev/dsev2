@@ -18,9 +18,10 @@ module ExpressionTestModule =
         let t2 = TTerminal(4)
 
         let args = [t1 :> IExpression; t2]
-        let iExpAdd:IExpression = createCustomFunctionExpression<int> "+" args
+        let funcCustomAdd = createCustomFunction<int> "+"
+        let iExpAdd:IExpression = funcCustomAdd args
         let tExpAdd = iExpAdd :?> IExpression<int>
-        let ntAdd = iExpAdd :?> TNonTerminal<int>
+        //let ntAdd = iExpAdd :?> TNonTerminal<int>
 
         let xxx = tryConvert<double>(-3.14)
         let yyy = xxx
@@ -28,13 +29,14 @@ module ExpressionTestModule =
         [<Test>]
         member _.Minimal() =
             iExpAdd.Evaluate()  === 7
-            ntAdd  .Evaluate()  === 7
             tExpAdd.Evaluate()  === 7
-            ntAdd  .TEvaluate() === 7
             tExpAdd.TEvaluate() === 7
             let oValue:obj = iExpAdd.Evaluate()
-            let nValue2:int = ntAdd.TEvaluate()
-            let oValue2:obj = ntAdd.Evaluate()
+
+            //ntAdd  .Evaluate()  === 7
+            //ntAdd  .TEvaluate() === 7
+            //let nValue2:int = ntAdd.TEvaluate()
+            //let oValue2:obj = ntAdd.Evaluate()
             noop()
 
             (fAbs<int> [TTerminal(-20)]).Evaluate() === 20

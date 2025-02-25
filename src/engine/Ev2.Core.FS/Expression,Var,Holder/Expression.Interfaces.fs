@@ -84,10 +84,10 @@ module rec ExpressionInterfaceModule =
     | CustomOperator of IEvaluator
 
     // 기존 Terminal<'T> 에 해당.
-    type TTerminal<'T>(value:'T) =
+    type TTerminalImpl<'T>(value:'T) =
         inherit TValueHolder<'T>(value)
         interface ITerminal<'T>
-        new() = TTerminal(Unchecked.defaultof<'T>)   // for Json
+        new() = TTerminalImpl(Unchecked.defaultof<'T>)   // for Json
 
 
 

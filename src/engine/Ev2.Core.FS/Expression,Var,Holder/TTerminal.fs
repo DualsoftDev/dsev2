@@ -41,7 +41,7 @@ module rec TTerminalModule =
 
     // 기존 FunctionSpec<'T> 에 해당.
     [<DataContract>]
-    type TNonTerminal<'T> private (op:Op, args:IExpression seq) =
+    type TNonTerminalImpl<'T> internal (op:Op, args:IExpression seq) =
 
         let args = args.ToFSharpList()
         let mutable lazyValue:ResettableLazy<'T> = null
@@ -64,7 +64,7 @@ module rec TTerminalModule =
         member x.Evaluate() = x.Value
         member x.TEvaluate():'T = x.TValue
 
-        member private x.OnDeserialized() =
+        member internal x.OnDeserialized() =
             lazyValue <- ResettableLazy<'T>(fun () ->
                 let objValue:obj = evaluateT<'T> (x.Operator, x.Arguments.ToFSharpList())
                 objValue :?> 'T
@@ -87,17 +87,6 @@ module rec TTerminalModule =
                 x.PropertiesDto <- DynamicDictionary()
             x.PropertiesDto
 
-
-    type TNonTerminal<'T> with
-        new() = TNonTerminal<'T>(Op.Unit, [])   // for Json
-        static member Create(op:Op, args:IExpression seq, ?name:string): TNonTerminal<'T> =
-            TNonTerminal<'T>(op, args)
-                .Tee(fun nt -> nt.OnDeserialized())
-                .Tee(fun nt -> name.Iter(fun n -> nt.DD.Add("Name", n)))
-
-        static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string): TNonTerminal<'T> =
-            let op = TEvaluator<'T>(evaluator) :> IEvaluator |> CustomOperator
-            TNonTerminal<'T>.Create(op, args, ?name=name)
 
     type INonTerminal<'T> with
         /// INonTerminal.FunctionBody

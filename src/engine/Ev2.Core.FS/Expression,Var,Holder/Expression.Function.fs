@@ -219,6 +219,10 @@ module ExpressionFunctionModule =
         | _ -> failwith $"NOT yet: {funName}"
 
 
+    let createCustomFunction<'T> (funName:string) : Args -> IExpression =
+        fun (args:Args) ->
+            createCustomFunctionExpression funName args
+
     /// Create function expression
     let private cf (f:Args->'T) (name:string) (args:Args): IExpression<'T> =
         //DuFunction { FunctionBody=f; Name=name; Arguments=args; LambdaDecl=None; LambdaApplication=None}
@@ -252,10 +256,10 @@ module ExpressionFunctionModule =
         let _gte (args:Args) = convertToDoublePair(args).All(fun (x, y) -> x >= y)
         let _lte (args:Args) = convertToDoublePair(args).All(fun (x, y) -> x <= y)
 
-        let _concat     (args:Args) = args.ExpectGteN(2).Select(evalArg).Cast<string>().Reduce( + )
-        let _logicalAnd (args:Args) = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( && )
-        let _logicalOr  (args:Args) = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( || )
-        let _logicalNot (args:Args) = args.Select(evalArg).Cast<bool>().Expect1() |> not
+        let _concat     (args:Args): string = args.ExpectGteN(2).Select(evalArg).Cast<string>().Reduce( + )
+        let _logicalAnd (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( && )
+        let _logicalOr  (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Cast<bool>()  .Reduce( || )
+        let _logicalNot (args:Args): bool = args.Select(evalArg).Cast<bool>().Expect1() |> not
 
         //let errorPCRunmode(_args:Args, funName:string) =  //PC 모드일때만 예외 (위치 수정 필요)
         //    if RuntimeDS.Package.IsPCorPCSIM() then
@@ -268,9 +272,9 @@ module ExpressionFunctionModule =
         let _fallingAfter (_args:Args) : bool=  false//    errorPCRunmode(_args, "fallingAfter")
 
 
-        let _sin (args:Args) = args.Select(evalArg >> toFloat64).Expect1() |> Math.Sin
-        let _cos (args:Args) = args.Select(evalArg >> toFloat64).Expect1() |> Math.Cos
-        let _tan (args:Args) = args.Select(evalArg >> toFloat64).Expect1() |> Math.Tan
+        let _sin (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Sin
+        let _cos (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Cos
+        let _tan (args:Args): double = args.Select(evalArg >> toFloat64).Expect1() |> Math.Tan
 
         let _castToUInt8   (args:Args) = args.Select(evalArg >> toUInt8)   .Expect1()
         let _castToInt8    (args:Args) = args.Select(evalArg >> toInt8)    .Expect1()
@@ -505,59 +509,59 @@ module ExpressionFunctionModule =
 
 
 
-        let fConcat         args = cf _concat         "+"      args
+        let fConcat         (args:Args): IExpression<string> = cf _concat         "+"      args
 
-        let fEqual          args: IExpression = cf _equal          "=="  args
-        let fNotEqual       args: IExpression = cf _notEqual       "!=" args
-        let fGt             args: IExpression = cf _gt             ">"  args
-        let fLt             args: IExpression = cf _lt             "<"  args
-        let fGte            args: IExpression = cf _gte            ">=" args
-        let fLte            args: IExpression = cf _lte            "<=" args
-        let fEqualString    args: IExpression = cf _equalString    "=="  args
-        let fNotEqualString args: IExpression = cf _notEqualString "!=" args
-        let fLogicalAnd     args: IExpression = cf _logicalAnd     "&&" args
-        let fLogicalOr      args: IExpression = cf _logicalOr      "||" args
-        let fLogicalNot     args: IExpression = cf _logicalNot     "!"  args
-        let fRising         args: IExpression = cf _rising         FunctionNameRising args
-        let fFalling        args: IExpression = cf _falling        FunctionNameFalling args
-        let fRisingAfter    args: IExpression = cf _risingAfter    FunctionNameRisingAfter args
-        let fFallingAfter   args: IExpression = cf _fallingAfter   FunctionNameFallingAfter args
-
-        (* FB: Functions that returns Expression<Bool> *)
-        let fbEqual          args: IExpression<bool> = cf _equal          "=="  args
-        let fbNotEqual       args: IExpression<bool> = cf _notEqual       "!=" args
-        let fbGt             args: IExpression<bool> = cf _gt             ">"  args
-        let fbLt             args: IExpression<bool> = cf _lt             "<"  args
-        let fbGte            args: IExpression<bool> = cf _gte            ">=" args
-        let fbLte            args: IExpression<bool> = cf _lte            "<=" args
-        let fbEqualString    args: IExpression<bool> = cf _equalString    "=="  args
-        let fbNotEqualString args: IExpression<bool> = cf _notEqualString "!=" args
-        let fbLogicalAnd     args: IExpression<bool> = cf _logicalAnd     "&&" args
-        let fbLogicalOr      args: IExpression<bool> = cf _logicalOr      "||" args
-        let fbLogicalNot     args: IExpression<bool> = cf _logicalNot     "!"  args
+        let fEqual          (args:Args): IExpression = cf _equal          "=="  args
+        let fNotEqual       (args:Args): IExpression = cf _notEqual       "!=" args
+        let fGt             (args:Args): IExpression = cf _gt             ">"  args
+        let fLt             (args:Args): IExpression = cf _lt             "<"  args
+        let fGte            (args:Args): IExpression = cf _gte            ">=" args
+        let fLte            (args:Args): IExpression = cf _lte            "<=" args
+        let fEqualString    (args:Args): IExpression = cf _equalString    "=="  args
+        let fNotEqualString (args:Args): IExpression = cf _notEqualString "!=" args
+        let fLogicalAnd     (args:Args): IExpression = cf _logicalAnd     "&&" args
+        let fLogicalOr      (args:Args): IExpression = cf _logicalOr      "||" args
+        let fLogicalNot     (args:Args): IExpression = cf _logicalNot     "!"  args
+        let fRising         (args:Args): IExpression = cf _rising         FunctionNameRising args
+        let fFalling        (args:Args): IExpression = cf _falling        FunctionNameFalling args
+        let fRisingAfter    (args:Args): IExpression = cf _risingAfter    FunctionNameRisingAfter args
+        let fFallingAfter   (args:Args): IExpression = cf _fallingAfter   FunctionNameFallingAfter args
 
         (* FB: Functions that returns Expression<Bool> *)
-        let fbRising        args: IExpression<bool> = cf _rising          FunctionNameRising args
-        let fbFalling       args: IExpression<bool> = cf _falling         FunctionNameFalling args
+        let fbEqual          (args:Args): IExpression<bool> = cf _equal          "=="  args
+        let fbNotEqual       (args:Args): IExpression<bool> = cf _notEqual       "!=" args
+        let fbGt             (args:Args): IExpression<bool> = cf _gt             ">"  args
+        let fbLt             (args:Args): IExpression<bool> = cf _lt             "<"  args
+        let fbGte            (args:Args): IExpression<bool> = cf _gte            ">=" args
+        let fbLte            (args:Args): IExpression<bool> = cf _lte            "<=" args
+        let fbEqualString    (args:Args): IExpression<bool> = cf _equalString    "=="  args
+        let fbNotEqualString (args:Args): IExpression<bool> = cf _notEqualString "!=" args
+        let fbLogicalAnd     (args:Args): IExpression<bool> = cf _logicalAnd     "&&" args
+        let fbLogicalOr      (args:Args): IExpression<bool> = cf _logicalOr      "||" args
+        let fbLogicalNot     (args:Args): IExpression<bool> = cf _logicalNot     "!"  args
+
+        (* FB: Functions that returns Expression<Bool> *)
+        let fbRising        (args:Args): IExpression<bool> = cf _rising          FunctionNameRising args
+        let fbFalling       (args:Args): IExpression<bool> = cf _falling         FunctionNameFalling args
 
         //let fbRisingAfter   _args: Expression<bool> =  failwith "fbRisingAfter not support expression using fbRising"//cf _risingAfter     FunctionNameRisingAfter args
         //let fbFallingAfter  _args: Expression<bool> =  failwith "fbFallingAfter not support expression  using fbFalling"//cf _fallingAfter    FunctionNameFallingAfter args
 
-        let fSin            args = cf _sin            "sin"    args
-        let fCos            args = cf _cos            "cos"    args
-        let fTan            args = cf _tan            "tan"    args
+        let fSin            (args:Args): IExpression<double> = cf _sin            "sin"    args
+        let fCos            (args:Args): IExpression<double> = cf _cos            "cos"    args
+        let fTan            (args:Args): IExpression<double> = cf _tan            "tan"    args
 
-        let fCastBool       args = cf _castToBool     "toBool"   args
-        let fCastUInt8      args = cf _castToUInt8    "toByte"   args
-        let fCastInt8       args = cf _castToInt8     "toSByte"  args
-        let fCastInt16      args = cf _castToInt16    "toInt16"  args
-        let fCastUInt16     args = cf _castToUInt16   "toUInt16" args
-        let fCastInt32      args = cf _castToInt32    "toInt32"  args
-        let fCastUInt32     args = cf _castToUInt32   "toUInt32" args
-        let fCastInt64      args = cf _castToInt64    "toInt64"  args
-        let fCastUInt64     args = cf _castToUInt64   "toUInt64" args
-        let fCastFloat32    args = cf _castToFloat32  "toFloat32"  args
-        let fCastFloat64    args = cf _castToFloat64  "toFloat64" args
+        let fCastBool       (args:Args): IExpression<bool> = cf _castToBool     "toBool"   args
+        let fCastUInt8      (args:Args): IExpression<byte> = cf _castToUInt8    "toByte"   args
+        let fCastInt8       (args:Args) = cf _castToInt8     "toSByte"  args
+        let fCastInt16      (args:Args) = cf _castToInt16    "toInt16"  args
+        let fCastUInt16     (args:Args) = cf _castToUInt16   "toUInt16" args
+        let fCastInt32      (args:Args) = cf _castToInt32    "toInt32"  args
+        let fCastUInt32     (args:Args) = cf _castToUInt32   "toUInt32" args
+        let fCastInt64      (args:Args) = cf _castToInt64    "toInt64"  args
+        let fCastUInt64     (args:Args) = cf _castToUInt64   "toUInt64" args
+        let fCastFloat32    (args:Args) = cf _castToFloat32  "toFloat32"  args
+        let fCastFloat64    (args:Args) = cf _castToFloat64  "toFloat64" args
 
 
         [<Obsolete("Todo: Fix")>]
