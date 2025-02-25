@@ -23,7 +23,7 @@ module T =
                 .Tee(fun nt -> name.Iter(fun n -> nt.DD.Add("Name", n)))
 
         static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string): TFunctionImpl<'T> =
-            let (f:Args -> obj) = fun (args:Arguments) -> evaluator args |> box
+            let (f:Evaluator) = fun (args:Arguments) -> evaluator args |> box
             let op = CustomOperator f
             TFunction.Create(op, args, ?name=name)
 

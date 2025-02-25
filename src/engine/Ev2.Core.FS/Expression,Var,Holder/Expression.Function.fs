@@ -128,12 +128,12 @@ module ExpressionFunctionModule =
         |] |> HashSet
 
 
-    /// (Args -> 'T) 함수를 (Args -> obj) 로 boxing
-    let private boxF<'T> (f:Args -> 'T) : (Args -> obj) = fun (args:Args) -> f args |> box
+    /// (TEvaluator<'T>: Args -> 'T) 함수를 (Evaluator: Args -> obj) 로 boxing
+    let private boxF<'T> (f:TEvaluator<'T>) : Evaluator = fun (args:Args) -> f args |> box
 
     /// Create (known) function
     [<Obsolete("Todo: Uncomment")>]
-    let cf<'T> (funName:string) : Args -> obj =
+    let cf<'T> (funName:string) : Evaluator =
         predefinedFunctionNames.Contains(funName) |> verifyM $"Undefined function: {funName}"
 
 

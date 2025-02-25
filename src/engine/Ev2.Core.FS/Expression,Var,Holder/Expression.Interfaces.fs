@@ -36,6 +36,11 @@ module rec ExpressionInterfaceModule =
     type TArguments<'T> = IExpression<'T> list
     type TArgs<'T> = TArguments<'T>
 
+    /// (Args -> obj): 인자를 받아서 'T 에 대한 obj 를 반환하는 함수
+    type Evaluator = Args -> obj
+    /// (Args -> 'T): 인자를 받아서 'T 를 반환하는 함수
+    type TEvaluator<'T> = Args -> 'T
+
     type INonTerminal =
         inherit IExpression
 
@@ -50,7 +55,7 @@ module rec ExpressionInterfaceModule =
     | PredefinedOperator of operator: string
 
     /// 정상 범주에서 지원되지 않는 operator
-    | CustomOperator of (Args -> obj)
+    | CustomOperator of Evaluator
 
 
 

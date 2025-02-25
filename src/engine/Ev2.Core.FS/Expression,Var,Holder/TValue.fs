@@ -10,7 +10,7 @@ open Dual.Common.Base.CS
 module rec TValueModule =
 
     type Op with
-        member x.GetFunction(): (Args -> obj) =
+        member x.GetFunction(): Evaluator =
             match x with
             | CustomOperator f -> f
             | PredefinedOperator mnemonic -> cf mnemonic
