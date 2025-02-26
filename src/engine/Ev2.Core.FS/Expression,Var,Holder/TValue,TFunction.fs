@@ -9,6 +9,11 @@ open System.Runtime.Serialization
 open Dual.Common.Base.CS
 [<AutoOpen>]
 module rec TExpressionModule =
+    [<Obsolete("중복: 제거 요망")>]
+    // 임시... 원본: Interface.fs@Engine.Core
+    type ISystem = interface end
+
+
     type ValueHolder(typ: Type, ?value: obj) =
         // NsJsonS11nSafeObject 에서 상속받아서는 안됨.  Sealed class
         member val ObjectHolder = NsJsonS11nSafeObject(typ, ?value=value) with get, set
@@ -81,8 +86,13 @@ module rec TExpressionModule =
 
         [<JsonIgnore>]
         member x.TagKind
-            with get() = x.DD.TryGet<uint64>("TagKind") |? 0UL
-            and set (v:uint64) = x.DD.Set<uint64>("TagKind", v)
+            with get() = x.DD.TryGet<int>("TagKind") |? 0
+            and set (v:int) = x.DD.Set<int>("TagKind", v)
+
+        [<JsonIgnore>]
+        member x.DsSystem
+            with get() = x.DD.TryGet<ISystem>("DsSystem") |? getNull<ISystem>()
+            and set (v:ISystem) = x.DD.Set<ISystem>("DsSystem", v)
 
     type TValue<'T>(value:'T) =
         inherit ValueHolder(typedefof<'T>, value)

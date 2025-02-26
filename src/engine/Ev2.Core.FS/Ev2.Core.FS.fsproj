@@ -17,7 +17,8 @@
 		<Compile Include="Expression,Var,Holder\Expression.Interfaces.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Function.fs" />
 		<Compile Include="Expression,Var,Holder\TValue,TFunction.fs" />
-		<Compile Include="Expression,Var,Holder\DsEv1_Timer_Counter.fs" />
+		<Compile Include="Expression,Var,Holder\DsEv1_Timer.fs" />
+		<Compile Include="Expression,Var,Holder\DsEv1_Counter.fs" />
 		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />

@@ -13,6 +13,7 @@ module InterfacesModule =
 
 
     type IStorage = interface end
+    //type ISystem  = interface end
 
     type IValue =
         abstract member Value: obj with get, set
