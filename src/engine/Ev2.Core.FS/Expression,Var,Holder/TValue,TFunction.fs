@@ -159,18 +159,8 @@ module rec TExpressionModule =
                     let f, args = x.Operator.GetFunction(), x.Arguments.ToFSharpList()
                     f args
                 objValue :?> 'T
-                |> tee( fun v -> ValueChangedSubject.OnNext(x, v))      // 엄밀히는 ValueChangedSubject.OnNext 가 lazyValue 값 설정 이전에 수행되어 문제의 소지가 있긴 함.
-
-                (*
-                // 무시해도 될 정도의 문제이긴 하나, 정확히 해결하려면, 다음 처럼 수정.  값 변경 시마다
-                // Lazy.Value 설정 후 이벤트 호출을 위한 비동기 실행 후 반환
-                async {
-                    do! Async.Sleep(0) // 즉시 실행 큐에 등록하여 lazyValue.Value 설정 이후 실행되도록 함
-                    ValueChangedSubject.OnNext(x, result)
-                } |> Async.Start
-                objValue :?> 'T
-                 *)
             )
+            lazyValue.OnValueChanged <- fun v -> ValueChangedSubject.OnNext(x, v)
             noop()
 
         // F#에서는 어트리뷰트를 [<OnDeserialized>] 형식으로 사용해야 합니다.

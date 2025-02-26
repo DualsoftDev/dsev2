@@ -56,11 +56,16 @@ module CpusEvent =  // from DsEvent.fs
     let onValueChanged(sys: ISystem, stg: IStorage, value: obj) =
         ValueSubject.OnNext(sys, stg, value)
 
+    let mutable private initialized = false
+    let internal initialize() =
+        if not initialized then
+            initialized <- true
+            ValueChangedSubject.Subscribe(
+                let system = getNull<ISystem>()
+                fun (stg, value) -> onValueChanged(system, box stg :?> IStorage, value))
+            |> ignore
     do
-        ValueChangedSubject.Subscribe(
-            let system = getNull<ISystem>()
-            fun (stg, value) -> onValueChanged(system, box stg :?> IStorage, value))
-        |> ignore
+        initialize()
 
 
 [<AutoOpen>]
