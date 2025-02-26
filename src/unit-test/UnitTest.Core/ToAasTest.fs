@@ -106,7 +106,7 @@ module ToAasTest =
             let guid1, guid2 = Guid.NewGuid(), Guid.NewGuid()
             let edgeDTO = EdgeDTO(guid1, guid2, CausalEdgeType.Start)
             let json = edgeDTO.ToSMC().Stringify()
-            DcClipboard.Write(json)
+            writeClipboard(json)
             json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let smec:Aas.SubmodelElementCollection = Aas.Jsonization.Deserialize.SubmodelElementCollectionFrom(JNode.Parse(json))
@@ -313,7 +313,7 @@ module ToAasTest =
 }"""
             let work = system2.Works[0]
             let json = work.ToSMC().Stringify()
-            DcClipboard.Write(json)
+            writeClipboard(json)
             json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
@@ -344,7 +344,7 @@ module ToAasTest =
   ]
 }"""
             let json = flow.ToSMC().Stringify()
-            DcClipboard.Write(json)
+            writeClipboard(json)
             json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
 
             let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(json).ToXml()
@@ -589,7 +589,7 @@ module ToAasTest =
   ]
 }"""
             let json = system2.ToSMC().Stringify()
-            DcClipboard.Write(json)
+            writeClipboard(json)
 
 
             json.ZeroFillGuid() === jsonAnswer.ZeroFillGuid()
@@ -605,7 +605,7 @@ module ToAasTest =
 
             let system2 = DsSystem.FromJson(dsJson)
             let json = system2.ToSM().Stringify()
-            DcClipboard.Write(json)
+            writeClipboard(json)
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
 

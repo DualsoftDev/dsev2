@@ -5,10 +5,14 @@ open System
 open System.Text.RegularExpressions
 open System.Xml.Linq
 open Newtonsoft.Json.Linq
+open Dual.Common.Base.CS
 
 let private isGuid (value: string) =
     let guidPattern = @"^[{(]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[)}]?$"
     Regex.IsMatch(value, guidPattern)
+
+let writeClipboard (text: string) =
+    DcClipboard.Write(text, swallowException=true)
 
 type String with
     member x.RemoveLineContaining(pattern:string) = Regex.Replace(x, @"^.*" + pattern + @".*$\r?\n?", "", RegexOptions.Multiline);

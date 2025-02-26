@@ -34,7 +34,7 @@ module rec TExpressionModule =
         interface IWithType
         interface IStorage
         interface IValue with
-            member x.Value with get() = x.Value and set v = x.Value <- v
+            member x.OValue with get() = x.OValue and set v = x.OValue <- v
 
         interface IExpression
 
@@ -53,9 +53,9 @@ module rec TExpressionModule =
         new () = ValueHolder(typeof<obj>, null)
         [<JsonIgnore>] member x.ValueType = x.ObjectHolder.Type
 
-        /// Holded value (ValueHolder.Value)
+        /// ValueHolder.OValue.  Holded value
         [<JsonIgnore>]
-        member x.Value
+        member x.OValue
             with get() = x.ObjectHolder.Value
             and set (v:obj) =
                 if x.ObjectHolder.Value <> v then
@@ -67,39 +67,45 @@ module rec TExpressionModule =
         [<JsonIgnore>] member x.Type = x.ObjectHolder.Type
 
 
-        /// NsJsonS11nSafeObject.Name with DD
+        /// ValueHolder.Name with DD
         [<JsonIgnore>]
         member x.Name
             with get() = x.DD.TryGet<string>("Name") |? null
             and set (v:string) = x.DD.Set<string>("Name", v)
 
 
+        /// ValueHolder.Address with DD
         [<JsonIgnore>]
         member x.Address
             with get() = x.DD.TryGet<string>("Address") |? null
             and set (v:string) = x.DD.Set<string>("Address", v)
 
+        /// ValueHolder.Comment with DD
         [<JsonIgnore>]
         member x.Comment
             with get() = x.DD.TryGet<string>("Comment") |? null
             and set (v:string) = x.DD.Set<string>("Comment", v)
 
+        /// ValueHolder.IsLiteral with DD
         [<JsonIgnore>]
         member x.IsLiteral
             with get() = x.DD.TryGet<bool>("IsLiteral") |? false
             and set (v:bool) = x.DD.Set<bool>("IsLiteral", v)
 
+        /// ValueHolder.IsMemberVariable with DD
         /// Timer/Counter 등의 member 변수.  DN,
         [<JsonIgnore>]
         member x.IsMemberVariable
             with get() = x.DD.TryGet<bool>("IsMemberVariable") |? false
             and set (v:bool) = x.DD.Set<bool>("IsMemberVariable", v)
 
+        /// ValueHolder.TagKind with DD
         [<JsonIgnore>]
         member x.TagKind
             with get() = x.DD.TryGet<int>("TagKind") |? 0
             and set (v:int) = x.DD.Set<int>("TagKind", v)
 
+        /// ValueHolder.DsSystem with DD
         [<JsonIgnore>]
         member x.DsSystem
             with get() = x.DD.TryGet<ISystem>("DsSystem") |? getNull<ISystem>()
@@ -116,9 +122,13 @@ module rec TExpressionModule =
         interface IStorage<'T>
 
         interface IValue<'T> with
-            member x.TValue with get() = x.TValue and set v = x.Value <- v
+            /// IValue<'T>.OValue interface 구현
+            member x.TValue with get() = x.TValue and set v = x.OValue <- v
+
+        /// TValue<'T>.TValue abstract member
         abstract member TValue: 'T with get, set
-        [<JsonIgnore>] default x.TValue with get() = x.Value :?> 'T and set v = x.Value <- v
+        /// TValue<'T>.TValue member
+        [<JsonIgnore>] default x.TValue with get() = x.OValue :?> 'T and set v = x.OValue <- v
 
 
 
@@ -142,15 +152,20 @@ module rec TExpressionModule =
         interface INonTerminal<'T>
 
         interface IExpression<'T> with
-            member x.Value with get() = x.Value and set v = x.Value <- v
-            member x.TValue with get() = x.TValue and set v = x.Value <- v
+            /// IExpression<'T>.OValue interface 구현 (@TFunction<'T>)
+            member x.OValue with get() = x.OValue and set v = x.OValue <- v
+            /// IExpression<'T>.TValue interface 구현 (@TFunction<'T>)
+            member x.TValue with get() = x.TValue and set v = x.OValue <- v
 
 
         [<DataMember>] member val Operator: Op = op with get, set
         [<DataMember>] member val Arguments: IExpression[] = args.ToArray() with get, set
 
-        [<JsonIgnore>] member x.Value = lazyValue.Value |> box
+        /// TFunction<'T>.OValue member
+        [<JsonIgnore>] member x.OValue = lazyValue.Value |> box
+        /// TFunction<'T>.TValue member
         [<JsonIgnore>] member x.TValue = lazyValue.Value
+
         member x.Invalidate() =
             lazyValue.Reset()
 

@@ -25,11 +25,11 @@ module Xml =
         member _.``Minimal`` () =
             // JSON -> XDoc (XML)
             let xdoc = JsonConvert.DeserializeXmlNode(json, "System", writeArrayAttribute=true)
-            DcClipboard.Write(xdoc.OuterXml)
+            writeClipboard(xdoc.OuterXml)
 
             // XML(XmlDoc) -> JSON
             let json2 = JsonConvert.SerializeXmlNode(xdoc, Newtonsoft.Json.Formatting.Indented, omitRootObject=true)
-            DcClipboard.Write(json2)
+            writeClipboard(json2)
             let system2 = DsSystem.FromJson(json2)
             //json === json2
             let json3 = system2.ToJson()

@@ -94,7 +94,7 @@ module DsJson =
         member _.``Minimal`` () =
             let xxx = createSystem()
             let jsonText = system.ToJson();
-            DcClipboard.Write(jsonText)
+            writeClipboard(jsonText)
 
             let xxx = jsonText.ZeroFillGuid()
             jsonText.ZeroFillGuid() === dsJson.ZeroFillGuid()
@@ -211,7 +211,7 @@ module DsJson =
         //    //let f1w1s1 = f1w1.AddVertex(new DsSafety("F1W1Saf1", [|"F2.W1.C999"; "F2.W1.C998"; |]))
         //    //f1w1.CreateEdge(f1w1s1, f1w1c1, CausalEdgeType.Start) |> verifyNonNull
         //    //let jsonText = system.ToJson()
-        //    //DcClipboard.Write(jsonText)
+        //    //writeClipboard(jsonText)
         //    ()
 
 

@@ -190,7 +190,7 @@ module rec TimerModule =
 
     let internal clearBool(b:TValue<bool>) =
         if b |> isItNull |> not then
-            b.Value <- false
+            b.OValue <- false
 
 
     type internal T =
@@ -223,7 +223,7 @@ module rec TimerModule =
             clearBool x.LD
 
             if x.ACC |> isItNull |> not then
-                x.ACC.Value <- 0u
+                x.ACC.OValue <- 0u
         /// XGK 에서 할당한 counter/timer 변수 이름 임시 저장 공간.  e.g "C0001"
         member x.XgkStructVariableName =
             let prefix = isTimer ?= ("T", "C")
@@ -279,7 +279,7 @@ module rec TimerModule =
         override x.ResetStruct() =
             base.ResetStruct()
             x.ClearBits()
-            x.ACC.Value <- 0u
+            x.ACC.OValue <- 0u
             // x.PRE.Value <- 0us       // preset 도 clear 해야 하는가?
             ()
 

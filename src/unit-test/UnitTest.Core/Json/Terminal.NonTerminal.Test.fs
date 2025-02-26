@@ -59,7 +59,7 @@ module TerminalTestModule =
             let json2 = EmJson.ToJson(hh0)
             json2 === jsonAnswer
 
-            (fun () -> pi.Value <- 123.0) |> ShouldFailWithSubstringT "ERROR: PI is CONSTANT.  It's read-only"
+            (fun () -> pi.OValue <- 123.0) |> ShouldFailWithSubstringT "ERROR: PI is CONSTANT.  It's read-only"
             noop()
 
 

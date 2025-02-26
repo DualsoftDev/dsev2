@@ -19,13 +19,13 @@ module private ExpressionHelperModule =
 
         xs
 
-    let evalArg (x:IExpression) = x.Value
+    let evalArg (x:IExpression) = x.OValue
     let castTo<'T> (x:obj) = x :?> 'T
     let evalTo<'T> (x:IExpression) = x |> evalArg |> castTo<'T>
 
     /// 모든 args 의 data type 이 동일한지 여부 반환
     let isAllExpressionSameType(args:Args) =
-        let types = args |> Seq.distinctBy(fun a -> a.Type) |> Seq.map(fun a -> a.Value, a.Type)
+        let types = args |> Seq.distinctBy(fun a -> a.Type) |> Seq.map(fun a -> a.OValue, a.Type)
         types|> Seq.length = 1
     let verifyAllExpressionSameType = isAllExpressionSameType >> verifyM "Type mismatch"
 
@@ -237,7 +237,7 @@ module ExpressionFunctionModule =
         let fEqual   (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Pairwise().All(fun (x, y) -> isEqual x y)
         let fNotEqual (args:Args): bool = not <| fEqual args
 
-        let private convertToDoublePair (args:Args) = args.ExpectGteN(2).Select(fun x -> x.Value |> toFloat64).Pairwise()
+        let private convertToDoublePair (args:Args) = args.ExpectGteN(2).Select(fun x -> x.OValue |> toFloat64).Pairwise()
         let fGt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x > y)
         let fLt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x < y)
         let fGte (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x >= y)
@@ -285,8 +285,8 @@ module ExpressionFunctionModule =
              L   | Int64        | int64
              UL  | UInt64       | uint64
         *)
-        let castArgs<'T>  (args:Args): 'T seq   = args.Select(fun x-> x.Value :?> 'T)
-        let castArg<'T>   (args:Args): 'T       = args.ExactlyOne().Value :?> 'T
+        let castArgs<'T>  (args:Args): 'T seq   = args.Select(fun x-> x.OValue :?> 'T)
+        let castArg<'T>   (args:Args): 'T       = args.ExactlyOne().OValue :?> 'T
         let shiftArgs<'T> (args:Args): 'T * int = args.ExpectTyped2<'T, int>()
 
 
@@ -544,7 +544,7 @@ module ExpressionFunctionModule =
         // tryGetLiteralValue helper
         let private tryGetLiteralValueT (expr:IExpression<'T>) : obj =
             if isLiteralizable expr then
-                expr.Value
+                expr.OValue
             else
                 null
 

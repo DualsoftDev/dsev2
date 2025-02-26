@@ -11,11 +11,12 @@ module InterfacesModule =
     type IWithType<'T> =
         inherit IWithType
 
-    /// Value 속성을 갖는 최상위 interface.  TValue<_> 및 TFunction<_> 포함
+    /// OValue (Object/Opaque type value) 속성을 갖는 최상위 interface.  TValue<_> 및 TFunction<_> 포함
     type IValue =
-        abstract member Value: obj with get, set
+        /// IValue.OValue : interface 선언
+        abstract member OValue: obj with get, set
 
-    /// TValue<_> 속성을 갖는 최상위 interface.  TValue<_> 및 TFunction<_> 포함
+    /// TValue<_> ('T Typed value) 속성을 갖는 최상위 interface.  TValue<_> 및 TFunction<_> 포함
     type IValue<'T> =
         inherit IValue
         abstract member TValue: 'T with get, set
@@ -53,14 +54,14 @@ module ReflectionInterfacesModule =
             and set (v:string) = setPropertyValueDynamically(x, "Name", v)
 
     type IValue with
-        /// IWithType.Type
-        member x.Value
-            with get() = getPropertyValueDynamically(x, "Value")
-            and set (v:obj) = setPropertyValueDynamically(x, "Value", v)
+        /// IValue.OValue
+        member x.OValue
+            with get() = getPropertyValueDynamically(x, "OValue")
+            and set (v:obj) = setPropertyValueDynamically(x, "OValue", v)
 
     type IValue<'T> with
-        /// IWithType.Type (no setter)
-        member x.TValue = getPropertyValueDynamically(x, "Value") :?> 'T
+        /// IValue<'T>.TValue (no setter)
+        member x.TValue = getPropertyValueDynamically(x, "TValue") :?> 'T
 
     type IWithAddress with
         /// IWithAddress.Address

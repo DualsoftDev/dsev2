@@ -120,13 +120,13 @@ module ExpressionTestModule =
             let args:Args = [t1 :> IExpression; t2; t3]
 
             let nt = TFunction<int>.Create(Op.PredefinedOperator "+", args)
-            nt.Value === 12
+            nt.OValue === 12
 
             // expression tree 상의 값 수정 해도, invalidate() 수행 전까지는 동일 cache 값 반환
-            t1.Value <- 5
-            nt.Value === 12
+            t1.OValue <- 5
+            nt.OValue === 12
             nt.Invalidate()
-            nt.Value === 14
+            nt.OValue === 14
 
 
 

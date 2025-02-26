@@ -153,11 +153,11 @@ module rec StatementModule =
         member x.Statement = match x with | CommentedStatement (_c, s) -> s
         member x.TargetName =
             match x.Statement with
-            | DuAssign (_, _expression, target) -> target.Name
-            | DuVarDecl (_expression,variable) -> variable.Name
-            | DuTimer (t:TimerStatement) -> t.Timer.Name
-            | DuCounter (c:CounterStatement) -> c.Counter.Name
-            | DuAction (a:ActionStatement) ->
+            | DuAssign  (_, _expression, target) -> target.Name
+            | DuVarDecl (_expression,variable)   -> variable.Name
+            | DuTimer   (t:TimerStatement)       -> t.Timer.Name
+            | DuCounter (c:CounterStatement)     -> c.Counter.Name
+            | DuAction  (a:ActionStatement)      ->
                 match a with
                 //| DuCopy (_condition:IExpression<bool>, _source:IExpression,target:IStorage)-> target.Name
                 | DuCopyUdt { Target = target } -> target
@@ -168,15 +168,15 @@ module rec StatementModule =
 
         member x.TargetValue =
             match x.Statement with
-            | DuAssign (_, _expression, target) -> target.Value
-            | DuVarDecl (_expression,variable) -> variable.Value
-            | DuTimer (t:TimerStatement) -> t.Timer.DN.Value
-            | DuCounter (c:CounterStatement) -> c.Counter.DN.Value
-            | DuAction (a:ActionStatement) ->
+            | DuAssign  (_, _expression, target) -> target.OValue
+            | DuVarDecl (_expression,variable)   -> variable.OValue
+            | DuTimer   (t:TimerStatement)       -> t.Timer.DN.OValue
+            | DuCounter (c:CounterStatement)     -> c.Counter.DN.OValue
+            | DuAction  (a:ActionStatement)      ->
                 match a with
                 //| DuCopy (_condition:IExpression<bool>, _source:IExpression,target:IStorage)-> target.BoxedValue
                 | DuCopyUdt _ -> failwith "ERROR: Invalid value reference"
-            | DuPLCFunction { OriginalExpression = exp } ->  exp.Value
+            | DuPLCFunction { OriginalExpression = exp } ->  exp.OValue
             | (DuUdtDecl _ | DuUdtDef _) -> failwith "Unsupported.  Should not be called for these statements"
             | (DuLambdaDecl _ | DuProcDecl _ | DuProcCall _) ->
                 failwith "ERROR: Not yet implemented"       // 추후 subroutine 사용시, 필요에 따라 세부 구현
@@ -187,7 +187,7 @@ module rec StatementModule =
     let copyUdt (storages:Storages) (decl:UdtDecl) (source:string) (target:string): unit =
         for m in decl.Members do
             let s, t = $"{source}.{m.Name}", $"{target}.{m.Name}"
-            storages[t].Value <- storages[s].Value
+            storages[t].OValue <- storages[s].OValue
 
     type IStatement with
         member x.Do() =
@@ -202,12 +202,12 @@ module rec StatementModule =
                                  | Some condi -> condi.TValue
 
                 if isEvaluate then
-                    target.Value <- expr.Value
+                    target.OValue <- expr.OValue
 
             | DuVarDecl (expr, target) ->
                 if target.Type <> expr.Type then
                     failwith $"ERROR: {target.Name} Type mismatch in assignment statement"
-                target.Value <- expr.Value
+                target.OValue <- expr.OValue
 
             | DuTimer timerStatement ->
                 for s in timerStatement.Timer.InputEvaluateStatements do

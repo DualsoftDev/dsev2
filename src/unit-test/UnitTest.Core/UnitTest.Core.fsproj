@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Test.Common.fs" />
 		<Compile Include="CommonTest\ResettableLazyTest.fs" />
 		<Compile Include="Expression\TestFixture.Expression.fs" />
 		<Compile Include="Expression\CounterTest.fs" />
@@ -16,7 +17,6 @@
 		<Compile Include="Expression\Express.Eval.Test.fs" />
 		<Compile Include="Json\ValueHolder.Test.fs" />
 		<Compile Include="Json\Terminal.NonTerminal.Test.fs" />
-		<Compile Include="Test.Common.fs" />
 		<Compile Include="AasCore3.0Test.fs" />
 		<Compile Include="DsJsonTest.fs" />
 		<Compile Include="DsXmlTest.fs" />

@@ -53,20 +53,20 @@ module CounterTestModule =
 
 
             for i in [1..50] do
-                condition.Value <- true
+                condition.OValue <- true
                 evaluateRungInputs ctu
                 ctu.ACC.TValue === uint32 i
-                condition.Value <- false
+                condition.OValue <- false
                 evaluateRungInputs ctu
                 ctu.DN.TValue === false
 
             ctu.ACC.TValue === 50u
             ctu.DN.TValue === false
             for i in [51..100] do
-                condition.Value <- true
+                condition.OValue <- true
                 evaluateRungInputs ctu
                 ctu.ACC.TValue === uint32 i
-                condition.Value <- false
+                condition.OValue <- false
                 evaluateRungInputs ctu
             ctu.ACC.TValue === 100u
             ctu.DN.TValue === true
