@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="CommonTest\ResettableLazyTest.fs" />
 		<Compile Include="Expression\TestFixture.Expression.fs" />
 		<Compile Include="Expression\CounterTest.fs" />
 		<Compile Include="Expression\TimerTest.fs" />
