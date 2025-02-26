@@ -188,6 +188,15 @@ module rec TimerModule =
         if b |> isItNull |> not then
             b.Value <- false
 
+
+    type internal T =
+        static member SysVarTag = int VariableTag.PcSysVariable
+        static member CreateMemberVariable<'T>(name:string, value:'T, ?tagKind:int) =
+            let v = TValue<'T>(value, Name=name, IsMemberVariable=true)
+            tagKind.Iter(fun tk -> v.TagKind <- tk)
+            v
+
+
     [<AbstractClass>]
     type TimerCounterBaseStruct (isTimer:bool, name, dn, pre, acc, res, sys) =
         inherit TValue<bool>(isTimer, Comment="Timer/Counter base")
@@ -218,9 +227,6 @@ module rec TimerModule =
 
         member val XgkStructVariableDevicePos = -1 with get, set
 
-    let createMemberVariable<'T>(name:string, value:'T) =
-        TValue<'T>(value, Name=name, IsMemberVariable=true)
-
     type TimerStruct private(typ:TimerType, name, en, tt, dn, pre, acc, res, sys) =
         inherit TimerCounterBaseStruct(true, name, dn, pre, acc, res, sys)
 
@@ -244,12 +250,12 @@ module rec TimerModule =
                 | [en; tt; dn; pre; acc; res] -> en, tt, dn, pre, acc, res
                 | _ -> failwith "Unexpected number of suffixes"
 
-            let en  = createMemberVariable<bool>($"{en }", false)
-            let tt  = createMemberVariable<bool>($"{tt }", false)
-            let dn  = createMemberVariable<bool>($"{dn }", false).Tee(fun v -> v.TagKind <- VariableTag.PcSysVariable|>int)
-            let pre = createMemberVariable<UInt32>(pre, preset)
-            let acc = createMemberVariable<UInt32>(acc, accum)
-            let res = createMemberVariable<bool>(res, false)
+            let en  = T.CreateMemberVariable<bool>($"{en }", false)
+            let tt  = T.CreateMemberVariable<bool>($"{tt }", false)
+            let dn  = T.CreateMemberVariable<bool>($"{dn }", false, T.SysVarTag)
+            let pre = T.CreateMemberVariable<UInt32>(pre, preset)
+            let acc = T.CreateMemberVariable<UInt32>(acc, accum)
+            let res = T.CreateMemberVariable<bool>(res, false)
 
             storages.Add(en.Name, en)
             storages.Add(tt.Name, tt)
