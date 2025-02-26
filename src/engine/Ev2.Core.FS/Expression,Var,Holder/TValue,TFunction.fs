@@ -1,14 +1,23 @@
 namespace Dual.Ev2
 
 open System
+open System.Runtime.Serialization
+open System.Reactive.Subjects
+
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
-open System.Runtime.Serialization
 open Dual.Common.Base.CS
+
 [<AutoOpen>]
 module rec TExpressionModule =
+
+    /// 값 변경 공지
+    let ValueChangedSubject = new Subject<IValue * obj>()
+
+
     [<Obsolete("중복: 제거 요망")>]
     // 임시... 원본: Interface.fs@Engine.Core
     type ISystem = interface end
@@ -44,14 +53,16 @@ module rec TExpressionModule =
         new () = ValueHolder(typeof<obj>, null)
         [<JsonIgnore>] member x.ValueType = x.ObjectHolder.Type
 
-        /// Holded value
+        /// Holded value (ValueHolder.Value)
         [<JsonIgnore>]
         member x.Value
             with get() = x.ObjectHolder.Value
             and set (v:obj) =
-                if x.IsLiteral then
-                    failwith $"ERROR: {x.Name} is CONSTANT.  It's read-only"
-                x.ObjectHolder.Value <- v
+                if x.ObjectHolder.Value <> v then
+                    if x.IsLiteral then
+                        failwith $"ERROR: {x.Name} is CONSTANT.  It's read-only"
+                    x.ObjectHolder.Value <- v
+                    ValueChangedSubject.OnNext(x, v)
 
         [<JsonIgnore>] member x.Type = x.ObjectHolder.Type
 

@@ -1,18 +1,14 @@
-module CounterTestModule
+namespace T
 
-
-open Dual.Common.UnitTest.FS
 
 open NUnit.Framework
+
+open Dual.Common.UnitTest.FS
 open Dual.Ev2
-open System
-open T
-open Dual.Common.Core.FS
 
 
 
-//[<AutoOpen>]
-//module CounterTestModule =
+module CounterTestModule =
 
     type CounterTest() =
         //inherit ExpressionTestBaseClass()
@@ -32,11 +28,11 @@ open Dual.Common.Core.FS
             let condition = TValue<bool>(false, Comment="my_counter_control_tag", Address="%M1.1")
             let tcParam = {Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTU"}
             let ctu = (CounterStatement.CreateAbCTU tcParam) ExpressionFixtures.runtimeTarget |> toCounter
-            ctu.OV.Value === false
-            ctu.UN.Value === false
-            ctu.DN.Value === false
-            ctu.PRE.Value === 100u
-            ctu.ACC.Value === 0u
+            ctu.OV .TValue === false
+            ctu.UN .TValue === false
+            ctu.DN .TValue === false
+            ctu.PRE.TValue === 100u
+            ctu.ACC.TValue === 0u
 
 
             (* Counter struct 의 내부 tag 들이 생성되고, 등록되었는지 확인 *)
@@ -59,39 +55,39 @@ open Dual.Common.Core.FS
             for i in [1..50] do
                 condition.Value <- true
                 evaluateRungInputs ctu
-                ctu.ACC.Value === uint32 i
+                ctu.ACC.TValue === uint32 i
                 condition.Value <- false
                 evaluateRungInputs ctu
-                ctu.DN.Value === false
+                ctu.DN.TValue === false
 
-            ctu.ACC.Value === 50u
-            ctu.DN.Value === false
+            ctu.ACC.TValue === 50u
+            ctu.DN.TValue === false
             for i in [51..100] do
                 condition.Value <- true
                 evaluateRungInputs ctu
-                ctu.ACC.Value === uint32 i
+                ctu.ACC.TValue === uint32 i
                 condition.Value <- false
                 evaluateRungInputs ctu
-            ctu.ACC.Value === 100u
-            ctu.DN.Value === true
+            ctu.ACC.TValue === 100u
+            ctu.DN.TValue === true
 
         [<Test>]
         member __.``CTUD creation test`` () =
             use _ = setRuntimeTarget AB
             let storages = Storages()
 
-            let upCondition = TValue<bool>(false, Comment="my_counter_up_tag", Address="%M1.1")
-            let downCondition = TValue<bool>(false, Comment="my_counter_down_tag", Address="%M1.1")
+            let upCondition    = TValue<bool>(false, Comment="my_counter_up_tag",    Address="%M1.1")
+            let downCondition  = TValue<bool>(false, Comment="my_counter_down_tag",  Address="%M1.1")
             let resetCondition = TValue<bool>(false, Comment="my_counter_reset_tag", Address="%M1.1")
 
 
             let tcParam = {Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=upCondition; FunctionName="createWinCTUD"}
             let ctu = CounterStatement.CreateAbCTUD(tcParam, downCondition, resetCondition) ExpressionFixtures.runtimeTarget|> toCounter
-            ctu.OV.Value === false
-            ctu.UN.Value === false
-            ctu.DN.Value === false
-            ctu.PRE.Value === 100u
-            ctu.ACC.Value === 0u
+            ctu.OV .TValue === false
+            ctu.UN .TValue === false
+            ctu.DN .TValue === false
+            ctu.PRE.TValue === 100u
+            ctu.ACC.TValue === 0u
 
 
             (* Counter struct 의 내부 tag 들이 생성되고, 등록되었는지 확인 *)
@@ -119,9 +115,9 @@ open Dual.Common.Core.FS
             let reset = TValue<bool>(false, Comment="my_counter_reset_tag", Address="%M1.1")
             let tcParam = {Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTU"}
             let ctu = CounterStatement.CreateCTU(tcParam, reset) ExpressionFixtures.runtimeTarget|> toCounter
-            ctu.OV.TValue === false
-            ctu.UN.TValue === false
-            ctu.DN.TValue === false
+            ctu.OV .TValue === false
+            ctu.UN .TValue === false
+            ctu.DN .TValue === false
             ctu.RES.TValue === false
             ctu.PRE.TValue === 100u
             ctu.ACC.TValue === 0u
@@ -141,9 +137,9 @@ open Dual.Common.Core.FS
             // counter reset
             reset.TValue <- true
             evaluateRungInputs ctu
-            ctu.OV.TValue === false
-            ctu.UN.TValue === false
-            ctu.DN.TValue === false
+            ctu.OV .TValue === false
+            ctu.UN .TValue === false
+            ctu.DN .TValue === false
             ctu.RES.TValue === true
             ctu.PRE.TValue === 100u
             ctu.ACC.TValue === 0u
@@ -157,9 +153,9 @@ open Dual.Common.Core.FS
             let reset = TValue<bool>(false, Comment="my_counter_reset_tag", Address="%M1.1")
             let tcParam = {Storages=storages; Name="myCTR"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTR"}
             let ctr = CounterStatement.CreateXgiCTR(tcParam, reset) ExpressionFixtures.runtimeTarget |> toCounter
-            ctr.OV.TValue === false
-            ctr.UN.TValue === false
-            ctr.DN.TValue === false
+            ctr.OV .TValue === false
+            ctr.UN .TValue === false
+            ctr.DN .TValue === false
             ctr.RES.TValue === false
             ctr.PRE.TValue === 100u
             ctr.ACC.TValue === 0u
@@ -205,9 +201,9 @@ open Dual.Common.Core.FS
             // force counter reset
             reset.TValue <- true
             evaluateRungInputs ctr
-            ctr.OV.TValue === false
-            ctr.UN.TValue === false
-            ctr.DN.TValue === false
+            ctr.OV .TValue === false
+            ctr.UN .TValue === false
+            ctr.DN .TValue === false
             ctr.RES.TValue === true
             ctr.PRE.TValue === 100u
             ctr.ACC.TValue === 0u

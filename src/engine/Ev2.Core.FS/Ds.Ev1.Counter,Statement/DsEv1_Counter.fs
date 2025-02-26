@@ -69,38 +69,38 @@ module CounterModule =
 
         match target, typ with
         | (WINDOWS | XGI| XGK), CTU ->
-            cu  <- T.CreateMemberVariable<bool>(     $"{name}.CU",  false)  // Count up enable bit
-            res <- T.CreateMemberVariable<bool>(     $"{name}.R",   false)
-            pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PV",  preset)
-            dn  <- T.CreateMemberVariable<bool>(     dnName,        false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>(   $"{name}.CV",  accum)
+            cu  <- T.CreateMemberVariable<bool>  (  $"{name}.CU",  false)  // Count up enable bit
+            res <- T.CreateMemberVariable<bool>  (  $"{name}.R",   false)
+            pre <- T.CreateMemberVariable<UInt32>(  $"{name}.PV",  preset)
+            dn  <- T.CreateMemberVariable<bool>  (  dnName,        false, T.SysVarTag) // Done
+            acc <- T.CreateMemberVariable<UInt32>(  $"{name}.CV",  accum)
             add [cu; res; pre; dn; acc]
 
         | (WINDOWS | XGI| XGK), CTD ->
             ()
-            cd  <- T.CreateMemberVariable<bool>(     $"{name}.CD", false)   // Count down enable bit
-            ld  <- T.CreateMemberVariable<bool>(     $"{name}.LD", false)   // Load
-            pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PV", preset)
-            dn  <- T.CreateMemberVariable<bool>(     dnName,       false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>(   $"{name}.CV", accum)
+            cd  <- T.CreateMemberVariable<bool>  (  $"{name}.CD", false)   // Count down enable bit
+            ld  <- T.CreateMemberVariable<bool>  (  $"{name}.LD", false)   // Load
+            pre <- T.CreateMemberVariable<UInt32>(  $"{name}.PV", preset)
+            dn  <- T.CreateMemberVariable<bool>  (  dnName,       false, T.SysVarTag) // Done
+            acc <- T.CreateMemberVariable<UInt32>(  $"{name}.CV", accum)
             add [cd; res; ld; pre; dn; acc]
 
         | (WINDOWS | XGI| XGK), CTUD ->
-            cu  <- T.CreateMemberVariable<bool>(     $"{name}.CU", false)  // Count up enable bit
-            cd  <- T.CreateMemberVariable<bool>(     $"{name}.CD", false)  // Count down enable bit
-            res <- T.CreateMemberVariable<bool>(     $"{name}.R" , false)
-            ld  <- T.CreateMemberVariable<bool>(     $"{name}.LD", false)  // Load
-            pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PV", preset)
-            dn  <- T.CreateMemberVariable<bool>(     dnName,       false, T.SysVarTag) // Done
+            cu  <- T.CreateMemberVariable<bool>    ( $"{name}.CU", false)  // Count up enable bit
+            cd  <- T.CreateMemberVariable<bool>    ( $"{name}.CD", false)  // Count down enable bit
+            res <- T.CreateMemberVariable<bool>    ( $"{name}.R" , false)
+            ld  <- T.CreateMemberVariable<bool>    ( $"{name}.LD", false)  // Load
+            pre <- T.CreateMemberVariable<UInt32>  ( $"{name}.PV", preset)
+            dn  <- T.CreateMemberVariable<bool>    ( dnName,       false, T.SysVarTag) // Done
             dnDown  <- T.CreateMemberVariable<bool>( $"{name}.QD", false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>(   $"{name}.CV", accum)
+            acc <- T.CreateMemberVariable<UInt32>  ( $"{name}.CV", accum)
             add [cu; cd; res; ld; pre; dn; dnDown; acc]
 
         | (WINDOWS | XGI| XGK), CTR ->
-            cd  <- T.CreateMemberVariable<bool>(     $"{name}.CD",  false)   // Count down enable bit
+            cd  <- T.CreateMemberVariable<bool>  (   $"{name}.CD",  false)   // Count down enable bit
             pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PV",  preset)
-            res <- T.CreateMemberVariable<bool>(     $"{name}.RST", false)
-            dn  <- T.CreateMemberVariable<bool>(     dnName,        false, T.SysVarTag) // Done
+            res <- T.CreateMemberVariable<bool>  (   $"{name}.RST", false)
+            dn  <- T.CreateMemberVariable<bool>  (   dnName,        false, T.SysVarTag) // Done
             acc <- T.CreateMemberVariable<UInt32>(   $"{name}.CV",  accum)
             add [cd; pre; res; dn; acc]
 
@@ -118,26 +118,26 @@ module CounterModule =
                 add [cu; cd]
 
 
-            ov  <- T.CreateMemberVariable<bool>(     $"{name}.OV", false)   // Overflow
-            un  <- T.CreateMemberVariable<bool>(     $"{name}.UN", false)   // Underflow
-            ld  <- T.CreateMemberVariable<bool>(     $"{name}.LD", false)   // XGI: Load
-            dn  <- T.CreateMemberVariable<bool>(     $"{name}.DN", false, T.SysVarTag) // Done
+            ov  <- T.CreateMemberVariable<bool>  (   $"{name}.OV", false)   // Overflow
+            un  <- T.CreateMemberVariable<bool>  (   $"{name}.UN", false)   // Underflow
+            ld  <- T.CreateMemberVariable<bool>  (   $"{name}.LD", false)   // XGI: Load
+            dn  <- T.CreateMemberVariable<bool>  (   $"{name}.DN", false, T.SysVarTag) // Done
             pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PRE", preset)
             acc <- T.CreateMemberVariable<UInt32>(   $"{name}.ACC", accum)
-            res <- T.CreateMemberVariable<bool>(     $"{name}.RES", false)
+            res <- T.CreateMemberVariable<bool>  (   $"{name}.RES", false)
             add [ov; un; dn; pre; acc; res;]
 
         (* 내부 structure 가 AB 기반이므로, 메모리 자체는 생성하되, storage 에 등록하지는 않는다. *)
         if isItNull(ov) then
-            ov  <- T.CreateMemberVariable<bool>(     $"{name}.OV", false)
+            ov  <- T.CreateMemberVariable<bool>  (   $"{name}.OV", false)
         if isItNull(un) then
-            un  <- T.CreateMemberVariable<bool>(     $"{name}.UN", false)
+            un  <- T.CreateMemberVariable<bool>  (   $"{name}.UN", false)
         if isItNull(cu) then
-            cu  <- T.CreateMemberVariable<bool>(     $"{name}.CU", false)
+            cu  <- T.CreateMemberVariable<bool>  (   $"{name}.CU", false)
         if isItNull(cd) then
-            cd  <- T.CreateMemberVariable<bool>(     $"{name}.CD", false)
+            cd  <- T.CreateMemberVariable<bool>  (   $"{name}.CD", false)
         if isItNull(cd) then
-            res  <- T.CreateMemberVariable<bool>(    $"{name}.RES", false)
+            res  <- T.CreateMemberVariable<bool> (   $"{name}.RES", false)
 
         {
             Type        = typ
