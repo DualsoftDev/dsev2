@@ -9,13 +9,8 @@ open Dual.Common.Base.FS
 
 
 
-
-
-
-
-
 [<AutoOpen>]
-module rec CounterModule =
+module CounterModule =
     type CounterType =
         /// UP Counter
         CTU
@@ -329,7 +324,9 @@ module rec CounterModule =
                     d.Dispose()
                 disposables.Clear()
 
-    [<Obsolete("코멘트 제거")>]
+
+
+
     type Counter internal(typ:CounterType, counterStruct:CounterBaseStruct) =
 
         let accumulator = new CountAccumulator(typ, counterStruct)
@@ -354,11 +351,16 @@ module rec CounterModule =
         /// Reset
         member _.RES = counterStruct.RES
 
-        // todo : remove comment
-
-        //member val InputEvaluateStatements:Statement list = [] with get, set
+        member val InputEvaluateStatements:IStatement list = [] with get, set
 
 
         interface IDisposable with
             member this.Dispose() = (accumulator :> IDisposable).Dispose()
+
+
+
+
+
+
+
 

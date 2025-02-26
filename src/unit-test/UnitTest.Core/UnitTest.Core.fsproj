@@ -9,6 +9,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Expression\TestFixture.Expression.fs" />
+		<Compile Include="Expression\CounterTest.fs" />
+		<Compile Include="Expression\TimerTest.fs" />
 		<Compile Include="Expression\Express.Eval.Test.fs" />
 		<Compile Include="Json\ValueHolder.Test.fs" />
 		<Compile Include="Json\Terminal.NonTerminal.Test.fs" />

@@ -63,13 +63,6 @@ module rec TimerModule =
     /// Timer / Counter 의 number data type
     type CountUnitType = uint32
 
-    //제어 HW CPU 기기 타입
-    type PlatformTarget =
-        | WINDOWS
-        | XGI
-        | XGK
-        | AB
-        | MELSEC
 
     let xgkTimerCounterContactMarking = "$ON"
     let [<Literal>] MinTickInterval = 10u    //<ms>
@@ -279,7 +272,10 @@ module rec TimerModule =
             // x.PRE.Value <- 0us       // preset 도 clear 해야 하는가?
             ()
 
-    [<Obsolete("코멘트 제거")>]
+
+    type IStatement = interface end
+
+
     type Timer internal(typ:TimerType, timerStruct:TimerStruct) =
 
         let accumulator = new TickAccumulator(typ, timerStruct)
@@ -296,15 +292,14 @@ module rec TimerModule =
 
         // todo : uncomment
 
-        /////// XGK 에서는 사용하는 timer 의 timer resolution 을 곱해서 실제 preset 값을 계산해야 한다.
-        ////member val XgkTimerResolution = 1.0 with get, set
-        /////// XGK 에서 사전 설정된 timer resolution 을 고려해서 실제 preset 값을 계산
-        ////member x.CalculateXgkTimerPreset() = int ( (float timerStruct.PRE.Value) / x.XgkTimerResolution)
+        ///// XGK 에서는 사용하는 timer 의 timer resolution 을 곱해서 실제 preset 값을 계산해야 한다.
+        //member val XgkTimerResolution = 1.0 with get, set
+        ///// XGK 에서 사전 설정된 timer resolution 을 고려해서 실제 preset 값을 계산
+        //member x.CalculateXgkTimerPreset() = int ( (float timerStruct.PRE.Value) / x.XgkTimerResolution)
 
-        //member val InputEvaluateStatements:Statement list = [] with get, set
-        //interface IDisposable with
-        //    member _.Dispose() = (accumulator :> IDisposable).Dispose()
-
+        member val InputEvaluateStatements:IStatement list = [] with get, set
+        interface IDisposable with
+            member _.Dispose() = (accumulator :> IDisposable).Dispose()
 
 
 

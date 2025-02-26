@@ -19,13 +19,13 @@ module private ExpressionHelperModule =
 
         xs
 
-    let evalArg (x:IExpression) = x.BoxedEvaluatedValue
+    let evalArg (x:IExpression) = x.Value
     let castTo<'T> (x:obj) = x :?> 'T
     let evalTo<'T> (x:IExpression) = x |> evalArg |> castTo<'T>
 
     /// 모든 args 의 data type 이 동일한지 여부 반환
     let isAllExpressionSameType(args:Args) =
-        let types = args |> Seq.distinctBy(fun a -> a.DataType) |> Seq.map(fun a ->a.BoxedEvaluatedValue, a.DataType)
+        let types = args |> Seq.distinctBy(fun a -> a.Type) |> Seq.map(fun a -> a.Value, a.Type)
         types|> Seq.length = 1
     let verifyAllExpressionSameType = isAllExpressionSameType >> verifyM "Type mismatch"
 
@@ -132,7 +132,6 @@ module ExpressionFunctionModule =
     let private boxF<'T> (f:TEvaluator<'T>) : Evaluator = fun (args:Args) -> f args |> box
 
     /// Create (known) function
-    [<Obsolete("Todo: Uncomment")>]
     let cf<'T> (funName:string) : Evaluator =
         predefinedFunctionNames.Contains(funName) |> verifyM $"Undefined function: {funName}"
 
@@ -193,25 +192,32 @@ module ExpressionFunctionModule =
         | "tan" -> boxF fTan
         | "abs" -> boxF fAbs
 
-        //// todo : uncomment
 
-        //(* Timer/Counter
-        //  - 실제로 function/expression 은 아니지만, parsing 편의를 고려해 function 처럼 취급.
-        //  - evaluate 등은 수행해서는 안된다.
-        //*)
-        //| (   "createXgiCTU" | "createXgiCTD" | "createXgiCTUD" | "createXgiCTR"
-        //    | "createXgkCTU" | "createXgkCTD" | "createXgkCTUD" | "createXgkCTR"
-        //    | "createWinCTU" | "createWinCTD" | "createWinCTUD" | "createWinCTR"
-        //    | "createAbCTU"  | "createAbCTD"  | "createAbCTUD"  | "createAbCTR" ) ->
-        //        TExpression<Counter>.Create(funName, args, NullFunction<Counter>)
-        //        //DuFunction { FunctionBody=NullFunction<Counter>; Name=funName; Arguments=args; LambdaDecl=None; LambdaApplication=None }
-        //| (   "createXgiTON" | "createXgiTOF" | "createXgiCRTO"
-        //    | "createXgkTON" | "createXgkTOF" | "createXgkCRTO"
-        //    | "createWinTON" | "createWinTOF" | "createWinCRTO"
-        //    | "createAbTON"  | "createAbTOF"  | "createAbCRTO") ->
-        //        DuFunction { FunctionBody=NullFunction<Timer>; Name=funName; Arguments=args; LambdaDecl=None; LambdaApplication=None }
-        //| "createTag" ->
-        //        DuFunction { FunctionBody=NullFunction<ITag>; Name=funName; Arguments=args; LambdaDecl=None; LambdaApplication=None }
+        (* Timer/Counter
+          - 실제로 function/expression 은 아니지만, parsing 편의를 고려해 function 처럼 취급.
+          - evaluate 등은 수행해서는 안된다.
+        *)
+
+        //| StartsWith "create" ->
+        //    match funName with
+        //    | (   "createXgiCTU" | "createXgiCTD" | "createXgiCTUD" | "createXgiCTR"
+        //        | "createXgkCTU" | "createXgkCTD" | "createXgkCTUD" | "createXgkCTR"
+        //        | "createWinCTU" | "createWinCTD" | "createWinCTUD" | "createWinCTR"
+        //        | "createAbCTU"  | "createAbCTD"  | "createAbCTUD"  | "createAbCTR" ) ->
+        //            //DuFunction { FunctionBody=NullFunction<Counter>; Name=funName; Arguments=args; LambdaDecl=None; LambdaApplication=None }
+        //            failwith $"NOT supported on EV2: {funName}"
+        //    | (   "createXgiTON" | "createXgiTOF" | "createXgiCRTO"
+        //        | "createXgkTON" | "createXgkTOF" | "createXgkCRTO"
+        //        | "createWinTON" | "createWinTOF" | "createWinCRTO"
+        //        | "createAbTON"  | "createAbTOF"  | "createAbCRTO") ->
+        //            //DuFunction { FunctionBody=NullFunction<Timer>; Name=funName; Arguments=args; LambdaDecl=None; LambdaApplication=None }
+        //            failwith $"NOT supported on EV2: {funName}"
+        //    | "createTag" ->
+        //            //DuFunction { FunctionBody=NullFunction<ITag>; Name=funName; Arguments=args; LambdaDecl=None; LambdaApplication=None }
+        //            failwith $"NOT supported on EV2: {funName}"
+        //    | _ ->
+        //        failwith $"NOT supported on EV2: {funName}"
+
 
         | _ -> failwith $"NOT yet: {funName}"
 
@@ -231,7 +237,7 @@ module ExpressionFunctionModule =
         let fEqual   (args:Args): bool = args.ExpectGteN(2).Select(evalArg).Pairwise().All(fun (x, y) -> isEqual x y)
         let fNotEqual (args:Args): bool = not <| fEqual args
 
-        let private convertToDoublePair (args:Args) = args.ExpectGteN(2).Select(fun x -> x.BoxedEvaluatedValue |> toFloat64).Pairwise()
+        let private convertToDoublePair (args:Args) = args.ExpectGteN(2).Select(fun x -> x.Value |> toFloat64).Pairwise()
         let fGt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x > y)
         let fLt  (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x < y)
         let fGte (args:Args): bool = convertToDoublePair(args).All(fun (x, y) -> x >= y)
@@ -279,8 +285,8 @@ module ExpressionFunctionModule =
              L   | Int64        | int64
              UL  | UInt64       | uint64
         *)
-        let castArgs<'T>  (args:Args): 'T seq   = args.Select(fun x-> x.BoxedEvaluatedValue :?> 'T)
-        let castArg<'T>   (args:Args): 'T       = args.ExactlyOne().BoxedEvaluatedValue :?> 'T
+        let castArgs<'T>  (args:Args): 'T seq   = args.Select(fun x-> x.Value :?> 'T)
+        let castArg<'T>   (args:Args): 'T       = args.ExactlyOne().Value :?> 'T
         let shiftArgs<'T> (args:Args): 'T * int = args.ExpectTyped2<'T, int>()
 
 
@@ -436,6 +442,7 @@ module ExpressionFunctionModule =
                     | FLOAT32 -> box (toFloat32 <| trigono(toFloat64 x))
                     | FLOAT64 -> box (trigono(toFloat64 x))
                     | _ -> failwith "ERROR"
+                | _ -> failwith $"ERROR: Unknown operator {op}"
 
                 |> fun v ->
                     if t.Name = OBJECT then
@@ -537,7 +544,7 @@ module ExpressionFunctionModule =
         // tryGetLiteralValue helper
         let private tryGetLiteralValueT (expr:IExpression<'T>) : obj =
             if isLiteralizable expr then
-                expr.Evaluate() |> box
+                expr.Value
             else
                 null
 
