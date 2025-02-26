@@ -46,14 +46,14 @@ module CpusEvent =  // from DsEvent.fs
     // Subjects to broadcast status and value changes.
     let StatusSubject = new Subject<VertexStatusParam>()
     /// Represents (system, storage, value)
-    let ValueSubject  = new Subject<ISystem * IStorage * obj>()
+    let ValueSubject  = new Subject<ISystem * IValue * obj>()
 
     // Notifies subscribers about a status change.
     let onStatusChanged(sys: ISystem, vertex: IVertex, status: Status4) =
         StatusSubject.OnNext(EventCPU (sys, vertex, status))
 
     // Notifies subscribers about a value change.
-    let onValueChanged(sys: ISystem, stg: IStorage, value: obj) =
+    let onValueChanged(sys: ISystem, stg: IValue, value: obj) =
         ValueSubject.OnNext(sys, stg, value)
 
     let mutable private initialized = false
@@ -62,7 +62,7 @@ module CpusEvent =  // from DsEvent.fs
             initialized <- true
             ValueChangedSubject.Subscribe(
                 let system = getNull<ISystem>()
-                fun (stg, value) -> onValueChanged(system, box stg :?> IStorage, value))
+                fun (stg, value) -> onValueChanged(system, stg, value))
             |> ignore
     do
         initialize()

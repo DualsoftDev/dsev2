@@ -11,9 +11,11 @@ module InterfacesModule =
     type IWithType<'T> =
         inherit IWithType
 
+    /// Value 속성을 갖는 최상위 interface.  TValue<_> 및 TFunction<_> 포함
     type IValue =
         abstract member Value: obj with get, set
 
+    /// TValue<_> 속성을 갖는 최상위 interface.  TValue<_> 및 TFunction<_> 포함
     type IValue<'T> =
         inherit IValue
         abstract member TValue: 'T with get, set
@@ -30,6 +32,10 @@ module InterfacesModule =
 
     type IStorage =
         inherit IExpression
+
+    type IStorage<'T> =
+        inherit IExpression<'T>
+
     //type ISystem  = interface end
 
 

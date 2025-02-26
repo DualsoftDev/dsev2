@@ -113,6 +113,7 @@ module rec TExpressionModule =
         interface ITerminal<'T>
         interface IWithType<'T>
         interface IExpression<'T>
+        interface IStorage<'T>
 
         interface IValue<'T> with
             member x.TValue with get() = x.TValue and set v = x.Value <- v
