@@ -188,7 +188,6 @@ module CounterModule =
             base.ResetStruct()
             [x.OV; x.UN; x.CU; x.CD;].Iter clearBool
 
-
     type ICounter = interface end
 
     type ICTU =
@@ -268,91 +267,107 @@ module CounterModule =
             storages.Add(name, cs)
             cs
 
-    type internal CountAccumulator(counterType:CounterType, counterStruct:CounterBaseStruct, dsRte:DsRuntimeEnvironment)=
+
+
+    type internal CountAccumulator(counterType: CounterType, counterStruct: CounterBaseStruct, dsRte: DsRuntimeEnvironment) =
+        /// CompositeDisposable을 사용하여 구독한 이벤트를 관리
         let disposables = new CompositeDisposable()
-
         let cs = counterStruct
-        let system = (counterStruct:>ValueHolder).DsSystem
-        let registerLoad() =
-            let csd = box cs :?> ICTD       // CTD or CTUD 둘다 적용
-            dsRte.ValueChangedSubject
-                .Where(fun (storage, _value) -> storage.DsSystem = system)
-                .Where(fun (storage, _newValue) -> storage = csd.LD && csd.LD.TValue)
-                .Subscribe(fun (_storage, _newValue) ->
-                    cs.ACC.TValue <- cs.PRE.TValue
-            ) |> disposables.Add
+        let system = counterStruct.DsSystem
 
-        let registerCTU() =
-            let csu = box cs :?> ICTU
-            dsRte.ValueChangedSubject
-                .Where(fun (storage, _value) -> storage.DsSystem = system)
-                .Where(fun (storage, _newValue) -> storage = csu.CU && csu.CU.TValue)
-                .Subscribe(fun (_storage, _newValue) ->
-                    if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
-                    cs.ACC.TValue <- cs.ACC.TValue + 1u
-                    if cs.ACC.TValue >= cs.PRE.TValue then
-                        debugfn "Counter accumulator value reached"
-                        cs.DN.TValue <- true
-            ) |> disposables.Add
-        let registerCTD() =
-            let csd = box cs :?> ICTD
-            registerLoad()
-            dsRte.ValueChangedSubject
-                .Where(fun (storage, _value) -> storage.DsSystem = system)
-                .Where(fun (storage, _newValue) -> storage = csd.CD && csd.CD.TValue)
-                .Subscribe(fun (_storage, _newValue) ->
-                    if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
-                    cs.ACC.TValue <- cs.ACC.TValue - 1u
-                    if cs.ACC.TValue <= cs.PRE.TValue then
-                        debugfn "Counter accumulator value reached"
-                        cs.DN.TValue <- true
-            ) |> disposables.Add
+        /// ACC 및 PRE 값이 0 이상인지 확인하는 함수
+        let validateAccPre (): unit =
+            if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
 
-        let registerCTR() =
-            let csr = box cs :?> ICTR
+        /// ACC 값을 변경하고 특정 조건이 충족되면 추가 동작을 수행하는 함수
+        /// - updateFn: ACC 값을 변경하는 함수
+        /// - comparisonFn: 현재 ACC 값과 PRE 값 비교 함수 (>=, <= 등)
+        /// - onLimitReached: ACC 값이 특정 조건을 충족했을 때 실행할 함수
+        let updateAccAndCheckLimit (updateFn: unit -> unit) (comparisonFn: uint32 -> uint32 -> bool) (onLimitReached: unit -> unit): unit =
+            validateAccPre()
+            updateFn ()
+            if comparisonFn cs.ACC.TValue cs.PRE.TValue then
+                debugfn "Counter accumulator value reached"
+                onLimitReached()
+
+        /// 특정 값이 변경될 때 특정 동작을 실행하는 구독 함수
+        /// - storage: 감지할 값 (DsStorage)
+        /// - condition: 조건을 검사하는 함수
+        /// - action: 조건이 충족되었을 때 실행할 함수
+        let subscribeToChange (storage:IStorage) (condition: unit -> bool) (action: unit -> unit): unit =
             dsRte.ValueChangedSubject
-                .Where(fun (storage, _value) -> storage.DsSystem = system)
-                .Where(fun (storage, _newValue) -> storage = csr.CD && csr.CD.TValue)
-                .Subscribe(fun (_storage, _newValue) ->
-                    if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
-                    cs.ACC.TValue <- cs.ACC.TValue + 1u
+                .Where(fun (s, _) -> s.DsSystem = system)
+                .Where(fun (s, _) -> s = storage && condition())
+                .Subscribe(fun (_, _) -> action ())
+            |> disposables.Add
+
+        /// CTD 구조체의 LD(Load) 신호가 True일 때 ACC를 PRE 값으로 설정
+        let registerLoad (csd: ICTD): unit =
+            let condition = fun () -> csd.LD.TValue
+            let action = fun () -> cs.ACC.TValue <- cs.PRE.TValue
+            subscribeToChange csd.LD condition action
+
+        /// CTU(Count Up) 타입의 카운터 증가를 등록
+        let registerCTU (csu: ICTU): unit =
+            let condition = fun () -> csu.CU.TValue
+            let action =
+                let update = fun () -> cs.ACC.TValue <- cs.ACC.TValue + 1u
+                let onLimitReached = fun () -> cs.DN.TValue <- true
+                fun () -> updateAccAndCheckLimit update (>=) onLimitReached
+            subscribeToChange csu.CU condition action
+
+        /// CTD(Count Down) 타입의 카운터 감소를 등록
+        let registerCTD (csd: ICTD): unit =
+            registerLoad csd
+            let condition = fun () -> csd.CD.TValue
+            let action =
+                let update = fun () -> if cs.ACC.TValue > 0u then cs.ACC.TValue <- cs.ACC.TValue - 1u
+                let onLimitReached = fun () -> cs.DN.TValue <- true
+                fun () -> updateAccAndCheckLimit update (<=) onLimitReached
+            subscribeToChange csd.CD condition action
+
+        /// CTR(Count Reset) 타입의 카운터 동작을 등록
+        let registerCTR (csr: ICTR): unit =
+            let condition = fun () -> csr.CD.TValue
+            let action =
+                let update = fun () -> cs.ACC.TValue <- cs.ACC.TValue + 1u
+                let onLimitReached = fun () ->
                     if cs.ACC.TValue = cs.PRE.TValue then
                         debugfn "Counter accumulator value reached"
                         cs.DN.TValue <- true
-                    if cs.ACC.TValue > cs.PRE.TValue then
+                    elif cs.ACC.TValue > cs.PRE.TValue then
                         cs.ACC.TValue <- 1u
                         cs.DN.TValue <- false
-            ) |> disposables.Add
+                fun () -> updateAccAndCheckLimit update (>=) onLimitReached
+            subscribeToChange csr.CD condition action
 
 
-        let registerReset() =
-            dsRte.ValueChangedSubject
-                .Where(fun (storage, _value) -> storage.DsSystem = counterStruct.DsSystem)
-                .Where(fun (storage, _newValue) -> storage = cs.RES && cs.RES.TValue)
-                .Subscribe(fun (_storage, _newValue) ->
-                    debugfn "Counter reset requested"
-                    if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then
-                        failwithlog "ERROR"
-                    cs.ACC.TValue <- 0u
-                    [cs.DN; cs.CU; cs.CD; cs.OV; cs.UN;].Iter clearBool
-            ) |> disposables.Add
+        /// Reset 신호를 감지하여 카운터 값을 초기화
+        let registerReset (): unit =
+            let condition = fun () -> cs.RES.TValue
+            let action = fun () ->
+                validateAccPre()
+                debugfn "Counter reset requested"
+                cs.ACC.TValue <- 0u
+                [cs.DN; cs.CU; cs.CD; cs.OV; cs.UN] |> List.iter clearBool
+            subscribeToChange cs.RES condition action
 
+        /// 초기화 및 카운터 타입별 등록 실행
         do
             cs.ResetStruct()
             registerReset()
             match cs, counterType with
-            | :? CTUStruct, CTU -> registerCTU()
-            | :? CTRStruct, CTR -> registerCTR()
-            | :? CTDStruct, CTD -> registerCTD()
-            | :? CTUDStruct, CTUD -> registerCTU(); registerCTD();
+            | :? CTUStruct as csu, CTU -> registerCTU csu
+            | :? CTRStruct as csr, CTR -> registerCTR csr
+            | :? CTDStruct as csd, CTD -> registerCTD csd
+            | :? CTUDStruct as csud, CTUD -> registerCTU csud; registerCTD csud
             | _ -> failwithlog "ERROR"
 
+        /// IDisposable 인터페이스 구현: 모든 구독 해제
         interface IDisposable with
-            member this.Dispose() =
-                for d in disposables do
-                    d.Dispose()
+            member this.Dispose(): unit =
+                for d in disposables do d.Dispose()
                 disposables.Clear()
-
 
 
 
