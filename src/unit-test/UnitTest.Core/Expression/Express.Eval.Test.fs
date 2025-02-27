@@ -114,19 +114,78 @@ module ExpressionTestModule =
 
         [<Test>]
         member _.NonTerminal() =
-            let t1 = TValue(3)
-            let t2 = TValue(4)
-            let t3 = TValue(5)
+            let t1 = TValue(1)
+            let t2 = TValue(2)
+            let t3 = TValue(3)
             let args:Args = [t1 :> IExpression; t2; t3]
 
             let nt = TFunction<int>.Create(Op.PredefinedOperator "+", args)
-            nt.OValue === 12
+            nt.OValue === 6
 
             // expression tree 상의 값 수정 해도, invalidate() 수행 전까지는 동일 cache 값 반환
-            t1.OValue <- 5
-            nt.OValue === 12
-            nt.Invalidate()
-            nt.OValue === 14
+            t1.OValue <- 11
+            //nt.Invalidate()     // 값 변경에 의해 자동으로 invalidate 되어야 함
+            nt.OValue === 16
+
+
+        /// terminal value 의 값 변경시, 상위 nonterminal 의 값도 변경되어야 함.
+        [<Test>]
+        member _.NonTerminalNested() =
+            let t1 = TValue(1)
+            let t2 = TValue(2)
+            let t3 = TValue(3)
+            let t4 = TValue(4)
+            let sub1 = TFunction<int>.Create(Op.PredefinedOperator "+", [t1 :> IExpression; t2])
+            let sub2 = TFunction<int>.Create(Op.PredefinedOperator "+", [t3 :> IExpression; t4])
+            let total = TFunction<int>.Create(Op.PredefinedOperator "+", [sub1 :> IExpression; sub2])
+
+            sub1 .TValue === 3
+            sub2 .TValue === 7
+            total.TValue === 10
+
+            t1   .TValue <- 11
+            sub1 .TValue === 13
+            sub2 .TValue === 7
+            total.TValue === 20
+
+            t2   .TValue <- 12
+            sub1 .TValue === 23
+            sub2 .TValue === 7
+            total.TValue === 30
+
+            t3   .TValue <- 13
+            sub1 .TValue === 23
+            sub2 .TValue === 17
+            total.TValue === 40
+
+            t1   .TValue <- 1
+            t2   .TValue <- 1
+            t3   .TValue <- 1
+            t4   .TValue <- 1
+            sub1 .TValue === 2
+            sub2 .TValue === 2
+            total.TValue === 4
+
+
+        [<Test>]
+        member _.NonTerminalNestedUnOrderedReference() =
+            let d1 = TValue(-1.0)
+            let d2 = TValue(-2.0)
+            let f1 = TFunction<double>.Create(Op.PredefinedOperator "abs", [d1 :> IExpression;])
+            let f2 = TFunction<double>.Create(Op.PredefinedOperator "abs", [d2 :> IExpression;])
+            let total = TFunction<double>.Create(Op.PredefinedOperator "+", [f1 :> IExpression; f2])
+            f1   .TValue === 1.0
+            f2   .TValue === 2.0
+            total.TValue === 3.0
+
+            d1   .TValue <- -11.0
+            // f1.TValue 및 f2.TValue 값을 조회하지 않고도 total.TValue 값이 변경되어야 함.
+            total.TValue === 13.0
+
+            f1   .TValue === 11.0
+            f2   .TValue === 2.0
+
+
 
 
 

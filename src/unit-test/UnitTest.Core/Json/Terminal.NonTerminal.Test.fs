@@ -124,14 +124,16 @@ module TerminalTestModule =
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 1.0
-      }
+      },
+      "PropertiesDto": {}
     },
     {
       "$type": "Dual.Ev2.TExpressionModule+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
       "ObjectHolder": {
         "ValueTypeName": "System.Double",
         "Value": 3.14
-      }
+      },
+      "PropertiesDto": {}
     }
   ]
 }"""

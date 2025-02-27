@@ -22,7 +22,7 @@ module rec ExpressionInterfaceModule =
         [<Obsolete("임시")>] member x.FunctionName = if x :? INonTerminal then Some x.Type.Name else None
         [<Obsolete("임시")>] member x.BoxedEvaluatedValue = tryGetPropertyValueDynamically(x, "Value") |? null
 
-        [<Obsolete("임시")>] member x.IsLiteral = false
+        //[<Obsolete("임시")>] member x.IsLiteral = false
 
     type IExpression<'T> with
         [<Obsolete("임시")>]

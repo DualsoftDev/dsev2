@@ -10,12 +10,65 @@ open Newtonsoft.Json.Linq
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 open Dual.Common.Base.CS
+open System.Collections.Generic
 
 [<AutoOpen>]
 module rec TExpressionModule =
+    type DependentDicType = Dictionary<IValue, HashSet<INonTerminal>>
+    type ValueBag private (valueChangedSubject:Subject<IValue * obj>, dependents:DependentDicType) =
+        member val ValueChangedSubject = valueChangedSubject
+        member val Dependents          = dependents
+
+        // todo: call site 에서 assign statement 에 의한 dependency 추가
+
+
+        /// dependency -> [dependents]: dependency 가 변경될 때 dependents 가 영향을 받음
+        ///
+        /// A = B + C, D = A + B  와 같은 함수 수식이 존재할 경우, Dependents dictionary 구성
+        ///
+        /// A -> [D]
+        /// B -> [A; D]
+        /// C -> [A]
+        member x.AddDependent(dependency:IValue, dependent:INonTerminal) =
+            match x.Dependents.TryGet(dependency) with
+            | Some ds -> ds.Add(dependent) |> ignore
+            | None -> x.Dependents.Add( dependency, HashSet([dependent]) ) |> ignore
+
+        /// function (nonTerminal) 내부의 의존성 반전 처리
+        member x.AddIntraFunctionDependency(nonTerminal:OFunction) =
+            for a in nonTerminal.Arguments do
+                match a with
+                | :? ValueHolder as vh when vh.IsLiteral -> ()  // literal은 dependency에서 제외
+                | _ ->
+                    let dependency = a :> IValue
+                    x.AddDependent(dependency, nonTerminal)
+
+        static member Create(?valueChangedSubject:Subject<IValue * obj>, ?dependents:DependentDicType) =
+            let valueChangedSubject = valueChangedSubject |?? (fun () -> new Subject<IValue * obj>())
+            let dependents          = dependents          |?? (fun () -> DependentDicType())
+
+            let rec invalidate (bag:ValueBag) (v:IValue) =
+                match bag.Dependents.TryGet(v) with
+                | Some ds ->
+                    for nonTerminal in ds do
+                        if nonTerminal.Invalidate() then
+                            invalidate bag nonTerminal
+                | None -> ()
+
+            ValueBag(valueChangedSubject, dependents)
+            |> tee( fun bag -> valueChangedSubject.Subscribe(fun (v, _) -> invalidate bag v) )
+
+
+
+
+
+
+
+
+    let theValueBag = ValueBag.Create()
 
     /// 값 변경 공지
-    let ValueChangedSubject = new Subject<IValue * obj>()
+    let ValueChangedSubject = theValueBag.ValueChangedSubject
 
 
     [<Obsolete("중복: 제거 요망")>]
@@ -23,7 +76,7 @@ module rec TExpressionModule =
     type ISystem = interface end
 
 
-    type ValueHolder(typ: Type, ?value: obj) =
+    type ValueHolder(typ: Type, ?value: obj, ?valueBag:ValueBag) =
         // NsJsonS11nSafeObject 에서 상속받아서는 안됨.  Sealed class
         member val ObjectHolder = NsJsonS11nSafeObject(typ, ?value=value) with get, set
 
@@ -37,6 +90,8 @@ module rec TExpressionModule =
             member x.OValue with get() = x.OValue and set v = x.OValue <- v
 
         interface IExpression
+
+        [<JsonIgnore>] member val internal ValueBag = valueBag |? theValueBag
 
         /// DynamicDictionary.
         ///
@@ -62,7 +117,7 @@ module rec TExpressionModule =
                     if x.IsLiteral then
                         failwith $"ERROR: {x.Name} is CONSTANT.  It's read-only"
                     x.ObjectHolder.Value <- v
-                    ValueChangedSubject.OnNext(x, v)
+                    x.ValueBag.ValueChangedSubject.OnNext(x, v)
 
         [<JsonIgnore>] member x.Type = x.ObjectHolder.Type
 
@@ -144,9 +199,40 @@ module rec TExpressionModule =
 
     // 기존 FunctionSpec<'T> 에 해당.
     [<DataContract>]
-    type TFunction<'T> private (op:Op, args:IExpression seq) =
+    [<AbstractClass>]
+    type OFunction internal (op:Op, args:IExpression seq) =
 
         let args = args.ToFSharpList()
+
+        interface INonTerminal
+        interface IValue with
+            member x.OValue with get() = x.OValue and set v = failwith "ERROR: Setter unsupported for function value."
+
+        abstract member OValue: obj with get
+        abstract member Invalidate: unit -> bool
+
+
+        [<DataMember>] member val Operator: Op = op with get, set
+        [<DataMember>] member val Arguments: IExpression[] = args.ToArray() with get, set
+
+        /// DynamicDictionary.
+        ///
+        /// NsJsonS11nSafeObject 의 부가 속성 정의 용.  e.g Name, Address, Rising, Negation 등
+        [<DataMember>] member val PropertiesDto:DynamicDictionary = null with get, set
+
+        /// PropertiesDto 접근용
+        [<JsonIgnore>]
+        member x.DD =
+            if x.PropertiesDto = null then
+                x.PropertiesDto <- DynamicDictionary()
+            x.PropertiesDto
+
+
+    //[<DataContract>]
+    type TFunction<'T> private (op:Op, args:IExpression seq, ?valueBag:ValueBag) =
+        inherit OFunction(op, args)
+
+        let valueBag = valueBag |? theValueBag
         let mutable lazyValue:ResettableLazy<'T> = null
 
         interface INonTerminal<'T>
@@ -157,16 +243,14 @@ module rec TExpressionModule =
             /// IExpression<'T>.TValue interface 구현 (@TFunction<'T>)
             member x.TValue with get() = x.TValue and set v = x.OValue <- v
 
-
-        [<DataMember>] member val Operator: Op = op with get, set
-        [<DataMember>] member val Arguments: IExpression[] = args.ToArray() with get, set
-
         /// TFunction<'T>.OValue member
-        [<JsonIgnore>] member x.OValue = lazyValue.Value |> box
+        [<JsonIgnore>] override x.OValue = lazyValue.Value |> box
         /// TFunction<'T>.TValue member
         [<JsonIgnore>] member x.TValue = lazyValue.Value
 
-        member x.Invalidate() =
+        //[<JsonIgnore>] member val internal ValueBag = valueBag |? theValueBag
+
+        override x.Invalidate() =
             lazyValue.Reset()
 
         member internal x.OnDeserialized() =
@@ -176,7 +260,7 @@ module rec TExpressionModule =
                     f args
                 objValue :?> 'T
             )
-            lazyValue.OnValueChanged <- fun v -> ValueChangedSubject.OnNext(x, v)
+            lazyValue.OnValueChanged <- fun v -> valueBag.ValueChangedSubject.OnNext(x, v)
             noop()
 
         // F#에서는 어트리뷰트를 [<OnDeserialized>] 형식으로 사용해야 합니다.
@@ -184,26 +268,46 @@ module rec TExpressionModule =
         [<OnDeserialized>]
         member this.OnDeserializedMethod(context: StreamingContext) = this.OnDeserialized()
 
-        /// DynamicDictionary.
-        ///
-        /// NsJsonS11nSafeObject 의 부가 속성 정의 용.  e.g Name, Address, Rising, Negation 등
-        [<DataMember>] member val PropertiesDto:DynamicDictionary = null with get, set
-        /// PropertiesDto 접근용
-        [<JsonIgnore>]
-        member x.DD =
-            if x.PropertiesDto = null then
-                x.PropertiesDto <- DynamicDictionary()
-            x.PropertiesDto
 
 
     type TFunction<'T> with
-        new() = TFunction<'T>(Op.Unit, [])   // for Json
-        static member Create(op:Op, args:IExpression seq, ?name:string): TFunction<'T> =
-            TFunction<'T>(op, args)
-                .Tee(fun nt -> nt.OnDeserialized())
-                .Tee(fun nt -> name.Iter(fun n -> nt.DD.Add("Name", n)))
+        /// *ONLY* for Json
+        new() = TFunction<'T>(Op.Unit, [])
 
-        static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string): TFunction<'T> =
+        static member Create(op:Op, args:IExpression seq, ?name:string, ?valueBag:ValueBag): TFunction<'T> =
+            let valueBag = valueBag |? theValueBag
+            TFunction<'T>(op, args, valueBag)
+                .Tee(fun nt ->
+                    nt.OnDeserialized()
+                    name.Iter(fun n -> nt.DD.Add("Name", n))
+                    valueBag.AddIntraFunctionDependency(nt)
+                )
+
+        static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string, ?valueBag:ValueBag): TFunction<'T> =
             let (f:Evaluator) = fun (args:Arguments) -> evaluator args |> box
             let op = CustomOperator f
-            TFunction.Create(op, args, ?name=name)
+            TFunction.Create(op, args, ?name=name, ?valueBag=valueBag)
+
+
+    type IValue with
+        member x.EnumerateValueObjects(?includeMe:bool): IValue seq =
+            let includeMe = includeMe |? false
+            seq {
+                if includeMe then
+                    yield x
+                match x with
+                | :? OFunction as f ->
+                    for arg in f.Arguments |> Seq.cast<IValue> do
+                        yield! arg.EnumerateValueObjects(true)
+                | _ -> ()
+            }
+
+    type INonTerminal with
+        member x.Arguments =
+            match x with
+            | :? OFunction as f -> f.Arguments
+            | _ -> failwith "ERROR: Not Yet!!"
+        member x.Invalidate(): bool =
+            match x with
+            | :? OFunction as f -> f.Invalidate()
+            | _ -> failwith "ERROR: Not Yet!!"
