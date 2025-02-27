@@ -21,11 +21,12 @@ module ExpressionFixtures =
 
     type DummySystem() =
         interface ISystem
-    let sys:ISystem = DummySystem()
-    let valueBag = ValueBag.Create()
-    let eventBag = EventBag.Create()
-
-    let theDsRuntimeEnvironment = DsRuntimeEnvironment(sys, valueBag, eventBag, WINDOWS)
+    type DsRuntimeEnvironment with
+        static member Create(runtimeTarget:PlatformTarget) =
+            let sys:ISystem = DummySystem()
+            let valueBag = ValueBag.Create()
+            let eventBag = EventBag.Create()
+            DsRuntimeEnvironment(sys, valueBag, eventBag, runtimeTarget)
 
     //let parseExpression4UnitTest (storages: Storages) (text: string) : IExpression =
     //    try

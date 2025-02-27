@@ -23,9 +23,7 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTU creation test`` () =
-            let dsRte =
-                let g = theDsRuntimeEnvironment
-                DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, AB)
+            let dsRte = DsRuntimeEnvironment.Create(AB)
 
             let storages = Storages()
             let condition = TValue<bool>(false, Comment="my_counter_control_tag", Address="%M1.1")
@@ -76,9 +74,7 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTUD creation test`` () =
-            let dsRte =
-                let g = theDsRuntimeEnvironment
-                DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, AB)
+            let dsRte = DsRuntimeEnvironment.Create(AB)
 
             let storages = Storages()
 
@@ -115,9 +111,7 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTU with reset creation test`` () =
-            let dsRte =
-                let g = theDsRuntimeEnvironment
-                DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, WINDOWS)
+            let dsRte = DsRuntimeEnvironment.Create(WINDOWS)
 
             let storages = Storages()
             let condition = TValue<bool>(false, Comment="my_counter_control_tag", Address="%M1.1")
@@ -156,10 +150,10 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTR with reset creation test`` () =
-            let dsRte, valueBag, system =
-                let g = theDsRuntimeEnvironment
-                let dsRte = DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, WINDOWS)
-                dsRte, g.ValueBag, dsRte.ISystem
+            let dsRte = DsRuntimeEnvironment.Create(WINDOWS)
+            let valueBag, system =
+                dsRte.ValueBag, dsRte.ISystem
+
             let storages = Storages()
             let condition = TValue<bool>(false, valueBag=valueBag, Comment="my_counter_control_tag", Address="%M1.1", DsSystem=system)
             let reset = TValue<bool>(false, valueBag=valueBag, Comment="my_counter_reset_tag", Address="%M1.1", DsSystem=system)
