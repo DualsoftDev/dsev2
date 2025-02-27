@@ -15,11 +15,11 @@ open Dual.Common.Base.FS.SampleDataTypes
 [<AutoOpen>]
 module ValueHolderTestModule =
 
-    let h0 = ValueHolder(typeof<int>, null)
-    let h1 = ValueHolder(typeof<int>, 123)
-    let h2 = THolder(3.14)
-    let h3 = ValueHolder(typeof<string>, "Hello, World!")
-    let h4 = ValueHolder(typeof<uint64>, 9999UL)
+    let h0 = ValueHolder.Create(typeof<int>)
+    let h1 = ValueHolder.Create(typeof<int>, 123)
+    let h2 = THolder.Create(3.14)
+    let h3 = ValueHolder.Create(typeof<string>, "Hello, World!")
+    let h4 = ValueHolder.Create(typeof<uint64>, 9999UL)
 
     /// ObjectHolder 를 포함하는 클래스
     type ContainerClass() =
@@ -56,7 +56,7 @@ module ValueHolderTestModule =
         [<Test>]
         member _.WithDynamicProperties() =
             let typ = typeof<double>
-            let h = ValueHolder(typ, 3.14)
+            let h = ValueHolder.Create(typ, 3.14)
             h.Type === typ
             (h :> IWithType).Type === typ
 
@@ -96,7 +96,7 @@ module ValueHolderTestModule =
 
         [<Test>]
         member _.WithDD() =
-            let h = ValueHolder(typeof<double>, 3.14)
+            let h = ValueHolder.Create(typeof<double>, 3.14)
             h.DD.Add("name", "PI")
             h.DD.Add("tolerarnce", 0.001)
             h.DD.Add("student", Student("John", 16))

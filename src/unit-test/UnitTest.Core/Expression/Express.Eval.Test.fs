@@ -169,11 +169,12 @@ module ExpressionTestModule =
 
         [<Test>]
         member _.NonTerminalNestedUnOrderedReference() =
-            let d1 = TValue(-1.0)
-            let d2 = TValue(-2.0)
-            let f1 = TFunction<double>.Create(Op.PredefinedOperator "abs", [d1 :> IExpression;])
-            let f2 = TFunction<double>.Create(Op.PredefinedOperator "abs", [d2 :> IExpression;])
-            let total = TFunction<double>.Create(Op.PredefinedOperator "+", [f1 :> IExpression; f2])
+            let valueBag = ValueBag.Create()
+            let d1 = TValue(-1.0, valueBag)
+            let d2 = TValue(-2.0, valueBag)
+            let f1 = TFunction<double>.Create(Op.PredefinedOperator "abs", [d1 :> IExpression;], valueBag=valueBag)
+            let f2 = TFunction<double>.Create(Op.PredefinedOperator "abs", [d2 :> IExpression;], valueBag=valueBag)
+            let total = TFunction<double>.Create(Op.PredefinedOperator "+", [f1 :> IExpression; f2], valueBag=valueBag)
             f1   .TValue === 1.0
             f2   .TValue === 2.0
             total.TValue === 3.0
@@ -184,6 +185,10 @@ module ExpressionTestModule =
 
             f1   .TValue === 11.0
             f2   .TValue === 2.0
+
+            let vs = valueBag.Values
+            [d1 :> IValue; d2; f1; f2; total] |> Seq.forall (fun v -> vs.Contains v) === true
+            vs.Count === 5
 
 
 

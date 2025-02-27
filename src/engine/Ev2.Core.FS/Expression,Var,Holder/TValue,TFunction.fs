@@ -15,11 +15,14 @@ open System.Collections.Generic
 [<AutoOpen>]
 module rec TExpressionModule =
     type DependentDicType = Dictionary<IValue, HashSet<INonTerminal>>
-    type ValueBag private (valueChangedSubject:Subject<IValue * obj>, dependents:DependentDicType) =
+
+    type ValueBag private (values:IValue seq, valueChangedSubject:Subject<IValue * obj>, dependents:DependentDicType) =
         member val ValueChangedSubject = valueChangedSubject
         member val Dependents          = dependents
+        member val Values              = HashSet(values)     // 사용된 전제 value list
 
-        // todo: call site 에서 assign statement 에 의한 dependency 추가
+        // todo: call site 에서 assign statement
+        // => .Do() 실행 시, 값만 복사해 주는 코드 추가 필요  (따로 dependency 처리는 필요 없을 듯)
 
 
         /// dependency -> [dependents]: dependency 가 변경될 때 dependents 가 영향을 받음
@@ -30,23 +33,30 @@ module rec TExpressionModule =
         /// B -> [A; D]
         /// C -> [A]
         member x.AddDependent(dependency:IValue, dependent:INonTerminal) =
+            x.Values.Add(dependency) |> ignore
+            x.Values.Add(dependent) |> ignore
+
             match x.Dependents.TryGet(dependency) with
             | Some ds -> ds.Add(dependent) |> ignore
             | None -> x.Dependents.Add( dependency, HashSet([dependent]) ) |> ignore
 
         /// function (nonTerminal) 내부의 의존성 반전 처리
         member x.AddIntraFunctionDependency(nonTerminal:OFunction) =
-            for a in nonTerminal.Arguments do
-                match a with
+            x.Values.Add(nonTerminal) |> ignore
+            for arg in nonTerminal.Arguments do
+                x.Values.Add(arg) |> ignore
+                match arg with
                 | :? ValueHolder as vh when vh.IsLiteral -> ()  // literal은 dependency에서 제외
                 | _ ->
-                    let dependency = a :> IValue
+                    let dependency = arg :> IValue
                     x.AddDependent(dependency, nonTerminal)
 
-        static member Create(?valueChangedSubject:Subject<IValue * obj>, ?dependents:DependentDicType) =
-            let valueChangedSubject = valueChangedSubject |?? (fun () -> new Subject<IValue * obj>())
+        static member Create(?values:IValue seq, ?valueChangedSubject:Subject<IValue * obj>, ?dependents:DependentDicType) =
+            let values = values |? Seq.empty
             let dependents          = dependents          |?? (fun () -> DependentDicType())
+            let valueChangedSubject = valueChangedSubject |?? (fun () -> new Subject<IValue * obj>())
 
+            // v 의 값 변경으로 인해서 영향 받는 nonTerminal 들을 재귀적으로 찾아서 invalidate 처리.  다음 value 참조시, 새로 계산됨
             let rec invalidate (bag:ValueBag) (v:IValue) =
                 match bag.Dependents.TryGet(v) with
                 | Some ds ->
@@ -55,13 +65,8 @@ module rec TExpressionModule =
                             invalidate bag nonTerminal
                 | None -> ()
 
-            ValueBag(valueChangedSubject, dependents)
+            ValueBag(values, valueChangedSubject, dependents)
             |> tee( fun bag -> valueChangedSubject.Subscribe(fun (v, _) -> invalidate bag v) )
-
-
-
-
-
 
 
 
@@ -75,8 +80,12 @@ module rec TExpressionModule =
     // 임시... 원본: Interface.fs@Engine.Core
     type ISystem = interface end
 
+    /// DS 에서는 TValue<'T> 부터 사용.
+    type ValueHolder (typ: Type, ?value: obj, ?valueBag:ValueBag) as this =
+        let valueBag = valueBag |? theValueBag
+        do
+            valueBag.Values.Add this |> ignore
 
-    type ValueHolder(typ: Type, ?value: obj, ?valueBag:ValueBag) =
         // NsJsonS11nSafeObject 에서 상속받아서는 안됨.  Sealed class
         member val ObjectHolder = NsJsonS11nSafeObject(typ, ?value=value) with get, set
 
@@ -91,7 +100,7 @@ module rec TExpressionModule =
 
         interface IExpression
 
-        [<JsonIgnore>] member val internal ValueBag = valueBag |? theValueBag
+        [<JsonIgnore>] member val internal ValueBag = valueBag
 
         /// DynamicDictionary.
         ///
@@ -105,7 +114,13 @@ module rec TExpressionModule =
             x.PropertiesDto
 
     type ValueHolder with
-        new () = ValueHolder(typeof<obj>, null)
+        new () = ValueHolder(typeof<obj>, null)     // *ONLY* for Json
+        static member Create(typ:Type, ?value:obj, ?name:string, ?valueBag:ValueBag): ValueHolder =
+            ValueHolder(typ, ?value=value, ?valueBag=valueBag)
+            |> tee( fun vh -> name.Iter(fun n -> vh.DD.Add("Name", n)) )
+
+
+
         [<JsonIgnore>] member x.ValueType = x.ObjectHolder.Type
 
         /// ValueHolder.OValue.  Holded value
@@ -166,8 +181,13 @@ module rec TExpressionModule =
             with get() = x.DD.TryGet<ISystem>("DsSystem") |? getNull<ISystem>()
             and set (v:ISystem) = x.DD.Set<ISystem>("DsSystem", v)
 
-    type TValue<'T>(value:'T) =
-        inherit ValueHolder(typedefof<'T>, value)
+    type TValue<'T>(value:'T, ?valueBag:ValueBag) as this =
+        inherit ValueHolder(typedefof<'T>, value, ?valueBag=valueBag)
+
+        let valueBag = valueBag |? theValueBag
+        do
+            valueBag.Values.Add this |> ignore
+
         new() = TValue(Unchecked.defaultof<'T>)   // for Json
 
         interface IWithAddress
@@ -277,11 +297,11 @@ module rec TExpressionModule =
         static member Create(op:Op, args:IExpression seq, ?name:string, ?valueBag:ValueBag): TFunction<'T> =
             let valueBag = valueBag |? theValueBag
             TFunction<'T>(op, args, valueBag)
-                .Tee(fun nt ->
-                    nt.OnDeserialized()
-                    name.Iter(fun n -> nt.DD.Add("Name", n))
-                    valueBag.AddIntraFunctionDependency(nt)
-                )
+            |> tee(fun nt ->
+                nt.OnDeserialized()
+                name.Iter(fun n -> nt.DD.Add("Name", n))
+                valueBag.AddIntraFunctionDependency(nt)
+                valueBag.Values.Add(nt))
 
         static member Create(evaluator:Arguments -> 'T, args:IExpression seq, ?name:string, ?valueBag:ValueBag): TFunction<'T> =
             let (f:Evaluator) = fun (args:Arguments) -> evaluator args |> box
