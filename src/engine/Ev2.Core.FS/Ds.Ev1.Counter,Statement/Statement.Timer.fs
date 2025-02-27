@@ -5,22 +5,13 @@ open Dual.Common.Base.FS
 
 [<AutoOpen>]
 module TimerStatementModule =
-    type internal TimerCreateParams = {
-        Type: TimerType
-        Name: string
-        Preset: CountUnitType
-        RungConditionIn: IExpression<bool> option
-        ResetCondition: IExpression<bool> option
-        FunctionName:string
-    }
-
 
     let private generateTimerStatement (ts :TimerStruct, tParams:TimerCreateParams) =
 
         if ts.PRE.TValue < MinTickInterval then
             failwith <| $"Timer Resolution Error: Preset value should be larger than %A{MinTickInterval}"
 
-        let timer = new Timer(ts.Type, ts)
+        let timer = new Timer(ts.Type, ts, tParams.DsRuntimeEnvironment)
         let statements = StatementContainer()
         tParams.RungConditionIn
         |> iter(fun cond ->
@@ -48,20 +39,24 @@ module TimerStatementModule =
         DuTimer ({ Timer=timer; RungInCondition = tParams.RungConditionIn; ResetCondition = tParams.ResetCondition; FunctionName=tParams.FunctionName }:TimerStatement)
 
 
-    let private createTONStatement (ts :TimerStruct, rungInCondition, resetCondition)  : Statement =
+    let private createTONStatement (ts :TimerStruct, rungInCondition, resetCondition, dsRte:DsRuntimeEnvironment)  : Statement =
 
-        let tParams ={ Type=ts.Type; Name=ts.Name; Preset=ts.PRE.TValue;
-                       RungConditionIn=rungInCondition; ResetCondition=resetCondition; FunctionName="createXgiTON"}     // createWinTON
+        let tParams = {
+            DsRuntimeEnvironment = dsRte
+            Type=ts.Type; Name=ts.Name; Preset=ts.PRE.TValue;
+            RungConditionIn=rungInCondition; ResetCondition=resetCondition; FunctionName="createXgiTON"     // createWinTON
+        }
 
         generateTimerStatement (ts, tParams)
 
-    let private createTimerStatement (storages:Storages) (target:PlatformTarget)  (tParams:TimerCreateParams)  : Statement =
-        let ts = TimerStruct.Create(tParams.Type, storages, tParams.Name, tParams.Preset, 0u, RuntimeDS.System.Value, target)
+    let private createTimerStatement (storages:Storages) (tParams:TimerCreateParams) : Statement =
+        let ts = TimerStruct.Create(tParams, storages, 0u)
         generateTimerStatement (ts, tParams)
 
 
     /// Timer & Counter construction parameters
     type TCConstructionParams = {
+        DsRuntimeEnvironment: DsRuntimeEnvironment
         Storages:Storages
         /// timer/counter structure name
         Name: string
@@ -72,32 +67,45 @@ module TimerStatementModule =
     }
 
     type TimerStatement =
-        static member CreateTON(tcParams:TCConstructionParams) (target:PlatformTarget)=
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
-            ({  Type=TON; Name=name; Preset=preset;
+        static member CreateTON(tcParams:TCConstructionParams) =
+            let {
+                DsRuntimeEnvironment = dsRte
+                Storages=storages
+                Name=name
+                Preset=preset
+                RungInCondition=rungInCondition
+                FunctionName=functionName
+            } = tcParams
+
+            ({
+                DsRuntimeEnvironment = dsRte
+                Type=TON; Name=name; Preset=preset;
                 RungConditionIn=Some rungInCondition;
                 ResetCondition=None; FunctionName=functionName
              } :TimerCreateParams
-            )|> createTimerStatement storages target
+            ) |> createTimerStatement storages
 
-        static member CreateTONUsingStructure(ts: TimerStruct, rungInCondition, resetCondition) =
-            createTONStatement (ts, rungInCondition, resetCondition)
+        static member CreateTONUsingStructure(ts: TimerStruct, rungInCondition, resetCondition, dsRte:DsRuntimeEnvironment) =
+            createTONStatement (ts, rungInCondition, resetCondition, dsRte)
 
-        static member CreateTOF(tcParams:TCConstructionParams) (target:PlatformTarget)=
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
-            ({  Type=TOF; Name=name; Preset=preset;
+        static member CreateTOF(tcParams:TCConstructionParams) =
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            ({  DsRuntimeEnvironment=dsRte
+                Type=TOF; Name=name; Preset=preset;
                 RungConditionIn=Some rungInCondition;
                 ResetCondition=None; FunctionName=functionName
-             }: TimerCreateParams)
-            |> createTimerStatement storages target
+             }: TimerCreateParams
+            ) |> createTimerStatement storages
 
-        static member CreateAbRTO(tcParams:TCConstructionParams) (target:PlatformTarget)=
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
-            ({  Type=TMR; Name=name; Preset=preset;
+        static member CreateAbRTO(tcParams:TCConstructionParams) =
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            ({
+                DsRuntimeEnvironment=dsRte
+                Type=TMR; Name=name; Preset=preset;
                 RungConditionIn=Some rungInCondition;
                 ResetCondition=None; FunctionName=functionName
-             }:TimerCreateParams)
-            |> createTimerStatement storages target
+             }:TimerCreateParams
+            ) |> createTimerStatement storages
 
         //static member CreateTON(tcParams:TCConstructionParams, resetCondition) =
         //    let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition} = tcParams
@@ -113,13 +121,15 @@ module TimerStatementModule =
         //        ResetCondition=Some resetCondition; }
         //    |> createTimerStatement storages
 
-        static member CreateTMR(tcParams:TCConstructionParams, resetCondition) (target:PlatformTarget)=
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
-            ({  Type=TMR; Name=name; Preset=preset;
+        static member CreateTMR(tcParams:TCConstructionParams, resetCondition) =
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            ({
+                DsRuntimeEnvironment=dsRte
+                Type=TMR; Name=name; Preset=preset;
                 RungConditionIn=Some rungInCondition;
                 ResetCondition=Some resetCondition; FunctionName=functionName
-             }: TimerCreateParams)
-            |> createTimerStatement storages target
+             }: TimerCreateParams
+            ) |> createTimerStatement storages
 
 
 

@@ -47,6 +47,11 @@ module Interfaces =
     type ICall =
         inherit ICoin
 
+    type IValueBag = interface end
+    type IEventBag = interface end
+    type IModelConfig = interface end
+
+
     /// script 샘플 interface
     type ICalculator =
         abstract member Add: int * int -> int
@@ -71,3 +76,20 @@ module AbstractClasses =
         inherit GuidObject(?guid=guid)
         [<JsonProperty(Order = -100)>] member val Name = name with get, set
         interface IWithName
+
+
+
+//제어 HW CPU 기기 타입
+type PlatformTarget =
+    | WINDOWS
+    | XGI
+    | XGK
+    | AB
+    | MELSEC
+
+type DsRuntimeEnvironment(system:ISystem, valueBag:IValueBag, eventBag:IEventBag, ?platformTarget:PlatformTarget, ?modelConfig:IModelConfig) =
+    member val ISystem = system
+    member val IValueBag = valueBag
+    member val IEventBag = eventBag
+    member val IModelConfig = modelConfig
+    member val PlatformTarget = platformTarget |? WINDOWS

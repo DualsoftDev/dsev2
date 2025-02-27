@@ -9,12 +9,7 @@ open Dual.Common.Base.FS.Functions
 module RuntimeGeneratorModule =
 
     //제어 HW CPU 기기 타입
-    type PlatformTarget =
-        | WINDOWS
-        | XGI
-        | XGK
-        | AB
-        | MELSEC
+    type PlatformTarget with
         static member ofString(str:string) = DU.fromString<PlatformTarget> str |?? (fun () -> failwith "ERROR")
 
         member x.Stringify() = x.ToString()
@@ -119,7 +114,8 @@ module RuntimeGeneratorModule =
         RuntimeMotionMode: RuntimeMotionMode
         TimeSimutionMode : TimeSimutionMode
         TimeoutCall : uint32
-    }
+    } with
+        interface IModelConfig
 
     let createDefaultModelConfig() =
         {

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Interfaces.fs" />
 		<Compile Include="ForwardDecl.fs" />
 		<Compile Include="Ds.Ev1\TypeConversion.fs" />
 		<Compile Include="Ds.Ev1\DsDataType.fs" />
@@ -17,6 +18,7 @@
 		<Compile Include="Expression,Var,Holder\Expression.Interfaces.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Function.fs" />
 		<Compile Include="Expression,Var,Holder\TValue,TFunction.fs" />
+		<Compile Include="Ds.Ev1.Counter,Statement\DsRuntimeEnvironment.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\RuntimeGenerator.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\DsEv1_Timer.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\DsEv1_Counter.fs" />
@@ -26,7 +28,6 @@
 		<None Include="database\schema.md" />
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />
-		<Compile Include="Interfaces.fs" />
 		<Compile Include="DsConfig.fs" />
 		<Compile Include="Device.fs" />
 		<Compile Include="Core.Graph.fs" />

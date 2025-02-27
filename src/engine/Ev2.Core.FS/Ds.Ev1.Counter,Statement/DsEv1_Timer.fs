@@ -11,62 +11,6 @@ open System.Reactive.Disposables
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
 
-(*
- - Timer 설정을 위한 조건: expression 으로 받음.
- - Timer statement 는 expression 을 매 scan 마다 평가.  값이 변경되면(rising or falling) 해당 timer 에 반영
- - Timer 가 설정되고 나면, observable timer 에 의해서 counter 값이 하나씩 감소하고, 0 이 되면 target trigger
-*)
-
-module TimerModuleApi =
-
-    // DllImport 바인딩을 정적 멤버로 정의합니다.
-    [<DllImport("winmm.dll", SetLastError = true)>]
-    extern uint timeBeginPeriod(uint uPeriod)
-
-    [<DllImport("winmm.dll", SetLastError = true)>]
-    extern uint timeEndPeriod(uint uPeriod)
-
-[<AutoOpen>]
-module DsType =     // from DsType.fs
-
-    /// Describes the segment status with default being 'Homing'
-    type Status4 =
-        | Ready
-        | Going
-        | Finish
-        | Homing
-
-
-[<AutoOpen>]
-module CpusEvent =  // from DsEvent.fs
-    // Represents the status parameters for a Vertex.
-    type VertexStatusParam =
-        | EventCPU of sys: ISystem * vertex: IVertex * status: Status4
-
-    // Subjects to broadcast status and value changes.
-    let StatusSubject = new Subject<VertexStatusParam>()
-    /// Represents (system, storage, value)
-    let ValueSubject  = new Subject<ISystem * IValue * obj>()
-
-    // Notifies subscribers about a status change.
-    let onStatusChanged(sys: ISystem, vertex: IVertex, status: Status4) =
-        StatusSubject.OnNext(EventCPU (sys, vertex, status))
-
-    // Notifies subscribers about a value change.
-    let onValueChanged(sys: ISystem, stg: IValue, value: obj) =
-        ValueSubject.OnNext(sys, stg, value)
-
-    let mutable private initialized = false
-    let internal initialize() =
-        if not initialized then
-            initialized <- true
-            ValueChangedSubject.Subscribe(
-                let system = getNull<ISystem>()
-                fun (stg, value) -> onValueChanged(system, stg, value))
-            |> ignore
-    do
-        initialize()
-
 
 [<AutoOpen>]
 module rec TimerModule =
@@ -86,7 +30,7 @@ module rec TimerModule =
             for kv in existing do
                 base.Add(kv.Key, kv.Value)
 
-    type internal TickAccumulator(timerType:TimerType, timerStruct:TimerStruct) =
+    type internal TickAccumulator(timerType:TimerType, timerStruct:TimerStruct, dsRte:DsRuntimeEnvironment) =
         let ts = timerStruct
         let tt = timerType
 
@@ -136,9 +80,10 @@ module rec TimerModule =
             TimerModuleApi.timeBeginPeriod(TimerResolution) |> ignore
             new System.Threading.Timer(TimerCallback(timerCallback), null, TimeSpan.Zero, TimeSpan.FromMilliseconds(float MinTickInterval)) |> disposables.Add
 
-            CpusEvent.ValueSubject.Where(fun (system, _storage, _value) -> system = (timerStruct:>ValueHolder).DsSystem)
-                .Where(fun (_system, storage, _newValue) -> storage = timerStruct.EN)
-                .Subscribe(fun (_system, _storage, newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = timerStruct.DsSystem)
+                .Where(fun (storage, _newValue) -> storage = timerStruct.EN)
+                .Subscribe(fun (_storage, newValue) ->
                     if ts.ACC.TValue < 0u || ts.PRE.TValue < 0u then failwithlog "ERROR"
                     let rungInCondition = newValue :?> bool
                     //debugfn "%A rung-condition-in=%b with DN=%b" tt rungInCondition ts.DN.Value
@@ -170,9 +115,10 @@ module rec TimerModule =
                         ts.TT.TValue <- false
                 ) |> disposables.Add
 
-            CpusEvent.ValueSubject.Where(fun (system, _storage, _value) -> system = (timerStruct:>ValueHolder).DsSystem)
-                .Where(fun (_system, storage, _newValue) -> storage = ts.RES)
-                .Subscribe(fun (_system, _storage, newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = timerStruct.DsSystem)
+                .Where(fun (storage, _newValue) -> storage = ts.RES)
+                .Subscribe(fun (_storage, newValue) ->
                     let resetCondition = newValue :?> bool
                     if resetCondition then
                         ts.ACC.TValue <- 0u
@@ -195,15 +141,15 @@ module rec TimerModule =
 
     type internal T =
         static member SysVarTag = int VariableTag.PcSysVariable
-        static member CreateMemberVariable<'T>(name:string, value:'T, ?tagKind:int) =
-            let v = TValue<'T>(value, Name=name, IsMemberVariable=true)
+        static member CreateMemberVariable<'T>(valueBag:ValueBag, system:ISystem, name:string, value:'T, ?tagKind:int) =
+            let v = TValue<'T>(value, valueBag=valueBag, Name=name, IsMemberVariable=true, DsSystem=system)
             tagKind.Iter(fun tk -> v.TagKind <- tk)
             v
 
 
     [<AbstractClass>]
     type TimerCounterBaseStruct (isTimer:bool, name, dn, pre, acc, res, sys) =
-        inherit TValue<bool>(isTimer, Comment="Timer/Counter base")
+        inherit TValue<bool>(isTimer, Comment="Timer/Counter base", DsSystem=sys)
 
         member private x.This = x
         member _.Name:string = name
@@ -231,6 +177,19 @@ module rec TimerModule =
 
         member val XgkStructVariableDevicePos = -1 with get, set
 
+
+    type (*internal*) TimerCreateParams = {
+        DsRuntimeEnvironment: DsRuntimeEnvironment
+        Type: TimerType
+        Name: string
+        Preset: CountUnitType
+        RungConditionIn: IExpression<bool> option
+        ResetCondition: IExpression<bool> option
+        FunctionName:string
+    }
+
+
+
     type TimerStruct private(typ:TimerType, name, en, tt, dn, pre, acc, res, sys) =
         inherit TimerCounterBaseStruct(true, name, dn, pre, acc, res, sys)
 
@@ -240,7 +199,12 @@ module rec TimerModule =
         member _.TT:TValue<bool> = tt
         member _.Type = typ
 
-        static member Create(typ:TimerType, storages:Storages, name, preset:CountUnitType, accum:CountUnitType, sys, target:PlatformTarget) =
+        static member Create(tParam:TimerCreateParams, storages:Storages, accum:CountUnitType) =
+            let {Type=typ; Name=name; Preset=preset; DsRuntimeEnvironment=dsRte}:TimerCreateParams = tParam
+            let target = dsRte.PlatformTarget
+            let valueBag = dsRte.ValueBag
+            let sys = dsRte.ISystem
+
             let suffixes  =
                 match target with
                 | XGK -> [".IN"; ".TT"; xgkTimerCounterContactMarking; ".PT"; ".ET"; ".RST"] // XGK 이름에 . 있으면 걸러짐 storagesToXgxSymbol
@@ -254,12 +218,12 @@ module rec TimerModule =
                 | [en; tt; dn; pre; acc; res] -> en, tt, dn, pre, acc, res
                 | _ -> failwith "Unexpected number of suffixes"
 
-            let en  = T.CreateMemberVariable<bool>($"{en }", false)
-            let tt  = T.CreateMemberVariable<bool>($"{tt }", false)
-            let dn  = T.CreateMemberVariable<bool>($"{dn }", false, T.SysVarTag)
-            let pre = T.CreateMemberVariable<UInt32>(pre, preset)
-            let acc = T.CreateMemberVariable<UInt32>(acc, accum)
-            let res = T.CreateMemberVariable<bool>(res, false)
+            let en  = T.CreateMemberVariable<bool>  (valueBag, sys, $"{en }", false)
+            let tt  = T.CreateMemberVariable<bool>  (valueBag, sys, $"{tt }", false)
+            let dn  = T.CreateMemberVariable<bool>  (valueBag, sys, $"{dn }", false, T.SysVarTag)
+            let pre = T.CreateMemberVariable<UInt32>(valueBag, sys, pre, preset)
+            let acc = T.CreateMemberVariable<UInt32>(valueBag, sys, acc, accum)
+            let res = T.CreateMemberVariable<bool>  (valueBag, sys, res, false)
 
             storages.Add(en.Name, en)
             storages.Add(tt.Name, tt)
@@ -287,9 +251,9 @@ module rec TimerModule =
     type IStatement = interface end
 
 
-    type Timer internal(typ:TimerType, timerStruct:TimerStruct) =
+    type Timer internal(typ:TimerType, timerStruct:TimerStruct, dsRte:DsRuntimeEnvironment) =
 
-        let accumulator = new TickAccumulator(typ, timerStruct)
+        let accumulator = new TickAccumulator(typ, timerStruct, dsRte)
 
         member _.Type = typ
         member _.Name = timerStruct.Name

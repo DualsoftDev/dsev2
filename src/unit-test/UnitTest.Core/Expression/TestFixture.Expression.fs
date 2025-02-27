@@ -19,15 +19,13 @@ module ExpressionFixtures =
     //    with exn ->
     //        failwith $"Failed to parse Statement: {text}\r\n{exn}"
 
+    type DummySystem() =
+        interface ISystem
+    let sys:ISystem = DummySystem()
+    let valueBag = ValueBag.Create()
+    let eventBag = EventBag.Create()
 
-    let sys:ISystem = getNull<ISystem>()    // DsSystem.Create4Test("testSys")
-    let mutable runtimeTarget = WINDOWS
-    let setRuntimeTarget(target:PlatformTarget) =
-            let runtimeTargetBackup = target
-            RuntimeDS.System <- Some sys
-            runtimeTarget <- target
-            //ParserUtil.runtimeTarget <-target
-            disposable { runtimeTarget <- runtimeTargetBackup }
+    let theDsRuntimeEnvironment = DsRuntimeEnvironment(sys, valueBag, eventBag, WINDOWS)
 
     //let parseExpression4UnitTest (storages: Storages) (text: string) : IExpression =
     //    try
@@ -43,11 +41,6 @@ module ExpressionFixtures =
     [<AbstractClass>]
     type ExpressionTestBaseClass() =
         inherit TestClassWithLogger(Path.Combine($"{__SOURCE_DIRECTORY__}/App.config"), "UnitTestLogger")
-        do
-            //Engine.CodeGenCPU.ModuleInitializer.Initialize()
-            setRuntimeTarget (WINDOWS)|> ignore
-
-
 
 
     let toTimer (timerStatement:Statement) :Timer =

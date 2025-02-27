@@ -23,11 +23,14 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTU creation test`` () =
-            use _ = setRuntimeTarget AB
+            let dsRte =
+                let g = theDsRuntimeEnvironment
+                DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, AB)
+
             let storages = Storages()
             let condition = TValue<bool>(false, Comment="my_counter_control_tag", Address="%M1.1")
-            let tcParam = {Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTU"}
-            let ctu = (CounterStatement.CreateAbCTU tcParam) ExpressionFixtures.runtimeTarget |> toCounter
+            let tcParam = { DsRuntimeEnvironment=dsRte; Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTU"}
+            let ctu = (CounterStatement.CreateAbCTU tcParam) |> toCounter
             ctu.OV .TValue === false
             ctu.UN .TValue === false
             ctu.DN .TValue === false
@@ -73,7 +76,10 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTUD creation test`` () =
-            use _ = setRuntimeTarget AB
+            let dsRte =
+                let g = theDsRuntimeEnvironment
+                DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, AB)
+
             let storages = Storages()
 
             let upCondition    = TValue<bool>(false, Comment="my_counter_up_tag",    Address="%M1.1")
@@ -81,8 +87,8 @@ module CounterTestModule =
             let resetCondition = TValue<bool>(false, Comment="my_counter_reset_tag", Address="%M1.1")
 
 
-            let tcParam = {Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=upCondition; FunctionName="createWinCTUD"}
-            let ctu = CounterStatement.CreateAbCTUD(tcParam, downCondition, resetCondition) ExpressionFixtures.runtimeTarget|> toCounter
+            let tcParam = { DsRuntimeEnvironment=dsRte; Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=upCondition; FunctionName="createWinCTUD"}
+            let ctu = CounterStatement.CreateAbCTUD(tcParam, downCondition, resetCondition) |> toCounter
             ctu.OV .TValue === false
             ctu.UN .TValue === false
             ctu.DN .TValue === false
@@ -109,12 +115,15 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTU with reset creation test`` () =
-            use _ = setRuntimeTarget WINDOWS
+            let dsRte =
+                let g = theDsRuntimeEnvironment
+                DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, WINDOWS)
+
             let storages = Storages()
             let condition = TValue<bool>(false, Comment="my_counter_control_tag", Address="%M1.1")
             let reset = TValue<bool>(false, Comment="my_counter_reset_tag", Address="%M1.1")
-            let tcParam = {Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTU"}
-            let ctu = CounterStatement.CreateCTU(tcParam, reset) ExpressionFixtures.runtimeTarget|> toCounter
+            let tcParam = {DsRuntimeEnvironment=dsRte; Storages=storages; Name="myCTU"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTU"}
+            let ctu = CounterStatement.CreateCTU(tcParam, reset) |> toCounter
             ctu.OV .TValue === false
             ctu.UN .TValue === false
             ctu.DN .TValue === false
@@ -147,12 +156,15 @@ module CounterTestModule =
 
         [<Test>]
         member __.``CTR with reset creation test`` () =
-            use _ = setRuntimeTarget WINDOWS
+            let dsRte, valueBag, system =
+                let g = theDsRuntimeEnvironment
+                let dsRte = DsRuntimeEnvironment(g.ISystem, g.IValueBag, g.IEventBag, WINDOWS)
+                dsRte, g.ValueBag, dsRte.ISystem
             let storages = Storages()
-            let condition = TValue<bool>(false, Comment="my_counter_control_tag", Address="%M1.1")
-            let reset = TValue<bool>(false, Comment="my_counter_reset_tag", Address="%M1.1")
-            let tcParam = {Storages=storages; Name="myCTR"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTR"}
-            let ctr = CounterStatement.CreateXgiCTR(tcParam, reset) ExpressionFixtures.runtimeTarget |> toCounter
+            let condition = TValue<bool>(false, valueBag=valueBag, Comment="my_counter_control_tag", Address="%M1.1", DsSystem=system)
+            let reset = TValue<bool>(false, valueBag=valueBag, Comment="my_counter_reset_tag", Address="%M1.1", DsSystem=system)
+            let tcParam = { DsRuntimeEnvironment=dsRte; Storages=storages; Name="myCTR"; Preset=100u; RungInCondition=condition; FunctionName="createWinCTR"}
+            let ctr = CounterStatement.CreateXgiCTR(tcParam, reset) |> toCounter
             ctr.OV .TValue === false
             ctr.UN .TValue === false
             ctr.DN .TValue === false

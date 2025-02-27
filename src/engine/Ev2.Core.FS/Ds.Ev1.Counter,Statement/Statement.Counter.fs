@@ -6,19 +6,8 @@ open Dual.Common.Base.FS
 [<AutoOpen>]
 module CounterStatementModule =
 
-    type (*internal*) CounterCreateParams = {
-        Type: CounterType
-        Name: string
-        Preset: CountUnitType
-        CountUpCondition  : IExpression<bool> option
-        CountDownCondition: IExpression<bool> option
-        ResetCondition    : IExpression<bool> option
-        LoadCondition     : IExpression<bool> option
-        FunctionName:string
-    }
-
     let generateCounterStatement (cs, cParams:CounterCreateParams) =
-        let counter = new Counter   (cParams.Type, cs)
+        let counter = new Counter   (cParams.Type, cs, cParams.DsRuntimeEnvironment)
 
         let statements = StatementContainer()
         cParams.CountUpCondition
@@ -57,22 +46,19 @@ module CounterStatementModule =
                 ResetCondition=cParams.ResetCondition; LoadCondition=cParams.LoadCondition;  }
         DuCounter counterStatement
 
-    let (*private*) createCounterStatement (storages:Storages) (cParams:CounterCreateParams) (target:PlatformTarget): Statement =
+    let (*private*) createCounterStatement (storages:Storages) (cParams:CounterCreateParams): Statement =
         let accum = 0u
         let cs =    // counter structure
-            let typ    = cParams.Type
-            let name   = cParams.Name
-            let preset = cParams.Preset
-            let sys    = RuntimeDS.System.Value
-            match typ with
-            | CTU  -> CTUStruct.Create (typ, storages, name, preset, accum, sys, target) :> CounterBaseStruct
-            | CTD  -> CTDStruct.Create (typ, storages, name, preset, accum, sys, target)
-            | CTUD -> CTUDStruct.Create(typ, storages, name, preset, accum, sys, target)
-            | CTR  -> CTRStruct.Create (typ, storages, name, preset, accum, sys, target)
+            match cParams.Type with
+            | CTU  -> CTUStruct.Create (cParams, storages, accum) :> CounterBaseStruct
+            | CTD  -> CTDStruct.Create (cParams, storages, accum)
+            | CTUD -> CTUDStruct.Create(cParams, storages, accum)
+            | CTR  -> CTRStruct.Create (cParams, storages, accum)
 
         generateCounterStatement (cs, cParams)
 
     let defaultCounterCreateParam = {
+        DsRuntimeEnvironment = getNull<DsRuntimeEnvironment>()
         Type              = CTU
         Name              = ""
         Preset            = 0u
@@ -83,9 +69,10 @@ module CounterStatementModule =
         FunctionName      = ""
     }
 
-    let private createCTRStatement (cs :CTRStruct, rungInCondition)  : Statement =
+    let private createCTRStatement (cs :CTRStruct, rungInCondition, dsRte:DsRuntimeEnvironment)  : Statement =
         let cParams = {
             defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type = cs.Type
                 Name = cs.Name
                 Preset= cs.PRE.TValue
@@ -97,23 +84,26 @@ module CounterStatementModule =
 
     type CounterStatement =
         static member CreateAbCTU(tcParams:TCConstructionParams) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
 
             ({ defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTU; Name=name; Preset=preset; FunctionName=functionName
                 CountUpCondition=Some rungInCondition; } :CounterCreateParams)
             |> createCounterStatement storages
 
         static member CreateAbCTD(tcParams:TCConstructionParams) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
             { defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTD; Name=name; Preset=preset; FunctionName=functionName
                 CountDownCondition=Some rungInCondition; }
             |> createCounterStatement storages
 
         static member CreateAbCTUD(tcParams:TCConstructionParams, countDownCondition, reset) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=countUpCondition; FunctionName=functionName} = tcParams
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=countUpCondition; FunctionName=functionName} = tcParams
             { defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTUD; Name=name; Preset=preset; FunctionName=functionName
                 CountUpCondition   = Some countUpCondition;
                 CountDownCondition = Some countDownCondition;
@@ -122,8 +112,9 @@ module CounterStatementModule =
 
         // ldCondition (load) 는 XGK 에서는 사용할 수 없음.
         static member CreateCTUD(tcParams:TCConstructionParams, countDownCondition:IExpression<bool>, reset:IExpression<bool>, ldCondition:IExpression<bool> option) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=countUpCondition; FunctionName=functionName} = tcParams
-            { //defaultCounterCreateParam with
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=countUpCondition; FunctionName=functionName} = tcParams
+            { defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTUD; Name=name; Preset=preset; FunctionName=functionName
                 CountUpCondition   = Some countUpCondition
                 CountDownCondition = Some countDownCondition
@@ -131,29 +122,32 @@ module CounterStatementModule =
                 ResetCondition     = Some reset  }
             |> createCounterStatement storages
 
-        static member CreateCTRUsingStructure(cs: CTRStruct, rungInCondition) =
-            createCTRStatement (cs, rungInCondition)
+        static member CreateCTRUsingStructure(cs: CTRStruct, rungInCondition, dsRte:DsRuntimeEnvironment) =
+            createCTRStatement (cs, rungInCondition, dsRte)
 
 
         static member CreateCTU(tcParams:TCConstructionParams, reset) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
             { defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTU; Name=name; Preset=preset; FunctionName=functionName
                 CountUpCondition = Some rungInCondition;
                 ResetCondition   = Some reset; }
             |> createCounterStatement storages
 
         static member CreateXgiCTD(tcParams:TCConstructionParams, load) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
             { defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTD; Name=name; Preset=preset; FunctionName=functionName
                 CountDownCondition = Some rungInCondition;
                 LoadCondition     = Some load; }
             |> createCounterStatement storages
 
         static member CreateXgiCTR(tcParams:TCConstructionParams, reset) =
-            let {Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
+            let { DsRuntimeEnvironment=dsRte; Storages=storages; Name=name; Preset=preset; RungInCondition=rungInCondition; FunctionName=functionName} = tcParams
             { defaultCounterCreateParam with
+                DsRuntimeEnvironment = dsRte
                 Type=CTR; Name=name; Preset=preset; FunctionName=functionName
                 CountDownCondition = Some rungInCondition;
                 ResetCondition   = Some reset; }

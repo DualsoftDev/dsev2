@@ -41,7 +41,24 @@ module CounterModule =
         ACC: TValue<CountUnitType>
     }
 
-    let private CreateCounterParameters(typ:CounterType, storages:Storages, name, preset, accum:CountUnitType, target:PlatformTarget) =
+    type (*internal*) CounterCreateParams = {
+        DsRuntimeEnvironment: DsRuntimeEnvironment
+        Type: CounterType
+        Name: string
+        Preset: CountUnitType
+        CountUpCondition  : IExpression<bool> option
+        CountDownCondition: IExpression<bool> option
+        ResetCondition    : IExpression<bool> option
+        LoadCondition     : IExpression<bool> option
+        FunctionName:string
+    }
+
+
+    let private CreateCounterParameters(cParams:CounterCreateParams, storages:Storages, accum:CountUnitType) =
+        let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
+        let sys, target = dsRte.ISystem, dsRte.PlatformTarget
+        let valueBag = dsRte.ValueBag
+
         let nullB = getNull<TValue<bool>>()
         let mutable cu  = nullB  // Count up enable bit
         let mutable cd  = nullB  // Count down enable bit
@@ -69,75 +86,75 @@ module CounterModule =
 
         match target, typ with
         | (WINDOWS | XGI| XGK), CTU ->
-            cu  <- T.CreateMemberVariable<bool>  (  $"{name}.CU",  false)  // Count up enable bit
-            res <- T.CreateMemberVariable<bool>  (  $"{name}.R",   false)
-            pre <- T.CreateMemberVariable<UInt32>(  $"{name}.PV",  preset)
-            dn  <- T.CreateMemberVariable<bool>  (  dnName,        false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>(  $"{name}.CV",  accum)
+            cu  <- T.CreateMemberVariable<bool>  (  valueBag, sys, $"{name}.CU",  false)  // Count up enable bit
+            res <- T.CreateMemberVariable<bool>  (  valueBag, sys, $"{name}.R",   false)
+            pre <- T.CreateMemberVariable<UInt32>(  valueBag, sys, $"{name}.PV",  preset)
+            dn  <- T.CreateMemberVariable<bool>  (  valueBag, sys, dnName,        false, T.SysVarTag) // Done
+            acc <- T.CreateMemberVariable<UInt32>(  valueBag, sys, $"{name}.CV",  accum)
             add [cu; res; pre; dn; acc]
 
         | (WINDOWS | XGI| XGK), CTD ->
             ()
-            cd  <- T.CreateMemberVariable<bool>  (  $"{name}.CD", false)   // Count down enable bit
-            ld  <- T.CreateMemberVariable<bool>  (  $"{name}.LD", false)   // Load
-            pre <- T.CreateMemberVariable<UInt32>(  $"{name}.PV", preset)
-            dn  <- T.CreateMemberVariable<bool>  (  dnName,       false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>(  $"{name}.CV", accum)
+            cd  <- T.CreateMemberVariable<bool>  (  valueBag, sys, $"{name}.CD", false)   // Count down enable bit
+            ld  <- T.CreateMemberVariable<bool>  (  valueBag, sys, $"{name}.LD", false)   // Load
+            pre <- T.CreateMemberVariable<UInt32>(  valueBag, sys, $"{name}.PV", preset)
+            dn  <- T.CreateMemberVariable<bool>  (  valueBag, sys, dnName,       false, T.SysVarTag) // Done
+            acc <- T.CreateMemberVariable<UInt32>(  valueBag, sys, $"{name}.CV", accum)
             add [cd; res; ld; pre; dn; acc]
 
         | (WINDOWS | XGI| XGK), CTUD ->
-            cu  <- T.CreateMemberVariable<bool>    ( $"{name}.CU", false)  // Count up enable bit
-            cd  <- T.CreateMemberVariable<bool>    ( $"{name}.CD", false)  // Count down enable bit
-            res <- T.CreateMemberVariable<bool>    ( $"{name}.R" , false)
-            ld  <- T.CreateMemberVariable<bool>    ( $"{name}.LD", false)  // Load
-            pre <- T.CreateMemberVariable<UInt32>  ( $"{name}.PV", preset)
-            dn  <- T.CreateMemberVariable<bool>    ( dnName,       false, T.SysVarTag) // Done
-            dnDown  <- T.CreateMemberVariable<bool>( $"{name}.QD", false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>  ( $"{name}.CV", accum)
+            cu  <- T.CreateMemberVariable<bool>    ( valueBag, sys, $"{name}.CU", false)  // Count up enable bit
+            cd  <- T.CreateMemberVariable<bool>    ( valueBag, sys, $"{name}.CD", false)  // Count down enable bit
+            res <- T.CreateMemberVariable<bool>    ( valueBag, sys, $"{name}.R" , false)
+            ld  <- T.CreateMemberVariable<bool>    ( valueBag, sys, $"{name}.LD", false)  // Load
+            pre <- T.CreateMemberVariable<UInt32>  ( valueBag, sys, $"{name}.PV", preset)
+            dn  <- T.CreateMemberVariable<bool>    ( valueBag, sys, dnName,       false, T.SysVarTag) // Done
+            dnDown  <- T.CreateMemberVariable<bool>( valueBag, sys, $"{name}.QD", false, T.SysVarTag) // Done
+            acc <- T.CreateMemberVariable<UInt32>  ( valueBag, sys, $"{name}.CV", accum)
             add [cu; cd; res; ld; pre; dn; dnDown; acc]
 
         | (WINDOWS | XGI| XGK), CTR ->
-            cd  <- T.CreateMemberVariable<bool>  (   $"{name}.CD",  false)   // Count down enable bit
-            pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PV",  preset)
-            res <- T.CreateMemberVariable<bool>  (   $"{name}.RST", false)
-            dn  <- T.CreateMemberVariable<bool>  (   dnName,        false, T.SysVarTag) // Done
-            acc <- T.CreateMemberVariable<UInt32>(   $"{name}.CV",  accum)
+            cd  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.CD",  false)   // Count down enable bit
+            pre <- T.CreateMemberVariable<UInt32>(   valueBag, sys, $"{name}.PV",  preset)
+            res <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.RST", false)
+            dn  <- T.CreateMemberVariable<bool>  (   valueBag, sys, dnName,        false, T.SysVarTag) // Done
+            acc <- T.CreateMemberVariable<UInt32>(   valueBag, sys, $"{name}.CV",  accum)
             add [cd; pre; res; dn; acc]
 
         | _ ->
             match typ with
             | CTU ->
-                cu  <- T.CreateMemberVariable<bool>( $"{name}.CU", false)  // Count up enable bit
+                cu  <- T.CreateMemberVariable<bool>( valueBag, sys, $"{name}.CU", false)  // Count up enable bit
                 add [cu]
             | CTR | CTD ->
-                cd  <- T.CreateMemberVariable<bool>( $"{name}.CD", false)  // Count down enable bit
+                cd  <- T.CreateMemberVariable<bool>( valueBag, sys, $"{name}.CD", false)  // Count down enable bit
                 add [cd]
             | CTUD ->
-                cu  <- T.CreateMemberVariable<bool>( $"{name}.CU", false) // Count up enable bit
-                cd  <- T.CreateMemberVariable<bool>( $"{name}.CD", false) // Count down enable bit
+                cu  <- T.CreateMemberVariable<bool>( valueBag, sys, $"{name}.CU", false) // Count up enable bit
+                cd  <- T.CreateMemberVariable<bool>( valueBag, sys, $"{name}.CD", false) // Count down enable bit
                 add [cu; cd]
 
 
-            ov  <- T.CreateMemberVariable<bool>  (   $"{name}.OV", false)   // Overflow
-            un  <- T.CreateMemberVariable<bool>  (   $"{name}.UN", false)   // Underflow
-            ld  <- T.CreateMemberVariable<bool>  (   $"{name}.LD", false)   // XGI: Load
-            dn  <- T.CreateMemberVariable<bool>  (   $"{name}.DN", false, T.SysVarTag) // Done
-            pre <- T.CreateMemberVariable<UInt32>(   $"{name}.PRE", preset)
-            acc <- T.CreateMemberVariable<UInt32>(   $"{name}.ACC", accum)
-            res <- T.CreateMemberVariable<bool>  (   $"{name}.RES", false)
+            ov  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.OV", false)   // Overflow
+            un  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.UN", false)   // Underflow
+            ld  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.LD", false)   // XGI: Load
+            dn  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.DN", false, T.SysVarTag) // Done
+            pre <- T.CreateMemberVariable<UInt32>(   valueBag, sys, $"{name}.PRE", preset)
+            acc <- T.CreateMemberVariable<UInt32>(   valueBag, sys, $"{name}.ACC", accum)
+            res <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.RES", false)
             add [ov; un; dn; pre; acc; res;]
 
         (* 내부 structure 가 AB 기반이므로, 메모리 자체는 생성하되, storage 에 등록하지는 않는다. *)
         if isItNull(ov) then
-            ov  <- T.CreateMemberVariable<bool>  (   $"{name}.OV", false)
+            ov  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.OV", false)
         if isItNull(un) then
-            un  <- T.CreateMemberVariable<bool>  (   $"{name}.UN", false)
+            un  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.UN", false)
         if isItNull(cu) then
-            cu  <- T.CreateMemberVariable<bool>  (   $"{name}.CU", false)
+            cu  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.CU", false)
         if isItNull(cd) then
-            cd  <- T.CreateMemberVariable<bool>  (   $"{name}.CD", false)
+            cd  <- T.CreateMemberVariable<bool>  (   valueBag, sys, $"{name}.CD", false)
         if isItNull(cd) then
-            res  <- T.CreateMemberVariable<bool> (   $"{name}.RES", false)
+            res  <- T.CreateMemberVariable<bool> (   valueBag, sys, $"{name}.RES", false)
 
         {
             Type        = typ
@@ -196,8 +213,10 @@ module CounterModule =
         member _.CU = base.CU
         interface ICTU with
             member x.CU = x.CU
-        static member Create(typ:CounterType, storages, name, preset:CountUnitType, accum:CountUnitType, sys, target:PlatformTarget) =
-            let counterParams = CreateCounterParameters(typ, storages, name, preset, accum, target)
+        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
+            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
+            let sys = dsRte.ISystem
+            let counterParams = CreateCounterParameters(cParams, storages, accum)
             let cs = new CTUStruct(counterParams, sys)
             storages.Add(name, cs)
             cs
@@ -208,8 +227,12 @@ module CounterModule =
         interface ICTD with
             member x.CD = x.CD
             member x.LD = x.LD
-        static member Create(typ:CounterType, storages, name, preset:CountUnitType, accum:CountUnitType, sys, target:PlatformTarget) =
-            let counterParams = CreateCounterParameters(typ, storages, name, preset, accum, target)
+
+        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
+            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
+            let sys = dsRte.ISystem
+            let counterParams = CreateCounterParameters(cParams, storages, accum)
+
             let cs = new CTDStruct(counterParams, sys)
             storages.Add(name, cs)
             cs
@@ -222,8 +245,11 @@ module CounterModule =
             member x.CU = x.CU
             member x.CD = x.CD
             member x.LD = x.LD
-        static member Create(typ:CounterType, storages, name, preset:CountUnitType, accum:CountUnitType, sys, target:PlatformTarget) =
-            let counterParams = CreateCounterParameters(typ, storages, name, preset, accum, target)
+
+        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
+            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
+            let sys = dsRte.ISystem
+            let counterParams = CreateCounterParameters(cParams, storages, accum)
             let cs = new CTUDStruct(counterParams, sys)
             storages.Add(name, cs)
             cs
@@ -233,32 +259,35 @@ module CounterModule =
         member _.RES = base.RES
         interface ICTR with
             member x.CD = x.CD
-        static member Create(typ:CounterType, storages, name, preset:CountUnitType, accum:CountUnitType, sys, target:PlatformTarget) =
-            let counterParams = CreateCounterParameters(typ, storages, name, preset, accum, target)
+
+        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
+            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
+            let sys = dsRte.ISystem
+            let counterParams = CreateCounterParameters(cParams, storages, accum)
             let cs = new CTRStruct(counterParams, sys)
             storages.Add(name, cs)
             cs
 
-    type internal CountAccumulator(counterType:CounterType, counterStruct:CounterBaseStruct)=
+    type internal CountAccumulator(counterType:CounterType, counterStruct:CounterBaseStruct, dsRte:DsRuntimeEnvironment)=
         let disposables = new CompositeDisposable()
 
         let cs = counterStruct
         let system = (counterStruct:>ValueHolder).DsSystem
         let registerLoad() =
             let csd = box cs :?> ICTD       // CTD or CTUD 둘다 적용
-            CpusEvent.ValueSubject
-                .Where(fun (sys, _storage, _value) -> sys = system)
-                .Where(fun (_sys, storage, _newValue) -> storage = csd.LD && csd.LD.TValue)
-                .Subscribe(fun (_sys, _storage, _newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = system)
+                .Where(fun (storage, _newValue) -> storage = csd.LD && csd.LD.TValue)
+                .Subscribe(fun (_storage, _newValue) ->
                     cs.ACC.TValue <- cs.PRE.TValue
             ) |> disposables.Add
 
         let registerCTU() =
             let csu = box cs :?> ICTU
-            CpusEvent.ValueSubject
-                .Where(fun (sys, _storage, _value) -> sys = system)
-                .Where(fun (_sys, storage, _newValue) -> storage = csu.CU && csu.CU.TValue)
-                .Subscribe(fun (_sys, _storage, _newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = system)
+                .Where(fun (storage, _newValue) -> storage = csu.CU && csu.CU.TValue)
+                .Subscribe(fun (_storage, _newValue) ->
                     if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
                     cs.ACC.TValue <- cs.ACC.TValue + 1u
                     if cs.ACC.TValue >= cs.PRE.TValue then
@@ -268,10 +297,10 @@ module CounterModule =
         let registerCTD() =
             let csd = box cs :?> ICTD
             registerLoad()
-            CpusEvent.ValueSubject
-                .Where(fun (sys, _storage, _value) -> sys = system)
-                .Where(fun (_sys, storage, _newValue) -> storage = csd.CD && csd.CD.TValue)
-                .Subscribe(fun (_sys, _storage, _newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = system)
+                .Where(fun (storage, _newValue) -> storage = csd.CD && csd.CD.TValue)
+                .Subscribe(fun (_storage, _newValue) ->
                     if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
                     cs.ACC.TValue <- cs.ACC.TValue - 1u
                     if cs.ACC.TValue <= cs.PRE.TValue then
@@ -281,10 +310,10 @@ module CounterModule =
 
         let registerCTR() =
             let csr = box cs :?> ICTR
-            CpusEvent.ValueSubject
-                .Where(fun (sys, _storage, _value) -> sys = system)
-                .Where(fun (_sys, storage, _newValue) -> storage = csr.CD && csr.CD.TValue)
-                .Subscribe(fun (_sys, _storage, _newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = system)
+                .Where(fun (storage, _newValue) -> storage = csr.CD && csr.CD.TValue)
+                .Subscribe(fun (_storage, _newValue) ->
                     if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then failwithlog "ERROR"
                     cs.ACC.TValue <- cs.ACC.TValue + 1u
                     if cs.ACC.TValue = cs.PRE.TValue then
@@ -297,10 +326,10 @@ module CounterModule =
 
 
         let registerReset() =
-            CpusEvent.ValueSubject
-                .Where(fun (sys, _storage, _value) -> sys = (counterStruct:>ValueHolder).DsSystem)
-                .Where(fun (_sys, storage, _newValue) -> storage = cs.RES && cs.RES.TValue)
-                .Subscribe(fun (_sys, _storage, _newValue) ->
+            dsRte.ValueChangedSubject
+                .Where(fun (storage, _value) -> storage.DsSystem = counterStruct.DsSystem)
+                .Where(fun (storage, _newValue) -> storage = cs.RES && cs.RES.TValue)
+                .Subscribe(fun (_storage, _newValue) ->
                     debugfn "Counter reset requested"
                     if cs.ACC.TValue < 0u || cs.PRE.TValue < 0u then
                         failwithlog "ERROR"
@@ -327,9 +356,9 @@ module CounterModule =
 
 
 
-    type Counter internal(typ:CounterType, counterStruct:CounterBaseStruct) =
+    type Counter internal(typ:CounterType, counterStruct:CounterBaseStruct, dsRte:DsRuntimeEnvironment) =
 
-        let accumulator = new CountAccumulator(typ, counterStruct)
+        let accumulator = new CountAccumulator(typ, counterStruct, dsRte)
 
         member _.Type = typ
         member _.CounterStruct = counterStruct

@@ -6,4 +6,5 @@ open Dual.Common.Core.FS
 
 module ModuleInitializer =
     let Initialize() =
-        CpusEvent.initialize()
+        //CpusEvent.initialize()
+        ()

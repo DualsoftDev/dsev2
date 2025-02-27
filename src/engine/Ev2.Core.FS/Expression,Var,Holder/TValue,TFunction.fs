@@ -17,6 +17,9 @@ module rec TExpressionModule =
     type DependentDicType = Dictionary<IValue, HashSet<INonTerminal>>
 
     type ValueBag private (values:IValue seq, valueChangedSubject:Subject<IValue * obj>, dependents:DependentDicType) =
+
+        interface IValueBag
+
         member val ValueChangedSubject = valueChangedSubject
         member val Dependents          = dependents
         member val Values              = HashSet(values)     // 사용된 전제 value list
@@ -72,13 +75,8 @@ module rec TExpressionModule =
 
     let theValueBag = ValueBag.Create()
 
-    /// 값 변경 공지
-    let ValueChangedSubject = theValueBag.ValueChangedSubject
-
-
-    [<Obsolete("중복: 제거 요망")>]
-    // 임시... 원본: Interface.fs@Engine.Core
-    type ISystem = interface end
+    ///// 값 변경 공지
+    //let ValueChangedSubject = theValueBag.ValueChangedSubject
 
     /// DS 에서는 TValue<'T> 부터 사용.
     type ValueHolder (typ: Type, ?value: obj, ?valueBag:ValueBag) as this =
@@ -309,18 +307,18 @@ module rec TExpressionModule =
             TFunction.Create(op, args, ?name=name, ?valueBag=valueBag)
 
 
-    type IValue with
-        member x.EnumerateValueObjects(?includeMe:bool): IValue seq =
-            let includeMe = includeMe |? false
-            seq {
-                if includeMe then
-                    yield x
-                match x with
-                | :? OFunction as f ->
-                    for arg in f.Arguments |> Seq.cast<IValue> do
-                        yield! arg.EnumerateValueObjects(true)
-                | _ -> ()
-            }
+    //type IValue with
+    //    member x.EnumerateValueObjects(?includeMe:bool): IValue seq =
+    //        let includeMe = includeMe |? false
+    //        seq {
+    //            if includeMe then
+    //                yield x
+    //            match x with
+    //            | :? OFunction as f ->
+    //                for arg in f.Arguments |> Seq.cast<IValue> do
+    //                    yield! arg.EnumerateValueObjects(true)
+    //            | _ -> ()
+    //        }
 
     type INonTerminal with
         member x.Arguments =
