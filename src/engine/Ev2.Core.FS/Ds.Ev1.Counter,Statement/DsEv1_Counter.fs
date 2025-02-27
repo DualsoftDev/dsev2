@@ -207,18 +207,27 @@ module CounterModule =
         inherit ICounter
         abstract CD:TValue<bool>
 
+    // 공통적인 Counter 생성 로직을 위한 유틸리티 함수
+    // 'T는 CounterBaseStruct를 상속하는 타입이어야 한다는 제약 조건.  즉, CTUStruct, CTDStruct, CTUDStruct, CTRStruct와 같은 Counter 타입을 가리킬 수 있음.
+    let private createCounter<'T when 'T :> CounterBaseStruct>
+        (ctor: CounterParams * _ -> 'T)     // ctor는 Counter 타입의 생성자를 전달받는 인자
+        (cParams: CounterCreateParams)
+        (storages: Storages)
+        (accum: uint32) =
+
+        let { DsRuntimeEnvironment = dsRte; Name = name } = cParams
+        let sys = dsRte.ISystem
+        let counterParams = CreateCounterParameters(cParams, storages, accum)
+        let counter = ctor(counterParams, sys)
+        storages.Add(name, counter)
+        counter
+
     type CTUStruct private(counterParams:CounterParams, sys) =
         inherit CounterBaseStruct(counterParams, sys)
         member _.CU = base.CU
         interface ICTU with
             member x.CU = x.CU
-        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
-            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
-            let sys = dsRte.ISystem
-            let counterParams = CreateCounterParameters(cParams, storages, accum)
-            let cs = new CTUStruct(counterParams, sys)
-            storages.Add(name, cs)
-            cs
+        static member Create = createCounter CTUStruct
 
     type CTDStruct private(counterParams:CounterParams, sys) =
         inherit CounterBaseStruct(counterParams, sys)
@@ -227,14 +236,7 @@ module CounterModule =
             member x.CD = x.CD
             member x.LD = x.LD
 
-        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
-            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
-            let sys = dsRte.ISystem
-            let counterParams = CreateCounterParameters(cParams, storages, accum)
-
-            let cs = new CTDStruct(counterParams, sys)
-            storages.Add(name, cs)
-            cs
+        static member Create = createCounter CTDStruct
 
     type CTUDStruct private(counterParams:CounterParams, sys) =
         inherit CounterBaseStruct(counterParams, sys)
@@ -245,13 +247,7 @@ module CounterModule =
             member x.CD = x.CD
             member x.LD = x.LD
 
-        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
-            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
-            let sys = dsRte.ISystem
-            let counterParams = CreateCounterParameters(cParams, storages, accum)
-            let cs = new CTUDStruct(counterParams, sys)
-            storages.Add(name, cs)
-            cs
+        static member Create = createCounter CTUDStruct
 
     type CTRStruct(counterParams:CounterParams , sys) =
         inherit CounterBaseStruct(counterParams, sys)
@@ -259,13 +255,7 @@ module CounterModule =
         interface ICTR with
             member x.CD = x.CD
 
-        static member Create(cParams:CounterCreateParams, storages:Storages, accum:uint32) =
-            let { DsRuntimeEnvironment=dsRte; Type=typ; Name=name; Preset=preset; }:CounterCreateParams = cParams
-            let sys = dsRte.ISystem
-            let counterParams = CreateCounterParameters(cParams, storages, accum)
-            let cs = new CTRStruct(counterParams, sys)
-            storages.Add(name, cs)
-            cs
+        static member Create = createCounter CTRStruct
 
 
 
@@ -296,8 +286,7 @@ module CounterModule =
         /// - action: 조건이 충족되었을 때 실행할 함수
         let subscribeToChange (storage:IStorage) (condition: unit -> bool) (action: unit -> unit): unit =
             dsRte.ValueChangedSubject
-                .Where(fun (s, _) -> s.DsSystem = system)
-                .Where(fun (s, _) -> s = storage && condition())
+                .Where(fun (s, _) -> s.DsSystem = system && s = storage && condition())
                 .Subscribe(fun (_, _) -> action ())
             |> disposables.Add
 

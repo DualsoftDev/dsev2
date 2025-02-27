@@ -50,10 +50,10 @@ module CounterStatementModule =
         let accum = 0u
         let cs =    // counter structure
             match cParams.Type with
-            | CTU  -> CTUStruct.Create (cParams, storages, accum) :> CounterBaseStruct
-            | CTD  -> CTDStruct.Create (cParams, storages, accum)
-            | CTUD -> CTUDStruct.Create(cParams, storages, accum)
-            | CTR  -> CTRStruct.Create (cParams, storages, accum)
+            | CTU  -> CTUStruct.Create  cParams storages accum :> CounterBaseStruct
+            | CTD  -> CTDStruct.Create  cParams storages accum
+            | CTUD -> CTUDStruct.Create cParams storages accum
+            | CTR  -> CTRStruct.Create  cParams storages accum
 
         generateCounterStatement (cs, cParams)
 
