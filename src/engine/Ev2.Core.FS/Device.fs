@@ -100,7 +100,7 @@ module DeviceModule =
     [<AbstractClass>]
     type TypedAddress(address: string, typ:Type) =
         [<JsonProperty(Order = -98)>] member val Address = address with get, set
-        [<JsonProperty(Order = -97)>] member val ObjectHolder = ObjectHolder.Create(typ, null) with get, set
+        [<JsonProperty(Order = -97)>] member val ObjectHolder = ObjHolder(typ) with get, set
 
     type InputParam(address: string, typ:Type, ?min:obj, ?max:obj) =
         inherit TypedAddress(address, typ)
@@ -110,8 +110,8 @@ module DeviceModule =
         let min = min |? null
         let max = max |? null
 
-        member val Min = ObjectHolder.Create(typ, min) with get, set
-        member val Max = ObjectHolder.Create(typ, max) with get, set
+        member val Min = ObjHolder(typ, min) with get, set
+        member val Max = ObjHolder(typ, max) with get, set
 
     type OutputParam(address: string, typ:Type, ?value:obj) =
         inherit TypedAddress(address, typ)

@@ -31,73 +31,7 @@ module DsDataType =
     let [<Literal>] PLCUINT64  = "lword"
 
 
-    /// DefaultValue * MaxValue * DefaultToString
-    let private typeInfo = dict [
-        BOOL,     (box false,   box true,               "false")
-        CHAR,     (box ' ',     box '\uFFFF',           "' '")  // Unicode 최대값
-        FLOAT32,  (box 0.0f,    box Single.MaxValue,    "0.0f")
-        FLOAT64,  (box 0.0,     box Double.MaxValue,    "0.0")
-        INT8,     (box 0y,      box SByte.MaxValue,     "0y")
-        INT16,    (box 0s,      box Int16.MaxValue,     "0s")
-        INT32,    (box 0,       box Int32.MaxValue,     "0")
-        INT64,    (box 0L,      box Int64.MaxValue,     "0L")
-        STRING,   (box "",      box "",                 "\"\"") // 문자열은 기본값과 최대값이 동일
-        UINT8,    (box 0uy,     box Byte.MaxValue,      "0uy")
-        UINT16,   (box  0us,    box UInt16.MaxValue,    "0us")
-        UINT32,   (box 0u,      box UInt32.MaxValue,    "0u")
-        UINT64,   (box 0UL,     box UInt64.MaxValue,    "0UL")
-    ]
-
-    let private getTypeInfo (typ: System.Type) =
-        match typeInfo.TryGetValue typ.Name with
-        | true, v -> v
-        | _ -> failwithlog "ERROR"
-
-    let typeDefaultValue    typ = getTypeInfo typ |> Tuple.item 0
-    let typeMaxValue        typ = getTypeInfo typ |> Tuple.item 1
-    let typeDefaultToString typ = getTypeInfo typ |> Tuple.item 2
-
-(*
     /// DataType Enum
-    type DataType =
-        | DuBOOL | DuCHAR | DuFLOAT32 | DuFLOAT64 | DuINT16 | DuINT32
-        | DuINT64 | DuINT8 | DuSTRING | DuUINT16 | DuUINT32 | DuUINT64 | DuUINT8
-
-    /// DataType => DefaultValue *  MaxValue     *      DefaultToString * SystemType * PLCType * Type *               BitSize
-    let dataTypeInfo = dict [
-        DuBOOL,    (box false,      box true,            "false",        BOOL,       PLCBOOL,    typedefof<bool>,    1)
-        DuCHAR,    (box ' ',        box '\uFFFF',        "' '",          CHAR,       CHAR,       typedefof<char>,    8)
-        DuFLOAT32, (box 0.0f,       box Single.MaxValue, "0.0f",         FLOAT32,    FLOAT32,    typedefof<single>, 32)
-        DuFLOAT64, (box 0.0,        box Double.MaxValue, "0.0",          FLOAT64,    FLOAT64,    typedefof<double>, 64)
-        DuINT16,   (box 0s,         box Int16.MaxValue,  "0s",           INT16,      INT16,      typedefof<int16>,  16)
-        DuINT32,   (box 0,          box Int32.MaxValue,  "0",            INT32,      INT32,      typedefof<int32>,  32)
-        DuINT64,   (box 0L,         box Int64.MaxValue,  "0L",           INT64,      INT64,      typedefof<int64>,  64)
-        DuINT8,    (box 0y,         box SByte.MaxValue,  "0y",           INT8,       INT8,       typedefof<sbyte>,   8)
-        DuSTRING,  (box "",         box "",              "\"\"",         STRING,     STRING,     typedefof<string>, 32 * 8)
-        DuUINT16,  (box 0us,        box UInt16.MaxValue, "0us",          UINT16,     PLCUINT16,  typedefof<uint16>, 16)
-        DuUINT32,  (box 0u,         box UInt32.MaxValue, "0u",           UINT32,     PLCUINT32,  typedefof<uint32>, 32)
-        DuUINT64,  (box 0UL,        box UInt64.MaxValue, "0UL",          UINT64,     PLCUINT64,  typedefof<uint64>, 64)
-        DuUINT8,   (box 0uy,        box Byte.MaxValue,   "0uy",          UINT8,      PLCUINT8,   typedefof<byte>,    8)
-    ]
-
-    /// 문자열을 DataType으로 변환하는 매핑
-    let stringToDataType = dict [
-        BOOL,    DuBOOL
-        CHAR,    DuCHAR
-        FLOAT32, DuFLOAT32
-        FLOAT64, DuFLOAT64
-        INT16,   DuINT16
-        INT32,   DuINT32
-        INT64,   DuINT64
-        INT8,    DuINT8
-        STRING,  DuSTRING
-        UINT16,  DuUINT16
-        UINT32,  DuUINT32
-        UINT64,  DuUINT64
-        UINT8,   DuUINT8
-    ]
-*)
-
     type DataType =
         | DuBOOL
         | DuCHAR
@@ -114,20 +48,35 @@ module DsDataType =
         | DuUINT64
         | DuUINT8
 
-    let typeMappings = dict [
-        DuBOOL,    (BOOL, PLCBOOL, "BOOL", typedefof<bool>, 1)
-        DuCHAR,    (CHAR, CHAR, "CHAR", typedefof<char>, 8)
-        DuFLOAT32, (FLOAT32, FLOAT32, "REAL", typedefof<single>, 32)
-        DuFLOAT64, (FLOAT64, FLOAT64, "LREAL", typedefof<double>, 64)
-        DuINT16,   (INT16, INT16, "INT", typedefof<int16>, 16)
-        DuINT32,   (INT32, INT32, "DINT", typedefof<int32>, 32)
-        DuINT64,   (INT64, INT64, "LINT", typedefof<int64>, 64)
-        DuINT8,    (INT8, INT8, "SINT", typedefof<sbyte>, 8)
-        DuSTRING,  (STRING, STRING, "STRING", typedefof<string>, 32 * 8)
-        DuUINT16,  (UINT16, PLCUINT16, "UINT", typedefof<uint16>, 16)
-        DuUINT32,  (UINT32, PLCUINT32, "UDINT", typedefof<uint32>, 32)
-        DuUINT64,  (UINT64, PLCUINT64, "ULINT", typedefof<uint64>, 64)
-        DuUINT8,   (UINT8, PLCUINT8, "BYTE", typedefof<byte>, 8)
+
+
+    // TypeInfo 클래스 정의
+    type TypeInfo(dataType, typ, typeString, plcType, plcText, defaultValue: obj, defaultString, maxValue: obj, bitSize: int) =
+        member val DataType:DataType    = dataType
+        member val Type:Type            = typ
+        member val TypeString:string    = typeString
+        member val PLCType:string       = plcType
+        member val PLCText:string       = plcText
+        member val DefaultValue:obj     = defaultValue
+        member val DefaultString:string = defaultString
+        member val MaxValue:obj         = maxValue
+        member val BitSize:int          = bitSize
+
+    /// DataType =>         DatType,   SystemType,       TypeStreing, PLCType,    PLCText,  DefaultValue *  DefaultToString,  MaxValue,                   BitSize
+    let dataTypeInfo = dict [
+        DuBOOL,    TypeInfo(DuBOOL,    typedefof<bool>,   BOOL,       PLCBOOL,    "BOOL",   box false,      "false",          box true,                    1)
+        DuCHAR,    TypeInfo(DuCHAR,    typedefof<char>,   CHAR,       CHAR,       "CHAR",   box ' ',        "' '",            box '\uFFFF',                8)
+        DuFLOAT32, TypeInfo(DuFLOAT32, typedefof<single>, FLOAT32,    FLOAT32,    "REAL",   box 0.0f,       "0.0f",           box Single.MaxValue,        32)
+        DuFLOAT64, TypeInfo(DuFLOAT64, typedefof<double>, FLOAT64,    FLOAT64,    "LREAL",  box 0.0,        "0.0",            box Double.MaxValue,        64)
+        DuINT16,   TypeInfo(DuINT16,   typedefof<int16>,  INT16,      INT16,      "INT",    box 0s,         "0s",             box Int16.MaxValue,         16)
+        DuINT32,   TypeInfo(DuINT32,   typedefof<int32>,  INT32,      INT32,      "DINT",   box 0,          "0",              box Int32.MaxValue,         32)
+        DuINT64,   TypeInfo(DuINT64,   typedefof<int64>,  INT64,      INT64,      "LINT",   box 0L,         "0L",             box Int64.MaxValue,         64)
+        DuINT8,    TypeInfo(DuINT8,    typedefof<sbyte>,  INT8,       INT8,       "SINT",   box 0y,         "0y",             box SByte.MaxValue,          8)
+        DuSTRING,  TypeInfo(DuSTRING,  typedefof<string>, STRING,     STRING,     "STRING", box "",         "\"\"",           box "",                     32 * 8)
+        DuUINT16,  TypeInfo(DuUINT16,  typedefof<uint16>, UINT16,     PLCUINT16,  "UINT",   box 0us,        "0us",            box UInt16.MaxValue,        16)
+        DuUINT32,  TypeInfo(DuUINT32,  typedefof<uint32>, UINT32,     PLCUINT32,  "UDINT",  box 0u,         "0u",             box UInt32.MaxValue,        32)
+        DuUINT64,  TypeInfo(DuUINT64,  typedefof<uint64>, UINT64,     PLCUINT64,  "ULINT",  box 0UL,        "0UL",            box UInt64.MaxValue,        64)
+        DuUINT8,   TypeInfo(DuUINT8,   typedefof<byte>,   UINT8,      PLCUINT8,   "BYTE",   box 0uy,        "0uy",            box Byte.MaxValue,           8)
     ]
 
     let blockSizeMappings = dict [
@@ -138,11 +87,11 @@ module DsDataType =
     ]
 
     type DataType with
-        member x.ToText() = typeMappings.[x] |> fun (text, _, _, _, _) -> text
-        member x.ToPLCText() = typeMappings.[x] |> fun (_, plcText, _, _, _) -> plcText
-        member x.ToPLCType() = typeMappings.[x] |> fun (_, _, plcType, _, _) -> plcType
-        member x.ToType() = typeMappings.[x] |> fun (_, _, _, typ, _) -> typ
-        member x.ToBitSize() = typeMappings.[x] |> fun (_, _, _, _, size) -> size
+        member x.ToText()      = dataTypeInfo[x].TypeString
+        member x.ToPLCText()   = dataTypeInfo[x].PLCType
+        member x.ToPLCType()   = dataTypeInfo[x].PLCText
+        member x.ToType()      = dataTypeInfo[x].Type
+        member x.ToBitSize()   = dataTypeInfo[x].BitSize
         member x.ToTextLower() = x.ToText().ToLower()
 
         member x.ToBlockSizeNText() =
@@ -150,70 +99,76 @@ module DsDataType =
             | true, v -> v
             | _ -> failwithf $"'{x}' not support ToBlockSize"
 
-            member x.ToValue(valueText: string) =
-                let valueText =
-                    if x = DuCHAR || x = DuSTRING || x = DuBOOL then valueText
-                    else valueText.TrimEnd([|'f'; 's'; 'L'; 'u'; 'y'|])
+        member x.ToValue(valueText: string) =
+            let valueText =
+                if x = DuCHAR || x = DuSTRING || x = DuBOOL then valueText
+                else valueText.TrimEnd([|'f'; 's'; 'L'; 'u'; 'y'|])
 
-                match x.ToType().Name with
-                | "Boolean" -> Convert.ToBoolean valueText |> box
-                | "Char"    -> Convert.ToChar valueText |> box
-                | "Single"  -> Convert.ToSingle valueText |> box
-                | "Double"  -> Convert.ToDouble valueText |> box
-                | "Int16"   -> Convert.ToInt16 valueText |> box
-                | "Int32"   -> Convert.ToInt32 valueText |> box
-                | "Int64"   -> Convert.ToInt64 valueText |> box
-                | "SByte"   -> Convert.ToSByte valueText |> box
-                | "String"  -> box valueText
-                | "UInt16"  -> Convert.ToUInt16 valueText |> box
-                | "UInt32"  -> Convert.ToUInt32 valueText |> box
-                | "UInt64"  -> Convert.ToUInt64 valueText |> box
-                | "Byte"    -> Convert.ToByte valueText |> box
-                | _ -> failwith $"Unsupported type {x}"
+            match x with
+            | DuBOOL    -> Convert.ToBoolean valueText |> box
+            | DuCHAR    -> Convert.ToChar    valueText |> box
+            | DuFLOAT32 -> Convert.ToSingle  valueText |> box
+            | DuFLOAT64 -> Convert.ToDouble  valueText |> box
+            | DuINT16   -> Convert.ToInt16   valueText |> box
+            | DuINT32   -> Convert.ToInt32   valueText |> box
+            | DuINT64   -> Convert.ToInt64   valueText |> box
+            | DuINT8    -> Convert.ToSByte   valueText |> box
+            | DuSTRING  -> box               valueText
+            | DuUINT16  -> Convert.ToUInt16  valueText |> box
+            | DuUINT32  -> Convert.ToUInt32  valueText |> box
+            | DuUINT64  -> Convert.ToUInt64  valueText |> box
+            | DuUINT8   -> Convert.ToByte    valueText |> box
+            | _ -> failwith $"Unsupported type {x}"
 
-        member x.DefaultValue() = typeDefaultValue (x.ToType())
-
-
+        member x.DefaultValue() = dataTypeInfo[x].DefaultValue
 
 
 
+    let typeDict = dict [
+        BOOL,    DuBOOL
+        CHAR,    DuCHAR
+        FLOAT32, DuFLOAT32
+        FLOAT64, DuFLOAT64
+        INT16,   DuINT16
+        INT32,   DuINT32
+        INT64,   DuINT64
+        INT8,    DuINT8
+        STRING,  DuSTRING
+        UINT16,  DuUINT16
+        UINT32,  DuUINT32
+        UINT64,  DuUINT64
+        UINT8,   DuUINT8
+    ]
+
+    let getDataType (typ: System.Type) : DataType =
+        match typeDict.TryGetValue(typ.Name) with
+        | true, value -> value
+        | false, _ -> failwithlog "ERROR"
+
+    let typeDefaultValue    typ = let t = getDataType typ in dataTypeInfo[t].DefaultValue
+    let typeMaxValue        typ = let t = getDataType typ in dataTypeInfo[t].MaxValue
+    let typeDefaultToString typ = let t = getDataType typ in dataTypeInfo[t].DefaultString
 
 
-    let getDataType (typ:System.Type) =
-        match typ.Name with
-        | BOOL      -> DuBOOL
-        | CHAR      -> DuCHAR
-        | FLOAT32   -> DuFLOAT32
-        | FLOAT64   -> DuFLOAT64
-        | INT16     -> DuINT16
-        | INT32     -> DuINT32
-        | INT64     -> DuINT64
-        | INT8      -> DuINT8
-        | STRING    -> DuSTRING
-        | UINT16    -> DuUINT16
-        | UINT32    -> DuUINT32
-        | UINT64    -> DuUINT64
-        | UINT8     -> DuUINT8
-        | _  -> failwithlog "ERROR"
 
     let getDataTypeFromName (textTypeName:string) =
         getDataType(Type.GetType(textTypeName))
 
     let ToStringValue (value: obj) =
         match getDataType(value.GetType()), value  with
-        | DuBOOL     , _ -> value.ToString()
-        | DuCHAR     , _ -> sprintf "'%c'" (Convert.ToChar(value))
-        | DuFLOAT32  , (:? float32 as v) -> sprintf "%gf" v
-        | DuFLOAT64  , (:? float   as v) -> sprintf "%g" v
-        | DuINT16    , (:? int16   as v) -> sprintf "%ds" v
-        | DuINT32    , (:? int     as v) -> sprintf "%d" v
-        | DuINT64    , (:? int64   as v) -> sprintf "%dL" v
-        | DuINT8     , (:? sbyte   as v) -> sprintf "%dy" v
-        | DuSTRING   , (:? string  as v) -> sprintf "\"%s\"" v
-        | DuUINT16   , (:? uint16  as v) -> sprintf "%dus" v
-        | DuUINT32   , (:? uint32  as v) -> sprintf "%du" v
-        | DuUINT64   , (:? uint64  as v) -> sprintf "%dUL" v
-        | DuUINT8    , (:? byte    as v) -> sprintf "%duy" v
+        | DuBOOL,    _                 -> value.ToString()
+        | DuCHAR,    _                 -> sprintf "'%c'" (Convert.ToChar(value))
+        | DuFLOAT32, (:? float32 as v) -> sprintf "%gf" v
+        | DuFLOAT64, (:? float   as v) -> sprintf "%g" v
+        | DuINT16,   (:? int16   as v) -> sprintf "%ds" v
+        | DuINT32,   (:? int     as v) -> sprintf "%d" v
+        | DuINT64,   (:? int64   as v) -> sprintf "%dL" v
+        | DuINT8,    (:? sbyte   as v) -> sprintf "%dy" v
+        | DuSTRING,  (:? string  as v) -> sprintf "\"%s\"" v
+        | DuUINT16,  (:? uint16  as v) -> sprintf "%dus" v
+        | DuUINT32,  (:? uint32  as v) -> sprintf "%du" v
+        | DuUINT64,  (:? uint64  as v) -> sprintf "%dUL" v
+        | DuUINT8,   (:? byte    as v) -> sprintf "%duy" v
         | _  -> failwithf $"ERROR: Unsupported type {value.GetType()} for value {value}"
 
     let getTextValueNType (x: string) =
