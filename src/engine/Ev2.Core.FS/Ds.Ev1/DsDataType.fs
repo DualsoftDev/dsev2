@@ -324,37 +324,15 @@ module DsDataType =
 
     let middleValue (a: obj) (b: obj) : obj option =
         match a, b with
-            // Prevent overflow by calculating the midpoint using an alternative method
-        | :? int64 as ia, (:? int64 as ib) ->
-            if ia > ib then
-                Some (box (ia - ((ia - ib) / 2L)))
-            else
-                Some (box (ib - ((ib - ia) / 2L)))
-        | :? int as ia, (:? int as ib) ->
-            // Same logic applies to int
-            if ia > ib then
-                Some (box (ia - ((ia - ib) / 2)))
-            else
-                Some (box (ib - ((ib - ia) / 2)))
-        | :? float as fa, (:? float as fb) ->
-            Some (box ((fa + fb) / 2.0))
-        | :? single as fsa, (:? single as fsb) ->
-            Some (box ((fsa + fsb) / 2.0f))
-        | :? sbyte as sba, (:? sbyte as sbb) ->
-            Some (box (sbyte ((int sba + int sbb) / 2)))
-        | :? int16 as sa, (:? int16 as sb) ->
-            Some (box (int16 ((int sa + int sb) / 2)))
-        | :? byte as ba, (:? byte as bb) ->
-            Some (box (byte ((int ba + int bb) / 2)))
-        | :? uint16 as usa, (:? uint16 as usb) ->
-            Some (box (uint16 ((int usa + int usb) / 2)))
-        | :? uint32 as ua, (:? uint32 as ub) ->
-            Some (box ((ua + ub) / 2u))
-        | :? uint64 as ula, (:? uint64 as ulb) ->
-            // Prevent overflow for uint64
-            if ula > ulb then
-                Some (box (ula - ((ula - ulb) / 2UL)))
-            else
-                Some (box (ulb - ((ulb - ula) / 2UL)))
+        | (:? int64   as ia),  (:? int64   as ib)  -> Some (int64  ((ia + ib)           / 2L)    :> obj)
+        | (:? int     as ia),  (:? int     as ib)  -> Some (int    ((ia + ib)           / 2)     )
+        | (:? float   as fa),  (:? float   as fb)  -> Some (float  ((fa + fb)           / 2.0)   )
+        | (:? single  as fsa), (:? single  as fsb) -> Some (single ((fsa + fsb)         / 2.0f)  )
+        | (:? sbyte   as sba), (:? sbyte   as sbb) -> Some (sbyte  ((int sba + int sbb) / 2)     )
+        | (:? int16   as sa),  (:? int16   as sb)  -> Some (int16  ((int sa  + int sb)  / 2)     )
+        | (:? byte    as ba),  (:? byte    as bb)  -> Some (byte   ((int ba  + int bb)  / 2)     )
+        | (:? uint16  as usa), (:? uint16  as usb) -> Some (uint16 ((int usa + int usb) / 2)     )
+        | (:? uint32  as ua),  (:? uint32  as ub)  -> Some (uint32 ((ua + ub)           / 2u)    )
+        | (:? uint64  as ula), (:? uint64  as ulb) -> Some (uint64 ((ula + ulb)         / 2UL)   )
         | _ -> None
 
