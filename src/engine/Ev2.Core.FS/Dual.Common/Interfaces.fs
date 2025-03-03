@@ -21,6 +21,10 @@ module InterfacesModule =
         inherit IValue
         abstract member TValue: 'T with get, set
 
+    //let mutable fwdEnumerateValueObjects: bool -> (obj -> bool) -> IValue -> IValue seq =
+    //    let dummy (includeMe:bool) (evaluator:obj -> bool) (value:IValue) : IValue seq = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdIsLiteralizable: IValue -> bool = let dummy (exp:IValue) : bool = failwithlog "Should be reimplemented." in dummy
+
     type IExpression =
         inherit IWithType
         inherit IValue

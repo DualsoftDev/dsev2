@@ -7,7 +7,9 @@ open System
 
 [<AutoOpen>]
 module internal ForwardDeclerationModule =
-    //let mutable fwdEvaluate: (op:Op) -> (args:IExpression seq) -> obj = let dummy (obj:obj) : string = failwithlog "Should be reimplemented." in dummy
+    //let mutable fwdEnumerateValueObjects: ((*includeMe:*)bool) -> ((*evaluator:*)obj -> bool) -> ((*value:*)IValue) -> IValue seq = let dummy (obj:obj) : string = failwithlog "Should be reimplemented." in dummy
+
     ()
+
 
 

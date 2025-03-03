@@ -19,8 +19,8 @@ type ResettableLazyTest() =
         let onValueChanged = Action<int64>(fun v -> tracefn $"onValueChanged: {lz.Value} == {v}")
         lz.OnValueChanged <- onValueChanged
         let a = lz.Value
-        lz.Reset()
+        lz.Reset() |> ignore
         let a = lz.Value
-        lz.Reset()
+        lz.Reset() |> ignore
         noop()
 

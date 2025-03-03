@@ -118,7 +118,6 @@ module DsDataType =
             | DuUINT32  -> Convert.ToUInt32  valueText |> box
             | DuUINT64  -> Convert.ToUInt64  valueText |> box
             | DuUINT8   -> Convert.ToByte    valueText |> box
-            | _ -> failwith $"Unsupported type {x}"
 
         member x.DefaultValue() = dataTypeInfo[x].DefaultValue
 

@@ -307,18 +307,19 @@ module rec TExpressionModule =
             TFunction.Create(op, args, ?name=name, ?valueBag=valueBag)
 
 
-    //type IValue with
-    //    member x.EnumerateValueObjects(?includeMe:bool): IValue seq =
-    //        let includeMe = includeMe |? false
-    //        seq {
-    //            if includeMe then
-    //                yield x
-    //            match x with
-    //            | :? OFunction as f ->
-    //                for arg in f.Arguments |> Seq.cast<IValue> do
-    //                    yield! arg.EnumerateValueObjects(true)
-    //            | _ -> ()
-    //        }
+    type IValue with
+        member x.EnumerateValueObjects(?includeMe:bool, ?evaluator:obj -> bool): IValue seq =
+            let includeMe = includeMe |? false
+            let evaluator = evaluator |? (fun _ -> true)
+            seq {
+                if includeMe && evaluator x then
+                    yield x
+                match x with
+                | :? OFunction as f ->
+                    for arg in f.Arguments |> Seq.cast<IValue> do
+                        yield! arg.EnumerateValueObjects(true)
+                | _ -> ()
+            }
 
     type INonTerminal with
         member x.Arguments =

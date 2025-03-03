@@ -5,6 +5,7 @@ open Dual.Common.UnitTest.FS
 open Dual.Common.Core.FS
 open Dual.Ev2
 open System.Reactive.PlatformServices
+open NUnit.Framework
 
 
 [<AutoOpen>]
@@ -40,8 +41,11 @@ module ExpressionFixtures =
 
 
     [<AbstractClass>]
-    type ExpressionTestBaseClass() =
-        inherit TestClassWithLogger(Path.Combine($"{__SOURCE_DIRECTORY__}/App.config"), "UnitTestLogger")
+    type TestBaseClass() =
+        //inherit TestClassWithLogger(Path.Combine($"{__SOURCE_DIRECTORY__}/App.config"), "UnitTestLogger")
+
+        [<OneTimeSetUp>]
+        member _.Initialize() = ModuleInitializer.Initialize()
 
 
     let toTimer (timerStatement:Statement) :Timer =

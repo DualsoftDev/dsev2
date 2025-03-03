@@ -525,25 +525,9 @@ module ExpressionFunctionModule =
         let fShiftRight<'T> (args: Args) : 'T = createShiftArgsFunction< 'T> ">>>" args     // Shift
 
 
-
-        [<Obsolete("Todo: Fix")>]
-        /// expression 내부에 변수가 하나도 없이 상수, 혹은 상수의 연산만으로 이루어진 경우에만 true 반환
-        let isLiteralizable exp : bool =
-            true
-            //let rec visit (exp:IExpression) : bool =
-            //    match exp.Terminal, exp.FunctionName with
-            //    | Some terminal, _ ->
-            //        //terminal.Literal.IsSome
-            //        terminal.IsLiteral
-            //    | None, Some _fn ->
-            //        exp.FunctionArguments |> map visit |> Seq.forall id
-            //    | _ ->
-            //        failwith "Invalid expression"
-            //visit exp
-
         // tryGetLiteralValue helper
         let private tryGetLiteralValueT (expr:IExpression<'T>) : obj =
-            if isLiteralizable expr then
+            if fwdIsLiteralizable expr then
                 expr.OValue
             else
                 null
@@ -573,4 +557,4 @@ module ExpressionFunctionModule =
         /// 주어진 expression 에 대한 literal value 반환.  내부에 변수가 하나라도 포함되어 있으면 null 반환
         member exp.TryGetLiteralValue() = tryGetLiteralValue exp
         /// expression 내부에 변수가 하나도 없이 상수, 혹은 상수의 연산만으로 이루어진 경우에만 true 반환
-        member exp.IsLiteralizable() = isLiteralizable exp
+        member exp.IsLiteralizable() = fwdIsLiteralizable exp

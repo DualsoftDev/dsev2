@@ -24,7 +24,7 @@ module CoreFromAas =
             let sm = J.CreateIClassFromXml<Environment>(xml).Submodels.First()
             DsSystem.FromISubmodel(sm)
 
-        [<Obsolete("TODO: ????")>]
+        [<Obsolete("TODO: ISubmodel 에서 DsSystem 구축 코드 작성")>]
         static member FromISubmodel(submodel:ISubmodel): DsSystem =
             assert(submodel.IdShort = "System")
             //submodel.SubmodelElements[0].

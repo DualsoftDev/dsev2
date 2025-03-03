@@ -15,6 +15,8 @@ module ExpressionTestModule =
 
     [<TestFixture>]
     type ExpressionTest() =
+        inherit TestBaseClass()
+
         let t1 = TValue(3)
         let t2 = TValue(4)
         let args:Args = [t1 :> IExpression; t2]
@@ -48,7 +50,6 @@ module ExpressionTestModule =
             cf "sin" [TValue(3.14/4.0); ] === Math.Sin(3.14/4.0)
             cf "sin" [TValue(3.14f/4.0f); ] === single (Math.Sin(3.14/4.0))
             (cf "sin" [TValue(3.14f/4.0f); ]).GetType() === typeof<single>
-
 
 
         [<Test>]
@@ -189,6 +190,25 @@ module ExpressionTestModule =
             let vs = valueBag.Values
             [d1 :> IValue; d2; f1; f2; total] |> Seq.forall (fun v -> vs.Contains v) === true
             vs.Count === 5
+
+
+        [<Test>]
+        member _.Literal() =
+            TValue(2) |> fwdIsLiteralizable  === false
+            TValue(2, IsLiteral=true) |> fwdIsLiteralizable  === true
+            TFunction<double>.Create(Op.PredefinedOperator "abs", [TValue(2.0):> IExpression;]) |> fwdIsLiteralizable  === false
+            TFunction<double>.Create(Op.PredefinedOperator "abs", [TValue(2.0, IsLiteral=true):> IExpression;]) |> fwdIsLiteralizable  === true
+
+            // const 끼리의 연산은 literalizable
+            let fAddConst = TFunction<double>.Create(Op.PredefinedOperator "+", [TValue(2.0, IsLiteral=true):> IExpression; TValue(3.0, IsLiteral=true)])
+            fwdIsLiteralizable fAddConst === true
+            let fAddConstNested = TFunction<double>.Create(Op.PredefinedOperator "+", [TValue(2.0, IsLiteral=true):> IExpression; fAddConst])
+            fwdIsLiteralizable fAddConstNested === true
+
+            // 하나라도 const 가 아닌 경우, literalizable 아님
+            TFunction<double>.Create(Op.PredefinedOperator "+", [TValue(2.0, IsLiteral=true):> IExpression; TValue(3.0)]) |> fwdIsLiteralizable  === false
+
+            ()
 
 
 
