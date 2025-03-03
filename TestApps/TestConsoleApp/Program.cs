@@ -16,6 +16,9 @@ class Program
     [STAThread] // STAThread 속성 지정
     static void Main()
     {
+        Dual.Ev2.ModuleInitializer.Initialize();
+
+
         DsSystem system = new DsSystem("system1");
         var flow1 = system.CsCreateFlow("flow1");
         var (work1, vWork1) = flow1.CsAddWork("work1");

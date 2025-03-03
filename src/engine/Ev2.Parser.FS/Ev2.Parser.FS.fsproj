@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<RootNamespace>Ev2.Parser.FS</RootNamespace>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="FqdnParser.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+	  <ProjectReference Include="..\Ev2.Parser\Ev2.Parser.csproj" />
+	</ItemGroup>
+
+</Project>
