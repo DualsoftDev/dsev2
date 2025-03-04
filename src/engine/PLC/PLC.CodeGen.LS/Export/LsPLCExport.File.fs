@@ -5,7 +5,7 @@ open System.Reflection
 open Dual.Common.Core.FS
 open PLC.CodeGen.LS
 open PLC.CodeGen.LS.Config.POU.Program.LDRoutine
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Base.FS
 
 [<AutoOpen>]

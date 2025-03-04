@@ -1,9 +1,10 @@
 namespace PLC.CodeGen.LS
 
-open Engine.Core
+open Dual.Ev2
 open PLC.CodeGen.Common
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
+open Dual.Common.Base.CS
 open System.Collections.Generic
 
 [<AutoOpen>]
@@ -92,7 +93,7 @@ module POUParametersModule =
             POUs = []
             MemoryAllocatorSpec = AllocatorFunctions(createMemoryAllocator "M" (0, memorySize) [] targetType)
             EnableXmlComment = false
-            AppendDebugInfoToRungComment = IsDebugVersion || isInUnitTest()
+            AppendDebugInfoToRungComment = DcApp.IsDebugVersion || isInUnitTest()
             TimerCounterGenerator   = voidCounterGenerator
             CounterCounterGenerator = voidCounterGenerator
             RungCounter             = voidCounterGenerator

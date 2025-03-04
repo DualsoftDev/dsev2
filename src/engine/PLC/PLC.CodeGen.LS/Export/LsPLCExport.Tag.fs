@@ -2,7 +2,7 @@ namespace PLC.CodeGen.LS
 
 
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 open System.Linq
 
 // IEC-61131 Addressing

@@ -1,6 +1,6 @@
 namespace PLC.CodeGen.LS
 
-open Engine.Core
+open Dual.Ev2
 open PLC.CodeGen.Common.FlatExpressionModule2
 open PLC.CodeGen.Common.FlatExpressionModule3
 

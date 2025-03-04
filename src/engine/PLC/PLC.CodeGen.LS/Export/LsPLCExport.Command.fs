@@ -5,7 +5,7 @@ open System.Linq
 open PLC.CodeGen.Common
 open PLC.CodeGen.LS.Config.POU.Program.LDRoutine
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 open FB
 open ConvertorPrologModule
 open System.Collections.Generic
@@ -61,25 +61,20 @@ module internal rec Command =
             | (PredicateCmd _ | FunctionCmd _ | FunctionBlockCmd _ | ActionCmd _) -> ElementType.VertFBMode
             | _ -> failwith "ERROR"
 
-    //let createOutputCoil(tag)    = CoilCmd(CoilOutputMode.COMCoil(tag))
-    //let createOutputCoilNot(tag) = CoilCmd(CoilOutputMode.COMClosedCoil(tag))
-    //let createOutputSet(tag)     = CoilCmd(CoilOutputMode.COMSetCoil(tag))
-    //let createOutputRst(tag)     = CoilCmd(CoilOutputMode.COMResetCoil(tag))
-    //let createOutputPulse(tag)   = CoilCmd(CoilOutputMode.COMPulseCoil(tag))
-    //let createOutputNPulse(tag)  = CoilCmd(CoilOutputMode.COMNPulseCoil(tag))
-
     type IExpression with
         member x.GetTerminalString (prjParam: XgxProjectParams) =
             match x.Terminal with
             | Some t ->
-                match t.Variable, t.Literal with
-                | Some v, None -> getStorageText v
-                | None, Some (:? ILiteralHolder as lh) ->
+                if t.IsLiteralizable() then
                     match prjParam.TargetType with
-                    | XGK -> lh.ToTextWithoutTypeSuffix()
-                    | _ -> lh.ToText()
-                | _ -> failwith "ERROR: Unknown terminal literal case."
-            | _ -> failwith "ERROR: Not a Terminal"
+                    | XGK -> x.ToTextWithoutTypeSuffix()
+                    | _ -> x.ToText()
+                else
+                    getStorageText (x :?> TValue<_>)
+            | _ ->
+                failwith "ERROR: Not a Terminal"
+
+
 
     /// Option<IExpression<bool>> to IExpression
     let private obe2e (obe: IExpression<bool> option) : IExpression = obe.Value :> IExpression
@@ -96,7 +91,7 @@ module internal rec Command =
     let private bxiXgiFunctionBlockTimer (prjParam: XgxProjectParams) (x, y) (timerStatement: TimerStatement) : BlockXmlInfo =
         let ts = timerStatement
         let typ = ts.Timer.Type     // TON, TOF, TMR
-        let time: int = int ts.Timer.PRE.Value
+        let time: int = int ts.Timer.PRE.TValue
 
         let inputParameters =
             [   "PT", (literal2expr $"T#{time}MS") :> IExpression
@@ -117,7 +112,7 @@ module internal rec Command =
         assert(prjParam.TargetType = XGI)
         //let paramDic = Dictionary<string, FuctionParameterShape>()
         let cs = counterStatement
-        let pv = int16 cs.Counter.PRE.Value
+        let pv = int16 cs.Counter.PRE.TValue
         let typ = cs.Counter.Type
 
         let inputParameters =
@@ -324,7 +319,7 @@ module internal rec Command =
                     for (_portOffset, (_name, yoffset, terminal, _checkType)) in alignedOutputParameters.Indexed() do
                         let terminalText =
                             match terminal with
-                            | :? IStorage as storage -> getStorageText storage
+                            | :? TValue<_> as storage -> getStorageText storage
                             | _ -> failwithlog "ERROR"
 
                         rxiFBParameter (fsx + 1, y + yoffset) terminalText
@@ -374,14 +369,18 @@ module internal rec Command =
                 [
                     (* Timer 의 PT, Counter 의 PV 등의 상수 값을 입력 모선에서 연결하지 않고, function cell 에 바로 입력 하기 위함*)
                     for (ry, rexp) in reservedLiteralInputParam do
-                        let literal =
+                        let literal:string =
                             match rexp.Terminal with
                             | Some terminal ->
-                                match terminal.Literal, terminal.Variable with
-                                | Some(:? ILiteralHolder as literal), None -> literal.ToTextWithoutTypeSuffix()
-                                | Some literal, None -> literal.ToText()
-                                | None, Some variable -> getStorageText variable
-                                | _ -> failwithlog "ERROR"
+                                let v = terminal :?> ValueHolder
+                                if v.IsMemberVariable then
+                                    v.ToTextWithoutTypeSuffix()
+                                elif v.IsLiteralizable() then
+                                    v.ToText()
+                                else
+                                    match terminal with
+                                    | :? TValue<_> as storage -> getStorageText storage
+                                    | _ -> failwithlog "ERROR"
                             | _ -> failwithlog "ERROR"
 
                         rxiFBParameter (x + fsx - 1, ry) literal
@@ -510,13 +509,13 @@ module internal rec Command =
                 let var = t.Name
                 let value =
                     let res = prjParam.GetXgkTimerResolution(t.TimerStruct.XgkStructVariableDevicePos)
-                    int <| (float t.PRE.Value) / res
+                    int <| (float t.PRE.TValue) / res
                 $"Param={dq}{typ},{var},{value}{dq}"        // e.g : Param="TON,T0000,1000"
             | CounterMode cs ->
                 let c = cs.Counter
                 let typ = c.Type.ToString()
                 let var = c.Name
-                let value = c.PRE.Value
+                let value = c.PRE.TValue
                 $"Param={dq}{typ},{var},{value}{dq}"        // e.g : Param="CTU,C0000,1000"
         bxiXgkFBCommandWithParam prjParam (x, y) (cond, cmdParam, cmdWidth)
 
@@ -612,7 +611,7 @@ module internal rec Command =
     /// x y 위치에서 expression 표현하기 위한 정보 반환
     /// {| Xml=[|c, str|]; NextX=sx; NextY=maxY; VLineUpRightMaxY=maxY |}
     /// - Xml : 좌표 * 결과 xml 문자열
-    let rec internal bxiLadderBlock (prjParam: XgxProjectParams) (x, y) (objExpr: IExpressionBase) : BlockXmlInfo =
+    let rec internal bxiLadderBlock (prjParam: XgxProjectParams) (x, y) (objExpr: IExpression) : BlockXmlInfo =
         let flatExp =
             match objExpr with
             | :? IExpression as exp -> flatten exp
@@ -774,8 +773,11 @@ module internal rec Command =
 
         | _ -> failwithlog "Unknown FlatExpression case"
 
-    type FlatExpression with
+
+    //type FlatExpression with
+    type IExpression with
         member exp.BxiLadderBlock (prjParam: XgxProjectParams, (x, y)) = bxiLadderBlock prjParam (x, y) exp
+
 
     /// [rxi] Flat expression 을 논리 Cell 좌표계 x y 에서 시작하는 rung 를 작성한다.
     ///
@@ -806,7 +808,7 @@ module internal rec Command =
                             stg.Address |> tee(fun a -> if (a.IsNullOrEmpty()) then failwith $"{stg.Name} 의 주소가 없습니다.")
                         | _ ->
                             match cmd.CoilTerminalTag with
-                            | :? IStorage as storage -> getStorageText storage
+                            | :? TValue<_> as storage when storage.Address.NonNullAny() -> getStorageText storage
                             | _ -> failwithlog "ERROR"
                     bxiCoil prjParam (x, y) expr.Value cmd coilText |> distinct
 

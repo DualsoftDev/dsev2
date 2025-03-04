@@ -4,7 +4,7 @@ open System.Linq
 open System.Xml
 
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 open PLC.CodeGen.LS
 open PLC.CodeGen.Common
 open System
@@ -147,8 +147,11 @@ module XgiExportModule =
                             | :? Expression<bool> as DuTerminal(DuLiteral lh) when not lh.Value  ->
                                 None, Some cond
                             | _ ->
-                                let t = fbLogicalAnd([condition; source])
-                                let f = fbLogicalAnd([condition; source.NegateBool() ])
+                                //let t = fbLogicalAnd([condition; source])
+                                //let f = fbLogicalAnd([condition; source.NegateBool() ])
+
+                                let t = TFunction<bool>.Create(fbLogicalAnd, [cond; source])
+                                let f = TFunction<bool>.Create(fbLogicalAnd, [cond; source.NegateBool() ])
                                 Some t, Some f
 
                         if condWithTrue.IsSome then
@@ -278,7 +281,7 @@ module XgiExportModule =
                         let s, t = $"{source}.{m.Name}", $"{target}.{m.Name}"
                         let s, t = prjParam.GlobalStorages[s], prjParam.GlobalStorages[t]
 
-                        let command = ActionCmd(Move(condition, s.ToExpression(), t))
+                        let command = ActionCmd(Move(condition, s, t))
                         let rgiSub = rgiCommandRung None command rgi.NextRungY
                         updateRgiWith rgiSub
 

@@ -6,7 +6,7 @@ open System.Text.RegularExpressions
 open Dual.Common.Core.FS
 open PLC.CodeGen.LS
 open PLC.CodeGen.Common
-open Engine.Core
+open Dual.Ev2
 open System.Collections.Generic
 
 [<AutoOpen>]

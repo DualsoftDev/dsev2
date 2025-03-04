@@ -223,7 +223,7 @@ module ExpressionFunctionModule =
 
 
     [<AutoOpen>]
-    module internal FunctionImpl =
+    module (*internal*) FunctionImpl =
         type SeqExt =
             [<Extension>] static member ExpectGteN(xs:'a seq, n) = expectGteN n xs
             [<Extension>] static member Expect1(xs:'a seq) = expect1 xs
@@ -552,8 +552,6 @@ module ExpressionFunctionModule =
 
 
     type IExpression with
-        /// 주어진 Expression 을 negation : negateBool 함수와 동일
-        member exp.NegateBool() = fbLogicalNot [exp]
         /// 주어진 expression 에 대한 literal value 반환.  내부에 변수가 하나라도 포함되어 있으면 null 반환
         member exp.TryGetLiteralValue() = tryGetLiteralValue exp
         /// expression 내부에 변수가 하나도 없이 상수, 혹은 상수의 연산만으로 이루어진 경우에만 true 반환

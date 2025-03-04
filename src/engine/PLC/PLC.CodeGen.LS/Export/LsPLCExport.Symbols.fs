@@ -7,7 +7,7 @@ open System.Security
 
 open Dual.Common.Base.FS
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 open Engine.Common
 open PLC.CodeGen.Common
 open PLC.CodeGen.LS
@@ -19,7 +19,7 @@ module internal XgiSymbolsModule =
         | DuXgiVar of IXgxVar
         | DuTimer of TimerStruct
         | DuCounter of CounterBaseStruct
-        | DuStorage of IStorage
+        | DuStorage of ValueHolder
 
 
     let storagesToXgxSymbol (storages: IStorage seq) : (IStorage * XgxSymbol)[] =
@@ -162,7 +162,7 @@ module internal XgiSymbolsModule =
                     | XGK ->
                         if t.Address = "" then  //XGK 는 무조건 address 가 있어야 한다.
                             t.Address <- TextAddrEmpty
-                        
+
                         if t.Address = TextAddrEmpty then
                             autoAllocatorAdress t prjParam
 
@@ -186,32 +186,34 @@ module internal XgiSymbolsModule =
             Some symbolInfo
         //DuXgxVar ?
         | DuXgiVar xgx ->
-            match prjParam.TargetType with
-            | XGI ->
-                if kindVar = int Variable.Kind.VAR_GLOBAL then
-                // Global 변수도 일단, XgiLocalVar type 으로 생성되므로, PLC 생성 시에만 global 로 override 해서 생성한다.
+            match xgx with
+            | :? XgxVar<_> as xgx ->
+                match prjParam.TargetType with
+                | XGI ->
+                    if kindVar = int Variable.Kind.VAR_GLOBAL then
+                    // Global 변수도 일단, XgiLocalVar type 으로 생성되므로, PLC 생성 시에만 global 로 override 해서 생성한다.
+                        {   xgx.SymbolInfo with
+                                Kind = kindVar
+                                AddressAlias = ResizeArray<string>()
+                                Address = xgx.Address }
+                    else
+                         xgx.SymbolInfo
+                | XGK ->
+                    if xgx.Address = "" then  //XGK 는 무조건 address 가 있어야 한다.
+                        xgx.Address <- TextAddrEmpty
+
+                    autoAllocatorAdress xgx prjParam
+                    let address, device, devPos = getXGXTagInfo prjParam.TargetType xgx.Address xgx.Name
                     {   xgx.SymbolInfo with
                             Kind = kindVar
+                            Address = address
+                            Device = device
                             AddressAlias = ResizeArray<string>()
-                            Address = xgx.Address }
-                else
-                     xgx.SymbolInfo
-            | XGK ->
-                if xgx.Address = "" then  //XGK 는 무조건 address 가 있어야 한다.
-                    xgx.Address <- TextAddrEmpty
-
-                autoAllocatorAdress xgx prjParam
-                let address, device, devPos = getXGXTagInfo prjParam.TargetType xgx.Address xgx.Name
-                {   xgx.SymbolInfo with
-                        Kind = kindVar
-                        Address = address
-                        Device = device
-                        AddressAlias = ResizeArray<string>()
-                        DevicePos = devPos }
-            | _ ->
-                    failwithf "Invalid target type: %A" prjParam.TargetType
-            |> Some
-
+                            DevicePos = devPos }
+                | _ ->
+                        failwithf "Invalid target type: %A" prjParam.TargetType
+                |> Some
+            | _ -> failwith "ERROR"
 
 
         | DuTimer timer ->

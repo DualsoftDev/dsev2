@@ -1,7 +1,7 @@
 namespace PLC.CodeGen.LS
 
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 open System.Runtime.CompilerServices
 open System.Xml
 open System.Collections.Generic

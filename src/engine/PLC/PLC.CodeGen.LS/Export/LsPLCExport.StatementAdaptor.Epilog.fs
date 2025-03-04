@@ -1,6 +1,6 @@
 namespace PLC.CodeGen.LS
 
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
 
@@ -56,7 +56,7 @@ module XgxTypeConvertorModule =
                     | Some _ -> exp
                     | None ->
                         exp.BoxedEvaluatedValue |> any2expr
-                var.BoxedValue <- exp.BoxedEvaluatedValue
+                var.OValue <- exp.BoxedEvaluatedValue
                 augs.Storages.Add var
 
                 match prjParam.TargetType with

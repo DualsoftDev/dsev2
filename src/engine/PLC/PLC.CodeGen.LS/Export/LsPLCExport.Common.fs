@@ -3,11 +3,11 @@ namespace PLC.CodeGen.LS
 open Dual.Common.Core.FS
 open PLC.CodeGen.LS.Config.POU.Program.LDRoutine
 open FB
-open Engine.Core
+open Dual.Ev2
 
 [<AutoOpen>]
 module internal Common =
-    let systemOnRising = fRising([Expression.True]) :?> IExpression<bool>
+    //let systemOnRising = fRising([Expression.True]) :?> IExpression<bool>
 
     let bxiRungXmlInfosToBlockXmlInfo (rungXmlInfos: RungXmlInfo list) : BlockXmlInfo =
         let xs   = rungXmlInfos

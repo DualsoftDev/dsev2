@@ -20,7 +20,8 @@
 
 
     <ItemGroup>
-        <Compile Include="..\..\Engine\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+        <Compile Include="..\..\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+        <Compile Include="Compatibility.fs" />
         <Content Include="Documents\WideExpression.txt" />
         <Content Include="Documents\Function, FB.txt" />
         <Content Include="Documents\IEC-61131-3.summary.txt" />

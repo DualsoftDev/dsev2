@@ -2,7 +2,7 @@ namespace PLC.CodeGen.LS
 
 
 open System
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
 open PLC.CodeGen.LS
@@ -23,19 +23,13 @@ module LsPLCExportExpressionModule =
         member val ExpressionStore:IStorage option = None with get, set
 
     /// '_ON' 에 대한 expression
-    let fakeAlwaysOnExpression: Expression<bool> =
-        let on = createXgxVariable "_ON" true "가짜 _ON" :?> XgxVar<bool>
-        DuTerminal(DuVariable on)
+    let fakeAlwaysOnExpression = createXgxVariable "_ON" true "가짜 _ON" :?> XgxVar<bool>
 
     /// '_OFF' 에 대한 expression
-    let fakeAlwaysOffExpression: Expression<bool> =
-        let on = createXgxVariable "_OFF" true "가짜 _OFF" :?> XgxVar<bool>
-        DuTerminal(DuVariable on)
+    let fakeAlwaysOffExpression = createXgxVariable "_OFF" true "가짜 _OFF" :?> XgxVar<bool>
 
     /// '_1ON' 에 대한 expression
-    let fake1OnExpression: Expression<bool> =
-        let on = createXgxVariable "_1ON" true "가짜 _1ON" :?> XgxVar<bool>
-        DuTerminal(DuVariable on)
+    let fake1OnExpression = createXgxVariable "_1ON" true "가짜 _1ON" :?> XgxVar<bool>
 
 
     let operatorToXgiFunctionName =
@@ -129,16 +123,11 @@ module LsPLCExportExpressionModule =
             let name = getTmpName nameHint n
             createXgxVariable name initValue comment
 
-        member x.CreateTypedAutoVariable(nameHint: string, initValue: 'T, comment) : XgxVar<'T> =
+        member x.CreateTypedAutoVariable(nameHint: string, initValue: 'T, comment, ?valueBag: ValueBag) : XgxVar<'T> =
             let n = x.AutoVariableCounter()
             let name = getTmpName nameHint n
+            XgxVar.Create(initValue, ?valueBag=valueBag, Name=name, Comment=comment)
 
-            let param =
-                {   defaultStorageCreationParams (initValue) (VariableTag.PlcUserVariable|>int) with
-                        Name = name
-                        Comment = Some comment }
-
-            XgxVar(param)
         member x.CreateAutoVariableWithFunctionExpression(exp:IExpression) =
             match exp.FunctionName with
             | Some op ->
@@ -158,128 +147,121 @@ module LsPLCExportExpressionModule =
         /// 주어진 Expression 을 multi-line text 형태로 변환한다.
         member exp.ToTextFormat() : string =
             let tab n = String.replicate (n*4) " "
-            let rec traverse (level:int) (exp:IExpression) =
+            let rec traverse (level:int) (exp:IExpression): string =
                 let space = tab level
-                match exp.Terminal, exp.FunctionName with
-                | Some terminal, None ->
-                    match terminal.Variable, terminal.Literal with
-                    | Some storage, None -> $"{space}Storage: {storage.ToText()}"
-                    | None, Some literal -> $"{space}Literal: {literal.ToText()}"
-                    | _ -> failwith "Invalid expression"
-
-                | None, Some fn ->
+                match exp with
+                | :? OFunction as f ->
                     [
-                        $"{space}Function: {fn}"
-                        for a in exp.FunctionArguments do
+                        $"{space}Function: {f.FunctionName}"
+                        for a in f.Arguments do
                             traverse (level + 1) a
                     ] |> String.concat "\r\n"
-                | _ -> failwith "Invalid expression"
+                | _ when exp.IsLiteralizable() ->
+                    $"{space}Literal: {exp.ToText()}"
+                | _ ->
+                    $"{space}Terminal: {exp.ToText()}"
+
             traverse 0 exp
 
+
+        [<Obsolete("다음 수정 필요")>]
         member exp.Visit (f: IExpression -> IExpression) : IExpression =
-            match exp.Terminal, exp.FunctionName with
-            | Some _terminal, None ->
-                f exp
-            | None, Some _fn ->
-                let args = exp.FunctionArguments |> map f
-                exp.WithNewFunctionArguments args |> f
-            | _ ->
-                failwith "Invalid expression"
+            getNull<IExpression>()
 
-        member exp.Visit (expPath:IExpression list, f: IExpression list -> IExpression -> IExpression) : IExpression =
-            match exp.Terminal, exp.FunctionName with
-            | Some _terminal, None ->
-                f expPath exp
-            | None, Some _fn ->
-                let args = exp.FunctionArguments |> map (fun a -> f (exp::expPath) a)
-                exp.WithNewFunctionArguments args |> f expPath
-            | _ ->
-                failwith "Invalid expression"
+        //member exp.Visit (f: IExpression -> IExpression) : IExpression =
+        //    match exp.Terminal, exp.FunctionName with
+        //    | Some _terminal, None ->
+        //        f exp
+        //    | None, Some _fn ->
+        //        let args = exp.Arguments |> map f
+        //        exp.WithNewFunctionArguments args |> f
+        //    | _ ->
+        //        failwith "Invalid expression"
 
-        member exp.IsLiteralizable() : bool =
-            let rec visit (exp:IExpression) : bool =
-                match exp.Terminal, exp.FunctionName with
-                | Some terminal, _ ->
-                    terminal.Literal.IsSome
-                | None, Some _fn ->
-                    exp.FunctionArguments |> map visit |> Seq.forall id
-                | _ ->
-                    failwith "Invalid expression"
-            visit exp
+        //member exp.Visit (expPath:IExpression list, f: IExpression list -> IExpression -> IExpression) : IExpression =
+        //    match exp.Terminal, exp.FunctionName with
+        //    | Some _terminal, None ->
+        //        f expPath exp
+        //    | None, Some _fn ->
+        //        let args = exp.FunctionArguments |> map (fun a -> f (exp::expPath) a)
+        //        exp.WithNewFunctionArguments args |> f expPath
+        //    | _ ->
+        //        failwith "Invalid expression"
 
+        //member exp.IsLiteralizable() : bool = exp.IsLiteralizable()
 
-        /// Expression 을 flattern 할 수 있는 형태로 변환 : e.g !(a>b) => (a<=b)
-        /// Non-terminal negation 을 terminal negation 으로 변경
-        member x.ApplyNegate() : IExpression =
-            let self = x
-            let negate (expPath:IExpression list) (expr:IExpression) : IExpression =
-                match expr.Terminal, expr.FunctionName with
-                    | Some _terminal, None ->
-                        if expr.DataType = typedefof<bool> then
-                            expr.NegateBool()
-                        else
-                            // 비교 연산 하에서의 argument negation 은 무시한다.  (e.g. !(a > b) => a <= b.  연산자만 변경하고, a 와 b 의 negation 은 무시됨.)
-                            assert(expPath.Head.FunctionName.Value |> isOpC)
-                            expr
-                    | None, Some "!" -> expr.FunctionArguments.ExactlyOne()
-                    | None, Some _fn -> expr.NegateBool()
-                    | _ -> failwith "Invalid expression"
+        ///// Expression 을 flattern 할 수 있는 형태로 변환 : e.g !(a>b) => (a<=b)
+        ///// Non-terminal negation 을 terminal negation 으로 변경
+        //member x.ApplyNegate() : IExpression =
+        //    let self = x
+        //    let negate (expPath:IExpression list) (expr:IExpression) : IExpression =
+        //        match expr.Terminal, expr.FunctionName with
+        //            | Some _terminal, None ->
+        //                if expr.DataType = typedefof<bool> then
+        //                    expr.NegateBool()
+        //                else
+        //                    // 비교 연산 하에서의 argument negation 은 무시한다.  (e.g. !(a > b) => a <= b.  연산자만 변경하고, a 와 b 의 negation 은 무시됨.)
+        //                    assert(expPath.Head.FunctionName.Value |> isOpC)
+        //                    expr
+        //            | None, Some "!" -> expr.FunctionArguments.ExactlyOne()
+        //            | None, Some _fn -> expr.NegateBool()
+        //            | _ -> failwith "Invalid expression"
 
-            let rec visitArgs (expPath:IExpression list) (negated:bool) (expr:IExpression) : IExpression =
-                match expr.Terminal, expr.FunctionName with
-                | Some _terminal, None ->
-                    match negated with
-                    // terminal 의 negation 은 bool type 에 한정한다.
-                    | true -> negate expPath expr
-                    | _-> expr
-                | None, Some _fn ->
-                    visitFunction expPath negated expr
-                | _ -> failwith "Invalid expression"
+        //    let rec visitArgs (expPath:IExpression list) (negated:bool) (expr:IExpression) : IExpression =
+        //        match expr.Terminal, expr.FunctionName with
+        //        | Some _terminal, None ->
+        //            match negated with
+        //            // terminal 의 negation 은 bool type 에 한정한다.
+        //            | true -> negate expPath expr
+        //            | _-> expr
+        //        | None, Some _fn ->
+        //            visitFunction expPath negated expr
+        //        | _ -> failwith "Invalid expression"
 
-            and visitFunction (expPath:IExpression list) (negated:bool) (expr:IExpression) : IExpression =
-                let args = expr.FunctionArguments
-                let newExpPath = expr::expPath
-                let vf = visitFunction newExpPath
-                let va = visitArgs newExpPath
-                if negated then
-                    let newArgs = args |> map (va true)
-                    match expr.Terminal, expr.FunctionName with
-                    | Some _terminal, None ->
-                        negate newExpPath expr
-                    | None, Some(IsOpC fn) ->
-                        let reverseFn =
-                            match fn with
-                            | "==" -> "!="
-                            | "!=" | "<>" -> "=="
-                            | ">" ->  "<="
-                            | ">=" -> "<"
-                            | "<" ->  ">="
-                            | "<=" -> ">"
-                            | _ -> failwith "ERROR"
-                        createCustomFunctionExpression reverseFn newArgs
-                    | None, Some("&&" | "||" as fn) ->
-                        let reverseFn =
-                            match fn with
-                            | "&&" -> "||"
-                            | "||" -> "&&"
-                            | _ -> failwith "ERROR"
-                        createCustomFunctionExpression reverseFn newArgs
-                    | None, Some "!" ->
-                        args.ExactlyOne() |> vf false
-                    | None, Some(FunctionNameRising | FunctionNameFalling as fn) ->
-                        createCustomFunctionExpression fn newArgs
-                    | _ -> failwith "Invalid expression"
-                else
-                    match expr.Terminal, expr.FunctionName with
-                    | Some _terminal, None -> expr
-                    | None, Some "!" ->
-                        args.ExactlyOne() |> va true
-                    | None, Some _fn ->
-                        let newArgs = args |> map (va false)
-                        expr.WithNewFunctionArguments newArgs
-                    | _ -> failwith "Invalid expression"
+        //    and visitFunction (expPath:IExpression list) (negated:bool) (expr:IExpression) : IExpression =
+        //        let args = expr.FunctionArguments
+        //        let newExpPath = expr::expPath
+        //        let vf = visitFunction newExpPath
+        //        let va = visitArgs newExpPath
+        //        if negated then
+        //            let newArgs = args |> map (va true)
+        //            match expr.Terminal, expr.FunctionName with
+        //            | Some _terminal, None ->
+        //                negate newExpPath expr
+        //            | None, Some(IsOpC fn) ->
+        //                let reverseFn =
+        //                    match fn with
+        //                    | "==" -> "!="
+        //                    | "!=" | "<>" -> "=="
+        //                    | ">" ->  "<="
+        //                    | ">=" -> "<"
+        //                    | "<" ->  ">="
+        //                    | "<=" -> ">"
+        //                    | _ -> failwith "ERROR"
+        //                createCustomFunctionExpression reverseFn newArgs
+        //            | None, Some("&&" | "||" as fn) ->
+        //                let reverseFn =
+        //                    match fn with
+        //                    | "&&" -> "||"
+        //                    | "||" -> "&&"
+        //                    | _ -> failwith "ERROR"
+        //                createCustomFunctionExpression reverseFn newArgs
+        //            | None, Some "!" ->
+        //                args.ExactlyOne() |> vf false
+        //            | None, Some(FunctionNameRising | FunctionNameFalling as fn) ->
+        //                createCustomFunctionExpression fn newArgs
+        //            | _ -> failwith "Invalid expression"
+        //        else
+        //            match expr.Terminal, expr.FunctionName with
+        //            | Some _terminal, None -> expr
+        //            | None, Some "!" ->
+        //                args.ExactlyOne() |> va true
+        //            | None, Some _fn ->
+        //                let newArgs = args |> map (va false)
+        //                expr.WithNewFunctionArguments newArgs
+        //            | _ -> failwith "Invalid expression"
 
-            visitFunction [] false self
+        //    visitFunction [] false self
 
 
         /// Expression 에 대해, 주어진 transformer 를 적용한 새로운 expression 을 반환한다.
@@ -288,16 +270,15 @@ module LsPLCExportExpressionModule =
             let {TerminalHandler = th; FunctionHandler = fh} = tfs
 
             let rec traverse (level:int) (exp:IExpression) (resultStore:IStorage option) : IExpression =
-                match exp.Terminal, exp.FunctionName with
-                | Some _terminal, None -> th (level, exp)
-                | None, Some _fn ->
-                    let args = exp.FunctionArguments
+                match exp with
+                | :? OFunction as f ->
+                    let args = f.Arguments
                     let newArgs = [for a in args do traverse (level + 1) a None]
                     let newFn =
-                        let f = exp.WithNewFunctionArguments newArgs
+                        let f = f.WithNewFunctionArguments newArgs
                         fh (level, f, resultStore)
                     newFn
-                | _ -> failwith "Invalid expression"
-            traverse 0 exp resultStore
+                | _ -> th (level, exp)
 
+            traverse 0 exp resultStore
 

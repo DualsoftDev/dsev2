@@ -1,19 +1,19 @@
 namespace PLC.CodeGen.LS
 
 open System.Linq
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
 
 [<AutoOpen>]
 module XgkTypeConvertorModule =
-    type XgkTimerCounterStructResetCoil(tc:TimerCounterBaseStruct) =
-        inherit TimerCounterBaseStruct(None, tc.Name, tc.DN, tc.PRE, tc.ACC, tc.RES, (tc :> IStorage).DsSystem)
-        interface INamedExpressionizableTerminal with
-            member x.StorageName = tc.Name
-        interface ITerminal with
-            member x.Variable = Some tc.RES
-            member x.Literal = None
+    type XgkTimerCounterStructResetCoil(isTimer:bool, tc:TimerCounterBaseStruct) =
+        inherit TimerCounterBaseStruct(isTimer, tc.Name, tc.DN, tc.PRE, tc.ACC, tc.RES, (tc :> IStorage).DsSystem)
+        interface ITerminal
+        //interface ITerminal with
+        //    member x.StorageName = tc.Name
+        //    member x.Variable = Some tc.RES
+        //    member x.Literal = None
 
     type Statement with
         /// XGK 전용 Statement 확장
@@ -27,8 +27,9 @@ module XgkTypeConvertorModule =
                     option {
                         // a := a 등의 형태 체크
                         let! terminal = exp2.Terminal
-                        let! variable = terminal.Variable
-                        return variable = target
+                        return (terminal :?> IExpression) = (target :?> IExpression)
+                        //let! variable = terminal.Variable
+                        //return variable = target
                     } |> Option.defaultValue false
 
                 // 변형된 추가 문장이 존재하지 않거나, .. => 새로운 문장 추가 필요.
@@ -42,7 +43,7 @@ module XgkTypeConvertorModule =
                 match tmr.ResetCondition with
                 | Some rst ->
                     // XGI timer 의 RST 조건을 XGK 에서는 Reset rung 으로 분리한다.
-                    augs.Statements.Add <| DuAssign(None, rst, new XgkTimerCounterStructResetCoil(tmr.Timer.TimerStruct))
+                    augs.Statements.Add <| DuAssign(None, rst, new XgkTimerCounterStructResetCoil(true, tmr.Timer.TimerStruct))
                 | _ -> ()
 
                 augs.Statements.Add (DuTimer tmr)
@@ -50,7 +51,7 @@ module XgkTypeConvertorModule =
             | DuCounter ctr ->
                 let statements = StatementContainer([x])
                 // XGI counter 의 LD(Load) 조건을 XGK 에서는 Reset rung 으로 분리한다.
-                let resetCoil = new XgkTimerCounterStructResetCoil(ctr.Counter.CounterStruct)
+                let resetCoil = new XgkTimerCounterStructResetCoil(false, ctr.Counter.CounterStruct)
                 let typ = ctr.Counter.Type
                 let assingExp =
                     match typ with
@@ -85,7 +86,7 @@ module XgkTypeConvertorModule =
                     (* XGK CTUD 에서 load : 별도의 statement 롭 분리: ldcondition --- MOV PV C0001  *)
                     match newCtr.LoadCondition with
                     | Some cond ->
-                        DuAssign(Some cond, literal2expr(ctr.Counter.PRE.Value), ctr.Counter.CounterStruct) |> statements.Add
+                        DuAssign(Some cond, literal2expr(ctr.Counter.PRE.TValue), ctr.Counter.CounterStruct) |> statements.Add
                     | _ -> ()
 
                 augs.Statements.AddRange(statements)

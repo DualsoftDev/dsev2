@@ -1,7 +1,7 @@
 namespace PLC.CodeGen.LS
 open System.Linq
 
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
 open System
@@ -14,7 +14,7 @@ module StatementExtensionModule =
             exp
         else
             debugfn $"exp: {exp.ToText()}"
-            let newExp =
+            let newExp: IExpression =
                 let args =
                     exp.FunctionArguments
                     |> map (fun ex ->
@@ -225,7 +225,7 @@ module StatementExtensionModule =
                                 | None -> arg.BoxedEvaluatedValue |> any2expr
                             let stgVar = prjParam.GlobalStorages[encryptedFormalParamName]
 
-                            prjParam.GlobalStorages[encryptedFormalParamName].BoxedValue <- value.BoxedEvaluatedValue
+                            prjParam.GlobalStorages[encryptedFormalParamName].OValue <- value.BoxedEvaluatedValue
                             if prjParam.TargetType = XGI && pack.Get<Statement>("original-statement").IsDuCaseVarDecl() then
                                 ()
                             else
@@ -236,7 +236,7 @@ module StatementExtensionModule =
                             match newExp.FunctionName with
                             | Some _ ->
                                 let result = prjParam.CreateAutoVariableWithFunctionExpression(pack, newExp)
-                                result.ToExpression()
+                                result
                             | None ->
                                 newExp
                         | XGI -> exp

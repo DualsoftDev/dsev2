@@ -1,5 +1,7 @@
 namespace Dual.Ev2
 
+open Dual.Common.Base.CS
+
 module ModuleInitializer =
     let private isLiteralizable (value:IValue) =
         let isLiteral (v:obj) =
@@ -12,6 +14,9 @@ module ModuleInitializer =
     let Initialize() =
         if not initailized then
             initailized <- true
+
+            DcApp.Initialize()
+
             //CpusEvent.initialize()
             //fwdEnumerateValueObjects <- evalueateValueObjects
             fwdIsLiteralizable <- isLiteralizable

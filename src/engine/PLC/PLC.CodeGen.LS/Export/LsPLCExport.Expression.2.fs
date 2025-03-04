@@ -2,7 +2,7 @@ namespace PLC.CodeGen.LS
 
 open System.Linq
 
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
 
@@ -29,23 +29,23 @@ module XgxExpressionConvertorModule =
             let newLocalStorages, expandFunctionStatements, expStore =
                 augs.Storages, augs.Statements, augs.ExpressionStore
 
-            let functionTransformer (_level:int, functionExpression:IExpression, expStore:IStorage option) =
-                match functionExpression.FunctionName with
-                | Some(IsOpAC op) -> //when level <> 0 ->
-                    let args = functionExpression.FunctionArguments
+            let functionTransformer (_level:int, functionExpression:IExpression, expStore:IStorage option): IExpression =
+                match functionExpression with
+                | :? OFunction as f when isOpAC f.Name ->
+                    let args = f.Arguments
                     let var:IStorage =
                         expStore |?? (fun () -> prjParam.CreateAutoVariableWithFunctionExpression(functionExpression))
 
                     expandFunctionStatements.Add
                     <| DuPLCFunction {
                         Condition = None
-                        FunctionName = op
-                        Arguments = args
+                        FunctionName = f.Name
+                        Arguments = args.ToFSharpList()
                         OriginalExpression = functionExpression
                         Output = var }
 
                     newLocalStorages.Add var
-                    var.ToExpression()
+                    var
                 | _ ->
                     functionExpression
 
@@ -61,14 +61,15 @@ module XgxExpressionConvertorModule =
           ) : IExpression list =
             let prjParam, augs = pack.Unpack()
             let storage, augmentedStatementsStorage = augs.Storages, augs.Statements
-            let withAugmentedPLCFunction (exp: IExpression) =
+            let withAugmentedPLCFunction (exp: OFunction) =
                 let out = prjParam.CreateAutoVariableWithFunctionExpression(exp)
                 storage.Add out
                 let op = exp.FunctionName.Value
 
                 let args =
-                    exp.FunctionArguments
-                    |> List.bind (fun arg -> arg.BinaryToNary(pack, operatorsToChange, op) )
+                    exp.Arguments
+                    |> List.ofSeq
+                    |> bind (fun arg -> arg.BinaryToNary(pack, operatorsToChange, op) )
 
                 DuPLCFunction {
                     Condition = None
@@ -78,13 +79,14 @@ module XgxExpressionConvertorModule =
                     Output = out }
                 |> augmentedStatementsStorage.Add
 
-                out.ToExpression()
+                out
 
-            match exp.FunctionName with
-            | Some op when operatorsToChange.Contains(op) -> // ("+"|"-"|"*"|"/"   (*|"&&"|"||"*) as op) ->
+            match exp with
+            | :? OFunction as f when operatorsToChange.Contains(f.Name) ->  // ("+"|"-"|"*"|"/"   (*|"&&"|"||"*) as op) ->
+                let op = f.Name
                 if op = currentOp then
                     let args =
-                        [ for arg in exp.FunctionArguments do
+                        [ for arg in f.Arguments do
                               match arg.Terminal, arg.FunctionName with
                               | Some _, _ -> yield arg
                               | None, Some("-" | "/") -> yield withAugmentedPLCFunction arg
@@ -93,8 +95,24 @@ module XgxExpressionConvertorModule =
 
                     args
                 else
-                    [ withAugmentedPLCFunction exp ]
+                    [ withAugmentedPLCFunction f ]
             | _ -> [ exp ]
+
+            //match exp.FunctionName with
+            //| Some op when operatorsToChange.Contains(op) -> // ("+"|"-"|"*"|"/"   (*|"&&"|"||"*) as op) ->
+            //    if op = currentOp then
+            //        let args =
+            //            [ for arg in exp.FunctionArguments do
+            //                  match arg.Terminal, arg.FunctionName with
+            //                  | Some _, _ -> yield arg
+            //                  | None, Some("-" | "/") -> yield withAugmentedPLCFunction arg
+            //                  | None, Some _fn -> yield! arg.BinaryToNary(pack, operatorsToChange, op)
+            //                  | _ -> failwithlog "ERROR" ]
+
+            //        args
+            //    else
+            //        [ withAugmentedPLCFunction exp ]
+            //| _ -> [ exp ]
 
         (* see ``ADD 3 items test`` *)
         /// 사칙 연산 처리
@@ -129,7 +147,7 @@ module XgxExpressionConvertorModule =
                             else
                                 prjParam.CreateAutoVariableWithFunctionExpression(exp)
 
-                        let outexp = out.ToExpression()
+                        let outexp = out
 
                         DuPLCFunction {
                             Condition = None
@@ -281,7 +299,7 @@ module XgxExpressionConvertorModule =
                         | _ -> failwithlog "ERROR"
 
                     augs.Statements.Add <| stmt
-                    var.ToExpression()
+                    var
             | _ -> x
 
 
@@ -309,11 +327,19 @@ module XgxExpressionConvertorModule =
 
                     if (*isXgk &&*) lexpr.DataType = typeof<bool> && fn.IsOneOf("!=", "==", "<>") then
                         // XGK 에는 bit 의 비교 연산이 없다.  따라서, bool 타입의 비교 연산을 수행할 경우, 이를 OR, AND 로 변환한다.
-                        let l, r, nl, nr = lexpr, rexpr, lexpr.NegateBool() , rexpr.NegateBool()
-                        let newExp =
+                        let l, r, nl, nr = lexpr, rexpr, lexpr.NegateBool() :> IExpression , rexpr.NegateBool() :> IExpression
+                        let newExp:IExpression<bool> =
                             match fn with
-                            | ("!=" | "<>") -> fbLogicalOr([fbLogicalAnd [l; nr]; fbLogicalAnd [nl; r]])
-                            | "==" -> fbLogicalOr([fbLogicalAnd [l; r]; fbLogicalAnd [nl; nr]])
+                            //| ("!=" | "<>") -> fbLogicalOr([fbLogicalAnd [l; nr]; fbLogicalAnd [nl; r]])
+                            //| "==" -> fbLogicalOr([fbLogicalAnd [l; r]; fbLogicalAnd [nl; nr]])
+                            | ("!=" | "<>") ->
+                                TFunction<bool>.Create(fbLogicalOr, [
+                                        TFunction<bool>.Create(fbLogicalAnd, [l; nr]) :> IExpression
+                                        TFunction<bool>.Create(fbLogicalAnd, [nl; r]) ])
+                            | "==" ->
+                                TFunction<bool>.Create(fbLogicalOr, [
+                                    TFunction<bool>.Create(fbLogicalAnd, [l; r])  :> IExpression
+                                    TFunction<bool>.Create(fbLogicalAnd, [nl; nr]) ])
                             | _ -> failwithlog "ERROR"
                         newExp, (lstgs @ rstgs), (lstmts @ rstmts)
                     else
@@ -326,7 +352,7 @@ module XgxExpressionConvertorModule =
                         | IsOpABC _ ->
                             let stg = expStore |?? (fun () -> prjParam.CreateAutoVariableWithFunctionExpression(exp))
                             let stmt = DuAssign(assignCondition, newExp, stg)
-                            let varExp = stg.ToExpression()
+                            let varExp = stg
                             varExp, (lstgs @ rstgs @ [ stg ]), (lstmts @ rstmts @ [ stmt ])
                         | _ ->
                             if lstgs.Any() || rstgs.Any() then

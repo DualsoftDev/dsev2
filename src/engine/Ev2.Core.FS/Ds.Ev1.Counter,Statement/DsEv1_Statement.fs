@@ -117,7 +117,7 @@ module rec StatementModule =
         /// XGK : _1ON 을 조건으로 한 대입문으로 rung 생성.  (XGK 에서는 변수 초기값이 지원되지 않음)
         ///
         /// Ladder 생성 시점에는 DuVarDecl statement 는 존재하지 않는다.  변수 선언 혹은 assign 문으로 사전에 변환된다.
-        | DuVarDecl of expression:IExpression * variable:IStorage
+        | DuVarDecl of expression:IExpression * variable:ValueHolder
 
         /// User Defined Type (structure) 선언.  e.g "struct Person { string name; int age; };"
         | DuUdtDecl of UdtDecl

@@ -2,9 +2,10 @@ namespace PLC.CodeGen.LS
 
 open System.Security
 
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
+open System
 
 (*
     - 사칙연산 함수(Add, ..) 의 입력은 XGI 에서 전원선으로부터 연결이 불가능한 반면,
@@ -87,46 +88,67 @@ module ConvertorPrologModule =
     type IXgxVar =
         inherit IVariable
         inherit INamedExpressionizableTerminal
-        abstract SymbolInfo: SymbolInfo
+        //abstract SymbolInfo: SymbolInfo
 
     type IXgxVar<'T> =
         inherit IXgxVar
         inherit IVariable<'T>
 
     /// XGI/XGK 에서 사용하는 tag 주소를 갖지 않는 variable
-    type XgxVar<'T when 'T: equality>(param: StorageCreationParams<'T>) =
-        inherit VariableBase<'T>(param)
+    type XgxVar<'T>(value:'T, ?valueBag:ValueBag, ?name:string) =
+        inherit TValue<'T>(value, ?valueBag=valueBag, Name= (name |? null))
+        interface IXgxVar<'T>
 
-        let {   Name = name
-                Value = initValue
-                Comment = comment } =
-            param
+    type XgxVar =
+        /// obj 로부터 TValue<'T> 생성
+        static member Create<'T>(value: obj, ?valueBag: ValueBag, ?name:string, ?comment:string) : XgxVar<'T> =
+            let valueType = typeof<'T>
+            let genericType = typedefof<XgxVar<_>>.MakeGenericType(valueType)
+            let parameters = [|
+                yield value
+                if valueBag.IsSome then yield valueBag.Value
+            |]
+            Activator.CreateInstance(genericType, parameters) :?> XgxVar<'T>
+            |> tee(fun v ->
+                name.Iter (fun n -> v.Name <- n)
+                comment.Iter (fun c -> v.Comment <- c)
+            )
+        member x.SymbolInfo:SymbolInfo = failwith "Not implemented"
 
-        let symbolInfo =
-            let plcType = systemTypeToXgiTypeName typedefof<'T>
-            let comment = comment |> map (fun cmt -> SecurityElement.Escape cmt) |? ""
-            let initValueHolder: BoxedObjectHolder = { Object = initValue }
-            let kind = int Variable.Kind.VAR
-            fwdCreateSymbolInfo name comment plcType kind initValueHolder
+    ///// XGI/XGK 에서 사용하는 tag 주소를 갖지 않는 variable
+    //type XgxVar<'T when 'T: equality>(param: StorageCreationParams<'T>) =
+    //    inherit VariableBase<'T>(param)
 
-        interface IXgxVar with
-            member x.SymbolInfo = x.SymbolInfo
+    //    let {   Name = name
+    //            Value = initValue
+    //            Comment = comment } =
+    //        param
 
-        interface INamedExpressionizableTerminal with
-            member x.StorageName = name
+    //    let symbolInfo =
+    //        let plcType = systemTypeToXgiTypeName typedefof<'T>
+    //        let comment = comment |> map (fun cmt -> SecurityElement.Escape cmt) |? ""
+    //        let initValueHolder: BoxedObjectHolder = { Object = initValue }
+    //        let kind = int Variable.Kind.VAR
+    //        fwdCreateSymbolInfo name comment plcType kind initValueHolder
 
-        interface IText with
-            member x.ToText() = name
+    //    interface IXgxVar with
+    //        member x.SymbolInfo = x.SymbolInfo
 
-        member x.SymbolInfo = symbolInfo
+    //    interface INamedExpressionizableTerminal with
+    //        member x.StorageName = name
 
-        override x.ToBoxedExpression() = var2expr x
+    //    interface IText with
+    //        member x.ToText() = name
+
+    //    member x.SymbolInfo = symbolInfo
+
+    //    override x.ToBoxedExpression() = var2expr x
 
     let getType (x: obj) : System.Type =
         match x with
         | :? IExpression as exp -> exp.DataType
         | :? IStorage as stg -> stg.DataType
-        | :? IValue as value -> value.ObjValue.GetType()
+        | :? IValue as value -> value.OValue.GetType()
         | _ -> failwithlog "ERROR"
 
     let createXgxVariable (name: string) (initValue: obj) comment : IXgxVar =
@@ -150,35 +172,9 @@ module ConvertorPrologModule =
         | RegexPattern @"^ld(\d)+" _ -> failwith $"Invalid XGI variable name {name}."
         | _ -> ()
 
-        let createParam () =
-            {   defaultStorageCreationParams (unbox initValue) (int VariableTag.PlcUserVariable) with
-                    Name = name
-                    Comment = Some comment }
+        XgxVar.Create(initValue, Name=name, Comment=comment)
 
-        let typ = initValue.GetType()
 
-        match typ.Name with
-        | BOOL    -> XgxVar<bool>  (createParam ())
-        | CHAR    -> XgxVar<char>  (createParam ())
-        | FLOAT32 -> XgxVar<single>(createParam ())
-        | FLOAT64 -> XgxVar<double>(createParam ())
-        | INT16   -> XgxVar<int16> (createParam ())
-        | INT32   -> XgxVar<int32> (createParam ())
-        | INT64   -> XgxVar<int64> (createParam ())
-        | INT8    -> XgxVar<int8>  (createParam ())
-        | STRING  -> XgxVar<string>(createParam ())
-        | UINT16  -> XgxVar<uint16>(createParam ())
-        | UINT32  -> XgxVar<uint32>(createParam ())
-        | UINT64  -> XgxVar<uint64>(createParam ())
-        | UINT8   -> XgxVar<uint8> (createParam ())
-        | "DuFunction" ->
-            let defaultBool =
-                {   defaultStorageCreationParams false (VariableTag.PlcUserVariable|>int) with
-                        Name = name
-                        Comment = Some comment }
-
-            XgxVar<bool>(defaultBool)
-        | _ -> failwithlog "ERROR"
 
 [<AutoOpen>]
 module rec TypeConvertorModule =

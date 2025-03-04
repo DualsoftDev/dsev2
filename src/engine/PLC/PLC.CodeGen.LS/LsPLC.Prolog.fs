@@ -3,7 +3,7 @@ namespace PLC.CodeGen.LS
 open System.Text.RegularExpressions
 open System.Security
 open System.Linq
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open PLC.CodeGen.Common
 

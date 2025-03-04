@@ -167,6 +167,12 @@ module rec TExpressionModule =
             with get() = x.DD.TryGet<bool>("IsMemberVariable") |? false
             and set (v:bool) = x.DD.Set<bool>("IsMemberVariable", v)
 
+        [<JsonIgnore>]
+        member x.IsGlobal
+            with get() = x.DD.TryGet<bool>("IsGlobal") |? false
+            and set (v:bool) = x.DD.Set<bool>("IsGlobal", v)
+
+
         /// ValueHolder.TagKind with DD
         [<JsonIgnore>]
         member x.TagKind
@@ -178,6 +184,12 @@ module rec TExpressionModule =
         member x.DsSystem
             with get() = x.DD.TryGet<ISystem>("DsSystem") |? getNull<ISystem>()
             and set (v:ISystem) = x.DD.Set<ISystem>("DsSystem", v)
+
+        [<JsonIgnore>]
+        member x.AliasNames
+            with get() = x.DD.TryGet<string[]>("AliasNames") |? [||]
+            and set (vs:string[]) = x.DD.Set<string[]>("AliasNames", vs)
+
 
     type TValue<'T>(value:'T, ?valueBag:ValueBag) as this =
         inherit ValueHolder(typedefof<'T>, value, ?valueBag=valueBag)
@@ -204,8 +216,17 @@ module rec TExpressionModule =
         [<JsonIgnore>] default x.TValue with get() = x.OValue :?> 'T and set v = x.OValue <- v
 
 
-
-
+    type TValue =
+        /// obj 로부터 TValue<'T> 생성
+        static member Create<'T>(value: obj, ?valueBag: ValueBag) : IValue<'T> =
+            let valueType = typeof<'T>
+            let genericType = typedefof<TValue<_>>.MakeGenericType(valueType)
+            let instance =
+                if valueBag.IsSome then
+                    Activator.CreateInstance(genericType, [| value; valueBag.Value |])
+                else
+                    Activator.CreateInstance(genericType, [| value |])
+            instance :?> IValue<'T>
 
     type Op with
         member x.GetFunction(): Evaluator =
