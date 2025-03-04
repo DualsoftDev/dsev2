@@ -12,7 +12,7 @@
 
     <ItemGroup>
         <Content Include="XGK-CPUA-4.77.99.1.template.xml" />
-        <Compile Include="..\..\Engine\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+		<Compile Include="..\..\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
     </ItemGroup>
 
     <ItemGroup />
