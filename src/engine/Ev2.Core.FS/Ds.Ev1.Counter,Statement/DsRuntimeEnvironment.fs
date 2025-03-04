@@ -41,49 +41,12 @@ module CpusEvent =  // from module CpusEvent @ DsEvent.fs
     type VertexStatusParam =
         | EventCPU of sys: ISystem * vertex: IVertex * status: Status4
 
-    type CpuEventBag = {
-        StatusSubject: Subject<VertexStatusParam>
-    } with
-        interface IEventBag
-
-    //type CpuEventBag(valueChangedSubject:Subject<IValue * obj>, ?statusSubject:Subject<VertexStatusParam>) =
-    //    interface ICpuEventBag
-    //    // Subjects to broadcast status and value changes.
-    //    member val StatusSubject = statusSubject |?? (fun () -> new Subject<VertexStatusParam>())
-    //    /// Represents (system, storage, value)
-    //    member val ValueSubject  = valueChangedSubject
-
-
-    //// Subjects to broadcast status and value changes.
-    //let StatusSubject = new Subject<VertexStatusParam>()
-    ///// Represents (system, storage, value)
-    //let ValueSubject  = new Subject<ISystem * IValue * obj>()
-
-    //// Notifies subscribers about a status change.
-    //let onStatusChanged(sys: ISystem, vertex: IVertex, status: Status4) =
-    //    StatusSubject.OnNext(EventCPU (sys, vertex, status))
-
-    //// Notifies subscribers about a value change.
-    //let onValueChanged(sys: ISystem, stg: IValue, value: obj) =
-    //    ValueSubject.OnNext(sys, stg, value)
-
-    //let mutable private initialized = false
-    //let internal initialize() =
-    //    if not initialized then
-    //        initialized <- true
-    //        ValueChangedSubject.Subscribe(
-    //            let system = getNull<ISystem>()
-    //            fun (stg, value) -> onValueChanged(system, stg, value))
-    //        |> ignore
-    //do
-    //    initialize()
-
-
 
 [<AutoOpen>]
 module DsRuntimeEnvironmentModule =
 
     type IValue with
+        //[<Obsolete("Value.DsSystem 제거 OK??")>] : Subsystem 코드 생성시 필요?
         member x.DsSystem =
             (x:?>ValueHolder).DsSystem
             |> tee (fun s -> if isItNull s then failwith "ERROR")
@@ -96,5 +59,6 @@ module DsRuntimeEnvironmentModule =
     type DsRuntimeEnvironment with
         member x.ValueBag = x.IValueBag :?> ValueBag
         member x.EventBag = x.IEventBag :?> EventBag
+        member x.OptModelConfig = x.IOptModelConfig.Cast<ModelConfig>()
         member x.ValueChangedSubject = x.ValueBag.ValueChangedSubject
         member x.StatusChangedSubject = x.EventBag.StatusSubject

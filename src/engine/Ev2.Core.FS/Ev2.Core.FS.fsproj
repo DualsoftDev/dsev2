@@ -18,8 +18,8 @@
 		<Compile Include="Expression,Var,Holder\Expression.Interfaces.fs" />
 		<Compile Include="Expression,Var,Holder\Expression.Function.fs" />
 		<Compile Include="Expression,Var,Holder\TValue,TFunction.fs" />
-		<Compile Include="Ds.Ev1.Counter,Statement\DsRuntimeEnvironment.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\RuntimeGenerator.fs" />
+		<Compile Include="Ds.Ev1.Counter,Statement\DsRuntimeEnvironment.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\DsEv1_Timer.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\DsEv1_Counter.fs" />
 		<Compile Include="Ds.Ev1.Counter,Statement\DsEv1_Statement.fs" />

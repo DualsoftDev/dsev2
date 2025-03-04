@@ -87,9 +87,14 @@ type PlatformTarget =
     | AB
     | MELSEC
 
-type DsRuntimeEnvironment(system:ISystem, valueBag:IValueBag, eventBag:IEventBag, ?platformTarget:PlatformTarget, ?modelConfig:IModelConfig) =
-    member val ISystem = system
-    member val IValueBag = valueBag
-    member val IEventBag = eventBag
-    member val IModelConfig = modelConfig
-    member val PlatformTarget = platformTarget |? WINDOWS
+
+/// Runtime Global 변수 collection
+///
+// 현재 위치에서 모든 global 을 선언할 수 없으므로, interface 로만 선언하고 나머지는 확장 메서드로 구현
+// see DsRuntimeEnvironment 확장 메서드
+type DsRuntimeEnvironment(system, valueBag, eventBag, ?platformTarget, ?modelConfig) =
+    member val internal ISystem:ISystem = system
+    member val internal IValueBag:IValueBag = valueBag
+    member val internal IEventBag:IEventBag = eventBag
+    member val internal IOptModelConfig:IModelConfig option = modelConfig
+    member val PlatformTarget:PlatformTarget = platformTarget |? WINDOWS

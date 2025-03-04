@@ -121,7 +121,7 @@ module rec TExpressionModule =
 
         [<JsonIgnore>] member x.ValueType = x.ObjectHolder.Type
 
-        /// ValueHolder.OValue.  Holded value
+        /// ValueHolder.OValue.  Holded Object/Opaque value
         [<JsonIgnore>]
         member x.OValue
             with get() = x.ObjectHolder.Value
