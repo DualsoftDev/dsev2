@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--<TargetFramework>netcoreapp3.1</TargetFramework>-->
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>PLC.CodeGen.LSXGK</RootNamespace>
+        <LangVersion>8.0</LangVersion>
+        <OutputPath>$(SolutionDir)\bin\</OutputPath>
+        <OtherFlags>--warnon:1182</OtherFlags>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="XGK-CPUA-4.77.99.1.template.xml" />
+        <Compile Include="..\..\Engine\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+    </ItemGroup>
+
+    <ItemGroup />
+</Project>

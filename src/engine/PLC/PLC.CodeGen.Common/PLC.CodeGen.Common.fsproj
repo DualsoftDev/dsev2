@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--<TargetFramework>netcoreapp3.1</TargetFramework>-->
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>PLC.CodeGen.Common</RootNamespace>
+		<LangVersion>8.0</LangVersion>
+		<SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
+		<OutputPath>$(SolutionDir)\bin\</OutputPath>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OtherFlags>--warnon:1182</OtherFlags>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<UseNugetProjectReference Condition="'$(UseNugetProjectReference)' == ''">false</UseNugetProjectReference>
+		<SignAssembly>True</SignAssembly>
+		<AssemblyOriginatorKeyFile>$(SolutionDir)\dualsoft.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Address\CSVPLCTypeList.fs" />
+        <Compile Include="Address\CSVDeviceSizeInfo.fs" />
+        <Compile Include="Address\HwModel.fs" />
+        <Compile Include="Address\DeviceSize.fs" />
+        <Compile Include="Address\HwModelManager.fs" />
+        <Compile Include="Address\LsTagInfo.fs" />
+        <Compile Include="Address\AddressPattern.fs" />
+        <Compile Include="..\..\Engine\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+        <Compile Include="Prelude\FakeTypes.fs" />
+        <Compile Include="Prelude\Constants.fs" />
+        <Compile Include="TagType.fs" />
+        <Compile Include="FlatExpression.fs" />
+        <Compile Include="FlatExpression.Proc.fs" />
+        <Compile Include="CollectStorages.fs" />
+        <Compile Include="Command.fs" />
+        <Compile Include="QGraph\QGraph.CodeGenerationOption.fs" />
+        <Compile Include="MemoryAllocator.fs" />
+        <Compile Include="EntryPoint.fs" />
+      
+        <Content Include="FodyWeavers.xml" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Engine\Engine.Core\Engine.Core.fsproj" />
+    </ItemGroup>
+
+	<ItemGroup Condition="'$(UseNugetProjectReference)' == 'true'">
+		<ProjectReference Include="..\..\..\..\Submodules\nuget\PLC\Dual.PLC.TagParser.FS\Dual.PLC.TagParser.FS.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(UseNugetProjectReference)' != 'true'">
+		<PackageReference Include="DualSoft-PLC-TagParser-FS" Version="0.5.1" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+        <Folder Include="QGraph\" />
+    </ItemGroup>
+
+    <ItemGroup />
+
+
+    <ItemGroup>
+        <PackageReference Include="Fody" Version="6.8.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="ModuleInit.Fody" Version="2.1.1">
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+
+</Project>

@@ -1,0 +1,97 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--<TargetFramework>netcoreapp3.1</TargetFramework>-->
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>PLC.CodeGen.LS</RootNamespace>
+		<LangVersion>8.0</LangVersion>
+		<SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
+		<OutputPath>$(SolutionDir)\bin\</OutputPath>
+        <OtherFlags>--warnon:1182</OtherFlags>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<UseNugetProjectReference Condition="'$(UseNugetProjectReference)' == ''">false</UseNugetProjectReference>
+		<SignAssembly>True</SignAssembly>
+		<AssemblyOriginatorKeyFile>$(SolutionDir)\dualsoft.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="Documents\XmlSample\**" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <Compile Include="..\..\Engine\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+        <Content Include="Documents\WideExpression.txt" />
+        <Content Include="Documents\Function, FB.txt" />
+        <Content Include="Documents\IEC-61131-3.summary.txt" />
+        <Folder Include="Documents\XmlSamples\" />
+
+        <None Include="Documents\XmlSamples\empty.xml" />
+        <None Include="Documents\XmlSamples\minimal.xml" />
+        <None Include="Documents\XmlSamples\multiProgramSample.xml" />
+        <None Include="Documents\XmlSamples\POU.xml" />
+
+        <None Include="Documents\XmlSamples\POU.xml" />
+        <None Include="Documents\XmlSamples\POU.xml" />
+        <None Include="Documents\XmlSamples\FunctionBlockSample.xml" />
+        <None Include="Documents\XmlSamples\FunctionBlockUsageSample.xml" />
+
+        <None Include="Documents\XG5000 - 패키지 SW 설계.docx" />
+        <None Include="Documents\XgiLadder.pptx" />
+        <None Include="Documents\XGI_초급(V18).pdf" />
+        <None Include="Documents\XGK_XGI 변환 검토.docx" />
+        <None Include="Documents\XGLib Details - with .NET Examples.docx" />
+        <None Include="Documents\사용설명서_XGI_XGR_XEC_명령어집_V2.7.pdf" />
+        <Compile Include="AssemblyInfo.fs" />
+        <Compile Include="Address.Convert.fs" />
+        <Compile Include="LsPLC.Spec.FBText.fs" />
+        <Compile Include="LsPLC.Spec.fs" />
+        <EmbeddedResource Include="XgI-4.5.2.template.xml" />
+        <EmbeddedResource Include="XGK-CPUUN-4.77.99.1.template.xml" />
+		<Compile Include="LsPLC.Prolog.fs" />
+        <None Include="Import\XGConfigReader.fsx" />
+        <None Include="Import\XGLDRoutineReader.fsx" />
+        <None Include="Import\XGFileRead.fsx" />
+        <Compile Include="Export\LsPLCExport.RungXmlInfo.fs" />
+        <Compile Include="Export\LsPLCExport.Common.fs" />
+        <Compile Include="Export\LsPLCExport.POUParams.fs" />
+        <Compile Include="Export\LsPLCExport.StatementAdaptor.Common.fs" />
+        <Compile Include="Export\LsPLCExport.Expression.1.fs" />
+        <Compile Include="Export\LsPLCExport.Expression.2.fs" />
+        <Compile Include="Export\LsPLCExport.Statement.fs" />
+        <Compile Include="Export\LsPLCExport.Statement.Xgk.fs" />
+        <Compile Include="Export\LsPLCExport.StatementAdaptor.Epilog.fs" />
+        <Compile Include="Export\LsPLCExport.Command.fs" />
+        <Compile Include="Export\LsPLCExport.Tag.fs" />
+        <Compile Include="Export\LsPLCExport.XmlDoc.fs" />
+        <Compile Include="Export\LsPLCExport.XmlProjectAnalyzer.fs" />
+        <Compile Include="Export\LsPLCExport.File.fs" />
+        <Compile Include="Export\LsPLCExport.Symbols.fs" />
+        <Compile Include="Export\LsPLCExport.Export.fs" />
+        <Content Include="Export\Note.txt" />
+        <Content Include="Export\XGK.txt" />
+        <None Include="Scripts\Script1.fsx" />
+        <Compile Include="EntryPoint.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Fody" Version="6.8.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="ModuleInit.Fody" Version="2.1.1">
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+
+    </ItemGroup>
+
+	<ItemGroup Condition="'$(UseNugetProjectReference)' != 'true'">
+		<PackageReference Include="DualSoft-Common-Base-FS" Version="0.5.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+        <ProjectReference Include="..\PLC.CodeGen.Common\PLC.CodeGen.Common.fsproj" />
+    </ItemGroup>
+
+
+</Project>

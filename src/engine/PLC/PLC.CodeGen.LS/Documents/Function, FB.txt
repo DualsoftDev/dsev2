@@ -1,0 +1,136 @@
+- LS 산전 function/function block 사용법 연재 시리즈
+    - https://blog.naver.com/PostView.naver?blogId=mech19&logNo=222350951524&categoryNo=37&parentCategoryNo=0&viewDate=&currentPage=1&postListTopCurrentPage=1&from=search
+
+
+- XGI 의 경우, ST 를 지원하기는 하지만, ST 를 이용해서 function (block) 을 구현하는 것은 아직 지원되지 않는 듯 하다.
+    - FUNCTION_BLOCK 키워드가 예약어로만 잡혀 있다.
+    - IEC 표준 ST function block 정의
+        https://www.fernhillsoftware.com/help/iec-61131/common-elements/program-unit/function-block.html
+
+        function-block =
+            FUNCTION_BLOCK function-block-name
+            { variable-declaration }
+            [ function-block-code ]
+            END_FUNCTION_BLOCK
+
+        function-block-code = [ structured-text | instruction-list ]
+
+        (* Rising edge detector *)
+        Function_Block R_TRIG
+	        Var_Input CLK : Bool; End_Var
+	        Var_Output Q : Bool; End_Var
+	        Var M : Bool = False; End_Var
+
+	        Q = CLK AND NOT M;
+	        M = CLK;
+        End_Function_Block
+
+
+
+        function =
+          FUNCTION function-name [ : return-type ]
+            { variable-declaration }
+            [ function-code ]
+          END_FUNCTION
+
+        return-type = [ Elementary Data Type | Derived Data Type ]
+
+        function-code = structured-text
+
+        (* Example *)
+
+        Function CalcStdDev : LREAL
+	        var_input v1,v2,v3,v4 : LREAL; end_var
+
+	        var
+		        SumOfSquares : LREAL;
+		        Mean : LREAL;
+	        end_var
+
+	        (* Calculate the mean *)
+	        Mean = (v1 + v2 + v3 + v4) / 4;
+
+	        (* Calculate the standard deviation *)
+	        SumOfSquares = (v1 - Mean) ** 2 +
+				        (v2 - Mean) ** 2 +
+				        (v3 - Mean) ** 2 +
+				        (v4 - Mean) ** 2;
+
+	        CalcStdDev = sqrt( SumOfSquares / 4 );
+        End_Function
+
+
+
+- Function block 에서 사용가능한 변수 type
+    VAR
+    VAR_CONSTANT
+    VAR_EXTERNAL
+    VAR_INPUT
+    VAR_OUTPUT
+    VAR_IN_OUT
+
+- 일반 scan program 에서 사용가능한 변수 type
+    VAR
+    VAR_CONSTANT
+    VAR_EXTERNAL
+
+- Function 에서 사용가능한 변수 type
+    VAR_RETURN      - fixed (type 생성할 때 지정한 것으로 고정)
+    VAR
+    VAR_INPUT
+    VAR_OUTPUT
+    VAR_IN_OUT
+
+- https://www.youtube.com/watch?v=GGZkWMJ-src [XGI PLC 14] 사용자함수블럭 만들기 만능점멸기
+- https://www.youtube.com/watch?v=SUKNfX_3Abw&list=PL09ePec21pnXcp_Cl0Y3YT1JBt-m_td2w&index=39 산전 공식 홈페이지 youtube
+- User function (block?) 의 VAR_OUTPUT 의 초기값은 UI 상에서 지정할 수는 없으나, XML 을 이용해서 입력할 때는 동작하는 것으로 확인됨.
+
+define (* functionBlock *) realfb {
+    variables {
+	    input {
+		    bool in1 = false;
+	    }
+	    output {
+		    bool out1 = false;
+	    }
+	    in_out {
+		    bool in_out1 = false;
+	    }
+        local {
+        }
+    }
+    // statements ...
+
+	out1 = <expr>;
+    // var_xxx 사용
+}
+
+define (* function *) BOOL myfunction {
+    variables {
+    }
+    myfunction = <expr>;
+}
+
+// fb instance 선언: fb name 이 하나의 type 이 되어야 한다.
+realfb real1 = create_fb_instance(realfb, in1=true, ...)
+bool x = real1.out1 && real1.out2;
+
+
+    module Variable =
+        type Kind =
+            | VAR_NONE              = 0
+            | VAR                   = 1
+            | VAR_CONSTANT          = 2
+            | VAR_INPUT             = 3
+            | VAR_OUTPUT            = 4
+            | VAR_IN_OUT            = 5
+            | VAR_GLOBAL            = 6
+            | VAR_GLOBAL_CONSTANT   = 7
+            /// Global 에 선언된 변수를 local 에서 사용하고자 할 때 추가되는 type
+            /// 특정 변수(g)를 global 화 하면 Global block 에 VAR_GLOBAL 로 g 가 추가되고,
+            /// 해당 변수 g 를 사용하는 local block 에 VAR_EXTERNAL 로 g 가 추가된다.
+            | VAR_EXTERNAL          = 8
+            | VAR_EXTERNAL_CONSTANT = 9
+            | VAR_RETURN            = 10
+            | VAR_GOTO_S1           = 11
+            | VAR_TRANS             = 12

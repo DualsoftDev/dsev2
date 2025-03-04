@@ -1,0 +1,35 @@
+1. POU 단위 local symbol 지원 안함
+	- Global symbol 로 옮겨야 함.
+
+1. TIMER resolution
+	- 기본값 <> 사용자 변경
+	- 사용자 지정 영역에 따라서, preset 값에 resolution 을 반영해야 한다.
+
+1. IEC function 과 function 이름 호환 안됨.  "+" vs "ADD"
+
+1. boolean 에 대한 NE 함수 없음
+	- Ladder 로 직접 그려야 한다.
+
+1. 복합 수식 처리 : 개별 rung 으로 분리
+	- IEC Function 을 지원하지 않으므로, 별도의 rung 으로 분리해야 한다.
+	- assign 의 좌측 비교 연산, 사칙 연산등은 모두 별도 rung 으로 분리
+
+1. Existing project 에 병합 시,
+	- 기존 project 내에서 사용된 Timer/Counter 변수를 피해서 할당해야 한다.
+	- 기존 project 분석해서 timer resolution map 을 구하고, rung 생성시에 PV 값에 resolution 반영
+		* collectXgkBasicParameters
+
+1. Counter 의 여러 조건들은 XGI 에서와 같이 뭉터기 다릿발로 연결할 수 없다.
+	- 각각의 복합 조건 expression 을 임시 변수에 할당하고, 그 변수를 사용해야 한다.  (CU/CD)
+	- XGK CTUD 는 LD 를 직접 지원하지 않으므로 별도의 rung 으로 분리 : ldcondition -- MOV,C0001,PV
+
+1. Timer/Counter 구문 처리
+	- reset 등은 별도의 ladder 로 처리해야 한다.
+	- Preset value 는 IEC 에서는 type suffix 를 붙여야 하고, XGK 에서는 그냥 사용해야 한다.
+
+1. 새로운 rung 생성
+	- exp2exp, statement2statements
+
+1. XGK 변수명 제한
+	- 현재 발견된 사항: "load", "ld"
+

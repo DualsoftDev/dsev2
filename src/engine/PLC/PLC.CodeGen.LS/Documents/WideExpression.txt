@@ -1,0 +1,8 @@
+XgxProjectParams.GenerateXmlDocument
+    XgxPOUParams.GenerateXmlNode
+        css2Css (=> commentedStatementsToCommentedXgxStatements)
+            cs2Css (=> statement2Statements)
+                s2XgxSs (=> statement2XgxStatements)
+                    collectExpandedExpression
+                        zipVisitor
+                            let w, _h = exp.Flatten() :?> FlatExpression |> precalculateSpan

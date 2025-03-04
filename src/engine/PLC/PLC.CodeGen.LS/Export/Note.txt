@@ -1,0 +1,44 @@
+createTypedXgxAutoVariable
+var2expr / literal2expr
+
+
+Python : 동작하지 않음
+    XML formatter: https://pypi.org/project/xmlformatter/
+	    Configurations//Configuration/Options 때문인지 변환 후, xg5000 에서 열리지 않는다.
+
+
+
+Javascript / Node.js : 그나마 동작함
+
+    npm install xml-formatter
+
+    아래 코드를 formatXml.mjs 파일로 저장하세요:
+
+    javascript
+
+        import xmlFormat from 'xml-formatter';
+
+        // 표준 입력 설정
+        process.stdin.setEncoding('utf-8');
+
+        let inputData = '';
+
+        // 데이터가 stdin으로 들어올 때 이벤트 리스너
+        process.stdin.on('data', (chunk) => {
+          inputData += chunk;
+        });
+
+        // stdin이 종료되면 (EOF) 실행
+        process.stdin.on('end', () => {
+          try {
+            const formattedXML = xmlFormat(inputData);
+            process.stdout.write(formattedXML);
+          } catch (error) {
+            console.error('XML 포맷 에러:', error.message);
+          }
+        });
+
+    스크립트 실행:
+
+    % node formatXml.mjs < input.xml > output.xml
+

@@ -1,0 +1,57 @@
+IEC-61131-3.pdf, pp37.
+
+Table 15 - Location and size prefix features for directly represented variable
+----------------------------------------------------------------------------------------------
+No. | Prefix  | Meaning                         | Default data type
+----------------------------------------------------------------------------------------------
+1   | I       | Input location                  |
+2   | Q       | Output location                 |
+3   | M       | Memory location                 |
+4   | X       | Single bit size                 | BOOL
+5   | None    | Single bit size                 | BOOL
+6   | B       | Byte (8 bits) size              | BYTE
+7   | W       | Word (16 bits) size             | WORD
+8   | D       | Double word (32 bits) size      | DWORD
+9   | L       | Long (quad) word (64 bits) size | LWORD
+----------------------------------------------------------------------------------------------
+10 Use of an asterisk (*) to indicate a not yet specified location (NOTE 2)
+----------------------------------------------------------------------------------------------
+NOTE 1 National standards organizations can publish tables of translations of these prefixes.
+NOTE 2 Use of feature 10 in this table requires feature 11 of table 49 and vice ver
+----------------------------------------------------------------------------------------------
+
+
+EXAMPLES
+%QX75 and %Q75  | Output bit 75
+%IW215          | Input word location 215
+%QB7            | Output byte location 7
+%MD48           | Double word at memory location 48
+%IW2.5.7.1      | See explanation below
+%Q*             | Output at a not yet specified locat
+
+
+IEC-61131-3.pdf, pp39.
+Table 16 a) - Variable declaration keywords
+----------------------------------------------------------------------------------------------
+Keyword         | Variable usage
+----------------+-----------------------------------------------------------------------------
+VAR             | Internal to organization unit
+VAR_INPUT       | Externally supplied, not modifiable within organization unit
+VAR_OUTPUT      | Supplied by organization unit to external entities
+VAR_IN_OUT      | Supplied by external entities - can be modified within organization unit
+VAR_EXTERNAL    | Supplied by configuration via VAR_GLOBAL (2.7.1)
+                | Can be modified within organization unit
+VAR_GLOBAL      | Global variable declaration (2.7.1)
+VAR_ACCESS      | Access path declaration (2.7.1)
+VAR_TEMP        | Temporary storage for variables in function blocks and programs (2.4.3)
+VAR_CONFIG      | Instance-specific initialization and location assignment.
+RETAIN          | Retentive variables (see preceding text)
+NON_RETAIN      | Non-retentive variables (see preceding text)
+CONSTANT        | Constant (variable cannot be modified)
+AT              | Location assignment (2.4.3.1)
+----------------+-----------------------------------------------------------------------------
+NOTE 1  The usage of these keywords is a feature of the program organization unit or
+        configuration element in which they are used. Normative requirements for the use
+        of these keywords are given in 2.4.3.1, 2.4.3.2, 2.5 and 2.7.
+NOTE 2 Examples of the use of VAR_IN_OUT variables are given in figures 11b and 1
+
