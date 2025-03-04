@@ -23,7 +23,8 @@
         <Compile Include="Address\HwModelManager.fs" />
         <Compile Include="Address\LsTagInfo.fs" />
         <Compile Include="Address\AddressPattern.fs" />
-        <Compile Include="..\..\Engine\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
+        <Compile Include="Compatibility.fs" />
+        <Compile Include="..\..\Engine.Common.Assembly.fs" Link="Engine.Common.Assembly.fs" />
         <Compile Include="Prelude\FakeTypes.fs" />
         <Compile Include="Prelude\Constants.fs" />
         <Compile Include="TagType.fs" />
@@ -34,12 +35,6 @@
         <Compile Include="QGraph\QGraph.CodeGenerationOption.fs" />
         <Compile Include="MemoryAllocator.fs" />
         <Compile Include="EntryPoint.fs" />
-      
-        <Content Include="FodyWeavers.xml" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\Engine\Engine.Core\Engine.Core.fsproj" />
     </ItemGroup>
 
 	<ItemGroup Condition="'$(UseNugetProjectReference)' == 'true'">
@@ -55,17 +50,9 @@
         <Folder Include="QGraph\" />
     </ItemGroup>
 
-    <ItemGroup />
-
 
     <ItemGroup>
-        <PackageReference Include="Fody" Version="6.8.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="ModuleInit.Fody" Version="2.1.1">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
+      <ProjectReference Include="..\..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
     </ItemGroup>
 
 

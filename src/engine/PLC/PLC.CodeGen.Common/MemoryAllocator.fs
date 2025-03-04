@@ -1,7 +1,7 @@
 namespace PLC.CodeGen.Common
 
 open System.Collections.Generic
-open Engine.Core
+open Dual.Ev2
 open Dual.Common.Core.FS
 open System.Text.RegularExpressions
 

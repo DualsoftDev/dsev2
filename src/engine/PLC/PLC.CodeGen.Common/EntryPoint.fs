@@ -1,8 +1,8 @@
 namespace PLC.CodeGen.Common
 
-open Engine.Core
+open Dual.Ev2
 
 module ModuleInitializer =
     let Initialize () =
         printfn "PLC.CodeGen.Common Module is being initialized..."
-        fwdFlattenExpression <- flattenExpression
+        //fwdFlattenExpression <- flattenExpression

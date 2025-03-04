@@ -1,7 +1,7 @@
 namespace PLC.CodeGen.Common
 
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 
 [<AutoOpen>]
 module rec Command =

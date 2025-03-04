@@ -1,6 +1,6 @@
 namespace PLC.CodeGen.Common
 
-open Engine.Core
+open Dual.Ev2
 
 [<AutoOpen>]
 module FakeTypesModule =

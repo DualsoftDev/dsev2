@@ -1,12 +1,13 @@
 namespace PLC.CodeGen.Common
 
+open System.Linq
+
 open Dual.Common.Core.FS
-open Engine.Core
+open Dual.Ev2
 
 [<AutoOpen>]
 
 module CollectStoragesModule =
-
     type TimerStatement with
 
         member x.CollectStorages() : IStorage list =
