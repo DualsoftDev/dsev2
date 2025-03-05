@@ -27,8 +27,6 @@ WS: [ \t\r\n]+ -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT: '(*' .*? '*)' -> skip;
 
-
-//ADDRESS: (~(' ' | '\t' | '\r' | '\n' | '(' | '"' | ';' | ',' ))+;  // 공백, '(' 및 ';' 이전까지 캡처
 ADDRESS: ID+ (':' [A-Za-z0-9_]+)* ('.' [A-Za-z0-9_]+)* ('[' INT ']')?;
 
 
@@ -36,44 +34,40 @@ ADDRESS: ID+ (':' [A-Za-z0-9_]+)* ('.' [A-Za-z0-9_]+)* ('[' INT ']')?;
 l5kFile: ieVer 'CONTROLLER' controller 'END_CONTROLLER';
 
 ieVer: 'IE_VER' ':=' VERSION ';';
+params_block: '(' params ')';
 
-controller:  ID '(' controllerParams ')' module* tag? program* task* config*;
+controller:  ID params_block struct_def* module* tag? program* task* config*;
 
-controllerParams: paramList;
-
-module: 'MODULE' ID '(' moduleParams ')' connection* 'END_MODULE';
-moduleParams: paramList;
-
-connection: 'CONNECTION' ID '(' connectionParams ')' SEMI 'END_CONNECTION';
-connectionParams: paramList;
+struct_def: 'DATATYPE' ID params_block (type_delc)+ 'END_DATATYPE';
+    type_delc: typename varname params_block? SEMI;
+        typename:
+              'BOOL' | 'SINT' | 'INT' | 'DINT' | 'REAL'
+            | 'LINT' | 'STRING' | 'TIME' | 'TOD' | 'DT' | 'DATE'
+            | 'DTT' | 'ANY' | 'UDT' | 'ARRAY' | 'STRUCT';
+        varname: ID (LBRACKET INT RBRACKET)?;
+module: 'MODULE' ID params_block connection* 'END_MODULE';
+connection: 'CONNECTION' ID params_block SEMI 'END_CONNECTION';
 
 tag: 'TAG' tagEntry+ 'END_TAG';
 
 tagEntry:
     ID 'OF' address
-    '(' tagParams ')' SEMI;
+    params_block SEMI;
 
 address: ADDRESS ;
 
-tagParams: paramList;
-
-program: 'PROGRAM' ID '(' programParams ')' routine* childPrograms? 'END_PROGRAM';
-programParams: paramList;
-
+program: 'PROGRAM' ID params_block routine* childPrograms? 'END_PROGRAM';
 routine: 'ROUTINE' ID command* 'END_ROUTINE';
 
 command: ID (':' commandArgs)? SEMI;
 commandArgs: ID+;
 
-task: 'TASK' ID '(' taskParams ')' ID SEMI 'END_TASK';
-taskParams: paramList;
+task: 'TASK' ID params_block ID SEMI 'END_TASK';
 
-config: 'CONFIG' ID '(' configParams ')' configParam* 'END_CONFIG';
-configParams: paramList;
-configParam: param;
+config: 'CONFIG' ID params_block param* 'END_CONFIG';
 
 childPrograms: 'CHILD_PROGRAMS' program* 'END_CHILD_PROGRAMS';
 
 // 공통 파라미터 리스트
-paramList: param (',' param)*;
+params: param (',' param)*;
 param: ID ':=' (STRING | INT | HEX | YES | NO | CONTINUOUS | ID);
