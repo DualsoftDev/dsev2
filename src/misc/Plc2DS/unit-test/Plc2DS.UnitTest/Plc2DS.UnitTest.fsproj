@@ -8,12 +8,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="csvreader\samples\S7.min.sdf" />
 		<None Include="CsvReader\Samples\GxWorks3.NoQuote3.EucKR.COMMENT.csv" />
 		<None Include="CsvReader\Samples\GxWorks3.Tab.COMMENT.csv" />
 		<None Include="CsvReader\Samples\GxWorks3.NoQuote3.COMMENT.csv" />
 		<None Include="CsvReader\Samples\GxWorks3.DoubleQuote.COMMENT.csv" />
 		<None Include="csvreader\test.fsx" />
+		<Compile Include="CsvReader\TestCommon.fs" />
 		<Compile Include="CsvReader\CsvReaderTest.fs" />
+		<Compile Include="CsvReader\S7.SdfReaderTest.fs" />
 		<Compile Include="Library.fs" />
 	</ItemGroup>
 
@@ -37,8 +40,6 @@
 		<ProjectReference Include="..\..\Dual.Plc2DS.MX\Dual.Plc2DS.MX.fsproj" />
 		<ProjectReference Include="..\..\Dual.Plc2DS.S7\Dual.Plc2DS.S7.fsproj" />
 	</ItemGroup>
-
-	<ItemGroup />
 
 
 </Project>
