@@ -19,6 +19,9 @@ module S7 =
             |> map _.Split(',')
             |> map (fun cols -> cols |> map _.Trim('"').Trim())
             |> map (fun cols ->
+                if cols.Length <> 4 then
+                    failwith "Invalid file format"
+
                 let name = cols[0]
                 let address =
                     match cols[1] with       // "I  200.2 ", "T 99 "  등의 불균일 요소 => "I 202.2", "T 99" 로 정리

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<RootNamespace>Dual.Plc2DS.AB.Parser</RootNamespace>
+		<LangVersion>12.0</LangVersion>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+		<PackageReference Include="Antlr4BuildTasks" Version="12.8.0" PrivateAssets="all" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<Antlr4 Include="l5k.g4" Link="l5k.g4">
+			<Visitor>true</Visitor>
+			<Package>Dual.Plc2DS.AB.Parser</Package>
+		</Antlr4>
+	</ItemGroup>
+
+	<ItemGroup>
+		<AssemblyAttribute Include="System.CLSCompliantAttribute">
+			<_Parameter1>true</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+</Project>

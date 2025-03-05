@@ -6,12 +6,14 @@ open Dual.Plc2DS.Common.FS
 
 [<AutoOpen>]
 module GxWorks =
-    type DeviceComment(device:string, comment:string, ?label:string) =
+    type DeviceComment = {
+        Device: string
+        Comment: string
+        Label: string
+    } with
         interface IDeviceComment
-        member val Device = device
-        member val Comment = comment
-        member val Label = label |? null
-
+        static member Create(device, comment, ?label:string) =
+            { Device = device; Comment = comment; Label = label |? "" }
 
 // 추후 확장?
 //[<AutoOpen>]
@@ -51,8 +53,10 @@ module Mx =
                 let device = cols[0] |> removeDq
                 let label, comment =
                     if hasLabel then
+                        if cols.Length <> 3 then failwith "Invalid file format"
                         cols[1] |> removeDq, cols[2]  |> removeDq
                     else
+                        if cols.Length <> 2 then failwith "Invalid file format"
                         "", cols[1] |> removeDq
 
-                GxWorks.DeviceComment(device, comment, label=label))
+                DeviceComment.Create(device, comment, label=label))

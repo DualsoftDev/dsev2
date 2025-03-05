@@ -6,7 +6,7 @@ open NUnit.Framework
 open Dual.Plc2DS.MX
 open Dual.Common.UnitTest.FS
 
-module Csv =
+module MxCsv =
     type T() =
         [<Test>]
         member _.``Minimal`` () =

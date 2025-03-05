@@ -33,6 +33,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.UnitTest.FS", "
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.PLC.TagParser.FS", "..\..\..\submodules\nuget\PLC\Dual.PLC.TagParser.FS\Dual.PLC.TagParser.FS.fsproj", "{FAB04E37-2855-41E6-8134-4940C7EB84C9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Plc2DS.AB.Parser", "Dual.Plc2DS.AB.Parser\Dual.Plc2DS.AB.Parser.csproj", "{A568B913-CDC2-4121-B056-83BC7E53008F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,10 @@ Global
 		{FAB04E37-2855-41E6-8134-4940C7EB84C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAB04E37-2855-41E6-8134-4940C7EB84C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FAB04E37-2855-41E6-8134-4940C7EB84C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A568B913-CDC2-4121-B056-83BC7E53008F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A568B913-CDC2-4121-B056-83BC7E53008F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A568B913-CDC2-4121-B056-83BC7E53008F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A568B913-CDC2-4121-B056-83BC7E53008F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
