@@ -11,7 +11,6 @@ open Dual.Common.Base.FS
 open Dual.Common.Core.FS
 
 open Dual.Ev2
-open Ev2.Parser.FS
 module FqdnParserTest =
     /// Json Test
     type T() =

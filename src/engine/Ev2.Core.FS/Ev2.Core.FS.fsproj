@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
@@ -29,6 +29,7 @@
 		<None Include="Fsx\loadlib.fsx" />
 		<None Include="fsx\jsonTest.fsx" />
 		<Compile Include="DsConfig.fs" />
+		<Compile Include="FqdnParser.fs" />
 		<Compile Include="Device.fs" />
 		<Compile Include="Core.Graph.fs" />
 		<Compile Include="Core.fs" />
@@ -44,10 +45,18 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Antlr.FS\Dual.Common.Antlr.FS.fsproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj" />
+		<ProjectReference Include="..\Ev2.Parser\Ev2.Parser.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+		<PackageReference Include="Antlr4BuildTasks" Version="12.8.0" PrivateAssets="all" />
+	</ItemGroup>
+
 
 </Project>

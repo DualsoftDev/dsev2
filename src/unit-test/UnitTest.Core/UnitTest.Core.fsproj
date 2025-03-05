@@ -43,7 +43,6 @@
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
 		<ProjectReference Include="..\..\engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj" />
 		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
-		<ProjectReference Include="..\..\engine\Ev2.Parser.FS\Ev2.Parser.FS.fsproj" />
 	</ItemGroup>
 
 </Project>
