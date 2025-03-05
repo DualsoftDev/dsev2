@@ -27,7 +27,8 @@ WS: [ \t\r\n]+ -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT: '(*' .*? '*)' -> skip;
 
-ADDRESS: ID+ (':' [A-Za-z0-9_]+)* ('.' [A-Za-z0-9_]+)* ('[' INT ']')?;
+// ADDRESS or VARNAME
+VARNAME: ID+ (':' [A-Za-z0-9_]+)* ('.' [A-Za-z0-9_]+)* ('[' INT ']')?;
 
 
 // Parser rules
@@ -39,12 +40,15 @@ params_block: '(' params ')';
 controller:  ID params_block struct_def* module* tag? program* task* config*;
 
 struct_def: 'DATATYPE' ID params_block (type_delc)+ 'END_DATATYPE';
-    type_delc: typename varname params_block? SEMI;
+    type_delc: typename VARNAME params_block? SEMI;
         typename:
               'BOOL' | 'SINT' | 'INT' | 'DINT' | 'REAL'
             | 'LINT' | 'STRING' | 'TIME' | 'TOD' | 'DT' | 'DATE'
-            | 'DTT' | 'ANY' | 'UDT' | 'ARRAY' | 'STRUCT';
-        varname: ID (LBRACKET INT RBRACKET)?;
+            | 'DTT' | 'ANY' | 'UDT' | 'ARRAY' | 'STRUCT'
+            | 'SKT_Address' | 'SKT_SNTP_Data' | 'SKT_SNTP_Data'
+            | 'SKT_Open_Connection' | 'SKT_Read_Source' | 'SKT_Read_Destination' | 'SKT_Write_Source';
+
+
 module: 'MODULE' ID params_block connection* 'END_MODULE';
 connection: 'CONNECTION' ID params_block SEMI 'END_CONNECTION';
 
@@ -54,7 +58,7 @@ tagEntry:
     ID 'OF' address
     params_block SEMI;
 
-address: ADDRESS ;
+address: VARNAME ;
 
 program: 'PROGRAM' ID params_block routine* childPrograms? 'END_PROGRAM';
 routine: 'ROUTINE' ID command* 'END_ROUTINE';
