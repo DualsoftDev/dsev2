@@ -13,7 +13,7 @@ module S7 =
     } with
         interface IDeviceComment
 
-    type Reader =
+    type CsvReader =
         static member ReadSDF(sdfPath: string) : SDF[] =
             File.PeekLines(sdfPath, 0)
             |> map _.Split(',')

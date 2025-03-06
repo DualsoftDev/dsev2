@@ -8,7 +8,7 @@ open System.Xml
 
 [<AutoOpen>]
 module Xgx =
-    type Reader =
+    type CsvReader =
         static member ReadXgxTags(xmlPath: string): IDeviceComment[] =
             let xdoc = DualXmlDocument.loadFromFile xmlPath
 

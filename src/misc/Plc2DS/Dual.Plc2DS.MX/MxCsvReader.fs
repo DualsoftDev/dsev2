@@ -4,34 +4,24 @@ open Dual.Common.Core.FS
 open Dual.Plc2DS.Common.FS
 
 
+//[<AutoOpen>]
+//module GxWorks =
+//        static member Create(device, comment, ?label:string) =
+//            { Device = device; Comment = comment; Label = label |? "" }
+
+
 [<AutoOpen>]
-module GxWorks =
+module Mx =
     type DeviceComment = {
         Device: string
         Comment: string
         Label: string
     } with
         interface IDeviceComment
-        static member Create(device, comment, ?label:string) =
-            { Device = device; Comment = comment; Label = label |? "" }
-
-// 추후 확장?
-//[<AutoOpen>]
-//module GxWorks3 =
-
-//    type DeviceComment(device:string, comment:string, ?label:string, ?klass:string, ?dataType:string, ?address:string) =
-//        inherit GxWorks.DeviceComment(device, comment, ?label=label)
-
-//        member val Class = klass |? "VAR_GLOBAL"
-//        member val DataType = dataType |? "BOOL"
-//        member val Address = address |? ""
 
 
-
-[<AutoOpen>]
-module Mx =
-    type Reader =
-        static member ReadCommentCSV(filePath: string): GxWorks.DeviceComment[] =
+    type CsvReader =
+        static member ReadCommentCSV(filePath: string): DeviceComment[] =
             let headers = File.PeekLines(filePath, 0, 2)
             let delimeter, trimDoubleQuote, hasLabel, skipLines =
                 match headers with
@@ -59,4 +49,5 @@ module Mx =
                         if cols.Length <> 2 then failwith "Invalid file format"
                         "", cols[1] |> removeDq
 
-                DeviceComment.Create(device, comment, label=label))
+                { Device = device; Comment = comment; Label = label |? "" }
+            )

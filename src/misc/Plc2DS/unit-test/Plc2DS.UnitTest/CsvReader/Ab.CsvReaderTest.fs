@@ -20,7 +20,7 @@ module AbCsv =
         [<Test>]
         member _.``Minimal`` () =
             let csvPath = getFile("min.csv")
-            let data = Ab.Reader.ReadCommentCSV(csvPath)
+            let data = Ab.CsvReader.ReadCommentCSV(csvPath)
             data |> Array.iter (tracefn "%A")
 
 
@@ -47,7 +47,7 @@ module AbCsv =
         [<Test>]
         member _.``HangleEncoding`` () =
             let csvPath = getFile("hangul_Tags.csv")
-            let data = Ab.Reader.ReadCommentCSV(csvPath)
+            let data = Ab.CsvReader.ReadCommentCSV(csvPath)
             data.Length === 11
 
             data[0].Type === "TAG"

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="LsXgx.fs" />
+    <Compile Include="LsCsvReader.fs" />
+    <Compile Include="LsLogicReader.fs" />
   </ItemGroup>
 
   <ItemGroup>

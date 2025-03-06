@@ -47,7 +47,7 @@ module Ab =
         )
 
 
-    type Reader =
+    type CsvReader =
         static member ReadCommentCSV(filePath: string): DeviceComment[] =
             let parseCsvLine (line: string) =
                 let pattern = """(?:^|,)(?:"([^"]*)"|([^,]*))""" // 쉼표로 시작하는 경우도 감지
@@ -69,8 +69,8 @@ module Ab =
                 let lines = File.PeekLines(filePath, skipLines)
                 lines |> map(fun line ->
                     let cols = parseCsvLine line
-                    {   Type = cols.[0]; Scope = cols.[1]; Name = cols.[2]; Description = cols.[3]
-                        DataType = cols.[4]; Specifier = cols.[5]; Attributes = cols.[6] } )
+                    {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
+                        DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6] } )
 
             | _ -> failwith "Invalid file format"
 

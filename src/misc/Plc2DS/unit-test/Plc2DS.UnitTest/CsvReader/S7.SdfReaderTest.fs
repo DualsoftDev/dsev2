@@ -16,7 +16,7 @@ module S7Sdf =
         [<Test>]
         member _.``Minimal`` () =
             let sdfPath = getFile("S7.min.sdf")
-            let data = S7.Reader.ReadSDF(sdfPath)
+            let data = S7.CsvReader.ReadSDF(sdfPath)
             data.Length === 4
             data[0].Name === "#5_M TL 핀전진단이상"
             data[0].Address === "M 750.0"
