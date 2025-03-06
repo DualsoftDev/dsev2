@@ -1,0 +1,15 @@
+	MODULE CRP_MAIN_CPU (Description := "MASTER INTERLOCK",
+	                     Parent := "CRP_MASTER",
+	                     ParentModPortId := 1,
+	                     CatalogNumber := "1756-L72",
+	                     Vendor := 1,
+	                     ProductType := 14,
+	                     ProductCode := 93,
+	                     Major := 20,
+	                     Minor := 1,
+	                     PortLabel := "RxBACKPLANE",
+	                     Slot := 0,
+	                     Mode := 2#0000_0000_0000_0000,
+	                     CompatibleModule := 0,
+	                     KeyMask := 2#0000_0000_0000_0000)
+	END_MODULE

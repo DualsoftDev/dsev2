@@ -1,0 +1,8 @@
+CONNECTION Output (
+    Rate := 10000,
+    EventID := 0,
+    Unicast := Yes
+)
+    InputData := [-1,[[-1,0],[-1,0],[-1,0],[-1,0]]];
+    InputForceData := [-1,-1,-1,-1,0,0,0,0];
+END_CONNECTION

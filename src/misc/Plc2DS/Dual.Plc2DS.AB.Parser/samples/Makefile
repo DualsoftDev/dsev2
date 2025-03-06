@@ -1,5 +1,7 @@
 
 default:
+	make gui file=connection.min.l5k target=connection
+	make gui file=module.min.l5k target=module
 	make gui file=datatype.l5k target=struct_def
 	make gui file=min.l5k target=l5kFile
 	make tokens file=datatype.l5k target=struct_def
