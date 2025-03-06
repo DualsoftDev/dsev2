@@ -20,7 +20,7 @@ module LsCsv =
         [<Test>]
         member _.``Minimal`` () =
             let csvPath = getFile("min.csv")
-            let data = Ls.CsvReader.ReadCommentCSV(csvPath)
+            let data = CsvReader.ReadCommentCSV(csvPath)
             data |> Array.iter (tracefn "%A")
 
             data.Length === 1

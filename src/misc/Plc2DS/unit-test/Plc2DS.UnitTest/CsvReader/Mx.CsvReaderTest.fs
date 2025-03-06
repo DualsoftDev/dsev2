@@ -15,7 +15,7 @@ module MxCsv =
         [<Test>]
         member _.``Minimal`` () =
             let csvPath = getFile("GxWorks3.Tab.COMMENT.csv")
-            let data = Mx.CsvReader.ReadCommentCSV(csvPath)
+            let data = CsvReader.ReadCommentCSV(csvPath)
             data.Length === 1
             data[0].Device === "SD2037"
             data[0].Label === ""
@@ -23,7 +23,7 @@ module MxCsv =
 
 
             let csvPath = getFile("GxWorks3.NoQuote3.COMMENT.csv")
-            let data = Mx.CsvReader.ReadCommentCSV(csvPath)
+            let data = CsvReader.ReadCommentCSV(csvPath)
             data.Length === 4
             data[0].Device === "M1000"
             data[0].Label === ""
@@ -35,7 +35,7 @@ module MxCsv =
 
 
             let csvPath = getFile("GxWorks3.DoubleQuote.COMMENT.csv")
-            let data = Mx.CsvReader.ReadCommentCSV(csvPath)
+            let data = CsvReader.ReadCommentCSV(csvPath)
             data.Length === 5
             data[0].Device === "X5C"
             data[0].Label === ""
@@ -50,7 +50,7 @@ module MxCsv =
         [<Test>]
         member _.``EucKR`` () =
             let csvPath = getFile("GxWorks3.NoQuote3.EucKR.COMMENT.csv")
-            let data = Mx.CsvReader.ReadCommentCSV(csvPath)
+            let data = CsvReader.ReadCommentCSV(csvPath)
             data.Length === 4
             data[0].Device === "M1000"
             data[0].Label === ""

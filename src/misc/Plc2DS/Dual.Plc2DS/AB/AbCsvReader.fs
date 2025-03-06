@@ -7,9 +7,7 @@ open Dual.Common.Core.FS
 open Dual.Plc2DS.Common.FS
 open Dual.Common.Core
 
-[<AutoOpen>]
-module Ab =
-    (* 샘플 CSV format
+(* 샘플 CSV format
 
 remark,"CSV-Import-Export"
 remark,"Date = Thu Mar  6 10:47:40 2025"
@@ -20,20 +18,22 @@ remark,"Company = "
 TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES
 TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
 
-    *)
+*)
 
 
-    type PlcTagInfo = {
-        Type: string
-        Scope: string
-        Name: string
-        Description: string
-        DataType: string
-        Specifier: string
-        Attributes: string
-    } with
-        interface IPlcTag
+type PlcTagInfo = {
+    Type: string
+    Scope: string
+    Name: string
+    Description: string
+    DataType: string
+    Specifier: string
+    Attributes: string
+} with
+    interface IPlcTag
 
+[<AutoOpen>]
+module Ab =
     /// $XXXX를 유니코드 문자로 디코딩
     let decodeEncodedString (encoded: string) =
         let encoded =
@@ -51,22 +51,23 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
         )
 
 
-    type CsvReader =
-        static member CreatePlcTagInfo(line: string) : PlcTagInfo =
-            let cols = Csv.ParseLine line |> map decodeEncodedString
-            assert(cols.Length = 7)
-            {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
-                DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6] }
+/// AB.CsvReader
+type CsvReader =
+    static member CreatePlcTagInfo(line: string) : PlcTagInfo =
+        let cols = Csv.ParseLine line |> map decodeEncodedString
+        assert(cols.Length = 7)
+        {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
+            DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6] }
 
-        static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
-            let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
-            match File.TryReadUntilHeader(filePath, header) with
-            | Some headers ->
-                let skipLines = headers.Length + 1
-                let lines = File.PeekLines(filePath, skipLines)
-                lines |> map CsvReader.CreatePlcTagInfo
-            | None ->
-                failwith $"ERROR: failed to find header {header}"
+    static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
+        let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
+        match File.TryReadUntilHeader(filePath, header) with
+        | Some headers ->
+            let skipLines = headers.Length + 1
+            let lines = File.PeekLines(filePath, skipLines)
+            lines |> map CsvReader.CreatePlcTagInfo
+        | None ->
+            failwith $"ERROR: failed to find header {header}"
 
 
 

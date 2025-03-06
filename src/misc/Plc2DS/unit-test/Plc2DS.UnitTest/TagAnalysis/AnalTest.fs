@@ -68,7 +68,7 @@ module AnalTest =
         [<Test>]
         member _.``Minimal`` () =
             let l = $"ALIAS,,CTRL2_B_SHUTTLE_ADVANCE,{ddq},{ddq},{dq}B100[1].1{dq},{dq}(RADIX := Decimal, ExternalAccess := Read/Write){dq}"
-            let tagInfo = Ab.CsvReader.CreatePlcTagInfo(l)
+            let tagInfo = AB.CsvReader.CreatePlcTagInfo(l)
             let name = tagInfo.GetName()
             let si = AnalyzedNameSemantic.Create(name, semantic)
             si.DeviceName === "SHT"
