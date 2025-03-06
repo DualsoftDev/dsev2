@@ -1,0 +1,9 @@
+remark,"CSV-Import-Export"
+remark,"Date = Thu Mar  6 09:32:18 2025"
+remark,"Version = RSLogix 5000 v33.00"
+remark,"Owner = "
+remark,"Company = "
+0.3
+TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES
+TAG,,CNET_3:I,"","AB:1756_CNB_13SLOT:I:0","","(ExternalAccess := Read/Write)"
+TAG,,CNET_3:O,"Vicious,Item","AB:1756_CNB_13SLOT:O:0","","(ExternalAccess := Read/Write)"

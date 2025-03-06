@@ -1,12 +1,16 @@
 namespace T
 
 
+open System.IO
 open NUnit.Framework
 
-open Dual.Plc2DS.MX
 open Dual.Common.UnitTest.FS
+open Dual.Plc2DS.MX
 
 module MxCsv =
+    let getFile(file:string) =
+        Path.Combine(__SOURCE_DIRECTORY__, "Samples", "MX", file)
+
     type T() =
         [<Test>]
         member _.``Minimal`` () =

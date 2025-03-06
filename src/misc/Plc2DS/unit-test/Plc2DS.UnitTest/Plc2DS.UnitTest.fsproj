@@ -8,14 +8,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="csvreader\samples\S7.min.sdf" />
-		<None Include="CsvReader\Samples\GxWorks3.NoQuote3.EucKR.COMMENT.csv" />
-		<None Include="CsvReader\Samples\GxWorks3.Tab.COMMENT.csv" />
-		<None Include="CsvReader\Samples\GxWorks3.NoQuote3.COMMENT.csv" />
-		<None Include="CsvReader\Samples\GxWorks3.DoubleQuote.COMMENT.csv" />
+		<None Include="CsvReader\Samples\**\*" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Include="csvreader\test.fsx" />
+		<Compile Include="CsvReader\Ab.CsvReaderTest.fs" />
 		<Compile Include="CsvReader\TestCommon.fs" />
-		<Compile Include="CsvReader\CsvReaderTest.fs" />
+		<Compile Include="CsvReader\Mx.CsvReaderTest.fs" />
 		<Compile Include="CsvReader\S7.SdfReaderTest.fs" />
 		<Compile Include="Library.fs" />
 	</ItemGroup>

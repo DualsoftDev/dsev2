@@ -8,7 +8,9 @@ open System.IO
 open Dual.Common.UnitTest.FS
 open Dual.Plc2DS.S7
 
-module Sdf =
+module S7Sdf =
+    let getFile(file:string) =
+        Path.Combine(__SOURCE_DIRECTORY__, "Samples", "S7", file)
 
     type T() =
         [<Test>]

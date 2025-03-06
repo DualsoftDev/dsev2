@@ -1,0 +1,18 @@
+remark,"CSV-Import-Export"
+remark,"Date = Thu Mar  6 10:47:40 2025"
+remark,"Version = RSLogix 5000 v33.00"
+remark,"Owner = "
+remark,"Company = "
+0.3
+TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES
+TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,B,"$B77C$C7781$N$B77C$C7782$N$B77C$C7783$NAA $Q$D070$B530$C634$QBB","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,MyTag,"$D55C$AD6D$C5B4$NComma,$N$'SQ$'$N$QDQ$Q$NTab$T$NEND","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,Shft12345,"!@#$$%","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,Colone,";:","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,LtGt,"<>","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,MinusUnderscorePlusEqual,"-_+=","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,Paren,"(){}[]","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,PipeBackslash,"|\","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,Shift67890,"^&*()","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
+TAG,,SlashDot,"/.","DINT","","(RADIX := Decimal, Constant := false, ExternalAccess := Read/Write)"
