@@ -36,11 +36,6 @@
 		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
 		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
 		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
-		<ProjectReference Include="..\..\Dual.Plc2DS.Common.FS\Dual.Plc2DS.Common.FS.fsproj" />
-		<ProjectReference Include="..\..\Dual.Plc2DS.AB\Dual.Plc2DS.AB.fsproj" />
-		<ProjectReference Include="..\..\Dual.Plc2DS.LS\Dual.Plc2DS.LS.fsproj" />
-		<ProjectReference Include="..\..\Dual.Plc2DS.MX\Dual.Plc2DS.MX.fsproj" />
-		<ProjectReference Include="..\..\Dual.Plc2DS.S7\Dual.Plc2DS.S7.fsproj" />
 		<ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj" />
 	</ItemGroup>
 

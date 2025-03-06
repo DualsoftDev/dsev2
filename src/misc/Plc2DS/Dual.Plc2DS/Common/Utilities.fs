@@ -2,7 +2,6 @@ namespace Dual.Plc2DS.Common.FS
 
 open System.IO
 open System.Text
-open System.Text.RegularExpressions
 
 open Dual.Common.Core.FS
 open Dual.Common.Core

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -6,6 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Common\Interfaces.fs" />
+    <Compile Include="Common\Utilities.fs" />
+    <Compile Include="LS\LsCsvReader.fs" />
+    <Compile Include="LS\LsLogicReader.fs" />
+    <Compile Include="MX\MxCsvReader.fs" />
+    <Compile Include="S7\S7.CsvReader.fs" />
+    <Compile Include="AB\AbCsvReader.fs" />
     <Compile Include="CsvReader.fs" />
     <Compile Include="AppSettings.fs" />
     <Compile Include="ExtractDevice.fs" />
@@ -15,10 +22,7 @@
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
-    <ProjectReference Include="..\Dual.Plc2DS.AB\Dual.Plc2DS.AB.fsproj" />
-    <ProjectReference Include="..\Dual.Plc2DS.LS\Dual.Plc2DS.LS.fsproj" />
-    <ProjectReference Include="..\Dual.Plc2DS.MX\Dual.Plc2DS.MX.fsproj" />
-    <ProjectReference Include="..\Dual.Plc2DS.S7\Dual.Plc2DS.S7.fsproj" />
+    <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj" />
   </ItemGroup>
 
 </Project>
