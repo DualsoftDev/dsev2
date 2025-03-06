@@ -17,7 +17,8 @@
 		<Compile Include="CsvReader\TestCommon.fs" />
 		<Compile Include="CsvReader\Mx.CsvReaderTest.fs" />
 		<Compile Include="CsvReader\S7.SdfReaderTest.fs" />
-		<Compile Include="Library.fs" />
+		<Compile Include="CsvReader\Ls.CsvReader.fs" />
+		<Compile Include="DummyMain.fs" />
 	</ItemGroup>
 
 	<ItemGroup>

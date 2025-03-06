@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="S7.SDF.fs" />
+    <Compile Include="S7.CsvReader.fs" />
   </ItemGroup>
 
   <ItemGroup>

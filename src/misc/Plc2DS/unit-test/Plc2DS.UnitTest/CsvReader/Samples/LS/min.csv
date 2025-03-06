@@ -1,0 +1,9 @@
+Remark,Title=CSV File
+Remark,Date=2025-3-6-13:41:54.459
+Remark,Version=Ver3.1
+Remark,PLC Name=LSPLC
+Remark,CPU Type=XGI-CPUUN
+Remark,EIP GUID=65a0ca83-53ad-48ee-9da6-f3dd04e15349
+Remark,EIP OnlineWrite=0
+Type,Scope,Variable,Address,DataType,Property,Comment
+Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"

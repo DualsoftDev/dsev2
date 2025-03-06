@@ -5,7 +5,7 @@ open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module S7 =
-    type SDF = {
+    type DeviceComment = {
         Name: string
         Address: string
         DataType: string
@@ -14,9 +14,10 @@ module S7 =
         interface IDeviceComment
 
     type CsvReader =
-        static member ReadSDF(sdfPath: string) : SDF[] =
+        /// read .SDF comment file
+        static member ReadCommentCSV(sdfPath: string) : DeviceComment[] =
             File.PeekLines(sdfPath, 0)
-            |> map _.Split(',')
+            |> map Csv.ParseLine
             |> map (fun cols -> cols |> map _.Trim('"').Trim())
             |> map (fun cols ->
                 if cols.Length <> 4 then
