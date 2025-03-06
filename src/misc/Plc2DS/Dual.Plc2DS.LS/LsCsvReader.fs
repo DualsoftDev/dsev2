@@ -29,6 +29,12 @@ module Ls =
         interface IPlcTag
 
     type CsvReader =
+        static member CreatePlcTagInfo(line: string) : PlcTagInfo =
+            let cols = Csv.ParseLine line
+            assert(cols.Length = 7)
+            {   Type = cols[0]; Scope = cols[1]; Variable = cols[2]; Address = cols[3]
+                DataType = cols[4]; Property = cols[5]; Comment = cols[6] }
+
         static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
             let skipLines = 7
             let header = "Type,Scope,Variable,Address,DataType,Property,Comment"
@@ -36,11 +42,7 @@ module Ls =
             | Some headers ->
                 let skipLines = headers.Length + 1
                 let lines = File.PeekLines(filePath, skipLines)
-                lines |> map(fun line ->
-                    let cols = Csv.ParseLine line
-                    assert(cols.Length = 7)
-                    {   Type = cols[0]; Scope = cols[1]; Variable = cols[2]; Address = cols[3]
-                        DataType = cols[4]; Property = cols[5]; Comment = cols[6] } )
+                lines |> map CsvReader.CreatePlcTagInfo
             | None ->
                 failwith $"ERROR: failed to find header {header}"
 

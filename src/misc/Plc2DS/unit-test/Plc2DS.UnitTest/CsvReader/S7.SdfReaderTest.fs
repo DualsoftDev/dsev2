@@ -18,8 +18,7 @@ module S7Sdf =
         member _.``Col9Format`` () =
             // "A","%I0.0","Bool","True","True","False","A_Comment","","True"
             let col9 = "\"A\",\"%I0.0\",\"Bool\",\"True\",\"True\",\"False\",\"A_Comment\",\"\",\"True\""
-            let cols = Csv.ParseLine(col9)
-            let data0 = S7.CsvReader.CreatePlcTagInfoFromColumns(cols)
+            let data0 = S7.CsvReader.CreatePlcTagInfo(col9)
             data0.Name === "A"
             data0.Address === "%I0.0"
             data0.DataType === "Bool"
@@ -29,8 +28,7 @@ module S7Sdf =
         member _.``Col4Format`` () =
             // "#5_M TL 핀전진단이상","M 750.0","BOOL",""
             let col4 = "\"#5_M TL 핀전진단이상\",\"M 750.0\",\"BOOL\",\"\""
-            let cols = Csv.ParseLine(col4)
-            let data0 = S7.CsvReader.CreatePlcTagInfoFromColumns(cols)
+            let data0 = S7.CsvReader.CreatePlcTagInfo(col4)
             data0.Name === "#5_M TL 핀전진단이상"
             data0.Address === "M 750.0"
             data0.DataType === "BOOL"
@@ -39,8 +37,7 @@ module S7Sdf =
         [<Test>]
         member _.``ColXFormat`` () =
             let col4 = "\"\",\"#5_M TL 핀전진단이상\",\"M 750.0\",\"BOOL\",\"\""
-            let cols = Csv.ParseLine(col4)
-            (fun () -> S7.CsvReader.CreatePlcTagInfoFromColumns(cols) |> ignore) |> ShouldFailWithSubstringT "Invalid file format"
+            (fun () -> S7.CsvReader.CreatePlcTagInfo(col4) |> ignore) |> ShouldFailWithSubstringT "Invalid file format"
 
 
         [<Test>]

@@ -21,13 +21,14 @@ module ExtractDeviceModule =
 
 
     [<AutoOpen>]
-    module internal rec ExtractDeviceImplModule =
+    module (*internal*) rec ExtractDeviceImplModule =
 
-        type internal AnalyzedNameSemantic = {
+        type AnalyzedNameSemantic = {
             FullName: string        // 이름 원본
             SplitNames: string[]    // '_' 기준 분리된 이름
             mutable FlowName: string
             mutable ActionName: string      // e.g "ADV"
+            mutable DeviceName: string      // e.g "ADV"
             mutable InputAuxNumber: int option  // e.g "ADV1" -> 1
             mutable StateName: string       // e.g "ERR"
         } with
@@ -35,7 +36,7 @@ module ExtractDeviceModule =
                 let splitNames = name.Split('_')
                 let baseline =
                     {   FullName = name; SplitNames = splitNames
-                        FlowName = ""; ActionName = ""
+                        FlowName = ""; ActionName = ""; DeviceName = ""
                         InputAuxNumber = None; StateName = "" }
                 match semantics with
                 | Some sm ->
@@ -43,14 +44,16 @@ module ExtractDeviceModule =
                     let standardPNames = standardPNamesAndNumbers |> map fst
 
 
-                    let flow, action, state =
+                    let flow, action, state, device =
                         sm.GuessFlowName standardPNames,
                         sm.GuessActionName standardPNames,
-                        sm.GuessStateName standardPNames
+                        sm.GuessStateName standardPNames,
+                        sm.GuessDeviceName standardPNames
 
                     { baseline with
                         FlowName = flow
                         ActionName = action
+                        DeviceName = device
                         //InputAuxNumber = splitNames.[1] |> GetAuxNumber
                         StateName = state }
                 | None -> baseline
@@ -58,5 +61,9 @@ module ExtractDeviceModule =
 
     type Builder =
         static member ExtractDevices(plcTags:#IPlcTag[], semantics:TagSemantics): Device[] =
-            let anals:AnalyzedNameSemantic[] = plcTags |> map (fun t -> t.GetName() |> AnalyzedNameSemantic.Create)
+            let anals:AnalyzedNameSemantic[] =
+                plcTags
+                |> map (fun t ->
+                    let name = t.GetName()
+                    AnalyzedNameSemantic.Create(name, semantics))
             [||]

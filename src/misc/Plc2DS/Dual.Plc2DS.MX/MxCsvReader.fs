@@ -15,6 +15,21 @@ module Mx =
 
 
     type CsvReader =
+        static member CreatePlcTagInfo(line: string, delimeter: char, hasLabel:bool) : PlcTagInfo =
+            let cols = Csv.ParseLine(line, delimeter)
+            assert(cols.Length = if hasLabel then 3 else 2)
+
+            let device = cols[0]
+            let label, comment =
+                if hasLabel then
+                    if cols.Length <> 3 then failwith "Invalid file format"
+                    cols[1], cols[2]
+                else
+                    if cols.Length <> 2 then failwith "Invalid file format"
+                    "", cols[1]
+
+            { Device = device; Comment = comment; Label = label |? "" }
+
         static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
             let headers = File.PeekLines(filePath, 0, 2)
             let delimeter, hasLabel, skipLines =
@@ -28,18 +43,4 @@ module Mx =
                 | _ -> failwith "Invalid file format"
 
             File.PeekLines(filePath, skipLines)
-            |> map (fun line -> Csv.ParseLine(line, delimeter))
-            |> map (fun cols ->
-                assert(cols.Length = if hasLabel then 3 else 2)
-
-                let device = cols[0]
-                let label, comment =
-                    if hasLabel then
-                        if cols.Length <> 3 then failwith "Invalid file format"
-                        cols[1], cols[2]
-                    else
-                        if cols.Length <> 2 then failwith "Invalid file format"
-                        "", cols[1]
-
-                { Device = device; Comment = comment; Label = label |? "" }
-            )
+            |> map (fun line -> CsvReader.CreatePlcTagInfo(line, delimeter, hasLabel))

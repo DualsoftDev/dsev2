@@ -490,6 +490,7 @@ $RECYCLE.BIN/
 **/[Bb]ak/
 **/[Uu]nused/
 **/.vs/
+**/.antlr/
 *autogen*
 *.vsto
 *.xml

@@ -52,17 +52,19 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 
 
     type CsvReader =
+        static member CreatePlcTagInfo(line: string) : PlcTagInfo =
+            let cols = Csv.ParseLine line |> map decodeEncodedString
+            assert(cols.Length = 7)
+            {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
+                DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6] }
+
         static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
             let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
             match File.TryReadUntilHeader(filePath, header) with
             | Some headers ->
                 let skipLines = headers.Length + 1
                 let lines = File.PeekLines(filePath, skipLines)
-                lines |> map(fun line ->
-                    let cols = Csv.ParseLine line |> map decodeEncodedString
-                    assert(cols.Length = 7)
-                    {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
-                        DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6] } )
+                lines |> map CsvReader.CreatePlcTagInfo
             | None ->
                 failwith $"ERROR: failed to find header {header}"
 
