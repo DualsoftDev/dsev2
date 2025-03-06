@@ -11,7 +11,7 @@ module Mx =
         Comment: string
         Label: string
     } with
-        interface IPlcTagInfo
+        interface IPlcTag
 
 
     type CsvReader =

@@ -13,7 +13,7 @@ open Dual.Common.Core.FS
 
 module AbCsv =
     let getFile(file:string) =
-        Path.Combine(__SOURCE_DIRECTORY__, "Samples", "AB", file)
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "Samples", "AB", file)
 
 
     type T() =
@@ -24,7 +24,7 @@ module AbCsv =
             data |> Array.iter (tracefn "%A")
 
 
-            data.Length === 2
+            data.Length === 3
             data[0].Type                   === "TAG"
             data[0].Scope                  === ""
             data[0].Name                   === "CNET_3:I"
@@ -41,6 +41,17 @@ module AbCsv =
             data[1].Specifier              === ""
             data[1].Attributes             === "(ExternalAccess := Read/Write)"
 
+
+            data[2].Type                   === "TAG"
+            data[2].Scope                  === ""
+            data[2].Name                   === "N100"
+            data[2].Description            === ""
+            data[2].DataType               === "DINT[120]"
+            data[2].Specifier              === ""
+            //data[2].Attributes             === """(RADIX := Decimal, PLCMappingFile := 100, Producer := "Controller_1", RemoteTag := "N100", RemoteFile := 0, RPI := 50, Unicast := false, ExternalAccess := Read/Write)"""
+
+            // 타협: "Controller_1" 대신 Controller_1
+            data[2].Attributes             === """(RADIX := Decimal, PLCMappingFile := 100, Producer := Controller_1, RemoteTag := N100, RemoteFile := 0, RPI := 50, Unicast := false, ExternalAccess := Read/Write)"""
 
 
 

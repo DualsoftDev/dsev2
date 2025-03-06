@@ -32,7 +32,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
         Specifier: string
         Attributes: string
     } with
-        interface IPlcTagInfo
+        interface IPlcTag
 
     /// $XXXX를 유니코드 문자로 디코딩
     let decodeEncodedString (encoded: string) =

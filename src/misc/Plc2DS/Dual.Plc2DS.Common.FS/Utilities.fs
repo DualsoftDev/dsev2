@@ -1,6 +1,5 @@
 namespace Dual.Plc2DS.Common.FS
 
-open System
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
@@ -39,14 +38,34 @@ module Util =
             |> Seq.toArray
 
     type Csv =
-        static member ParseLine (line: string, ?delimeter:char) =
+        //static member ParseLineLegacy (line: string, ?delimeter:char) =
+        //    let delimeter = delimeter |? ','
+        //    let pattern = $"""(?:^|{delimeter})(?:"([^"]*)"|([^{delimeter}]*))""" // 쉼표로 시작하는 경우도 감지
+        //    Regex.Matches(line, pattern)
+        //    |> Seq.cast<Match>
+        //    |> Seq.map (fun m ->
+        //        if m.Groups.[1].Success then m.Groups.[1].Value // 따옴표 안 값
+        //        else if m.Groups.[2].Success then m.Groups.[2].Value // 일반 값
+        //        else "" // 빈 값
+        //    )
+        //    |> Seq.toArray
+
+        static member ParseLine (line: string, ?delimeter: char) =
             let delimeter = delimeter |? ','
-            let pattern = $"""(?:^|{delimeter})(?:"([^"]*)"|([^{delimeter}]*))""" // 쉼표로 시작하는 경우도 감지
-            Regex.Matches(line, pattern)
-            |> Seq.cast<Match>
-            |> Seq.map (fun m ->
-                if m.Groups.[1].Success then m.Groups.[1].Value // 따옴표 안 값
-                else if m.Groups.[2].Success then m.Groups.[2].Value // 일반 값
-                else "" // 빈 값
-            )
-            |> Seq.toArray
+            let mutable insideQuotes = false
+            let mutable buffer = []
+            let mutable result = []
+
+            for ch in line do
+                match ch, insideQuotes with
+                | '"', _ -> insideQuotes <- not insideQuotes  // 따옴표 안/밖 전환
+                | c, true -> buffer <- c :: buffer  // 따옴표 안에 있는 문자
+                | d, false when d = delimeter ->
+                    result <- (buffer |> List.rev |> System.String.Concat) :: result
+                    buffer <- []
+                | c, false -> buffer <- c :: buffer
+
+            if buffer <> [] then
+                result <- (buffer |> List.rev |> System.String.Concat) :: result
+
+            result |> List.rev |> Array.ofList

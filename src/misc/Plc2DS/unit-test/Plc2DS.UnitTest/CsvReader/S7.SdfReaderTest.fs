@@ -10,7 +10,7 @@ open Dual.Plc2DS.S7
 
 module S7Sdf =
     let getFile(file:string) =
-        Path.Combine(__SOURCE_DIRECTORY__, "Samples", "S7", file)
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "Samples", "S7", file)
 
     type T() =
         [<Test>]

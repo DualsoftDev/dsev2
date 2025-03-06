@@ -13,7 +13,7 @@ open Dual.Plc2DS.LS
 
 module LsCsv =
     let getFile(file:string) =
-        Path.Combine(__SOURCE_DIRECTORY__, "Samples", "LS", file)
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "Samples", "LS", file)
 
 
     type T() =

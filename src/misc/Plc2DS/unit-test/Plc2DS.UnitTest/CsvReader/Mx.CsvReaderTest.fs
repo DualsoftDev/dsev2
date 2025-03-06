@@ -9,7 +9,7 @@ open Dual.Plc2DS.MX
 
 module MxCsv =
     let getFile(file:string) =
-        Path.Combine(__SOURCE_DIRECTORY__, "Samples", "MX", file)
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "Samples", "MX", file)
 
     type T() =
         [<Test>]

@@ -26,7 +26,7 @@ module Ls =
         Property: string
         Comment: string
     } with
-        interface IPlcTagInfo
+        interface IPlcTag
 
     type CsvReader =
         static member ReadCommentCSV(filePath: string): PlcTagInfo[] =

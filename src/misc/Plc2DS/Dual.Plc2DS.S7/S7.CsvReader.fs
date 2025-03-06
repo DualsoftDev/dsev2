@@ -11,7 +11,7 @@ module S7 =
         DataType: string
         Comment: string
     } with
-        interface IPlcTagInfo
+        interface IPlcTag
 
     type CsvReader =
         /// read .SDF comment file

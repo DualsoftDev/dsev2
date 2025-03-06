@@ -8,7 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="CsvReader\Samples\**\*" />
+		<Compile Include="TagAnalysis\AnalTest.fs" />
+		<None Include="Samples\**\*" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -40,6 +41,7 @@
 		<ProjectReference Include="..\..\Dual.Plc2DS.LS\Dual.Plc2DS.LS.fsproj" />
 		<ProjectReference Include="..\..\Dual.Plc2DS.MX\Dual.Plc2DS.MX.fsproj" />
 		<ProjectReference Include="..\..\Dual.Plc2DS.S7\Dual.Plc2DS.S7.fsproj" />
+		<ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj" />
 	</ItemGroup>
 
 

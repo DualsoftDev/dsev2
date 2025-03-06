@@ -10,7 +10,7 @@ module ReaderModule =
         static member ReadS7(filePath:string) = S7.S7.CsvReader.ReadCommentSDF(filePath)
         static member ReadMx(filePath:string) = MX.Mx.CsvReader.ReadCommentCSV(filePath)
 
-    type IPlcTagInfo with
+    type IPlcTag with
         member x.GetName() =
             match x with
             | :? LS.Ls.PlcTagInfo as ls -> ls.Variable
