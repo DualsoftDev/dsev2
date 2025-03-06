@@ -50,22 +50,33 @@ module Util =
         //    )
         //    |> Seq.toArray
 
-        static member ParseLine (line: string, ?delimeter: char) =
+        static member ParseLine (line: string, ?delimeter: char, ?trim:bool): string[] =
             let delimeter = delimeter |? ','
+            let trim = trim |? true
             let mutable insideQuotes = false
-            let mutable buffer = []
-            let mutable result = []
+            let mutable buffer:char list = []
+            let mutable result:string list = []
+            let unbuffer() =
+                let col = buffer |> List.rev |> System.String.Concat
+                buffer <- []
+                if trim then col.Trim() else col
 
-            for ch in line do
+            for (i, ch) in line |> indexed do
                 match ch, insideQuotes with
-                | '"', _ -> insideQuotes <- not insideQuotes  // 따옴표 안/밖 전환
+                | '"', _ ->
+                    insideQuotes <- not insideQuotes  // 따옴표 안/밖 전환
+
+                    // 맨 마지막에 ,"" 로 끝나는 경우, empty string column 추가
+                    if i = line.Length-1 && buffer = [] && not insideQuotes then
+                        result <- "" :: result
+
                 | c, true -> buffer <- c :: buffer  // 따옴표 안에 있는 문자
                 | d, false when d = delimeter ->
-                    result <- (buffer |> List.rev |> System.String.Concat) :: result
+                    result <- unbuffer() :: result
                     buffer <- []
                 | c, false -> buffer <- c :: buffer
 
             if buffer <> [] then
-                result <- (buffer |> List.rev |> System.String.Concat) :: result
+                result <- unbuffer() :: result
 
             result |> List.rev |> Array.ofList

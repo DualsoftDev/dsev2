@@ -1,3 +1,8 @@
+(*
+S7 *.SDF 파일 한계
+- 내용에 "," 가 포함된 경우, encoding 처리가 안되어서 분석 불가: 자체 simatic manager에서도 export 후 import 시 제대로 읽어 들이지 못함
+ *)
+
 namespace Dual.Plc2DS.S7
 
 open Dual.Plc2DS.Common.FS
@@ -12,27 +17,34 @@ module S7 =
         Comment: string
     } with
         interface IPlcTag
+        static member Create(name, address, dataType, comment) =
+            { Name = name; Address = address; DataType = dataType; Comment = comment }
 
     type CsvReader =
+        static member CreatePlcTagInfoFromColumns(cols: string[]) : PlcTagInfo =
+                let name = cols[0]
+                let dataType = cols[2]
+                match cols.Length with
+                | 4 ->  // name * address * data type * comment
+                    let address =
+                        match cols[1] with       // "I  200.2 ", "T 99 "  등의 불균일 요소 => "I 202.2", "T 99" 로 정리
+                        | RegexPattern @"^\s*(\w+)\s+(\d+(?:\.\d+)*)\s*$" [typ; addr] ->
+                            $"{typ} {addr}"
+                        | _ -> cols[1]
+                    let comment = cols[3]
+                    PlcTagInfo.Create(name, address, dataType, comment)
+                | 9 ->  // name * address * data type * bool * bool * bool * comment * ? * bool
+                    let address = cols[1]
+                    let comment = cols[6]
+                    PlcTagInfo.Create(name, address, dataType, comment)
+                | _ ->
+                    failwith "Invalid file format"
+
         /// read .SDF comment file
         static member ReadCommentSDF(sdfPath: string) : PlcTagInfo[] =
             File.PeekLines(sdfPath, 0)
-            |> map Csv.ParseLine
-            |> map (fun cols -> cols |> map _.Trim('"').Trim())
-            |> map (fun cols ->
-                if cols.Length <> 4 then
-                    failwith "Invalid file format"
+            |> map ( Csv.ParseLine >> CsvReader.CreatePlcTagInfoFromColumns)
 
-                let name = cols[0]
-                let address =
-                    match cols[1] with       // "I  200.2 ", "T 99 "  등의 불균일 요소 => "I 202.2", "T 99" 로 정리
-                    | RegexPattern @"^\s*(\w+)\s+(\d+(?:\.\d+)*)\s*$" [typ; addr] ->
-                        $"{typ} {addr}"
-                    | _ -> cols[1]
-                let dataType = cols[2]
-                let comment = cols[3]
-                { Name = name; Address = address; DataType = dataType; Comment = comment }
-            )
         static member ReadCommentCSV(sdfPath: string) = CsvReader.ReadCommentSDF(sdfPath)
 
 
