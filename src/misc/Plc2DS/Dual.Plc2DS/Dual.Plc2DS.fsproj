@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="CsvReader.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dual.Plc2DS.AB\Dual.Plc2DS.AB.fsproj" />
+    <ProjectReference Include="..\Dual.Plc2DS.LS\Dual.Plc2DS.LS.fsproj" />
+    <ProjectReference Include="..\Dual.Plc2DS.MX\Dual.Plc2DS.MX.fsproj" />
+    <ProjectReference Include="..\Dual.Plc2DS.S7\Dual.Plc2DS.S7.fsproj" />
+  </ItemGroup>
+
+</Project>

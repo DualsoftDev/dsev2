@@ -6,16 +6,16 @@ open Dual.Plc2DS.Common.FS
 
 [<AutoOpen>]
 module Mx =
-    type DeviceComment = {
+    type PlcTagInfo = {
         Device: string
         Comment: string
         Label: string
     } with
-        interface IDeviceComment
+        interface IPlcTagInfo
 
 
     type CsvReader =
-        static member ReadCommentCSV(filePath: string): DeviceComment[] =
+        static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
             let headers = File.PeekLines(filePath, 0, 2)
             let delimeter, hasLabel, skipLines =
                 match headers with
@@ -30,6 +30,8 @@ module Mx =
             File.PeekLines(filePath, skipLines)
             |> map (fun line -> Csv.ParseLine(line, delimeter))
             |> map (fun cols ->
+                assert(cols.Length = if hasLabel then 3 else 2)
+
                 let device = cols[0]
                 let label, comment =
                     if hasLabel then

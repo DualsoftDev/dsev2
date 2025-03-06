@@ -9,7 +9,7 @@ open System.Xml
 [<AutoOpen>]
 module Xgx =
     type CsvReader =
-        static member ReadXgxTags(xmlPath: string): IDeviceComment[] =
+        static member ReadXgxTags(xmlPath: string): IPlcTagInfo[] =
             let xdoc = DualXmlDocument.loadFromFile xmlPath
 
             null

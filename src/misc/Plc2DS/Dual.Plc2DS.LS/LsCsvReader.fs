@@ -17,7 +17,7 @@ Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"
 
 [<AutoOpen>]
 module Ls =
-    type DeviceComment = {
+    type PlcTagInfo = {
         Type: string
         Scope: string
         Variable: string
@@ -26,10 +26,10 @@ module Ls =
         Property: string
         Comment: string
     } with
-        interface IDeviceComment
+        interface IPlcTagInfo
 
     type CsvReader =
-        static member ReadCommentCSV(filePath: string): DeviceComment[] =
+        static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
             let skipLines = 7
             let header = "Type,Scope,Variable,Address,DataType,Property,Comment"
             match File.TryReadUntilHeader(filePath, header) with
@@ -38,6 +38,7 @@ module Ls =
                 let lines = File.PeekLines(filePath, skipLines)
                 lines |> map(fun line ->
                     let cols = Csv.ParseLine line
+                    assert(cols.Length = 7)
                     {   Type = cols[0]; Scope = cols[1]; Variable = cols[2]; Address = cols[3]
                         DataType = cols[4]; Property = cols[5]; Comment = cols[6] } )
             | None ->

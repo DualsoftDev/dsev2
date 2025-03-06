@@ -35,6 +35,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.PLC.TagParser.FS", "..
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Plc2DS.AB.Parser", "Dual.Plc2DS.AB.Parser\Dual.Plc2DS.AB.Parser.csproj", "{A568B913-CDC2-4121-B056-83BC7E53008F}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Plc2DS", "Dual.Plc2DS\Dual.Plc2DS.fsproj", "{947FC14D-F726-49DD-9132-C27B7AADF8F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,10 @@ Global
 		{A568B913-CDC2-4121-B056-83BC7E53008F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A568B913-CDC2-4121-B056-83BC7E53008F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A568B913-CDC2-4121-B056-83BC7E53008F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{947FC14D-F726-49DD-9132-C27B7AADF8F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{947FC14D-F726-49DD-9132-C27B7AADF8F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{947FC14D-F726-49DD-9132-C27B7AADF8F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{947FC14D-F726-49DD-9132-C27B7AADF8F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

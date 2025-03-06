@@ -23,7 +23,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
     *)
 
 
-    type DeviceComment = {
+    type PlcTagInfo = {
         Type: string
         Scope: string
         Name: string
@@ -32,7 +32,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
         Specifier: string
         Attributes: string
     } with
-        interface IDeviceComment
+        interface IPlcTagInfo
 
     /// $XXXX를 유니코드 문자로 디코딩
     let decodeEncodedString (encoded: string) =
@@ -52,8 +52,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 
 
     type CsvReader =
-        static member ReadCommentCSV(filePath: string): DeviceComment[] =
-            let skipLines = 7
+        static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
             let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
             match File.TryReadUntilHeader(filePath, header) with
             | Some headers ->
@@ -61,6 +60,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
                 let lines = File.PeekLines(filePath, skipLines)
                 lines |> map(fun line ->
                     let cols = Csv.ParseLine line |> map decodeEncodedString
+                    assert(cols.Length = 7)
                     {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
                         DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6] } )
             | None ->

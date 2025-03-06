@@ -5,17 +5,17 @@ open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module S7 =
-    type DeviceComment = {
+    type PlcTagInfo = {
         Name: string
         Address: string
         DataType: string
         Comment: string
     } with
-        interface IDeviceComment
+        interface IPlcTagInfo
 
     type CsvReader =
         /// read .SDF comment file
-        static member ReadCommentCSV(sdfPath: string) : DeviceComment[] =
+        static member ReadCommentSDF(sdfPath: string) : PlcTagInfo[] =
             File.PeekLines(sdfPath, 0)
             |> map Csv.ParseLine
             |> map (fun cols -> cols |> map _.Trim('"').Trim())
@@ -33,5 +33,6 @@ module S7 =
                 let comment = cols[3]
                 { Name = name; Address = address; DataType = dataType; Comment = comment }
             )
+        static member ReadCommentCSV(sdfPath: string) = CsvReader.ReadCommentSDF(sdfPath)
 
 
