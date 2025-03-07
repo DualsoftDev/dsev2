@@ -12,6 +12,7 @@ open Dual.Common.UnitTest.FS
 open Dual.Plc2DS
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
+open Dual.Plc2DS.Common.FS
 
 module AnalTest =
     let getFile(file:string) =
@@ -20,6 +21,7 @@ module AnalTest =
     let createSemantic() =
         let json = """
 {
+  "_NameSeparators": "_",
   "Dialects": [
     [ "ADV", "ADVANCE" ],
     [ "CLP", "CLAMP" ],
@@ -42,8 +44,11 @@ module AnalTest =
   "FlowNames": [ "STN" ],
 
   "Modifiers": [
-    "A", "ALL", "AUX", "B", "C", "D", "EMERGENCY", "HIGH", "LOW", "MEMO", "N", "SIDE", "SPEED",
-    "1ST", "2ND", "2UNIT", "3DR", "3RD", "3UNIT", "4DR", "4TH", "4UNIT", "5DR", "UNIT"
+    "A", "ALL", "AUX", "B", "C", "D",
+    "EMERGENCY", "HIGH", "LOW", "MEMO", "N",
+    "SIDE", "SPEED", "1ST",
+    "2ND", "2UNIT", "3DR", "3RD", "3UNIT", "4DR", "4TH", "4UNIT", "5DR",
+    "UNIT"
   ],
 
   "MutualResetTuples": [
@@ -56,8 +61,17 @@ module AnalTest =
     [ "UP", "DOWN" ]
   ],
 
-  "States": [ "CONDITION", "ERR", "NO", "OK", "RUNNING", "STOP", "WAIT" ]
+  "States": [ "CONDITION", "ERR", "NO", "OK", "RUNNING", "STOP", "WAIT" ],
+  "AddOn": {
+    "MX": {
+      "SplitOnCamelCase": true,
+      "DeviceNames": [ "BUFFER" ],
+      "NameSeparators": [ "_", ";", " ", "\\\\t", ".", ",", ":" ],
+    }
+  }
 }
+
+
 
 """
         EmJson.FromJson<AppSettings>(json);
@@ -142,7 +156,9 @@ module AnalTest =
             tagInfo.Label === ""
             tagInfo.OptIOType === Some false
 
-            //let si = AnalyzedNameSemantic.Create(tagInfo.GetName(), semantic)
-            //si.DeviceName === "SHT"
-            //si.ActionName === "ADV"
+            let mx = semantic.CreateVendorSemantic(K.MX)
+            mx.SplitOnCamelCase === true
+            let si = AnalyzedNameSemantic.Create(tagInfo.Comment, mx)
+            si.SplitNames |> SeqEq ["U17"; "REV"; "3"; "BUFFER"; "A"; "VAC"; "ON"]
+            si.DeviceName === "BUFFER"
             noop()

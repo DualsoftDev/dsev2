@@ -18,6 +18,7 @@ module AppSettingsModule =
     /// Tag 기반 semantic 정보 추출용
     [<DataContract>]
     type Semantic() =
+        [<DataMember>] member val SplitOnCamelCase = false with get, set
         /// 행위 keyword. e.g "ADV", "RET",
         [<DataMember>] member val Actions = WordSet(ignoreCase) with get, set
         /// 상태 keyword. e.g "ERR"

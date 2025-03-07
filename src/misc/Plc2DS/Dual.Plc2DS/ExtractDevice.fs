@@ -1,9 +1,11 @@
 namespace Dual.Plc2DS
 
+open System
 open System.Collections.Generic
+open System.Text.RegularExpressions
+
 open Dual.Plc2DS.Common.FS
 open Dual.Common.Core.FS
-open System
 
 [<AutoOpen>]
 module ExtractDeviceModule =
@@ -35,9 +37,19 @@ module ExtractDeviceModule =
             mutable StateName: string       // e.g "ERR"
         } with
             static member Create(name:string, ?semantics:Semantic) =
+                // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
+                let splitCamelCase (input: string) =
+                    let sep = "<_sep_>"
+                    Regex.Replace(input, "(?<!^)([A-Z])", $"{sep}$1") // 첫 글자는 제외하고 대문자 앞에 separator 추가
+                        .Split(sep)
+                let isSplitOnCamelCase = semantics.Map(_.SplitOnCamelCase) |? false
+                let splitter (x:string) = if isSplitOnCamelCase then splitCamelCase x else [|x|]
+
                 let splitNames =
                     let delimiter:string[] = semantics.Map(_.NameSeparators.ToArray()) |? [|"_"|]
                     name.Split(delimiter, StringSplitOptions.RemoveEmptyEntries)
+                    |> bind splitter
+                    |> map _.ToUpper()
 
                 let baseline =
                     {   FullName = name; SplitNames = splitNames
