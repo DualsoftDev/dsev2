@@ -6,6 +6,7 @@ open System.Text.RegularExpressions
 
 open Dual.Plc2DS.Common.FS
 open Dual.Common.Core.FS
+open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module ExtractDeviceModule =
@@ -25,10 +26,21 @@ module ExtractDeviceModule =
 
     [<AutoOpen>]
     module (*internal*) rec ExtractDeviceImplModule =
+        type SemanticCategory =
+            | Nope
+            | Action
+            | Device
+            | Flow
+            | Modifier
+            | State
 
         type AnalyzedNameSemantic = {
-            FullName: string        // 이름 원본
-            SplitNames: string[]    // '_' 기준 분리된 이름
+            /// 이름 원본
+            FullName: string
+            /// '_' 기준 분리된 이름
+            SplitNames: string[]
+            /// SplitNames 각각에 대한 SemanticCategory
+            SplitSemanticCategories: SemanticCategory[]
             mutable FlowName: string
             mutable ActionName: string      // e.g "ADV"
             mutable DeviceName: string      // e.g "ADV"
@@ -52,7 +64,7 @@ module ExtractDeviceModule =
                     |> map _.ToUpper()
 
                 let baseline =
-                    {   FullName = name; SplitNames = splitNames
+                    {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst Nope)
                         FlowName = ""; ActionName = ""; DeviceName = ""; Modifiers = [||]
                         InputAuxNumber = None; StateName = "" }
                 match semantics with
@@ -60,12 +72,22 @@ module ExtractDeviceModule =
                     let standardPNamesAndNumbers = baseline.SplitNames |> map sm.StandardizePName
                     let standardPNames = standardPNamesAndNumbers |> map fst
 
+                    let categories = Array.copy baseline.SplitSemanticCategories
+                    let procReusult (cat:SemanticCategory) (gr:GuessResult) =
+                        match gr with
+                        | Some (name, idx) ->
+                            categories[idx] <- cat
+                            name
+                        | None -> ""
+                    let procReusults (cat:SemanticCategory) (grs:(string*int)[]) =
+                        grs |> map (fun gr -> procReusult cat (Some gr))
 
-                    let flow   = sm.GuessFlowName   standardPNames
-                    let action = sm.GuessActionName standardPNames
-                    let state  = sm.GuessStateName  standardPNames
-                    let device = sm.GuessDeviceName standardPNames
-                    let modifiers = sm.GuessModifierNames standardPNames
+
+                    let flow      = sm.GuessFlowName      standardPNames |> procReusult Flow
+                    let action    = sm.GuessActionName    standardPNames |> procReusult Action
+                    let state     = sm.GuessStateName     standardPNames |> procReusult State
+                    let device    = sm.GuessDeviceName    standardPNames |> procReusult Device
+                    let modifiers = sm.GuessModifierNames standardPNames |> procReusults Modifier
 
                     { baseline with
                         FlowName = flow
@@ -74,8 +96,34 @@ module ExtractDeviceModule =
                         //InputAuxNumber = splitNames.[1] |> GetAuxNumber
                         StateName = state
                         Modifiers = modifiers
+                        SplitSemanticCategories = categories
                     }
                 | None -> baseline
+
+            member x.Stringify(?withAction:bool, ?withModifiers:bool, ?withUnmatched:bool) =
+                let withAction    = withAction |? false
+                let withModifiers = withModifiers |? false
+                let withUnmatched = withUnmatched |? false
+                let action = withAction ?= (x.ActionName, "")
+                let modifiers = if withModifiers then x.Modifiers |> String.concat ":" else ""
+                let unmatched =
+                    if withUnmatched then
+                        x.SplitSemanticCategories
+                        |> Seq.choosei (fun i c -> c = Nope ?= (Some i, None))
+                        |> map id
+                        |> map (fun idx -> x.SplitNames[idx])
+                        |> String.concat ":"
+                    else
+                        ""
+                [|
+                    x.FlowName
+                    x.DeviceName
+                    action
+                    x.StateName
+                    modifiers
+                    unmatched
+                |]  |> filter _.NonNullAny()
+                    |> String.concat "_"
 
 
     type Builder =

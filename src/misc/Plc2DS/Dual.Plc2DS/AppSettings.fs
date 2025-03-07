@@ -15,6 +15,7 @@ module AppSettingsModule =
     type Words = string[]
 
     let private ignoreCase = StringComparer.OrdinalIgnoreCase
+
     /// Tag 기반 semantic 정보 추출용
     [<DataContract>]
     type Semantic() =
@@ -51,14 +52,14 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
-            y.Actions <- WordSet(x.Actions, ignoreCase)
-            y.States <- WordSet(x.States, ignoreCase)
-            y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ignoreCase)) |> ResizeArray
-            y.Dialects <- Dictionary(x.Dialects, ignoreCase)
-            y.NameSeparators <- x.NameSeparators.Distinct() |> ResizeArray
-            y.FlowNames <- WordSet(x.FlowNames, ignoreCase)
+            y.Actions     <- WordSet(x.Actions, ignoreCase)
+            y.States      <- WordSet(x.States, ignoreCase)
+            y.FlowNames   <- WordSet(x.FlowNames, ignoreCase)
             y.DeviceNames <- WordSet(x.DeviceNames, ignoreCase)
-            y.Modifiers <- WordSet(x.Modifiers, ignoreCase)
+            y.Modifiers   <- WordSet(x.Modifiers, ignoreCase)
+            y.Dialects    <- Dictionary(x.Dialects, ignoreCase)
+            y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ignoreCase)) |> ResizeArray
+            y.NameSeparators <- x.NameSeparators.Distinct() |> ResizeArray
             y
 
         /// addOn 을 x 에 합침
@@ -129,6 +130,11 @@ module AppSettingsModule =
         | RegexPattern @"^(\w+)(\d+)$" [name; Int32Pattern number] -> name, Some number
         | _ -> pName, None
 
+    /// 특정 category (e.g Action, Device) 에 대한 추측 결과.
+    ///
+    /// - standardPNames 를 match 했을 때, match 되는 string 과 그것의 index
+    type GuessResult = (string * int) option
+
     type Semantic with
         /// pName 에서 뒤에 붙은 숫자 부분 제거 후, 표준어로 변환
         member x.StandardizePName(pName:string): string * int option =   // pName : partial name: '_' 로 분리된 이름 중 하나
@@ -139,21 +145,35 @@ module AppSettingsModule =
 
         /// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
         [<Obsolete("추후 고려")>]
-        member private x.GuessName(targetSet: WordSet, standardPNames: string[]): string =
+        member private x.GuessName(targetSet: WordSet, standardPNames: string[]): GuessResult =
             // 일단 match 되는 하나라도 있으면 바로 리턴.. 추후에는 갯수와 위치 등을 고려해야 함
-            standardPNames |> Array.tryFind targetSet.Contains |? null
+            standardPNames |> Array.tryFindIndex targetSet.Contains
+            |> map (fun i -> standardPNames[i], i)
 
 
-        member x.GuessFlowName(standardPNames: Words): string =
+        // standardPNames : 표준화된 부분(*P*artial) 이름
+        /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
+        member x.GuessFlowName(standardPNames: Words): GuessResult =
             x.GuessName(x.FlowNames, standardPNames)
 
-        member x.GuessDeviceName(standardPNames: Words): string =
+        /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
+        member x.GuessDeviceName(standardPNames: Words): GuessResult =
             x.GuessName(x.DeviceNames, standardPNames)
 
-        member x.GuessActionName(standardPNames: Words): string =
+        /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
+        member x.GuessActionName(standardPNames: Words): GuessResult =
             x.GuessName(x.Actions, standardPNames)
 
-        member x.GuessStateName(standardPNames: Words): string =
+        /// standardPNames 중에서 State 에 해당하는 것이 존재하면, 그것과 index 반환
+        member x.GuessStateName(standardPNames: Words): GuessResult =
             x.GuessName(x.States, standardPNames)
-        member x.GuessModifierNames(standardPNames: Words): string[] =
-            standardPNames |> Array.filter x.Modifiers.Contains
+
+        /// standardPNames 중에서 Modifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
+        member x.GuessModifierNames(standardPNames: Words): (string * int)[] =
+            [|
+                for (i, n) in standardPNames.Indexed() do
+                    if x.Modifiers.Contains n then
+                        Some(n, i)
+                    else
+                        None
+            |] |> Array.choose id

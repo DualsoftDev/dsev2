@@ -124,6 +124,17 @@ module AnalTest =
             si.ActionName === "ADV"
             si.Modifiers === [|"B"|]
             si.SplitNames === [|"CTRL2"; "B"; "SHUTTLE"; "ADVANCE"|]
+            si.SplitSemanticCategories[0] === Nope
+            si.SplitSemanticCategories[1] === Modifier
+            si.SplitSemanticCategories[2] === Device
+            si.SplitSemanticCategories[3] === Action
+
+            // 필수 요소만: flow + device
+            si.Stringify() === "SHT"
+            si.Stringify(withAction=true) === "SHT_ADV"
+            si.Stringify(withAction=true, withModifiers=true) === "SHT_ADV_B"
+            si.Stringify(withAction=true, withUnmatched=true) === "SHT_ADV_CTRL2"
+            si.Stringify(withAction=true, withModifiers=true, withUnmatched=true) === "SHT_ADV_B_CTRL2"
             noop()
 
 
@@ -161,4 +172,24 @@ module AnalTest =
             let si = AnalyzedNameSemantic.Create(tagInfo.Comment, mx)
             si.SplitNames |> SeqEq ["U17"; "REV"; "3"; "BUFFER"; "A"; "VAC"; "ON"]
             si.DeviceName === "BUFFER"
+            si.SplitSemanticCategories[3] === Device
+            noop()
+
+
+
+        [<Test>]
+        member _.``WellDefinedABGrouping`` () =
+            let csv = """
+ALIAS,,STN1_CYL1_ADV,"","","B100[1].1","COMMENT"
+ALIAS,,STN1_CYL1_RET,"","","B100[1].1","COMMENT"
+ALIAS,,STN1_CYL2_ADV,"","","B100[1].1","COMMENT"
+ALIAS,,STN1_CYL2_RET,"","","B100[1].1","COMMENT"
+"""
+
+            let tagInfos:AB.PlcTagInfo[] =
+                csv.SplitByLine().Filter _.NonNullAny()
+                |> map AB.CsvReader.CreatePlcTagInfo
+                |> Seq.toArray
+            let anals = tagInfos |> Array.map (fun t -> AnalyzedNameSemantic.Create(t.GetName(), semantic))
+            let gr = anals |> Seq.groupBy (_.Stringify())
             noop()
