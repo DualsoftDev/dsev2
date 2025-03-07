@@ -190,12 +190,49 @@ ALIAS,,STN1_CYL1_ADV,"","","B100[1].1","COMMENT"
 ALIAS,,STN1_CYL1_RET,"","","B100[1].1","COMMENT"
 ALIAS,,STN1_CYL2_ADV,"","","B100[1].1","COMMENT"
 ALIAS,,STN1_CYL2_RET,"","","B100[1].1","COMMENT"
+ALIAS,,STN2_CYL1_ADV,"","","B100[1].1","COMMENT"
+ALIAS,,STN2_CYL1_RET,"","","B100[1].1","COMMENT"
 """
 
             let tagInfos:AB.PlcTagInfo[] =
-                csv.SplitByLine().Filter _.NonNullAny()
+                csv.SplitByLine()
+                |> filter _.NonNullAny()
                 |> map AB.CsvReader.CreatePlcTagInfo
                 |> Seq.toArray
             let anals = tagInfos |> Array.map (fun t -> AnalyzedNameSemantic.Create(t.GetName(), semantic))
-            let gr = anals |> Seq.groupBy (_.Stringify(withTrailingNumber=true))
+            let gr = anals |> groupBy (_.Stringify(withDeviceTrailingNumber=true))
+            gr.Length === 3
+            do
+                let key, items = gr.[0]
+                key === "STN1_CYL1"
+                items.Length === 2
+                Tuple.AreEqual(items[0].ActionName, ("ADV", None)) === true
+                Tuple.AreEqual(items[1].ActionName, ("RET", None)) === true
+                Tuple.AreEqual(items[0].FlowName  , ("STN", Some 1)) === true
+                Tuple.AreEqual(items[1].FlowName  , ("STN", Some 1)) === true
+                Tuple.AreEqual(items[0].DeviceName, ("CYL", Some 1)) === true
+                Tuple.AreEqual(items[1].DeviceName, ("CYL", Some 1)) === true
+
+            do
+                let key, items = gr.[1]
+                key === "STN1_CYL2"
+                items.Length === 2
+                Tuple.AreEqual(items[0].ActionName, ("ADV", None)) === true
+                Tuple.AreEqual(items[1].ActionName, ("RET", None)) === true
+                Tuple.AreEqual(items[0].FlowName  , ("STN", Some 1)) === true
+                Tuple.AreEqual(items[1].FlowName  , ("STN", Some 1)) === true
+                Tuple.AreEqual(items[0].DeviceName, ("CYL", Some 2)) === true
+                Tuple.AreEqual(items[1].DeviceName, ("CYL", Some 2)) === true
+
+            do
+                let key, items = gr.[2]
+                key === "STN2_CYL1"
+                items.Length === 2
+                Tuple.AreEqual(items[0].ActionName, ("ADV", None)) === true
+                Tuple.AreEqual(items[1].ActionName, ("RET", None)) === true
+                Tuple.AreEqual(items[0].FlowName  , ("STN", Some 2)) === true
+                Tuple.AreEqual(items[1].FlowName  , ("STN", Some 2)) === true
+                Tuple.AreEqual(items[0].DeviceName, ("CYL", Some 1)) === true
+                Tuple.AreEqual(items[1].DeviceName, ("CYL", Some 1)) === true
+
             noop()

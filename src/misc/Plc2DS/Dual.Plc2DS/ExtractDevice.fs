@@ -99,33 +99,44 @@ module ExtractDeviceModule =
                     }
                 | None -> baseline
 
-            member x.Stringify(?withAction:bool, ?withModifiers:bool, ?withUnmatched:bool, ?withTrailingNumber) =
-                let withAction    = withAction |? false
-                let withTrailingNumber    = withTrailingNumber |? false
+            member x.Stringify(?withAction:bool, ?withModifiers:bool, ?withUnmatched:bool
+                , ?withFlowTrailingNumber:bool
+                , ?withDeviceTrailingNumber:bool
+                , ?withActionTrailingNumber:bool
+                , ?withStateTrailingNumber:bool
+                , ?withModifierTrailingNumber:bool
+              ) =
+                let withAction    = withAction    |? false
                 let withModifiers = withModifiers |? false
                 let withUnmatched = withUnmatched |? false
 
-                let stringify (nn:NameWithNumber): string =
+                let withFN = withFlowTrailingNumber     |? true
+                let withDN = withDeviceTrailingNumber   |? false
+                let withAN = withActionTrailingNumber   |? true
+                let withSN = withStateTrailingNumber    |? true
+                let withMN = withModifierTrailingNumber |? true
+
+                let stringify (nn:NameWithNumber) (withNumber:bool): string =
                     let n, i = nn
                     let i = i |> map toString |? ""
-                    withTrailingNumber ?= ($"{n}{i}", n)
+                    withNumber ?= ($"{n}{i}", n)
 
-                let flow = stringify x.FlowName
-                let device = stringify x.DeviceName
+                let flow = stringify x.FlowName withFN
+                let device = stringify x.DeviceName withDN
                 let action =
                     let n, i = x.ActionName
                     let i = i |> map toString |? ""
                     if withAction then
-                        withTrailingNumber ?= ($"{n}{i}", n)
+                        withAN ?= ($"{n}{i}", n)
                     else ""
-                let state = stringify x.StateName
+                let state = stringify x.StateName withSN
 
                 let modifiers =
                     if withModifiers then
                         x.Modifiers
                         |> map (fun (n, i) ->
                             let i = i |> map toString |? ""
-                            withTrailingNumber ?= ($"{n}{i}", n)) |> String.concat ":"
+                            withMN ?= ($"{n}{i}", n)) |> String.concat ":"
                     else ""
 
                 let unmatched =
