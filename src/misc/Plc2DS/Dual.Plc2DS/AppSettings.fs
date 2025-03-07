@@ -125,55 +125,59 @@ module AppSettingsModule =
                 | None, Some o -> o
                 | _ -> failwith "ERROR"
 
-    let splitTailNumber(pName:string): string * int option = // pName : partial name: '_' 로 분리된 이름 중 하나
+    let splitTailNumber(pName:string): string * (int option) = // pName : partial name: '_' 로 분리된 이름 중 하나
         match pName with
         | RegexPattern @"^(\w+)(\d+)$" [name; Int32Pattern number] -> name, Some number
         | _ -> pName, None
 
+
+    type NameWithNumber = string * (int option)
+    type NameWithNumbers = NameWithNumber[]
+    let zeroNN:NameWithNumber = "", None
+
+
     /// 특정 category (e.g Action, Device) 에 대한 추측 결과.
     ///
     /// - standardPNames 를 match 했을 때, match 되는 string 과 그것의 index
-    type GuessResult = (string * int) option
+    type GuessResult = (NameWithNumber * int) option
 
     type Semantic with
         /// pName 에서 뒤에 붙은 숫자 부분 제거 후, 표준어로 변환
-        member x.StandardizePName(pName:string): string * int option =   // pName : partial name: '_' 로 분리된 이름 중 하나
-            let name, optNumber = splitTailNumber pName
+        member x.StandardizePName(pName:string): NameWithNumber =   // pName : partial name: '_' 로 분리된 이름 중 하나
+            let name, (optNumber:int option) = splitTailNumber pName
             match x.Dialects.TryGet(name) with
             | Some standard -> standard, optNumber
             | None -> name, optNumber
 
         /// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
         [<Obsolete("추후 고려")>]
-        member private x.GuessName(targetSet: WordSet, standardPNames: string[]): GuessResult =
+        member private x.GuessName(targetSet: WordSet, standardPNames: NameWithNumbers): GuessResult =
             // 일단 match 되는 하나라도 있으면 바로 리턴.. 추후에는 갯수와 위치 등을 고려해야 함
-            standardPNames |> Array.tryFindIndex targetSet.Contains
+            standardPNames |> Array.tryFindIndex(fun (n, i) -> targetSet.Contains n)
             |> map (fun i -> standardPNames[i], i)
 
 
         // standardPNames : 표준화된 부분(*P*artial) 이름
         /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessFlowName(standardPNames: Words): GuessResult =
+        member x.GuessFlowName(standardPNames: NameWithNumbers): GuessResult =
             x.GuessName(x.FlowNames, standardPNames)
 
         /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessDeviceName(standardPNames: Words): GuessResult =
+        member x.GuessDeviceName(standardPNames: NameWithNumbers): GuessResult =
             x.GuessName(x.DeviceNames, standardPNames)
 
         /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessActionName(standardPNames: Words): GuessResult =
+        member x.GuessActionName(standardPNames: NameWithNumbers): GuessResult =
             x.GuessName(x.Actions, standardPNames)
 
         /// standardPNames 중에서 State 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessStateName(standardPNames: Words): GuessResult =
+        member x.GuessStateName(standardPNames: NameWithNumbers): GuessResult =
             x.GuessName(x.States, standardPNames)
 
         /// standardPNames 중에서 Modifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
-        member x.GuessModifierNames(standardPNames: Words): (string * int)[] =
+        member x.GuessModifierNames(standardPNames: NameWithNumbers): GuessResult[] =
             [|
                 for (i, n) in standardPNames.Indexed() do
-                    if x.Modifiers.Contains n then
+                    if x.Modifiers.Contains (fst n) then
                         Some(n, i)
-                    else
-                        None
-            |] |> Array.choose id
+            |]// |> Array.choose id

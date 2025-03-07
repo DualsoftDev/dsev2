@@ -80,25 +80,29 @@ module AnalTest =
 
     let dq = "\""
     let ddq = "\"\""
+    open FsUnit.Xunit
 
     type S() =
         [<Test>]
         member _.``Minimal`` () =
             do
                 let si = AnalyzedNameSemantic.Create("STN2_B_SHUTTLE_ADVANCE", semantic)
-                si.FlowName === "STN"
-                si.DeviceName === "SHT"
-                si.ActionName === "ADV"
-                si.Modifiers === [|"B"|]
+                Tuple.AreEqual(si.FlowName, ("STN", Some 2)) === true
+                Tuple.AreEqual(si.DeviceName, ("SHT", None)) === true
+                Tuple.AreEqual(si.ActionName, ("ADV", None)) === true
+
+                si.Modifiers.Length === 1
+                Tuple.AreEqual(si.Modifiers[0], ("B", None)) === true
                 si.SplitNames === [|"STN2"; "B"; "SHUTTLE"; "ADVANCE"|]
 
             do
                 // 표준어 변환, modifiers test
                 let si = AnalyzedNameSemantic.Create("STATION2_1ST_SHT_ADV", semantic)
-                si.FlowName === "STN"
-                si.DeviceName === "SHT"
-                si.ActionName === "ADV"
-                si.Modifiers === [|"1ST"|]
+                Tuple.AreEqual(si.FlowName, ("STN", Some 2)) === true
+                Tuple.AreEqual(si.DeviceName, ("SHT", None)) === true
+                Tuple.AreEqual(si.ActionName, ("ADV", None)) === true
+                si.Modifiers.Length === 1
+                Tuple.AreEqual(si.Modifiers[0], ("1ST", None)) === true
                 si.SplitNames === [|"STATION2"; "1ST"; "SHT"; "ADV"|]
 
             do
@@ -106,10 +110,11 @@ module AnalTest =
                 let semantic = createSemantic()
                 semantic.NameSeparators <- ResizeArray [|":"|]
                 let si = AnalyzedNameSemantic.Create("STATION2:1ST:SHT:ADV", semantic)
-                si.FlowName === "STN"
-                si.DeviceName === "SHT"
-                si.ActionName === "ADV"
-                si.Modifiers === [|"1ST"|]
+                Tuple.AreEqual(si.FlowName, ("STN", Some 2)) === true
+                Tuple.AreEqual(si.DeviceName, ("SHT", None)) === true
+                Tuple.AreEqual(si.ActionName, ("ADV", None)) === true
+                si.Modifiers.Length === 1
+                Tuple.AreEqual(si.Modifiers[0], ("1ST", None)) === true
                 si.SplitNames === [|"STATION2"; "1ST"; "SHT"; "ADV"|]
 
 
@@ -120,9 +125,10 @@ module AnalTest =
             let tagInfo:AB.PlcTagInfo = AB.CsvReader.CreatePlcTagInfo(l)
             let name = tagInfo.GetName()
             let si = AnalyzedNameSemantic.Create(name, semantic)
-            si.DeviceName === "SHT"
-            si.ActionName === "ADV"
-            si.Modifiers === [|"B"|]
+            Tuple.AreEqual(si.DeviceName, ("SHT", None)) === true
+            Tuple.AreEqual(si.ActionName, ("ADV", None)) === true
+            si.Modifiers.Length === 1
+            Tuple.AreEqual(si.Modifiers[0], ("B", None)) === true
             si.SplitNames === [|"CTRL2"; "B"; "SHUTTLE"; "ADVANCE"|]
             si.SplitSemanticCategories[0] === Nope
             si.SplitSemanticCategories[1] === Modifier
@@ -171,7 +177,7 @@ module AnalTest =
             mx.SplitOnCamelCase === true
             let si = AnalyzedNameSemantic.Create(tagInfo.Comment, mx)
             si.SplitNames |> SeqEq ["U17"; "REV"; "3"; "BUFFER"; "A"; "VAC"; "ON"]
-            si.DeviceName === "BUFFER"
+            Tuple.AreEqual(si.DeviceName, ("BUFFER", None)) === true
             si.SplitSemanticCategories[3] === Device
             noop()
 
@@ -191,5 +197,5 @@ ALIAS,,STN1_CYL2_RET,"","","B100[1].1","COMMENT"
                 |> map AB.CsvReader.CreatePlcTagInfo
                 |> Seq.toArray
             let anals = tagInfos |> Array.map (fun t -> AnalyzedNameSemantic.Create(t.GetName(), semantic))
-            let gr = anals |> Seq.groupBy (_.Stringify())
+            let gr = anals |> Seq.groupBy (_.Stringify(withTrailingNumber=true))
             noop()

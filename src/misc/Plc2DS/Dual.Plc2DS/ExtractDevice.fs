@@ -41,12 +41,11 @@ module ExtractDeviceModule =
             SplitNames: string[]
             /// SplitNames 각각에 대한 SemanticCategory
             SplitSemanticCategories: SemanticCategory[]
-            mutable FlowName: string
-            mutable ActionName: string      // e.g "ADV"
-            mutable DeviceName: string      // e.g "ADV"
-            mutable Modifiers: string[]
-            mutable InputAuxNumber: int option  // e.g "ADV1" -> 1
-            mutable StateName: string       // e.g "ERR"
+            mutable FlowName: NameWithNumber
+            mutable ActionName: NameWithNumber      // e.g "ADV"
+            mutable DeviceName: NameWithNumber      // e.g "ADV"
+            mutable Modifiers: NameWithNumber[]
+            mutable StateName: NameWithNumber       // e.g "ERR"
         } with
             static member Create(name:string, ?semantics:Semantic) =
                 // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
@@ -65,22 +64,22 @@ module ExtractDeviceModule =
 
                 let baseline =
                     {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst Nope)
-                        FlowName = ""; ActionName = ""; DeviceName = ""; Modifiers = [||]
-                        InputAuxNumber = None; StateName = "" }
+                        FlowName = zeroNN; ActionName = zeroNN; DeviceName = zeroNN; StateName = zeroNN
+                        Modifiers = [||]
+                    }
                 match semantics with
                 | Some sm ->
-                    let standardPNamesAndNumbers = baseline.SplitNames |> map sm.StandardizePName
-                    let standardPNames = standardPNamesAndNumbers |> map fst
+                    let standardPNames = baseline.SplitNames |> map sm.StandardizePName
 
                     let categories = Array.copy baseline.SplitSemanticCategories
                     let procReusult (cat:SemanticCategory) (gr:GuessResult) =
                         match gr with
-                        | Some (name, idx) ->
+                        | Some (nameWithNumber, idx) ->
                             categories[idx] <- cat
-                            name
-                        | None -> ""
-                    let procReusults (cat:SemanticCategory) (grs:(string*int)[]) =
-                        grs |> map (fun gr -> procReusult cat (Some gr))
+                            nameWithNumber
+                        | None -> zeroNN
+                    let procReusults (cat:SemanticCategory) (grs:GuessResult[]) =
+                        grs |> map (fun gr -> procReusult cat gr)
 
 
                     let flow      = sm.GuessFlowName      standardPNames |> procReusult Flow
@@ -100,12 +99,35 @@ module ExtractDeviceModule =
                     }
                 | None -> baseline
 
-            member x.Stringify(?withAction:bool, ?withModifiers:bool, ?withUnmatched:bool) =
+            member x.Stringify(?withAction:bool, ?withModifiers:bool, ?withUnmatched:bool, ?withTrailingNumber) =
                 let withAction    = withAction |? false
+                let withTrailingNumber    = withTrailingNumber |? false
                 let withModifiers = withModifiers |? false
                 let withUnmatched = withUnmatched |? false
-                let action = withAction ?= (x.ActionName, "")
-                let modifiers = if withModifiers then x.Modifiers |> String.concat ":" else ""
+
+                let stringify (nn:NameWithNumber): string =
+                    let n, i = nn
+                    let i = i |> map toString |? ""
+                    withTrailingNumber ?= ($"{n}{i}", n)
+
+                let flow = stringify x.FlowName
+                let device = stringify x.DeviceName
+                let action =
+                    let n, i = x.ActionName
+                    let i = i |> map toString |? ""
+                    if withAction then
+                        withTrailingNumber ?= ($"{n}{i}", n)
+                    else ""
+                let state = stringify x.StateName
+
+                let modifiers =
+                    if withModifiers then
+                        x.Modifiers
+                        |> map (fun (n, i) ->
+                            let i = i |> map toString |? ""
+                            withTrailingNumber ?= ($"{n}{i}", n)) |> String.concat ":"
+                    else ""
+
                 let unmatched =
                     if withUnmatched then
                         x.SplitSemanticCategories
@@ -113,13 +135,12 @@ module ExtractDeviceModule =
                         |> map id
                         |> map (fun idx -> x.SplitNames[idx])
                         |> String.concat ":"
-                    else
-                        ""
+                    else ""
                 [|
-                    x.FlowName
-                    x.DeviceName
+                    flow
+                    device
                     action
-                    x.StateName
+                    state
                     modifiers
                     unmatched
                 |]  |> filter _.NonNullAny()
