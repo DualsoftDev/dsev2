@@ -3,6 +3,7 @@ namespace Dual.Plc2DS
 open System.Collections.Generic
 open Dual.Plc2DS.Common.FS
 open Dual.Common.Core.FS
+open System
 
 [<AutoOpen>]
 module ExtractDeviceModule =
@@ -29,14 +30,18 @@ module ExtractDeviceModule =
             mutable FlowName: string
             mutable ActionName: string      // e.g "ADV"
             mutable DeviceName: string      // e.g "ADV"
+            mutable Modifiers: string[]
             mutable InputAuxNumber: int option  // e.g "ADV1" -> 1
             mutable StateName: string       // e.g "ERR"
         } with
-            static member Create(name:string, ?semantics:TagSemantics) =
-                let splitNames = name.Split('_')
+            static member Create(name:string, ?semantics:TagSemantic) =
+                let splitNames =
+                    let delimiter:string[] = semantics.Map(_.NameSeparators) |? [|"_"|]
+                    name.Split(delimiter, StringSplitOptions.RemoveEmptyEntries)
+
                 let baseline =
                     {   FullName = name; SplitNames = splitNames
-                        FlowName = ""; ActionName = ""; DeviceName = ""
+                        FlowName = ""; ActionName = ""; DeviceName = ""; Modifiers = [||]
                         InputAuxNumber = None; StateName = "" }
                 match semantics with
                 | Some sm ->
@@ -44,23 +49,25 @@ module ExtractDeviceModule =
                     let standardPNames = standardPNamesAndNumbers |> map fst
 
 
-                    let flow, action, state, device =
-                        sm.GuessFlowName standardPNames,
-                        sm.GuessActionName standardPNames,
-                        sm.GuessStateName standardPNames,
-                        sm.GuessDeviceName standardPNames
+                    let flow   = sm.GuessFlowName   standardPNames
+                    let action = sm.GuessActionName standardPNames
+                    let state  = sm.GuessStateName  standardPNames
+                    let device = sm.GuessDeviceName standardPNames
+                    let modifiers = sm.GuessModifierNames standardPNames
 
                     { baseline with
                         FlowName = flow
                         ActionName = action
                         DeviceName = device
                         //InputAuxNumber = splitNames.[1] |> GetAuxNumber
-                        StateName = state }
+                        StateName = state
+                        Modifiers = modifiers
+                    }
                 | None -> baseline
 
 
     type Builder =
-        static member ExtractDevices(plcTags:#IPlcTag[], semantics:TagSemantics): Device[] =
+        static member ExtractDevices(plcTags:#IPlcTag[], semantics:TagSemantic): Device[] =
             let anals:AnalyzedNameSemantic[] =
                 plcTags
                 |> map (fun t ->

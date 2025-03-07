@@ -1,6 +1,7 @@
 namespace Dual.Plc2DS
 
 open System
+open System.Linq
 open System.Collections.Generic
 open System.Runtime.Serialization
 open Newtonsoft.Json
@@ -14,7 +15,7 @@ module AppSettingsModule =
     type Words = string[]
 
     [<DataContract>]
-    type TagSemantics() =
+    type TagSemantic() =
         /// 행위 keyword. e.g "ADV", "RET",
         [<DataMember>] member val Actions = WordSet(StringComparer.OrdinalIgnoreCase) with get, set
         /// 상태 keyword. e.g "ERR"
@@ -26,10 +27,12 @@ module AppSettingsModule =
         [<DataMember>] member val DialectsDTO:Words[] = [||] with get, set
 
         /// 표준어 사전: Dialect => Standard
-        [<JsonIgnore>] member val Dialects = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        [<JsonIgnore>] member val NameSeparators = [|"_"|] with get, set
 
-        [<DataMember>] member val FlowNames = WordSet(StringComparer.OrdinalIgnoreCase) with get, set
+        [<DataMember>] member val FlowNames   = WordSet(StringComparer.OrdinalIgnoreCase) with get, set
         [<DataMember>] member val DeviceNames = WordSet(StringComparer.OrdinalIgnoreCase) with get, set
+        [<DataMember>] member val Modifiers   = WordSet(StringComparer.OrdinalIgnoreCase) with get, set
 
         [<OnDeserialized>]
         member x.OnDeserializedMethod(context: StreamingContext) =
@@ -38,15 +41,18 @@ module AppSettingsModule =
                 let dialects = ds[1..]
                 dialects |> iter (fun d -> x.Dialects.Add(d, std))
 
+            if x.NameSeparators.Any(fun sep -> sep.Length <> 1) then
+                logWarn "Invalid NameSeparators"
+
     type AppSettings() =
-        inherit TagSemantics()
+        inherit TagSemantic()
 
     let splitTailNumber(pName:string): string * int option = // pName : partial name: '_' 로 분리된 이름 중 하나
         match pName with
         | RegexPattern @"^(\w+)(\d+)$" [name; Int32Pattern number] -> name, Some number
         | _ -> pName, None
 
-    type TagSemantics with
+    type TagSemantic with
         /// pName 에서 뒤에 붙은 숫자 부분 제거 후, 표준어로 변환
         member x.StandardizePName(pName:string): string * int option =   // pName : partial name: '_' 로 분리된 이름 중 하나
             let name, optNumber = splitTailNumber pName
@@ -72,3 +78,5 @@ module AppSettingsModule =
 
         member x.GuessStateName(standardPNames: Words): string =
             x.GuessName(x.States, standardPNames)
+        member x.GuessModifierNames(standardPNames: Words): string[] =
+            standardPNames |> Array.filter x.Modifiers.Contains

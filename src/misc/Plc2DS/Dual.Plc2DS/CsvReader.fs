@@ -1,6 +1,8 @@
 namespace Dual.Plc2DS
 
+open Dual.Common.Core.FS
 open Dual.Plc2DS.Common.FS
+open System.Text.RegularExpressions
 
 [<AutoOpen>]
 module ReaderModule =
@@ -30,7 +32,48 @@ module ReaderModule =
         member x.GetAddress() =
             match x with
             | :? LS.PlcTagInfo as ls -> ls.Address
-            | :? AB.PlcTagInfo as ab -> ab.DataType
+            | :? AB.PlcTagInfo as ab -> ab.Specifier
             | :? S7.PlcTagInfo as s7 -> s7.Address
             | :? MX.PlcTagInfo as mx -> mx.Device        // Device, Comment, Label 중 어느 것??
             | _ -> failwith "Invalid PlcTagInfo"
+
+        static member private xxx = ()
+        // I 여부
+        member x.IsInput(): bool =
+            let addr = x.GetAddress()
+            if addr.IsNullOrEmpty() then
+                false
+            else
+                let pattern =
+                    match x with
+                    | :? LS.PlcTagInfo -> @"^%[Ii]"
+                    | :? AB.PlcTagInfo -> @":I"
+                    | :? S7.PlcTagInfo -> @"^%[Ii]"
+                    | :? MX.PlcTagInfo -> @"^[Xx]"
+                    | _ -> failwith "Invalid PlcTagInfo"
+                Regex.IsMatch(addr, pattern)
+
+
+        // Q 여부
+        member x.IsOutput(): bool =
+            let addr = x.GetAddress()
+            if addr.IsNullOrEmpty() then
+                false
+            else
+                let pattern =
+                    match x with
+                    | :? LS.PlcTagInfo -> @"^%[Qq]"
+                    | :? AB.PlcTagInfo -> @":Q"
+                    | :? S7.PlcTagInfo -> @"^%[Qq]"
+                    | :? MX.PlcTagInfo -> @"^[Yy]"
+                    | _ -> failwith "Invalid PlcTagInfo"
+                Regex.IsMatch(addr, pattern)
+
+        // Input 이면 Some true, Output 이면 Some false, 아니면 None
+        member x.OptIOType: bool option =
+            if x.IsInput() then
+                Some true
+            elif x.IsOutput() then
+                Some false
+            else
+                None
