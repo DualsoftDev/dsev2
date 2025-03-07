@@ -34,9 +34,9 @@ module ExtractDeviceModule =
             mutable InputAuxNumber: int option  // e.g "ADV1" -> 1
             mutable StateName: string       // e.g "ERR"
         } with
-            static member Create(name:string, ?semantics:TagSemantic) =
+            static member Create(name:string, ?semantics:Semantic) =
                 let splitNames =
-                    let delimiter:string[] = semantics.Map(_.NameSeparators) |? [|"_"|]
+                    let delimiter:string[] = semantics.Map(_.NameSeparators.ToArray()) |? [|"_"|]
                     name.Split(delimiter, StringSplitOptions.RemoveEmptyEntries)
 
                 let baseline =
@@ -67,7 +67,7 @@ module ExtractDeviceModule =
 
 
     type Builder =
-        static member ExtractDevices(plcTags:#IPlcTag[], semantics:TagSemantic): Device[] =
+        static member ExtractDevices(plcTags:#IPlcTag[], semantics:Semantic): Device[] =
             let anals:AnalyzedNameSemantic[] =
                 plcTags
                 |> map (fun t ->

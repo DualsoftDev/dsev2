@@ -90,7 +90,7 @@ module AnalTest =
             do
                 // 이름 구분자 변경 test
                 let semantic = createSemantic()
-                semantic.NameSeparators <- [|":"|]
+                semantic.NameSeparators <- ResizeArray [|":"|]
                 let si = AnalyzedNameSemantic.Create("STATION2:1ST:SHT:ADV", semantic)
                 si.FlowName === "STN"
                 si.DeviceName === "SHT"

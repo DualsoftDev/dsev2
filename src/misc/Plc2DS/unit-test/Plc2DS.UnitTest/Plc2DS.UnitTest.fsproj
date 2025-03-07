@@ -8,6 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="TagAnalysis\SemanticSettingTest.fs" />
 		<Compile Include="TagAnalysis\AnalTest.fs" />
 		<None Include="Samples\**\*" />
 	</ItemGroup>
