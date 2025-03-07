@@ -37,6 +37,11 @@ module ReaderModule =
             | :? MX.PlcTagInfo as mx -> mx.Device        // Device, Comment, Label 중 어느 것??
             | _ -> failwith "Invalid PlcTagInfo"
 
+        member x.GetAnalysisField() =
+            match x with
+            | :? MX.PlcTagInfo as mx -> mx.Comment
+            | _ -> x.GetName()
+
         static member private xxx = ()
         // I 여부
         member x.IsInput(): bool =

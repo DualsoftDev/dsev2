@@ -41,11 +41,11 @@ module ExtractDeviceModule =
             SplitNames: string[]
             /// SplitNames 각각에 대한 SemanticCategory
             SplitSemanticCategories: SemanticCategory[]
-            mutable FlowName: NameWithNumber
-            mutable ActionName: NameWithNumber      // e.g "ADV"
-            mutable DeviceName: NameWithNumber      // e.g "ADV"
+            mutable Flow     : NameWithNumber
+            mutable Action   : NameWithNumber      // e.g "ADV"
+            mutable Device   : NameWithNumber      // e.g "ADV"
+            mutable State    : NameWithNumber      // e.g "ERR"
             mutable Modifiers: NameWithNumber[]
-            mutable StateName: NameWithNumber       // e.g "ERR"
         } with
             static member Create(name:string, ?semantics:Semantic) =
                 // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
@@ -64,7 +64,7 @@ module ExtractDeviceModule =
 
                 let baseline =
                     {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst Nope)
-                        FlowName = zeroNN; ActionName = zeroNN; DeviceName = zeroNN; StateName = zeroNN
+                        Flow = zeroNN; Action = zeroNN; Device = zeroNN; State = zeroNN
                         Modifiers = [||]
                     }
                 match semantics with
@@ -89,11 +89,11 @@ module ExtractDeviceModule =
                     let modifiers = sm.GuessModifierNames standardPNames |> procReusults Modifier
 
                     { baseline with
-                        FlowName = flow
-                        ActionName = action
-                        DeviceName = device
+                        Flow = flow
+                        Action = action
+                        Device = device
                         //InputAuxNumber = splitNames.[1] |> GetAuxNumber
-                        StateName = state
+                        State = state
                         Modifiers = modifiers
                         SplitSemanticCategories = categories
                     }
@@ -121,15 +121,15 @@ module ExtractDeviceModule =
                     let i = i |> map toString |? ""
                     withNumber ?= ($"{n}{i}", n)
 
-                let flow = stringify x.FlowName withFN
-                let device = stringify x.DeviceName withDN
+                let flow = stringify x.Flow withFN
+                let device = stringify x.Device withDN
                 let action =
-                    let n, i = x.ActionName
+                    let n, i = x.Action
                     let i = i |> map toString |? ""
                     if withAction then
                         withAN ?= ($"{n}{i}", n)
                     else ""
-                let state = stringify x.StateName withSN
+                let state = stringify x.State withSN
 
                 let modifiers =
                     if withModifiers then
@@ -163,6 +163,5 @@ module ExtractDeviceModule =
             let anals:AnalyzedNameSemantic[] =
                 plcTags
                 |> map (fun t ->
-                    let name = t.GetName()
-                    AnalyzedNameSemantic.Create(name, semantics))
+                    AnalyzedNameSemantic.Create(t.GetAnalysisField(), semantics))
             [||]

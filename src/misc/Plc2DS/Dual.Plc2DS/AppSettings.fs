@@ -125,9 +125,17 @@ module AppSettingsModule =
                 | None, Some o -> o
                 | _ -> failwith "ERROR"
 
-    let splitTailNumber(pName:string): string * (int option) = // pName : partial name: '_' 로 분리된 이름 중 하나
+    /// word 주변에 동시에 숫자가 오는 경우는 일단, 없다고 가정하고, 구현은 앞뒤 숫자를 더해서 결정
+    let splitNumber(pName:string): string * (int option) = // pName : partial name: '_' 로 분리된 이름 중 하나
         match pName with
-        | RegexPattern @"^(\w+)(\d+)$" [name; Int32Pattern number] -> name, Some number
+        | RegexPattern @"^(\d+)?(\D+)(\d+)?$" [prefix; name; postfix] ->        // D+: 숫자가 아닌 임의의 것
+            let mutable sum = 0
+            if prefix.NonNullAny() then
+                sum <- int prefix
+            if postfix.NonNullAny() then
+                sum <- sum + int postfix
+            let number = (prefix.NonNullAny() || postfix.NonNullAny()) ?= (Some sum, None)
+            name, number
         | _ -> pName, None
 
 
@@ -144,7 +152,7 @@ module AppSettingsModule =
     type Semantic with
         /// pName 에서 뒤에 붙은 숫자 부분 제거 후, 표준어로 변환
         member x.StandardizePName(pName:string): NameWithNumber =   // pName : partial name: '_' 로 분리된 이름 중 하나
-            let name, (optNumber:int option) = splitTailNumber pName
+            let name, (optNumber:int option) = splitNumber pName
             match x.Dialects.TryGet(name) with
             | Some standard -> standard, optNumber
             | None -> name, optNumber
