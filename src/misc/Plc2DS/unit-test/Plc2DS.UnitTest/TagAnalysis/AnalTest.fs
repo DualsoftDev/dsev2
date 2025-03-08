@@ -80,7 +80,6 @@ module AnalTest =
 
     let dq = "\""
     let ddq = "\"\""
-    open FsUnit.Xunit
 
     type S() =
         [<Test>]
@@ -166,15 +165,6 @@ module AnalTest =
                 let si = AnalyzedNameSemantic.Create(tagInfo.Name, semantic)
                 si.SplitNames === [|"S441"; "PLC"; "BOX"; "1:3:I"|]
                 noop()
-
-
-            //let csvPath = getFile("AB/BB_Controller_2_Tags.csv")
-            //let data = Ab.CsvReader.ReadCommentCSV(csvPath)
-            //data |> Array.iter (tracefn "%A")
-
-            //let devices:Device[] = Builder.ExtractDevices(data, semantic)
-            //devices |> Array.iter (tracefn "%A")
-            //noop()
 
         [<Test>]
         member _.``MinimalMX`` () =

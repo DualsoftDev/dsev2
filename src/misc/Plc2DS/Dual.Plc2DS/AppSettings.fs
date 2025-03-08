@@ -140,18 +140,6 @@ module AppSettingsModule =
         | _ -> None, pName, None
 
 
-    //type NameWithNumber(name: string, optPrefixNumber: int option, optPostfixNumber: int option) =
-    //    // 선택적 매개변수를 지원하는 보조 생성자
-    //    //new (name, ?optPrefixNumber, ?optPostfixNumber) =
-    //    //    NameWithNumber(name, optPrefixNumber |? None, optPostfixNumber |? None)
-    //    new (name, ?optPrefixNumber, ?optPostfixNumber) =
-    //        NameWithNumber(name, (optPrefixNumber |> Option.flatten), (optPostfixNumber |> Option.flatten))
-
-    //    member x.Name = name
-    //    member x.OptPrefixNumber = optPrefixNumber
-    //    member x.OptPostfixNumber = optPostfixNumber
-
-
     type NameWithNumber(name: string, optPrefixNumber:int option, optPostfixNumber:int option) =
 
         member x.Name = name
@@ -161,9 +149,6 @@ module AppSettingsModule =
         /// PName 의 position
         member val OptPosition:int option = None with get, set
 
-        // 선택적 매개변수를 지원하는 보조 생성자
-        //new (name, ?optPrefixNumber, ?optPostfixNumber) =
-        //    NameWithNumber(name, optPrefixNumber |? None, optPostfixNumber |? None)
         static member Create(name, ?optPrefixNumber:int, ?optPostfixNumber:int) =
             NameWithNumber(name, optPrefixNumber, optPostfixNumber)
 
@@ -179,12 +164,8 @@ module AppSettingsModule =
             $"{o2s x.OptPrefixNumber}:{x.Name}:{o2s x.OptPostfixNumber}@{x.OptPosition.Value}"
 
     type NameWithNumbers = NameWithNumber[]
+    type PIndex = int
 
-
-    ///// 특정 category (e.g Action, Device) 에 대한 추측 결과.
-    /////
-    ///// - standardPNames 를 match 했을 때, match 되는 string 과 그것의 index
-    //type GuessResult = (NameWithNumber * int) option
 
     let zeroNN = NameWithNumber.Create("")
 

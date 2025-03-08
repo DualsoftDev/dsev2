@@ -41,12 +41,13 @@ module ExtractDeviceModule =
             SplitNames: string[]
             /// SplitNames 각각에 대한 SemanticCategory
             SplitSemanticCategories: SemanticCategory[]
-            mutable Flows     : NameWithNumber[]
-            mutable Actions   : NameWithNumber[]      // e.g "ADV"
-            mutable Devices   : NameWithNumber[]      // e.g "ADV"
-            mutable States    : NameWithNumber[]      // e.g "ERR"
-            mutable Modifiers : NameWithNumber[]
-        } with
+            Flows     : NameWithNumber[]
+            Actions   : NameWithNumber[]      // e.g "ADV"
+            Devices   : NameWithNumber[]      // e.g "ADV"
+            States    : NameWithNumber[]      // e.g "ERR"
+            Modifiers : NameWithNumber[]
+        }
+        type AnalyzedNameSemantic with
             static member Create(name:string, ?semantics:Semantic) =
                 // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
                 let splitCamelCase (input: string) =
@@ -96,7 +97,11 @@ module ExtractDeviceModule =
                     }
                 | None -> baseline
 
-            member x.Stringify(?withAction:bool, ?withState:bool, ?withModifiers:bool, ?withUnmatched:bool
+            member x.Stringify(
+                  ?withAction:bool
+                , ?withState:bool
+                , ?withModifiers:bool
+                , ?withUnmatched:bool
                 , ?withFlowNumber:bool
                 , ?withDeviceNumber:bool
                 , ?withActionNumber:bool
@@ -133,15 +138,52 @@ module ExtractDeviceModule =
                         |> map (fun idx -> x.SplitNames[idx])
                         |> String.concat ":"
                     else ""
-                [|
-                    flow
-                    device
-                    action
-                    state
-                    modifiers
-                    unmatched
-                |]  |> filter _.NonNullAny()
-                    |> String.concat "_"
+
+                [| flow; device; action; state; modifiers; unmatched |]
+                |> filter _.NonNullAny()
+                |> String.concat "_"
+
+
+
+            member x.Categorize() =
+                // x.SplitSemanticCategories 의 SemanticCategory 별 indices 를 반환
+                let multiples: (SemanticCategory * PIndex[])[] =
+                    // x.SplitSemanticCategories 에서 같은 SemanticCategory 가 2개 이상인 것들에 대해, key 와 index 들을 추출.
+                    x.SplitSemanticCategories
+                    |> mapi (fun i cat -> cat, i)  // 각 카테고리와 해당 인덱스를 튜플로 매핑
+                    |> groupBy fst                 // SemanticCategory별로 그룹화
+                    |> filter (fun (cat, items) -> cat <> Nope && items.Length > 1) // 2개 이상인 것만 필터링
+                    |> map (fun (cat, items) -> cat, items |> map snd) // (카테고리, 인덱스 배열) 반환
+
+                let nopes: PIndex[] =
+                    x.SplitSemanticCategories
+                    |> mapi (fun i cat -> cat, i)
+                    |> filter (fun (cat, _) -> cat = Nope)
+                    |> map snd
+
+                let uniqs: PIndex[] =
+                    let nopesOrMultiples = nopes @ (multiples |> collect snd)
+                    [|0 .. x.SplitNames.Length - 1 |] |> except nopesOrMultiples
+                let uniqCats: (PIndex * SemanticCategory)[] =
+                    uniqs |> map (fun i -> i, x.SplitSemanticCategories[i])
+
+                let shownCategories:SemanticCategory[] =
+                    // SemanticCategory 중에 한번이라도 나타난 모든 것들 수집
+                    x.SplitSemanticCategories |> filter ((<>) Nope) |> distinct
+
+                let notShownCategories:SemanticCategory[] =
+                    let allCases = DU.Cases<SemanticCategory>() |> Seq.cast<SemanticCategory>
+                    // SemanticCategory 중에 한번도 나타나지 않은 모든 것들 수집
+                    allCases
+                    |> filter (fun c -> c <> Nope && not (shownCategories |> contains c))
+                    |> toArray
+
+
+
+                {| Multiples = multiples; Nopes = nopes; Uniqs = uniqCats; Showns = shownCategories; NotShowns = notShownCategories|}
+                //multiples, nopes, uniqCats
+
+            member x.PostProcess(semantic:AppSettings): AnalyzedNameSemantic = x
 
 
     type Builder =

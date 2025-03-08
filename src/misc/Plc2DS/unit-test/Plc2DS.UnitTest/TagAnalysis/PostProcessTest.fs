@@ -1,0 +1,44 @@
+namespace T
+
+open NUnit.Framework
+
+open Dual.Plc2DS
+open Dual.Common.Core.FS
+open Dual.Common.UnitTest.FS
+
+
+module PostProcessTest =
+    type P() =
+        [<Test>]
+        member _.``Categorize`` () =
+            let semantic = AnalTest.semantic
+            // "~:STN:2@0" : STN 의 prefix 숫자는 없고(~), postfix 숫자는 '2' 이고, 위치는(@) 쪼갠 이름의 0번째
+            let si = AnalyzedNameSemantic.Create("S301RH_B_ADV_LOCK_CLAMP1_ERR", semantic)
+            do
+                //anals[1] : "S301RH_B_ADV_LOCK_CLAMP1_ERR"
+                // "LOCK" 이 Action 으로 등록되어 있지 않고, Device 로 등록되어 있는 상태
+                semantic.Actions     |> contains "LOCK" |> ShouldBeFalse
+                semantic.DeviceNames |> contains "LOCK" |> ShouldBeTrue
+                semantic.States      |> contains "ERR"  |> ShouldBeTrue
+
+                si.States  |> exactlyOne |> toString === "~:ERR:~@5"
+                si.Devices |> exactlyOne |> toString === "~:LOCK:~@3"
+                si.Actions |> map toString === [| "~:ADV:~@2"; "~:CLP:1@4" |]
+                si.Stringify(withDeviceNumber=true, withState=false) === "LOCK"
+                si.Stringify(withDeviceNumber=true, withState=true) === "LOCK_ERR"
+
+            let multiples, nopes, uniqCats, showns, notShowns =
+                let c = si.Categorize()
+                c.Multiples, c.Nopes, c.Uniqs, c.Showns, c.NotShowns
+
+            nopes     === [|0|]
+            multiples === [| Action, [|2; 4|] |]
+            uniqCats  === [|
+                (1, SemanticCategory.Modifier)
+                (3, SemanticCategory.Device)
+                (5, SemanticCategory.State)
+            |]
+
+            showns === [| Modifier; Action; Device; SemanticCategory.State |]
+            notShowns === [| Flow |]
+            noop()
