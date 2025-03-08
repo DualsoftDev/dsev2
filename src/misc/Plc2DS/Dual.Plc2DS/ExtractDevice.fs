@@ -72,22 +72,19 @@ module ExtractDeviceModule =
                     let standardPNames = baseline.SplitNames |> map sm.StandardizePName
 
                     let categories = Array.copy baseline.SplitSemanticCategories
-                    let procReusult (cat:SemanticCategory) (gr:GuessResult) =
-                        match gr with
-                        | Some (nameWithNumber, idx) ->
-                            categories[idx] <- cat
-                            nameWithNumber
-                        | None -> zeroNN
-                    let procReusults (cat:SemanticCategory) (grs:GuessResult[]) =
-                        grs |> map (fun gr -> procReusult cat gr)
+
+                    let procReusults (cat:SemanticCategory) (nns:NameWithNumber[]) =
+                        for nn in nns do
+                            categories[nn.OptPosition.Value] <- cat
 
 
-                    let flow      = sm.GuessFlowName      standardPNames |> procReusults Flow
-                    let action    = sm.GuessActionName    standardPNames |> procReusults Action
-                    let state     = sm.GuessStateName     standardPNames |> procReusults State
-                    let device    = sm.GuessDeviceName    standardPNames |> procReusults Device
-                    let modifiers = sm.GuessModifierNames standardPNames |> procReusults Modifier
+                    let flow      = sm.GuessFlowName      standardPNames |> tee(fun nns -> procReusults Flow     nns)
+                    let action    = sm.GuessActionName    standardPNames |> tee(fun nns -> procReusults Action   nns)
+                    let state     = sm.GuessStateName     standardPNames |> tee(fun nns -> procReusults State    nns)
+                    let device    = sm.GuessDeviceName    standardPNames |> tee(fun nns -> procReusults Device   nns)
+                    let modifiers = sm.GuessModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
 
+                    noop()
                     { baseline with
                         Flows = flow
                         Actions = action
@@ -99,40 +96,34 @@ module ExtractDeviceModule =
                     }
                 | None -> baseline
 
-            member x.Stringify(?withAction:bool, ?withModifiers:bool, ?withUnmatched:bool
-                , ?withFlowTrailingNumber:bool
-                , ?withDeviceTrailingNumber:bool
-                , ?withActionTrailingNumber:bool
-                , ?withStateTrailingNumber:bool
-                , ?withModifierTrailingNumber:bool
+            member x.Stringify(?withAction:bool, ?withState:bool, ?withModifiers:bool, ?withUnmatched:bool
+                , ?withFlowNumber:bool
+                , ?withDeviceNumber:bool
+                , ?withActionNumber:bool
+                , ?withStateNumber:bool
+                , ?withModifierNumber:bool
               ) =
                 let withAction    = withAction    |? false
+                let withState     = withState     |? false
                 let withModifiers = withModifiers |? false
                 let withUnmatched = withUnmatched |? false
 
-                let withFN = withFlowTrailingNumber     |? true
-                let withDN = withDeviceTrailingNumber   |? false
-                let withAN = withActionTrailingNumber   |? true
-                let withSN = withStateTrailingNumber    |? true
-                let withMN = withModifierTrailingNumber |? true
+                let withFN = withFlowNumber     |? true
+                let withDN = withDeviceNumber   |? false
+                let withAN = withActionNumber   |? true
+                let withSN = withStateNumber    |? true
+                let withMN = withModifierNumber |? true
 
                 let stringify (nn:NameWithNumber) (withNumber:bool): string =
-                    if withNumber then
-                        let mutable r = ""
-                        nn.OptPrefixNumber.Iter (fun prefix -> r <- $"{prefix}")
-                        r <- r + nn.Name
-                        nn.OptPostfixNumber.Iter (fun postfix -> r <- $"{r}{postfix}")
-                        r
-                    else
-                        nn.Name
+                    withNumber ?= (nn.PName, nn.Name)
                 let stringify (nns:NameWithNumber[]) (withNumber:bool): string =
                     nns |> map (fun nn -> stringify nn withNumber) |> String.concat "_"
 
-                let flow = stringify x.Flows withFN
-                let device = stringify x.Devices withDN
-                let action = stringify x.Actions withAN
-                let state = stringify x.States withSN
-                let modifiers = stringify x.Modifiers withMN
+                let flow      = stringify x.Flows withFN
+                let device    = stringify x.Devices withDN
+                let state     = if withState     then stringify x.States    withSN else ""
+                let action    = if withAction    then stringify x.Actions   withAN else ""
+                let modifiers = if withModifiers then stringify x.Modifiers withMN else ""
 
                 let unmatched =
                     if withUnmatched then
