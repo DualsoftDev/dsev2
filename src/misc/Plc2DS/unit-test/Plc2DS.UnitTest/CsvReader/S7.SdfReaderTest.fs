@@ -4,8 +4,8 @@ open System.IO
 open NUnit.Framework
 
 open Dual.Common.UnitTest.FS
+open Dual.Plc2DS
 open Dual.Plc2DS.S7
-open Dual.Plc2DS.Common.FS
 
 module S7Sdf =
     let getFile(file:string) =

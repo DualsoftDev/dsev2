@@ -1,4 +1,4 @@
-namespace Dual.Plc2DS.Common.FS
+namespace Dual.Plc2DS
 
 open System.IO
 open Dual.Common.Core.FS
@@ -18,3 +18,10 @@ module K =
     let [<Literal>] LS = "LS"
     let [<Literal>] MX = "MX"
 
+type SemanticCategory =
+    | Nope
+    | Action
+    | Device
+    | Flow
+    | Modifier
+    | State

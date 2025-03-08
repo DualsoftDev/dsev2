@@ -1,4 +1,4 @@
-namespace Dual.Plc2DS.Common.FS
+namespace Dual.Plc2DS
 
 open System.IO
 open System.Text

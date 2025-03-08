@@ -7,6 +7,7 @@ open System.Runtime.Serialization
 open Newtonsoft.Json
 
 open Dual.Common.Core.FS
+open Dual.Common.Core
 
 [<AutoOpen>]
 module AppSettingsModule =
@@ -15,6 +16,8 @@ module AppSettingsModule =
     type Words = string[]
 
     let private ignoreCase = StringComparer.OrdinalIgnoreCase
+
+    type PositionHint = { Min: int; Max: int }
 
     /// Tag 기반 semantic 정보 추출용
     [<DataContract>]
@@ -38,6 +41,11 @@ module AppSettingsModule =
         [<DataMember>] member val DeviceNames = WordSet(ignoreCase) with get, set
         [<DataMember>] member val Modifiers   = WordSet(ignoreCase) with get, set
 
+
+        [<JsonProperty("PositionHints")>] // JSON에서는 "Dialects"라는 이름으로 저장
+        [<DataMember>] member val PositionHintsDTO = Dictionary<string, PositionHint>() with get, set
+        [<JsonIgnore>] member val PositionHints    = Dictionary<SemanticCategory, PositionHint>() with get, set
+
         [<OnDeserialized>]
         member x.OnDeserializedMethod(context: StreamingContext) =
             for ds in x.DialectsDTO do
@@ -47,6 +55,12 @@ module AppSettingsModule =
 
             if x.NameSeparators.Any(fun sep -> sep.Length <> 1) then
                 logWarn "Invalid NameSeparators"
+
+
+            x.PositionHintsDTO |> iter (fun (KeyValue(k, v)) ->
+                match DU.tryParse<SemanticCategory>(k) with
+                | Some cat -> x.PositionHints.Add(cat, v)
+                | None -> logWarn $"Invalid PositionHint: {k}")
 
     type Semantic with
         member x.Duplicate() =

@@ -4,7 +4,7 @@ open System
 open System.Text.RegularExpressions
 
 open Dual.Common.Core.FS
-open Dual.Plc2DS.Common.FS
+open Dual.Plc2DS
 open Dual.Common.Core
 
 (* 샘플 CSV format

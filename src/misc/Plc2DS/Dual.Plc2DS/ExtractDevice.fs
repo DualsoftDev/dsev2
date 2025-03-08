@@ -4,7 +4,7 @@ open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
 
-open Dual.Plc2DS.Common.FS
+open Dual.Plc2DS
 open Dual.Common.Core.FS
 open Dual.Common.Core.FS
 
@@ -26,14 +26,6 @@ module ExtractDeviceModule =
 
     [<AutoOpen>]
     module (*internal*) rec ExtractDeviceImplModule =
-        type SemanticCategory =
-            | Nope
-            | Action
-            | Device
-            | Flow
-            | Modifier
-            | State
-
         type AnalyzedNameSemantic = {
             /// 이름 원본
             FullName: string
@@ -81,7 +73,7 @@ module ExtractDeviceModule =
 
                     let flow      = sm.GuessFlowName      standardPNames |> tee(fun nns -> procReusults Flow     nns)
                     let action    = sm.GuessActionName    standardPNames |> tee(fun nns -> procReusults Action   nns)
-                    let state     = sm.GuessStateName     standardPNames |> tee(fun nns -> procReusults State    nns)
+                    let state     = sm.GuessStateName     standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
                     let device    = sm.GuessDeviceName    standardPNames |> tee(fun nns -> procReusults Device   nns)
                     let modifiers = sm.GuessModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
 

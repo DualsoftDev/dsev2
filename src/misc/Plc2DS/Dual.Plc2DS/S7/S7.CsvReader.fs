@@ -5,7 +5,7 @@ S7 *.SDF 파일 한계
 
 namespace Dual.Plc2DS.S7
 
-open Dual.Plc2DS.Common.FS
+open Dual.Plc2DS
 open Dual.Common.Core.FS
 
 type PlcTagInfo = {

@@ -12,7 +12,7 @@ open Dual.Common.UnitTest.FS
 open Dual.Plc2DS
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
-open Dual.Plc2DS.Common.FS
+open Dual.Plc2DS
 
 module AnalTest =
     let getFile(file:string) =

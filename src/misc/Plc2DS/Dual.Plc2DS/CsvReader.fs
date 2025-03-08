@@ -1,7 +1,7 @@
 namespace Dual.Plc2DS
 
 open Dual.Common.Core.FS
-open Dual.Plc2DS.Common.FS
+open Dual.Plc2DS
 open System.Text.RegularExpressions
 
 [<AutoOpen>]
