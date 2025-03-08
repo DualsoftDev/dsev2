@@ -41,11 +41,11 @@ module ExtractDeviceModule =
             SplitNames: string[]
             /// SplitNames 각각에 대한 SemanticCategory
             SplitSemanticCategories: SemanticCategory[]
-            mutable Flow     : NameWithNumber
-            mutable Action   : NameWithNumber      // e.g "ADV"
-            mutable Device   : NameWithNumber      // e.g "ADV"
-            mutable State    : NameWithNumber      // e.g "ERR"
-            mutable Modifiers: NameWithNumber[]
+            mutable Flows     : NameWithNumber[]
+            mutable Actions   : NameWithNumber[]      // e.g "ADV"
+            mutable Devices   : NameWithNumber[]      // e.g "ADV"
+            mutable States    : NameWithNumber[]      // e.g "ERR"
+            mutable Modifiers : NameWithNumber[]
         } with
             static member Create(name:string, ?semantics:Semantic) =
                 // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
@@ -64,7 +64,7 @@ module ExtractDeviceModule =
 
                 let baseline =
                     {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst Nope)
-                        Flow = zeroNN; Action = zeroNN; Device = zeroNN; State = zeroNN
+                        Flows = [||]; Actions = [||]; Devices = [||]; States = [||]
                         Modifiers = [||]
                     }
                 match semantics with
@@ -82,18 +82,18 @@ module ExtractDeviceModule =
                         grs |> map (fun gr -> procReusult cat gr)
 
 
-                    let flow      = sm.GuessFlowName      standardPNames |> procReusult Flow
-                    let action    = sm.GuessActionName    standardPNames |> procReusult Action
-                    let state     = sm.GuessStateName     standardPNames |> procReusult State
-                    let device    = sm.GuessDeviceName    standardPNames |> procReusult Device
+                    let flow      = sm.GuessFlowName      standardPNames |> procReusults Flow
+                    let action    = sm.GuessActionName    standardPNames |> procReusults Action
+                    let state     = sm.GuessStateName     standardPNames |> procReusults State
+                    let device    = sm.GuessDeviceName    standardPNames |> procReusults Device
                     let modifiers = sm.GuessModifierNames standardPNames |> procReusults Modifier
 
                     { baseline with
-                        Flow = flow
-                        Action = action
-                        Device = device
+                        Flows = flow
+                        Actions = action
+                        Devices = device
                         //InputAuxNumber = splitNames.[1] |> GetAuxNumber
-                        State = state
+                        States = state
                         Modifiers = modifiers
                         SplitSemanticCategories = categories
                     }
@@ -117,27 +117,22 @@ module ExtractDeviceModule =
                 let withMN = withModifierTrailingNumber |? true
 
                 let stringify (nn:NameWithNumber) (withNumber:bool): string =
-                    let n, i = nn
-                    let i = i |> map toString |? ""
-                    withNumber ?= ($"{n}{i}", n)
+                    if withNumber then
+                        let mutable r = ""
+                        nn.OptPrefixNumber.Iter (fun prefix -> r <- $"{prefix}")
+                        r <- r + nn.Name
+                        nn.OptPostfixNumber.Iter (fun postfix -> r <- $"{r}{postfix}")
+                        r
+                    else
+                        nn.Name
+                let stringify (nns:NameWithNumber[]) (withNumber:bool): string =
+                    nns |> map (fun nn -> stringify nn withNumber) |> String.concat "_"
 
-                let flow = stringify x.Flow withFN
-                let device = stringify x.Device withDN
-                let action =
-                    let n, i = x.Action
-                    let i = i |> map toString |? ""
-                    if withAction then
-                        withAN ?= ($"{n}{i}", n)
-                    else ""
-                let state = stringify x.State withSN
-
-                let modifiers =
-                    if withModifiers then
-                        x.Modifiers
-                        |> map (fun (n, i) ->
-                            let i = i |> map toString |? ""
-                            withMN ?= ($"{n}{i}", n)) |> String.concat ":"
-                    else ""
+                let flow = stringify x.Flows withFN
+                let device = stringify x.Devices withDN
+                let action = stringify x.Actions withAN
+                let state = stringify x.States withSN
+                let modifiers = stringify x.Modifiers withMN
 
                 let unmatched =
                     if withUnmatched then

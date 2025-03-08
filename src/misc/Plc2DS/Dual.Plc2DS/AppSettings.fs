@@ -126,22 +126,45 @@ module AppSettingsModule =
                 | _ -> failwith "ERROR"
 
     /// word 주변에 동시에 숫자가 오는 경우는 일단, 없다고 가정하고, 구현은 앞뒤 숫자를 더해서 결정
-    let splitNumber(pName:string): string * (int option) = // pName : partial name: '_' 로 분리된 이름 중 하나
+    let splitNumber(pName:string): (int option) * string * (int option) = // pName : partial name: '_' 로 분리된 이름 중 하나
         match pName with
         | RegexPattern @"^(\d+)?(\D+)(\d+)?$" [prefix; name; postfix] ->        // D+: 숫자가 아닌 임의의 것
-            let mutable sum = 0
-            if prefix.NonNullAny() then
-                sum <- int prefix
-            if postfix.NonNullAny() then
-                sum <- sum + int postfix
-            let number = (prefix.NonNullAny() || postfix.NonNullAny()) ?= (Some sum, None)
-            name, number
-        | _ -> pName, None
+            match prefix, postfix with
+            | "", "" -> None, name, None
+            | "", postfix ->
+                None, name, Some (int postfix)
+            | prefix, "" ->
+                Some (int prefix), name, None
+            | prefix, postfix ->
+                Some (int prefix), name, Some (int postfix)
+        | _ -> None, pName, None
 
 
-    type NameWithNumber = string * (int option)
+    //type NameWithNumber(name: string, optPrefixNumber: int option, optPostfixNumber: int option) =
+    //    // 선택적 매개변수를 지원하는 보조 생성자
+    //    //new (name, ?optPrefixNumber, ?optPostfixNumber) =
+    //    //    NameWithNumber(name, optPrefixNumber |? None, optPostfixNumber |? None)
+    //    new (name, ?optPrefixNumber, ?optPostfixNumber) =
+    //        NameWithNumber(name, (optPrefixNumber |> Option.flatten), (optPostfixNumber |> Option.flatten))
+
+    //    member x.Name = name
+    //    member x.OptPrefixNumber = optPrefixNumber
+    //    member x.OptPostfixNumber = optPostfixNumber
+
+
+    type NameWithNumber(name: string, optPrefixNumber:int option, optPostfixNumber:int option) =
+
+        member x.Name = name
+        member x.OptPrefixNumber = optPrefixNumber
+        member x.OptPostfixNumber = optPostfixNumber
+
+        // 선택적 매개변수를 지원하는 보조 생성자
+        //new (name, ?optPrefixNumber, ?optPostfixNumber) =
+        //    NameWithNumber(name, optPrefixNumber |? None, optPostfixNumber |? None)
+        static member Create(name, ?optPrefixNumber:int, ?optPostfixNumber:int) =
+            NameWithNumber(name, optPrefixNumber, optPostfixNumber)
+
     type NameWithNumbers = NameWithNumber[]
-    let zeroNN:NameWithNumber = "", None
 
 
     /// 특정 category (e.g Action, Device) 에 대한 추측 결과.
@@ -149,43 +172,49 @@ module AppSettingsModule =
     /// - standardPNames 를 match 했을 때, match 되는 string 과 그것의 index
     type GuessResult = (NameWithNumber * int) option
 
+    let zeroNN = NameWithNumber.Create("")
+
     type Semantic with
         /// pName 에서 뒤에 붙은 숫자 부분 제거 후, 표준어로 변환
         member x.StandardizePName(pName:string): NameWithNumber =   // pName : partial name: '_' 로 분리된 이름 중 하나
-            let name, (optNumber:int option) = splitNumber pName
+            let (preNumber:int option), name, (postNumber:int option) = splitNumber pName
             match x.Dialects.TryGet(name) with
-            | Some standard -> standard, optNumber
-            | None -> name, optNumber
+            | Some standard -> NameWithNumber(standard, preNumber, postNumber)
+            | None -> NameWithNumber(name, preNumber, postNumber)
+
+        ///// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
+        //[<Obsolete("추후 고려")>]
+        //member private x.GuessName(targetSet: WordSet, standardPNames: NameWithNumbers): GuessResult =
+        //    // 일단 match 되는 하나라도 있으면 바로 리턴.. 추후에는 갯수와 위치 등을 고려해야 함
+        //    xxx
+        //    standardPNames |> Array.tryFindIndex(fun (pre, n, post) -> targetSet.Contains n)
+        //    |> map (fun i -> standardPNames[i], i)
 
         /// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
-        [<Obsolete("추후 고려")>]
-        member private x.GuessName(targetSet: WordSet, standardPNames: NameWithNumbers): GuessResult =
-            // 일단 match 되는 하나라도 있으면 바로 리턴.. 추후에는 갯수와 위치 등을 고려해야 함
-            standardPNames |> Array.tryFindIndex(fun (n, i) -> targetSet.Contains n)
-            |> map (fun i -> standardPNames[i], i)
-
+        member private x.GuessNames(targetSet: WordSet, standardPNames: NameWithNumbers): GuessResult[] =
+            [|
+                for (i, nn) in standardPNames.Indexed() do
+                    if targetSet.Contains (nn.Name) then
+                        Some(nn, i)
+            |]
 
         // standardPNames : 표준화된 부분(*P*artial) 이름
         /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessFlowName(standardPNames: NameWithNumbers): GuessResult =
-            x.GuessName(x.FlowNames, standardPNames)
+        member x.GuessFlowName(standardPNames: NameWithNumbers): GuessResult[] =
+            x.GuessNames(x.FlowNames, standardPNames)
 
         /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessDeviceName(standardPNames: NameWithNumbers): GuessResult =
-            x.GuessName(x.DeviceNames, standardPNames)
+        member x.GuessDeviceName(standardPNames: NameWithNumbers): GuessResult[] =
+            x.GuessNames(x.DeviceNames, standardPNames)
 
         /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessActionName(standardPNames: NameWithNumbers): GuessResult =
-            x.GuessName(x.Actions, standardPNames)
+        member x.GuessActionName(standardPNames: NameWithNumbers): GuessResult[] =
+            x.GuessNames(x.Actions, standardPNames)
 
         /// standardPNames 중에서 State 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessStateName(standardPNames: NameWithNumbers): GuessResult =
-            x.GuessName(x.States, standardPNames)
+        member x.GuessStateName(standardPNames: NameWithNumbers): GuessResult[] =
+            x.GuessNames(x.States, standardPNames)
 
         /// standardPNames 중에서 Modifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
         member x.GuessModifierNames(standardPNames: NameWithNumbers): GuessResult[] =
-            [|
-                for (i, n) in standardPNames.Indexed() do
-                    if x.Modifiers.Contains (fst n) then
-                        Some(n, i)
-            |]// |> Array.choose id
+            x.GuessNames(x.Modifiers, standardPNames)
