@@ -72,6 +72,7 @@ module AppSettingsModule =
             y.DeviceNames <- WordSet(x.DeviceNames, ignoreCase)
             y.Modifiers   <- WordSet(x.Modifiers, ignoreCase)
             y.Dialects    <- Dictionary(x.Dialects, ignoreCase)
+            y.PositionHints <- Dictionary(x.PositionHints)
             y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ignoreCase)) |> ResizeArray
             y.NameSeparators <- x.NameSeparators.Distinct() |> ResizeArray
             y
@@ -80,18 +81,19 @@ module AppSettingsModule =
         member x.Merge(addOn:Semantic): unit =
             x.Actions.UnionWith(addOn.Actions)
             x.States.UnionWith(addOn.States)
+            x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
+            x.FlowNames.UnionWith(addOn.FlowNames)
+            x.DeviceNames.UnionWith(addOn.DeviceNames)
+            x.Modifiers.UnionWith(addOn.Modifiers)
+
             // x.MutualResetTuples 에 addOn.MutualResetTuples 의 항목을 deep copy 해서 추가
             addOn.MutualResetTuples
             |> Seq.map (fun set -> WordSet(set, ignoreCase))
             |> Seq.iter (fun set -> x.MutualResetTuples.Add(set))
 
             //x.Dialects.AddRange(addOn.Dialects)
-            addOn.Dialects |> iter (fun (KeyValue(k, v)) -> x.Dialects.Add (k, v))
-
-            x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
-            x.FlowNames.UnionWith(addOn.FlowNames)
-            x.DeviceNames.UnionWith(addOn.DeviceNames)
-            x.Modifiers.UnionWith(addOn.Modifiers)
+            addOn.Dialects      |> iter (fun (KeyValue(k, v)) -> x.Dialects.Add (k, v))
+            addOn.PositionHints |> iter (fun (KeyValue(k, v)) -> x.PositionHints.Add (k, v))
 
         member x.Override(replace:Semantic): unit =
             if replace.Actions.NonNullAny() then
@@ -102,6 +104,8 @@ module AppSettingsModule =
                 x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ignoreCase)) |> ResizeArray
             if replace.Dialects.NonNullAny() then
                 x.Dialects <- Dictionary(replace.Dialects, ignoreCase)
+            if replace.PositionHints.NonNullAny() then
+                x.PositionHints <- Dictionary(replace.PositionHints)
             if replace.NameSeparators.NonNullAny() then
                 x.NameSeparators <- ResizeArray(replace.NameSeparators.Distinct())
             if replace.FlowNames.NonNullAny() then
@@ -178,7 +182,6 @@ module AppSettingsModule =
             $"{o2s x.OptPrefixNumber}:{x.Name}:{o2s x.OptPostfixNumber}@{x.OptPosition.Value}"
 
     type NameWithNumbers = NameWithNumber[]
-    type PIndex = int
 
 
     let zeroNN = NameWithNumber.Create("")

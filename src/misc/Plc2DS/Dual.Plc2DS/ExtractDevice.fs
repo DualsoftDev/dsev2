@@ -5,7 +5,7 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 
 open Dual.Plc2DS
-open Dual.Common.Core.FS
+open Dual.Common.Core
 open Dual.Common.Core.FS
 
 [<AutoOpen>]
@@ -23,6 +23,64 @@ module ExtractDeviceModule =
         MutualResetTuples: Call[][]
     }
 
+    type PositionHint with
+
+
+        (*
+            점수 계산 로직 (점수가 높을 조건)
+
+                p가 min과 max 범위 안에 있어야 점수를 받을 수 있음
+                → 즉, p가 x.Min ≤ p ≤ x.Max 범위에 있을 때만 점수를 계산.
+
+                p가 범위 중앙(center)에 가까울수록 점수가 높아야 함
+                → center = (x.Min + x.Max) / 2 이므로, |p - center|가 작을수록 높은 점수.
+
+                range가 작을수록 점수가 높아야 함
+                → range = x.Max - x.Min 이므로, range가 작을수록 높은 점수를 부여.
+        *)
+        //member x.CalculateScore(position: PIndex, size: int): double =
+        //    let mn, mx = double x.Min, double x.Max
+        //    let p = (double position / double size) * 100.0
+
+        //    if p >= mn && p <= mx then  // min ≤ p ≤ mx
+        //        let center = (mn + mx) / 2.0
+        //        let range = max (mx - mn) 1.0  // range가 0이면 1로 설정하여 0 나눗셈 방지
+
+        //        // 거리 기반 점수 (중앙에 가까울수록 높음, 최소값 보정 추가)
+        //        let distanceScore = 1.0 - (abs (p - center) / (range / 2.0))
+        //        let distanceScore = max distanceScore 0.1  // 최소 점수 보장
+
+        //        // 범위가 작을수록 높은 가중치 (최소값 보정)
+        //        let rangeWeight = 1.0 / (1.0 + range / 2.0)
+
+        //        // 최종 점수 = 거리 점수 * 가중치
+        //        distanceScore * rangeWeight
+        //    else
+        //        0.0  // 범위 밖이면 0점
+
+        member x.CalculateScore(position: PIndex, size: int): double =
+            let position = position + 1
+            let size = size + 2
+            let min, max = double x.Min, double x.Max
+            let p = (double position / double size) * 100.0
+            if p >= min && p <= max then  // x.Min ≤ p ≤ x.Max
+                let center = (min + max) / 2.0
+                let range = max - min
+
+                // 거리 기반 점수 (중앙에 가까울수록 높은 점수)
+                let distanceScore = 1.0 - (abs (p - center) / (range / 2.0))
+
+                distanceScore
+
+                //// 범위가 작을수록 높은 가중치 (작은 범위일수록 1에 가까움)
+                //let rangeWeight = 1.0 / (1.0 + range)
+
+                //// 최종 점수 = 거리 점수 * 가중치 (0~1 범위에서 정규화)
+                //distanceScore * rangeWeight
+            else
+                0.0  // 범위 밖이면 0점
+
+
 
     [<AutoOpen>]
     module (*internal*) rec ExtractDeviceImplModule =
@@ -33,11 +91,11 @@ module ExtractDeviceModule =
             SplitNames: string[]
             /// SplitNames 각각에 대한 SemanticCategory
             SplitSemanticCategories: SemanticCategory[]
-            Flows     : NameWithNumber[]
-            Actions   : NameWithNumber[]      // e.g "ADV"
-            Devices   : NameWithNumber[]      // e.g "ADV"
-            States    : NameWithNumber[]      // e.g "ERR"
-            Modifiers : NameWithNumber[]
+            mutable Flows     : NameWithNumber[]
+            mutable Actions   : NameWithNumber[]      // e.g "ADV"
+            mutable Devices   : NameWithNumber[]      // e.g "ADV"
+            mutable States    : NameWithNumber[]      // e.g "ERR"
+            mutable Modifiers : NameWithNumber[]
         }
         type AnalyzedNameSemantic with
             static member Create(name:string, ?semantics:Semantic) =
@@ -137,7 +195,7 @@ module ExtractDeviceModule =
 
 
 
-            member x.Categorize() =
+            member x.Categorize() :CategorySummary =
                 // x.SplitSemanticCategories 의 SemanticCategory 별 indices 를 반환
                 let multiples: (SemanticCategory * PIndex[])[] =
                     // x.SplitSemanticCategories 에서 같은 SemanticCategory 가 2개 이상인 것들에 대해, key 와 index 들을 추출.
@@ -170,10 +228,42 @@ module ExtractDeviceModule =
                     |> filter (fun c -> c <> Nope && not (shownCategories |> contains c))
                     |> toArray
 
+                { Multiples = multiples; Nopes = nopes; Uniqs = uniqCats; Showns = shownCategories; NotShowns = notShownCategories}
 
+            member x.FillEmptyPName(semantic:Semantic): AnalyzedNameSemantic =
+                let cs = x.Categorize()
+                // cs.Multiples, cs.Nopes, cs.Uniqs, cs.Showns, cs.NotShowns
 
-                {| Multiples = multiples; Nopes = nopes; Uniqs = uniqCats; Showns = shownCategories; NotShowns = notShownCategories|}
-                //multiples, nopes, uniqCats
+                let scores =
+                    [|
+                        for idx in cs.Nopes do
+                            for (KeyValue(k, v)) in semantic.PositionHints do
+                                idx, k, v.CalculateScore(idx, x.SplitNames.Length)
+                    |] |> filter (fun (_, _, score) -> score > 0.0)
+                       |> sortByDescending Tuple.third
+
+                match scores |> Array.tryExactlyOne with
+                | Some (idx, cat, score) ->
+                    let dup =
+                        let ssc = Array.copy x.SplitSemanticCategories
+                        ssc[idx] <- cat
+                        { x with SplitSemanticCategories = ssc }
+
+                    let guessedNames =
+                        let nn = NameWithNumber.Create(x.SplitNames.[idx])
+                        nn.OptPosition <- Some idx
+                        [| nn |]
+                    match cat with
+                    | Action   -> dup.Actions   <- guessedNames
+                    | Device   -> dup.Devices   <- guessedNames
+                    | Flow     -> dup.Flows     <- guessedNames
+                    | Modifier -> dup.Modifiers <- guessedNames
+                    | SemanticCategory.State -> dup.States <- guessedNames
+                    | Nope -> failwith "ERROR"
+
+                    dup
+
+                | None -> x
 
             member x.PostProcess(semantic:AppSettings): AnalyzedNameSemantic = x
 

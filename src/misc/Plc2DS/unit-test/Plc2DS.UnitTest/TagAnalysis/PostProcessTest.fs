@@ -42,3 +42,14 @@ module PostProcessTest =
             showns === [| Modifier; Action; Device; SemanticCategory.State |]
             notShowns === [| Flow |]
             noop()
+
+            let semantic2 = semantic.Duplicate()
+            semantic2.PositionHints.Add(Flow,   { Min = 0;  Max = 40 })
+            semantic2.PositionHints.Add(Device, { Min = 20; Max = 80 })
+            semantic2.PositionHints.Add(Action, { Min = 50; Max = 100 })
+            semantic2.PositionHints.Add(SemanticCategory.State,  { Min = 70; Max = 100 })
+
+            si.Flows === [||]
+            let si2 = si.FillEmptyPName(semantic2)
+            si2.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
+            noop()

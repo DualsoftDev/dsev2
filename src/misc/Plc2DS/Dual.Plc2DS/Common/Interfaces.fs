@@ -25,3 +25,14 @@ type SemanticCategory =
     | Flow
     | Modifier
     | State
+
+/// Positional index type
+type PIndex = int
+
+type CategorySummary = {
+    Multiples: (SemanticCategory * PIndex[])[]    // e.g. [Action, [2; 4]]
+    Nopes: PIndex[]
+    Uniqs: (PIndex * SemanticCategory)[]    // e.g. (1, Modifier)
+    Showns: SemanticCategory[]
+    NotShowns: SemanticCategory[]
+}
