@@ -41,9 +41,13 @@ module AppSettingsModule =
         [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
         [<DataMember>] member val NameSeparators = ResizeArray ["_"] with get, set
 
-        [<DataMember>] member val FlowNames   = WordSet(ic) with get, set
-        [<DataMember>] member val DeviceNames = WordSet(ic) with get, set
-        [<DataMember>] member val Modifiers   = WordSet(ic) with get, set
+        [<DataMember>] member val FlowNames           = WordSet(ic) with get, set
+        [<DataMember>] member val FlowNameFragments   = WordSet(ic) with get, set
+        [<DataMember>] member val DeviceNames         = WordSet(ic) with get, set
+        [<DataMember>] member val DeviceNameFragments = WordSet(ic) with get, set
+        [<DataMember>] member val Modifiers           = WordSet(ic) with get, set
+        [<DataMember>] member val PrefixModifiers     = WordSet(ic) with get, set
+        [<DataMember>] member val PostfixModifiers    = WordSet(ic) with get, set
 
 
         [<JsonProperty("PositionHints")>] // JSON에서는 "Dialects"라는 이름으로 저장
@@ -71,24 +75,32 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
-            y.Actions     <- WordSet(x.Actions, ic)
-            y.States      <- WordSet(x.States, ic)
-            y.FlowNames   <- WordSet(x.FlowNames, ic)
-            y.DeviceNames <- WordSet(x.DeviceNames, ic)
-            y.Modifiers   <- WordSet(x.Modifiers, ic)
-            y.Dialects    <- Dictionary(x.Dialects, ic)
-            y.PositionHints <- Dictionary(x.PositionHints)
+            y.Actions             <- WordSet(x.Actions, ic)
+            y.States              <- WordSet(x.States, ic)
+            y.FlowNames           <- WordSet(x.FlowNames, ic)
+            y.DeviceNames         <- WordSet(x.DeviceNames, ic)
+            y.FlowNameFragments   <- WordSet(x.FlowNameFragments, ic)
+            y.DeviceNameFragments <- WordSet(x.DeviceNameFragments, ic)
+            y.Modifiers           <- WordSet(x.Modifiers, ic)
+            y.PrefixModifiers     <- WordSet(x.PrefixModifiers, ic)
+            y.PostfixModifiers    <- WordSet(x.PostfixModifiers, ic)
+            y.Dialects            <- Dictionary(x.Dialects, ic)
+            y.PositionHints       <- Dictionary(x.PositionHints)
             y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
             y.NameSeparators <- x.NameSeparators.Distinct() |> ResizeArray
             y
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
-            x.Actions    .UnionWith(addOn.Actions)
-            x.States     .UnionWith(addOn.States)
-            x.FlowNames  .UnionWith(addOn.FlowNames)
-            x.DeviceNames.UnionWith(addOn.DeviceNames)
-            x.Modifiers  .UnionWith(addOn.Modifiers)
+            x.Actions            .UnionWith(addOn.Actions)
+            x.States             .UnionWith(addOn.States)
+            x.FlowNames          .UnionWith(addOn.FlowNames)
+            x.DeviceNames        .UnionWith(addOn.DeviceNames)
+            x.FlowNameFragments  .UnionWith(addOn.FlowNameFragments)
+            x.DeviceNameFragments.UnionWith(addOn.DeviceNameFragments)
+            x.Modifiers          .UnionWith(addOn.Modifiers)
+            x.PrefixModifiers    .UnionWith(addOn.PrefixModifiers)
+            x.PostfixModifiers   .UnionWith(addOn.PostfixModifiers)
             x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
 
             // x.MutualResetTuples 에 addOn.MutualResetTuples 의 항목을 deep copy 해서 추가
@@ -115,8 +127,18 @@ module AppSettingsModule =
                 x.FlowNames <- WordSet(replace.FlowNames, ic)
             if replace.DeviceNames.NonNullAny() then
                 x.DeviceNames <- WordSet(replace.DeviceNames, ic)
+
+            if replace.FlowNameFragments.NonNullAny() then
+                x.FlowNameFragments <- WordSet(replace.FlowNameFragments, ic)
+            if replace.DeviceNameFragments.NonNullAny() then
+                x.DeviceNameFragments <- WordSet(replace.DeviceNameFragments, ic)
+
             if replace.Modifiers.NonNullAny() then
                 x.Modifiers <- WordSet(replace.Modifiers, ic)
+            if replace.PrefixModifiers.NonNullAny() then
+                x.PrefixModifiers <- WordSet(replace.PrefixModifiers, ic)
+            if replace.PostfixModifiers.NonNullAny() then
+                x.PostfixModifiers <- WordSet(replace.PostfixModifiers, ic)
 
             if replace.MutualResetTuples.NonNullAny() then
                 x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
@@ -165,13 +187,19 @@ module AppSettingsModule =
 
     type NameWithNumber(name: string, optPrefixNumber:int option, optPostfixNumber:int option) =
 
-        member x.Name = name
+        member x.OriginalName = name        // 대소문자 변환 전의 이름
         member x.OptPrefixNumber = optPrefixNumber
         member x.OptPostfixNumber = optPostfixNumber
 
         /// PName 의 position
         member val OptPosition:PIndex option = None with get, set
 
+        member x.Name = x.OriginalName.ToUpper()
+        override x.ToString (): string =
+            let o2s (n:int option) = n |> map toString |? "~"
+            $"{o2s x.OptPrefixNumber}:{x.Name}:{o2s x.OptPostfixNumber}@{x.OptPosition.Value}"
+
+    type NameWithNumber with
         static member Create(name, ?optPrefixNumber:int, ?optPostfixNumber:int) =
             NameWithNumber(name, optPrefixNumber, optPostfixNumber)
 
@@ -182,9 +210,6 @@ module AppSettingsModule =
             x.OptPostfixNumber.Iter (fun postfix -> r <- $"{r}{postfix}")
             r
 
-        override x.ToString (): string =
-            let o2s (n:int option) = n |> map toString |? "~"
-            $"{o2s x.OptPrefixNumber}:{x.Name}:{o2s x.OptPostfixNumber}@{x.OptPosition.Value}"
 
     type NameWithNumbers = NameWithNumber[]
 
@@ -208,14 +233,22 @@ module AppSettingsModule =
                         nn
             |]
 
+        member private x.GuessWithFragment(fragments: WordSet, standardPNames: NameWithNumbers): NameWithNumber[] =
+            [|
+                for (i, nn) in standardPNames.Indexed() do
+                    if fragments.Any(fun f -> nn.PName.Contains(f)) then
+                        nn.OptPosition <- Some i
+                        nn
+            |]
+
         // standardPNames : 표준화된 부분(*P*artial) 이름
         /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessFlowName(standardPNames: NameWithNumbers): NameWithNumber[] =
-            x.GuessNames(x.FlowNames, standardPNames)
+            x.GuessNames(x.FlowNames, standardPNames) |?? (fun () -> x.GuessWithFragment(x.FlowNameFragments, standardPNames))
 
         /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessDeviceName(standardPNames: NameWithNumbers): NameWithNumber[] =
-            x.GuessNames(x.DeviceNames, standardPNames)
+            x.GuessNames(x.DeviceNames, standardPNames) |?? (fun () -> x.GuessWithFragment(x.DeviceNameFragments, standardPNames))
 
         /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessActionName(standardPNames: NameWithNumbers): NameWithNumber[] =
@@ -228,3 +261,12 @@ module AppSettingsModule =
         /// standardPNames 중에서 Modifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
         member x.GuessModifierNames(standardPNames: NameWithNumbers): NameWithNumber[] =
             x.GuessNames(x.Modifiers, standardPNames)
+
+        /// standardPNames 중에서 PrefixModifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
+        member x.GuessPrefixModifierNames(standardPNames: NameWithNumbers): NameWithNumber[] =
+            x.GuessNames(x.PrefixModifiers, standardPNames)
+
+
+        /// standardPNames 중에서 PostfixModifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
+        member x.GuessPostfixModifierNames(standardPNames: NameWithNumbers): NameWithNumber[] =
+            x.GuessNames(x.PostfixModifiers, standardPNames)

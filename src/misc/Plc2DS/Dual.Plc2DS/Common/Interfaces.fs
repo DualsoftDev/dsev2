@@ -24,7 +24,12 @@ type SemanticCategory =
     | Device
     | Flow
     | Modifier
+    | PrefixModifier
+    | PostfixModifier
     | State
+    with
+        member x.IsMandatory = x.IsAction || x.IsDevice || x.IsFlow
+
 
 /// Positional index type
 type PIndex = int
@@ -35,4 +40,6 @@ type CategorySummary = {
     Uniqs: (PIndex * SemanticCategory)[]    // e.g. (1, Modifier)
     Showns: SemanticCategory[]
     NotShowns: SemanticCategory[]
-}
+} with
+    member x.ShownsMandatory    = x.Showns    |> filter _.IsMandatory
+    member x.NotShownsMandatory = x.NotShowns |> filter _.IsMandatory

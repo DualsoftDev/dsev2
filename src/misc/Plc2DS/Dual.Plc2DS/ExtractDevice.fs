@@ -96,6 +96,8 @@ module ExtractDeviceModule =
             mutable Devices   : NameWithNumber[]      // e.g "ADV"
             mutable States    : NameWithNumber[]      // e.g "ERR"
             mutable Modifiers : NameWithNumber[]
+            mutable PrefixModifiers  : NameWithNumber[]
+            mutable PostfixModifiers : NameWithNumber[]
         }
         type AnalyzedNameSemantic with
             static member Create(name:string, ?semantics:Semantic) =
@@ -116,7 +118,7 @@ module ExtractDeviceModule =
                 let baseline =
                     {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst Nope)
                         Flows = [||]; Actions = [||]; Devices = [||]; States = [||]
-                        Modifiers = [||]
+                        Modifiers = [||]; PrefixModifiers = [||]; PostfixModifiers = [||]
                     }
                 match semantics with
                 | Some sm ->
@@ -129,24 +131,28 @@ module ExtractDeviceModule =
                             categories[nn.OptPosition.Value] <- cat
 
 
-                    let flow      = sm.GuessFlowName      standardPNames |> tee(fun nns -> procReusults Flow     nns)
-                    let action    = sm.GuessActionName    standardPNames |> tee(fun nns -> procReusults Action   nns)
-                    let state     = sm.GuessStateName     standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
-                    let device    = sm.GuessDeviceName    standardPNames |> tee(fun nns -> procReusults Device   nns)
-                    let modifiers = sm.GuessModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                    let flow             = sm.GuessFlowName             standardPNames |> tee(fun nns -> procReusults Flow     nns)
+                    let action           = sm.GuessActionName           standardPNames |> tee(fun nns -> procReusults Action   nns)
+                    let state            = sm.GuessStateName            standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
+                    let device           = sm.GuessDeviceName           standardPNames |> tee(fun nns -> procReusults Device   nns)
+                    let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                    let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                    let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
 
                     noop()
                     { baseline with
                         Flows = flow
                         Actions = action
                         Devices = device
-                        //InputAuxNumber = splitNames.[1] |> GetAuxNumber
                         States = state
                         Modifiers = modifiers
+                        PrefixModifiers = prefixModifiers
+                        PostfixModifiers = postfixModifiers
                         SplitSemanticCategories = categories
                     }
                 | None -> baseline
 
+            [<Obsolete("Prefix, Postfix modifier 위치 지정")>]
             member x.Stringify(
                   ?withAction:bool
                 , ?withState:bool
@@ -263,6 +269,8 @@ module ExtractDeviceModule =
                     | Device   -> dup.Devices   <- guessedNames
                     | Flow     -> dup.Flows     <- guessedNames
                     | Modifier -> dup.Modifiers <- guessedNames
+                    | PrefixModifier -> dup.PrefixModifiers <- guessedNames
+                    | PostfixModifier -> dup.PostfixModifiers <- guessedNames
                     | SemanticCategory.State -> dup.States <- guessedNames
                     | Nope -> failwith "ERROR"
 

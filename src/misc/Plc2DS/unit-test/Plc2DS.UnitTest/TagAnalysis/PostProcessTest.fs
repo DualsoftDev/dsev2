@@ -21,46 +21,61 @@ module PostProcessTest =
                 semantic.DeviceNames |> contains "LOCK" |> ShouldBeTrue
                 semantic.States      |> contains "ERR"  |> ShouldBeTrue
 
-                si.States  |> exactlyOne |> toString === "~:ERR:~@5"
                 si.Devices |> exactlyOne |> toString === "~:LOCK:~@3"
-                si.Actions |> map toString === [| "~:ADV:~@2"; "~:CLP:1@4" |]
+                si.Actions |> map toString           === [| "~:ADV:~@2"; "~:CLP:1@4" |]
+                si.States  |> exactlyOne |> toString === "~:ERR:~@5"
                 si.Stringify(withDeviceNumber=true, withState=false) === "LOCK"
                 si.Stringify(withDeviceNumber=true, withState=true) === "LOCK_ERR"
 
             do
-                let multiples, nopes, uniqCats, showns, notShowns =
-                    let c = si.Categorize()
-                    c.Multiples, c.Nopes, c.Uniqs, c.Showns, c.NotShowns
-
-                nopes     === [|0|]
-                multiples === [| Action, [|2; 4|] |]
-                uniqCats  === [|
+                let c = si.Categorize()
+                c.Nopes     === [|0|]
+                c.Multiples === [| Action, [|2; 4|] |]
+                c.Uniqs  === [|
                     (1, SemanticCategory.Modifier)
                     (3, SemanticCategory.Device)
                     (5, SemanticCategory.State)
                 |]
 
-                showns === [| Modifier; Action; Device; SemanticCategory.State |]
-                notShowns === [| Flow |]
+                c.Showns             === [| Modifier; Action; Device; SemanticCategory.State |]
+                c.ShownsMandatory    === [| Action; Device |]
+                c.NotShownsMandatory === [| Flow |]
                 noop()
 
-            let semantic2 = semantic.Duplicate()
-            semantic2.PositionHints.Add(Flow,   { Min = 0;  Max = 40 })
-            semantic2.PositionHints.Add(Device, { Min = 20; Max = 80 })
-            semantic2.PositionHints.Add(Action, { Min = 50; Max = 100 })
-            semantic2.PositionHints.Add(SemanticCategory.State,  { Min = 70; Max = 100 })
-
             do
-                si.Flows === [||]
-                let si2 = si.FillEmptyPName(semantic2)
-                si2.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
+                let semantic2 = semantic.Duplicate()
+                semantic2.PositionHints.Add(Flow,   { Min = 0;  Max = 40 })
+                semantic2.PositionHints.Add(Device, { Min = 20; Max = 80 })
+                semantic2.PositionHints.Add(Action, { Min = 50; Max = 100 })
+                semantic2.PositionHints.Add(SemanticCategory.State,  { Min = 70; Max = 100 })
 
+                do
+                    si.Flows === [||]
+                    let si2 = si.FillEmptyPName(semantic2)
+                    si2.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
 
-            do
-                si.Modifiers  |> exactlyOne |> toString === "~:B:~@1"
-                let si2 = si.DecideModifiers(semantic2)
-                let xxx = si2.Categorize()
-                noop()
+                do
+                    si.Modifiers  |> exactlyOne |> toString === "~:B:~@1"
+                    let si2 = si.DecideModifiers(semantic2)
+                    let xxx = si2.Categorize()
+                    noop()
 
 
             noop()
+
+
+        [<Test>]
+        member _.``Fragmemnt`` () =
+            do
+                //let semantic = AnalTest.createSemantic()
+                let semantic = AnalTest.semantic
+                let si = AnalyzedNameSemantic.Create("S301RH_B_ADV_LOCK_CLAMP1_ERR", semantic)
+                si.Flows === [||]
+
+            do
+                let semantic = AnalTest.createSemantic()
+
+                semantic.FlowNameFragments.Add("RH") |> ignore  // "RH" 는 Flow name fragments 로 등록
+
+                let si = AnalyzedNameSemantic.Create("S301RH_B_ADV_LOCK_CLAMP1_ERR", semantic)
+                si.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
