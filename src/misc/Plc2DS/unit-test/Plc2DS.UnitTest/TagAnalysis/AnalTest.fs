@@ -66,7 +66,7 @@ module AnalTest =
     "MX": {
       "SplitOnCamelCase": true,
       "DeviceNames": [ "BUFFER" ],
-      "NameSeparators": [ "_", ";", " ", "\\\\t", ".", ",", ":" ],
+      "NameSeparators": [ "_", ";", " ", "\t", ".", ",", ":" ],
     }
   }
 }

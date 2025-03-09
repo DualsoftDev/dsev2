@@ -27,21 +27,22 @@ module PostProcessTest =
                 si.Stringify(withDeviceNumber=true, withState=false) === "LOCK"
                 si.Stringify(withDeviceNumber=true, withState=true) === "LOCK_ERR"
 
-            let multiples, nopes, uniqCats, showns, notShowns =
-                let c = si.Categorize()
-                c.Multiples, c.Nopes, c.Uniqs, c.Showns, c.NotShowns
+            do
+                let multiples, nopes, uniqCats, showns, notShowns =
+                    let c = si.Categorize()
+                    c.Multiples, c.Nopes, c.Uniqs, c.Showns, c.NotShowns
 
-            nopes     === [|0|]
-            multiples === [| Action, [|2; 4|] |]
-            uniqCats  === [|
-                (1, SemanticCategory.Modifier)
-                (3, SemanticCategory.Device)
-                (5, SemanticCategory.State)
-            |]
+                nopes     === [|0|]
+                multiples === [| Action, [|2; 4|] |]
+                uniqCats  === [|
+                    (1, SemanticCategory.Modifier)
+                    (3, SemanticCategory.Device)
+                    (5, SemanticCategory.State)
+                |]
 
-            showns === [| Modifier; Action; Device; SemanticCategory.State |]
-            notShowns === [| Flow |]
-            noop()
+                showns === [| Modifier; Action; Device; SemanticCategory.State |]
+                notShowns === [| Flow |]
+                noop()
 
             let semantic2 = semantic.Duplicate()
             semantic2.PositionHints.Add(Flow,   { Min = 0;  Max = 40 })
@@ -49,7 +50,17 @@ module PostProcessTest =
             semantic2.PositionHints.Add(Action, { Min = 50; Max = 100 })
             semantic2.PositionHints.Add(SemanticCategory.State,  { Min = 70; Max = 100 })
 
-            si.Flows === [||]
-            let si2 = si.FillEmptyPName(semantic2)
-            si2.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
+            do
+                si.Flows === [||]
+                let si2 = si.FillEmptyPName(semantic2)
+                si2.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
+
+
+            do
+                si.Modifiers  |> exactlyOne |> toString === "~:B:~@1"
+                let si2 = si.DecideModifiers(semantic2)
+                let xxx = si2.Categorize()
+                noop()
+
+
             noop()

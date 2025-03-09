@@ -23,7 +23,7 @@ module ExtractDeviceModule =
         MutualResetTuples: Call[][]
     }
 
-    type PositionHint with
+    type Range with
 
 
         (*
@@ -214,6 +214,7 @@ module ExtractDeviceModule =
                 let uniqs: PIndex[] =
                     let nopesOrMultiples = nopes @ (multiples |> collect snd)
                     [|0 .. x.SplitNames.Length - 1 |] |> except nopesOrMultiples
+
                 let uniqCats: (PIndex * SemanticCategory)[] =
                     uniqs |> map (fun i -> i, x.SplitSemanticCategories[i])
 
@@ -230,20 +231,24 @@ module ExtractDeviceModule =
 
                 { Multiples = multiples; Nopes = nopes; Uniqs = uniqCats; Showns = shownCategories; NotShowns = notShownCategories}
 
+            /// PName 중에서 category 할당 안된 항목 채우기.  Semantic.PositinalHints 참고하여 위치 기반으로 항목 채움
+            /// 채울 수 없으면 원본 그대로 반환.  변경되면 사본 반환
             member x.FillEmptyPName(semantic:Semantic): AnalyzedNameSemantic =
                 let cs = x.Categorize()
                 // cs.Multiples, cs.Nopes, cs.Uniqs, cs.Showns, cs.NotShowns
 
                 let scores =
-                    [|
+                    [
                         for idx in cs.Nopes do
-                            for (KeyValue(k, v)) in semantic.PositionHints do
-                                idx, k, v.CalculateScore(idx, x.SplitNames.Length)
-                    |] |> filter (fun (_, _, score) -> score > 0.0)
+                            for (KeyValue(cat, range)) in semantic.PositionHints do
+                                let score = range.CalculateScore(idx, x.SplitNames.Length)
+                                idx, cat, score
+                    ] |> filter (fun (_, _, score) -> score > 0.0)
                        |> sortByDescending Tuple.third
 
-                match scores |> Array.tryExactlyOne with
-                | Some (idx, cat, score) ->
+                match scores with
+                | [] -> x
+                | (idx, cat, score) :: _  ->
                     let dup =
                         let ssc = Array.copy x.SplitSemanticCategories
                         ssc[idx] <- cat
@@ -263,7 +268,19 @@ module ExtractDeviceModule =
 
                     dup
 
-                | None -> x
+            member x.DecideModifiers(semantic:Semantic): AnalyzedNameSemantic =
+                let preferPrefixModifier = semantic.PreferPrefixModifier
+                //for (idx, _) in x.SplitSemanticCategories.Indexed().Filter(snd >> ((=) Modifier)) do
+                //    match preferPrefixModifier with
+                //    | true when idx
+                //    noop()
+
+                x
+
+            /// PName 중에서 복수 category 할당 된 항목 처리
+            member x.Disambiguate(semantic:Semantic): AnalyzedNameSemantic =
+                let cs = x.Categorize()
+                x
 
             member x.PostProcess(semantic:AppSettings): AnalyzedNameSemantic = x
 

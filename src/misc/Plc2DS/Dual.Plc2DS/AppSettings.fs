@@ -12,21 +12,25 @@ open Dual.Common.Core
 [<AutoOpen>]
 module AppSettingsModule =
 
+    /// StringComparer.OrdinalIgnoreCase
+    let private ic = StringComparer.OrdinalIgnoreCase
+
     type WordSet = HashSet<string>
     type Words = string[]
 
-    let private ignoreCase = StringComparer.OrdinalIgnoreCase
-
-    type PositionHint = { Min: int; Max: int }
+    /// 범위 지정: 백분율 Min/Max : [0..100]
+    type Range = { Min: int; Max: int }
 
     /// Tag 기반 semantic 정보 추출용
     [<DataContract>]
     type Semantic() =
         [<DataMember>] member val SplitOnCamelCase = false with get, set
+        /// Modifier 가 앞에 붙는 걸 선호.  default 는 false 로 뒤에 붙는 걸 선호.  e.g "STN3_B_CYL1" => STN3_B
+        [<DataMember>] member val PreferPrefixModifier = false with get, set
         /// 행위 keyword. e.g "ADV", "RET",
-        [<DataMember>] member val Actions = WordSet(ignoreCase) with get, set
+        [<DataMember>] member val Actions = WordSet(ic) with get, set
         /// 상태 keyword. e.g "ERR"
-        [<DataMember>] member val States = WordSet(ignoreCase) with get, set
+        [<DataMember>] member val States = WordSet(ic) with get, set
         /// Mutual Reset Pairs. e.g ["ADV"; "RET"]
         [<DataMember>] member val MutualResetTuples = ResizeArray<WordSet> [||] with get, set
         /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
@@ -34,17 +38,17 @@ module AppSettingsModule =
         [<DataMember>] member val DialectsDTO:Words[] = [||] with get, set
 
         /// 표준어 사전: Dialect => Standard
-        [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ignoreCase) with get, set
+        [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
         [<DataMember>] member val NameSeparators = ResizeArray ["_"] with get, set
 
-        [<DataMember>] member val FlowNames   = WordSet(ignoreCase) with get, set
-        [<DataMember>] member val DeviceNames = WordSet(ignoreCase) with get, set
-        [<DataMember>] member val Modifiers   = WordSet(ignoreCase) with get, set
+        [<DataMember>] member val FlowNames   = WordSet(ic) with get, set
+        [<DataMember>] member val DeviceNames = WordSet(ic) with get, set
+        [<DataMember>] member val Modifiers   = WordSet(ic) with get, set
 
 
         [<JsonProperty("PositionHints")>] // JSON에서는 "Dialects"라는 이름으로 저장
-        [<DataMember>] member val PositionHintsDTO = Dictionary<string, PositionHint>() with get, set
-        [<JsonIgnore>] member val PositionHints    = Dictionary<SemanticCategory, PositionHint>() with get, set
+        [<DataMember>] member val PositionHintsDTO = Dictionary<string, Range>() with get, set
+        [<JsonIgnore>] member val PositionHints    = Dictionary<SemanticCategory, Range>() with get, set
 
         [<OnDeserialized>]
         member x.OnDeserializedMethod(context: StreamingContext) =
@@ -53,8 +57,9 @@ module AppSettingsModule =
                 let dialects = ds[1..]
                 dialects |> iter (fun d -> x.Dialects.Add(d, std))
 
-            if x.NameSeparators.Any(fun sep -> sep.Length <> 1) then
-                logWarn "Invalid NameSeparators"
+            match x.NameSeparators.TryFind(fun sep -> sep.Length <> 1) with
+            | Some sep -> failwith $"Invalid NameSeparators: {sep}"
+            | None -> ()
 
 
             x.PositionHintsDTO |> iter (fun (KeyValue(k, v)) ->
@@ -66,29 +71,29 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
-            y.Actions     <- WordSet(x.Actions, ignoreCase)
-            y.States      <- WordSet(x.States, ignoreCase)
-            y.FlowNames   <- WordSet(x.FlowNames, ignoreCase)
-            y.DeviceNames <- WordSet(x.DeviceNames, ignoreCase)
-            y.Modifiers   <- WordSet(x.Modifiers, ignoreCase)
-            y.Dialects    <- Dictionary(x.Dialects, ignoreCase)
+            y.Actions     <- WordSet(x.Actions, ic)
+            y.States      <- WordSet(x.States, ic)
+            y.FlowNames   <- WordSet(x.FlowNames, ic)
+            y.DeviceNames <- WordSet(x.DeviceNames, ic)
+            y.Modifiers   <- WordSet(x.Modifiers, ic)
+            y.Dialects    <- Dictionary(x.Dialects, ic)
             y.PositionHints <- Dictionary(x.PositionHints)
-            y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ignoreCase)) |> ResizeArray
+            y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
             y.NameSeparators <- x.NameSeparators.Distinct() |> ResizeArray
             y
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
-            x.Actions.UnionWith(addOn.Actions)
-            x.States.UnionWith(addOn.States)
-            x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
-            x.FlowNames.UnionWith(addOn.FlowNames)
+            x.Actions    .UnionWith(addOn.Actions)
+            x.States     .UnionWith(addOn.States)
+            x.FlowNames  .UnionWith(addOn.FlowNames)
             x.DeviceNames.UnionWith(addOn.DeviceNames)
-            x.Modifiers.UnionWith(addOn.Modifiers)
+            x.Modifiers  .UnionWith(addOn.Modifiers)
+            x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
 
             // x.MutualResetTuples 에 addOn.MutualResetTuples 의 항목을 deep copy 해서 추가
             addOn.MutualResetTuples
-            |> Seq.map (fun set -> WordSet(set, ignoreCase))
+            |> Seq.map (fun set -> WordSet(set, ic))
             |> Seq.iter (fun set -> x.MutualResetTuples.Add(set))
 
             //x.Dialects.AddRange(addOn.Dialects)
@@ -97,24 +102,24 @@ module AppSettingsModule =
 
         member x.Override(replace:Semantic): unit =
             if replace.Actions.NonNullAny() then
-                x.Actions <- WordSet(replace.Actions, ignoreCase)
+                x.Actions <- WordSet(replace.Actions, ic)
             if replace.States.NonNullAny() then
-                x.States <- WordSet(replace.States, ignoreCase)
-            if replace.MutualResetTuples.NonNullAny() then
-                x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ignoreCase)) |> ResizeArray
+                x.States <- WordSet(replace.States, ic)
             if replace.Dialects.NonNullAny() then
-                x.Dialects <- Dictionary(replace.Dialects, ignoreCase)
+                x.Dialects <- Dictionary(replace.Dialects, ic)
             if replace.PositionHints.NonNullAny() then
                 x.PositionHints <- Dictionary(replace.PositionHints)
             if replace.NameSeparators.NonNullAny() then
                 x.NameSeparators <- ResizeArray(replace.NameSeparators.Distinct())
             if replace.FlowNames.NonNullAny() then
-                x.FlowNames <- WordSet(replace.FlowNames, ignoreCase)
+                x.FlowNames <- WordSet(replace.FlowNames, ic)
             if replace.DeviceNames.NonNullAny() then
-                x.DeviceNames <- WordSet(replace.DeviceNames, ignoreCase)
+                x.DeviceNames <- WordSet(replace.DeviceNames, ic)
             if replace.Modifiers.NonNullAny() then
-                x.Modifiers <- WordSet(replace.Modifiers, ignoreCase)
+                x.Modifiers <- WordSet(replace.Modifiers, ic)
 
+            if replace.MutualResetTuples.NonNullAny() then
+                x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
 
     /// Vendor 별 Tag Semantic 별도 적용 용도
     type Semantics = Dictionary<string, Semantic>
@@ -165,7 +170,7 @@ module AppSettingsModule =
         member x.OptPostfixNumber = optPostfixNumber
 
         /// PName 의 position
-        member val OptPosition:int option = None with get, set
+        member val OptPosition:PIndex option = None with get, set
 
         static member Create(name, ?optPrefixNumber:int, ?optPostfixNumber:int) =
             NameWithNumber(name, optPrefixNumber, optPostfixNumber)
@@ -193,14 +198,6 @@ module AppSettingsModule =
             match x.Dialects.TryGet(name) with
             | Some standard -> NameWithNumber(standard, preNumber, postNumber)
             | None -> NameWithNumber(name, preNumber, postNumber)
-
-        ///// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
-        //[<Obsolete("추후 고려")>]
-        //member private x.GuessName(targetSet: WordSet, standardPNames: NameWithNumbers): GuessResult =
-        //    // 일단 match 되는 하나라도 있으면 바로 리턴.. 추후에는 갯수와 위치 등을 고려해야 함
-        //    xxx
-        //    standardPNames |> Array.tryFindIndex(fun (pre, n, post) -> targetSet.Contains n)
-        //    |> map (fun i -> standardPNames[i], i)
 
         /// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
         member private x.GuessNames(targetSet: WordSet, standardPNames: NameWithNumbers): NameWithNumber[] =
