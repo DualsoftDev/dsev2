@@ -75,17 +75,18 @@ module ExtractDeviceModule =
         }
         type AnalyzedNameSemantic with
             /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  기본 처리만 수행
-            static member internal CreateDefault(name:string, ?semantics:Semantic): AnalyzedNameSemantic =
+            static member internal CreateDefault(name:string, semantics:Semantic): AnalyzedNameSemantic =
+                let sm = semantics
                 // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
                 let splitCamelCase (input: string) =
                     let sep = "<_sep_>"
                     Regex.Replace(input, "(?<!^)([A-Z])", $"{sep}$1") // 첫 글자는 제외하고 대문자 앞에 separator 추가
                         .Split(sep)
-                let isSplitOnCamelCase = semantics.Map(_.SplitOnCamelCase) |? false
-                let splitter (x:string) = if isSplitOnCamelCase then splitCamelCase x else [|x|]
+
+                let splitter (x:string) = if sm.SplitOnCamelCase then splitCamelCase x else [|x|]
 
                 let splitNames =
-                    let delimiter:string[] = semantics.Map(_.NameSeparators.ToArray()) |? [|"_"|]
+                    let delimiter:string[] = sm.NameSeparators.ToArray()
                     name.Split(delimiter, StringSplitOptions.RemoveEmptyEntries)
                     |> bind splitter
                     |> map _.ToUpper()
@@ -95,38 +96,36 @@ module ExtractDeviceModule =
                         Flows = [||]; Actions = [||]; Devices = [||]; States = [||]
                         Modifiers = [||]; PrefixModifiers = [||]; PostfixModifiers = [||]
                     }
-                match semantics with
-                | Some sm ->
-                    let standardPNames = baseline.SplitNames |> map sm.StandardizePName
-
-                    let categories = Array.copy baseline.SplitSemanticCategories
-
-                    let procReusults (cat:SemanticCategory) (nns:NameWithNumber[]) =
-                        for nn in nns do
-                            categories[nn.OptPosition.Value] <- cat
 
 
-                    let flow             = sm.GuessFlowName             standardPNames |> tee(fun nns -> procReusults Flow     nns)
-                    let action           = sm.GuessActionName           standardPNames |> tee(fun nns -> procReusults Action   nns)
-                    let state            = sm.GuessStateName            standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
-                    let device           = sm.GuessDeviceName           standardPNames |> tee(fun nns -> procReusults Device   nns)
-                    let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults Modifier nns)
-                    let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults Modifier nns)
-                    let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                let standardPNames = baseline.SplitNames |> map sm.StandardizePName
 
-                    noop()
-                    { baseline with
-                        Flows = flow
-                        Actions = action
-                        Devices = device
-                        States = state
-                        Modifiers = modifiers
-                        PrefixModifiers = prefixModifiers
-                        PostfixModifiers = postfixModifiers
-                        SplitSemanticCategories = categories
-                    }
-                | None -> baseline
+                let categories = Array.copy baseline.SplitSemanticCategories
 
+                let procReusults (cat:SemanticCategory) (nns:NameWithNumber[]) =
+                    for nn in nns do
+                        categories[nn.OptPosition.Value] <- cat
+
+
+                let flow             = sm.GuessFlowName             standardPNames |> tee(fun nns -> procReusults Flow     nns)
+                let action           = sm.GuessActionName           standardPNames |> tee(fun nns -> procReusults Action   nns)
+                let state            = sm.GuessStateName            standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
+                let device           = sm.GuessDeviceName           standardPNames |> tee(fun nns -> procReusults Device   nns)
+                let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
+
+                noop()
+                { baseline with
+                    Flows = flow
+                    Actions = action
+                    Devices = device
+                    States = state
+                    Modifiers = modifiers
+                    PrefixModifiers = prefixModifiers
+                    PostfixModifiers = postfixModifiers
+                    SplitSemanticCategories = categories
+                }
             /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  부가 처리 수행
             [<Obsolete("Prefix, Postfix modifier 위치 지정")>]
             static member Create(name:string, semantics:Semantic): AnalyzedNameSemantic =
@@ -191,7 +190,7 @@ module ExtractDeviceModule =
                 let cs = x.Categorize()
                 x
 
-            member x.PostProcess(semantic:AppSettings): AnalyzedNameSemantic = x
+            member x.PostProcess(semantic:Semantic): AnalyzedNameSemantic = x
 
             member x.Categorize() :CategorySummary =
                 // x.SplitSemanticCategories 의 SemanticCategory 별 indices 를 반환

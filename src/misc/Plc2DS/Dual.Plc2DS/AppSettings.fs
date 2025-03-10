@@ -244,11 +244,13 @@ module AppSettingsModule =
         // standardPNames : 표준화된 부분(*P*artial) 이름
         /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessFlowName(standardPNames: NameWithNumbers): NameWithNumber[] =
-            x.GuessNames(x.FlowNames, standardPNames) |?? (fun () -> x.GuessWithFragment(x.FlowNameFragments, standardPNames))
+            x.GuessNames(x.FlowNames, standardPNames)
+            |?? (fun () -> x.GuessWithFragment(x.FlowNameFragments, standardPNames))
 
         /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessDeviceName(standardPNames: NameWithNumbers): NameWithNumber[] =
-            x.GuessNames(x.DeviceNames, standardPNames) |?? (fun () -> x.GuessWithFragment(x.DeviceNameFragments, standardPNames))
+            x.GuessNames(x.DeviceNames, standardPNames)
+            |?? (fun () -> x.GuessWithFragment(x.DeviceNameFragments, standardPNames))
 
         /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessActionName(standardPNames: NameWithNumbers): NameWithNumber[] =
