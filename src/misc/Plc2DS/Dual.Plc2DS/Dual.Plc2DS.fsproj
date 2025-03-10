@@ -16,6 +16,7 @@
     <Compile Include="CsvReader.fs" />
     <Compile Include="AppSettings.fs" />
     <Compile Include="ExtractDevice.fs" />
+    <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
 
   <ItemGroup>

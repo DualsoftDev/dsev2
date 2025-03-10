@@ -5,6 +5,7 @@
 		<GenerateProgramFile>false</GenerateProgramFile>
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
+		<AssemblyOriginatorKeyFile>$(SolutionDir)\dualsoft.snk</AssemblyOriginatorKeyFile>
 	</PropertyGroup>
 
 	<ItemGroup>

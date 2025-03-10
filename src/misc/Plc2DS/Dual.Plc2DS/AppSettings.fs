@@ -187,14 +187,14 @@ module AppSettingsModule =
 
     type NameWithNumber(name: string, optPrefixNumber:int option, optPostfixNumber:int option) =
 
-        member x.OriginalName = name        // 대소문자 변환 전의 이름
+        member x.CaseSensitiveName = name        // 대소문자 변환 전의 이름
         member x.OptPrefixNumber = optPrefixNumber
         member x.OptPostfixNumber = optPostfixNumber
 
         /// PName 의 position
         member val OptPosition:PIndex option = None with get, set
 
-        member x.Name = x.OriginalName.ToUpper()
+        member x.Name = x.CaseSensitiveName.ToUpper()
         override x.ToString (): string =
             let o2s (n:int option) = n |> map toString |? "~"
             $"{o2s x.OptPrefixNumber}:{x.Name}:{o2s x.OptPostfixNumber}@{x.OptPosition.Value}"
