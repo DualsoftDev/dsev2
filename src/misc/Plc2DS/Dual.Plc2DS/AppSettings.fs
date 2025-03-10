@@ -28,10 +28,6 @@ module AppSettingsModule =
         [<DataMember>] member val SplitOnCamelCase = false with get, set
         /// Modifier 가 앞에 붙는 걸 선호.  default 는 false 로 뒤에 붙는 걸 선호.  e.g "STN3_B_CYL1" => STN3_B
         [<DataMember>] member val PreferPrefixModifier = false with get, set
-        /// 행위 keyword. e.g "ADV", "RET",
-        [<DataMember>] member val Actions = WordSet(ic) with get, set
-        /// 상태 keyword. e.g "ERR"
-        [<DataMember>] member val States = WordSet(ic) with get, set
         /// Mutual Reset Pairs. e.g ["ADV"; "RET"]
         [<DataMember>] member val MutualResetTuples = ResizeArray<WordSet> [||] with get, set
         /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
@@ -44,9 +40,15 @@ module AppSettingsModule =
 
         [<DataMember>] member val Flows            = WordSet(ic) with get, set
         [<DataMember>] member val FlowPatterns     = WordSet(ic) with get, set
-        [<DataMember>] member val FlowFragments    = WordSet(ic) with get, set
         [<DataMember>] member val Devices          = WordSet(ic) with get, set
-        [<DataMember>] member val DeviceFragments  = WordSet(ic) with get, set
+        [<DataMember>] member val DevicePatterns   = WordSet(ic) with get, set
+        /// 행위 keyword. e.g "ADV", "RET",
+        [<DataMember>] member val Actions          = WordSet(ic) with get, set
+        [<DataMember>] member val ActionPatterns   = WordSet(ic) with get, set
+
+
+        /// 상태 keyword. e.g "ERR"
+        [<DataMember>] member val States           = WordSet(ic) with get, set
         [<DataMember>] member val Modifiers        = WordSet(ic) with get, set
         [<DataMember>] member val PrefixModifiers  = WordSet(ic) with get, set
         [<DataMember>] member val PostfixModifiers = WordSet(ic) with get, set
@@ -81,8 +83,8 @@ module AppSettingsModule =
             y.States            <- WordSet(x.States, ic)
             y.Flows             <- WordSet(x.Flows, ic)
             y.Devices           <- WordSet(x.Devices, ic)
-            y.FlowFragments     <- WordSet(x.FlowFragments, ic)
-            y.DeviceFragments   <- WordSet(x.DeviceFragments, ic)
+            y.FlowPatterns      <- WordSet(x.FlowPatterns, ic)
+            y.DevicePatterns    <- WordSet(x.DevicePatterns, ic)
             y.Modifiers         <- WordSet(x.Modifiers, ic)
             y.PrefixModifiers   <- WordSet(x.PrefixModifiers, ic)
             y.PostfixModifiers  <- WordSet(x.PostfixModifiers, ic)
@@ -98,8 +100,8 @@ module AppSettingsModule =
             x.States          .UnionWith(addOn.States)
             x.Flows           .UnionWith(addOn.Flows)
             x.Devices         .UnionWith(addOn.Devices)
-            x.FlowFragments   .UnionWith(addOn.FlowFragments)
-            x.DeviceFragments .UnionWith(addOn.DeviceFragments)
+            x.FlowPatterns    .UnionWith(addOn.FlowPatterns)
+            x.DevicePatterns  .UnionWith(addOn.DevicePatterns)
             x.Modifiers       .UnionWith(addOn.Modifiers)
             x.PrefixModifiers .UnionWith(addOn.PrefixModifiers)
             x.PostfixModifiers.UnionWith(addOn.PostfixModifiers)
@@ -130,10 +132,10 @@ module AppSettingsModule =
             if replace.Devices.NonNullAny() then
                 x.Devices <- WordSet(replace.Devices, ic)
 
-            if replace.FlowFragments.NonNullAny() then
-                x.FlowFragments <- WordSet(replace.FlowFragments, ic)
-            if replace.DeviceFragments.NonNullAny() then
-                x.DeviceFragments <- WordSet(replace.DeviceFragments, ic)
+            if replace.FlowPatterns.NonNullAny() then
+                x.FlowPatterns <- WordSet(replace.FlowPatterns, ic)
+            if replace.DevicePatterns.NonNullAny() then
+                x.DevicePatterns <- WordSet(replace.DevicePatterns, ic)
 
             if replace.Modifiers.NonNullAny() then
                 x.Modifiers <- WordSet(replace.Modifiers, ic)
@@ -244,24 +246,14 @@ module AppSettingsModule =
                         nn
             |]
 
-        member private x.GuessWithFragment(fragments: WordSet, standardPNames: NwNs): NwNs =
-            [|
-                for (i, nn) in standardPNames.Indexed() do
-                    if fragments.Any(fun f -> nn.PName.Contains(f)) then
-                        nn.OptPosition <- Some i
-                        nn
-            |]
-
         // standardPNames : 표준화된 부분(*P*artial) 이름
         /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessFlowNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.Flows, standardPNames)
-            |?? (fun () -> x.GuessWithFragment(x.FlowFragments, standardPNames))
 
         /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessDeviceNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.Devices, standardPNames)
-            |?? (fun () -> x.GuessWithFragment(x.DeviceFragments, standardPNames))
 
         /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
         member x.GuessActionNames(standardPNames: NwNs): NwNs =
@@ -286,9 +278,19 @@ module AppSettingsModule =
 
 
 
+        member x.ExpandDialects(targetSet:WordSet) =
+            [|
+                for w in targetSet do
+                    yield w
+                    for (KeyValue(dialect, standard)) in x.Dialects do
+                        if w = standard then
+                            yield dialect
+            |]
+
+
         /// 공통 word to word 직접 검색 함수: name 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
         member private x.TryMatchName(targetSet: WordSet, name:string): NameMatchResult option =
-            targetSet
+            x.ExpandDialects(targetSet)
             |> Seq.tryPick (fun n ->
                 match name.Split(n) |> List.ofArray with
                 | [prolog; epilog] -> Some { Name = n; Prolog = prolog; Epilog = epilog }

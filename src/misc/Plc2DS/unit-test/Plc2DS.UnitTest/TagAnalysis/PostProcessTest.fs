@@ -65,7 +65,7 @@ module PostProcessTest =
 
 
         [<Test>]
-        member _.``Fragment`` () =
+        member _.``Pattern`` () =
             do
                 //let semantic = AnalTest.createSemantic()
                 let semantic = AnalTest.semantic
@@ -75,7 +75,7 @@ module PostProcessTest =
             do
                 let semantic = AnalTest.createSemantic()
 
-                semantic.FlowFragments.Add("RH") |> ignore  // "RH" 는 Flow name fragments 로 등록
+                semantic.FlowPatterns.Add(@"\w+RH") |> ignore  // "RH" 는 Flow name fragments 로 등록
 
                 let si = semantic.CreateDefault("S301RH_B_ADV_LOCK_CLAMP1_ERR")
                 si.Flows  |> exactlyOne |> toString === "~:S301RH:~@0"
