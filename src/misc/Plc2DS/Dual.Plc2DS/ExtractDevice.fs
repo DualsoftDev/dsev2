@@ -73,19 +73,27 @@ module ExtractDeviceModule =
             mutable PrefixModifiers  : NameWithNumber[]
             mutable PostfixModifiers : NameWithNumber[]
         }
-        type AnalyzedNameSemantic with
-            /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  기본 처리만 수행
-            static member internal CreateDefault(name:string, semantics:Semantic): AnalyzedNameSemantic =
-                let sm = semantics
-                // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
-                let splitCamelCase (input: string) =
-                    let sep = "<_sep_>"
-                    Regex.Replace(input, "(?<!^)([A-Z])", $"{sep}$1") // 첫 글자는 제외하고 대문자 앞에 separator 추가
-                        .Split(sep)
 
-                let splitter (x:string) = if sm.SplitOnCamelCase then splitCamelCase x else [|x|]
+        type Semantic with
+            /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  기본 처리만 수행
+            member internal sm.CreateDefault(name:string): AnalyzedNameSemantic =
+                // flow, device 에 대한 brute force matching 우선
+                let flow = sm.TryMatchFlowName name
+                let device = sm.TryMatchDeviceName name
+                let action = sm.TryMatchActionName name
+
+
+
 
                 let splitNames =
+                    // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
+                    let splitCamelCase (input: string) =
+                        let sep = "<_sep_>"
+                        Regex.Replace(input, "(?<!^)([A-Z])", $"{sep}$1") // 첫 글자는 제외하고 대문자 앞에 separator 추가
+                            .Split(sep)
+
+                    let splitter (x:string) = if sm.SplitOnCamelCase then splitCamelCase x else [|x|]
+
                     let delimiter:string[] = sm.NameSeparators.ToArray()
                     name.Split(delimiter, StringSplitOptions.RemoveEmptyEntries)
                     |> bind splitter
@@ -98,7 +106,7 @@ module ExtractDeviceModule =
                     }
 
 
-                let standardPNames = baseline.SplitNames |> map sm.StandardizePName
+                let standardPNames = splitNames |> map sm.StandardizePName
 
                 let categories = Array.copy baseline.SplitSemanticCategories
 
@@ -107,31 +115,41 @@ module ExtractDeviceModule =
                         categories[nn.OptPosition.Value] <- cat
 
 
-                let flow             = sm.GuessFlowName             standardPNames |> tee(fun nns -> procReusults Flow     nns)
-                let action           = sm.GuessActionName           standardPNames |> tee(fun nns -> procReusults Action   nns)
-                let state            = sm.GuessStateName            standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
-                let device           = sm.GuessDeviceName           standardPNames |> tee(fun nns -> procReusults Device   nns)
+                let flows            = sm.GuessFlowNames            standardPNames |> tee(fun nns -> procReusults Flow     nns)
+                let actions          = sm.GuessActionNames          standardPNames |> tee(fun nns -> procReusults Action   nns)
+                let states           = sm.GuessStateNames           standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
+                let devices          = sm.GuessDeviceNames          standardPNames |> tee(fun nns -> procReusults Device   nns)
                 let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults Modifier nns)
                 let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults Modifier nns)
                 let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
 
                 noop()
                 { baseline with
-                    Flows = flow
-                    Actions = action
-                    Devices = device
-                    States = state
+                    Flows = flows
+                    Actions = actions
+                    Devices = devices
+                    States = states
                     Modifiers = modifiers
                     PrefixModifiers = prefixModifiers
                     PostfixModifiers = postfixModifiers
                     SplitSemanticCategories = categories
                 }
+
             /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  부가 처리 수행
             [<Obsolete("Prefix, Postfix modifier 위치 지정")>]
-            static member Create(name:string, semantics:Semantic): AnalyzedNameSemantic =
-                AnalyzedNameSemantic.CreateDefault(name, semantics)
-                    .FillEmptyPName(semantics)
-                    .DecideModifiers(semantics)
+            member sm.Create(name:string): AnalyzedNameSemantic =
+                sm.CreateDefault(name)
+                    .FillEmptyPName(sm)
+                    .DecideModifiers(sm)
+
+            member sm.ExtractDevices(plcTags:#IPlcTag[]): Device[] =
+                let anals:AnalyzedNameSemantic[] =
+                    plcTags
+                    |> map (fun t ->
+                        sm.CreateDefault(t.GetAnalysisField()))
+                [||]
+
+        type AnalyzedNameSemantic with
 
             /// PName 중에서 category 할당 안된 항목 채우기.  Semantic.PositinalHints 참고하여 위치 기반으로 항목 채움
             /// 채울 수 없으면 원본 그대로 반환.  변경되면 사본 반환
@@ -277,10 +295,3 @@ module ExtractDeviceModule =
 
 
 
-    type Builder =
-        static member ExtractDevices(plcTags:#IPlcTag[], semantics:Semantic): Device[] =
-            let anals:AnalyzedNameSemantic[] =
-                plcTags
-                |> map (fun t ->
-                    AnalyzedNameSemantic.CreateDefault(t.GetAnalysisField(), semantics))
-            [||]

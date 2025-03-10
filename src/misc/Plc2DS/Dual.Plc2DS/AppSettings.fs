@@ -8,6 +8,7 @@ open Newtonsoft.Json
 
 open Dual.Common.Core.FS
 open Dual.Common.Core
+open System.Text.RegularExpressions
 
 [<AutoOpen>]
 module AppSettingsModule =
@@ -41,13 +42,14 @@ module AppSettingsModule =
         [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
         [<DataMember>] member val NameSeparators = ResizeArray ["_"] with get, set
 
-        [<DataMember>] member val FlowNames           = WordSet(ic) with get, set
-        [<DataMember>] member val FlowNameFragments   = WordSet(ic) with get, set
-        [<DataMember>] member val DeviceNames         = WordSet(ic) with get, set
-        [<DataMember>] member val DeviceNameFragments = WordSet(ic) with get, set
-        [<DataMember>] member val Modifiers           = WordSet(ic) with get, set
-        [<DataMember>] member val PrefixModifiers     = WordSet(ic) with get, set
-        [<DataMember>] member val PostfixModifiers    = WordSet(ic) with get, set
+        [<DataMember>] member val Flows            = WordSet(ic) with get, set
+        [<DataMember>] member val FlowPatterns     = WordSet(ic) with get, set
+        [<DataMember>] member val FlowFragments    = WordSet(ic) with get, set
+        [<DataMember>] member val Devices          = WordSet(ic) with get, set
+        [<DataMember>] member val DeviceFragments  = WordSet(ic) with get, set
+        [<DataMember>] member val Modifiers        = WordSet(ic) with get, set
+        [<DataMember>] member val PrefixModifiers  = WordSet(ic) with get, set
+        [<DataMember>] member val PostfixModifiers = WordSet(ic) with get, set
 
 
         [<JsonProperty("PositionHints")>] // JSON에서는 "Dialects"라는 이름으로 저장
@@ -75,32 +77,32 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
-            y.Actions             <- WordSet(x.Actions, ic)
-            y.States              <- WordSet(x.States, ic)
-            y.FlowNames           <- WordSet(x.FlowNames, ic)
-            y.DeviceNames         <- WordSet(x.DeviceNames, ic)
-            y.FlowNameFragments   <- WordSet(x.FlowNameFragments, ic)
-            y.DeviceNameFragments <- WordSet(x.DeviceNameFragments, ic)
-            y.Modifiers           <- WordSet(x.Modifiers, ic)
-            y.PrefixModifiers     <- WordSet(x.PrefixModifiers, ic)
-            y.PostfixModifiers    <- WordSet(x.PostfixModifiers, ic)
-            y.Dialects            <- Dictionary(x.Dialects, ic)
-            y.PositionHints       <- Dictionary(x.PositionHints)
+            y.Actions           <- WordSet(x.Actions, ic)
+            y.States            <- WordSet(x.States, ic)
+            y.Flows             <- WordSet(x.Flows, ic)
+            y.Devices           <- WordSet(x.Devices, ic)
+            y.FlowFragments     <- WordSet(x.FlowFragments, ic)
+            y.DeviceFragments   <- WordSet(x.DeviceFragments, ic)
+            y.Modifiers         <- WordSet(x.Modifiers, ic)
+            y.PrefixModifiers   <- WordSet(x.PrefixModifiers, ic)
+            y.PostfixModifiers  <- WordSet(x.PostfixModifiers, ic)
+            y.Dialects          <- Dictionary(x.Dialects, ic)
+            y.PositionHints     <- Dictionary(x.PositionHints)
             y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
             y.NameSeparators <- x.NameSeparators.Distinct() |> ResizeArray
             y
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
-            x.Actions            .UnionWith(addOn.Actions)
-            x.States             .UnionWith(addOn.States)
-            x.FlowNames          .UnionWith(addOn.FlowNames)
-            x.DeviceNames        .UnionWith(addOn.DeviceNames)
-            x.FlowNameFragments  .UnionWith(addOn.FlowNameFragments)
-            x.DeviceNameFragments.UnionWith(addOn.DeviceNameFragments)
-            x.Modifiers          .UnionWith(addOn.Modifiers)
-            x.PrefixModifiers    .UnionWith(addOn.PrefixModifiers)
-            x.PostfixModifiers   .UnionWith(addOn.PostfixModifiers)
+            x.Actions         .UnionWith(addOn.Actions)
+            x.States          .UnionWith(addOn.States)
+            x.Flows           .UnionWith(addOn.Flows)
+            x.Devices         .UnionWith(addOn.Devices)
+            x.FlowFragments   .UnionWith(addOn.FlowFragments)
+            x.DeviceFragments .UnionWith(addOn.DeviceFragments)
+            x.Modifiers       .UnionWith(addOn.Modifiers)
+            x.PrefixModifiers .UnionWith(addOn.PrefixModifiers)
+            x.PostfixModifiers.UnionWith(addOn.PostfixModifiers)
             x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
 
             // x.MutualResetTuples 에 addOn.MutualResetTuples 의 항목을 deep copy 해서 추가
@@ -123,15 +125,15 @@ module AppSettingsModule =
                 x.PositionHints <- Dictionary(replace.PositionHints)
             if replace.NameSeparators.NonNullAny() then
                 x.NameSeparators <- ResizeArray(replace.NameSeparators.Distinct())
-            if replace.FlowNames.NonNullAny() then
-                x.FlowNames <- WordSet(replace.FlowNames, ic)
-            if replace.DeviceNames.NonNullAny() then
-                x.DeviceNames <- WordSet(replace.DeviceNames, ic)
+            if replace.Flows.NonNullAny() then
+                x.Flows <- WordSet(replace.Flows, ic)
+            if replace.Devices.NonNullAny() then
+                x.Devices <- WordSet(replace.Devices, ic)
 
-            if replace.FlowNameFragments.NonNullAny() then
-                x.FlowNameFragments <- WordSet(replace.FlowNameFragments, ic)
-            if replace.DeviceNameFragments.NonNullAny() then
-                x.DeviceNameFragments <- WordSet(replace.DeviceNameFragments, ic)
+            if replace.FlowFragments.NonNullAny() then
+                x.FlowFragments <- WordSet(replace.FlowFragments, ic)
+            if replace.DeviceFragments.NonNullAny() then
+                x.DeviceFragments <- WordSet(replace.DeviceFragments, ic)
 
             if replace.Modifiers.NonNullAny() then
                 x.Modifiers <- WordSet(replace.Modifiers, ic)
@@ -213,19 +215,28 @@ module AppSettingsModule =
 
     type NameWithNumbers = NameWithNumber[]
 
+    type NwN = NameWithNumber
+    type NwNs = NameWithNumbers
 
-    let zeroNN = NameWithNumber.Create("")
+    /// "STN1_CYL1_ACTION1" 에 대해 device name (e.g CYL1) matching 하였을 때,
+    ///
+    /// 성공하면 Some (=> "CYL1", STN1_", "_ACTION1")     // Name, Prolog, Epilog
+    /// 실패하면 None
+    type NameMatchResult = { Name:string; Prolog:string; Epilog:string}
+
+
+    let zeroNN = NwN.Create("")
 
     type Semantic with
         /// pName 에서 뒤에 붙은 숫자 부분 제거 후, 표준어로 변환
-        member x.StandardizePName(pName:string): NameWithNumber =   // pName : partial name: '_' 로 분리된 이름 중 하나
+        member x.StandardizePName(pName:string): NwN =   // pName : partial name: '_' 로 분리된 이름 중 하나
             let (preNumber:int option), name, (postNumber:int option) = splitNumber pName
             match x.Dialects.TryGet(name) with
-            | Some standard -> NameWithNumber(standard, preNumber, postNumber)
-            | None -> NameWithNumber(name, preNumber, postNumber)
+            | Some standard -> NwN(standard, preNumber, postNumber)
+            | None -> NwN(name, preNumber, postNumber)
 
         /// 공통 검색 함수: standardPNames 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
-        member private x.GuessNames(targetSet: WordSet, standardPNames: NameWithNumbers): NameWithNumber[] =
+        member private x.GuessNames(targetSet: WordSet, standardPNames: NwNs): NwNs =
             [|
                 for (i, nn) in standardPNames.Indexed() do
                     if targetSet.Contains (nn.PName) || targetSet.Contains (nn.Name) then
@@ -233,7 +244,7 @@ module AppSettingsModule =
                         nn
             |]
 
-        member private x.GuessWithFragment(fragments: WordSet, standardPNames: NameWithNumbers): NameWithNumber[] =
+        member private x.GuessWithFragment(fragments: WordSet, standardPNames: NwNs): NwNs =
             [|
                 for (i, nn) in standardPNames.Indexed() do
                     if fragments.Any(fun f -> nn.PName.Contains(f)) then
@@ -243,32 +254,67 @@ module AppSettingsModule =
 
         // standardPNames : 표준화된 부분(*P*artial) 이름
         /// standardPNames 중에서 Flow 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessFlowName(standardPNames: NameWithNumbers): NameWithNumber[] =
-            x.GuessNames(x.FlowNames, standardPNames)
-            |?? (fun () -> x.GuessWithFragment(x.FlowNameFragments, standardPNames))
+        member x.GuessFlowNames(standardPNames: NwNs): NwNs =
+            x.GuessNames(x.Flows, standardPNames)
+            |?? (fun () -> x.GuessWithFragment(x.FlowFragments, standardPNames))
 
         /// standardPNames 중에서 Device 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessDeviceName(standardPNames: NameWithNumbers): NameWithNumber[] =
-            x.GuessNames(x.DeviceNames, standardPNames)
-            |?? (fun () -> x.GuessWithFragment(x.DeviceNameFragments, standardPNames))
+        member x.GuessDeviceNames(standardPNames: NwNs): NwNs =
+            x.GuessNames(x.Devices, standardPNames)
+            |?? (fun () -> x.GuessWithFragment(x.DeviceFragments, standardPNames))
 
         /// standardPNames 중에서 Action 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessActionName(standardPNames: NameWithNumbers): NameWithNumber[] =
+        member x.GuessActionNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.Actions, standardPNames)
 
         /// standardPNames 중에서 State 에 해당하는 것이 존재하면, 그것과 index 반환
-        member x.GuessStateName(standardPNames: NameWithNumbers): NameWithNumber[] =
+        member x.GuessStateNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.States, standardPNames)
 
         /// standardPNames 중에서 Modifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
-        member x.GuessModifierNames(standardPNames: NameWithNumbers): NameWithNumber[] =
+        member x.GuessModifierNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.Modifiers, standardPNames)
 
         /// standardPNames 중에서 PrefixModifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
-        member x.GuessPrefixModifierNames(standardPNames: NameWithNumbers): NameWithNumber[] =
+        member x.GuessPrefixModifierNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.PrefixModifiers, standardPNames)
 
 
         /// standardPNames 중에서 PostfixModifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
-        member x.GuessPostfixModifierNames(standardPNames: NameWithNumbers): NameWithNumber[] =
+        member x.GuessPostfixModifierNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.PostfixModifiers, standardPNames)
+
+
+
+        /// 공통 word to word 직접 검색 함수: name 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
+        member private x.TryMatchName(targetSet: WordSet, name:string): NameMatchResult option =
+            targetSet
+            |> Seq.tryPick (fun n ->
+                match name.Split(n) |> List.ofArray with
+                | [prolog; epilog] -> Some { Name = n; Prolog = prolog; Epilog = epilog }
+                | [prolog] when name.EndsWith(n) -> Some { Name = n; Prolog = prolog; Epilog = "" }
+                | [epilog] when name.StartsWith(n) -> Some { Name = n; Prolog = ""; Epilog = epilog }
+                | _ -> None)
+
+        member private x.TryPatternMatchName(patternSet: WordSet, name: string): NameMatchResult option =
+            let convertPattern (pattern: string) : string =
+                // 패턴을 명명된 그룹을 포함한 전체 매칭 패턴으로 변환
+                $"^(?<Prolog>.*?)(?<Name>{pattern})(?<Epilog>.*?)$"
+
+            patternSet
+            |> Seq.map convertPattern  // 자동 변환된 정규식 패턴 배열 생성
+            |> Seq.tryPick (fun pattern ->
+                let regex = Regex(pattern)
+                let matchResult = regex.Match(name)
+                if matchResult.Success then
+                    let prolog = matchResult.Groups.["Prolog"].Value
+                    let matchedName = matchResult.Groups.["Name"].Value
+                    let epilog = matchResult.Groups.["Epilog"].Value
+                    Some { Name = matchedName; Prolog = prolog; Epilog = epilog }
+                else None
+            )
+
+        member x.TryMatchFlowName  (name:string): NameMatchResult option = x.TryMatchName(x.Flows, name)   .OrElseWith (fun () -> x.TryPatternMatchName(x.FlowPatterns, name))
+        member x.TryMatchDeviceName(name:string): NameMatchResult option = x.TryMatchName(x.Devices, name)
+        member x.TryMatchActionName(name:string): NameMatchResult option = x.TryMatchName(x.Actions, name)
+

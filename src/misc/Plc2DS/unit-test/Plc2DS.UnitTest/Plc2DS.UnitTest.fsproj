@@ -6,7 +6,9 @@
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
 		<AssemblyOriginatorKeyFile>$(SolutionDir)\dualsoft.snk</AssemblyOriginatorKeyFile>
+		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
+
 
 	<ItemGroup>
 		<Compile Include="TagAnalysis\SemanticSettingTest.fs" />

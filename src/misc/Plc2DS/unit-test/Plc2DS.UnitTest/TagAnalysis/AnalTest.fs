@@ -21,7 +21,7 @@ module AnalTest =
     let createSemantic() =
         let json = """
 {
-  "_NameSeparators": "_",
+  "_Separators": "_",
   "Dialects": [
     [ "ADV", "ADVANCE" ],
     [ "CLP", "CLAMP" ],
@@ -39,9 +39,9 @@ module AnalTest =
 
   "Actions": [ "ADV", "CHECK", "CLP", "HOME", "LOAD", "OFF", "ON", "PRESS", "RET", "ROTATE", "SELECT", "SWING", "UNSWING" ],
 
-  "DeviceNames": [ "CAM", "CARRIER", "CONNECTOR", "CYL", "GATE", "GUN", "LAMP", "LOCK", "LS", "MOTOR", "PART", "PIN", "RBT", "SHT", "SLIDE", "SOL", "VALVE" ],
+  "Devices": [ "CAM", "CARRIER", "CONNECTOR", "CYL", "GATE", "GUN", "LAMP", "LOCK", "LS", "MOTOR", "PART", "PIN", "RBT", "SHT", "SLIDE", "SOL", "VALVE" ],
 
-  "FlowNames": [ "STN" ],
+  "Flows": [ "STN" ],
 
   "Modifiers": [
     "A", "ALL", "AUX", "B", "C", "D",
@@ -65,7 +65,7 @@ module AnalTest =
   "AddOn": {
     "MX": {
       "SplitOnCamelCase": true,
-      "DeviceNames": [ "BUFFER" ],
+      "Devices": [ "BUFFER" ],
       "NameSeparators": [ "_", ";", " ", "\t", ".", ",", ":" ],
     }
   }
@@ -86,7 +86,7 @@ module AnalTest =
         member _.``Minimal`` () =
             do
                 // "~:STN:2@0" : STN 의 prefix 숫자는 없고(~), postfix 숫자는 '2' 이고, 위치는(@) 쪼갠 이름의 0번째
-                let si = AnalyzedNameSemantic.CreateDefault("STN2_B_SHUTTLE_ADVANCE", semantic)
+                let si = semantic.CreateDefault("STN2_B_SHUTTLE_ADVANCE")
                 si.Flows     |> exactlyOne |> toString === "~:STN:2@0"
                 si.Devices   |> exactlyOne |> toString === "~:SHT:~@2"
                 si.Actions   |> exactlyOne |> toString === "~:ADV:~@3"
@@ -95,7 +95,7 @@ module AnalTest =
 
             do
                 // 표준어 변환, modifiers test
-                let si = AnalyzedNameSemantic.CreateDefault("STATION2_1ST_SHT_ADV", semantic)
+                let si = semantic.CreateDefault("STATION2_1ST_SHT_ADV")
                 si.Flows     |> exactlyOne |> toString === "~:STN:2@0"
                 si.Devices   |> exactlyOne |> toString === "~:SHT:~@2"
                 si.Actions   |> exactlyOne |> toString === "~:ADV:~@3"
@@ -106,7 +106,7 @@ module AnalTest =
 
             do
                 // 충돌: ADV 와 CLAMP 모두 ACTION 이름으로 match.  먼저 match 되는 ADV 가 우선시 되는 bug
-                let si = AnalyzedNameSemantic.CreateDefault("S301RH_B_ADV_LOCK_CLAMP", semantic)
+                let si = semantic.CreateDefault("S301RH_B_ADV_LOCK_CLAMP")
                 si.Actions.Length === 2
                 si.Actions[0].ToString() === "~:ADV:~@2"
                 si.Actions[1].ToString() === "~:CLP:~@4"
@@ -117,7 +117,7 @@ module AnalTest =
                 // 이름 구분자 변경 test
                 let semantic = createSemantic()
                 semantic.NameSeparators <- ResizeArray [|":"|]
-                let si = AnalyzedNameSemantic.CreateDefault("STATION2:1ST:SHT:ADV", semantic)
+                let si = semantic.CreateDefault("STATION2:1ST:SHT:ADV")
 
 
                 si.Flows     |> exactlyOne |> toString === "~:STN:2@0"
@@ -134,7 +134,7 @@ module AnalTest =
             do
                 let l = $"ALIAS,,CTRL2_B_SHUTTLE_ADVANCE,{ddq},{ddq},{dq}B100[1].1{dq},{dq}(RADIX := Decimal, ExternalAccess := Read/Write){dq}"
                 let tagInfo:AB.PlcTagInfo = AB.CsvReader.CreatePlcTagInfo(l)
-                let si = AnalyzedNameSemantic.CreateDefault(tagInfo.GetAnalysisField(), semantic)
+                let si = semantic.CreateDefault(tagInfo.GetAnalysisField())
 
                 si.Devices   |> exactlyOne |> toString === "~:SHT:~@2"
                 si.Actions   |> exactlyOne |> toString === "~:ADV:~@3"
@@ -162,7 +162,7 @@ module AnalTest =
                 tagInfo.Specifier === "S441_PLC_BOX_1:I.Data[3]"
                 tagInfo.OptIOType === Some true
 
-                let si = AnalyzedNameSemantic.CreateDefault(tagInfo.Name, semantic)
+                let si = semantic.CreateDefault(tagInfo.Name)
                 si.SplitNames === [|"S441"; "PLC"; "BOX"; "1:3:I"|]
                 noop()
 
@@ -179,7 +179,7 @@ module AnalTest =
             mx.SplitOnCamelCase === true
             let xxx = tagInfo.GetAnalysisField()
             let y = xxx
-            let si = AnalyzedNameSemantic.CreateDefault(tagInfo.GetAnalysisField(), mx)
+            let si = mx.CreateDefault(tagInfo.GetAnalysisField())
             si.SplitNames |> SeqEq ["U17"; "REV"; "3"; "BUFFER"; "A"; "VAC"; "ON"]
             si.Devices   |> exactlyOne |> toString === "~:BUFFER:~@3"
             si.SplitSemanticCategories.Filter(fun x -> x <> Nope) |> Seq.length === 1
@@ -204,7 +204,7 @@ ALIAS,,STN2_CYL1_RET,"","","B100[1].1","COMMENT"
                 |> filter _.NonNullAny()
                 |> map AB.CsvReader.CreatePlcTagInfo
                 |> Seq.toArray
-            let anals = tagInfos |> Array.map (fun t -> AnalyzedNameSemantic.CreateDefault(t.GetAnalysisField(), semantic))
+            let anals = tagInfos |> Array.map (fun t -> semantic.CreateDefault(t.GetAnalysisField()))
             let gr = anals |> groupBy (_.Stringify(withDeviceNumber=true))
             gr.Length === 3
             do
@@ -263,13 +263,13 @@ ALIAS,,S301RH_B_ADV_LOCK_CLAMP_MEMO,"","","B301[86].1","(RADIX := Decimal, Exter
                 |> filter _.NonNullAny()
                 |> map AB.CsvReader.CreatePlcTagInfo
                 |> Seq.toArray
-            let anals = tagInfos |> Array.map (fun t -> AnalyzedNameSemantic.CreateDefault(t.GetAnalysisField(), semantic))
+            let anals = tagInfos |> Array.map (fun t -> semantic.CreateDefault(t.GetAnalysisField()))
 
             do  // key tests
                 //anals[1] : "S301RH_B_ADV_LOCK_CLAMP1_ERR"
                 // "LOCK" 이 Action 으로 등록되어 있지 않고, Device 로 등록되어 있는 상태
                 semantic.Actions     |> contains "LOCK" |> ShouldBeFalse
-                semantic.DeviceNames |> contains "LOCK" |> ShouldBeTrue
+                semantic.Devices |> contains "LOCK" |> ShouldBeTrue
                 semantic.States      |> contains "ERR"  |> ShouldBeTrue
 
                 anals[1].States  |> exactlyOne |> toString === "~:ERR:~@5"
