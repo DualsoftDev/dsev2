@@ -127,6 +127,13 @@ module StringUtils =
         static member FindNegativeRangeIntersects (ranges: (TRange)[]): (TRange)[] = StringSearch.GetIntersectionRanges ranges
 
 
+        /// Matching score 계산
+        ///
+        /// - heystack: 검색 대상 문자열의 범위.  tag name 의 범위
+        ///
+        /// - xss: 부분 match 들 : Text 및 Start index
+        ///
+        /// - xss 가 겹치지 않고, heystack 영역을 최대한 많이 커버할 수록 높은 점수
         static member ComputeScores (heystack:TRange, xss:PartialMatch[][]): MatchSet[] =
             let matches: MatchSet[] =
                 [|
@@ -141,10 +148,12 @@ module StringUtils =
                             let w1, s1, c1 = xs1.ToTuple()
                             let r1 = (s1, s1 + w1.Length)
 
+                            // xss 끼리 겹치는 부분이 없어야 함. m = 0
                             let m = StringSearch.FindNegativeRangeIntersects([|r0; r1|]) |> rangesSum
                             if m = 0 then
+                                // heystack 을 최대한 xss 들이 cover 할수록 높은 점수
                                 let p = StringSearch.FindPositiveRangeIntersects(heystack, [|r0; r1|]) |> rangesSum
-                                let score = w0.Length + w1.Length + p - 10 * m
+                                let score = w0.Length + w1.Length + p
                                 yield { Score=score; Matches=[|xs0; xs1|]}
 
                                 for xs2 in xss[2] do
@@ -155,7 +164,7 @@ module StringUtils =
                                     if m = 0 then
                                         let p = StringSearch.FindPositiveRangeIntersects(heystack, [|r0; r1; r2|]) |> rangesSum
 
-                                        let score = w0.Length + w1.Length + w2.Length + p - 10 * m
+                                        let score = w0.Length + w1.Length + w2.Length + p
                                         let matches = [|xs0; xs1; xs2|] |> sortByDescending _.Category
                                         yield { Score=score; Matches=matches }     // flow, device, action 순서로 정렬
                 |] |> sortByDescending _.Score

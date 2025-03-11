@@ -142,16 +142,16 @@ module AppSettingsModule =
                 x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
 
     /// Vendor 별 Tag Semantic 별도 적용 용도
-    type Semantics = Dictionary<string, Semantic>
+    type Semantics = Dictionary<string, Semantic>   // string : Vendor type 이지만, JSON 편의를 위해 string 으로.
 
-    type AppSettings() =
+    type SemanticSettings() =
         inherit Semantic()
         /// Vendor 별 Tag Semantic: 부가, additional
         [<DataMember>] member val AddOn    = Semantics() with get, set
         /// Vendor 별 Tag Semantic: override.  this 의 항목 override
         [<DataMember>] member val Override = Semantics() with get, set
 
-    type AppSettings with
+    type SemanticSettings with
         member x.CreateVendorSemantic(vendor:Vendor): Semantic =
             let vendor = vendor.ToString()
             let addOn = x.AddOn.TryGet(vendor)

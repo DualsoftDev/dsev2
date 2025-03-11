@@ -74,7 +74,7 @@ module AnalTest =
 
 
 """
-        EmJson.FromJson<AppSettings>(json);
+        EmJson.FromJson<SemanticSettings>(json);
 
     let semantic = createSemantic()
 

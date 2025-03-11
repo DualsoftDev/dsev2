@@ -52,7 +52,7 @@ module SemanticSettingTest =
 }
 
 """
-        EmJson.FromJson<AppSettings>(json);
+        EmJson.FromJson<SemanticSettings>(json);
 
     type SS() =
         [<Test>]

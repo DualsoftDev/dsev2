@@ -12,7 +12,7 @@ let appSettingsPath =
     let baseDir = AppDomain.CurrentDomain.BaseDirectory;
     Path.Combine(baseDir, "appsettings.json")
 //let appSettings = JsonSetting.GetSectionEx<AppSettings>(appSettingsPath, "AppSettings");
-let appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText(appSettingsPath));
+let appSettings = EmJson.FromJson<SemanticSettings>(File.ReadAllText(appSettingsPath));
 
 
 open System
