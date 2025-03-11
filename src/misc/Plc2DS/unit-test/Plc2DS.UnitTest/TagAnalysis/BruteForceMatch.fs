@@ -23,7 +23,7 @@ module BruteForceMatch =
             //sm.Devices <- WordSet(["LAMP"; "CYL"], ic)
             //sm.Actions <- WordSet(["CLAMP"], ic)
 
-            let rs = StringSearch.FindFDA("STN01_B_CYL_CLAMP1", [|"STN01"|], [|"LAMP"; "CYL"|], [|"CLAMP"|])
+            let rs = StringSearch.MatchRawFDA("STN01_B_CYL_CLAMP1", [|"STN01"|], [|"LAMP"; "CYL"|], [|"CLAMP"|])
             noop()
             let xxx = rs
             noop()
