@@ -15,10 +15,13 @@
     <Compile Include="AB\AbCsvReader.fs" />
     <Compile Include="CsvReader.fs" />
     <Compile Include="StringUtils.fs" />
+    <None Include="StringUtils.fsx" />
     <Compile Include="Semantics.fs" />
     <Compile Include="ExtractDevice.fs" />
     <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />

@@ -16,16 +16,16 @@ module Util =
             let mutable found = false
             let headers =
                 File.ReadLines(filePath, encoding)
-                |> Seq.take maxLine
+                |> Seq.truncate maxLine
                 |> Seq.takeWhile (fun line ->
                     if line = csvHeader then found <- true
                     not found
                 )
                 |> Seq.toArray
 
-            if found then Some headers else None
+            if found then Some (headers @ [|csvHeader|]) else None
 
-        static member PeekLines(filePath: string, ?startLine: int, ?lineCount: int, ?encoding:Encoding): string[] =
+        static member PeekLines(filePath: string, ?startLine: int, ?lineCount: int, ?encoding:Encoding): string seq =
             let startLine = startLine |? 0
             let encoding = encoding |? FileEx.GetEncoding(filePath)
             File.ReadLines(filePath, encoding)
@@ -34,7 +34,6 @@ module Util =
                 match lineCount with
                 | Some lineCount -> lines |> Seq.truncate lineCount   // 지정된 개수만큼 읽음
                 | None -> lines
-            |> Seq.toArray
 
     type Csv =
         //static member ParseLineLegacy (line: string, ?delimeter:char) =

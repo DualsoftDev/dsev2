@@ -2,6 +2,7 @@ namespace Dual.Plc2DS.LS
 
 open Dual.Common.Core.FS
 open Dual.Plc2DS
+open System
 
 (*
 Remark,Title=CSV File
@@ -35,13 +36,13 @@ type CsvReader =
             DataType = cols[4]; Property = cols[5]; Comment = cols[6] }
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
-        let skipLines = 7
         let header = "Type,Scope,Variable,Address,DataType,Property,Comment"
         match File.TryReadUntilHeader(filePath, header) with
         | Some headers ->
-            let skipLines = headers.Length + 1
-            let lines = File.PeekLines(filePath, skipLines)
-            lines |> map CsvReader.CreatePlcTagInfo
+            File.PeekLines(filePath, headers.Length)
+            |> Seq.filter (fun l -> not (String.IsNullOrEmpty l) && l.[0] <> '\u0000')  // 파일 맨 마지막 라인 NULL 라인
+            |> map CsvReader.CreatePlcTagInfo
+            |> toArray
         | None ->
             failwith $"ERROR: failed to find header {header}"
 

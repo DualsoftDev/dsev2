@@ -43,6 +43,7 @@ type CsvReader =
     /// read .SDF comment file
     static member ReadCommentSDF(sdfPath: string) : PlcTagInfo[] =
         File.PeekLines(sdfPath, 0)
+        |> toArray
         |> map CsvReader.CreatePlcTagInfo
 
     static member ReadCommentCSV(sdfPath: string) = CsvReader.ReadCommentSDF(sdfPath)

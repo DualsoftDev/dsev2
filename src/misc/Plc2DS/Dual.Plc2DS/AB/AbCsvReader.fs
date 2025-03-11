@@ -63,9 +63,10 @@ type CsvReader =
         let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
         match File.TryReadUntilHeader(filePath, header) with
         | Some headers ->
-            let skipLines = headers.Length + 1
-            let lines = File.PeekLines(filePath, skipLines)
-            lines |> map CsvReader.CreatePlcTagInfo
+            let skipLines = headers.Length
+            File.PeekLines(filePath, skipLines)
+            |> toArray
+            |> map CsvReader.CreatePlcTagInfo
         | None ->
             failwith $"ERROR: failed to find header {header}"
 

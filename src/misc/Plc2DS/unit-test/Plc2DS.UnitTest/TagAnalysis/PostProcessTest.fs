@@ -65,7 +65,7 @@ module PostProcessTest =
 
 
         [<Test>]
-        member _.``Pattern`` () =
+        member _.``X Pattern`` () =
             do
                 //let semantic = AnalTest.createSemantic()
                 let semantic = AnalTest.semantic

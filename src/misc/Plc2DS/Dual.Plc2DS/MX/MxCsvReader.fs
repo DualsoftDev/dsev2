@@ -30,7 +30,7 @@ type CsvReader =
         { Device = device; Comment = comment; Label = label |? "" }
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
-        let headers = File.PeekLines(filePath, 0, 2)
+        let headers = File.PeekLines(filePath, 0, 2) |> toArray
         let delimeter, hasLabel, skipLines =
             match headers with
             | [| "Device,Label,Comment"; _ |]         -> ',',  true,  1
@@ -42,4 +42,5 @@ type CsvReader =
             | _ -> failwith "Invalid file format"
 
         File.PeekLines(filePath, skipLines)
+        |> toArray
         |> map (fun line -> CsvReader.CreatePlcTagInfo(line, delimeter, hasLabel))
