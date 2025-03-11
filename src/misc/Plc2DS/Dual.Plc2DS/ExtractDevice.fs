@@ -58,7 +58,7 @@ module ExtractDeviceModule =
 
     [<AutoOpen>]
     module (*internal*) rec ExtractDeviceImplModule =
-        type AnalyzedNameSemantic = {
+        type NameAnalysis = {
             /// 이름 원본
             FullName: string
             /// '_' 기준 분리된 이름
@@ -76,7 +76,7 @@ module ExtractDeviceModule =
 
         type Semantic with
             /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  기본 처리만 수행
-            member internal sm.CreateDefault(name:string): AnalyzedNameSemantic =
+            member internal sm.CreateDefault(name:string): NameAnalysis =
                 // flow, device 에 대한 brute force matching 우선
                 let flow = sm.TryMatchFlowName name
                 let device = sm.TryMatchDeviceName name
@@ -137,23 +137,23 @@ module ExtractDeviceModule =
 
             /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  부가 처리 수행
             [<Obsolete("Prefix, Postfix modifier 위치 지정")>]
-            member sm.Create(name:string): AnalyzedNameSemantic =
+            member sm.Create(name:string): NameAnalysis =
                 sm.CreateDefault(name)
                     .FillEmptyPName(sm)
                     .DecideModifiers(sm)
 
             member sm.ExtractDevices(plcTags:#IPlcTag[]): Device[] =
-                let anals:AnalyzedNameSemantic[] =
+                let anals:NameAnalysis[] =
                     plcTags
                     |> map (fun t ->
                         sm.CreateDefault(t.GetAnalysisField()))
                 [||]
 
-        type AnalyzedNameSemantic with
+        type NameAnalysis with
 
             /// PName 중에서 category 할당 안된 항목 채우기.  Semantic.PositinalHints 참고하여 위치 기반으로 항목 채움
             /// 채울 수 없으면 원본 그대로 반환.  변경되면 사본 반환
-            member internal x.FillEmptyPName(semantic:Semantic): AnalyzedNameSemantic =
+            member internal x.FillEmptyPName(semantic:Semantic): NameAnalysis =
                 let cs:CategorySummary = x.Categorize()
                 let scores =
                     [
@@ -188,7 +188,7 @@ module ExtractDeviceModule =
 
                     dup
 
-            member x.DecideModifiers(semantic:Semantic): AnalyzedNameSemantic =
+            member x.DecideModifiers(semantic:Semantic): NameAnalysis =
                 //if [ x.Modifiers; x.PrefixModifiers; x.PostfixModifiers ] |> forall _.IsNullOrEmpty() then
                 //    x
                 //else
@@ -204,11 +204,11 @@ module ExtractDeviceModule =
                     x
 
             /// PName 중에서 복수 category 할당 된 항목 처리
-            member x.Disambiguate(semantic:Semantic): AnalyzedNameSemantic =
+            member x.Disambiguate(semantic:Semantic): NameAnalysis =
                 let cs = x.Categorize()
                 x
 
-            member x.PostProcess(semantic:Semantic): AnalyzedNameSemantic = x
+            member x.PostProcess(semantic:Semantic): NameAnalysis = x
 
             member x.Categorize() :CategorySummary =
                 // x.SplitSemanticCategories 의 SemanticCategory 별 indices 를 반환

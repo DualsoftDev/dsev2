@@ -14,13 +14,7 @@ open System.Text.RegularExpressions
 module AppSettingsModule =
 
     /// StringComparer.OrdinalIgnoreCase
-    let private ic = StringComparer.OrdinalIgnoreCase
-
-    type WordSet = HashSet<string>
-    type Words = string[]
-
-    /// 범위 지정: 백분율 Min/Max : [0..100]
-    type Range = { Min: int; Max: int }
+    let internal ic = StringComparer.OrdinalIgnoreCase
 
     /// Tag 기반 semantic 정보 추출용
     [<DataContract>]
@@ -290,6 +284,7 @@ module AppSettingsModule =
 
         /// 공통 word to word 직접 검색 함수: name 배열에서 targetSet에 있는 첫 번째 단어 반환 (없으면 null)
         member private x.TryMatchName(targetSet: WordSet, name:string): NameMatchResult option =
+
             x.ExpandDialects(targetSet)
             |> Seq.tryPick (fun n ->
                 match name.Split(n) |> List.ofArray with

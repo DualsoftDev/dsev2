@@ -14,7 +14,8 @@
     <Compile Include="S7\S7.CsvReader.fs" />
     <Compile Include="AB\AbCsvReader.fs" />
     <Compile Include="CsvReader.fs" />
-    <Compile Include="AppSettings.fs" />
+    <Compile Include="StringUtils.fs" />
+    <Compile Include="Semantics.fs" />
     <Compile Include="ExtractDevice.fs" />
     <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>

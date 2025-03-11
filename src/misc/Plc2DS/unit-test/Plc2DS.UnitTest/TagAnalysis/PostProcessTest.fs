@@ -17,9 +17,9 @@ module PostProcessTest =
             do
                 //anals[1] : "S301RH_B_ADV_LOCK_CLAMP1_ERR"
                 // "LOCK" 이 Action 으로 등록되어 있지 않고, Device 로 등록되어 있는 상태
-                semantic.Actions     |> contains "LOCK" |> ShouldBeFalse
+                semantic.Actions |> contains "LOCK" |> ShouldBeFalse
                 semantic.Devices |> contains "LOCK" |> ShouldBeTrue
-                semantic.States      |> contains "ERR"  |> ShouldBeTrue
+                semantic.States  |> contains "ERR"  |> ShouldBeTrue
 
                 si.Devices |> exactlyOne |> toString === "~:LOCK:~@3"
                 si.Actions |> map toString           === [| "~:ADV:~@2"; "~:CLP:1@4" |]
