@@ -57,7 +57,7 @@ module SemanticSettingTest =
     type SS() =
         [<Test>]
         member _.``Minimal`` () =
-            let mx = semantic.CreateVendorSemantic(K.MX)
+            let mx = semantic.CreateVendorSemantic(Vendor.MX)
 
             // override 항목 체크
             mx.NameSeparators |> SeqEq ["_"; ";"; " "]      // ["*"] 는 addOn 에서 추가된 후, override 되어 삭제됨
@@ -70,7 +70,7 @@ module SemanticSettingTest =
             // addOn 항목 체크
             mx.Actions |> SeqEq ([ "ADV"; "RET" ] @ [ "ABORT"; "PAUSE"; "RESUME" ])
 
-            let s7 = semantic.CreateVendorSemantic(K.S7)
+            let s7 = semantic.CreateVendorSemantic(Vendor.S7)
             s7.NameSeparators |> SeqEq semantic.NameSeparators
             s7.States         |> SeqEq semantic.States
             s7.Actions        |> SeqEq semantic.Actions

@@ -15,6 +15,7 @@ open Dual.Common.Base.FS
 open Dual.Plc2DS
 
 module BruteForceMatch =
+    let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
     type B() =
         [<Test>]
         member _.``Minimal`` () =
@@ -50,5 +51,7 @@ module BruteForceMatch =
 
             noop()
 
+        //[<Test>]
+        //member _.``Maximal`` () =
 
 

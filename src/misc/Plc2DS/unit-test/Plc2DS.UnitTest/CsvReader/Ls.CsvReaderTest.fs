@@ -35,7 +35,7 @@ module LsCsv =
 
 
 module LsCsvLargeScale =
-    let dataDir = "F:/Git/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
+    let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
     let csvFiles = Directory.GetFiles(dataDir, "*.csv")
 
 

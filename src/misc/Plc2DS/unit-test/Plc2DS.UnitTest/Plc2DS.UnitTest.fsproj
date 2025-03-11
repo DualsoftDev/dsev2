@@ -11,20 +11,20 @@
 
 
 	<ItemGroup>
-		<Compile Include="TagAnalysis\SemanticSettingTest.fs" />
-		<Compile Include="TagAnalysis\AnalTest.fs" />
-		<Compile Include="TagAnalysis\BruteForceMatch.fs" />
-		<Compile Include="TagAnalysis\PostProcessTest.fs" />
 		<None Include="Samples\**\*" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<None Include="csvreader\test.fsx" />
 		<Compile Include="CsvReader\Ab.CsvReaderTest.fs" />
 		<Compile Include="CsvReader\TestCommon.fs" />
 		<Compile Include="CsvReader\Mx.CsvReaderTest.fs" />
 		<Compile Include="CsvReader\S7.SdfReaderTest.fs" />
 		<Compile Include="CsvReader\Ls.CsvReaderTest.fs" />
+		<Compile Include="TagAnalysis\SemanticSettingTest.fs" />
+		<Compile Include="TagAnalysis\AnalTest.fs" />
+		<Compile Include="TagAnalysis\BruteForceMatch.fs" />
+		<Compile Include="TagAnalysis\PostProcessTest.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Include="DummyMain.fs" />
 	</ItemGroup>
 

@@ -152,7 +152,8 @@ module AppSettingsModule =
         [<DataMember>] member val Override = Semantics() with get, set
 
     type AppSettings with
-        member x.CreateVendorSemantic(vendor:string): Semantic =
+        member x.CreateVendorSemantic(vendor:Vendor): Semantic =
+            let vendor = vendor.ToString()
             let addOn = x.AddOn.TryGet(vendor)
             let ovrride = x.Override.TryGet(vendor)
             if addOn.IsNone && ovrride.IsNone then

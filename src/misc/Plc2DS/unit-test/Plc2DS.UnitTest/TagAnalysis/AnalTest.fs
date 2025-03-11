@@ -175,7 +175,7 @@ module AnalTest =
             tagInfo.Label === ""
             tagInfo.OptIOType === Some false
 
-            let mx = semantic.CreateVendorSemantic(K.MX)
+            let mx = semantic.CreateVendorSemantic(Vendor.MX)
             mx.SplitOnCamelCase === true
             let xxx = tagInfo.GetAnalysisField()
             let y = xxx
@@ -268,9 +268,9 @@ ALIAS,,S301RH_B_ADV_LOCK_CLAMP_MEMO,"","","B301[86].1","(RADIX := Decimal, Exter
             do  // key tests
                 //anals[1] : "S301RH_B_ADV_LOCK_CLAMP1_ERR"
                 // "LOCK" 이 Action 으로 등록되어 있지 않고, Device 로 등록되어 있는 상태
-                semantic.Actions     |> contains "LOCK" |> ShouldBeFalse
+                semantic.Actions |> contains "LOCK" |> ShouldBeFalse
                 semantic.Devices |> contains "LOCK" |> ShouldBeTrue
-                semantic.States      |> contains "ERR"  |> ShouldBeTrue
+                semantic.States  |> contains "ERR"  |> ShouldBeTrue
 
                 anals[1].States  |> exactlyOne |> toString === "~:ERR:~@5"
                 anals[1].Devices |> exactlyOne |> toString === "~:LOCK:~@3"
