@@ -100,7 +100,7 @@ module ExtractDeviceModule =
                     |> map _.ToUpper()
 
                 let baseline =
-                    {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst Nope)
+                    {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst DuNone)
                         Flows = [||]; Actions = [||]; Devices = [||]; States = [||]
                         Modifiers = [||]; PrefixModifiers = [||]; PostfixModifiers = [||]
                     }
@@ -115,13 +115,13 @@ module ExtractDeviceModule =
                         categories[nn.OptPosition.Value] <- cat
 
 
-                let flows            = sm.GuessFlowNames            standardPNames |> tee(fun nns -> procReusults Flow     nns)
-                let actions          = sm.GuessActionNames          standardPNames |> tee(fun nns -> procReusults Action   nns)
-                let states           = sm.GuessStateNames           standardPNames |> tee(fun nns -> procReusults SemanticCategory.State    nns)
-                let devices          = sm.GuessDeviceNames          standardPNames |> tee(fun nns -> procReusults Device   nns)
-                let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults Modifier nns)
-                let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults Modifier nns)
-                let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults Modifier nns)
+                let flows            = sm.GuessFlowNames            standardPNames |> tee(fun nns -> procReusults DuFlow     nns)
+                let actions          = sm.GuessActionNames          standardPNames |> tee(fun nns -> procReusults DuAction nns)
+                let states           = sm.GuessStateNames           standardPNames |> tee(fun nns -> procReusults DuState  nns)
+                let devices          = sm.GuessDeviceNames          standardPNames |> tee(fun nns -> procReusults DuDevice   nns)
+                let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults DuModifier nns)
+                let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults DuModifier nns)
+                let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults DuModifier nns)
 
                 noop()
                 { baseline with
@@ -177,14 +177,14 @@ module ExtractDeviceModule =
                         nn.OptPosition <- Some idx
                         [| nn |]
                     match cat with
-                    | Action          -> dup.Actions          <- guessedNames
-                    | Device          -> dup.Devices          <- guessedNames
-                    | Flow            -> dup.Flows            <- guessedNames
-                    | Modifier        -> dup.Modifiers        <- guessedNames
-                    | PrefixModifier  -> dup.PrefixModifiers  <- guessedNames
-                    | PostfixModifier -> dup.PostfixModifiers <- guessedNames
-                    | SemanticCategory.State -> dup.States    <- guessedNames
-                    | Nope -> failwith "ERROR"
+                    | DuAction        -> dup.Actions          <- guessedNames
+                    | DuDevice          -> dup.Devices          <- guessedNames
+                    | DuFlow            -> dup.Flows            <- guessedNames
+                    | DuModifier        -> dup.Modifiers        <- guessedNames
+                    | DuPrefixModifier  -> dup.PrefixModifiers  <- guessedNames
+                    | DuPostfixModifier -> dup.PostfixModifiers <- guessedNames
+                    | DuState -> dup.States    <- guessedNames
+                    | (DuUnmatched | DuNone) -> failwith "ERROR"
 
                     dup
 
@@ -217,13 +217,13 @@ module ExtractDeviceModule =
                     x.SplitSemanticCategories
                     |> mapi (fun i cat -> cat, i)  // 각 카테고리와 해당 인덱스를 튜플로 매핑
                     |> groupBy fst                 // SemanticCategory별로 그룹화
-                    |> filter (fun (cat, items) -> cat <> Nope && items.Length > 1) // 2개 이상인 것만 필터링
+                    |> filter (fun (cat, items) -> cat <> DuNone && items.Length > 1) // 2개 이상인 것만 필터링
                     |> map (fun (cat, items) -> cat, items |> map snd) // (카테고리, 인덱스 배열) 반환
 
                 let nopes: PIndex[] =
                     x.SplitSemanticCategories
                     |> mapi (fun i cat -> cat, i)
-                    |> filter (fun (cat, _) -> cat = Nope)
+                    |> filter (fun (cat, _) -> cat = DuNone)
                     |> map snd
 
                 let uniqs: PIndex[] =
@@ -235,13 +235,13 @@ module ExtractDeviceModule =
 
                 let shownCategories:SemanticCategory[] =
                     // SemanticCategory 중에 한번이라도 나타난 모든 것들 수집
-                    x.SplitSemanticCategories |> filter ((<>) Nope) |> distinct
+                    x.SplitSemanticCategories |> filter ((<>) DuNone) |> distinct
 
                 let notShownCategories:SemanticCategory[] =
                     let allCases = DU.Cases<SemanticCategory>() |> Seq.cast<SemanticCategory>
                     // SemanticCategory 중에 한번도 나타나지 않은 모든 것들 수집
                     allCases
-                    |> filter (fun c -> c <> Nope && not (shownCategories |> contains c))
+                    |> filter (fun c -> c <> DuNone && not (shownCategories |> contains c))
                     |> toArray
 
                 { Multiples = multiples; Nopes = nopes; Uniqs = uniqCats; Showns = shownCategories; NotShowns = notShownCategories}
@@ -282,7 +282,7 @@ module ExtractDeviceModule =
                 let unmatched =
                     if withUnmatched then
                         x.SplitSemanticCategories
-                        |> Seq.choosei (fun i c -> c = Nope ?= (Some i, None))
+                        |> Seq.choosei (fun i c -> c = DuNone ?= (Some i, None))
                         |> map id
                         |> map (fun idx -> x.SplitNames[idx])
                         |> String.concat ":"

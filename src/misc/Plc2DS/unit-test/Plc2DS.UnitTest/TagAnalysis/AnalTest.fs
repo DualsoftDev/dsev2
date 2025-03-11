@@ -141,10 +141,10 @@ module AnalTest =
                 si.Modifiers |> exactlyOne |> toString === "~:B:~@1"
 
                 si.SplitNames === [|"CTRL2"; "B"; "SHUTTLE"; "ADVANCE"|]
-                si.SplitSemanticCategories[0] === Nope
-                si.SplitSemanticCategories[1] === Modifier
-                si.SplitSemanticCategories[2] === Device
-                si.SplitSemanticCategories[3] === Action
+                si.SplitSemanticCategories[0] === DuNone
+                si.SplitSemanticCategories[1] === DuModifier
+                si.SplitSemanticCategories[2] === DuDevice
+                si.SplitSemanticCategories[3] === DuAction
 
                 // 필수 요소만: flow + device
                 si.Stringify() === "SHT"
@@ -182,8 +182,8 @@ module AnalTest =
             let si = mx.CreateDefault(tagInfo.GetAnalysisField())
             si.SplitNames |> SeqEq ["U17"; "REV"; "3"; "BUFFER"; "A"; "VAC"; "ON"]
             si.Devices   |> exactlyOne |> toString === "~:BUFFER:~@3"
-            si.SplitSemanticCategories.Filter(fun x -> x <> Nope) |> Seq.length === 1
-            si.SplitSemanticCategories[3] === Device
+            si.SplitSemanticCategories.Filter(fun x -> x <> DuNone) |> Seq.length === 1
+            si.SplitSemanticCategories[3] === DuDevice
             noop()
 
 

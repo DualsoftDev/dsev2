@@ -3,6 +3,7 @@ namespace Dual.Plc2DS
 open System.Collections.Generic
 open Dual.Common.Core.FS
 open System.Text.RegularExpressions
+open System
 
 type WordSet = HashSet<string>
 type Words = string[]
@@ -24,6 +25,42 @@ type PartialMatch = {
     static member Create(text:string, start:StringIndex, category:SemanticCategory) = { Text = text; Start = start; Category = category }
     member x.ToTuple() = x.Text, x.Start, x.Category
 
+    // - partialMatches 배열을 Start 기준으로 정렬
+    // - text에서 매칭되지 않은 부분을 찾고 PartialMatch 객체로 변환하여 리스트에 추가
+    // - 마지막 매치 이후 남은 텍스트도 처리
+    static member ComputeUnmatched(text: string, partialMatches: PartialMatch[], ?separators: string[]): PartialMatch[] =
+        let separators = separators |? [||]
+        let sortedMatches = partialMatches |> Array.sortBy (fun pm -> pm.Start)
+        let result = ResizeArray<PartialMatch>()
+        let mutable lastEnd = 0
+
+        let filterUnmatchedText(text: string, separators: string[]): (char * int)[] =
+            text
+            |> choosei (fun i c -> if separators |> contains (string c) then None else Some (c, i))
+            |> toArray
+
+        let addResult(filteredText:(char*int)[]) =
+            if filteredText.Length > 0 then
+                let startIndex = lastEnd + (filteredText |> map snd |> Array.min)
+                let filteredStr = filteredText |> map fst |> System.String.Concat
+                result.Add( { Text=filteredStr; Start=startIndex; Category=DuUnmatched } )
+
+        for pm in sortedMatches do
+            if lastEnd < pm.Start then
+                let unmatchedText = text.Substring(lastEnd, pm.Start - lastEnd)
+                let filteredText = filterUnmatchedText(unmatchedText, separators)
+                addResult filteredText
+            lastEnd <- pm.Start + pm.Text.Length
+
+        if lastEnd < text.Length then
+            let unmatchedText = text.Substring(lastEnd)
+            let filteredText = filterUnmatchedText(unmatchedText, separators)
+            addResult filteredText
+
+        result.ToArray()
+
+
+
 type MatchSet = {
     Score:Score
     Matches:PartialMatch[]
@@ -42,16 +79,6 @@ module StringUtils =
     type internal StringSearch =
         static member MatchAllWithRegex(target:string, pattern:string): Match[] =
             Regex.Matches(target, pattern) |> Seq.cast<Match> |> Seq.toArray
-
-        ///// heystack 에서 needle 이 한번만 나오는 경우에만 해당 위치 값 반환.  그렇지 않으면 -1
-        //static member IndexOfUnique (heystack:string, needle:string): StringIndex =
-        //    let index = heystack.IndexOf(needle)
-        //    if index >= 0   // 한번 이상 존재하고
-        //        && heystack.Substring(index+needle.Length).IndexOf(heystack) = -1   // 유일하게 존재
-        //    then
-        //        index
-        //    else
-        //        -1
 
         /// heystack 에서 needle 이 한번만 나오는 경우에만 해당 위치 값 반환.  그렇지 않으면 -1
         static member AllIndices (heystack:string, needle:string): StringIndex[] =
@@ -157,9 +184,9 @@ module StringUtils =
                 |> sortByDescending _.Start
                 |> toArray
 
-            let ifs   = flows   |> indices Flow      // flow 의 이름 후보군이 name 에 포함되는 모든 위치 검색
-            let ids   = devices |> indices Device
-            let ias   = actions |> indices Action
+            let ifs = flows   |> indices DuFlow      // flow 의 이름 후보군이 name 에 포함되는 모든 위치 검색
+            let ids = devices |> indices DuDevice
+            let ias = actions |> indices DuAction
 
             let xss = [|ifs; ids; ias|] |> sortByDescending Array.length
             let heystack = (0, name.Length)
@@ -175,9 +202,9 @@ module StringUtils =
                     |> Seq.cast<Match>
                     |> Seq.map (fun m -> PartialMatch.Create(m.Value, m.Index, cat))
                 )
-                |> Seq.filter (fun mr -> mr.Start >= 0)
-                |> Seq.sortByDescending (fun mr -> mr.Start)
-                |> Seq.toArray
+                |> filter (fun mr -> mr.Start >= 0)
+                |> sortByDescending (fun mr -> mr.Start)
+                |> toArray
 
             let xss:PartialMatch[][] =
                 catRegexs

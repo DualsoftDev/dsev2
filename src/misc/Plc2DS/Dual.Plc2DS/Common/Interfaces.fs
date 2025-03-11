@@ -18,16 +18,17 @@ type Vendor =
     | MX
 
 type SemanticCategory =
-    | Nope
-    | Action
-    | Device
-    | Flow
-    | Modifier
-    | PrefixModifier
-    | PostfixModifier
-    | State
+    | DuNone
+    | DuAction
+    | DuDevice
+    | DuFlow
+    | DuModifier
+    | DuPrefixModifier
+    | DuPostfixModifier
+    | DuState
+    | DuUnmatched
     with
-        member x.IsMandatory = x.IsAction || x.IsDevice || x.IsFlow
+        member x.IsMandatory = x.IsDuAction || x.IsDuDevice || x.IsDuFlow
 
 
 /// Positional index type

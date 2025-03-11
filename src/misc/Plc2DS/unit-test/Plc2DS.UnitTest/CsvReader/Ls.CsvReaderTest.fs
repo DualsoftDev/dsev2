@@ -9,7 +9,6 @@ open NUnit.Framework
 
 open Dual.Common.UnitTest.FS
 open Dual.Common.Core.FS
-open Dual.Plc2DS.LS
 open Dual.Plc2DS
 
 module LsCsv =
@@ -21,7 +20,7 @@ module LsCsv =
         [<Test>]
         member _.``Minimal`` () =
             let csvPath = getFile("min.csv")
-            let data = CsvReader.ReadCommentCSV(csvPath)
+            let data = CsvReader.ReadLs(csvPath)
             data |> Array.iter (tracefn "%A")
 
             data.Length === 1
@@ -44,25 +43,16 @@ module LsCsvLargeScale =
         member _.``ReadMassCsvs`` () =
             for f in csvFiles do
                 try
-                    let data = CsvReader.ReadCommentCSV(f)
+                    let data = CsvReader.ReadLs(f)
                     ()
                 with ex ->
                     failwith $"Failed to parse file {f}: {ex}"
 
-        /// 공용함수.  CSV file 에서 PlcTagInfo[] 를 읽어온다.
-        member _.GetTagInfos(file:string, ?addressFilter:string -> bool): PlcTagInfo[] =
-            let data = CsvReader.ReadCommentCSV(file)
-            let filtered =
-                match addressFilter with
-                | Some pred -> data |> filter (fun x -> pred x.Address)
-                | None -> data
-            filtered
-
-
         [<Test>]
         member x.``ReadMassCsvs2`` () =
-            let inputTags:PlcTagInfo[] =
-                x.GetTagInfos(Path.Combine(dataDir, "BB 메인제어반.csv"), fun addr -> addr.StartsWith("%I"))
+            let inputTags:IPlcTag[] =
+                let csv = Path.Combine(dataDir, "BB 메인제어반.csv")
+                CsvReader.Read(Vendor.LS, csv, addressFilter = fun addr -> addr.StartsWith("%I"))
             let inputTagNames = inputTags |> map _.GetName()
             noop()
 

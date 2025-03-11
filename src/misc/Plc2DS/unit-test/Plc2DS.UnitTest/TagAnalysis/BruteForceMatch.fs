@@ -25,33 +25,81 @@ module BruteForceMatch =
             //sm.Actions <- WordSet(["CLAMP"], ic)
 
             do
-                let rs = StringSearch.MatchRawFDA("STN01_B_CYL_CLAMP1", [|"STN01"|], [|"LAMP"; "CYL"|], [|"CLAMP"|])
+                let name = "STN01_B_CYL_CLAMP1"
+                let rs:MatchSet[] = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"LAMP"; "CYL"|], [|"CLAMP"|])
                 rs[0].Matches === [|
-                    { Text = "STN01"; Start =  0; Category = Flow}
-                    { Text = "CYL"  ; Start =  8; Category = Device}
-                    { Text = "CLAMP"; Start = 12; Category = Action}
+                    { Text = "STN01"; Start =  0; Category = DuFlow}
+                    { Text = "CYL"  ; Start =  8; Category = DuDevice}
+                    { Text = "CLAMP"; Start = 12; Category = DuAction}
+                |]
+
+                do
+                    let text = "This_is original:Text"
+                    let separators = [| "_"; ":" |]
+                    let partialMatches = [| { Text = "is"; Start = 5; Category = DuModifier } |]
+                    let unmatched = PartialMatch.ComputeUnmatched(text, partialMatches, separators)
+                    unmatched === [|
+                        { Text = "This"         ; Start = 0; Category = DuUnmatched }
+                        { Text = " originalText"; Start = 7; Category = DuUnmatched }|]
+
+                    unmatched |> Array.iter (fun pm -> printfn "Text: '%s', Start: %d" pm.Text pm.Start)
+
+
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches) === [|
+                    { Text = "_B_"; Start =  5; Category = DuUnmatched }
+                    { Text = "_"  ; Start = 11; Category = DuUnmatched }
+                    { Text = "1"  ; Start = 17; Category = DuUnmatched }
+                |]
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
+                    { Text = "B"; Start =  6; Category = DuUnmatched }
+                    { Text = "1"; Start = 17; Category = DuUnmatched }
                 |]
 
             do
-                let rs = StringSearch.MatchRawFDA("CYL_CLAMP1_STN01_B", [|"STN01"|], [|"CYL"; "LAMP"|], [|"CLAMP"|])    // CYL <-> STN, [CYL <-> LAMP] 위치 변경
+                let name = "CYL_CLAMP1_STN01_B"
+                let rs = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"CYL"; "LAMP"|], [|"CLAMP"|])    // CYL <-> STN, [CYL <-> LAMP] 위치 변경
                 rs[0].Matches === [|
-                    { Text = "STN01"; Start = 11; Category = Flow}
-                    { Text = "CYL"  ; Start =  0; Category = Device}
-                    { Text = "CLAMP"; Start =  4; Category = Action}
+                    { Text = "STN01"; Start = 11; Category = DuFlow}
+                    { Text = "CYL"  ; Start =  0; Category = DuDevice}
+                    { Text = "CLAMP"; Start =  4; Category = DuAction}
+                |]
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
+                    { Text = "1"; Start =  9; Category = DuUnmatched }
+                    { Text = "B"; Start = 17; Category = DuUnmatched }
                 |]
 
+
             do
-                let rs = StringSearch.MatchRawFDA("STN01_CLOCK_LOCK", [|"STN01"|], [|"LOCK"; "CLOCK"|], [|"LOCK"|])
+                let name = "STN01_CLOCK_LOCK"
+                let rs = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"LOCK"; "CLOCK"|], [|"LOCK"|])
                 rs[0].Matches === [|
-                    { Text = "STN01"; Start =  0; Category = Flow}
-                    { Text = "CLOCK"; Start =  6; Category = Device}    // CLOCK, LOCK 가능하나, CLOCK 이 더 길어서 선택됨
-                    { Text = "LOCK" ; Start = 12; Category = Action}
+                    { Text = "STN01"; Start =  0; Category = DuFlow}
+                    { Text = "CLOCK"; Start =  6; Category = DuDevice}    // CLOCK, LOCK 가능하나, CLOCK 이 더 길어서 선택됨
+                    { Text = "LOCK" ; Start = 12; Category = DuAction}
+                |]
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [||]
+
+            do
+                let name = "S211_I_RB4_1ST_WORK_COMP"
+                let rs = StringSearch.MatchRawFDA(name, [|"S211"|], [|"RB4"|], [|"1ST_WORK_COMP"|])
+                rs[0].Matches === [|
+                    { Text = "S211"          ; Start =  0; Category = DuFlow}
+                    { Text = "RB4"           ; Start =  7; Category = DuDevice}
+                    { Text = "1ST_WORK_COMP" ; Start = 11; Category = DuAction}
+                |]
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
+                    { Text = "I"; Start = 5; Category = DuUnmatched }
                 |]
 
 
             noop()
 
-        //[<Test>]
-        //member _.``Maximal`` () =
+        [<Test>]
+        member _.``Maximal`` () =
+            let inputTags:IPlcTag[] =
+                let csv = Path.Combine(dataDir, "BB 메인제어반.csv")
+                CsvReader.Read(Vendor.LS, csv, addressFilter = fun addr -> addr.StartsWith("%I"))
+            let inputTagNames = inputTags |> map _.GetName()
+            noop()
 
 

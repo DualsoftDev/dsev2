@@ -5,12 +5,26 @@ open Dual.Plc2DS
 open System.Text.RegularExpressions
 
 [<AutoOpen>]
-module ReaderModule =
+module rec ReaderModule =
     type CsvReader =
-        static member ReadLs(filePath:string) = LS.CsvReader.ReadCommentCSV(filePath)
-        static member ReadAb(filePath:string) = AB.CsvReader.ReadCommentCSV(filePath)
-        static member ReadS7(filePath:string) = S7.CsvReader.ReadCommentSDF(filePath)
-        static member ReadMx(filePath:string) = MX.CsvReader.ReadCommentCSV(filePath)
+        /// vendor 별 CSV 파일에서 PlcTagInfo로 변환
+        static member Read(vendor:Vendor, filePath:string, ?addressFilter:string -> bool): IPlcTag[] =
+            let tags =
+                match vendor with
+                | LS -> LS.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+                | AB -> AB.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+                | S7 -> S7.CsvReader.ReadCommentSDF(filePath) |> map (fun x -> x :> IPlcTag)
+                | MX -> MX.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+            let filtered =
+                match addressFilter with
+                | Some pred -> tags |> filter (fun t -> pred (t.GetAddress()))
+                | None -> tags
+            filtered
+
+        static member ReadLs(filePath:string): LS.PlcTagInfo[] = LS.CsvReader.ReadCommentCSV(filePath)
+        static member ReadAb(filePath:string): AB.PlcTagInfo[] = AB.CsvReader.ReadCommentCSV(filePath)
+        static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
+        static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
 
     type IPlcTag with
         member x.GetName() =
