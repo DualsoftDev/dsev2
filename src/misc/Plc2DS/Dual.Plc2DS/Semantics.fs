@@ -318,8 +318,3 @@ module AppSettingsModule =
                     Some { Name = matchedName; Prolog = prolog; Epilog = epilog }
                 else None
             )
-
-        member x.TryMatchFlowName  (name:string): NameMatchResult option = x.TryMatchName(x.Flows, name)   .OrElseWith (fun () -> x.TryPatternMatchName(x.FlowPatterns, name))
-        member x.TryMatchDeviceName(name:string): NameMatchResult option = x.TryMatchName(x.Devices, name)
-        member x.TryMatchActionName(name:string): NameMatchResult option = x.TryMatchName(x.Actions, name)
-

@@ -4,6 +4,7 @@ open System.Collections.Generic
 open Dual.Common.Core.FS
 open System.Text.RegularExpressions
 open System
+open System.Reactive.Joins
 
 type WordSet = HashSet<string>
 type Words = string[]
@@ -80,6 +81,8 @@ module StringUtils =
 
     let private rangesSum (xs: (StringIndex*StringIndex)[]) =
         xs |> sumBy (fun (min, max) -> max - min)
+
+    let private compiledRegexPattern = Regex(@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$", RegexOptions.Compiled)
 
 
     type internal StringSearch =
@@ -235,23 +238,22 @@ module StringUtils =
             StringSearch.ComputeScores(heystack, xss)
 
 
-        static member MatchRegexFDA (remainingName:string, catRegexs:(SemanticCategory * Regex[])[]): MatchSet[] =
-            let indices (cat, patterns: Regex[]) =
-                patterns
-                |> Seq.collect (fun pattern ->
-                    pattern.Matches(remainingName)
-                    |> Seq.cast<Match>
-                    |> Seq.map (fun m -> PartialMatch.Create(m.Value, m.Index, cat))
-                )
-                |> filter (fun mr -> mr.Start >= 0)
-                |> sortByDescending (fun mr -> mr.Start)
-                |> toArray
+        /// 위치 기반 정규식 매칭: (Flow)_(Device)_(Action) 형식의 문자열에서 각 부분을 추출
+        ///
+        /// baseline 으로, 다른 방법이 통하지 않을 때 마지막 수단으로 사용
+        // Regex(@"^(?<flow>[^_]+)_(?<device>.*)_(?<action>[^_]+)$", RegexOptions.Compiled)
+        static member MatchRegexFDA (name:string, ?tagFDAPattern:Regex): PartialMatch[] =
+            let tagFDAPattern = tagFDAPattern |? compiledRegexPattern
+            [|
+                match tagFDAPattern.Match(name) with
+                | m when m.Success ->
+                    for groupName in compiledRegexPattern.GetGroupNames() do
+                        if groupName.IsOneOf("flow", "device", "action") then
+                            let group = m.Groups.[groupName]
+                            if group.Success then
+                                yield { Text = group.Value; Start = group.Index; Category = DuUnmatched }
+                | _ ->
+                    logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
+            |]
 
-            let xss:PartialMatch[][] =
-                catRegexs
-                |> map indices
-                |> sortByDescending Array.length
 
-            let heystack = (0, remainingName.Length)
-
-            StringSearch.ComputeScores(heystack, xss)

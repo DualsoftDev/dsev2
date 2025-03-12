@@ -56,8 +56,6 @@ module PostProcessTest =
 
                 do
                     si.Modifiers  |> exactlyOne |> toString === "~:B:~@1"
-                    let si2 = si.DecideModifiers(semantic2)
-                    let xxx = si2.Categorize()
                     noop()
 
 

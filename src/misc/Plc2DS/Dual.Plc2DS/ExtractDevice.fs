@@ -78,14 +78,6 @@ module ExtractDeviceModule =
         type Semantic with
             /// 이름과 Semantic 정보를 받아서, 분석된 정보를 반환.  기본 처리만 수행
             member internal sm.CreateDefault(name:string): NameAnalysis =
-                // flow, device 에 대한 brute force matching 우선
-                let flow = sm.TryMatchFlowName name
-                let device = sm.TryMatchDeviceName name
-                let action = sm.TryMatchActionName name
-
-
-
-
                 let splitNames =
                     // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
                     let splitCamelCase (input: string) =
@@ -143,7 +135,6 @@ module ExtractDeviceModule =
             member sm.Create(name:string): NameAnalysis =
                 sm.CreateDefault(name)
                     .FillEmptyPName(sm)
-                    .DecideModifiers(sm)
 
             member sm.ExtractDevices(plcTags:#IPlcTag[]): Device[] =
                 let anals:NameAnalysis[] =
@@ -192,20 +183,7 @@ module ExtractDeviceModule =
 
                     dup
 
-            member x.DecideModifiers(semantic:Semantic): NameAnalysis =
-                //if [ x.Modifiers; x.Discards; x.PrefixModifiers; x.PostfixModifiers ] |> forall _.IsNullOrEmpty() then
-                //    x
-                //else
-                //    let dup = { x with FullName = x.FullName }
-                //    x.PrefixModifiers |> sortBy _.OptPosition.Value |> List.ofSeq |> groupConsecutive
 
-                //    let preferPrefixModifier = semantic.PreferPrefixModifier
-                //    //for (idx, _) in x.SplitSemanticCategories.Indexed().Filter(snd >> ((=) Modifier)) do
-                //    //    match preferPrefixModifier with
-                //    //    | true when idx
-                //    //    noop()
-
-                    x
 
             /// PName 중에서 복수 category 할당 된 항목 처리
             member x.Disambiguate(semantic:Semantic): NameAnalysis =

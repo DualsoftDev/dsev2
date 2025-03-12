@@ -139,22 +139,32 @@ module BruteForceMatchBatch =
 
             noop()
 
-            for name in inputTagNames do
-                let mss = T.MatchRawFDA(name)
-                let unmatched = T.ComputeUnmatched(name, separators=[|"_";|], discards=defaultDiscards)
-                let m =
-                    if mss.Length > 0 then
-                        let m = mss[0].Matches |> map _.Text |> String.concat ","
-                        $"[{m}]"
-                    else
-                        "[]"
-                let u =
-                    if unmatched.Length > 0 then
-                        let u = unmatched |> map (fun pm -> pm.Text) |> String.concat ","
-                        $"[{u}]"
-                    else
-                        "[]"
-                tracefn $"{name}: {m}, {u}"
+            //do
+            //    for name in inputTagNames do
+            //        let mss = T.MatchRawFDA(name)
+            //        let unmatched = T.ComputeUnmatched(name, separators=[|"_";|], discards=defaultDiscards)
+            //        let m =
+            //            if mss.Length > 0 then
+            //                let m = mss[0].Matches |> map _.Text |> String.concat ","
+            //                $"[{m}]"
+            //            else
+            //                "[]"
+            //        let u =
+            //            if unmatched.Length > 0 then
+            //                let u = unmatched |> map (fun pm -> pm.Text) |> String.concat ","
+            //                $"[{u}]"
+            //            else
+            //                "[]"
+            //        tracefn $"{name}: {m}, {u}"
+
+
+            do
+                for tag in inputTags do
+                    match tag.TryGetFDA(sm) with
+                    | Some (f, d, a) ->
+                        tracefn $"{tag.GetName()}: {f}, {d}, {a}"
+                    | None ->
+                        logWarn $"------------ {tag.GetName()}: Failed to match"
             noop()
 
 
