@@ -38,9 +38,9 @@ module GetFDA =
         //  . flow 및 action 이름이 "_" 를 포함하는 multi-word 인 경우, semantic 에 따로 등록한 경우만 처리
         member x.TryGetFDA(semantic:Semantic): (string*string*string) option =
             let sm = semantic
-            let fs = sm.Flows   |> toArray
-            let ds = sm.Devices |> toArray
-            let zs = sm.Actions |> toArray
+            //let fs = sm.Flows   |> toArray
+            //let ds = sm.Devices |> toArray
+            //let zs = sm.Actions |> toArray
             let name = x.GetName()
 
             // "DNDL_Q_RB3_CN_2000" 처럼 _ 뒤에 숫자로 끝날 경우, action 에 귀속
