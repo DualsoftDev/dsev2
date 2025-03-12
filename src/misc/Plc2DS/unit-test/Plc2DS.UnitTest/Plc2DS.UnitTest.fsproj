@@ -20,8 +20,9 @@
 		<Compile Include="CsvReader\Ls.CsvReaderTest.fs" />
 		<Compile Include="TagAnalysis\SemanticSettingTest.fs" />
 		<Compile Include="TagAnalysis\AnalTest.fs" />
-		<Compile Include="TagAnalysis\BruteForceMatch.fs" />
-		<Compile Include="TagAnalysis\BruteForceMatch.Batch.fs" />
+		<Compile Include="TagAnalysis\Obsoleted\BruteForceMatch.Batch.fs" />
+		<Compile Include="TagAnalysis\Obsoleted\BruteForceMatch.fs" />
+		<Compile Include="TagAnalysis\Batch.fs" />
 		<Compile Include="TagAnalysis\PostProcessTest.fs" />
 	</ItemGroup>
 

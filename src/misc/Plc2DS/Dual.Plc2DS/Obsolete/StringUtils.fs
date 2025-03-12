@@ -6,83 +6,67 @@ open System.Text.RegularExpressions
 open System
 open System.Reactive.Joins
 
-type WordSet = HashSet<string>
-type Words = string[]
+module Obsoleted =
+    type PartialMatch with
+        member x.ToTuple() = x.Text, x.Start, x.Category
 
-/// 범위 지정: 백분율 Min/Max : [0..100]
-type Range = { Min: int; Max: int }
-/// tuple'ed range
-type TRange = int * int
+        // - partialMatches 배열을 Start 기준으로 정렬
+        // - text에서 매칭되지 않은 부분을 찾고 PartialMatch 객체로 변환하여 리스트에 추가
+        // - 마지막 매치 이후 남은 텍스트도 처리
+        static member ComputeUnmatched(text:string, partialMatches:PartialMatch[], ?separators:string[], ?discards:string[]):PartialMatch[] =
+            let separators = separators |? [||]
+            let discards = discards |? [||]
+            let sortedMatches = partialMatches |> Array.sortBy (fun pm -> pm.Start)
+            let result = ResizeArray<PartialMatch>()
+            let mutable lastEnd = 0
 
-/// word 내에서의 위치
-type StringIndex = int
-type Score = int
+            let addResult (unmatchedText: string, startIndex: int) =
+                if unmatchedText <> "" then
+                    result.Add({ Text = unmatchedText; Start = startIndex; Category = DuUnmatched })
 
-type PartialMatch = {
-    Text:string
-    Start:StringIndex
-    Category:SemanticCategory
-} with
-    static member Create(text:string, start:StringIndex, category:SemanticCategory) = { Text = text; Start = start; Category = category }
-    member x.ToTuple() = x.Text, x.Start, x.Category
+            for pm in sortedMatches do
+                if lastEnd < pm.Start then
+                    let unmatchedText = text.Substring(lastEnd, pm.Start - lastEnd)
+                    addResult (unmatchedText, lastEnd)
+                lastEnd <- pm.Start + pm.Text.Length
 
-    // - partialMatches 배열을 Start 기준으로 정렬
-    // - text에서 매칭되지 않은 부분을 찾고 PartialMatch 객체로 변환하여 리스트에 추가
-    // - 마지막 매치 이후 남은 텍스트도 처리
-    static member ComputeUnmatched(text:string, partialMatches:PartialMatch[], ?separators:string[], ?discards:string[]):PartialMatch[] =
-        let separators = separators |? [||]
-        let discards = discards |? [||]
-        let sortedMatches = partialMatches |> Array.sortBy (fun pm -> pm.Start)
-        let result = ResizeArray<PartialMatch>()
-        let mutable lastEnd = 0
-
-        let addResult (unmatchedText: string, startIndex: int) =
-            if unmatchedText <> "" then
-                result.Add({ Text = unmatchedText; Start = startIndex; Category = DuUnmatched })
-
-        for pm in sortedMatches do
-            if lastEnd < pm.Start then
-                let unmatchedText = text.Substring(lastEnd, pm.Start - lastEnd)
+            if lastEnd < text.Length then
+                let unmatchedText = text.Substring(lastEnd)
                 addResult (unmatchedText, lastEnd)
-            lastEnd <- pm.Start + pm.Text.Length
 
-        if lastEnd < text.Length then
-            let unmatchedText = text.Substring(lastEnd)
-            addResult (unmatchedText, lastEnd)
-
-        // 여기서 한 번에 filtering 및 가공 수행
-        result
-        |> collect (fun pm ->
-            pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries)
-            |> Array.fold (fun (acc, (offset:StringIndex)) (word:string) ->
-                let actualStart = text.IndexOf(word, offset)
-                let newMatch = { pm with Text = word; Start = actualStart }
-                (newMatch :: acc, actualStart + word.Length)
-            ) ([], pm.Start)
-            |> fst
-            |> List.rev
-        )
-        |> toArray
-        |> Array.filter (fun pm -> not (Array.contains pm.Text discards))
+            // 여기서 한 번에 filtering 및 가공 수행
+            result
+            |> collect (fun pm ->
+                pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries)
+                |> Array.fold (fun (acc, (offset:StringIndex)) (word:string) ->
+                    let actualStart = text.IndexOf(word, offset)
+                    let newMatch = { pm with Text = word; Start = actualStart }
+                    (newMatch :: acc, actualStart + word.Length)
+                ) ([], pm.Start)
+                |> fst
+                |> List.rev
+            )
+            |> toArray
+            |> Array.filter (fun pm -> not (Array.contains pm.Text discards))
 
 
 
 
-type MatchSet = {
-    Score:Score
-    Matches:PartialMatch[]
-}
+    type MatchSet = {
+        Score:Score
+        Matches:PartialMatch[]
+    }
 
 [<AutoOpen>]
 module StringUtils =
+    open Obsoleted
+
     type Range with
         member x.ToTuple() = x.Min, x.Max
         static member FromTuple (min, max) = { Min = min; Max = max }
 
     let private rangesSum (xs: (StringIndex*StringIndex)[]) =
         xs |> sumBy (fun (min, max) -> max - min)
-
-    let private compiledRegexPattern = Regex(@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$", RegexOptions.Compiled)
 
 
     type internal StringSearch =
@@ -236,24 +220,5 @@ module StringUtils =
             let heystack = (0, name.Length)
 
             StringSearch.ComputeScores(heystack, xss)
-
-
-        /// 위치 기반 정규식 매칭: (Flow)_(Device)_(Action) 형식의 문자열에서 각 부분을 추출
-        ///
-        /// baseline 으로, 다른 방법이 통하지 않을 때 마지막 수단으로 사용
-        // Regex(@"^(?<flow>[^_]+)_(?<device>.*)_(?<action>[^_]+)$", RegexOptions.Compiled)
-        static member MatchRegexFDA (name:string, ?tagFDAPattern:Regex): PartialMatch[] =
-            let tagFDAPattern = tagFDAPattern |? compiledRegexPattern
-            [|
-                match tagFDAPattern.Match(name) with
-                | m when m.Success ->
-                    for groupName in compiledRegexPattern.GetGroupNames() do
-                        if groupName.IsOneOf("flow", "device", "action") then
-                            let group = m.Groups.[groupName]
-                            if group.Success then
-                                yield { Text = group.Value; Start = group.Index; Category = DuUnmatched }
-                | _ ->
-                    logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
-            |]
 
 

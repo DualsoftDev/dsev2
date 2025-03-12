@@ -11,6 +11,8 @@ open Dual.Plc2DS
 open Dual.Common.Core.FS
 
 module BruteForceMatch =
+    open Obsoleted
+
     type B() =
         [<Test>]
         member _.``Minimal`` () =

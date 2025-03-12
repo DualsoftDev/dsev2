@@ -11,6 +11,8 @@ open Dual.Plc2DS
 open Dual.Common.Core.FS
 
 module BruteForceMatchBatch =
+    open Obsoleted
+
     let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
     let sm = Semantic()
 
@@ -156,15 +158,4 @@ module BruteForceMatchBatch =
             //            else
             //                "[]"
             //        tracefn $"{name}: {m}, {u}"
-
-
-            do
-                for tag in inputTags do
-                    match tag.TryGetFDA(sm) with
-                    | Some (f, d, a) ->
-                        tracefn $"{tag.GetName()}: {f}, {d}, {a}"
-                    | None ->
-                        logWarn $"------------ {tag.GetName()}: Failed to match"
-            noop()
-
 
