@@ -15,6 +15,8 @@ open Dual.Common.Base.FS
 open Dual.Plc2DS
 
 module AnalTest =
+    open ObsoletedExtractDeviceModule
+
     let getFile(file:string) =
         Path.Combine(__SOURCE_DIRECTORY__, "..", "Samples", file)
 

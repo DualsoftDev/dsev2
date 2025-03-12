@@ -8,8 +8,10 @@ open Dual.Plc2DS
 open Dual.Common.Core
 open Dual.Common.Core.FS
 
-[<AutoOpen>]
-module ExtractDeviceModule =
+//[<AutoOpen>]
+module ObsoletedExtractDeviceModule =
+    open ObsoletedSemantic
+
     type Call = {
         Name: string    // e.g "ADV"
         Input: HashSet<IPlcTag>

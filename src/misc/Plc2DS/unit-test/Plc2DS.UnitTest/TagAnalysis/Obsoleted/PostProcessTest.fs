@@ -8,6 +8,7 @@ open Dual.Common.UnitTest.FS
 
 
 module PostProcessTest =
+    open ObsoletedExtractDeviceModule
     type P() =
         [<Test>]
         member _.``Categorize`` () =
