@@ -21,11 +21,11 @@ module BruteForceMatch =
 
             do
                 let name = "STN01_B_CYL_CLAMP1"
-                let rs:MatchSet[] = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"LAMP"; "CYL"|], [|"CLAMP"|])
+                let rs:MatchSet[] = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"LAMP"; "CYL"|], [|"CLAMP1"|])
                 rs[0].Matches === [|
                     { Text = "STN01"; Start =  0; Category = DuFlow}
                     { Text = "CYL"  ; Start =  8; Category = DuDevice}
-                    { Text = "CLAMP"; Start = 12; Category = DuAction}
+                    { Text = "CLAMP1"; Start = 12; Category = DuAction}
                 |]
 
                 do
@@ -45,31 +45,27 @@ module BruteForceMatch =
                 PartialMatch.ComputeUnmatched(name, rs[0].Matches) === [|
                     { Text = "_B_"; Start =  5; Category = DuUnmatched }
                     { Text = "_"  ; Start = 11; Category = DuUnmatched }
-                    { Text = "1"  ; Start = 17; Category = DuUnmatched }
                 |]
 
                 // Separator 적용
                 let name = "STN01_B_CYL_CLAMP1"
                 PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
                     { Text = "B"; Start =  6; Category = DuUnmatched }
-                    { Text = "1"; Start = 17; Category = DuUnmatched }
+                    //{ Text = "1"; Start = 17; Category = DuUnmatched }
                 |]
 
                 // Discards: 버릴 목록.  (주로 "I", "Q" 등)
-                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|], discards=[|"A"; "B"|]) === [|
-                    { Text = "1"; Start = 17; Category = DuUnmatched }
-                |]
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|], discards=[|"A"; "B"|]) === [||]
 
             do
                 let name = "CYL_CLAMP1_STN01_B"
-                let rs = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"CYL"; "LAMP"|], [|"CLAMP"|])    // CYL <-> STN, [CYL <-> LAMP] 위치 변경
+                let rs = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"CYL"; "LAMP"|], [|"CLAMP1"|])    // CYL <-> STN, [CYL <-> LAMP] 위치 변경
                 rs[0].Matches === [|
                     { Text = "STN01"; Start = 11; Category = DuFlow}
                     { Text = "CYL"  ; Start =  0; Category = DuDevice}
-                    { Text = "CLAMP"; Start =  4; Category = DuAction}
+                    { Text = "CLAMP1"; Start =  4; Category = DuAction}
                 |]
                 PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
-                    { Text = "1"; Start =  9; Category = DuUnmatched }
                     { Text = "B"; Start = 17; Category = DuUnmatched }
                 |]
 
@@ -127,3 +123,17 @@ module BruteForceMatch =
 
             noop()
 
+        [<Test>]
+        member _.``Disallow Non-Numeric Partial Match`` () =
+            //let sm = Semantic()
+            //sm.Flows   <- WordSet(["STN"], ic)
+            //sm.Devices <- WordSet(["LAMP"; "CYL"], ic)
+            //sm.Actions <- WordSet(["CLAMP"], ic)
+
+            do
+                let name = "STN01_B_CYL_CLAMP1"
+                let rs:MatchSet[] = StringSearch.MatchRawFDA(name, [|"STN01"|], [|"LAMP"; "CYL"|], [|"ADV"|])
+                rs[0].Matches === [|
+                    { Text = "STN01"; Start =  0; Category = DuFlow}
+                    { Text = "CYL"  ; Start =  8; Category = DuDevice}
+                |]

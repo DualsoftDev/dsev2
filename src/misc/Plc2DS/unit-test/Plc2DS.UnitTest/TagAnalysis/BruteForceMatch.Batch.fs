@@ -32,10 +32,13 @@ module BruteForceMatchBatch =
     |]
 
     let devices = [|
+        "AIR"
         "BUZZ";
         "CARR"; "COM"; "CYL"; "EPB"; "GATE";
+        "HOOK_LOCK"
         "INV"
         "LASER"
+        "MCI"
         yield! nameIt ("RB", 1, 9)
         yield! nameIt ("RBT", 1, 9)
         yield! nameIt ("PB", 1, 9)
@@ -43,26 +46,49 @@ module BruteForceMatchBatch =
         yield! nameIt ("SPB", 1, 9)
         yield! nameIt ("SSP", 1, 9)
 
+        "S351_ROBOT"; "S352_ROBOT"
+        "LH_PART";
         "PRS";
+        "PRS_SKD";
+        "RH_PART"
         "ROBOT";
         "SKD";
-        "WPRS"; "WRS";
+        "STOPPER"
+        "WPRS"; "WRS"; "WRS_SKD"; "WRS_SKD_EJECT"
     |]
 
     let actions = [|
+        "ADV"
         "AUTO_START"; "BRK_ON"; "BUZZ_STOP";
         "CHECK_BYPASS"; "CHECK_ERROR";
-        "CLOSE"; "EM_STOP";
+        "CLOSE";
+        "CUT_OFF"
         "DEGRADE"
+        "DOWN"
+        "E_STOP"
         "EM_STOP"
         "INPUT"; "INPUT_ADDRESS";
+        "IN_OK"
+        yield! nameIt ("INT", 1, 9)
         "LAMP_CHECK"
+        "OPEN"
+        "OVERRUN"
+        "PART"; "PART_CHK"
         "READY_ON";
+        "RET"
+        "RESTART"
+        "RST"
+        "START"
+        "SLOW_CHECK"
+        "SLOW_CHK"
+        "STOP_CHK"
+        "STOP_CHECK"
         "TOTAL_ERROR";
-        "WELD_COMP"; "WORK_COMP"
+        "UP";
+        "WELD_COMP"; "WORK_COMP"; "WORK_COMP_ECHO"
     |]
     let defaultSeparators = [| "_"|]
-    let defaultDiscards = [| "I"; "Q"|]
+    let defaultDiscards = [| "I"; "Q"; "LS"|]
     do
         sm.Flows   <- WordSet(flows, ic)
         sm.Devices <- WordSet(devices, ic)
@@ -86,17 +112,20 @@ module BruteForceMatchBatch =
         member _.``Minimal`` () =
             let inputTags:IPlcTag[] =
                 let csv = Path.Combine(dataDir, "BB 메인제어반.csv")
-                CsvReader.Read(Vendor.LS, csv, addressFilter = fun addr -> addr.StartsWith("%I"))
+                CsvReader.Read(Vendor.LS, csv, addressFilter = fun addr -> addr.StartsWith("%Q"))
             let inputTagNames = inputTags |> map _.GetName()
 
-            let rs:MatchSet[] = T.MatchRawFDA("CRP_I_S351_ROBOT_IN_OK")
+            let rs:MatchSet[] = T.MatchRawFDA("CRP_I_S999_ROBOT_IN_OK")
             rs[0].Matches === [|
-                { Text = "S351" ; Start =  6; Category = DuFlow}
+                { Text = "S999" ; Start =  6; Category = DuFlow}
                 { Text = "ROBOT"; Start = 11; Category = DuDevice}
+                { Text = "IN_OK"; Start = 17; Category = DuAction }
             |]
+
             rs[1].Matches === [|
                 { Text = "CRP"  ; Start =  0; Category = DuFlow}
                 { Text = "ROBOT"; Start = 11; Category = DuDevice}
+                { Text = "IN_OK"; Start = 17; Category = DuAction }
             |]
 
 
@@ -105,6 +134,9 @@ module BruteForceMatchBatch =
                 //{ Text = "BR"; Start = 0;  Category = DuUnmatched }
                 { Text = "X"; Start = 13; Category = DuUnmatched }
             |]
+
+            let rs:MatchSet[] = T.MatchRawFDA("CRP_Q_S351_CAR_TYPE")
+
             noop()
 
             for name in inputTagNames do

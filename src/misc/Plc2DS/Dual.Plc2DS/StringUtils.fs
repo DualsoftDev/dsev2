@@ -67,53 +67,6 @@ type PartialMatch = {
 
 
 
-    static member ComputeUnmatchedVer2(text:string, partialMatches:PartialMatch[], ?separators:string[], ?discards:string[]):PartialMatch[] =
-        let separators = separators |? [||]
-        let discards = discards |? [||]
-        let sortedMatches = partialMatches |> Array.sortBy (fun pm -> pm.Start)
-        let result = ResizeArray<PartialMatch>()
-        let mutable lastEnd = 0
-
-        let addResult (unmatchedText: string, startIndex: int) =
-            if unmatchedText <> "" then
-                result.Add({ Text = unmatchedText; Start = startIndex; Category = DuUnmatched })
-
-        for pm in sortedMatches do
-            if lastEnd < pm.Start then
-                let unmatchedText = text.Substring(lastEnd, pm.Start - lastEnd)
-                addResult (unmatchedText, lastEnd)
-            lastEnd <- pm.Start + pm.Text.Length
-
-        if lastEnd < text.Length then
-            let unmatchedText = text.Substring(lastEnd)
-            addResult (unmatchedText, lastEnd)
-
-        //// 여기서 한 번에 filtering 및 가공 수행
-        //result
-        //|> collect (fun pm ->
-        //    pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries) // separators로 분리
-        //    |> filter (fun pm -> not (discards |> contains pm))  // discards 제거
-        //    |> Array.mapi (fun i word -> { pm with Text = word; Start = pm.Start + (if i = 0 then 0 else pm.Text.IndexOf(word)) }))
-        //|> toArray
-
-        // 여기서 한 번에 filtering 및 가공 수행
-        result
-        |> collect (fun pm ->
-            pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries)
-            |> Array.fold (fun (acc, (offset:StringIndex)) (word:string) ->
-                let actualStart = text.IndexOf(word, offset)
-                let newMatch = { pm with Text = word; Start = actualStart }
-                (newMatch :: acc, actualStart + word.Length)
-            ) ([], pm.Start)
-            |> fst
-            |> List.rev
-        )
-        |> toArray
-
-
-
-
-
 type MatchSet = {
     Score:Score
     Matches:PartialMatch[]
@@ -244,7 +197,15 @@ module StringUtils =
                 //    noop()
                 //    xs
                 |> bind (fun w ->
-                    StringSearch.AllIndices(name, w) |> map (fun i -> PartialMatch.Create(w, i, cat)))
+                    StringSearch.AllIndices(name, w)
+                    //|> map (fun i -> PartialMatch.Create(w, i, cat)))
+                    |> choose(fun i ->
+                        let headOk = i = 0 || name[i-1] = '_'
+                        let tailOk = i + w.Length = name.Length || name[i+w.Length] = '_'
+                        if headOk && tailOk then
+                            Some <| PartialMatch.Create(w, i, cat)
+                        else
+                            None))
                 |> filter (fun mr -> mr.Start >= 0)       // start >= 0
                 |> sortByDescending _.Start
                 |> toArray
