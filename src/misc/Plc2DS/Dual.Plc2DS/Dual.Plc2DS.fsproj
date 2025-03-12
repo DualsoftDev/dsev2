@@ -16,9 +16,11 @@
     <Compile Include="CsvReader.fs" />
     <Compile Include="Semantics.fs" />
     <Compile Include="GetFDA.fs" />
-    <Compile Include="Obsolete\Semantic.Obsolted.fs" />
+
+    <!--<Compile Include="Obsolete\Semantic.Obsolted.fs" />
     <Compile Include="Obsolete\ExtractDevice.fs" />
-    <Compile Include="Obsolete\StringUtils.fs" />
+    <Compile Include="Obsolete\StringUtils.fs" />-->
+
     <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
 

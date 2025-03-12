@@ -9,7 +9,7 @@ open Dual.Common.Core.FS
 module GetFDA =
     let private compiledRegexPattern = Regex(@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$", RegexOptions.Compiled)
     type StringSearch =
-        /// 위치 기반 정규식 매칭: (Flow)_(Device)_(Action) 형식의 문자열에서 각 부분을 추출
+        /// 위치 기반 정규식 매칭: (Flow)_(Device_)+(Action) 형식의 문자열에서 각 부분을 추출
         ///
         /// baseline 으로, 다른 방법이 통하지 않을 때 마지막 수단으로 사용
         // Regex(@"^(?<flow>[^_]+)_(?<device>.*)_(?<action>[^_]+)$", RegexOptions.Compiled)
