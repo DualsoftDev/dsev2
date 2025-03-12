@@ -89,8 +89,15 @@ module BruteForceMatchBatch =
                 CsvReader.Read(Vendor.LS, csv, addressFilter = fun addr -> addr.StartsWith("%I"))
             let inputTagNames = inputTags |> map _.GetName()
 
-            let xxx = T.MatchRawFDA("CRP_I_S351_ROBOT_IN_OK")
-            noop()
+            let rs:MatchSet[] = T.MatchRawFDA("CRP_I_S351_ROBOT_IN_OK")
+            rs[0].Matches === [|
+                { Text = "S351" ; Start =  6; Category = DuFlow}
+                { Text = "ROBOT"; Start = 11; Category = DuDevice}
+            |]
+            rs[1].Matches === [|
+                { Text = "CRP"  ; Start =  0; Category = DuFlow}
+                { Text = "ROBOT"; Start = 11; Category = DuDevice}
+            |]
 
 
 

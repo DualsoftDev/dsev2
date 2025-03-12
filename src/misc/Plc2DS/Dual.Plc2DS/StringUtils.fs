@@ -161,19 +161,40 @@ module StringUtils =
             )
 
         /// 이미 match 가 끝난 needle 들의 ranges 간의 intersection.  동일 요소를 중복 match 한 것이므로 range 길이가 길수록 감점 요인
-        static member GetIntersectionRanges (ranges: (TRange)[]): (TRange)[] =
+        static member GetIntersectionRangesNew (ranges: (TRange)[]): (TRange)[] =
             ranges
             |> Array.collect (fun (a, aa) ->    // aMin, aMax
                 ranges
                 |> Array.choose (fun (b, bb) -> // bMin, bMax
-                    let i = max a b     // minIntersect
-                    let ii = min aa bb  // maxIntersect
-                    if i <= ii && (a, aa) <> (b, bb) then
-                        Some (i, ii)
+                    if (a, aa) = (b, bb) then
+                        Some (a, aa)
                     else
-                        None
+                        let i = max a b     // minIntersect
+                        let ii = min aa bb  // maxIntersect
+                        if i <= ii then
+                            Some (i, ii)
+                        else
+                            None
                 )
             )
+            |> Array.distinct  // 중복 제거
+
+        static member GetIntersectionRanges (ranges: (TRange)[]): (TRange)[] =
+            let sameRanges = ranges |> Array.countBy id |> Array.choose (fun (key, count) -> if count > 1 then Some key else None)
+            let overlaps =
+                ranges
+                |> Array.collect (fun (a, aa) ->    // aMin, aMax
+                    ranges
+                    |> Array.choose (fun (b, bb) -> // bMin, bMax
+                        let i = max a b     // minIntersect
+                        let ii = min aa bb  // maxIntersect
+                        if i <= ii && (a, aa) <> (b, bb) then
+                            Some (i, ii)
+                        else
+                            None
+                    )
+                )
+            sameRanges @ overlaps
             |> Array.distinct  // 중복 제거
 
         static member FindPositiveRangeIntersects (heystack: TRange, needles: (TRange)[]): (TRange)[] = StringSearch.GetIntersectionRanges (heystack, needles)
@@ -190,36 +211,18 @@ module StringUtils =
         static member ComputeScores (heystack:TRange, xss:PartialMatch[][]): MatchSet[] =
             let matches: MatchSet[] =
                 [|
-                    // FDA 셋다 포함하면서, FDA match 간 overwrap 이 없고, 긴 match를 가장 선호
-                    for xs0:PartialMatch in xss[0] do
-                        let w0, s0, c0 = xs0.ToTuple()
-                        let r0 = (s0, s0 + w0.Length)
-                        let score = w0.Length
-                        yield { Score=score; Matches=[|xs0|]}
+                    for xs in xss do
+                        let ranges =
+                            xs
+                            |> map (fun x ->
+                                let w, s, c = x.ToTuple()
+                                (s, s + w.Length))
 
-                        for xs1 in xss[1] do
-                            let w1, s1, c1 = xs1.ToTuple()
-                            let r1 = (s1, s1 + w1.Length)
-
-                            // xss 끼리 겹치는 부분이 없어야 함. m = 0
-                            let m = StringSearch.FindNegativeRangeIntersects([|r0; r1|]) |> rangesSum
-                            if m = 0 then
-                                // heystack 을 최대한 xss 들이 cover 할수록 높은 점수
-                                let p = StringSearch.FindPositiveRangeIntersects(heystack, [|r0; r1|]) |> rangesSum
-                                let score = w0.Length + w1.Length + p
-                                yield { Score=score; Matches=[|xs0; xs1|]}
-
-                                for xs2 in xss[2] do
-                                    let w2, s2, c2 = xs2.ToTuple()
-                                    let r2 = (s2, s2 + w2.Length)
-
-                                    let m = StringSearch.FindNegativeRangeIntersects([|r0; r1; r2|]) |> rangesSum
-                                    if m = 0 then
-                                        let p = StringSearch.FindPositiveRangeIntersects(heystack, [|r0; r1; r2|]) |> rangesSum
-
-                                        let score = w0.Length + w1.Length + w2.Length + p
-                                        let matches = [|xs0; xs1; xs2|] |> sortByDescending _.Category
-                                        yield { Score=score; Matches=matches }     // flow, device, action 순서로 정렬
+                        // FDA 셋다 포함하면서, FDA match 간 overwrap 이 없고, 긴 match를 가장 선호
+                        if StringSearch.FindNegativeRangeIntersects(ranges) |> rangesSum = 0 then
+                            let p = StringSearch.FindPositiveRangeIntersects(heystack, ranges) |> rangesSum
+                            let score = (xs |> sumBy _.Text.Length)  + p
+                            yield { Score=score; Matches=xs}
                 |] |> sortByDescending _.Score
             matches
 
@@ -250,7 +253,22 @@ module StringUtils =
             let ids = devices |> indices DuDevice
             let ias = actions |> indices DuAction
 
-            let xss = [|ifs; ids; ias|] |> sortByDescending Array.length
+            let combineFDA (fs: 't[]) (ds: 't[]) (zs: 't[]) : 't array array =
+                match fs, ds, zs with
+                | [||], [||], [||] -> [||]
+                | _,    [||], [||] -> fs |> map (fun f -> [| f |])
+                | [||], _   , [||] -> ds |> map (fun d -> [| d |])
+                | [||], [||], _    -> zs |> map (fun z -> [| z |])
+                | _,    [||], _    -> allPairs fs zs |> map (fun (f, z) -> [| f; z |])
+                | [||], _   , _    -> allPairs ds zs |> map (fun (d, z) -> [| d; z |])
+                | _   , _   , [||] -> allPairs fs ds |> map (fun (f, d) -> [| f; d |])
+                | _   , _   , _    ->
+                    allPairs fs ds
+                    |> collect (fun (f, d) -> zs |> map (fun z -> [| f; d; z |]))
+
+
+
+            let xss = combineFDA ifs ids ias |> sortByDescending Array.length
             let heystack = (0, name.Length)
 
             StringSearch.ComputeScores(heystack, xss)
