@@ -12,7 +12,7 @@ open Dual.Common.Core.FS
 
 module Batch =
     let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
-    let sm = Semantic()
+    let sm = Semantic.Create()
 
 
     type B() =

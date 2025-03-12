@@ -7,25 +7,34 @@ open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module GetFDA =
-    let private compiledRegexPattern = Regex(@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$", RegexOptions.Compiled)
+
     type StringSearch =
         /// 위치 기반 정규식 매칭: (Flow)_(Device_)+(Action) 형식의 문자열에서 각 부분을 추출
         ///
         /// baseline 으로, 다른 방법이 통하지 않을 때 마지막 수단으로 사용
         // Regex(@"^(?<flow>[^_]+)_(?<device>.*)_(?<action>[^_]+)$", RegexOptions.Compiled)
-        static member MatchRegexFDA (name:string, ?tagFDAPattern:Regex): PartialMatch[] =
-            let tagFDAPattern = tagFDAPattern |? compiledRegexPattern
-            [|
-                match tagFDAPattern.Match(name) with
-                | m when m.Success ->
-                    for groupName in compiledRegexPattern.GetGroupNames() do
-                        if groupName.IsOneOf("flow", "device", "action") then
-                            let group = m.Groups.[groupName]
-                            if group.Success then
-                                yield { Text = group.Value; Start = group.Index; Category = DuUnmatched }
-                | _ ->
-                    logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
-            |]
+        static member MatchRegexFDA (name:string, tagFDAPatterns:Regex[]): PartialMatch[] =
+
+            let matchRegex (name:string) (pattern:Regex): PartialMatch[] =
+                [|
+                    match pattern.Match(name) with
+                    | m when m.Success ->
+                        for groupName in pattern.GetGroupNames() do
+                            if groupName.IsOneOf("flow", "device", "action") then
+                                let group = m.Groups.[groupName]
+                                if group.Success then
+                                    yield { Text = group.Value; Start = group.Index; Category = DuUnmatched }
+                    | _ ->
+                        logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
+                |]
+            let xxx =
+                tagFDAPatterns
+                |> tryPick (fun p ->
+                    match matchRegex name p with
+                    | xs when xs.Length = 3 -> Some xs
+                    | _ -> None)
+                |> function Some xs -> xs | None -> [||]
+            xxx
 
 
 
@@ -53,7 +62,7 @@ module GetFDA =
                 else
                     name, ""
 
-            StringSearch.MatchRegexFDA(nname)
+            StringSearch.MatchRegexFDA(nname, semantic.CompiledRegexPatterns)
             |> map _.Text
             |> fun xs ->
                 if xs.Length = 3 then

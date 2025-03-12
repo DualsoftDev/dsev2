@@ -19,6 +19,7 @@
 		<Compile Include="CsvReader\S7.SdfReaderTest.fs" />
 		<Compile Include="CsvReader\Ls.CsvReaderTest.fs" />
 		<Compile Include="TagAnalysis\SemanticSettingTest.fs" />
+		<Compile Include="TagAnalysis\PatternMatchTest.fs" />
 
 		<!--<Compile Include="TagAnalysis\Obsoleted\AnalTest.fs" />
 		<Compile Include="TagAnalysis\Obsoleted\BruteForceMatch.Batch.fs" />

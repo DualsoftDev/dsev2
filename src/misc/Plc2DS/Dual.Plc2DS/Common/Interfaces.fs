@@ -66,3 +66,4 @@ type PartialMatch = {
     Category:SemanticCategory
 } with
     static member Create(text:string, start:StringIndex, category:SemanticCategory) = { Text = text; Start = start; Category = category }
+    member x.Stringify() = $"{x.Text}@{x.Start}"
