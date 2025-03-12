@@ -28,36 +28,89 @@ type PartialMatch = {
     // - partialMatches 배열을 Start 기준으로 정렬
     // - text에서 매칭되지 않은 부분을 찾고 PartialMatch 객체로 변환하여 리스트에 추가
     // - 마지막 매치 이후 남은 텍스트도 처리
-    static member ComputeUnmatched(text: string, partialMatches: PartialMatch[], ?separators: string[]): PartialMatch[] =
+    static member ComputeUnmatched(text:string, partialMatches:PartialMatch[], ?separators:string[], ?discards:string[]):PartialMatch[] =
         let separators = separators |? [||]
+        let discards = discards |? [||]
         let sortedMatches = partialMatches |> Array.sortBy (fun pm -> pm.Start)
         let result = ResizeArray<PartialMatch>()
         let mutable lastEnd = 0
 
-        let filterUnmatchedText(text: string, separators: string[]): (char * int)[] =
-            text
-            |> choosei (fun i c -> if separators |> contains (string c) then None else Some (c, i))
-            |> toArray
-
-        let addResult(filteredText:(char*int)[]) =
-            if filteredText.Length > 0 then
-                let startIndex = lastEnd + (filteredText |> map snd |> Array.min)
-                let filteredStr = filteredText |> map fst |> System.String.Concat
-                result.Add( { Text=filteredStr; Start=startIndex; Category=DuUnmatched } )
+        let addResult (unmatchedText: string, startIndex: int) =
+            if unmatchedText <> "" then
+                result.Add({ Text = unmatchedText; Start = startIndex; Category = DuUnmatched })
 
         for pm in sortedMatches do
             if lastEnd < pm.Start then
                 let unmatchedText = text.Substring(lastEnd, pm.Start - lastEnd)
-                let filteredText = filterUnmatchedText(unmatchedText, separators)
-                addResult filteredText
+                addResult (unmatchedText, lastEnd)
             lastEnd <- pm.Start + pm.Text.Length
 
         if lastEnd < text.Length then
             let unmatchedText = text.Substring(lastEnd)
-            let filteredText = filterUnmatchedText(unmatchedText, separators)
-            addResult filteredText
+            addResult (unmatchedText, lastEnd)
 
-        result.ToArray()
+        // 여기서 한 번에 filtering 및 가공 수행
+        result
+        |> collect (fun pm ->
+            pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries)
+            |> Array.fold (fun (acc, (offset:StringIndex)) (word:string) ->
+                let actualStart = text.IndexOf(word, offset)
+                let newMatch = { pm with Text = word; Start = actualStart }
+                (newMatch :: acc, actualStart + word.Length)
+            ) ([], pm.Start)
+            |> fst
+            |> List.rev
+        )
+        |> toArray
+        |> Array.filter (fun pm -> not (Array.contains pm.Text discards))
+
+
+
+
+    static member ComputeUnmatchedVer2(text:string, partialMatches:PartialMatch[], ?separators:string[], ?discards:string[]):PartialMatch[] =
+        let separators = separators |? [||]
+        let discards = discards |? [||]
+        let sortedMatches = partialMatches |> Array.sortBy (fun pm -> pm.Start)
+        let result = ResizeArray<PartialMatch>()
+        let mutable lastEnd = 0
+
+        let addResult (unmatchedText: string, startIndex: int) =
+            if unmatchedText <> "" then
+                result.Add({ Text = unmatchedText; Start = startIndex; Category = DuUnmatched })
+
+        for pm in sortedMatches do
+            if lastEnd < pm.Start then
+                let unmatchedText = text.Substring(lastEnd, pm.Start - lastEnd)
+                addResult (unmatchedText, lastEnd)
+            lastEnd <- pm.Start + pm.Text.Length
+
+        if lastEnd < text.Length then
+            let unmatchedText = text.Substring(lastEnd)
+            addResult (unmatchedText, lastEnd)
+
+        //// 여기서 한 번에 filtering 및 가공 수행
+        //result
+        //|> collect (fun pm ->
+        //    pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries) // separators로 분리
+        //    |> filter (fun pm -> not (discards |> contains pm))  // discards 제거
+        //    |> Array.mapi (fun i word -> { pm with Text = word; Start = pm.Start + (if i = 0 then 0 else pm.Text.IndexOf(word)) }))
+        //|> toArray
+
+        // 여기서 한 번에 filtering 및 가공 수행
+        result
+        |> collect (fun pm ->
+            pm.Text.Split(separators, System.StringSplitOptions.RemoveEmptyEntries)
+            |> Array.fold (fun (acc, (offset:StringIndex)) (word:string) ->
+                let actualStart = text.IndexOf(word, offset)
+                let newMatch = { pm with Text = word; Start = actualStart }
+                (newMatch :: acc, actualStart + word.Length)
+            ) ([], pm.Start)
+            |> fst
+            |> List.rev
+        )
+        |> toArray
+
+
 
 
 

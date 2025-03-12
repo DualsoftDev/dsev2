@@ -43,6 +43,7 @@ module AppSettingsModule =
 
         /// 상태 keyword. e.g "ERR"
         [<DataMember>] member val States           = WordSet(ic) with get, set
+        [<DataMember>] member val Discards         = WordSet(ic) with get, set
         [<DataMember>] member val Modifiers        = WordSet(ic) with get, set
         [<DataMember>] member val PrefixModifiers  = WordSet(ic) with get, set
         [<DataMember>] member val PostfixModifiers = WordSet(ic) with get, set
@@ -80,6 +81,7 @@ module AppSettingsModule =
             y.FlowPatterns      <- WordSet(x.FlowPatterns, ic)
             y.DevicePatterns    <- WordSet(x.DevicePatterns, ic)
             y.Modifiers         <- WordSet(x.Modifiers, ic)
+            y.Discards          <- WordSet(x.Discards, ic)
             y.PrefixModifiers   <- WordSet(x.PrefixModifiers, ic)
             y.PostfixModifiers  <- WordSet(x.PostfixModifiers, ic)
             y.Dialects          <- Dictionary(x.Dialects, ic)
@@ -97,6 +99,7 @@ module AppSettingsModule =
             x.FlowPatterns    .UnionWith(addOn.FlowPatterns)
             x.DevicePatterns  .UnionWith(addOn.DevicePatterns)
             x.Modifiers       .UnionWith(addOn.Modifiers)
+            x.Discards        .UnionWith(addOn.Discards)
             x.PrefixModifiers .UnionWith(addOn.PrefixModifiers)
             x.PostfixModifiers.UnionWith(addOn.PostfixModifiers)
             x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
@@ -261,6 +264,10 @@ module AppSettingsModule =
         /// standardPNames 중에서 Modifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
         member x.GuessModifierNames(standardPNames: NwNs): NwNs =
             x.GuessNames(x.Modifiers, standardPNames)
+
+        member x.GuessDiscards(standardPNames: NwNs): NwNs =
+            x.GuessNames(x.Discards, standardPNames)
+
 
         /// standardPNames 중에서 PrefixModifiers 에 해당하는 것들이 존재하면, (그것과 index) 배열 반환
         member x.GuessPrefixModifierNames(standardPNames: NwNs): NwNs =

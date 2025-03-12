@@ -70,6 +70,7 @@ module ExtractDeviceModule =
             mutable Devices   : NameWithNumber[]      // e.g "ADV"
             mutable States    : NameWithNumber[]      // e.g "ERR"
             mutable Modifiers : NameWithNumber[]
+            mutable Discards  : NameWithNumber[]
             mutable PrefixModifiers  : NameWithNumber[]
             mutable PostfixModifiers : NameWithNumber[]
         }
@@ -102,7 +103,7 @@ module ExtractDeviceModule =
                 let baseline =
                     {   FullName = name; SplitNames = splitNames; SplitSemanticCategories = Array.init splitNames.Length (konst DuNone)
                         Flows = [||]; Actions = [||]; Devices = [||]; States = [||]
-                        Modifiers = [||]; PrefixModifiers = [||]; PostfixModifiers = [||]
+                        Modifiers = [||]; Discards = [||]; PrefixModifiers = [||]; PostfixModifiers = [||]
                     }
 
 
@@ -120,6 +121,7 @@ module ExtractDeviceModule =
                 let states           = sm.GuessStateNames           standardPNames |> tee(fun nns -> procReusults DuState  nns)
                 let devices          = sm.GuessDeviceNames          standardPNames |> tee(fun nns -> procReusults DuDevice   nns)
                 let modifiers        = sm.GuessModifierNames        standardPNames |> tee(fun nns -> procReusults DuModifier nns)
+                let discards         = sm.GuessDiscards             standardPNames |> tee(fun nns -> procReusults DuDiscard nns)
                 let prefixModifiers  = sm.GuessPrefixModifierNames  standardPNames |> tee(fun nns -> procReusults DuModifier nns)
                 let postfixModifiers = sm.GuessPostfixModifierNames standardPNames |> tee(fun nns -> procReusults DuModifier nns)
 
@@ -130,6 +132,7 @@ module ExtractDeviceModule =
                     Devices = devices
                     States = states
                     Modifiers = modifiers
+                    Discards = discards
                     PrefixModifiers = prefixModifiers
                     PostfixModifiers = postfixModifiers
                     SplitSemanticCategories = categories
@@ -181,6 +184,7 @@ module ExtractDeviceModule =
                     | DuDevice          -> dup.Devices          <- guessedNames
                     | DuFlow            -> dup.Flows            <- guessedNames
                     | DuModifier        -> dup.Modifiers        <- guessedNames
+                    | DuDiscard         -> dup.Discards         <- guessedNames
                     | DuPrefixModifier  -> dup.PrefixModifiers  <- guessedNames
                     | DuPostfixModifier -> dup.PostfixModifiers <- guessedNames
                     | DuState -> dup.States    <- guessedNames
@@ -189,7 +193,7 @@ module ExtractDeviceModule =
                     dup
 
             member x.DecideModifiers(semantic:Semantic): NameAnalysis =
-                //if [ x.Modifiers; x.PrefixModifiers; x.PostfixModifiers ] |> forall _.IsNullOrEmpty() then
+                //if [ x.Modifiers; x.Discards; x.PrefixModifiers; x.PostfixModifiers ] |> forall _.IsNullOrEmpty() then
                 //    x
                 //else
                 //    let dup = { x with FullName = x.FullName }

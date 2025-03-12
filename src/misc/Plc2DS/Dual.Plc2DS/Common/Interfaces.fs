@@ -23,6 +23,7 @@ type SemanticCategory =
     | DuDevice
     | DuFlow
     | DuModifier
+    | DuDiscard
     | DuPrefixModifier
     | DuPostfixModifier
     | DuState

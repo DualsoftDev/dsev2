@@ -2,8 +2,6 @@ namespace T
 
 
 open System.IO
-open System
-open System.Text.RegularExpressions
 
 open NUnit.Framework
 
@@ -11,11 +9,8 @@ open Dual.Common.UnitTest.FS
 
 open Dual.Plc2DS
 open Dual.Common.Core.FS
-open Dual.Common.Base.FS
-open Dual.Plc2DS
 
 module BruteForceMatch =
-    let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
     type B() =
         [<Test>]
         member _.``Minimal`` () =
@@ -37,10 +32,12 @@ module BruteForceMatch =
                     let text = "This_is original:Text"
                     let separators = [| "_"; ":" |]
                     let partialMatches = [| { Text = "is"; Start = 5; Category = DuModifier } |]
-                    let unmatched = PartialMatch.ComputeUnmatched(text, partialMatches, separators)
+                    let unmatched:PartialMatch[] = PartialMatch.ComputeUnmatched(text, partialMatches, separators)
                     unmatched === [|
-                        { Text = "This"         ; Start = 0; Category = DuUnmatched }
-                        { Text = " originalText"; Start = 7; Category = DuUnmatched }|]
+                        { Text = "This"      ; Start =  0; Category = DuUnmatched }
+                        { Text = " original" ; Start =  7; Category = DuUnmatched }
+                        { Text = "Text"      ; Start = 17;  Category = DuUnmatched }
+                    |]
 
                     unmatched |> Array.iter (fun pm -> printfn "Text: '%s', Start: %d" pm.Text pm.Start)
 
@@ -50,8 +47,16 @@ module BruteForceMatch =
                     { Text = "_"  ; Start = 11; Category = DuUnmatched }
                     { Text = "1"  ; Start = 17; Category = DuUnmatched }
                 |]
+
+                // Separator 적용
+                let name = "STN01_B_CYL_CLAMP1"
                 PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
                     { Text = "B"; Start =  6; Category = DuUnmatched }
+                    { Text = "1"; Start = 17; Category = DuUnmatched }
+                |]
+
+                // Discards: 버릴 목록.  (주로 "I", "Q" 등)
+                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|], discards=[|"A"; "B"|]) === [|
                     { Text = "1"; Start = 17; Category = DuUnmatched }
                 |]
 
@@ -81,25 +86,44 @@ module BruteForceMatch =
 
             do
                 let name = "S211_I_RB4_1ST_WORK_COMP"
-                let rs = StringSearch.MatchRawFDA(name, [|"S211"|], [|"RB4"|], [|"1ST_WORK_COMP"|])
-                rs[0].Matches === [|
-                    { Text = "S211"          ; Start =  0; Category = DuFlow}
-                    { Text = "RB4"           ; Start =  7; Category = DuDevice}
-                    { Text = "1ST_WORK_COMP" ; Start = 11; Category = DuAction}
-                |]
-                PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
-                    { Text = "I"; Start = 5; Category = DuUnmatched }
-                |]
+                do
+                    let rs = StringSearch.MatchRawFDA(name, [|"S211"|], [|"RB4"|], [|"1ST_WORK_COMP"|])
+                    rs[0].Matches === [|
+                        { Text = "S211"          ; Start =  0; Category = DuFlow}
+                        { Text = "RB4"           ; Start =  7; Category = DuDevice}
+                        { Text = "1ST_WORK_COMP" ; Start = 11; Category = DuAction}
+                    |]
+                    PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
+                        { Text = "I"; Start = 5; Category = DuUnmatched }
+                    |]
 
+                    PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|], discards=[|"I"; "Q"|]) === [||]
+                do
+                    let rs = StringSearch.MatchRawFDA(name, [|"S211"|], [|"RB4"|], [|"WORK_COMP"|])
+                    rs[0].Matches === [|
+                        { Text = "S211"      ; Start =  0; Category = DuFlow}
+                        { Text = "RB4"       ; Start =  7; Category = DuDevice}
+                        { Text = "WORK_COMP" ; Start = 15; Category = DuAction}
+                    |]
+                    PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|]) === [|
+                        { Text = "I"  ; Start =  5; Category = DuUnmatched }
+                        { Text = "1ST"; Start = 11; Category = DuUnmatched }
+                    |]
+
+                    PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|], discards=[|"I"; "Q"|]) === [|
+                        { Text = "1ST"; Start = 11; Category = DuUnmatched }
+                    |]
+
+                do
+                    let name = "BR_I_EM_STOP_X"
+                    let rs = StringSearch.MatchRawFDA(name, [||], [||], [| "EM_STOP"|])
+                    rs[0].Matches === [|
+                        { Text = "EM_STOP"   ; Start =  5; Category = DuAction}
+                    |]
+                    PartialMatch.ComputeUnmatched(name, rs[0].Matches, separators=[|"_"|], discards=[|"I"; "Q"|]) === [|
+                        { Text = "BR"; Start = 0;  Category = DuUnmatched }
+                        { Text = "X"; Start = 13; Category = DuUnmatched }
+                    |]
 
             noop()
-
-        [<Test>]
-        member _.``Maximal`` () =
-            let inputTags:IPlcTag[] =
-                let csv = Path.Combine(dataDir, "BB 메인제어반.csv")
-                CsvReader.Read(Vendor.LS, csv, addressFilter = fun addr -> addr.StartsWith("%I"))
-            let inputTagNames = inputTags |> map _.GetName()
-            noop()
-
 
