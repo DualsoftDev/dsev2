@@ -16,26 +16,17 @@ module PatternMatchTest =
 
     let regexMatch (sm:Semantic) (name:string) =
         StringSearch.MatchRegexFDA(name, sm.CompiledRegexPatterns)
-        |> map _.Stringify()
+        |> map _.Text
 
     type B() =
         [<Test>]
         member _.``Minimal`` () =
-            "STATION2_1ST_SHT_ADV" |> regexMatch sm === [|
-                "STATION2@0"
-                "1ST_SHT@9"
-                "ADV@17"
-            |]
+            "STATION2_1ST_SHT_ADV" |> regexMatch sm === [| "STATION2"; "1ST_SHT"; "ADV"; |]
 
-            let xxx = "MY_SPECIAL_FLOW_1ST_SHT_ADV" |> regexMatch sm
-
-            "MY_SPECIAL_FLOW_1ST_SHT_ADV" |> regexMatch sm === [|
-                "MY@0"
-                "SPECIAL_FLOW_1ST_SHT@3"
-                "ADV@24"
-            |]
 
             do
+                "MY_SPECIAL_FLOW_1ST_SHT_ADV" |> regexMatch sm === [| "MY"; "SPECIAL_FLOW_1ST_SHT"; "ADV" |]
+
                 let sm = Semantic.Create()
                 [ "MY_SPECIAL_FLOW"; "ANOTHER_SPECIAL_FLOW"; ] |> iter (fun w -> sm.SpecialFlows.Add(w) |> ignore)
                 [ "MY_ACTION"; "ANOTHER_ACTION"; ] |> iter (fun w -> sm.SpecialActions.Add(w) |> ignore)
@@ -43,33 +34,41 @@ module PatternMatchTest =
 
                 do
 
-                    "MY_SPECIAL_FLOW_1ST_SHT_ADV" |> regexMatch sm === [|
-                        "MY_SPECIAL_FLOW@0"
-                        "1ST_SHT@16"
-                        "ADV@24"
-                    |]
+                    "MY_SPECIAL_FLOW_1ST_SHT_ADV" |> regexMatch sm === [| "MY_SPECIAL_FLOW"; "1ST_SHT"; "ADV"; |]
 
-                    "MY_SPECIAL_FLOW_1ST_SHT_ANOTHER_ACTION" |> regexMatch sm === [|
-                        "MY_SPECIAL_FLOW@0"
-                        "1ST_SHT@16"
-                        "ANOTHER_ACTION@24"
-                    |]
+                    "MY_SPECIAL_FLOW_1ST_SHT_ANOTHER_ACTION" |> regexMatch sm === [| "MY_SPECIAL_FLOW"; "1ST_SHT"; "ANOTHER_ACTION"; |]
 
                 do
                     // special name 에 정규식 패턴 테스트
-                    "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [|
-                        "STATION2@0"
-                        "1ST_SHT_ACTION@9"
-                        "12345@24"
-                    |]
+                    "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [| "STATION2"; "1ST_SHT_ACTION"; "12345"; |]
 
                     [ "ACTION_\\d+"; ] |> iter (fun w -> sm.SpecialActions.Add(w) |> ignore)
                     sm.CompileRegexPatterns()
 
-                    "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [|
-                        "STATION2@0"
-                        "1ST_SHT@9"
-                        "ACTION_12345@17"
-                    |]
+                    "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [| "STATION2"; "1ST_SHT"; "ACTION_12345"; |]
 
+        [<Test>]
+        member _.``SpecialAction`` () =
+            do
+                do
+                    let sm = Semantic.Create()
+                    sm.SpecialFlows.Clear()
+                    sm.SpecialActions.Clear()
+                    sm.CompileRegexPatterns()
+                    "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3_CN"; "2000"; |]
+                do
+                    let sm = Semantic.Create()
+                    [ "CN_\\d+" ] |> iter (fun w -> sm.SpecialActions.Add(w) |> ignore)
+                    sm.CompileRegexPatterns()
+
+                    "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3"; "CN_2000"; |]
+
+
+        [<Test>]
+        member _.``AbnormalCases`` () =
+            "MES_재투입BODY_서열[0]" |> regexMatch sm === [| "MES"; "재투입BODY"; "서열[0]"; |]
+
+            "S302_ROBOT2.M_RBT_CLEANNER_BYPASS" |> regexMatch sm === [| "S302"; "ROBOT2.M_RBT_CLEANNER"; "BYPASS"; |]
+
+            "S100-1_RBT_WELD_OK" |> regexMatch sm === [| "S100-1"; "RBT_WELD"; "OK"; |]
 

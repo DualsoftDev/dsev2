@@ -24,8 +24,7 @@ module GetFDA =
                                 let group = m.Groups.[groupName]
                                 if group.Success then
                                     yield { Text = group.Value; Start = group.Index; Category = DuUnmatched }
-                    | _ ->
-                        logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
+                    | _ -> ()
                 |]
             let xxx =
                 tagFDAPatterns
@@ -33,7 +32,11 @@ module GetFDA =
                     match matchRegex name p with
                     | xs when xs.Length = 3 -> Some xs
                     | _ -> None)
-                |> function Some xs -> xs | None -> [||]
+                |> function
+                    |Some xs -> xs
+                    | None ->
+                        logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
+                        [||]
             xxx
 
 
@@ -46,26 +49,6 @@ module GetFDA =
         //  . device 명에서 discards 처리 ("_I_", "_Q_", "_LS_", ... 등 무시할 것 처리)
         //  . flow 및 action 이름이 "_" 를 포함하는 multi-word 인 경우, semantic 에 따로 등록한 경우만 처리
         member x.TryGetFDA(semantic:Semantic): (string*string*string) option =
-            let sm = semantic
-            //let fs = sm.Flows   |> toArray
-            //let ds = sm.Devices |> toArray
-            //let zs = sm.Actions |> toArray
-            let name = x.GetName()
-
-            // "DNDL_Q_RB3_CN_2000" 처럼 _ 뒤에 숫자로 끝날 경우, action 에 귀속
-            let tailNumber = Regex.Match(name, "_\d+$")
-            let nname, ntail =
-                if tailNumber.Success then
-                    let tail = tailNumber.Value
-                    let head = name.Substring(0, name.Length - tail.Length)
-                    head, tail
-                else
-                    name, ""
-
-            StringSearch.MatchRegexFDA(nname, semantic.CompiledRegexPatterns)
+            StringSearch.MatchRegexFDA(x.GetName(), semantic.CompiledRegexPatterns)
             |> map _.Text
-            |> fun xs ->
-                if xs.Length = 3 then
-                    Some (xs.[0], xs.[1], (xs.[2] + ntail))
-                else
-                    None
+            |> function [||] -> None | xs -> Some (xs.[0], xs.[1], xs.[2])
