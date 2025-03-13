@@ -12,7 +12,8 @@ open Dual.Common.Core.FS
 open Dual.Common.Base.FS
 open System.Text.RegularExpressions
 
-module Batch =
+[<AutoOpen>]
+module BatchCommon =
     let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
     let sm = EmJson.FromJson<SemanticSettings>(File.ReadAllText("Z:/dsev2/src/misc/Plc2DS/ConsoleTestApp/appsettings.json"))
 
@@ -57,6 +58,9 @@ module Batch =
         for s10 in items |> chunkBySize size do
             s10 |> String.concat ", " |> tracefn "\t%s"
 
+
+
+module Batch =
     type B() =
         [<Test>]
         member _.``Minimal`` () =

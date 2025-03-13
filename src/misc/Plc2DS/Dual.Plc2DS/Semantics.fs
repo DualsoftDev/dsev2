@@ -41,8 +41,8 @@ module AppSettingsModule =
         [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
 
         member x.CompileRegexPatterns() =
-            let sfs = let ss = x.SpecialFlows   |> joinWith "|" in String.EncloseWith(ss, "(", ")")     // [A; B; C] => "(A|B|C)"
-            let sas = let ss = x.SpecialActions |> joinWith "|" in String.EncloseWith(ss, "(", ")")
+            let sfs = let ss = x.SpecialFlows   |> joinWith "|" in ss.EncloseWith("(", ")")     // [A; B; C] => "(A|B|C)"
+            let sas = let ss = x.SpecialActions |> joinWith "|" in ss.EncloseWith("(", ")")
             x.CompiledRegexPatterns <-
                 [|
                     if x.SpecialFlows.any() && x.SpecialActions.any() then
