@@ -24,6 +24,7 @@ type PlcTagInfo = {
     DataType: string
     Property: string
     Comment: string
+    mutable Temporary:obj
 } with
     interface IPlcTag
 
@@ -33,7 +34,9 @@ type CsvReader =
         let cols = Csv.ParseLine line
         assert(cols.Length = 7)
         {   Type = cols[0]; Scope = cols[1]; Variable = cols[2]; Address = cols[3]
-            DataType = cols[4]; Property = cols[5]; Comment = cols[6] }
+            DataType = cols[4]; Property = cols[5]; Comment = cols[6]
+            Temporary = null
+        }
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
         let header = "Type,Scope,Variable,Address,DataType,Property,Comment"

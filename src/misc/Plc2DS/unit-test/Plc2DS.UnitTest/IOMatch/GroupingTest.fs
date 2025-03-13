@@ -11,10 +11,46 @@ open Dual.Plc2DS
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
 open System.Text.RegularExpressions
+open Dual.Plc2DS.LS
 
 module GroupingTest =
 
     type G() =
         [<Test>]
         member _.``Minimal`` () =
-            ()
+            let inputTags: IPlcTag[] =
+                C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I") || addr.StartsWith("%Q"))
+                |> filter (fun t -> (t :?> PlcTagInfo).Scope = "GlobalVariable")
+
+            inputTags |> iter (fun t -> t.OptFDA <- t.TryGetFDA(sm))
+            let oks, errs = inputTags |> partition _.OptFDA.IsSome
+
+            let okFDAs = oks |> map _.OptFDA.Value
+            let errs = errs |> map _.GetName() |> sort |> distinct
+
+            let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
+            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm) |> sort |> distinct
+            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm) |> sort |> distinct
+
+            let n = 10
+            okFlows   |> printN "Flows"   n
+            okDevices |> printN "Devices" n
+            okActions |> printN "Actions" n
+            errs      |> printN "Errors"  n     // BLE_HARTBIT, BLE_HEARTBIT, S508LH_MAT1, S508LH_MAT2, S508RH_MAT1, S508RH_MAT2, S509LH_MAT1, S509LH_MAT2, S509RH_MAT1, S509RH_MAT2
+
+
+            // oks 를 "{flow}::{device}::{action}" key 로 만들어서 grouping
+            let grouped =
+                let getKey (t:IPlcTag) =
+                    let f = t.OptFDA.Value.Flow
+                    let d = t.OptFDA.Value.Device
+                    $"{f}::{d}"
+                oks
+                |> groupBy getKey
+                |> sortByDescending (snd >> _.Length)
+                //|> map (fun (key, tags) -> key, tags |> map snd)
+
+            noop()
+
+
+

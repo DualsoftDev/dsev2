@@ -13,10 +13,13 @@ type PlcTagInfo = {
     Address: string
     DataType: string
     Comment: string
+    mutable Temporary:obj
 } with
     interface IPlcTag
     static member Create(name, address, dataType, comment) =
-        { Name = name; Address = address; DataType = dataType; Comment = comment }
+        {   Name = name; Address = address; DataType = dataType; Comment = comment
+            Temporary = null
+        }
 
 /// S7.CsvReader
 type CsvReader =

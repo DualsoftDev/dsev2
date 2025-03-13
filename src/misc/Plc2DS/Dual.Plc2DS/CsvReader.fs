@@ -116,3 +116,18 @@ module rec ReaderModule =
             | 'Q' -> Some false
             | _ -> None
 
+        member x.Temporary
+            with get() =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.Temporary
+                | :? AB.PlcTagInfo as t -> t.Temporary
+                | :? S7.PlcTagInfo as t -> t.Temporary
+                | :? MX.PlcTagInfo as t -> t.Temporary
+                | _ -> failwith "Invalid PlcTagInfo"
+            and set v =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.Temporary <- v
+                | :? AB.PlcTagInfo as t -> t.Temporary <- v
+                | :? S7.PlcTagInfo as t -> t.Temporary <- v
+                | :? MX.PlcTagInfo as t -> t.Temporary <- v
+                | _ -> failwith "Invalid PlcTagInfo"

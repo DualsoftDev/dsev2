@@ -38,10 +38,6 @@ module BatchCommon =
             |> map (fun csv -> CsvReader.Read(Vendor.LS, csv, ?addressFilter=addressFilter))
             |> Array.concat
 
-    let rtryAnalyze (sm:Semantic) (tag:IPlcTag): Result<IPlcTag*FDA, IPlcTag> =
-        match tag.TryGetFDA(sm) with
-        | Some fda-> Ok (tag, fda)
-        | None -> Error tag
 
     let sortResults (results: Result<(IPlcTag * FDA), IPlcTag>[]) =
         results
@@ -59,6 +55,26 @@ module BatchCommon =
             s10 |> String.concat ", " |> tracefn "\t%s"
 
 
+    /// 단어 뒤에 숫자(혹은 array index) 형식의 이름 match.  성능 향상을 위해 local 변수로 만들 수 없음.
+    let tailNumberPattern = Regex(@"^([a-zA-Z가-힣_\.]+)_?(\d+|\[[\d,\.]+\])$", RegexOptions.Compiled)
+    let tailNumberUnifier (sm:Semantic) name =
+        let discardedName =
+            TagString.SplitName(name, discardsPrefix=sm.Discards.ToArray())
+            |> String.concat "_"
+        let m =
+            discardedName |> tailNumberPattern.Match
+        if m.Success then
+            $"{m.Groups[1].Value}$" // pattern 에서 단어 부분만 추출하고 나머지는 "$" 로 대체
+        else
+            discardedName
+
+    type IPlcTag with
+        member x.OptFDA
+            with get() =
+                let xxx = x
+                x.Temporary :?> FDA option
+            and set (fda: FDA option) =
+                x.Temporary <- fda
 
 module Batch =
     type B() =
@@ -105,11 +121,11 @@ module Batch =
             *)
             //let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I"))
             let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
-            let anals = inputTags |> map (rtryAnalyze sm)
-            let oks, errs = anals |> partition Result.isOk
+            inputTags |> iter (fun t -> t.OptFDA <- t.TryGetFDA(sm))
+            let oks, errs = inputTags |> partition _.OptFDA.IsSome
 
-            let okFDAs = oks |> map Result.get |> map snd
-            let errs = errs |> map _.GetErrorValue() |> map _.GetName() |> sort |> distinct
+            let okFDAs = oks |> map _.OptFDA.Value
+            let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
             let okDevices = okFDAs |> map _.Device |> sort |> distinct
@@ -123,21 +139,6 @@ module Batch =
 
             noop()
 
-
-
-
-
-    let tailNumberPattern = Regex(@"^([a-zA-Z가-힣_\.]+)_?(\d+|\[[\d,\.]+\])$", RegexOptions.Compiled)
-    let tailNumberTransformer (sm:Semantic) name =
-        let discardedName =
-            TagString.SplitName(name, discardsPrefix=sm.Discards.ToArray())
-            |> String.concat "_"
-        let m =
-            discardedName |> tailNumberPattern.Match
-        if m.Success then
-            $"{m.Groups[1].Value}$"
-        else
-            discardedName
 
     type Filtered() =
         let sm = Semantic.Create()
@@ -158,15 +159,15 @@ module Batch =
 
             let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I") || addr.StartsWith("%Q"))
             //let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
-            let anals = inputTags |> map (rtryAnalyze sm)
-            let oks, errs = anals |> partition Result.isOk
+            inputTags |> iter (fun t -> t.OptFDA <- t.TryGetFDA(sm))
+            let oks, errs = inputTags |> partition _.OptFDA.IsSome
 
-            let okFDAs = oks |> map Result.get |> map snd
-            let errs = errs |> map _.GetErrorValue() |> map _.GetName() |> sort |> distinct
+            let okFDAs = oks |> map _.OptFDA.Value
+            let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
-            let okDevices = okFDAs |> map _.Device |> map (tailNumberTransformer sm) |> sort |> distinct
-            let okActions = okFDAs |> map _.Action |> map (tailNumberTransformer sm) |> sort |> distinct
+            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm) |> sort |> distinct
+            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm) |> sort |> distinct
 
             let n = 10
             okFlows   |> printN "Flows"   n
@@ -181,23 +182,23 @@ module Batch =
             let dq = "\""
             let ddq = "\"\""
             let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}S305_Q_RB4_PLT3_COUNT_RST{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
-            match rtryAnalyze sm tagInfo with
-            | Ok (tag, {Flow=f; Device=d; Action=a}) ->
-                tracefn $"{tag.GetName()}: {f}, {d}, {a}"
-                tailNumberTransformer sm d === "RB4_PLT3_COUNT"        // w/o "Q"
+            match tagInfo.TryGetFDA(sm) with
+            | Some {Flow=f; Device=d; Action=a} ->
+                tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
+                tailNumberUnifier sm d === "RB4_PLT3_COUNT"        // w/o "Q"
                 noop()
-            | Error e ->
+            | None ->
                 noop()
 
 
             let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}DNDL_I_RB1_PROG_ECHO_1{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
-            match rtryAnalyze sm tagInfo with
-            | Ok (tag, {Flow=f; Device=d; Action=a}) ->
-                tracefn $"{tag.GetName()}: {f}, {d}, {a}"
+            match tagInfo.TryGetFDA(sm) with
+            | Some {Flow=f; Device=d; Action=a} ->
+                tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
                 f === "DNDL"
                 d === "I_RB1_PROG"
                 a === "ECHO_1"
-                tailNumberTransformer sm d === "RB1_PROG"        // w/o "Q"
+                tailNumberUnifier sm d === "RB1_PROG"        // w/o "Q"
                 noop()
-            | Error e ->
+            | None ->
                 noop()

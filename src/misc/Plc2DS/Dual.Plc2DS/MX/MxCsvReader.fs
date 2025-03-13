@@ -8,6 +8,7 @@ type PlcTagInfo = {
     Device: string
     Comment: string
     Label: string
+    mutable Temporary:obj
 } with
     interface IPlcTag
 
@@ -27,7 +28,9 @@ type CsvReader =
                 if cols.Length <> 2 then failwith "Invalid file format"
                 "", cols[1]
 
-        { Device = device; Comment = comment; Label = label |? "" }
+        {   Device = device; Comment = comment; Label = label |? ""
+            Temporary = null
+        }
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
         let headers = File.PeekLines(filePath, 0, 2) |> toArray
