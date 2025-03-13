@@ -4,11 +4,12 @@ open System.Text.RegularExpressions
 
 open Dual.Plc2DS
 open Dual.Common.Core.FS
+open System
 
 [<AutoOpen>]
 module GetFDA =
 
-    type StringSearch =
+    type TagString =
         /// 위치 기반 정규식 매칭: (Flow)_(Device_)+(Action) 형식의 문자열에서 각 부분을 추출
         ///
         /// baseline 으로, 다른 방법이 통하지 않을 때 마지막 수단으로 사용
@@ -40,6 +41,40 @@ module GetFDA =
             xxx
 
 
+        static member SplitName (name:string, ?discardsPrefix:string[], ?splitOnCamelCase:bool, ?delimeters:string[]): string[] =
+            let splitOnCamelCase = splitOnCamelCase |? false
+            let discardsPrefix = discardsPrefix |? [||]
+            let delimiters = delimeters |? [|"_"|]
+            let splitNames =
+                // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
+                let camelCaseSplitter (input: string) =
+                    let sep = "<_sep_>"
+                    Regex.Replace(input, "(?<!^)([A-Z])", $"{sep}$1") // 첫 글자는 제외하고 대문자 앞에 separator 추가
+                        .Split(sep)
+
+                let splitter (x:string) = if splitOnCamelCase then camelCaseSplitter x else [|x|]
+
+                name.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+                |> bind splitter
+                |> map _.ToUpper()
+                |> toList
+
+            match splitNames with
+            | [] -> [||]
+            | h::t::ts when     // discard 대상이되, discard 이후 숫자만 남는 것은 제외
+                discardsPrefix |> contains h
+                && (ts.any() || !! Regex.IsMatch(t, "^\d+$")) ->
+                    t::ts |> toArray
+            | _ ->
+                splitNames |> toArray
+                |> tee(fun splitNames ->
+                    if splitNames.Length = 1 && Regex.IsMatch(splitNames[0], "^\d+$") then
+                        noop()
+                )
+
+
+
+    type FDA = { Flow:string; Device:string; Action:string }
 
     type IPlcTag with
         /// PlcTag 정보로부터 flow, device, action 명 추출
@@ -48,7 +83,15 @@ module GetFDA =
         //  . "action_숫자" 형식으로 끝날 경우, action으로 간주
         //  . device 명에서 discards 처리 ("_I_", "_Q_", "_LS_", ... 등 무시할 것 처리)
         //  . flow 및 action 이름이 "_" 를 포함하는 multi-word 인 경우, semantic 에 따로 등록한 경우만 처리
-        member x.TryGetFDA(semantic:Semantic): (string*string*string) option =
-            StringSearch.MatchRegexFDA(x.GetName(), semantic.CompiledRegexPatterns)
+        member x.TryGetFDA(semantic:Semantic): FDA option =
+            TagString.MatchRegexFDA(x.GetName().ToUpper(), semantic.CompiledRegexPatterns)
             |> map _.Text
-            |> function [||] -> None | xs -> Some (xs.[0], xs.[1], xs.[2])
+            |> function
+            | [||] -> None
+            | xs ->
+                let f, d, a = xs[0], xs[1], xs[2]
+                if [f; d; a] |> exists (fun x -> Regex.IsMatch(x, @"^\d+$")) then
+                    logWarn $"WARN: number only item exists: {f}/{d}/{a} on {x.GetName()}"
+                    None
+                else
+                    Some { Flow = f; Device = d; Action = a }

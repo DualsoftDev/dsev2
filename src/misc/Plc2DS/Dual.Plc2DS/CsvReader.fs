@@ -59,41 +59,60 @@ module rec ReaderModule =
         static member private xxx = ()
         // I 여부
         member x.IsInput(): bool =
-            let addr = x.GetAddress()
+            let addr = x.GetAddress().ToUpper()
             if addr.IsNullOrEmpty() then
                 false
             else
                 let pattern =
                     match x with
-                    | :? LS.PlcTagInfo -> @"^%[Ii]"
+                    | :? LS.PlcTagInfo -> @"^%I"
                     | :? AB.PlcTagInfo -> @":I"
-                    | :? S7.PlcTagInfo -> @"^%[Ii]"
-                    | :? MX.PlcTagInfo -> @"^[Xx]"
+                    | :? S7.PlcTagInfo -> @"^%I"
+                    | :? MX.PlcTagInfo -> @"^X"
                     | _ -> failwith "Invalid PlcTagInfo"
                 Regex.IsMatch(addr, pattern)
 
 
         // Q 여부
         member x.IsOutput(): bool =
-            let addr = x.GetAddress()
+            let addr = x.GetAddress().ToUpper()
             if addr.IsNullOrEmpty() then
                 false
             else
                 let pattern =
                     match x with
-                    | :? LS.PlcTagInfo -> @"^%[Qq]"
+                    | :? LS.PlcTagInfo -> @"^%Q"
                     | :? AB.PlcTagInfo -> @":Q"
-                    | :? S7.PlcTagInfo -> @"^%[Qq]"
-                    | :? MX.PlcTagInfo -> @"^[Yy]"
+                    | :? S7.PlcTagInfo -> @"^%Q"
+                    | :? MX.PlcTagInfo -> @"^Y"
                     | _ -> failwith "Invalid PlcTagInfo"
                 Regex.IsMatch(addr, pattern)
 
+        // M 여부
+        member x.IsMemory(): bool =
+            let addr = x.GetAddress().ToUpper()
+            if addr.IsNullOrEmpty() then
+                false
+            else
+                let pattern =
+                    match x with
+                    | :? LS.PlcTagInfo -> @"^%M"
+                    | :? AB.PlcTagInfo -> @":M"
+                    | :? S7.PlcTagInfo -> @"^%M"
+                    | :? MX.PlcTagInfo -> @"^M"     // ???
+                    | _ -> failwith "Invalid PlcTagInfo"
+                Regex.IsMatch(addr, pattern)
+
+        member x.GetMermoyType(): char =
+            if   x.IsInput()  then 'I'
+            elif x.IsOutput() then 'Q'
+            elif x.IsMemory() then 'M'
+            else '?'
+
         // Input 이면 Some true, Output 이면 Some false, 아니면 None
         member x.OptIOType: bool option =
-            if x.IsInput() then
-                Some true
-            elif x.IsOutput() then
-                Some false
-            else
-                None
+            match x.GetMermoyType() with
+            | 'I' -> Some true
+            | 'Q' -> Some false
+            | _ -> None
 

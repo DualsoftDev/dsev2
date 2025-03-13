@@ -15,7 +15,7 @@ module PatternMatchTest =
     let sm = Semantic.Create()
 
     let regexMatch (sm:Semantic) (name:string) =
-        StringSearch.MatchRegexFDA(name, sm.CompiledRegexPatterns)
+        TagString.MatchRegexFDA(name, sm.CompiledRegexPatterns)
         |> map _.Text
 
     type B() =
@@ -58,10 +58,11 @@ module PatternMatchTest =
                     "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3_CN"; "2000"; |]
                 do
                     let sm = Semantic.Create()
-                    [ "CN_\\d+" ] |> iter (fun w -> sm.SpecialActions.Add(w) |> ignore)
+                    [ "CN_\\d+"; "BT_(\\d+M|CHANGE|NORMAL|AS|EMPTY|EMPTY_CRR|NG_BODY|NG_CRR|OUT_CRR|STOCK)" ] |> iter (fun w -> sm.SpecialActions.Add(w) |> ignore)
                     sm.CompileRegexPatterns()
 
                     "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3"; "CN_2000"; |]
+                    "S506_WRS_LH_ARG_CT_CLP_ADV_BT_3M" |> regexMatch sm === [| "S506"; "WRS_LH_ARG_CT_CLP_ADV"; "BT_3M"; |]
 
 
         [<Test>]

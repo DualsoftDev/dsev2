@@ -10,12 +10,13 @@ open Dual.Common.UnitTest.FS
 open Dual.Plc2DS
 open Dual.Common.Core.FS
 open Dual.Common.Base.FS
+open System.Text.RegularExpressions
 
 module Batch =
     let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
     let sm = EmJson.FromJson<SemanticSettings>(File.ReadAllText("Z:/dsev2/src/misc/Plc2DS/ConsoleTestApp/appsettings.json"))
 
-    let csvs = [
+    let csvs = [|
         "BB 메인제어반.csv"
         "BC 로컬 메인제어반.csv"
         "BC1 메인제어반.csv"
@@ -27,7 +28,7 @@ module Batch =
         "ROOF 메인제어반.csv"
         "S_COMPL LH 메인제어반.csv"
         "S_COMPL RH 메인제어반.csv"
-    ]
+    |]
 
     type C =
         static member CollectTags (csvs:string[], ?addressFilter:string -> bool): IPlcTag[] =
@@ -36,10 +37,25 @@ module Batch =
             |> map (fun csv -> CsvReader.Read(Vendor.LS, csv, ?addressFilter=addressFilter))
             |> Array.concat
 
-    //let rtryAnalyze (tag:IPlcTag): Result< =
-    //    match tag.TryGetFDA(sm) with
-    //    | Some (f, d, a) -> tracefn $"{tag.GetName()}: {f}, {d}, {a}"
-    //    | None -> logWarn $"------------ {tag.GetName()}: Failed to match"
+    let rtryAnalyze (sm:Semantic) (tag:IPlcTag): Result<IPlcTag*FDA, IPlcTag> =
+        match tag.TryGetFDA(sm) with
+        | Some fda-> Ok (tag, fda)
+        | None -> Error tag
+
+    let sortResults (results: Result<(IPlcTag * FDA), IPlcTag>[]) =
+        results
+        |> Array.sortWith (fun a b ->
+            match a, b with
+            | Ok (s1, _), Ok (s2, _) -> compare (s1.GetName()) (s2.GetName())  // Ok 내부 알파벳 정렬
+            | Error e1, Error e2 -> compare (e1.GetName()) (e2.GetName())      // Error 내부 알파벳 정렬
+            | Ok _, Error _ -> -1  // Ok를 Error보다 먼저 배치
+            | Error _, Ok _ -> 1   // Error를 Ok보다 뒤에 배치
+        )
+
+    let printN (header:string) (size:int) (items:string[]) =
+        tracefn $":::: {header} {items.Length}"
+        for s10 in items |> chunkBySize size do
+            s10 |> String.concat ", " |> tracefn "\t%s"
 
     type B() =
         [<Test>]
@@ -51,7 +67,7 @@ module Batch =
             do
                 for tag in inputTags do
                     match tag.TryGetFDA(sm) with
-                    | Some (f, d, a) ->
+                    | Some { Flow = f; Device = d; Action = a } ->
                         tracefn $"{tag.GetName()}: {f}, {d}, {a}"
                     | None ->
                         logWarn $"------------ {tag.GetName()}: Failed to match"
@@ -74,5 +90,110 @@ module Batch =
             ] |> ignore
 
 
+        [<Test>]
+        member _.``CollectFDANames`` () =
+            (*
+                "BB 메인제어반.csv" Input 기준 갯수 : errs(1), okFlows(29), okDevices(1318), okActions(404)
+                전체 Input 기준 갯수 : errs(11), okFlows(126), okDevices(5196), okActions(755)
+                전체 기준 갯수 : errs(15972), okFlows(429), okDevices(48325), okActions(6869)
+
+                see anal.txt
+            *)
+            //let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I"))
+            let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
+            let anals = inputTags |> map (rtryAnalyze sm)
+            let oks, errs = anals |> partition Result.isOk
+
+            let okFDAs = oks |> map Result.get |> map snd
+            let errs = errs |> map _.GetErrorValue() |> map _.GetName() |> sort |> distinct
+
+            let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
+            let okDevices = okFDAs |> map _.Device |> sort |> distinct
+            let okActions = okFDAs |> map _.Action |> sort |> distinct
+
+            let n = 10
+            okFlows   |> printN "Flows"   n
+            okDevices |> printN "Devices" n
+            okActions |> printN "Actions" n
+            errs      |> printN "Errors"  n     // BLE_HARTBIT, BLE_HEARTBIT, S508LH_MAT1, S508LH_MAT2, S508RH_MAT1, S508RH_MAT2, S509LH_MAT1, S509LH_MAT2, S509RH_MAT1, S509RH_MAT2
+
+            noop()
 
 
+
+
+
+    let tailNumberPattern = Regex(@"^([a-zA-Z가-힣_\.]+)_?(\d+|\[[\d,\.]+\])$", RegexOptions.Compiled)
+    let tailNumberTransformer (sm:Semantic) name =
+        let discardedName =
+            TagString.SplitName(name, discardsPrefix=sm.Discards.ToArray())
+            |> String.concat "_"
+        let m =
+            discardedName |> tailNumberPattern.Match
+        if m.Success then
+            $"{m.Groups[1].Value}$"
+        else
+            discardedName
+
+    type Filtered() =
+        let sm = Semantic.Create()
+        do
+            sm.Discards <- WordSet([|"I"; "O"; "X"; "Y"; "Q"; "M"; "D"; "B"; "PS"; "RS"; "LS"; "SOL"|], ic)
+            sm.SpecialActions <- WordSet(["CARR_NO_\\d+"; "[A-Z]+(_|/)\\d+"], ic)
+            sm.CompileRegexPatterns()
+
+        [<Test>]
+        member _.``CollectFDANamesFiltered`` () =
+            (*
+                "BB 메인제어반.csv" Input 기준 갯수 : errs(1), okFlows(29), okDevices(1305), okActions(83)
+                전체 Input 기준 갯수 : errs(11), okFlows(31), okDevices(1973), okActions(109)
+                전체 기준 갯수 : errs(), okFlows(), okDevices(), okActions()
+
+                see anal.txt
+            *)
+
+            let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I") || addr.StartsWith("%Q"))
+            //let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
+            let anals = inputTags |> map (rtryAnalyze sm)
+            let oks, errs = anals |> partition Result.isOk
+
+            let okFDAs = oks |> map Result.get |> map snd
+            let errs = errs |> map _.GetErrorValue() |> map _.GetName() |> sort |> distinct
+
+            let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
+            let okDevices = okFDAs |> map _.Device |> map (tailNumberTransformer sm) |> sort |> distinct
+            let okActions = okFDAs |> map _.Action |> map (tailNumberTransformer sm) |> sort |> distinct
+
+            let n = 10
+            okFlows   |> printN "Flows"   n
+            okDevices |> printN "Devices" n
+            okActions |> printN "Actions" n
+            errs      |> printN "Errors"  n     // BLE_HARTBIT, BLE_HEARTBIT, S508LH_MAT1, S508LH_MAT2, S508RH_MAT1, S508RH_MAT2, S509LH_MAT1, S509LH_MAT2, S509RH_MAT1, S509RH_MAT2
+
+            noop()
+
+        [<Test>]
+        member _.``CollectFDANames개별Tag분석`` () =
+            let dq = "\""
+            let ddq = "\"\""
+            let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}S305_Q_RB4_PLT3_COUNT_RST{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
+            match rtryAnalyze sm tagInfo with
+            | Ok (tag, {Flow=f; Device=d; Action=a}) ->
+                tracefn $"{tag.GetName()}: {f}, {d}, {a}"
+                tailNumberTransformer sm d === "RB4_PLT3_COUNT"        // w/o "Q"
+                noop()
+            | Error e ->
+                noop()
+
+
+            let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}DNDL_I_RB1_PROG_ECHO_1{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
+            match rtryAnalyze sm tagInfo with
+            | Ok (tag, {Flow=f; Device=d; Action=a}) ->
+                tracefn $"{tag.GetName()}: {f}, {d}, {a}"
+                f === "DNDL"
+                d === "I_RB1_PROG"
+                a === "ECHO_1"
+                tailNumberTransformer sm d === "RB1_PROG"        // w/o "Q"
+                noop()
+            | Error e ->
+                noop()
