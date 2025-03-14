@@ -26,6 +26,9 @@ module rec ReaderModule =
         static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
         static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
 
+
+    type FDA = { Flow:string; Device:string; Action:string }
+
     type IPlcTag with
         member x.GetName() =
             match x with
@@ -131,3 +134,77 @@ module rec ReaderModule =
                 | :? S7.PlcTagInfo as t -> t.Temporary <- v
                 | :? MX.PlcTagInfo as t -> t.Temporary <- v
                 | _ -> failwith "Invalid PlcTagInfo"
+
+
+        member x.FlowName
+            with get() =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.FlowName
+                | :? AB.PlcTagInfo as t -> t.FlowName
+                | :? S7.PlcTagInfo as t -> t.FlowName
+                | :? MX.PlcTagInfo as t -> t.FlowName
+                | _ -> failwith "Invalid PlcTagInfo"
+            and set v =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.FlowName <- v
+                | :? AB.PlcTagInfo as t -> t.FlowName <- v
+                | :? S7.PlcTagInfo as t -> t.FlowName <- v
+                | :? MX.PlcTagInfo as t -> t.FlowName <- v
+                | _ -> failwith "Invalid PlcTagInfo"
+
+
+        member x.DeviceName
+            with get() =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.DeviceName
+                | :? AB.PlcTagInfo as t -> t.DeviceName
+                | :? S7.PlcTagInfo as t -> t.DeviceName
+                | :? MX.PlcTagInfo as t -> t.DeviceName
+                | _ -> failwith "Invalid PlcTagInfo"
+            and set v =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.DeviceName <- v
+                | :? AB.PlcTagInfo as t -> t.DeviceName <- v
+                | :? S7.PlcTagInfo as t -> t.DeviceName <- v
+                | :? MX.PlcTagInfo as t -> t.DeviceName <- v
+                | _ -> failwith "Invalid PlcTagInfo"
+
+        member x.ActionName
+            with get() =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.ActionName
+                | :? AB.PlcTagInfo as t -> t.ActionName
+                | :? S7.PlcTagInfo as t -> t.ActionName
+                | :? MX.PlcTagInfo as t -> t.ActionName
+                | _ -> failwith "Invalid PlcTagInfo"
+            and set v =
+                match x with
+                | :? LS.PlcTagInfo as t -> t.ActionName <- v
+                | :? AB.PlcTagInfo as t -> t.ActionName <- v
+                | :? S7.PlcTagInfo as t -> t.ActionName <- v
+                | :? MX.PlcTagInfo as t -> t.ActionName <- v
+                | _ -> failwith "Invalid PlcTagInfo"
+
+        member x.SetFDA(optFDA:FDA option) =
+            match optFDA with
+            | Some { Flow = flow; Device = device; Action = action } ->
+                x.FlowName <- flow
+                x.DeviceName <- device
+                x.ActionName <- action
+            | None ->
+                x.FlowName <- null
+                x.DeviceName <- null
+                x.ActionName <- null
+
+        member x.TryGetFDA(): FDA option =
+            if x.FlowName <> null && x.DeviceName <> null && x.ActionName <> null then
+                Some { Flow = x.FlowName; Device = x.DeviceName; Action = x.ActionName }
+            else
+                None
+
+        member x.GetFDA(): FDA =
+            match x.TryGetFDA() with
+            | Some fda -> fda
+            | None -> { Flow = null; Device = null; Action = null }
+
+

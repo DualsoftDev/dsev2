@@ -22,13 +22,18 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 
 
 type PlcTagInfo = {
-    Type: string
-    Scope: string
-    Name: string
+    Type       : string
+    Scope      : string
+    Name       : string
     Description: string
-    DataType: string
-    Specifier: string
-    Attributes: string
+    DataType   : string
+    Specifier  : string
+    Attributes : string
+
+    mutable FlowName  :string
+    mutable DeviceName:string
+    mutable ActionName:string
+
     mutable Temporary:obj
 } with
     interface IPlcTag
@@ -59,7 +64,7 @@ type CsvReader =
         assert(cols.Length = 7)
         {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
             DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6]
-            Temporary = null
+            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
         }
 
 

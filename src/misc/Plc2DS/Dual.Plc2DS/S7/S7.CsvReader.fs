@@ -9,16 +9,20 @@ open Dual.Plc2DS
 open Dual.Common.Core.FS
 
 type PlcTagInfo = {
-    Name: string
-    Address: string
+    Name    : string
+    Address : string
     DataType: string
-    Comment: string
-    mutable Temporary:obj
+    Comment : string
+
+    mutable FlowName  :string
+    mutable DeviceName:string
+    mutable ActionName:string
+    mutable Temporary :obj
 } with
     interface IPlcTag
     static member Create(name, address, dataType, comment) =
         {   Name = name; Address = address; DataType = dataType; Comment = comment
-            Temporary = null
+            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
         }
 
 /// S7.CsvReader

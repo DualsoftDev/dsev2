@@ -17,14 +17,19 @@ Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"
 *)
 
 type PlcTagInfo = {
-    Type: string
-    Scope: string
+    Type    : string
+    Scope   : string
     Variable: string
-    Address: string
+    Address : string
     DataType: string
     Property: string
-    Comment: string
-    mutable Temporary:obj
+    Comment : string
+
+    mutable FlowName  :string
+    mutable DeviceName:string
+    mutable ActionName:string
+
+    mutable Temporary :obj
 } with
     interface IPlcTag
 
@@ -35,7 +40,7 @@ type CsvReader =
         assert(cols.Length = 7)
         {   Type = cols[0]; Scope = cols[1]; Variable = cols[2]; Address = cols[3]
             DataType = cols[4]; Property = cols[5]; Comment = cols[6]
-            Temporary = null
+            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
         }
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =

@@ -5,10 +5,14 @@ open Dual.Plc2DS
 
 
 type PlcTagInfo = {
-    Device: string
+    Device : string
     Comment: string
-    Label: string
-    mutable Temporary:obj
+    Label  : string
+
+    mutable FlowName  :string
+    mutable DeviceName:string
+    mutable ActionName:string
+    mutable Temporary :obj
 } with
     interface IPlcTag
 
@@ -29,7 +33,7 @@ type CsvReader =
                 "", cols[1]
 
         {   Device = device; Comment = comment; Label = label |? ""
-            Temporary = null
+            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
         }
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =

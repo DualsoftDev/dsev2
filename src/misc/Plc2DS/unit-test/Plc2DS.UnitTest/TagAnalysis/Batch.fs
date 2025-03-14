@@ -68,13 +68,6 @@ module BatchCommon =
         else
             discardedName
 
-    type IPlcTag with
-        member x.OptFDA
-            with get() =
-                let xxx = x
-                x.Temporary :?> FDA option
-            and set (fda: FDA option) =
-                x.Temporary <- fda
 
 module Batch =
     type B() =
@@ -121,10 +114,10 @@ module Batch =
             *)
             //let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I"))
             let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
-            inputTags |> iter (fun t -> t.OptFDA <- t.TryGetFDA(sm))
-            let oks, errs = inputTags |> partition _.OptFDA.IsSome
+            inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
+            let oks, errs = inputTags |> partition _.TryGetFDA().IsSome
 
-            let okFDAs = oks |> map _.OptFDA.Value
+            let okFDAs = oks |> map _.GetFDA()
             let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
@@ -159,10 +152,10 @@ module Batch =
 
             let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I") || addr.StartsWith("%Q"))
             //let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
-            inputTags |> iter (fun t -> t.OptFDA <- t.TryGetFDA(sm))
-            let oks, errs = inputTags |> partition _.OptFDA.IsSome
+            inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
+            let oks, errs = inputTags |> partition _.TryGetFDA().IsSome
 
-            let okFDAs = oks |> map _.OptFDA.Value
+            let okFDAs = oks |> map _.GetFDA()
             let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct

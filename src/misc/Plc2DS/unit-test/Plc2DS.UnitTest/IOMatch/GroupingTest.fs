@@ -22,10 +22,10 @@ module GroupingTest =
                 C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I") || addr.StartsWith("%Q"))
                 |> filter (fun t -> (t :?> PlcTagInfo).Scope = "GlobalVariable")
 
-            inputTags |> iter (fun t -> t.OptFDA <- t.TryGetFDA(sm))
-            let oks, errs = inputTags |> partition _.OptFDA.IsSome
+            inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
+            let oks, errs = inputTags |> partition _.TryGetFDA().IsSome
 
-            let okFDAs = oks |> map _.OptFDA.Value
+            let okFDAs = oks |> map _.GetFDA()
             let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
@@ -42,8 +42,8 @@ module GroupingTest =
             // oks 를 "{flow}::{device}::{action}" key 로 만들어서 grouping
             let grouped: (string * IPlcTag[])[] =
                 let getKey (t:IPlcTag) =
-                    let f = t.OptFDA.Value.Flow
-                    let d = t.OptFDA.Value.Device.ApplyRemovePatterns(sm.DeviceNameErasePatterns)
+                    let f = t.FlowName
+                    let d = t.DeviceName.ApplyRemovePatterns(sm.DeviceNameErasePatterns)
                     $"{f}::{d}"
                 oks
                 |> groupBy getKey
@@ -53,7 +53,7 @@ module GroupingTest =
             let nonBT = grouped |> filter (fun (k, ts) -> 2 <= ts.Length && ts.Length <= 10 && not (k.Contains("_BT")))
 
             let advRetPattern = Regex("^(ADV|RET)\d*$", RegexOptions.Compiled)
-            let nonBTnonAdvRet = nonBT |> filter (fun (k, ts) -> ts |> exists (fun t -> !! advRetPattern.IsMatch(t.OptFDA.Value.Action)))
+            let nonBTnonAdvRet = nonBT |> filter (fun (k, ts) -> ts |> exists (fun t -> !! advRetPattern.IsMatch(t.ActionName)))
 
             let xxx = sm
             noop()

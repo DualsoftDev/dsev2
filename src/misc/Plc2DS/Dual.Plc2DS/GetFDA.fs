@@ -77,8 +77,6 @@ module GetFDA =
 
 
 
-    type FDA = { Flow:string; Device:string; Action:string }
-
     type IPlcTag with
         /// PlcTag 정보로부터 flow, device, action 명 추출
         // - 기본 : (flow)_(device_)+_(action).  즉 '_' 기준으로 맨처음과 맨마지막을 제외한 나머지는 device로 간주
