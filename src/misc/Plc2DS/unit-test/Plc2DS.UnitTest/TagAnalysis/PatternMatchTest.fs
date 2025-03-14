@@ -28,8 +28,8 @@ module PatternMatchTest =
                 "MY_SPECIAL_FLOW_1ST_SHT_ADV" |> regexMatch sm === [| "MY"; "SPECIAL_FLOW_1ST_SHT"; "ADV" |]
 
                 let sm = Semantic.Create()
-                sm.SpecialFlows <- sm.SpecialFlows @ [| "MY_SPECIAL_FLOW"; "ANOTHER_SPECIAL_FLOW"; |]
-                sm.SpecialActions <- sm.SpecialActions @ [| "MY_ACTION"; "ANOTHER_ACTION"; |]
+                sm.SpecialFlowPatterns <- sm.SpecialFlowPatterns @ [| "MY_SPECIAL_FLOW"; "ANOTHER_SPECIAL_FLOW"; |]
+                sm.SpecialActionPatterns <- sm.SpecialActionPatterns @ [| "MY_ACTION"; "ANOTHER_ACTION"; |]
                 sm.CompileRegexPatterns()
 
                 do
@@ -42,7 +42,7 @@ module PatternMatchTest =
                     // special name 에 정규식 패턴 테스트
                     "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [| "STATION2"; "1ST_SHT_ACTION"; "12345"; |]
 
-                    sm.SpecialActions <- sm.SpecialActions @ [| "ACTION_\\d+"; |]
+                    sm.SpecialActionPatterns <- sm.SpecialActionPatterns @ [| "ACTION_\\d+"; |]
                     sm.CompileRegexPatterns()
 
                     "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [| "STATION2"; "1ST_SHT"; "ACTION_12345"; |]
@@ -52,13 +52,13 @@ module PatternMatchTest =
             do
                 do
                     let sm = Semantic.Create()
-                    sm.SpecialFlows <- [||]
-                    sm.SpecialActions <- [||]
+                    sm.SpecialFlowPatterns <- [||]
+                    sm.SpecialActionPatterns <- [||]
                     sm.CompileRegexPatterns()
                     "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3_CN"; "2000"; |]
                 do
                     let sm = Semantic.Create()
-                    sm.SpecialActions <- sm.SpecialActions @ [| "CN_\\d+"; "BT_(\\d+M|CHANGE|NORMAL|AS|EMPTY|EMPTY_CRR|NG_BODY|NG_CRR|OUT_CRR|STOCK)" |]
+                    sm.SpecialActionPatterns <- sm.SpecialActionPatterns @ [| "CN_\\d+"; "BT_(\\d+M|CHANGE|NORMAL|AS|EMPTY|EMPTY_CRR|NG_BODY|NG_CRR|OUT_CRR|STOCK)" |]
                     sm.CompileRegexPatterns()
 
                     "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3"; "CN_2000"; |]

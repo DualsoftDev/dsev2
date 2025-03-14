@@ -26,8 +26,11 @@ module AppSettingsModule =
         [<JsonProperty("DeviceNameErasePatterns")>] // JSON에서는 "DeviceNameErasePatterns"라는 이름으로 저장
         [<DataMember>] member val DeviceNameErasePatternsDTO:Words = [||]  with get, set
 
-        [<DataMember>] member val SpecialFlows:Words   = [||] with get, set
-        [<DataMember>] member val SpecialActions:Words = [||] with get, set
+        [<DataMember>] member val SpecialFlowPatterns     :Words = [||] with get, set
+        [<DataMember>] member val SpecialActionPatterns   :Words = [||] with get, set
+
+        [<JsonProperty("DefinitelyActionPatterns")>] // JSON에서는 "DefinitelyActionPatterns"라는 이름으로 저장
+        [<DataMember>] member val DefinitelyActionPatternsDTO:Words = [||] with get, set
 
 
         /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
@@ -41,26 +44,32 @@ module AppSettingsModule =
         [<JsonIgnore>] member val CompiledRegexPatterns:Regex[] = [||] with get, set
 
         [<JsonIgnore>] member val DeviceNameErasePatterns:Regex[] = [||]  with get, set
+        [<JsonIgnore>] member val DefinitelyActionPatterns:Regex[] = [||] with get, set
 
         /// 표준어 사전: Dialect => Standard
         [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
 
         member x.CompileRegexPatterns() =
-            let sfs = let ss = x.SpecialFlows   |> joinWith "|" in ss.EncloseWith("(", ")")     // [A; B; C] => "(A|B|C)"
-            let sas = let ss = x.SpecialActions |> joinWith "|" in ss.EncloseWith("(", ")")
+            let sfs = let ss = x.SpecialFlowPatterns   |> joinWith "|" in ss.EncloseWith("(", ")")     // [A; B; C] => "(A|B|C)"
+            let sas = let ss = x.SpecialActionPatterns |> joinWith "|" in ss.EncloseWith("(", ")")
             x.CompiledRegexPatterns <-
                 [|
-                    if x.SpecialFlows.any() && x.SpecialActions.any() then
+                    if x.SpecialFlowPatterns.any() && x.SpecialActionPatterns.any() then
                         $@"^(?<flow>{sfs})_(?<device>.+)_(?<action>{sas})$"
-                    if x.SpecialFlows.any() then
+                    if x.SpecialFlowPatterns.any() then
                         $@"^(?<flow>{sfs})_(?<device>.+)_(?<action>[^_]+)$"
-                    if x.SpecialActions.any() then
+                    if x.SpecialActionPatterns.any() then
                         $@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>{sas})$"
 
                     @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
                 |] |> map (fun pattern -> Regex(pattern, RegexOptions.Compiled))
+
             x.DeviceNameErasePatterns <-
                 x.DeviceNameErasePatternsDTO
+                |> map (fun p -> Regex(p, RegexOptions.Compiled))
+
+            x.DefinitelyActionPatterns <-
+                x.DefinitelyActionPatternsDTO
                 |> map (fun p -> Regex(p, RegexOptions.Compiled))
 
 
@@ -87,21 +96,23 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
-            y.SpecialFlows      <- x.SpecialFlows
-            y.SpecialActions    <- x.SpecialActions
-            y.DeviceNameErasePatterns <- x.DeviceNameErasePatterns
-            y.NameSeparators    <- x.NameSeparators.Distinct() |> ResizeArray
-            y.Dialects          <- Dictionary(x.Dialects, ic)
-            y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
+            y.SpecialFlowPatterns      <- x.SpecialFlowPatterns
+            y.SpecialActionPatterns    <- x.SpecialActionPatterns
+            y.DeviceNameErasePatterns  <- x.DeviceNameErasePatterns
+            y.DefinitelyActionPatterns <- x.DefinitelyActionPatterns
+            y.NameSeparators           <- x.NameSeparators.Distinct() |> ResizeArray
+            y.Dialects                 <- Dictionary(x.Dialects, ic)
+            y.MutualResetTuples        <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
             y.CompileRegexPatterns()
             y
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
-            x.SpecialFlows            <- x.SpecialFlows            @ addOn.SpecialFlows
-            x.SpecialActions          <- x.SpecialActions          @ addOn.SpecialActions
-            x.DeviceNameErasePatterns <- x.DeviceNameErasePatterns @ addOn.DeviceNameErasePatterns
-            x.NameSeparators          <- (x.NameSeparators         @ addOn.NameSeparators).Distinct() |> ResizeArray
+            x.SpecialFlowPatterns      <- x.SpecialFlowPatterns      @ addOn.SpecialFlowPatterns
+            x.SpecialActionPatterns    <- x.SpecialActionPatterns    @ addOn.SpecialActionPatterns
+            x.DeviceNameErasePatterns  <- x.DeviceNameErasePatterns  @ addOn.DeviceNameErasePatterns
+            x.DefinitelyActionPatterns <- x.DefinitelyActionPatterns @ addOn.DefinitelyActionPatterns
+            x.NameSeparators           <- (x.NameSeparators          @ addOn.NameSeparators).Distinct() |> ResizeArray
             addOn.Dialects |> iter (fun (KeyValue(k, v)) -> x.Dialects.Add (k, v))
 
             // x.MutualResetTuples 에 addOn.MutualResetTuples 의 항목을 deep copy 해서 추가
@@ -117,10 +128,12 @@ module AppSettingsModule =
                 x.NameSeparators <- ResizeArray(replace.NameSeparators.Distinct())
             if replace.DeviceNameErasePatterns.NonNullAny() then
                 x.DeviceNameErasePatterns <- replace.DeviceNameErasePatterns
-            if replace.SpecialFlows.NonNullAny() then
-                x.SpecialFlows <- replace.SpecialFlows
-            if replace.SpecialActions.NonNullAny() then
-                x.SpecialActions <- replace.SpecialActions
+            if replace.DefinitelyActionPatterns.NonNullAny() then
+                x.DefinitelyActionPatterns <- replace.DefinitelyActionPatterns
+            if replace.SpecialFlowPatterns.NonNullAny() then
+                x.SpecialFlowPatterns <- replace.SpecialFlowPatterns
+            if replace.SpecialActionPatterns.NonNullAny() then
+                x.SpecialActionPatterns <- replace.SpecialActionPatterns
             if replace.Dialects.NonNullAny() then
                 x.Dialects <- Dictionary(replace.Dialects, ic)
             if replace.MutualResetTuples.NonNullAny() then
