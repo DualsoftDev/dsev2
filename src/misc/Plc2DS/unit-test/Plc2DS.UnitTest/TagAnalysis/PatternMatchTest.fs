@@ -15,7 +15,7 @@ module PatternMatchTest =
     let sm = Semantic.Create()
 
     let regexMatch (sm:Semantic) (name:string) =
-        TagString.MatchRegexFDA(name, sm.CompiledRegexPatterns)
+        TagString.MatchRegexFDA(name, sm.CompiledFDARegexPatterns)
         |> map _.Text
 
     type B() =
@@ -30,7 +30,7 @@ module PatternMatchTest =
                 let sm = Semantic.Create()
                 sm.SpecialFlowPatterns <- sm.SpecialFlowPatterns @ [| "MY_SPECIAL_FLOW"; "ANOTHER_SPECIAL_FLOW"; |]
                 sm.SpecialActionPatterns <- sm.SpecialActionPatterns @ [| "MY_ACTION"; "ANOTHER_ACTION"; |]
-                sm.CompileRegexPatterns()
+                sm.CompileAllRegexPatterns()
 
                 do
 
@@ -43,7 +43,7 @@ module PatternMatchTest =
                     "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [| "STATION2"; "1ST_SHT_ACTION"; "12345"; |]
 
                     sm.SpecialActionPatterns <- sm.SpecialActionPatterns @ [| "ACTION_\\d+"; |]
-                    sm.CompileRegexPatterns()
+                    sm.CompileAllRegexPatterns()
 
                     "STATION2_1ST_SHT_ACTION_12345" |> regexMatch sm === [| "STATION2"; "1ST_SHT"; "ACTION_12345"; |]
 
@@ -54,12 +54,12 @@ module PatternMatchTest =
                     let sm = Semantic.Create()
                     sm.SpecialFlowPatterns <- [||]
                     sm.SpecialActionPatterns <- [||]
-                    sm.CompileRegexPatterns()
+                    sm.CompileAllRegexPatterns()
                     "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3_CN"; "2000"; |]
                 do
                     let sm = Semantic.Create()
                     sm.SpecialActionPatterns <- sm.SpecialActionPatterns @ [| "CN_\\d+"; "BT_(\\d+M|CHANGE|NORMAL|AS|EMPTY|EMPTY_CRR|NG_BODY|NG_CRR|OUT_CRR|STOCK)" |]
-                    sm.CompileRegexPatterns()
+                    sm.CompileAllRegexPatterns()
 
                     "DNDL_Q_RB3_CN_2000" |> regexMatch sm === [| "DNDL"; "Q_RB3"; "CN_2000"; |]
                     "S506_WRS_LH_ARG_CT_CLP_ADV_BT_3M" |> regexMatch sm === [| "S506"; "WRS_LH_ARG_CT_CLP_ADV"; "BT_3M"; |]

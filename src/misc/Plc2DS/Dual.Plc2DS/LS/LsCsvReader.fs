@@ -3,6 +3,7 @@ namespace Dual.Plc2DS.LS
 open Dual.Common.Core.FS
 open Dual.Plc2DS
 open System
+open System.Diagnostics
 
 (*
 Remark,Title=CSV File
@@ -16,6 +17,7 @@ Type,Scope,Variable,Address,DataType,Property,Comment
 Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"
 *)
 
+[<DebuggerDisplay("{Stringify()}")>]
 type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?comment) =
     inherit FDA()
 
@@ -35,6 +37,8 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     member val DataType= dataType with get, set
     member val Property= property with get, set
     member val Comment = comment  with get, set
+
+    member x.Stringify() = $"{x.Variable} = {base.Stringify()}, {x.Address}, {x.Type}, {x.DataType}, {x.Comment}"
 
 
 

@@ -40,8 +40,8 @@ module AppSettingsModule =
         /// Mutual Reset Pairs. e.g ["ADV"; "RET"]
         [<DataMember>] member val MutualResetTuples = ResizeArray<WordSet> [||] with get, set
 
-        static member RegexPattern = @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
-        [<JsonIgnore>] member val CompiledRegexPatterns:Regex[] = [||] with get, set
+        static member FDARegexPattern = @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
+        [<JsonIgnore>] member val CompiledFDARegexPatterns:Regex[] = [||] with get, set
 
         [<JsonIgnore>] member val DeviceNameErasePatterns:Regex[] = [||]  with get, set
         [<JsonIgnore>] member val DefinitelyActionPatterns:Regex[] = [||] with get, set
@@ -49,20 +49,27 @@ module AppSettingsModule =
         /// 표준어 사전: Dialect => Standard
         [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
 
-        member x.CompileRegexPatterns() =
+        member x.CompileFDARegexPattern(?deviceNameCandidates:string[]) =
+            let deviceNameCandidates = deviceNameCandidates |? [||]
             let sfs = let ss = x.SpecialFlowPatterns   |> joinWith "|" in ss.EncloseWith("(", ")")     // [A; B; C] => "(A|B|C)"
             let sas = let ss = x.SpecialActionPatterns |> joinWith "|" in ss.EncloseWith("(", ")")
-            x.CompiledRegexPatterns <-
-                [|
-                    if x.SpecialFlowPatterns.any() && x.SpecialActionPatterns.any() then
-                        $@"^(?<flow>{sfs})_(?<device>.+)_(?<action>{sas})$"
-                    if x.SpecialFlowPatterns.any() then
-                        $@"^(?<flow>{sfs})_(?<device>.+)_(?<action>[^_]+)$"
-                    if x.SpecialActionPatterns.any() then
-                        $@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>{sas})$"
+            [|
+                if deviceNameCandidates.any() then
+                    let devices = deviceNameCandidates.JoinWith("|").EncloseWith("(", ")")
+                    $@"^(?<flow>[^_]+)_(?<device>{devices})_(?<action>[^_]+)$"
 
-                    @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
-                |] |> map (fun pattern -> Regex(pattern, RegexOptions.Compiled))
+                if x.SpecialFlowPatterns.any() && x.SpecialActionPatterns.any() then
+                    $@"^(?<flow>{sfs})_(?<device>.+)_(?<action>{sas})$"
+                if x.SpecialFlowPatterns.any() then
+                    $@"^(?<flow>{sfs})_(?<device>.+)_(?<action>[^_]+)$"
+                if x.SpecialActionPatterns.any() then
+                    $@"^(?<flow>[^_]+)_(?<device>.+)_(?<action>{sas})$"
+
+                @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
+            |] |> map (fun pattern -> Regex(pattern, RegexOptions.Compiled))
+
+        member x.CompileAllRegexPatterns() =
+            x.CompiledFDARegexPatterns <- x.CompileFDARegexPattern()
 
             x.DeviceNameErasePatterns <-
                 x.DeviceNameErasePatternsDTO
@@ -84,34 +91,39 @@ module AppSettingsModule =
                 let dialects = ds[1..]
                 dialects |> iter (fun d -> x.Dialects.Add(d, std))
 
-            x.CompileRegexPatterns()
+            x.CompileAllRegexPatterns()
 
 
 
     type Semantic with
         static member Create() =
             Semantic()
-            |> tee(fun sm -> sm.CompileRegexPatterns())
+            |> tee(fun sm -> sm.CompileAllRegexPatterns())
 
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
             y.SpecialFlowPatterns      <- x.SpecialFlowPatterns
             y.SpecialActionPatterns    <- x.SpecialActionPatterns
-            y.DeviceNameErasePatterns  <- x.DeviceNameErasePatterns
-            y.DefinitelyActionPatterns <- x.DefinitelyActionPatterns
+            y.DeviceNameErasePatternsDTO  <- x.DeviceNameErasePatternsDTO
+            y.DefinitelyActionPatternsDTO <- x.DefinitelyActionPatternsDTO
             y.NameSeparators           <- x.NameSeparators.Distinct() |> ResizeArray
             y.Dialects                 <- Dictionary(x.Dialects, ic)
             y.MutualResetTuples        <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
-            y.CompileRegexPatterns()
+            y.CompileAllRegexPatterns()
+            y
+
+        member x.DuplicateWithDeviceNames(deviceNames:Words) =
+            let y = x.Duplicate()
+            y.CompiledFDARegexPatterns <- y.CompileFDARegexPattern(deviceNames)
             y
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
             x.SpecialFlowPatterns      <- x.SpecialFlowPatterns      @ addOn.SpecialFlowPatterns
             x.SpecialActionPatterns    <- x.SpecialActionPatterns    @ addOn.SpecialActionPatterns
-            x.DeviceNameErasePatterns  <- x.DeviceNameErasePatterns  @ addOn.DeviceNameErasePatterns
-            x.DefinitelyActionPatterns <- x.DefinitelyActionPatterns @ addOn.DefinitelyActionPatterns
+            x.DeviceNameErasePatternsDTO  <- x.DeviceNameErasePatternsDTO  @ addOn.DeviceNameErasePatternsDTO
+            x.DefinitelyActionPatternsDTO <- x.DefinitelyActionPatternsDTO @ addOn.DefinitelyActionPatternsDTO
             x.NameSeparators           <- (x.NameSeparators          @ addOn.NameSeparators).Distinct() |> ResizeArray
             addOn.Dialects |> iter (fun (KeyValue(k, v)) -> x.Dialects.Add (k, v))
 
@@ -120,7 +132,7 @@ module AppSettingsModule =
             |> Seq.map (fun set -> WordSet(set, ic))
             |> Seq.iter (fun set -> x.MutualResetTuples.Add(set))
 
-            x.CompileRegexPatterns()
+            x.CompileAllRegexPatterns()
 
 
         member x.Override(replace:Semantic): unit =
@@ -139,7 +151,7 @@ module AppSettingsModule =
             if replace.MutualResetTuples.NonNullAny() then
                 x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
 
-            x.CompileRegexPatterns()
+            x.CompileAllRegexPatterns()
 
 
     /// Vendor 별 Tag Semantic 별도 적용 용도

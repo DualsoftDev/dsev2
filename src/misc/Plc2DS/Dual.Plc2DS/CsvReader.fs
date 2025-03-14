@@ -144,3 +144,4 @@ module rec ReaderModule =
         member x.TryGetFDA(): FDA option = (x :?> FDA).TryGet()
 
 
+        member x.Stringify() = "XXX"

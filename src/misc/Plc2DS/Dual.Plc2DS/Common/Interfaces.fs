@@ -3,6 +3,7 @@ namespace Dual.Plc2DS
 open System.IO
 open Dual.Common.Core.FS
 open System.Collections.Generic
+open System.Diagnostics
 
 [<AutoOpen>]
 module InterfaceModule =
@@ -12,6 +13,7 @@ module InterfaceModule =
     /// 주로 CSV 를 통해 읽어 들인, vendor 별 PLC 태그 정보를 담는 인터페이스
     type IPlcTag = interface end
 
+    [<DebuggerDisplay("{Stringify()}")>]
     type FDA(flow:string, device:string, action:string) =
         new () = FDA(null, null, null)
         member val FlowName = flow with get, set
@@ -31,6 +33,8 @@ module InterfaceModule =
                 None
 
         member x.GetTuples() = x.FlowName, x.DeviceName, x.ActionName
+        abstract member Stringify: unit -> string
+        default x.Stringify() = $"{x.FlowName}:{x.DeviceName}:{x.ActionName}"
 
 
 type Vendor =

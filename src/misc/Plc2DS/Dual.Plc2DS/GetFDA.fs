@@ -46,7 +46,8 @@ module GetFDA =
         static member ApplyRemovePatterns(name:string, erasePatterns:Regex[]): string =
             let mutable n = name
             for p in erasePatterns do
-                n <- p.Replace(n, "")
+                n <- p.Replace(n, "_")
+            n <- n.TrimStart('_').TrimEnd('_')
 
             // discard 이후 숫자만 남는 것은 제외
             Regex.IsMatch(n, "^\d+$") ?= (name, n)
@@ -84,8 +85,8 @@ module GetFDA =
         //  . "action_숫자" 형식으로 끝날 경우, action으로 간주
         //  . device 명에서 discards 처리 ("_I_", "_Q_", "_LS_", ... 등 무시할 것 처리)
         //  . flow 및 action 이름이 "_" 를 포함하는 multi-word 인 경우, semantic 에 따로 등록한 경우만 처리
-        member x.TryGetFDA(semantic:Semantic): FDA option =
-            TagString.MatchRegexFDA(x.GetName().ToUpper(), semantic.CompiledRegexPatterns)
+        member x.TryGetFDA(fdaPatterns: Regex[]): FDA option =
+            TagString.MatchRegexFDA(x.GetName().ToUpper(), fdaPatterns)
             |> map _.Text
             |> function
             | [||] -> None
@@ -96,3 +97,5 @@ module GetFDA =
                     None
                 else
                     Some (FDA(f, d, a))
+
+        member x.TryGetFDA(semantic:Semantic): FDA option = x.TryGetFDA(semantic.CompiledFDARegexPatterns)

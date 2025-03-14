@@ -137,9 +137,9 @@ module Batch =
     type Filtered() =
         let sm = Semantic.Create()
         do
-            sm.DeviceNameErasePatternsDTO <- [| "^([IQMOXYDB]|PS|RS|LS|SOL|[PW]RS)_|_([IQMOXYDB]|PS|RS|LS|SOL|[PW]RS)_" |]
+            sm.DeviceNameErasePatternsDTO <- [| "^([IQMOXYDB]|[PRL]S|SOL|[PW]RS)_|_([IQMOXYDB]|PRL]S|SOL|[PW]RS)_" |]
             sm.SpecialActionPatterns <- [|"CARR_NO_\\d+"; "[A-Z]+(_|/)\\d+"; "(1ST|2ND|3RD|[4-9]TH)_IN_OK"|]
-            sm.CompileRegexPatterns()
+            sm.CompileAllRegexPatterns()
 
         [<Test>]
         member _.``CollectFDANamesFiltered`` () =
@@ -203,7 +203,7 @@ module Batch =
             do
                 let sm = sm.Duplicate()
                 sm.SpecialActionPatterns <- [| "(1ST|2ND|3RD|[4-9]TH)_IN_OK" |]
-                sm.CompileRegexPatterns()
+                sm.CompileAllRegexPatterns()
                 let xxx = sm.SpecialActionPatterns
                 let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}S231_M_RBT4_2ND_IN_OK{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
                 match tagInfo.TryGetFDA(sm) with
