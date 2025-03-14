@@ -57,6 +57,7 @@ module MultiStaging =
             sm.DeviceNameErasePatternsDTO <- [| "^([IQMOXYDB]|[PRL]S|SOL|[PW]RS)_|_([IQMOXYDB]|PRL]S|SOL|[PW]RS)_" |]
             sm.SpecialActionPatterns <- [|"CARR_NO_\\d+"; "[A-Z]+(_|/)\\d+"; "(1ST|2ND|3RD|[4-9]TH)_IN_OK"|]
             sm.DefinitelyActionPatternsDTO <- [| "_(ADV|RET|OPEN|SAFETY)$" |]
+            sm.FDARegexPatterns <- [| "^(?<flow>[^_]+)_[IQM]_(?<device>RB\\d+)_(?<action>.*)$" |]
             sm.CompileAllRegexPatterns()
 
 
@@ -97,6 +98,7 @@ module MultiStaging =
                 //|> map (fun (key, tags) -> key, tags |> map snd)
 
             let nonBT = grouped |> filter (fun (k, ts) -> 2 <= ts.Length && ts.Length <= 10 && not (k.Contains("_BT")))
+            let nonBTalpha = nonBT |> sortBy fst
 
             let advRetPattern = Regex("^(ADV|RET)\d*$", RegexOptions.Compiled)
             let nonBTnonAdvRet = nonBT |> filter (fun (k, ts) -> ts |> exists (fun t -> !! advRetPattern.IsMatch(t.ActionName)))

@@ -26,6 +26,7 @@ module AppSettingsModule =
         [<JsonProperty("DeviceNameErasePatterns")>] // JSON에서는 "DeviceNameErasePatterns"라는 이름으로 저장
         [<DataMember>] member val DeviceNameErasePatternsDTO:Words = [||]  with get, set
 
+        [<DataMember>] member val FDARegexPatterns        :Words = [||] with get, set
         [<DataMember>] member val SpecialFlowPatterns     :Words = [||] with get, set
         [<DataMember>] member val SpecialActionPatterns   :Words = [||] with get, set
 
@@ -40,7 +41,7 @@ module AppSettingsModule =
         /// Mutual Reset Pairs. e.g ["ADV"; "RET"]
         [<DataMember>] member val MutualResetTuples = ResizeArray<WordSet> [||] with get, set
 
-        static member FDARegexPattern = @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
+        static member BaselineFDARegexPattern = @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
         [<JsonIgnore>] member val CompiledFDARegexPatterns:Regex[] = [||] with get, set
 
         [<JsonIgnore>] member val DeviceNameErasePatterns:Regex[] = [||]  with get, set
@@ -54,6 +55,8 @@ module AppSettingsModule =
             let sfs = let ss = x.SpecialFlowPatterns   |> joinWith "|" in ss.EncloseWith("(", ")")     // [A; B; C] => "(A|B|C)"
             let sas = let ss = x.SpecialActionPatterns |> joinWith "|" in ss.EncloseWith("(", ")")
             [|
+                yield! x.FDARegexPatterns
+
                 if deviceNameCandidates.any() then
                     let devices = deviceNameCandidates.JoinWith("|").EncloseWith("(", ")")
                     $@"^(?<flow>[^_]+)_(?<device>{devices})_(?<action>[^_]+)$"
@@ -103,6 +106,7 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
+            y.FDARegexPatterns      <- x.FDARegexPatterns
             y.SpecialFlowPatterns      <- x.SpecialFlowPatterns
             y.SpecialActionPatterns    <- x.SpecialActionPatterns
             y.DeviceNameErasePatternsDTO  <- x.DeviceNameErasePatternsDTO
@@ -120,6 +124,7 @@ module AppSettingsModule =
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
+            x.FDARegexPatterns      <- x.FDARegexPatterns      @ addOn.FDARegexPatterns
             x.SpecialFlowPatterns      <- x.SpecialFlowPatterns      @ addOn.SpecialFlowPatterns
             x.SpecialActionPatterns    <- x.SpecialActionPatterns    @ addOn.SpecialActionPatterns
             x.DeviceNameErasePatternsDTO  <- x.DeviceNameErasePatternsDTO  @ addOn.DeviceNameErasePatternsDTO
@@ -142,6 +147,8 @@ module AppSettingsModule =
                 x.DeviceNameErasePatterns <- replace.DeviceNameErasePatterns
             if replace.DefinitelyActionPatterns.NonNullAny() then
                 x.DefinitelyActionPatterns <- replace.DefinitelyActionPatterns
+            if replace.FDARegexPatterns.NonNullAny() then
+                x.FDARegexPatterns <- replace.FDARegexPatterns
             if replace.SpecialFlowPatterns.NonNullAny() then
                 x.SpecialFlowPatterns <- replace.SpecialFlowPatterns
             if replace.SpecialActionPatterns.NonNullAny() then

@@ -106,13 +106,6 @@ module Batch =
 
         [<Test>]
         member _.``CollectFDANames`` () =
-            (*
-                "BB 메인제어반.csv" Input 기준 갯수 : errs(1), okFlows(29), okDevices(1318), okActions(404)
-                전체 Input 기준 갯수 : errs(11), okFlows(126), okDevices(5196), okActions(755)
-                전체 기준 갯수 : errs(15972), okFlows(429), okDevices(48325), okActions(6869)
-
-                see anal.txt
-            *)
             //let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I"))
             let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
             inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
@@ -143,14 +136,6 @@ module Batch =
 
         [<Test>]
         member _.``CollectFDANamesFiltered`` () =
-            (*
-                "BB 메인제어반.csv" Input 기준 갯수 : errs(1), okFlows(29), okDevices(1305), okActions(83)
-                전체 Input 기준 갯수 : errs(11), okFlows(31), okDevices(1973), okActions(109)
-                전체 기준 갯수 : errs(), okFlows(), okDevices(), okActions()
-
-                see anal.txt
-            *)
-
             let inputTags: IPlcTag[] = C.CollectTags([|"BB 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I") || addr.StartsWith("%Q"))
             //let inputTags: IPlcTag[] = C.CollectTags(csvs(*, addressFilter = fun addr -> addr.StartsWith("%I")*))
             inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
