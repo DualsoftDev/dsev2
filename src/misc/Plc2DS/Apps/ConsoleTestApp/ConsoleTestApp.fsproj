@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.template.json" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.AppSettings\Dual.Common.AppSettings.csproj" />
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+    <ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj" />
+  </ItemGroup>
+
+</Project>
