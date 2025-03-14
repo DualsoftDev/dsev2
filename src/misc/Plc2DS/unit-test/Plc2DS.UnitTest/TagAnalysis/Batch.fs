@@ -80,7 +80,8 @@ module Batch =
             do
                 for tag in inputTags do
                     match tag.TryGetFDA(sm) with
-                    | Some { Flow = f; Device = d; Action = a } ->
+                    | Some fda ->
+                        let f, d, a = fda.GetTuples()
                         tracefn $"{tag.GetName()}: {f}, {d}, {a}"
                     | None ->
                         logWarn $"------------ {tag.GetName()}: Failed to match"
@@ -117,12 +118,12 @@ module Batch =
             inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
             let oks, errs = inputTags |> partition _.TryGetFDA().IsSome
 
-            let okFDAs = oks |> map _.GetFDA()
+            let okFDAs = oks |> map (fun t -> t.TryGetFDA() |> Option.get)
             let errs = errs |> map _.GetName() |> sort |> distinct
 
-            let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
-            let okDevices = okFDAs |> map _.Device |> sort |> distinct
-            let okActions = okFDAs |> map _.Action |> sort |> distinct
+            let okFlows   = okFDAs |> map _.FlowName   |> sort |> distinct
+            let okDevices = okFDAs |> map _.DeviceName |> sort |> distinct
+            let okActions = okFDAs |> map _.ActionName |> sort |> distinct
 
             let n = 10
             okFlows   |> printN "Flows"   n
@@ -155,12 +156,12 @@ module Batch =
             inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
             let oks, errs = inputTags |> partition _.TryGetFDA().IsSome
 
-            let okFDAs = oks |> map _.GetFDA()
+            let okFDAs = oks |> map (fun t -> t.TryGetFDA() |> Option.get)
             let errs = errs |> map _.GetName() |> sort |> distinct
 
-            let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
-            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm sm.DeviceNameErasePatterns) |> sort |> distinct
-            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm [||])                       |> sort |> distinct
+            let okFlows   = okFDAs |> map _.FlowName   |> sort |> distinct
+            let okDevices = okFDAs |> map _.DeviceName |> map (tailNumberUnifier sm sm.DeviceNameErasePatterns) |> sort |> distinct
+            let okActions = okFDAs |> map _.ActionName |> map (tailNumberUnifier sm [||])                       |> sort |> distinct
 
             let n = 10
             okFlows   |> printN "Flows"   n
@@ -176,7 +177,8 @@ module Batch =
             let ddq = "\"\""
             let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}S305_Q_RB4_PLT3_COUNT_RST{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
             match tagInfo.TryGetFDA(sm) with
-            | Some {Flow=f; Device=d; Action=a} ->
+            | Some fda ->
+                let f, d, a = fda.GetTuples()
                 tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
                 tailNumberUnifier sm sm.DeviceNameErasePatterns d === "RB4_PLT3_COUNT"        // w/o "Q"
                 noop()
@@ -186,7 +188,8 @@ module Batch =
 
             let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}DNDL_I_RB1_PROG_ECHO_1{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
             match tagInfo.TryGetFDA(sm) with
-            | Some {Flow=f; Device=d; Action=a} ->
+            | Some fda ->
+                let f, d, a = fda.GetTuples()
                 tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
                 f === "DNDL"
                 d === "I_RB1_PROG"
@@ -204,8 +207,8 @@ module Batch =
                 let xxx = sm.SpecialActionPatterns
                 let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}S231_M_RBT4_2ND_IN_OK{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
                 match tagInfo.TryGetFDA(sm) with
-                | Some {Flow=f; Device=d; Action=a} ->
-                    tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
+                | Some fda ->
+                    let f, d, a = fda.GetTuples()
                     f === "S231"
                     d === "M_RBT4"
                     a === "2ND_IN_OK"

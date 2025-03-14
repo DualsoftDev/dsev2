@@ -1,8 +1,8 @@
 namespace Dual.Plc2DS
 
+open System.Text.RegularExpressions
 open Dual.Common.Core.FS
 open Dual.Plc2DS
-open System.Text.RegularExpressions
 
 [<AutoOpen>]
 module rec ReaderModule =
@@ -26,8 +26,6 @@ module rec ReaderModule =
         static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
         static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
 
-
-    type FDA = { Flow:string; Device:string; Action:string }
 
     type IPlcTag with
         member x.GetName() =
@@ -119,92 +117,30 @@ module rec ReaderModule =
             | 'Q' -> Some false
             | _ -> None
 
+
         member x.Temporary
-            with get() =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.Temporary
-                | :? AB.PlcTagInfo as t -> t.Temporary
-                | :? S7.PlcTagInfo as t -> t.Temporary
-                | :? MX.PlcTagInfo as t -> t.Temporary
-                | _ -> failwith "Invalid PlcTagInfo"
-            and set v =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.Temporary <- v
-                | :? AB.PlcTagInfo as t -> t.Temporary <- v
-                | :? S7.PlcTagInfo as t -> t.Temporary <- v
-                | :? MX.PlcTagInfo as t -> t.Temporary <- v
-                | _ -> failwith "Invalid PlcTagInfo"
+            with get() = (x :?> FDA).Temporary
+            and  set v = (x :?> FDA).Temporary <- v
 
 
         member x.FlowName
-            with get() =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.FlowName
-                | :? AB.PlcTagInfo as t -> t.FlowName
-                | :? S7.PlcTagInfo as t -> t.FlowName
-                | :? MX.PlcTagInfo as t -> t.FlowName
-                | _ -> failwith "Invalid PlcTagInfo"
-            and set v =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.FlowName <- v
-                | :? AB.PlcTagInfo as t -> t.FlowName <- v
-                | :? S7.PlcTagInfo as t -> t.FlowName <- v
-                | :? MX.PlcTagInfo as t -> t.FlowName <- v
-                | _ -> failwith "Invalid PlcTagInfo"
+            with get() = (x :?> FDA).FlowName
+            and  set v = (x :?> FDA).FlowName <- v
 
 
         member x.DeviceName
-            with get() =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.DeviceName
-                | :? AB.PlcTagInfo as t -> t.DeviceName
-                | :? S7.PlcTagInfo as t -> t.DeviceName
-                | :? MX.PlcTagInfo as t -> t.DeviceName
-                | _ -> failwith "Invalid PlcTagInfo"
-            and set v =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.DeviceName <- v
-                | :? AB.PlcTagInfo as t -> t.DeviceName <- v
-                | :? S7.PlcTagInfo as t -> t.DeviceName <- v
-                | :? MX.PlcTagInfo as t -> t.DeviceName <- v
-                | _ -> failwith "Invalid PlcTagInfo"
+            with get() = (x :?> FDA).DeviceName
+            and  set v = (x :?> FDA).DeviceName <- v
 
         member x.ActionName
-            with get() =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.ActionName
-                | :? AB.PlcTagInfo as t -> t.ActionName
-                | :? S7.PlcTagInfo as t -> t.ActionName
-                | :? MX.PlcTagInfo as t -> t.ActionName
-                | _ -> failwith "Invalid PlcTagInfo"
-            and set v =
-                match x with
-                | :? LS.PlcTagInfo as t -> t.ActionName <- v
-                | :? AB.PlcTagInfo as t -> t.ActionName <- v
-                | :? S7.PlcTagInfo as t -> t.ActionName <- v
-                | :? MX.PlcTagInfo as t -> t.ActionName <- v
-                | _ -> failwith "Invalid PlcTagInfo"
+            with get() = (x :?> FDA).ActionName
+            and  set v = (x :?> FDA).ActionName <- v
 
         member x.SetFDA(optFDA:FDA option) =
             match optFDA with
-            | Some { Flow = flow; Device = device; Action = action } ->
-                x.FlowName <- flow
-                x.DeviceName <- device
-                x.ActionName <- action
-            | None ->
-                x.FlowName <- null
-                x.DeviceName <- null
-                x.ActionName <- null
+            | Some fda -> (x :?> FDA).Set(fda.FlowName, fda.DeviceName, fda.ActionName)
+            | None     -> (x :?> FDA).Set(null, null, null)
 
-        member x.TryGetFDA(): FDA option =
-            if x.FlowName <> null && x.DeviceName <> null && x.ActionName <> null then
-                Some { Flow = x.FlowName; Device = x.DeviceName; Action = x.ActionName }
-            else
-                None
-
-        member x.GetFDA(): FDA =
-            match x.TryGetFDA() with
-            | Some fda -> fda
-            | None -> { Flow = null; Device = null; Action = null }
+        member x.TryGetFDA(): FDA option = (x :?> FDA).TryGet()
 
 

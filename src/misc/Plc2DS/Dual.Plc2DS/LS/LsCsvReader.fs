@@ -16,32 +16,35 @@ Type,Scope,Variable,Address,DataType,Property,Comment
 Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"
 *)
 
-type PlcTagInfo = {
-    Type    : string
-    Scope   : string
-    Variable: string
-    Address : string
-    DataType: string
-    Property: string
-    Comment : string
+type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?comment) =
+    inherit FDA()
 
-    mutable FlowName  :string
-    mutable DeviceName:string
-    mutable ActionName:string
+    let typ      = typ      |? ""
+    let scope    = scope    |? ""
+    let variable = variable |? ""
+    let address  = address  |? ""
+    let dataType = dataType |? ""
+    let property = property |? ""
+    let comment  = comment  |? ""
 
-    mutable Temporary :obj
-} with
     interface IPlcTag
+    member val Type    = typ      with get, set
+    member val Scope   = scope    with get, set
+    member val Variable= variable with get, set
+    member val Address = address  with get, set
+    member val DataType= dataType with get, set
+    member val Property= property with get, set
+    member val Comment = comment  with get, set
+
+
 
 /// LS.CsvReader
 type CsvReader =
     static member CreatePlcTagInfo(line: string) : PlcTagInfo =
         let cols = Csv.ParseLine line
         assert(cols.Length = 7)
-        {   Type = cols[0]; Scope = cols[1]; Variable = cols[2]; Address = cols[3]
-            DataType = cols[4]; Property = cols[5]; Comment = cols[6]
-            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
-        }
+        PlcTagInfo(typ = cols[0], scope = cols[1], variable = cols[2], address = cols[3],
+            dataType = cols[4], Property = cols[5], Comment = cols[6])
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
         let header = "Type,Scope,Variable,Address,DataType,Property,Comment"

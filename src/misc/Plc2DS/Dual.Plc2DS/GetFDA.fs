@@ -95,4 +95,4 @@ module GetFDA =
                     logWarn $"WARN: number only item exists: {f}/{d}/{a} on {x.GetName()}"
                     None
                 else
-                    Some { Flow = f; Device = d; Action = a }
+                    Some (FDA(f, d, a))

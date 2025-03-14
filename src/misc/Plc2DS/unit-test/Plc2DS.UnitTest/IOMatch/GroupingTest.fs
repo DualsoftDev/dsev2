@@ -25,12 +25,12 @@ module GroupingTest =
             inputTags |> iter (fun t -> t.SetFDA(t.TryGetFDA(sm)))
             let oks, errs = inputTags |> partition _.TryGetFDA().IsSome
 
-            let okFDAs = oks |> map _.GetFDA()
+            let okFDAs = oks |> map (fun t -> t.TryGetFDA() |> Option.get)
             let errs = errs |> map _.GetName() |> sort |> distinct
 
-            let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
-            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm sm.DeviceNameErasePatterns) |> sort |> distinct
-            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm [||])                       |> sort |> distinct
+            let okFlows   = okFDAs |> map _.FlowName   |> sort |> distinct
+            let okDevices = okFDAs |> map _.DeviceName |> map (tailNumberUnifier sm sm.DeviceNameErasePatterns) |> sort |> distinct
+            let okActions = okFDAs |> map _.ActionName |> map (tailNumberUnifier sm [||])                       |> sort |> distinct
 
             let n = 10
             okFlows   |> printN "Flows"   n

@@ -20,23 +20,28 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 
 *)
 
+type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attributes) =
+    inherit FDA()
 
-type PlcTagInfo = {
-    Type       : string
-    Scope      : string
-    Name       : string
-    Description: string
-    DataType   : string
-    Specifier  : string
-    Attributes : string
+    let typ         = typ         |? ""
+    let scope       = scope       |? ""
+    let name        = name        |? ""
+    let description = description |? ""
+    let dataType    = dataType    |? ""
+    let specifier   = specifier   |? ""
+    let attributes  = attributes  |? ""
 
-    mutable FlowName  :string
-    mutable DeviceName:string
-    mutable ActionName:string
-
-    mutable Temporary:obj
-} with
     interface IPlcTag
+    member val Type        = typ         with get, set
+    member val Scope       = scope       with get, set
+    member val Name        = name        with get, set
+    member val Description = description with get, set
+    member val DataType    = dataType    with get, set
+    member val Specifier   = specifier   with get, set
+    member val Attributes  = attributes  with get, set
+
+
+
 
 [<AutoOpen>]
 module Ab =
@@ -62,10 +67,8 @@ type CsvReader =
     static member CreatePlcTagInfo(line: string) : PlcTagInfo =
         let cols = Csv.ParseLine line |> map decodeEncodedString
         assert(cols.Length = 7)
-        {   Type = cols[0]; Scope = cols[1]; Name = cols[2]; Description = cols[3]
-            DataType = cols[4]; Specifier = cols[5]; Attributes = cols[6]
-            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
-        }
+        PlcTagInfo(typ = cols[0], scope = cols[1], name = cols[2], description = cols[3],
+            dataType = cols[4], specifier = cols[5], attributes = cols[6])
 
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =

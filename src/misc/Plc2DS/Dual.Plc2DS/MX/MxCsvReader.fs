@@ -4,17 +4,19 @@ open Dual.Common.Core.FS
 open Dual.Plc2DS
 
 
-type PlcTagInfo = {
-    Device : string
-    Comment: string
-    Label  : string
 
-    mutable FlowName  :string
-    mutable DeviceName:string
-    mutable ActionName:string
-    mutable Temporary :obj
-} with
+type PlcTagInfo(?device, ?comment, ?label) =
+    inherit FDA()
+
+    let device  = device  |? ""
+    let comment  = comment  |? ""
+    let label  = label  |? ""
+
     interface IPlcTag
+    member val Device  = device  with get, set
+    member val Comment = comment with get, set
+    member val Label   = label   with get, set
+
 
 
 /// MX.CsvReader
@@ -32,9 +34,7 @@ type CsvReader =
                 if cols.Length <> 2 then failwith "Invalid file format"
                 "", cols[1]
 
-        {   Device = device; Comment = comment; Label = label |? ""
-            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
-        }
+        PlcTagInfo(device, comment, label)
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
         let headers = File.PeekLines(filePath, 0, 2) |> toArray

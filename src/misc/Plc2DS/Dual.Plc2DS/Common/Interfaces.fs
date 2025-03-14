@@ -12,6 +12,27 @@ module InterfaceModule =
     /// 주로 CSV 를 통해 읽어 들인, vendor 별 PLC 태그 정보를 담는 인터페이스
     type IPlcTag = interface end
 
+    type FDA(flow:string, device:string, action:string) =
+        new () = FDA(null, null, null)
+        member val FlowName = flow with get, set
+        member val DeviceName = device with get, set
+        member val ActionName = action with get, set
+        member val Temporary :obj = null with get, set
+
+        member x.Set(flow, device, action) =
+            x.FlowName <- flow
+            x.DeviceName <- device
+            x.ActionName <- action
+
+        member x.TryGet() =
+            if x.FlowName <> null && x.DeviceName <> null && x.ActionName <> null then
+                Some x
+            else
+                None
+
+        member x.GetTuples() = x.FlowName, x.DeviceName, x.ActionName
+
+
 type Vendor =
     | AB
     | S7

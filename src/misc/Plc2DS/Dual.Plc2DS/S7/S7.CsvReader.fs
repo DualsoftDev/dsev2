@@ -8,22 +8,22 @@ namespace Dual.Plc2DS.S7
 open Dual.Plc2DS
 open Dual.Common.Core.FS
 
-type PlcTagInfo = {
-    Name    : string
-    Address : string
-    DataType: string
-    Comment : string
 
-    mutable FlowName  :string
-    mutable DeviceName:string
-    mutable ActionName:string
-    mutable Temporary :obj
-} with
+type PlcTagInfo(?name, ?address, ?dataType, ?comment) =
+    inherit FDA()
+
+    let name     = name     |? ""
+    let address  = address  |? ""
+    let dataType = dataType |? ""
+    let comment  = comment  |? ""
+
     interface IPlcTag
-    static member Create(name, address, dataType, comment) =
-        {   Name = name; Address = address; DataType = dataType; Comment = comment
-            FlowName = null; DeviceName = null; ActionName = null; Temporary = null
-        }
+    member val Name     = name     with get, set
+    member val Comment  = comment  with get, set
+    member val Address  = address  with get, set
+    member val DataType = dataType with get, set
+
+
 
 /// S7.CsvReader
 type CsvReader =
@@ -39,11 +39,11 @@ type CsvReader =
                     $"{typ} {addr}"
                 | _ -> cols[1]
             let comment = cols[3]
-            PlcTagInfo.Create(name, address, dataType, comment)
+            PlcTagInfo(name, address, dataType, comment)
         | 9 ->  // name * address * data type * bool * bool * bool * comment * ? * bool
             let address = cols[1]
             let comment = cols[6]
-            PlcTagInfo.Create(name, address, dataType, comment)
+            PlcTagInfo(name, address, dataType, comment)
         | _ ->
             failwith "Invalid file format"
 
