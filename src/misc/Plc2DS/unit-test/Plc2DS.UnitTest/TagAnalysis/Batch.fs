@@ -57,9 +57,9 @@ module BatchCommon =
 
     /// 단어 뒤에 숫자(혹은 array index) 형식의 이름 match.  성능 향상을 위해 local 변수로 만들 수 없음.
     let tailNumberPattern = Regex(@"^([a-zA-Z가-힣_\.]+)_?(\d+|\[[\d,\.]+\])$", RegexOptions.Compiled)
-    let tailNumberUnifier (sm:Semantic) name =
+    let tailNumberUnifier (sm:Semantic) (erasePatterns:Regex[]) name =
         let discardedName =
-            TagString.SplitName(name, discardsPrefix=sm.Discards.ToArray())
+            TagString.SplitName(name, erasePatterns=erasePatterns)
             |> String.concat "_"
         let m =
             discardedName |> tailNumberPattern.Match
@@ -143,8 +143,8 @@ module Batch =
     type Filtered() =
         let sm = Semantic.Create()
         do
-            sm.Discards <- WordSet([|"I"; "O"; "X"; "Y"; "Q"; "M"; "D"; "B"; "PS"; "RS"; "LS"; "SOL"|], ic)
-            sm.SpecialActions <- WordSet(["CARR_NO_\\d+"; "[A-Z]+(_|/)\\d+"], ic)
+            sm.DeviceNameErasePatternsDTO <- [| "^([IQMOXYDB]|PS|RS|LS|SOL|[PW]RS)_|_([IQMOXYDB]|PS|RS|LS|SOL|[PW]RS)_" |]
+            sm.SpecialActions <- [|"CARR_NO_\\d+"; "[A-Z]+(_|/)\\d+"; "(1ST|2ND|3RD|[4-9]TH)_IN_OK"|]
             sm.CompileRegexPatterns()
 
         [<Test>]
@@ -166,8 +166,8 @@ module Batch =
             let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
-            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm) |> sort |> distinct
-            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm) |> sort |> distinct
+            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm sm.DeviceNameErasePatterns) |> sort |> distinct
+            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm [||])                       |> sort |> distinct
 
             let n = 10
             okFlows   |> printN "Flows"   n
@@ -185,7 +185,7 @@ module Batch =
             match tagInfo.TryGetFDA(sm) with
             | Some {Flow=f; Device=d; Action=a} ->
                 tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
-                tailNumberUnifier sm d === "RB4_PLT3_COUNT"        // w/o "Q"
+                tailNumberUnifier sm sm.DeviceNameErasePatterns d === "RB4_PLT3_COUNT"        // w/o "Q"
                 noop()
             | None ->
                 noop()
@@ -198,7 +198,24 @@ module Batch =
                 f === "DNDL"
                 d === "I_RB1_PROG"
                 a === "ECHO_1"
-                tailNumberUnifier sm d === "RB1_PROG"        // w/o "Q"
+                tailNumberUnifier sm sm.DeviceNameErasePatterns d === "RB1_PROG"        // w/o "Q"
                 noop()
             | None ->
                 noop()
+
+
+            do
+                let sm = sm.Duplicate()
+                sm.SpecialActions <- [| "(1ST|2ND|3RD|[4-9]TH)_IN_OK" |]
+                sm.CompileRegexPatterns()
+                let xxx = sm.SpecialActions
+                let tagInfo = LS.CsvReader.CreatePlcTagInfo($"Tag,GlobalVariable,{dq}S231_M_RBT4_2ND_IN_OK{dq},%%QW3345.2,{dq}BOOL{dq},,{ddq}")
+                match tagInfo.TryGetFDA(sm) with
+                | Some {Flow=f; Device=d; Action=a} ->
+                    tracefn $"{tagInfo.GetName()}: {f}, {d}, {a}"
+                    f === "S231"
+                    d === "M_RBT4"
+                    a === "2ND_IN_OK"
+                    noop()
+                | None ->
+                    noop()

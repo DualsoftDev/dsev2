@@ -29,8 +29,8 @@ module GroupingTest =
             let errs = errs |> map _.GetName() |> sort |> distinct
 
             let okFlows   = okFDAs |> map _.Flow   |> sort |> distinct
-            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm) |> sort |> distinct
-            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm) |> sort |> distinct
+            let okDevices = okFDAs |> map _.Device |> map (tailNumberUnifier sm sm.DeviceNameErasePatterns) |> sort |> distinct
+            let okActions = okFDAs |> map _.Action |> map (tailNumberUnifier sm [||])                       |> sort |> distinct
 
             let n = 10
             okFlows   |> printN "Flows"   n
@@ -40,16 +40,22 @@ module GroupingTest =
 
 
             // oks 를 "{flow}::{device}::{action}" key 로 만들어서 grouping
-            let grouped =
+            let grouped: (string * IPlcTag[])[] =
                 let getKey (t:IPlcTag) =
                     let f = t.OptFDA.Value.Flow
-                    let d = t.OptFDA.Value.Device
+                    let d = t.OptFDA.Value.Device.ApplyRemovePatterns(sm.DeviceNameErasePatterns)
                     $"{f}::{d}"
                 oks
                 |> groupBy getKey
                 |> sortByDescending (snd >> _.Length)
                 //|> map (fun (key, tags) -> key, tags |> map snd)
 
+            let nonBT = grouped |> filter (fun (k, ts) -> 2 <= ts.Length && ts.Length <= 10 && not (k.Contains("_BT")))
+
+            let advRetPattern = Regex("^(ADV|RET)\d*$", RegexOptions.Compiled)
+            let nonBTnonAdvRet = nonBT |> filter (fun (k, ts) -> ts |> exists (fun t -> !! advRetPattern.IsMatch(t.OptFDA.Value.Action)))
+
+            let xxx = sm
             noop()
 
 

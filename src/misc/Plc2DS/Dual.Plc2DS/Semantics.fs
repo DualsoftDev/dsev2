@@ -22,10 +22,12 @@ module AppSettingsModule =
         [<DataMember>] member val SplitOnCamelCase = false with get, set
 
         [<DataMember>] member val NameSeparators = ResizeArray ["_"] with get, set  // JSON 편의상 string.  실제는 char
-        [<DataMember>] member val Discards       = WordSet(ic) with get, set
 
-        [<DataMember>] member val SpecialFlows   = WordSet(ic) with get, set
-        [<DataMember>] member val SpecialActions = WordSet(ic) with get, set
+        [<JsonProperty("DeviceNameErasePatterns")>] // JSON에서는 "DeviceNameErasePatterns"라는 이름으로 저장
+        [<DataMember>] member val DeviceNameErasePatternsDTO:Words = [||]  with get, set
+
+        [<DataMember>] member val SpecialFlows:Words   = [||] with get, set
+        [<DataMember>] member val SpecialActions:Words = [||] with get, set
 
 
         /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
@@ -37,6 +39,9 @@ module AppSettingsModule =
 
         static member RegexPattern = @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
         [<JsonIgnore>] member val CompiledRegexPatterns:Regex[] = [||] with get, set
+
+        [<JsonIgnore>] member val DeviceNameErasePatterns:Regex[] = [||]  with get, set
+
         /// 표준어 사전: Dialect => Standard
         [<JsonIgnore>] member val Dialects    = Dictionary<string, string>(ic) with get, set
 
@@ -54,6 +59,9 @@ module AppSettingsModule =
 
                     @"^(?<flow>[^_]+)_(?<device>.+)_(?<action>[^_]+)$"
                 |] |> map (fun pattern -> Regex(pattern, RegexOptions.Compiled))
+            x.DeviceNameErasePatterns <-
+                x.DeviceNameErasePatternsDTO
+                |> map (fun p -> Regex(p, RegexOptions.Compiled))
 
 
         [<OnDeserialized>]
@@ -79,20 +87,21 @@ module AppSettingsModule =
         member x.Duplicate() =
             let y = Semantic()
             // deep copy
-            y.SpecialFlows      <- WordSet(x.SpecialFlows, ic)
-            y.SpecialActions    <- WordSet(x.SpecialActions, ic)
-            y.Discards          <- WordSet(x.Discards, ic)
+            y.SpecialFlows      <- x.SpecialFlows
+            y.SpecialActions    <- x.SpecialActions
+            y.DeviceNameErasePatterns <- x.DeviceNameErasePatterns
             y.NameSeparators    <- x.NameSeparators.Distinct() |> ResizeArray
             y.Dialects          <- Dictionary(x.Dialects, ic)
             y.MutualResetTuples <- x.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
+            y.CompileRegexPatterns()
             y
 
         /// addOn 을 x 에 합침
         member x.Merge(addOn:Semantic): unit =
-            x.SpecialFlows  .UnionWith(addOn.SpecialFlows)
-            x.SpecialActions.UnionWith(addOn.SpecialActions)
-            x.Discards      .UnionWith(addOn.Discards)
-            x.NameSeparators <- (x.NameSeparators @ addOn.NameSeparators).Distinct() |> ResizeArray
+            x.SpecialFlows            <- x.SpecialFlows            @ addOn.SpecialFlows
+            x.SpecialActions          <- x.SpecialActions          @ addOn.SpecialActions
+            x.DeviceNameErasePatterns <- x.DeviceNameErasePatterns @ addOn.DeviceNameErasePatterns
+            x.NameSeparators          <- (x.NameSeparators         @ addOn.NameSeparators).Distinct() |> ResizeArray
             addOn.Dialects |> iter (fun (KeyValue(k, v)) -> x.Dialects.Add (k, v))
 
             // x.MutualResetTuples 에 addOn.MutualResetTuples 의 항목을 deep copy 해서 추가
@@ -100,19 +109,25 @@ module AppSettingsModule =
             |> Seq.map (fun set -> WordSet(set, ic))
             |> Seq.iter (fun set -> x.MutualResetTuples.Add(set))
 
+            x.CompileRegexPatterns()
+
+
         member x.Override(replace:Semantic): unit =
             if replace.NameSeparators.NonNullAny() then
                 x.NameSeparators <- ResizeArray(replace.NameSeparators.Distinct())
-            if replace.Discards.NonNullAny() then
-                x.Discards <- WordSet(replace.Discards, ic)
+            if replace.DeviceNameErasePatterns.NonNullAny() then
+                x.DeviceNameErasePatterns <- replace.DeviceNameErasePatterns
             if replace.SpecialFlows.NonNullAny() then
-                x.SpecialFlows <- WordSet(replace.SpecialFlows, ic)
+                x.SpecialFlows <- replace.SpecialFlows
             if replace.SpecialActions.NonNullAny() then
-                x.SpecialActions <- WordSet(replace.SpecialActions, ic)
+                x.SpecialActions <- replace.SpecialActions
             if replace.Dialects.NonNullAny() then
                 x.Dialects <- Dictionary(replace.Dialects, ic)
             if replace.MutualResetTuples.NonNullAny() then
                 x.MutualResetTuples <- replace.MutualResetTuples |> Seq.map (fun set -> WordSet(set, ic)) |> ResizeArray
+
+            x.CompileRegexPatterns()
+
 
     /// Vendor 별 Tag Semantic 별도 적용 용도
     type Semantics = Dictionary<string, Semantic>   // string : Vendor type 이지만, JSON 편의를 위해 string 으로.

@@ -5,6 +5,7 @@ open System.Text.RegularExpressions
 open Dual.Plc2DS
 open Dual.Common.Core.FS
 open System
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module GetFDA =
@@ -40,10 +41,21 @@ module GetFDA =
                         [||]
             xxx
 
+        /// name 에 대해 erasePatterns 에 해당하는 문자열 제거
+        [<Extension>]
+        static member ApplyRemovePatterns(name:string, erasePatterns:Regex[]): string =
+            let mutable n = name
+            for p in erasePatterns do
+                n <- p.Replace(n, "")
 
-        static member SplitName (name:string, ?discardsPrefix:string[], ?splitOnCamelCase:bool, ?delimeters:string[]): string[] =
+            // discard 이후 숫자만 남는 것은 제외
+            Regex.IsMatch(n, "^\d+$") ?= (name, n)
+
+
+
+        static member SplitName (name:string, ?erasePatterns:Regex[], ?splitOnCamelCase:bool, ?delimeters:string[]): string[] =
             let splitOnCamelCase = splitOnCamelCase |? false
-            let discardsPrefix = discardsPrefix |? [||]
+            let erasePatterns = erasePatterns |? [||]
             let delimiters = delimeters |? [|"_"|]
             let splitNames =
                 // camelCase 분리 : aCamelCase -> [| "a"; "Camel"; "Case" |]
@@ -54,23 +66,14 @@ module GetFDA =
 
                 let splitter (x:string) = if splitOnCamelCase then camelCaseSplitter x else [|x|]
 
-                name.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+                // name 에 대해 erasePatterns 에 해당하는 문자열 제거
+                let cleanName = name.ApplyRemovePatterns(erasePatterns)
+
+                cleanName.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
                 |> bind splitter
                 |> map _.ToUpper()
-                |> toList
 
-            match splitNames with
-            | [] -> [||]
-            | h::t::ts when     // discard 대상이되, discard 이후 숫자만 남는 것은 제외
-                discardsPrefix |> contains h
-                && (ts.any() || !! Regex.IsMatch(t, "^\d+$")) ->
-                    t::ts |> toArray
-            | _ ->
-                splitNames |> toArray
-                |> tee(fun splitNames ->
-                    if splitNames.Length = 1 && Regex.IsMatch(splitNames[0], "^\d+$") then
-                        noop()
-                )
+            splitNames
 
 
 

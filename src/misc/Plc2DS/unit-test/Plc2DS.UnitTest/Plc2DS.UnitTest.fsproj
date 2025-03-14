@@ -29,6 +29,8 @@
 		<Compile Include="TagAnalysis\Batch.fs" />
 
 		<Compile Include="IOMatch\GroupingTest.fs" />
+
+		<Compile Include="IOMatch\MultiStaging.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
