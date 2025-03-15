@@ -42,6 +42,7 @@ namespace Plc2DsApp
             this.btnReadCsvFile = new DevExpress.XtraEditors.SimpleButton();
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnAcceptTags = new DevExpress.XtraEditors.SimpleButton();
+            this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
@@ -49,11 +50,13 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsFixed.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsNotyet.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).BeginInit();
+            this.groupControl2.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOpenCSV
             // 
-            this.btnOpenCSV.Location = new System.Drawing.Point(29, 31);
+            this.btnOpenCSV.Location = new System.Drawing.Point(12, 31);
             this.btnOpenCSV.Name = "btnOpenCSV";
             this.btnOpenCSV.Size = new System.Drawing.Size(112, 34);
             this.btnOpenCSV.TabIndex = 0;
@@ -70,9 +73,9 @@ namespace Plc2DsApp
             // 
             // tbCsvFile
             // 
-            this.tbCsvFile.Location = new System.Drawing.Point(175, 35);
+            this.tbCsvFile.Location = new System.Drawing.Point(147, 35);
             this.tbCsvFile.Name = "tbCsvFile";
-            this.tbCsvFile.Size = new System.Drawing.Size(429, 28);
+            this.tbCsvFile.Size = new System.Drawing.Size(457, 28);
             this.tbCsvFile.TabIndex = 2;
             // 
             // groupControl1
@@ -85,7 +88,7 @@ namespace Plc2DsApp
             this.groupControl1.Controls.Add(this.btnShowFixedTags);
             this.groupControl1.Controls.Add(this.btnShowNotyetTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(29, 316);
+            this.groupControl1.Location = new System.Drawing.Point(12, 336);
             this.groupControl1.Name = "groupControl1";
             this.groupControl1.Size = new System.Drawing.Size(465, 122);
             this.groupControl1.TabIndex = 3;
@@ -157,29 +160,38 @@ namespace Plc2DsApp
             // 
             // btnDiscardTags
             // 
-            this.btnDiscardTags.Location = new System.Drawing.Point(29, 87);
+            this.btnDiscardTags.Location = new System.Drawing.Point(5, 37);
             this.btnDiscardTags.Name = "btnDiscardTags";
-            this.btnDiscardTags.Size = new System.Drawing.Size(139, 55);
+            this.btnDiscardTags.Size = new System.Drawing.Size(139, 45);
             this.btnDiscardTags.TabIndex = 7;
             this.btnDiscardTags.Text = "Discard";
             this.btnDiscardTags.Click += new System.EventHandler(this.btnDiscardTags_Click);
             // 
             // btnAcceptTags
             // 
-            this.btnAcceptTags.Location = new System.Drawing.Point(195, 87);
+            this.btnAcceptTags.Location = new System.Drawing.Point(150, 37);
             this.btnAcceptTags.Name = "btnAcceptTags";
-            this.btnAcceptTags.Size = new System.Drawing.Size(139, 55);
+            this.btnAcceptTags.Size = new System.Drawing.Size(139, 45);
             this.btnAcceptTags.TabIndex = 8;
             this.btnAcceptTags.Text = "Accept";
             this.btnAcceptTags.Click += new System.EventHandler(this.btnAcceptTags_Click);
+            // 
+            // groupControl2
+            // 
+            this.groupControl2.Controls.Add(this.btnAcceptTags);
+            this.groupControl2.Controls.Add(this.btnDiscardTags);
+            this.groupControl2.Location = new System.Drawing.Point(12, 92);
+            this.groupControl2.Name = "groupControl2";
+            this.groupControl2.Size = new System.Drawing.Size(301, 94);
+            this.groupControl2.TabIndex = 9;
+            this.groupControl2.Text = "Select tags";
             // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1053, 470);
-            this.Controls.Add(this.btnAcceptTags);
-            this.Controls.Add(this.btnDiscardTags);
+            this.Controls.Add(this.groupControl2);
             this.Controls.Add(this.btnReadCsvFile);
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.tbCsvFile);
@@ -195,6 +207,8 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsFixed.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsNotyet.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).EndInit();
+            this.groupControl2.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -215,6 +229,7 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnReadCsvFile;
         private DevExpress.XtraEditors.SimpleButton btnDiscardTags;
         private DevExpress.XtraEditors.SimpleButton btnAcceptTags;
+        private DevExpress.XtraEditors.GroupControl groupControl2;
     }
 }
 

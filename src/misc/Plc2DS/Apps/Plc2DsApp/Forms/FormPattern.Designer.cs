@@ -39,6 +39,7 @@ namespace Plc2DsApp
             this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
             this.btnOK = new DevExpress.XtraEditors.SimpleButton();
+            this.btnApplyAllPatterns = new DevExpress.XtraEditors.SimpleButton();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
@@ -50,10 +51,13 @@ namespace Plc2DsApp
             // 
             // gridControl1
             // 
+            this.gridControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.gridControl1.Location = new System.Drawing.Point(22, 12);
             this.gridControl1.MainView = this.gridView1;
             this.gridControl1.Name = "gridControl1";
-            this.gridControl1.Size = new System.Drawing.Size(922, 398);
+            this.gridControl1.Size = new System.Drawing.Size(1037, 426);
             this.gridControl1.TabIndex = 0;
             this.gridControl1.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gridView1});
@@ -65,13 +69,14 @@ namespace Plc2DsApp
             // 
             // groupControl1
             // 
+            this.groupControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.groupControl1.Controls.Add(this.tbNumTagsChosen);
             this.groupControl1.Controls.Add(this.tbNumTagsNotyet);
             this.groupControl1.Controls.Add(this.tbNumTagsAll);
             this.groupControl1.Controls.Add(this.btnShowChosenTags);
             this.groupControl1.Controls.Add(this.btnShowNotyetTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(22, 437);
+            this.groupControl1.Location = new System.Drawing.Point(12, 461);
             this.groupControl1.Name = "groupControl1";
             this.groupControl1.Size = new System.Drawing.Size(465, 122);
             this.groupControl1.TabIndex = 4;
@@ -129,7 +134,7 @@ namespace Plc2DsApp
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(950, 522);
+            this.btnCancel.Location = new System.Drawing.Point(989, 548);
             this.btnCancel.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(70, 35);
@@ -139,18 +144,27 @@ namespace Plc2DsApp
             // btnOK
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOK.Location = new System.Drawing.Point(874, 522);
+            this.btnOK.Location = new System.Drawing.Point(913, 548);
             this.btnOK.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(70, 35);
             this.btnOK.TabIndex = 10;
             this.btnOK.Text = "OK";
             // 
+            // btnApplyAllPatterns
+            // 
+            this.btnApplyAllPatterns.Location = new System.Drawing.Point(868, 444);
+            this.btnApplyAllPatterns.Name = "btnApplyAllPatterns";
+            this.btnApplyAllPatterns.Size = new System.Drawing.Size(191, 34);
+            this.btnApplyAllPatterns.TabIndex = 10;
+            this.btnApplyAllPatterns.Text = "Apply all patterns";
+            // 
             // FormPattern
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1035, 571);
+            this.ClientSize = new System.Drawing.Size(1074, 597);
+            this.Controls.Add(this.btnApplyAllPatterns);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.btnOK);
@@ -182,5 +196,6 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnShowAllTags;
         private DevExpress.XtraEditors.SimpleButton btnCancel;
         private DevExpress.XtraEditors.SimpleButton btnOK;
+        private DevExpress.XtraEditors.SimpleButton btnApplyAllPatterns;
     }
 }

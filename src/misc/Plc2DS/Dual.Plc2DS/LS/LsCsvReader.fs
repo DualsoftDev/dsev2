@@ -32,11 +32,12 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     interface IPlcTag
     member val Type    = typ      with get, set
     member val Scope   = scope    with get, set
-    member val Variable= variable with get, set
+    member val Variable= variable.ToUpper().Replace(".", "_") with get, set
     member val Address = address  with get, set
     member val DataType= dataType with get, set
     member val Property= property with get, set
     member val Comment = comment  with get, set
+    member val VariableOriginal = variable with get, set
 
     override x.Stringify() = $"{x.Variable} = {base.Stringify()}, {x.Address}, {x.Type}, {x.DataType}, {x.Comment}"
 

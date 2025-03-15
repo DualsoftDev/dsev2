@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using System.Text.RegularExpressions;
+using static DevExpress.Utils.MVVM.Internal.ILReader;
 
 namespace Plc2DsApp
 {
@@ -33,29 +34,63 @@ namespace Plc2DsApp
             tagsNotYet = tags;
 
             gridControl1.DataSource = patterns;
+
+            void applyPatterns (Regex[] patterns)
+            {
+                var gr = tagsNotYet.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
+
+                if (gr.ContainsKey(true))
+                {
+                    var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
+                    if (DialogResult.OK == form.ShowDialog())
+                    {
+                        TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
+                        tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
+                        updateUI();
+                    }
+                }
+            }
             gridView1.AddActionColumn<Pattern>("Apply", p =>
             {
                 return ("Apply", new Action<Pattern>(p =>
                 {
                     var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
-                    var gr = tagsNotYet.GroupByToDictionary(t => pattern.IsMatch(t.CsGetName()));
+                    applyPatterns(new Regex[] { pattern });
+                    //var gr = tagsNotYet.GroupByToDictionary(t => pattern.IsMatch(t.CsGetName()));
 
-                    if (gr.ContainsKey(true))
-                    {
-                        var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
-                        if (DialogResult.OK == form.ShowDialog())
-                        {
-                            TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
-                            tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
-                            updateUI();
-                        }
-                    }
-                    else
-                        MessageBox.Show("No matches found.");
+                    //if (gr.ContainsKey(true))
+                    //{
+                    //    var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
+                    //    if (DialogResult.OK == form.ShowDialog())
+                    //    {
+                    //        TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
+                    //        tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
+                    //        updateUI();
+                    //    }
+                    //}
+                    //else
+                    //    MessageBox.Show("No matches found.");
                 }));
             });
             btnOK    .Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
+            btnApplyAllPatterns.Click += (s, e) =>
+            {
+                var regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
+                applyPatterns(regexPatterns);
+                //var gr = tagsNotYet.GroupByToDictionary(t => regexPatterns.Any(p => p.IsMatch(t.CsGetName())) );
+
+                //if (gr.ContainsKey(true))
+                //{
+                //    var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
+                //    if (DialogResult.OK == form.ShowDialog())
+                //    {
+                //        TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
+                //        tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
+                //        updateUI();
+                //    }
+                //}
+            };
         }
 
         private void FormPattern_Load(object sender, EventArgs e)
