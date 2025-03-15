@@ -4,29 +4,34 @@ open System.Text.RegularExpressions
 open Dual.Common.Core.FS
 open Dual.Plc2DS
 
+module private PrivateFwdDeclImpl =
+    let mutable fwdGetAddress: IPlcTag -> string = let dummy (tag:IPlcTag) = failwithlog "Should be reimplemented." in dummy
+
+
+type CsvReader =
+    /// vendor 별 CSV 파일에서 PlcTagInfo로 변환
+    static member Read(vendor:Vendor, filePath:string, ?addressFilter:string -> bool): IPlcTag[] =
+        let tags =
+            match vendor with
+            | LS -> LS.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+            | AB -> AB.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+            | S7 -> S7.CsvReader.ReadCommentSDF(filePath) |> map (fun x -> x :> IPlcTag)
+            | MX -> MX.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+        let filtered =
+            match addressFilter with
+            //| Some pred -> tags |> filter (fun t ->  pred (t.GetAddress()))
+            | Some pred -> tags |> filter (PrivateFwdDeclImpl.fwdGetAddress >> pred)
+            | None -> tags
+        filtered
+    static member CsRead(vendor:Vendor, filePath:string): IPlcTag[] = CsvReader.Read(vendor, filePath)
+
+    static member ReadLs(filePath:string): LS.PlcTagInfo[] = LS.CsvReader.ReadCommentCSV(filePath)
+    static member ReadAb(filePath:string): AB.PlcTagInfo[] = AB.CsvReader.ReadCommentCSV(filePath)
+    static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
+    static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
+
 [<AutoOpen>]
 module rec ReaderModule =
-    type CsvReader =
-        /// vendor 별 CSV 파일에서 PlcTagInfo로 변환
-        static member Read(vendor:Vendor, filePath:string, ?addressFilter:string -> bool): IPlcTag[] =
-            let tags =
-                match vendor with
-                | LS -> LS.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
-                | AB -> AB.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
-                | S7 -> S7.CsvReader.ReadCommentSDF(filePath) |> map (fun x -> x :> IPlcTag)
-                | MX -> MX.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
-            let filtered =
-                match addressFilter with
-                | Some pred -> tags |> filter (fun t -> pred (t.GetAddress()))
-                | None -> tags
-            filtered
-
-        static member ReadLs(filePath:string): LS.PlcTagInfo[] = LS.CsvReader.ReadCommentCSV(filePath)
-        static member ReadAb(filePath:string): AB.PlcTagInfo[] = AB.CsvReader.ReadCommentCSV(filePath)
-        static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
-        static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
-
-
     type IPlcTag with
         member x.GetName() =
             match x with
@@ -143,3 +148,5 @@ module rec ReaderModule =
 
         member x.TryGetFDA(): FDA option = (x :?> FDA).TryGet()
 
+    let initialize() =
+        PrivateFwdDeclImpl.fwdGetAddress <- fun (tag:IPlcTag) -> tag.GetAddress()

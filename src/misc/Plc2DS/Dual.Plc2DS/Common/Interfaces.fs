@@ -4,6 +4,7 @@ open System.IO
 open Dual.Common.Core.FS
 open System.Collections.Generic
 open System.Diagnostics
+open System
 
 [<AutoOpen>]
 module InterfaceModule =
@@ -13,12 +14,18 @@ module InterfaceModule =
     /// 주로 CSV 를 통해 읽어 들인, vendor 별 PLC 태그 정보를 담는 인터페이스
     type IPlcTag = interface end
 
+    type Choice =
+        | Undefined = 0
+        | Fixed = 1
+        | Discarded = 2
+
     [<DebuggerDisplay("{Stringify()}")>]
     type FDA(flow:string, device:string, action:string) =
         new () = FDA(null, null, null)
         member val FlowName = flow with get, set
         member val DeviceName = device with get, set
         member val ActionName = action with get, set
+        member val Choice = Choice.Undefined with get, set
         member val Temporary :obj = null with get, set
 
         member x.Set(flow, device, action) =

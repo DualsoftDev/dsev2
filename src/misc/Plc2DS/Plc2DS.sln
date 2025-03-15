@@ -35,6 +35,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{02EA681E-C
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ConsoleTestApp", "Apps\ConsoleTestApp\ConsoleTestApp.fsproj", "{A679C5AC-0B3E-7F20-19B6-D085418D788D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.Winform.DevX.24.1.7", "..\..\..\submodules\nuget\Windows\Dual.Common.Winform.DevX\Dual.Common.Winform.DevX.24.1.7.csproj", "{9844813A-CCAC-43CF-928F-0EF95935837D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.Winform", "..\..\..\submodules\nuget\Windows\Dual.Common.Winform\Dual.Common.Winform.csproj", "{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +97,14 @@ Global
 		{A679C5AC-0B3E-7F20-19B6-D085418D788D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A679C5AC-0B3E-7F20-19B6-D085418D788D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A679C5AC-0B3E-7F20-19B6-D085418D788D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9844813A-CCAC-43CF-928F-0EF95935837D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9844813A-CCAC-43CF-928F-0EF95935837D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9844813A-CCAC-43CF-928F-0EF95935837D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9844813A-CCAC-43CF-928F-0EF95935837D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,5 +121,10 @@ Global
 		{43BD16C2-53C9-425A-9375-D5650C585126} = {E2F92588-3BC0-4894-8164-A4FA21581332}
 		{767D99A6-208E-499E-8FC9-412A0CE34682} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{A679C5AC-0B3E-7F20-19B6-D085418D788D} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{9844813A-CCAC-43CF-928F-0EF95935837D} = {E2F92588-3BC0-4894-8164-A4FA21581332}
+		{471C4B2A-FF16-DDC9-752B-A949C7A29ABE} = {E2F92588-3BC0-4894-8164-A4FA21581332}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC119DCD-6FF1-43E5-9A4A-18EFA2BF54DD}
 	EndGlobalSection
 EndGlobal

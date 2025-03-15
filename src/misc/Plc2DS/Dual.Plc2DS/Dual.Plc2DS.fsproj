@@ -16,6 +16,8 @@
     <Compile Include="CsvReader.fs" />
     <Compile Include="Semantics.fs" />
     <Compile Include="GetFDA.fs" />
+    <Compile Include="ExtensionForCSharp.fs" />
+    <Compile Include="EntryPoint.fs" />
 
     <!--<Compile Include="Obsolete\Semantic.Obsolted.fs" />
     <Compile Include="Obsolete\ExtractDevice.fs" />

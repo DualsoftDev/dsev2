@@ -8,6 +8,8 @@ open Dual.Common.Base.FS
 // For more information see https://aka.ms/fsharp-console-apps
 printfn "Hello from F#"
 
+ModuleInitializer.Initialize()
+
 let appSettingsPath =
     let baseDir = AppDomain.CurrentDomain.BaseDirectory;
     Path.Combine(baseDir, "appsettings.json")

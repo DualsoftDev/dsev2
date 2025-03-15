@@ -38,7 +38,7 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     member val Property= property with get, set
     member val Comment = comment  with get, set
 
-    member x.Stringify() = $"{x.Variable} = {base.Stringify()}, {x.Address}, {x.Type}, {x.DataType}, {x.Comment}"
+    override x.Stringify() = $"{x.Variable} = {base.Stringify()}, {x.Address}, {x.Type}, {x.DataType}, {x.Comment}"
 
 
 
