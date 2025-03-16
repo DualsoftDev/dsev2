@@ -1,16 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using DevExpress.XtraEditors;
-using System.Text.RegularExpressions;
-using static DevExpress.Utils.MVVM.Internal.ILReader;
-
 namespace Plc2DsApp
 {
 	public partial class FormPattern: DevExpress.XtraEditors.XtraForm
@@ -56,20 +43,6 @@ namespace Plc2DsApp
                 {
                     var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
                     applyPatterns(new Regex[] { pattern });
-                    //var gr = tagsNotYet.GroupByToDictionary(t => pattern.IsMatch(t.CsGetName()));
-
-                    //if (gr.ContainsKey(true))
-                    //{
-                    //    var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
-                    //    if (DialogResult.OK == form.ShowDialog())
-                    //    {
-                    //        TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
-                    //        tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
-                    //        updateUI();
-                    //    }
-                    //}
-                    //else
-                    //    MessageBox.Show("No matches found.");
                 }));
             });
             btnOK    .Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
@@ -78,18 +51,6 @@ namespace Plc2DsApp
             {
                 var regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
                 applyPatterns(regexPatterns);
-                //var gr = tagsNotYet.GroupByToDictionary(t => regexPatterns.Any(p => p.IsMatch(t.CsGetName())) );
-
-                //if (gr.ContainsKey(true))
-                //{
-                //    var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
-                //    if (DialogResult.OK == form.ShowDialog())
-                //    {
-                //        TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
-                //        tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
-                //        updateUI();
-                //    }
-                //}
             };
         }
 

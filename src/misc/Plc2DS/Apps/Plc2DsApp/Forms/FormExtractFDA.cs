@@ -1,0 +1,70 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using DevExpress.XtraEditors;
+using DevExpress.XtraGrid;
+using static Dual.Plc2DS.InterfaceModule;
+
+namespace Plc2DsApp.Forms
+{
+	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm
+	{
+        LS.PlcTagInfo[] tags = [];
+        LS.PlcTagInfo[] tagsNotYet => tags.Where(t => t.Choice == Choice.Undefined).ToArray();
+        LS.PlcTagInfo[] tagsCategorized = [];
+        void updateUI()
+        {
+            tbNumTagsAll.Text = tags.Length.ToString();
+            tbNumTagsChosen.Text = tagsCategorized.Length.ToString();
+            tbNumTagsNotyet.Text = tagsNotYet.Length.ToString();
+        }
+        void showTags(LS.PlcTagInfo[] tags) => FormGridTags.ShowTags(tags);
+        public FormExtractFDA(LS.PlcTagInfo[] tags, Pattern[] patterns)
+		{
+            InitializeComponent();
+
+            this.tags = tags;
+
+            gridControl1.DataSource = patterns;
+            tbPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
+        }
+
+        private void FormExtractFDA_Load(object sender, EventArgs e)
+        {
+            btnShowAllTags.Click += (s, e) => showTags(tags);
+            btnShowNotyetTags.Click += (s, e) => showTags(tagsNotYet);
+            btnShowChosenTags.Click += (s, e) => showTags(tagsCategorized);
+            updateUI();
+        }
+
+        private void btnApply_Click(object sender, EventArgs e)
+        {
+            var pattern = new Regex(tbPattern.Text, RegexOptions.Compiled);
+            IEnumerable<LS.PlcTagInfo> collectCategorized()
+            {
+                foreach (var t in tagsNotYet)
+                {
+                    var match = pattern.Match(t.CsGetName());
+                    if (match.Success)
+                    {
+                        // match group 의 이름 중에 flow, device, action 을 찾아서 t 에 저장
+                        t.FlowName = match.Groups["flow"].Value;
+                        t.DeviceName = match.Groups["device"].Value;
+                        t.ActionName = match.Groups["action"].Value;
+                        t.Choice = Choice.Fixed;
+                        yield return t;
+                    }
+                }
+            }
+            tagsCategorized = tagsCategorized.Concat(collectCategorized()).ToArray();
+            var form = new FormGridTags(tagsCategorized);
+            form.ShowDialog();
+        }
+    }
+}

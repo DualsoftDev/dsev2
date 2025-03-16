@@ -3,8 +3,9 @@ global using System.Data;
 global using System.IO;
 global using System.Linq;
 global using System.Windows.Forms;
-global using DevExpress.XtraGrid.Views.Grid;
+global using System.Text.RegularExpressions;
 
+global using DevExpress.XtraGrid.Views.Grid;
 
 global using Dual.Common.Winform.DevX;
 global using Dual.Common.Core;

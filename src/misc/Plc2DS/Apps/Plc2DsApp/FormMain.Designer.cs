@@ -43,6 +43,7 @@ namespace Plc2DsApp
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnAcceptTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
+            this.btnExtractFDA = new DevExpress.XtraEditors.SimpleButton();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
@@ -186,11 +187,22 @@ namespace Plc2DsApp
             this.groupControl2.TabIndex = 9;
             this.groupControl2.Text = "Select tags";
             // 
+            // btnExtractFDA
+            // 
+            this.btnExtractFDA.Location = new System.Drawing.Point(17, 250);
+            this.btnExtractFDA.Name = "btnExtractFDA";
+            this.btnExtractFDA.Size = new System.Drawing.Size(139, 45);
+            this.btnExtractFDA.TabIndex = 10;
+            this.btnExtractFDA.Text = "Extract";
+            this.btnExtractFDA.ToolTip = "Flow, Device, Action 명 추출";
+            this.btnExtractFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1053, 470);
+            this.Controls.Add(this.btnExtractFDA);
             this.Controls.Add(this.groupControl2);
             this.Controls.Add(this.btnReadCsvFile);
             this.Controls.Add(this.groupControl1);
@@ -230,6 +242,7 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnDiscardTags;
         private DevExpress.XtraEditors.SimpleButton btnAcceptTags;
         private DevExpress.XtraEditors.GroupControl groupControl2;
+        private DevExpress.XtraEditors.SimpleButton btnExtractFDA;
     }
 }
 

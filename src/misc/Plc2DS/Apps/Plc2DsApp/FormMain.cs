@@ -1,4 +1,6 @@
 
+using Plc2DsApp.Forms;
+
 using System.Text.RegularExpressions;
 
 using static Dual.Plc2DS.InterfaceModule;
@@ -131,5 +133,17 @@ namespace Plc2DsApp
         {
 
         }
+
+        private void btnExtractFDA_Click(object sender, EventArgs e)
+        {
+            Pattern[] patterns = new Pattern[] {
+                  new Pattern { Name = "ROBOT 패턴",      PatternString = @"^(?<flow>[^_]+)_([IQM]_)?(?<device>(RB|RBT|ROBOT)\d+)_(?<action>.*)$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
+                //, new Pattern { Name = "'_' 로 시작", PatternString = @"^_",         Description = "'_' 로 시작하는 항목" }
+            };
+
+            var form = new FormExtractFDA(TagsNotYet, patterns);
+            form.ShowDialog();
+        }
     }
 }
+
