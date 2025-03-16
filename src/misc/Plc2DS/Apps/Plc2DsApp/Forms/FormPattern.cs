@@ -2,14 +2,14 @@ namespace Plc2DsApp
 {
 	public partial class FormPattern: DevExpress.XtraEditors.XtraForm
 	{
-        LS.PlcTagInfo[] tags = [];
-        LS.PlcTagInfo[] tagsNotYet = [];
+        LS.PlcTagInfo[] _tags = [];
+        LS.PlcTagInfo[] _tagsNotYet = [];
         public LS.PlcTagInfo[] TagsChosen = [];
         void updateUI()
         {
-            tbNumTagsAll.Text = tags.Length.ToString();
+            tbNumTagsAll.Text = _tags.Length.ToString();
             tbNumTagsChosen.Text = TagsChosen.Length.ToString();
-            tbNumTagsNotyet.Text = tagsNotYet.Length.ToString();
+            tbNumTagsNotyet.Text = _tagsNotYet.Length.ToString();
         }
         void showTags(LS.PlcTagInfo[] tags) => FormGridTags.ShowTags(tags);
 
@@ -17,22 +17,22 @@ namespace Plc2DsApp
 		{
             InitializeComponent();
 
-            this.tags = tags;
-            tagsNotYet = tags;
+            _tags = tags;
+            _tagsNotYet = tags;
 
             gridControl1.DataSource = patterns;
 
             void applyPatterns (Regex[] patterns)
             {
-                var gr = tagsNotYet.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
+                var gr = _tagsNotYet.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
 
                 if (gr.ContainsKey(true))
                 {
-                    var form = new FormGridTags(gr[true], true) { Text = "Confirm selection.." };
+                    var form = new FormGridTags(gr[true], selectedTags:gr[true], confirmMode:true) { Text = "Confirm selection.." };
                     if (DialogResult.OK == form.ShowDialog())
                     {
                         TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
-                        tagsNotYet = tagsNotYet.Except(TagsChosen).ToArray();
+                        _tagsNotYet = _tagsNotYet.Except(TagsChosen).ToArray();
                         updateUI();
                     }
                 }
@@ -56,8 +56,8 @@ namespace Plc2DsApp
 
         private void FormPattern_Load(object sender, EventArgs e)
         {
-            btnShowAllTags.Click += (s, e) => showTags(tags);
-            btnShowNotyetTags.Click += (s, e) => showTags(tagsNotYet);
+            btnShowAllTags.Click += (s, e) => showTags(_tags);
+            btnShowNotyetTags.Click += (s, e) => showTags(_tagsNotYet);
             btnShowChosenTags.Click += (s, e) => showTags(TagsChosen);
             updateUI();
         }

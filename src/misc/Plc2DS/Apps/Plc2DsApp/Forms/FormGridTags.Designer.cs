@@ -34,6 +34,7 @@ namespace Plc2DsApp
             this.btnOK = new DevExpress.XtraEditors.SimpleButton();
             this.gridControl1 = new DevExpress.XtraGrid.GridControl();
             this.gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
+            this.btnSaveAs = new DevExpress.XtraEditors.SimpleButton();
             ((System.ComponentModel.ISupportInitialize)(this.cbShowWithFDA.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.cbShowWithoutFDA.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).BeginInit();
@@ -44,39 +45,41 @@ namespace Plc2DsApp
             // 
             this.cbShowWithFDA.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.cbShowWithFDA.EditValue = true;
-            this.cbShowWithFDA.Location = new System.Drawing.Point(0, 672);
+            this.cbShowWithFDA.Location = new System.Drawing.Point(0, 525);
+            this.cbShowWithFDA.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.cbShowWithFDA.Name = "cbShowWithFDA";
             this.cbShowWithFDA.Properties.Caption = "Show w/ FDA";
-            this.cbShowWithFDA.Size = new System.Drawing.Size(155, 27);
+            this.cbShowWithFDA.Size = new System.Drawing.Size(124, 24);
             this.cbShowWithFDA.TabIndex = 1;
             // 
             // cbShowWithoutFDA
             // 
             this.cbShowWithoutFDA.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.cbShowWithoutFDA.Location = new System.Drawing.Point(0, 645);
+            this.cbShowWithoutFDA.Location = new System.Drawing.Point(0, 503);
+            this.cbShowWithoutFDA.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.cbShowWithoutFDA.Name = "cbShowWithoutFDA";
             this.cbShowWithoutFDA.Properties.Caption = "Show w/o FDA";
-            this.cbShowWithoutFDA.Size = new System.Drawing.Size(171, 27);
+            this.cbShowWithoutFDA.Size = new System.Drawing.Size(137, 24);
             this.cbShowWithoutFDA.TabIndex = 2;
             // 
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(1073, 652);
-            this.btnCancel.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.btnCancel.Location = new System.Drawing.Point(785, 508);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(70, 35);
+            this.btnCancel.Size = new System.Drawing.Size(56, 29);
             this.btnCancel.TabIndex = 6;
             this.btnCancel.Text = "Cancel";
             // 
             // btnOK
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOK.Location = new System.Drawing.Point(997, 652);
-            this.btnOK.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.btnOK.Location = new System.Drawing.Point(725, 508);
+            this.btnOK.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnOK.Name = "btnOK";
-            this.btnOK.Size = new System.Drawing.Size(70, 35);
+            this.btnOK.Size = new System.Drawing.Size(56, 29);
             this.btnOK.TabIndex = 5;
             this.btnOK.Text = "OK";
             // 
@@ -85,31 +88,49 @@ namespace Plc2DsApp
             this.gridControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.gridControl1.Location = new System.Drawing.Point(12, 27);
+            this.gridControl1.EmbeddedNavigator.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.gridControl1.Location = new System.Drawing.Point(10, 22);
             this.gridControl1.MainView = this.gridView1;
+            this.gridControl1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.gridControl1.Name = "gridControl1";
-            this.gridControl1.Size = new System.Drawing.Size(1130, 574);
+            this.gridControl1.Size = new System.Drawing.Size(831, 445);
             this.gridControl1.TabIndex = 7;
             this.gridControl1.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gridView1});
             // 
             // gridView1
             // 
+            this.gridView1.DetailHeight = 286;
             this.gridView1.GridControl = this.gridControl1;
             this.gridView1.Name = "gridView1";
+            this.gridView1.OptionsEditForm.PopupEditFormWidth = 640;
+            // 
+            // btnSaveAs
+            // 
+            this.btnSaveAs.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSaveAs.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnSaveAs.Location = new System.Drawing.Point(545, 508);
+            this.btnSaveAs.Margin = new System.Windows.Forms.Padding(2);
+            this.btnSaveAs.Name = "btnSaveAs";
+            this.btnSaveAs.Size = new System.Drawing.Size(133, 29);
+            this.btnSaveAs.TabIndex = 8;
+            this.btnSaveAs.Text = "Save as..";
+            this.btnSaveAs.Click += new System.EventHandler(this.btnSaveAs_Click);
             // 
             // FormGridTags
             // 
             this.AcceptButton = this.btnOK;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(1154, 699);
+            this.ClientSize = new System.Drawing.Size(850, 547);
+            this.Controls.Add(this.btnSaveAs);
             this.Controls.Add(this.gridControl1);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.cbShowWithoutFDA);
             this.Controls.Add(this.cbShowWithFDA);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "FormGridTags";
             this.Text = "FormGridTags";
             this.Load += new System.EventHandler(this.FormGridTags_Load);
@@ -128,5 +149,6 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnOK;
         private DevExpress.XtraGrid.GridControl gridControl1;
         private DevExpress.XtraGrid.Views.Grid.GridView gridView1;
+        private DevExpress.XtraEditors.SimpleButton btnSaveAs;
     }
 }

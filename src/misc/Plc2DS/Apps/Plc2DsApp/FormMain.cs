@@ -39,7 +39,7 @@ namespace Plc2DsApp
             tbCsvFile.Text = Path.Combine(dataDir, "BB 메인제어반.csv");
 
             btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
-            btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
+            //btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
         }
         private void FormMain_Load(object sender, EventArgs e)
         {
@@ -79,10 +79,10 @@ namespace Plc2DsApp
 
         void updateUI()
         {
-            tbNumTagsAll.Text = TagsAll.Length.ToString();
+            tbNumTagsAll      .Text = TagsAll      .Length.ToString();
             tbNumTagsDiscarded.Text = TagsDiscarded.Length.ToString();
-            tbNumTagsFixed.Text = TagsFixed.Length.ToString();
-            tbNumTagsNotyet.Text = TagsNotYet.Length.ToString();
+            tbNumTagsFixed    .Text = TagsFixed    .Length.ToString();
+            tbNumTagsNotyet   .Text = TagsNotYet   .Length.ToString();
         }
 
         private void btnSelectCSV_Click(object sender, EventArgs e)
@@ -127,11 +127,6 @@ namespace Plc2DsApp
                 form.TagsChosen.Iter(t => t.Choice = Choice.Discarded);
                 updateUI();
             }
-        }
-
-        private void btnAcceptTags_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void btnExtractFDA_Click(object sender, EventArgs e)
