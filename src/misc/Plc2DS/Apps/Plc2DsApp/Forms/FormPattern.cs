@@ -6,6 +6,8 @@ namespace Plc2DsApp.Forms
         PlcTagBaseFDA[] _tags = [];
         PlcTagBaseFDA[] _tagsStage = [];
         public PlcTagBaseFDA[] TagsChosen = [];
+
+        Pattern[] _patterns = [];
         void updateUI()
         {
             tbNumTagsAll.Text = _tags.Length.ToString();
@@ -18,26 +20,12 @@ namespace Plc2DsApp.Forms
 		{
             InitializeComponent();
 
+            _patterns = patterns;
             _tags = tags;
             _tagsStage = tags;
 
             gridControl1.DataSource = patterns;
 
-            void applyPatterns (Regex[] patterns)
-            {
-                var gr = _tagsStage.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
-
-                if (gr.ContainsKey(true))
-                {
-                    var form = new FormTags(gr[true], selectedTags:gr[true], usageHint:"(Pattern matching)");
-                    if (DialogResult.OK == form.ShowDialog())
-                    {
-                        TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
-                        _tagsStage = _tagsStage.Except(TagsChosen).ToArray();
-                        updateUI();
-                    }
-                }
-            }
             gridView1.AddActionColumn<Pattern>("Apply", p =>
             {
                 return ("Apply", new Action<Pattern>(p =>
@@ -61,6 +49,33 @@ namespace Plc2DsApp.Forms
             btnShowStageTags.Click += (s, e) => showTags(_tagsStage, usageHint: "(Stage Tags)");
             btnShowChosenTags.Click += (s, e) => showTags(TagsChosen, usageHint: "(Chosen Tags)");
             updateUI();
+        }
+        void applyPatterns(Regex[] patterns)
+        {
+            var gr = _tagsStage.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
+
+            if (gr.ContainsKey(true))
+            {
+                var form = new FormTags(gr[true], selectedTags: gr[true], usageHint: "(Pattern matching)");
+                if (DialogResult.OK == form.ShowDialog())
+                {
+                    TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
+                    _tagsStage = _tagsStage.Except(TagsChosen).ToArray();
+                    updateUI();
+                }
+            }
+        }
+
+        private void btnApplyCustomPattern_Click(object sender, EventArgs e)
+        {
+            var pattern = new Regex(tbCustomPattern.Text, RegexOptions.Compiled);
+            applyPatterns([pattern]);
+        }
+
+        private void btnApplyAllPatterns_Click(object sender, EventArgs e)
+        {
+            var patterns = _patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
+            applyPatterns(patterns);
         }
     }
 

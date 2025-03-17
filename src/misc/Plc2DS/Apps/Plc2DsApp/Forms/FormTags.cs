@@ -110,21 +110,6 @@ namespace Plc2DsApp.Forms
             return form;
         }
 
-        private void btnSaveAs_Click(object sender, EventArgs e)
-        {
-            using SaveFileDialog sfd =
-                new SaveFileDialog()
-                {
-                    //InitialDirectory = dataDir,
-                    //Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
-                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
-                };
-
-            if (sfd.ShowDialog() == DialogResult.OK)
-            {
-                string json = EmJson.ToJson(SelectedTags);
-                File.WriteAllText(sfd.FileName, json);
-            }
-        }
+        private void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(SelectedTags);
     }
 }

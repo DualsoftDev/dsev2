@@ -18,6 +18,9 @@ global using Dual.Common.Base.FS;
 global using Dual.Plc2DS;
 
 global using LS = Dual.Plc2DS.LS;
+global using AB = Dual.Plc2DS.AB;
+global using S7 = Dual.Plc2DS.S7;
+global using MX = Dual.Plc2DS.MX;
 
 global using static Dual.Plc2DS.AppSettingsModule;
 global using Plc2DsApp.Forms;

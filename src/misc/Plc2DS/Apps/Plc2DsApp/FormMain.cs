@@ -4,7 +4,7 @@ namespace Plc2DsApp
         AppSettings _appSettings = null;
         public Vendor Vendor { get; set; } = Vendor.LS;
         public string[] VisibleColumns => _appSettings.VisibleColumns;
-        string _dataDir => _appSettings.DataDir;
+        public string DataDir => _appSettings.DataDir;
 
         // abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
         public object ConvertToVendorTags(IEnumerable<PlcTagBaseFDA> tags)
@@ -41,7 +41,7 @@ namespace Plc2DsApp
             Dual.Plc2DS.ModuleInitializer.Initialize();
             DcLogger.EnableTrace = false;
 
-            tbCsvFile.Text = Path.Combine(_dataDir, _appSettings.PrimaryCsv);
+            tbCsvFile.Text = Path.Combine(DataDir, _appSettings.PrimaryCsv);
 
             btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
             //btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
@@ -79,28 +79,71 @@ namespace Plc2DsApp
             btnReadCsvFile.Click += (s, e) => loadTags(tbCsvFile.Text);
         }
 
+        public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
+        {
+            using SaveFileDialog sfd =
+                new SaveFileDialog()
+                {
+                    InitialDirectory = FormMain.Instance.DataDir,
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                };
+
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                string json = EmJson.ToJson(tags);
+                File.WriteAllText(sfd.FileName, json);
+            }
+
+        }
+
         PlcTagBaseFDA[] loadTags(string csvFile)
         {
             using var wf = DcWaitForm.CreateWaitForm("Loading tags...");
-            if (Vendor.IsLS)
+            var ext = Path.GetExtension(csvFile).ToLower();
+            if ( ext == ".csv")
             {
-                TagsAll =
-                    CsvReader.ReadLs(csvFile)
-                    .Where(t => t.DataType.ToUpper() == "BOOL")
-                    .Where(t => t.Scope == "GlobalVariable")
-                    .ToArray();
+                if (Vendor.IsLS)
+                {
+                    TagsAll =
+                        CsvReader.ReadLs(csvFile)
+                        .Where(t => t.DataType.ToUpper() == "BOOL")
+                        .Where(t => t.Scope == "GlobalVariable")
+                        .ToArray();
+                }
+                else if (Vendor.IsAB)
+                    TagsAll = CsvReader.ReadAb(csvFile).ToArray();
+                else if (Vendor.IsS7)
+                    TagsAll = CsvReader.ReadS7(csvFile).ToArray();
+                else if (Vendor.IsMX)
+                    TagsAll = CsvReader.ReadMx(csvFile).ToArray();
             }
-            else if (Vendor.IsAB)
-                TagsAll = CsvReader.ReadAb(csvFile).ToArray();
-            else if (Vendor.IsS7)
-                TagsAll = CsvReader.ReadS7(csvFile).ToArray();
-            else if (Vendor.IsMX)
-                TagsAll = CsvReader.ReadMx(csvFile).ToArray();
+            else if (ext == ".json")
+            {
+                var json = File.ReadAllText(csvFile);
+                if      (Vendor.IsLS) TagsAll = EmJson.FromJson<LS.PlcTagInfo[]>(json);
+                else if (Vendor.IsAB) TagsAll = EmJson.FromJson<AB.PlcTagInfo[]>(json);
+                else if (Vendor.IsS7) TagsAll = EmJson.FromJson<S7.PlcTagInfo[]>(json);
+                else if (Vendor.IsMX) TagsAll = EmJson.FromJson<MX.PlcTagInfo[]>(json);
+                else throw new Exception("ERROR");
+            }
+            else
+                throw new NotImplementedException();
 
-            TagsAll.Iter(t => {
-                t.CsSetFDA(t.CsTryGetFDA(Semantic));
-                t.Choice = Choice.Stage;
-            });
+            TagsAll.Iter(t =>
+                {
+                    t.CsSetFDA(t.CsTryGetFDA(Semantic));
+                    t.Choice = Choice.Stage;
+                });
+
+            var invalidTags = TagsAll.Where(t => !t.CsIsValid()).ToArray();
+            if (invalidTags.Any())
+            {
+                var f = invalidTags.First();
+                var msg = $"Total {invalidTags.Length} invalid tags: {f.CsGetName()}...\r\nContinue?";
+                if (DialogResult.No == MessageBox.Show(msg, "ERROR", MessageBoxButtons.YesNo))
+                    return [];
+            }
+
 
             updateUI();
             return TagsAll;
@@ -120,8 +163,8 @@ namespace Plc2DsApp
             using OpenFileDialog ofd =
                 new OpenFileDialog()
                 {
-                    InitialDirectory = _dataDir,
-                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    InitialDirectory = DataDir,
+                    Filter = "CSV files (*.csv)|*.csv|JSON files (*.json)|*.json|All files (*.*)|*.*",
                 };
 
             if (ofd.ShowDialog() == DialogResult.OK)

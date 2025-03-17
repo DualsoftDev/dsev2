@@ -71,6 +71,8 @@ module rec ReaderModule =
             | :? MX.PlcTagInfo as mx -> mx.Comment
             | _ -> x.GetName()
 
+        member x.IsValid() = x.GetName().NonNullAny() && x.GetAddress().NonNullAny()
+
         static member private xxx = ()
         // I 여부
         member x.IsInput(): bool =

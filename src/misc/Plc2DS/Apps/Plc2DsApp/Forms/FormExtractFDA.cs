@@ -1,10 +1,16 @@
 using DevExpress.XtraEditors;
 
+using System.Runtime.InteropServices.WindowsRuntime;
+
+using static DevExpress.Utils.MVVM.Internal.ILReader;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] _tags = [];
+        Pattern[] _patterns = [];
+
         public PlcTagBaseFDA[] TagsStage => _tags.Where(t => t.Choice == Choice.Stage).ToArray();
         public PlcTagBaseFDA[] TagsNonStage => _tags.Where(t => t.Choice != Choice.Stage).ToArray();    // chosen + categorized
         void updateUI()
@@ -19,15 +25,16 @@ namespace Plc2DsApp.Forms
 		{
             InitializeComponent();
 
-            this._tags = tags;
+            _patterns = patterns;
+            _tags = tags;
 
             gridControl1.DataSource = patterns;
-            tbPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
+            tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
 
             gridView1.SelectionChanged += (s, e) =>
             {
                 var pattern = gridView1.GetFocusedRow() as Pattern;
-                tbPattern.Text = pattern.PatternString;
+                tbCustomPattern.Text = pattern.PatternString;
             };
 
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
@@ -43,10 +50,9 @@ namespace Plc2DsApp.Forms
             updateUI();
         }
 
-        private void btnApply_Click(object sender, EventArgs e)
+        void applyPatterns(Regex[] patterns)
         {
-            var pattern = new Regex(tbPattern.Text, RegexOptions.Compiled);
-            IEnumerable<PlcTagBaseFDA> collectCategorized()
+            IEnumerable<PlcTagBaseFDA> collectCategorized(Regex pattern)
             {
                 foreach (var t in TagsStage)
                 {
@@ -57,18 +63,33 @@ namespace Plc2DsApp.Forms
                         t.FlowName = match.Groups["flow"].Value;
                         t.DeviceName = match.Groups["device"].Value;
                         t.ActionName = match.Groups["action"].Value;
-                        //t.Choice = Choice.Categorized;
                         yield return t;
                     }
                 }
             }
-            var categorizedCandidates = collectCategorized().ToArray();
-            var form = FormTags.ShowTags(categorizedCandidates, categorizedCandidates, usageHint:"(Extract FDA pattern)");
+
+            var categorizedCandidates = patterns.SelectMany(collectCategorized);
+
+            var form = FormTags.ShowTags(categorizedCandidates, categorizedCandidates, usageHint: "(Extract FDA pattern)");
             if (form.DialogResult == DialogResult.OK)
             {
                 form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
                 updateUI();
             }
+
+        }
+
+
+        private void btnApplyCustomPattern_Click(object sender, EventArgs e)
+        {
+            var pattern = new Regex(tbCustomPattern.Text, RegexOptions.Compiled);
+            applyPatterns([pattern]);
+        }
+
+        private void btnApplyAllPatterns_Click(object sender, EventArgs e)
+        {
+            var patterns = _patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
+            applyPatterns(patterns);
         }
     }
 }
