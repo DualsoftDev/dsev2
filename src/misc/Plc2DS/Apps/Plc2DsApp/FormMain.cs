@@ -169,6 +169,7 @@ namespace Plc2DsApp
                 , new Pattern { Name = "'_BOLTING_ERR_' 포함",  PatternString = @"__BOLTING_ERR__", Description = "'_BOLTING_ERR_' 을 포함하는 항목" }
                 , new Pattern { Name = "'_MANUAL_INT' 포함",  PatternString = @"_(MANUAL|MUTUAL)_INT\d*", Description = "'_MANUAL_INT' 을 포함하는 항목" }
             };
+            var _ = selectTags(Choice.Undefined);   // load TagsAll if null or empty
             var form = new FormPattern(TagsAll, patterns);
             if (form.ShowDialog() == DialogResult.OK)
             {
@@ -181,11 +182,16 @@ namespace Plc2DsApp
         {
             Pattern[] patterns = new Pattern[] {
                   new Pattern { Name = "ROBOT 패턴",      PatternString = @"^(?<flow>[^_]+)_([IQM]_)?(?<device>(RB|RBT|ROBOT)\d+)_(?<action>.*)$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
+                  , new Pattern { Name = "일반 패턴",      PatternString = @"^(?<flow>[^_]+)_(?<device>.*)_(?<action>[^_]+)$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
                 //, new Pattern { Name = "'_' 로 시작", PatternString = @"^_",         Description = "'_' 로 시작하는 항목" }
             };
 
             var form = new FormExtractFDA(TagsNotYet, patterns);
-            form.ShowDialog();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                form.TagsCategorized.Iter(t => t.Choice = Choice.Fixed);
+                updateUI();
+            }
         }
     }
 }

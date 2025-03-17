@@ -153,6 +153,7 @@ namespace Plc2DsApp.Forms
             // 
             // btnApplyAllPatterns
             // 
+            this.btnApplyAllPatterns.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnApplyAllPatterns.Location = new System.Drawing.Point(868, 444);
             this.btnApplyAllPatterns.Name = "btnApplyAllPatterns";
             this.btnApplyAllPatterns.Size = new System.Drawing.Size(191, 34);

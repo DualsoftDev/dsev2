@@ -94,6 +94,7 @@
     <Compile Include="Forms\FormTags.Designer.cs">
       <DependentUpon>FormTags.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\GridExtension.cs" />
     <Compile Include="GlobalUsing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormTags: DevExpress.XtraEditors.XtraForm
@@ -10,7 +12,9 @@ namespace Plc2DsApp.Forms
             InitializeComponent();
 
             // PlcTagBaseFDA[] 를 GridView 에서 보기 위해서 최종 subclass type (e.g LS.PlcTagInfo[]) 으로 변환
-            gridControl1.DataSource = FormMain.Instance.ConvertToVendorTags(tags);
+            var vendorTags = FormMain.Instance.ConvertToVendorTags(tags);
+            gridControl1.DataSource = new BindingList<object>(vendorTags as object[]);
+
 
             gridView1.OptionsSelection.MultiSelect = true;
             gridView1.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
@@ -40,7 +44,7 @@ namespace Plc2DsApp.Forms
                 }
             }
 
-            if (selectedTags.NonNullAny())
+            //if (selectedTags.NonNullAny())
             {
                 GridView view = gridView1;
                 // 체크박스 열 추가
@@ -80,47 +84,22 @@ namespace Plc2DsApp.Forms
                     }
                 };
 
-                view.RowCellClick += (sender, e) =>
-                {
-                    if (e.Column.FieldName == "IsChecked") // 체크박스 컬럼인지 확인
-                    {
-                        bool currentValue = (bool)gridView1.GetRowCellValue(e.RowHandle, e.Column);
-                        bool newValue = !currentValue; // 현재 값의 반대 값으로 설정 (토글)
-
-                        // 선택된 모든 행 가져오기
-                        var selectedRows = gridView1.GetSelectedRows();
-
-                        foreach (int rowIndex in selectedRows)
-                        {
-                            // 선택된 행에 동일한 값 설정
-                            gridView1.SetRowCellValue(rowIndex, e.Column, newValue);
-
-                            // ✅ selectedTags도 함께 업데이트
-                            var tag = gridView1.GetRow(rowIndex) as PlcTagBaseFDA;
-                            if (tag != null)
-                            {
-                                if (newValue)
-                                    _selectedTags.Add(tag);
-                                else
-                                    _selectedTags.Remove(tag);
-                            }
-                        }
-                    }
-                };
+                view.MakeCheckableMultiRows<PlcTagBaseFDA>(_selectedTags, new string[] { "IsChecked" });
+                view.MakeEditableMultiRows<string>(new string[] { "FlowName", "DeviceName", "ActionName" });
+                view.MakeEditableMultiRows<Choice>(new string[] { "Choice" });
             }
 
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
-
         private void FormGridTags_Load(object sender, EventArgs e)
         {
 
         }
 
-        public static FormTags ShowTags(PlcTagBaseFDA[] tags, string selectionColumnCaption = null)
+        public static FormTags ShowTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, string selectionColumnCaption = null)
         {
-            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption);
+            var form = new FormTags(tags, selectedTags:selectedTags, selectionColumnCaption: selectionColumnCaption);
             form.ShowDialog();
             return form;
         }

@@ -156,6 +156,7 @@ namespace Plc2DsApp.Forms
             // 
             // labelControl1
             // 
+            this.labelControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.labelControl1.Location = new System.Drawing.Point(17, 405);
             this.labelControl1.Name = "labelControl1";
             this.labelControl1.Size = new System.Drawing.Size(62, 22);
@@ -164,7 +165,7 @@ namespace Plc2DsApp.Forms
             // 
             // tbPattern
             // 
-            this.tbPattern.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.tbPattern.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbPattern.Location = new System.Drawing.Point(85, 402);
             this.tbPattern.Name = "tbPattern";
@@ -173,6 +174,7 @@ namespace Plc2DsApp.Forms
             // 
             // btnApply
             // 
+            this.btnApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnApply.Location = new System.Drawing.Point(886, 398);
             this.btnApply.Name = "btnApply";
             this.btnApply.Size = new System.Drawing.Size(90, 34);

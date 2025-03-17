@@ -1,14 +1,16 @@
+using DevExpress.XtraEditors;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] tags = [];
         PlcTagBaseFDA[] tagsNotYet => tags.Where(t => t.Choice == Choice.Undefined).ToArray();
-        PlcTagBaseFDA[] tagsCategorized = [];
+        public PlcTagBaseFDA[] TagsCategorized = [];
         void updateUI()
         {
             tbNumTagsAll.Text = tags.Length.ToString();
-            tbNumTagsChosen.Text = tagsCategorized.Length.ToString();
+            tbNumTagsChosen.Text = TagsCategorized.Length.ToString();
             tbNumTagsNotyet.Text = tagsNotYet.Length.ToString();
         }
         void showTags(PlcTagBaseFDA[] tags) => FormTags.ShowTags(tags);
@@ -20,13 +22,22 @@ namespace Plc2DsApp.Forms
 
             gridControl1.DataSource = patterns;
             tbPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
+
+            gridView1.SelectionChanged += (s, e) =>
+            {
+                var pattern = gridView1.GetFocusedRow() as Pattern;
+                tbPattern.Text = pattern.PatternString;
+            };
+
+            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
+            btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
 
         private void FormExtractFDA_Load(object sender, EventArgs e)
         {
             btnShowAllTags.Click += (s, e) => showTags(tags);
             btnShowNotyetTags.Click += (s, e) => showTags(tagsNotYet);
-            btnShowChosenTags.Click += (s, e) => showTags(tagsCategorized);
+            btnShowChosenTags.Click += (s, e) => showTags(TagsCategorized);
             updateUI();
         }
 
@@ -49,9 +60,13 @@ namespace Plc2DsApp.Forms
                     }
                 }
             }
-            tagsCategorized = tagsCategorized.Concat(collectCategorized()).ToArray();
-            var form = new FormTags(tagsCategorized);
-            form.ShowDialog();
+            TagsCategorized = TagsCategorized.Concat(collectCategorized()).ToArray();
+            var form = FormTags.ShowTags(TagsCategorized, TagsCategorized);
+            if (DialogResult.OK == form.ShowDialog())
+            {
+                TagsCategorized = form.SelectedTags;
+                updateUI();
+            }
         }
     }
 }
