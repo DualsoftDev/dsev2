@@ -11,7 +11,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsChosen.Text = tagsCategorized.Length.ToString();
             tbNumTagsNotyet.Text = tagsNotYet.Length.ToString();
         }
-        void showTags(PlcTagBaseFDA[] tags) => FormGridTags.ShowTags(tags);
+        void showTags(PlcTagBaseFDA[] tags) => FormTags.ShowTags(tags);
         public FormExtractFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
@@ -50,7 +50,7 @@ namespace Plc2DsApp.Forms
                 }
             }
             tagsCategorized = tagsCategorized.Concat(collectCategorized()).ToArray();
-            var form = new FormGridTags(tagsCategorized);
+            var form = new FormTags(tagsCategorized);
             form.ShowDialog();
         }
     }

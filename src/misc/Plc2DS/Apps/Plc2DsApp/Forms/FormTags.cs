@@ -1,11 +1,11 @@
 namespace Plc2DsApp.Forms
 {
-	public partial class FormGridTags: DevExpress.XtraEditors.XtraForm
+	public partial class FormTags: DevExpress.XtraEditors.XtraForm
 	{
         // 선택 상태를 저장하는 Dictionary (선택 정보 관리)
         HashSet<PlcTagBaseFDA> _selectedTags = new();
         public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
-        public FormGridTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, bool confirmMode = false, string selectionColumnCaption = null)
+        public FormTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, bool confirmMode = false, string selectionColumnCaption = null)
         {
             InitializeComponent();
 
@@ -118,9 +118,9 @@ namespace Plc2DsApp.Forms
 
         }
 
-        public static FormGridTags ShowTags(PlcTagBaseFDA[] tags, string selectionColumnCaption = null)
+        public static FormTags ShowTags(PlcTagBaseFDA[] tags, string selectionColumnCaption = null)
         {
-            var form = new FormGridTags(tags, selectionColumnCaption: selectionColumnCaption);
+            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption);
             form.ShowDialog();
             return form;
         }

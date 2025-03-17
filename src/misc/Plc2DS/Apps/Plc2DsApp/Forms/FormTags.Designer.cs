@@ -1,6 +1,6 @@
 namespace Plc2DsApp.Forms
 {
-    partial class FormGridTags
+    partial class FormTags
     {
         /// <summary>
         /// Required designer variable.

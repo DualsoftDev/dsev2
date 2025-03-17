@@ -46,7 +46,7 @@ namespace Plc2DsApp
         public PlcTagBaseFDA[] TagsDiscarded => selectTags(Choice.Discarded);
         public PlcTagBaseFDA[] TagsFixed => selectTags(Choice.Fixed);
         public PlcTagBaseFDA[] TagsNotYet => selectTags(Choice.Undefined);
-        FormGridTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null) => FormGridTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption);
+        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null) => FormTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption);
 
 
         const string dataDir = @"Z:\dsev2\src\misc\Plc2DS\unit-test\Plc2DS.UnitTest\Samples\LS\Autoland광명2";
@@ -87,7 +87,7 @@ namespace Plc2DsApp
             btnShowFixedTags    .Click += (s, e) => showTags(selectTags(Choice.Fixed));
             btnShowDiscardedTags.Click += (s, e) =>
             {
-                FormGridTags form = showTags(selectTags(Choice.Discarded), selectionColumnCaption: "Resurrect");
+                FormTags form = showTags(selectTags(Choice.Discarded), selectionColumnCaption: "Resurrect");
                 if (form.DialogResult == DialogResult.OK && form.SelectedTags.Any())
                 {
                     form.SelectedTags.Iter(t => t.Choice = Choice.Undefined);

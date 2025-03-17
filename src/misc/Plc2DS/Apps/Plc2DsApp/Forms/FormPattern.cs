@@ -12,7 +12,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsChosen.Text = TagsChosen.Length.ToString();
             tbNumTagsNotyet.Text = _tagsNotYet.Length.ToString();
         }
-        void showTags(PlcTagBaseFDA[] tags) => FormGridTags.ShowTags(tags);
+        void showTags(PlcTagBaseFDA[] tags) => FormTags.ShowTags(tags);
 
         public FormPattern(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
@@ -29,7 +29,7 @@ namespace Plc2DsApp.Forms
 
                 if (gr.ContainsKey(true))
                 {
-                    var form = new FormGridTags(gr[true], selectedTags:gr[true], confirmMode:true) { Text = "Confirm selection.." };
+                    var form = new FormTags(gr[true], selectedTags:gr[true], confirmMode:true) { Text = "Confirm selection.." };
                     if (DialogResult.OK == form.ShowDialog())
                     {
                         TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
