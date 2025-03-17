@@ -5,7 +5,7 @@ namespace Plc2DsApp.Forms
         // 선택 상태를 저장하는 Dictionary (선택 정보 관리)
         HashSet<PlcTagBaseFDA> _selectedTags = new();
         public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
-        public FormGridTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, string[] visibleFields = null, bool confirmMode = false, string selectionColumnCaption = null)
+        public FormGridTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, bool confirmMode = false, string selectionColumnCaption = null)
         {
             InitializeComponent();
 
@@ -15,6 +15,15 @@ namespace Plc2DsApp.Forms
             gridView1.OptionsSelection.MultiSelect = true;
             gridView1.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
 
+            // 다중 column sorting 기능 지원.  Flow 로 먼저 sorting 하고, flow 내 device 로 sorting
+            // Shift + 클릭으로 다중 컬럼 정렬 가능
+            // Ctrl + 클릭으로 특정 컬럼 정렬 해제 가능
+            gridView1.OptionsCustomization.AllowSort = true;  // 사용자가 정렬 가능
+            gridView1.OptionsCustomization.AllowFilter = true; // 필터링도 허용
+            gridView1.OptionsCustomization.AllowColumnMoving = true; // 컬럼 이동 가능
+            gridView1.OptionsCustomization.AllowGroup = true; // 그룹핑 가능
+            gridView1.OptionsCustomization.AllowQuickHideColumns = true; // 빠른 숨기기 기능
+
             _selectedTags = new HashSet<PlcTagBaseFDA>(selectedTags ?? Array.Empty<PlcTagBaseFDA>());
             if (confirmMode)
             {
@@ -23,11 +32,11 @@ namespace Plc2DsApp.Forms
             }
 
 
-            if (visibleFields != null)
+            if (FormMain.Instance.VisibleFields.NonNullAny())
             {
                 foreach (GridColumn column in gridView1.Columns)
                 {
-                    column.Visible = visibleFields.Contains(column.FieldName);
+                    column.Visible = FormMain.Instance.VisibleFields.Contains(column.FieldName);
                 }
             }
 

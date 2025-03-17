@@ -44,6 +44,7 @@ namespace Plc2DsApp
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             this.btnExtractFDA = new DevExpress.XtraEditors.SimpleButton();
             this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
+            this.ucVisibleFields = new Dual.Common.Winform.DevX.UcSelectableStringList();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
@@ -210,11 +211,19 @@ namespace Plc2DsApp
             this.ucRadioSelector1.Size = new System.Drawing.Size(387, 90);
             this.ucRadioSelector1.TabIndex = 11;
             // 
+            // ucVisibleFields
+            // 
+            this.ucVisibleFields.Location = new System.Drawing.Point(598, 302);
+            this.ucVisibleFields.Name = "ucVisibleFields";
+            this.ucVisibleFields.Size = new System.Drawing.Size(150, 150);
+            this.ucVisibleFields.TabIndex = 12;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1052, 471);
+            this.Controls.Add(this.ucVisibleFields);
             this.Controls.Add(this.ucRadioSelector1);
             this.Controls.Add(this.btnExtractFDA);
             this.Controls.Add(this.groupControl2);
@@ -222,7 +231,7 @@ namespace Plc2DsApp
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.tbCsvFile);
             this.Controls.Add(this.btnOpenCSV);
-            this.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
+            this.Margin = new System.Windows.Forms.Padding(5);
             this.Name = "FormMain";
             this.Text = "Plc2Ds";
             this.Load += new System.EventHandler(this.FormMain_Load);
@@ -257,6 +266,7 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.GroupControl groupControl2;
         private DevExpress.XtraEditors.SimpleButton btnExtractFDA;
         private UcRadioSelector ucRadioSelector1;
+        private UcSelectableStringList ucVisibleFields;
     }
 }
 

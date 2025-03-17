@@ -1,8 +1,32 @@
+using System.Reflection;
+
 namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm {
-        public Vendor Vendor = Vendor.LS;
-        public object ConvertToVendorTags(PlcTagBaseFDA[] tags)
+        Vendor _vendor = Vendor.LS;
+        public Vendor Vendor
+        {
+            get => _vendor;
+            set
+            {
+                _vendor = value;
+
+                string[] fieldNames =
+                    _vendor.CsGetTagType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(p => p.Name)
+                    .Filter(n => n != "Temporary")
+                    .ToArray()
+                    ;
+
+                ucVisibleFields.SetItems(fieldNames);
+                ucVisibleFields.SelectedItems = fieldNames;
+            }
+        }
+
+        public string[] VisibleFields => ucVisibleFields.SelectedItems.ToArray();
+
+        // abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
+        public object ConvertToVendorTags(IEnumerable<PlcTagBaseFDA> tags)
         {
             var typ = FormMain.Instance.Vendor.CsGetTagType();
             return tags.Select(t => Convert.ChangeType(t, typ)).ToArray();
@@ -53,6 +77,7 @@ namespace Plc2DsApp
                 };
             };
 
+            Vendor = _vendor;
         }
         private void FormMain_Load(object sender, EventArgs e)
         {
