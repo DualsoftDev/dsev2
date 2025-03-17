@@ -124,29 +124,29 @@ module rec ReaderModule =
 
 
         member x.Temporary
-            with get() = (x :?> FDA).Temporary
-            and  set v = (x :?> FDA).Temporary <- v
+            with get() = (x :?> PlcTagBaseFDA).Temporary
+            and  set v = (x :?> PlcTagBaseFDA).Temporary <- v
 
 
         member x.FlowName
-            with get() = (x :?> FDA).FlowName
-            and  set v = (x :?> FDA).FlowName <- v
+            with get() = (x :?> PlcTagBaseFDA).FlowName
+            and  set v = (x :?> PlcTagBaseFDA).FlowName <- v
 
 
         member x.DeviceName
-            with get() = (x :?> FDA).DeviceName
-            and  set v = (x :?> FDA).DeviceName <- v
+            with get() = (x :?> PlcTagBaseFDA).DeviceName
+            and  set v = (x :?> PlcTagBaseFDA).DeviceName <- v
 
         member x.ActionName
-            with get() = (x :?> FDA).ActionName
-            and  set v = (x :?> FDA).ActionName <- v
+            with get() = (x :?> PlcTagBaseFDA).ActionName
+            and  set v = (x :?> PlcTagBaseFDA).ActionName <- v
 
-        member x.SetFDA(optFDA:FDA option) =
+        member x.SetFDA(optFDA:PlcTagBaseFDA option) =
             match optFDA with
-            | Some fda -> (x :?> FDA).Set(fda.FlowName, fda.DeviceName, fda.ActionName)
-            | None     -> (x :?> FDA).Set(null, null, null)
+            | Some fda -> (x :?> PlcTagBaseFDA).Set(fda.FlowName, fda.DeviceName, fda.ActionName)
+            | None     -> (x :?> PlcTagBaseFDA).Set(null, null, null)
 
-        member x.TryGetFDA(): FDA option = (x :?> FDA).TryGet()
+        member x.TryGetFDA(): PlcTagBaseFDA option = (x :?> PlcTagBaseFDA).TryGet()
 
     let initialize() =
         PrivateFwdDeclImpl.fwdGetAddress <- fun (tag:IPlcTag) -> tag.GetAddress()

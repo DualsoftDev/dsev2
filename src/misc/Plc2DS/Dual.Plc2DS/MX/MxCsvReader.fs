@@ -6,13 +6,12 @@ open Dual.Plc2DS
 
 
 type PlcTagInfo(?device, ?comment, ?label) =
-    inherit FDA()
+    inherit PlcTagBaseFDA()
 
     let device  = device  |? ""
     let comment  = comment  |? ""
     let label  = label  |? ""
 
-    interface IPlcTag
     member val Device  = device  with get, set
     member val Comment = comment with get, set
     member val Label   = label   with get, set

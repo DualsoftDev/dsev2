@@ -9,27 +9,26 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid;
-using static Dual.Plc2DS.InterfaceModule;
 
 namespace Plc2DsApp.Forms
 {
 	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm
 	{
-        LS.PlcTagInfo[] tags = [];
-        LS.PlcTagInfo[] tagsNotYet => tags.Where(t => t.Choice == Choice.Undefined).ToArray();
-        LS.PlcTagInfo[] tagsCategorized = [];
+        PlcTagBaseFDA[] tags = [];
+        PlcTagBaseFDA[] tagsNotYet => tags.Where(t => t.Choice == Choice.Undefined).ToArray();
+        PlcTagBaseFDA[] tagsCategorized = [];
         void updateUI()
         {
             tbNumTagsAll.Text = tags.Length.ToString();
             tbNumTagsChosen.Text = tagsCategorized.Length.ToString();
             tbNumTagsNotyet.Text = tagsNotYet.Length.ToString();
         }
-        void showTags(LS.PlcTagInfo[] tags) => FormGridTags.ShowTags(tags);
-        public FormExtractFDA(LS.PlcTagInfo[] tags, Pattern[] patterns)
+        void showTags(PlcTagBaseFDA[] tags) => FormGridTags.ShowTags(tags);
+        public FormExtractFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
 
-            this.tags = tags;
+            this.tags = tags.Cast<LS.PlcTagInfo>().ToArray();
 
             gridControl1.DataSource = patterns;
             tbPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
@@ -46,7 +45,7 @@ namespace Plc2DsApp.Forms
         private void btnApply_Click(object sender, EventArgs e)
         {
             var pattern = new Regex(tbPattern.Text, RegexOptions.Compiled);
-            IEnumerable<LS.PlcTagInfo> collectCategorized()
+            IEnumerable<PlcTagBaseFDA> collectCategorized()
             {
                 foreach (var t in tagsNotYet)
                 {

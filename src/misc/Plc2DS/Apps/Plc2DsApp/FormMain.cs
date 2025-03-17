@@ -1,9 +1,4 @@
 
-using Plc2DsApp.Forms;
-
-using System.Text.RegularExpressions;
-
-using static Dual.Plc2DS.InterfaceModule;
 
 namespace Plc2DsApp
 {
@@ -11,19 +6,19 @@ namespace Plc2DsApp
         public static FormMain Instance { get; private set; }
         public SemanticSettings Semantic = null;
 
-        public LS.PlcTagInfo[] TagsAll = [];
+        public PlcTagBaseFDA[] TagsAll = [];
 
 
-        LS.PlcTagInfo[] selectTags(Choice cat)
+        PlcTagBaseFDA[] selectTags(Choice cat)
         {
             if (TagsAll.IsNullOrEmpty())
                 TagsAll = loadTags(tbCsvFile.Text);
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
-        public LS.PlcTagInfo[] TagsDiscarded => selectTags(Choice.Discarded);
-        public LS.PlcTagInfo[] TagsFixed => selectTags(Choice.Fixed);
-        public LS.PlcTagInfo[] TagsNotYet => selectTags(Choice.Undefined);
-        FormGridTags showTags(LS.PlcTagInfo[] tags, string selectionColumnCaption=null) => FormGridTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption);
+        public PlcTagBaseFDA[] TagsDiscarded => selectTags(Choice.Discarded);
+        public PlcTagBaseFDA[] TagsFixed => selectTags(Choice.Fixed);
+        public PlcTagBaseFDA[] TagsNotYet => selectTags(Choice.Undefined);
+        FormGridTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null) => FormGridTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption);
 
 
         const string dataDir = @"Z:\dsev2\src\misc\Plc2DS\unit-test\Plc2DS.UnitTest\Samples\LS\Autoland광명2";
@@ -57,14 +52,14 @@ namespace Plc2DsApp
                 }
             };
 
-            btnReadCsvFile      .Click += (s, e) => loadTags(tbCsvFile.Text);
+            btnReadCsvFile.Click += (s, e) => loadTags(tbCsvFile.Text);
         }
 
-        LS.PlcTagInfo[] loadTags(string csvFile)
+        PlcTagBaseFDA[] loadTags(string csvFile)
         {
             using var wf = DcWaitForm.CreateWaitForm("Loading tags...");
             TagsAll =
-                CsvReader.CsRead(Vendor.LS, csvFile).Cast<LS.PlcTagInfo>()
+                CsvReader.ReadLs(csvFile)
                 .Where(t => t.DataType.ToUpper() == "BOOL")
                 .Where(t => t.Scope == "GlobalVariable")
                 .ToArray();

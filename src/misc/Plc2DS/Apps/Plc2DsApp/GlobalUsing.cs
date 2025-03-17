@@ -17,3 +17,4 @@ global using Dual.Plc2DS;
 global using LS = Dual.Plc2DS.LS;
 
 global using static Dual.Plc2DS.AppSettingsModule;
+global using Plc2DsApp.Forms;

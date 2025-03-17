@@ -5,22 +5,22 @@ using DevExpress.XtraGrid.Columns;
 
 using System.Collections.Generic;
 
-namespace Plc2DsApp
+namespace Plc2DsApp.Forms
 {
 	public partial class FormGridTags: DevExpress.XtraEditors.XtraForm
 	{
         // 선택 상태를 저장하는 Dictionary (선택 정보 관리)
-        HashSet<LS.PlcTagInfo> _selectedTags = new();
-        public LS.PlcTagInfo[] SelectedTags => _selectedTags.ToArray();
-        public FormGridTags(LS.PlcTagInfo[] tags, LS.PlcTagInfo[] selectedTags = null, string[] visibleFields = null, bool confirmMode = false, string selectionColumnCaption = null)
+        HashSet<PlcTagBaseFDA> _selectedTags = new();
+        public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
+        public FormGridTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, string[] visibleFields = null, bool confirmMode = false, string selectionColumnCaption = null)
         {
             InitializeComponent();
 
-            gridControl1.DataSource = tags;
+            gridControl1.DataSource = tags.Cast<LS.PlcTagInfo>();
             gridView1.OptionsSelection.MultiSelect = true;
             gridView1.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
 
-            _selectedTags = new HashSet<LS.PlcTagInfo>(selectedTags ?? Array.Empty<LS.PlcTagInfo>());
+            _selectedTags = new HashSet<PlcTagBaseFDA>(selectedTags ?? Array.Empty<PlcTagBaseFDA>());
             if (confirmMode)
             {
                 btnOK.Text = "Accept";
@@ -57,7 +57,7 @@ namespace Plc2DsApp
                 // Unbound 값 제공을 위해 CustomUnboundColumnData 이벤트 핸들링
                 view.CustomUnboundColumnData += (sender, e) =>
                 {
-                    var tag = e.Row as LS.PlcTagInfo;
+                    var tag = e.Row as PlcTagBaseFDA;
                     if (tag == null) return; // null 방지
 
                     if (e.Column.FieldName == "IsChecked" && e.IsGetData)
@@ -92,7 +92,7 @@ namespace Plc2DsApp
                             gridView1.SetRowCellValue(rowIndex, e.Column, newValue);
 
                             // ✅ selectedTags도 함께 업데이트
-                            var tag = gridView1.GetRow(rowIndex) as LS.PlcTagInfo;
+                            var tag = gridView1.GetRow(rowIndex) as PlcTagBaseFDA;
                             if (tag != null)
                             {
                                 if (newValue)
@@ -114,7 +114,7 @@ namespace Plc2DsApp
 
         }
 
-        public static FormGridTags ShowTags(LS.PlcTagInfo[] tags, string selectionColumnCaption = null)
+        public static FormGridTags ShowTags(PlcTagBaseFDA[] tags, string selectionColumnCaption = null)
         {
             var form = new FormGridTags(tags, selectionColumnCaption: selectionColumnCaption);
             form.ShowDialog();

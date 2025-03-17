@@ -21,7 +21,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 *)
 
 type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attributes) =
-    inherit FDA()
+    inherit PlcTagBaseFDA()
 
     let typ         = typ         |? ""
     let scope       = scope       |? ""
@@ -31,7 +31,6 @@ type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attri
     let specifier   = specifier   |? ""
     let attributes  = attributes  |? ""
 
-    interface IPlcTag
     member val Type        = typ         with get, set
     member val Scope       = scope       with get, set
     member val Name        = name        with get, set

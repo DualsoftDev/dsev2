@@ -10,14 +10,13 @@ open Dual.Common.Core.FS
 
 
 type PlcTagInfo(?name, ?address, ?dataType, ?comment) =
-    inherit FDA()
+    inherit PlcTagBaseFDA()
 
     let name     = name     |? ""
     let address  = address  |? ""
     let dataType = dataType |? ""
     let comment  = comment  |? ""
 
-    interface IPlcTag
     member val Name     = name     with get, set
     member val Comment  = comment  with get, set
     member val Address  = address  with get, set

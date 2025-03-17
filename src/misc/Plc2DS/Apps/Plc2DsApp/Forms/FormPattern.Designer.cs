@@ -1,4 +1,4 @@
-namespace Plc2DsApp
+namespace Plc2DsApp.Forms
 {
     partial class FormPattern
     {

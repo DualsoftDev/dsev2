@@ -39,7 +39,7 @@ module BatchCommon =
             |> Array.concat
 
 
-    let sortResults (results: Result<(IPlcTag * FDA), IPlcTag>[]) =
+    let sortResults (results: Result<(IPlcTag * PlcTagBaseFDA), IPlcTag>[]) =
         results
         |> Array.sortWith (fun a b ->
             match a, b with

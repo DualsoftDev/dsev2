@@ -19,7 +19,7 @@ Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"
 
 [<DebuggerDisplay("{Stringify()}")>]
 type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?comment) =
-    inherit FDA()
+    inherit PlcTagBaseFDA()
 
     let typ      = typ      |? ""
     let scope    = scope    |? ""
@@ -29,7 +29,6 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     let property = property |? ""
     let comment  = comment  |? ""
 
-    interface IPlcTag
     member val Type    = typ      with get, set
     member val Scope   = scope    with get, set
     member val Variable= variable.ToUpper().Replace(".", "_") with get, set

@@ -1,19 +1,20 @@
-namespace Plc2DsApp
+
+namespace Plc2DsApp.Forms
 {
 	public partial class FormPattern: DevExpress.XtraEditors.XtraForm
 	{
-        LS.PlcTagInfo[] _tags = [];
-        LS.PlcTagInfo[] _tagsNotYet = [];
-        public LS.PlcTagInfo[] TagsChosen = [];
+        PlcTagBaseFDA[] _tags = [];
+        PlcTagBaseFDA[] _tagsNotYet = [];
+        public PlcTagBaseFDA[] TagsChosen = [];
         void updateUI()
         {
             tbNumTagsAll.Text = _tags.Length.ToString();
             tbNumTagsChosen.Text = TagsChosen.Length.ToString();
             tbNumTagsNotyet.Text = _tagsNotYet.Length.ToString();
         }
-        void showTags(LS.PlcTagInfo[] tags) => FormGridTags.ShowTags(tags);
+        void showTags(PlcTagBaseFDA[] tags) => FormGridTags.ShowTags(tags);
 
-        public FormPattern(LS.PlcTagInfo[] tags, Pattern[] patterns)
+        public FormPattern(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
 

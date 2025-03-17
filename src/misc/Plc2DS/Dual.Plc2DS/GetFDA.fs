@@ -85,7 +85,7 @@ module GetFDA =
         //  . "action_숫자" 형식으로 끝날 경우, action으로 간주
         //  . device 명에서 discards 처리 ("_I_", "_Q_", "_LS_", ... 등 무시할 것 처리)
         //  . flow 및 action 이름이 "_" 를 포함하는 multi-word 인 경우, semantic 에 따로 등록한 경우만 처리
-        member x.TryGetFDA(fdaPatterns: Regex[]): FDA option =
+        member x.TryGetFDA(fdaPatterns: Regex[]): PlcTagBaseFDA option =
             TagString.MatchRegexFDA(x.GetName().ToUpper(), fdaPatterns)
             |> map _.Text
             |> function
@@ -96,6 +96,6 @@ module GetFDA =
                     logWarn $"WARN: number only item exists: {f}/{d}/{a} on {x.GetName()}"
                     None
                 else
-                    Some (FDA(f, d, a))
+                    Some (PlcTagBaseFDA(f, d, a))
 
-        member x.TryGetFDA(semantic:Semantic): FDA option = x.TryGetFDA(semantic.CompiledFDARegexPatterns)
+        member x.TryGetFDA(semantic:Semantic): PlcTagBaseFDA option = x.TryGetFDA(semantic.CompiledFDARegexPatterns)
