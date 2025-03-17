@@ -1,8 +1,12 @@
-
-
 namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm {
+        public Vendor Vendor = Vendor.LS;
+        public object ConvertToVendorTags(PlcTagBaseFDA[] tags)
+        {
+            var typ = FormMain.Instance.Vendor.CsGetTagType();
+            return tags.Select(t => Convert.ChangeType(t, typ)).ToArray();
+        }
         public static FormMain Instance { get; private set; }
         public SemanticSettings Semantic = null;
 
@@ -35,6 +39,20 @@ namespace Plc2DsApp
 
             btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
             //btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
+
+            ucRadioSelector1.SetOptions(new string[] { "LS", "AB", "S7", "MX" });
+            ucRadioSelector1.SelectedOptionChanged += (s, e) =>
+            {
+                Vendor = e switch
+                {
+                    "LS" => Vendor.LS,
+                    "AB" => Vendor.AB,
+                    "S7" => Vendor.S7,
+                    "MX" => Vendor.MX,
+                    _ => throw new NotImplementedException()
+                };
+            };
+
         }
         private void FormMain_Load(object sender, EventArgs e)
         {
@@ -58,11 +76,21 @@ namespace Plc2DsApp
         PlcTagBaseFDA[] loadTags(string csvFile)
         {
             using var wf = DcWaitForm.CreateWaitForm("Loading tags...");
-            TagsAll =
-                CsvReader.ReadLs(csvFile)
-                .Where(t => t.DataType.ToUpper() == "BOOL")
-                .Where(t => t.Scope == "GlobalVariable")
-                .ToArray();
+            if (Vendor.IsLS)
+            {
+                TagsAll =
+                    CsvReader.ReadLs(csvFile)
+                    .Where(t => t.DataType.ToUpper() == "BOOL")
+                    .Where(t => t.Scope == "GlobalVariable")
+                    .ToArray();
+            }
+            else if (Vendor.IsAB)
+                TagsAll = CsvReader.ReadAb(csvFile).ToArray();
+            else if (Vendor.IsS7)
+                TagsAll = CsvReader.ReadS7(csvFile).ToArray();
+            else if (Vendor.IsMX)
+                TagsAll = CsvReader.ReadMx(csvFile).ToArray();
+
             TagsAll.Iter(t => {
                 t.CsSetFDA(t.CsTryGetFDA(Semantic));
                 t.Choice = Choice.Undefined;

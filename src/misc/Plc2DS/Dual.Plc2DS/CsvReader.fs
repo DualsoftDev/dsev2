@@ -30,8 +30,17 @@ type CsvReader =
     static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
     static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
 
+
 [<AutoOpen>]
 module rec ReaderModule =
+    type Vendor with
+        member x.GetVendorTagType() =
+            match x with
+            | LS -> typeof<LS.PlcTagInfo>
+            | AB -> typeof<AB.PlcTagInfo>
+            | S7 -> typeof<S7.PlcTagInfo>
+            | MX -> typeof<MX.PlcTagInfo>
+
     type IPlcTag with
         member x.GetName() =
             match x with

@@ -4,8 +4,11 @@ global using System.IO;
 global using System.Linq;
 global using System.Windows.Forms;
 global using System.Text.RegularExpressions;
+global using System.Collections.Generic;
 
 global using DevExpress.XtraGrid.Views.Grid;
+global using DevExpress.XtraEditors.Repository;
+global using DevExpress.XtraGrid.Columns;
 
 global using Dual.Common.Winform.DevX;
 global using Dual.Common.Core;

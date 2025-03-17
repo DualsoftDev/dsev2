@@ -43,6 +43,7 @@ namespace Plc2DsApp
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             this.btnExtractFDA = new DevExpress.XtraEditors.SimpleButton();
+            this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
@@ -56,29 +57,29 @@ namespace Plc2DsApp
             // 
             // btnOpenCSV
             // 
-            this.btnOpenCSV.Location = new System.Drawing.Point(10, 25);
-            this.btnOpenCSV.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnOpenCSV.Location = new System.Drawing.Point(12, 31);
+            this.btnOpenCSV.Margin = new System.Windows.Forms.Padding(2);
             this.btnOpenCSV.Name = "btnOpenCSV";
-            this.btnOpenCSV.Size = new System.Drawing.Size(90, 28);
+            this.btnOpenCSV.Size = new System.Drawing.Size(112, 34);
             this.btnOpenCSV.TabIndex = 0;
             this.btnOpenCSV.Text = "Select CSV..";
             this.btnOpenCSV.Click += new System.EventHandler(this.btnSelectCSV_Click);
             // 
             // btnShowAllTags
             // 
-            this.btnShowAllTags.Location = new System.Drawing.Point(4, 34);
-            this.btnShowAllTags.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnShowAllTags.Location = new System.Drawing.Point(5, 42);
+            this.btnShowAllTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnShowAllTags.Name = "btnShowAllTags";
-            this.btnShowAllTags.Size = new System.Drawing.Size(72, 28);
+            this.btnShowAllTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowAllTags.TabIndex = 1;
             this.btnShowAllTags.Text = "All";
             // 
             // tbCsvFile
             // 
-            this.tbCsvFile.Location = new System.Drawing.Point(118, 29);
-            this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbCsvFile.Location = new System.Drawing.Point(148, 35);
+            this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
             this.tbCsvFile.Name = "tbCsvFile";
-            this.tbCsvFile.Size = new System.Drawing.Size(366, 24);
+            this.tbCsvFile.Size = new System.Drawing.Size(458, 28);
             this.tbCsvFile.TabIndex = 2;
             // 
             // groupControl1
@@ -91,91 +92,91 @@ namespace Plc2DsApp
             this.groupControl1.Controls.Add(this.btnShowFixedTags);
             this.groupControl1.Controls.Add(this.btnShowNotyetTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(10, 275);
-            this.groupControl1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupControl1.Location = new System.Drawing.Point(12, 336);
+            this.groupControl1.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl1.Name = "groupControl1";
-            this.groupControl1.Size = new System.Drawing.Size(372, 100);
+            this.groupControl1.Size = new System.Drawing.Size(465, 122);
             this.groupControl1.TabIndex = 3;
             this.groupControl1.Text = "Show tags";
             // 
             // tbNumTagsDiscarded
             // 
-            this.tbNumTagsDiscarded.Location = new System.Drawing.Point(275, 67);
-            this.tbNumTagsDiscarded.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbNumTagsDiscarded.Location = new System.Drawing.Point(344, 82);
+            this.tbNumTagsDiscarded.Margin = new System.Windows.Forms.Padding(2);
             this.tbNumTagsDiscarded.Name = "tbNumTagsDiscarded";
             this.tbNumTagsDiscarded.Properties.ReadOnly = true;
-            this.tbNumTagsDiscarded.Size = new System.Drawing.Size(72, 24);
+            this.tbNumTagsDiscarded.Size = new System.Drawing.Size(90, 28);
             this.tbNumTagsDiscarded.TabIndex = 10;
             // 
             // tbNumTagsFixed
             // 
-            this.tbNumTagsFixed.Location = new System.Drawing.Point(185, 67);
-            this.tbNumTagsFixed.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbNumTagsFixed.Location = new System.Drawing.Point(231, 82);
+            this.tbNumTagsFixed.Margin = new System.Windows.Forms.Padding(2);
             this.tbNumTagsFixed.Name = "tbNumTagsFixed";
             this.tbNumTagsFixed.Properties.ReadOnly = true;
-            this.tbNumTagsFixed.Size = new System.Drawing.Size(72, 24);
+            this.tbNumTagsFixed.Size = new System.Drawing.Size(90, 28);
             this.tbNumTagsFixed.TabIndex = 9;
             // 
             // tbNumTagsNotyet
             // 
-            this.tbNumTagsNotyet.Location = new System.Drawing.Point(94, 67);
-            this.tbNumTagsNotyet.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbNumTagsNotyet.Location = new System.Drawing.Point(118, 82);
+            this.tbNumTagsNotyet.Margin = new System.Windows.Forms.Padding(2);
             this.tbNumTagsNotyet.Name = "tbNumTagsNotyet";
             this.tbNumTagsNotyet.Properties.ReadOnly = true;
-            this.tbNumTagsNotyet.Size = new System.Drawing.Size(72, 24);
+            this.tbNumTagsNotyet.Size = new System.Drawing.Size(90, 28);
             this.tbNumTagsNotyet.TabIndex = 8;
             // 
             // tbNumTagsAll
             // 
-            this.tbNumTagsAll.Location = new System.Drawing.Point(4, 67);
-            this.tbNumTagsAll.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbNumTagsAll.Location = new System.Drawing.Point(5, 82);
+            this.tbNumTagsAll.Margin = new System.Windows.Forms.Padding(2);
             this.tbNumTagsAll.Name = "tbNumTagsAll";
             this.tbNumTagsAll.Properties.ReadOnly = true;
-            this.tbNumTagsAll.Size = new System.Drawing.Size(72, 24);
+            this.tbNumTagsAll.Size = new System.Drawing.Size(90, 28);
             this.tbNumTagsAll.TabIndex = 7;
             // 
             // btnShowDiscardedTags
             // 
-            this.btnShowDiscardedTags.Location = new System.Drawing.Point(275, 34);
-            this.btnShowDiscardedTags.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnShowDiscardedTags.Location = new System.Drawing.Point(344, 42);
+            this.btnShowDiscardedTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnShowDiscardedTags.Name = "btnShowDiscardedTags";
-            this.btnShowDiscardedTags.Size = new System.Drawing.Size(72, 28);
+            this.btnShowDiscardedTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowDiscardedTags.TabIndex = 6;
             this.btnShowDiscardedTags.Text = "Discarded";
             // 
             // btnShowFixedTags
             // 
-            this.btnShowFixedTags.Location = new System.Drawing.Point(185, 34);
-            this.btnShowFixedTags.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnShowFixedTags.Location = new System.Drawing.Point(231, 42);
+            this.btnShowFixedTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnShowFixedTags.Name = "btnShowFixedTags";
-            this.btnShowFixedTags.Size = new System.Drawing.Size(72, 28);
+            this.btnShowFixedTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowFixedTags.TabIndex = 5;
             this.btnShowFixedTags.Text = "Fixed";
             // 
             // btnShowNotyetTags
             // 
-            this.btnShowNotyetTags.Location = new System.Drawing.Point(94, 34);
-            this.btnShowNotyetTags.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnShowNotyetTags.Location = new System.Drawing.Point(118, 42);
+            this.btnShowNotyetTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnShowNotyetTags.Name = "btnShowNotyetTags";
-            this.btnShowNotyetTags.Size = new System.Drawing.Size(72, 28);
+            this.btnShowNotyetTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowNotyetTags.TabIndex = 4;
             this.btnShowNotyetTags.Text = "Working";
             // 
             // btnReadCsvFile
             // 
-            this.btnReadCsvFile.Location = new System.Drawing.Point(497, 25);
-            this.btnReadCsvFile.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnReadCsvFile.Location = new System.Drawing.Point(621, 31);
+            this.btnReadCsvFile.Margin = new System.Windows.Forms.Padding(2);
             this.btnReadCsvFile.Name = "btnReadCsvFile";
-            this.btnReadCsvFile.Size = new System.Drawing.Size(90, 28);
+            this.btnReadCsvFile.Size = new System.Drawing.Size(112, 34);
             this.btnReadCsvFile.TabIndex = 6;
             this.btnReadCsvFile.Text = "Read";
             // 
             // btnDiscardTags
             // 
-            this.btnDiscardTags.Location = new System.Drawing.Point(4, 30);
-            this.btnDiscardTags.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnDiscardTags.Location = new System.Drawing.Point(5, 37);
+            this.btnDiscardTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnDiscardTags.Name = "btnDiscardTags";
-            this.btnDiscardTags.Size = new System.Drawing.Size(111, 37);
+            this.btnDiscardTags.Size = new System.Drawing.Size(139, 45);
             this.btnDiscardTags.TabIndex = 7;
             this.btnDiscardTags.Text = "Discard";
             this.btnDiscardTags.Click += new System.EventHandler(this.btnDiscardTags_Click);
@@ -183,36 +184,45 @@ namespace Plc2DsApp
             // groupControl2
             // 
             this.groupControl2.Controls.Add(this.btnDiscardTags);
-            this.groupControl2.Location = new System.Drawing.Point(10, 75);
-            this.groupControl2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupControl2.Location = new System.Drawing.Point(12, 92);
+            this.groupControl2.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl2.Name = "groupControl2";
-            this.groupControl2.Size = new System.Drawing.Size(241, 77);
+            this.groupControl2.Size = new System.Drawing.Size(301, 94);
             this.groupControl2.TabIndex = 9;
             this.groupControl2.Text = "Select tags";
             // 
             // btnExtractFDA
             // 
-            this.btnExtractFDA.Location = new System.Drawing.Point(14, 205);
-            this.btnExtractFDA.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnExtractFDA.Location = new System.Drawing.Point(18, 251);
+            this.btnExtractFDA.Margin = new System.Windows.Forms.Padding(2);
             this.btnExtractFDA.Name = "btnExtractFDA";
-            this.btnExtractFDA.Size = new System.Drawing.Size(111, 37);
+            this.btnExtractFDA.Size = new System.Drawing.Size(139, 45);
             this.btnExtractFDA.TabIndex = 10;
             this.btnExtractFDA.Text = "Extract";
             this.btnExtractFDA.ToolTip = "Flow, Device, Action 명 추출";
             this.btnExtractFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
             // 
+            // ucRadioSelector1
+            // 
+            this.ucRadioSelector1.Location = new System.Drawing.Point(488, 180);
+            this.ucRadioSelector1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.ucRadioSelector1.Name = "ucRadioSelector1";
+            this.ucRadioSelector1.Size = new System.Drawing.Size(387, 90);
+            this.ucRadioSelector1.TabIndex = 11;
+            // 
             // FormMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 18F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(842, 385);
+            this.ClientSize = new System.Drawing.Size(1052, 471);
+            this.Controls.Add(this.ucRadioSelector1);
             this.Controls.Add(this.btnExtractFDA);
             this.Controls.Add(this.groupControl2);
             this.Controls.Add(this.btnReadCsvFile);
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.tbCsvFile);
             this.Controls.Add(this.btnOpenCSV);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.Name = "FormMain";
             this.Text = "Plc2Ds";
             this.Load += new System.EventHandler(this.FormMain_Load);
@@ -246,6 +256,7 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnDiscardTags;
         private DevExpress.XtraEditors.GroupControl groupControl2;
         private DevExpress.XtraEditors.SimpleButton btnExtractFDA;
+        private UcRadioSelector ucRadioSelector1;
     }
 }
 

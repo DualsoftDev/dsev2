@@ -1,10 +1,3 @@
-
-
-using DevExpress.XtraEditors.Repository;
-using DevExpress.XtraGrid.Columns;
-
-using System.Collections.Generic;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormGridTags: DevExpress.XtraEditors.XtraForm
@@ -16,7 +9,9 @@ namespace Plc2DsApp.Forms
         {
             InitializeComponent();
 
-            gridControl1.DataSource = tags.Cast<LS.PlcTagInfo>();
+            // PlcTagBaseFDA[] 를 GridView 에서 보기 위해서 최종 subclass type (e.g LS.PlcTagInfo[]) 으로 변환
+            gridControl1.DataSource = FormMain.Instance.ConvertToVendorTags(tags);
+
             gridView1.OptionsSelection.MultiSelect = true;
             gridView1.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
 

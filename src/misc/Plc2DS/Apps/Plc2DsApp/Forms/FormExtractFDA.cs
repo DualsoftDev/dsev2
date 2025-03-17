@@ -28,7 +28,7 @@ namespace Plc2DsApp.Forms
 		{
             InitializeComponent();
 
-            this.tags = tags.Cast<LS.PlcTagInfo>().ToArray();
+            this.tags = tags;
 
             gridControl1.DataSource = patterns;
             tbPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
