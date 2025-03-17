@@ -9,10 +9,12 @@ namespace Plc2DsApp.Forms
         // 선택 상태를 저장하는 Dictionary (선택 정보 관리)
         HashSet<PlcTagBaseFDA> _selectedTags = new();
         public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
-        public FormTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, bool confirmMode = false, string selectionColumnCaption = null)
+        string _usageHint = null;
+        public FormTags(IEnumerable<PlcTagBaseFDA> tags, IEnumerable<PlcTagBaseFDA> selectedTags = null, string usageHint = null, string selectionColumnCaption = null)
         {
             InitializeComponent();
 
+            _usageHint = usageHint;
             // PlcTagBaseFDA[] 를 GridView 에서 보기 위해서 최종 subclass type (e.g LS.PlcTagInfo[]) 으로 변환
             var vendorTags = FormMain.Instance.ConvertToVendorTags(tags);
             gridControl1.DataSource = new BindingList<object>(vendorTags as object[]);
@@ -33,12 +35,8 @@ namespace Plc2DsApp.Forms
             gridView1.OptionsCustomization.AllowQuickHideColumns = true; // 빠른 숨기기 기능
 
             _selectedTags = new HashSet<PlcTagBaseFDA>(selectedTags ?? Array.Empty<PlcTagBaseFDA>());
-            if (confirmMode)
-            {
-                btnOK.Text = "Accept";
-                btnCancel.Text = "Reject";
-            }
 
+            Text = $"{usageHint} Tags: {tags.Count()}";
 
             if (FormMain.Instance.VisibleColumns.NonNullAny())
             {
@@ -105,9 +103,9 @@ namespace Plc2DsApp.Forms
 
         }
 
-        public static FormTags ShowTags(PlcTagBaseFDA[] tags, PlcTagBaseFDA[] selectedTags = null, string selectionColumnCaption = null)
+        public static FormTags ShowTags(IEnumerable<PlcTagBaseFDA> tags, IEnumerable<PlcTagBaseFDA> selectedTags = null, string selectionColumnCaption = null, string usageHint = null)
         {
-            var form = new FormTags(tags, selectedTags:selectedTags, selectionColumnCaption: selectionColumnCaption);
+            var form = new FormTags(tags, selectedTags:selectedTags, selectionColumnCaption: selectionColumnCaption, usageHint:usageHint);
             form.ShowDialog();
             return form;
         }

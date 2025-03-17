@@ -28,7 +28,8 @@ namespace Plc2DsApp
         public PlcTagBaseFDA[] TagsChosen => selectTags(Choice.Chosen);
         public PlcTagBaseFDA[] TagsCategorized => selectTags(Choice.Categorized);
         public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
-        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null) => FormTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption);
+        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null) =>
+            FormTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
 
 
         public FormMain() {

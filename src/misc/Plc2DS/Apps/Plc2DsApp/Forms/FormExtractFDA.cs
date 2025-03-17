@@ -14,7 +14,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsStage.Text = TagsStage.Length.ToString();
             tbNumTagsCategorized.Text = _tags.Where(t => t.Choice == Choice.Categorized).Count().ToString();
         }
-        void showTags(PlcTagBaseFDA[] tags) => FormTags.ShowTags(tags);
+        void showTags(IEnumerable<PlcTagBaseFDA> tags) => FormTags.ShowTags(tags);
         public FormExtractFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
@@ -38,7 +38,8 @@ namespace Plc2DsApp.Forms
         {
             btnShowAllTags.Click += (s, e) => showTags(_tags);
             btnShowStageTags.Click += (s, e) => showTags(TagsStage);
-            btnShowChosenTags.Click += (s, e) => showTags(TagsNonStage);
+            btnShowChosenTags.Click += (s, e) => showTags(_tags.Where(t => t.Choice == Choice.Chosen));
+            btnShowCategorizedTags.Click += (s, e) => showTags(_tags.Where(t => t.Choice == Choice.Categorized));
             updateUI();
         }
 
@@ -62,7 +63,7 @@ namespace Plc2DsApp.Forms
                 }
             }
             var categorizedCandidates = collectCategorized().ToArray();
-            var form = FormTags.ShowTags(categorizedCandidates, categorizedCandidates);
+            var form = FormTags.ShowTags(categorizedCandidates, categorizedCandidates, usageHint:"(Extract FDA pattern)");
             if (form.DialogResult == DialogResult.OK)
             {
                 form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);

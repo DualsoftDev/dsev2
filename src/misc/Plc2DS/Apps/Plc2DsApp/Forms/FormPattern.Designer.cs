@@ -32,10 +32,10 @@ namespace Plc2DsApp.Forms
             this.gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
             this.tbNumTagsChosen = new DevExpress.XtraEditors.TextEdit();
-            this.tbNumTagsNotyet = new DevExpress.XtraEditors.TextEdit();
+            this.tbNumTagsStage = new DevExpress.XtraEditors.TextEdit();
             this.tbNumTagsAll = new DevExpress.XtraEditors.TextEdit();
             this.btnShowChosenTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnShowNotyetTags = new DevExpress.XtraEditors.SimpleButton();
+            this.btnShowStageTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
             this.btnOK = new DevExpress.XtraEditors.SimpleButton();
@@ -45,7 +45,7 @@ namespace Plc2DsApp.Forms
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsNotyet.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).BeginInit();
             this.SuspendLayout();
             // 
@@ -71,10 +71,10 @@ namespace Plc2DsApp.Forms
             // 
             this.groupControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.groupControl1.Controls.Add(this.tbNumTagsChosen);
-            this.groupControl1.Controls.Add(this.tbNumTagsNotyet);
+            this.groupControl1.Controls.Add(this.tbNumTagsStage);
             this.groupControl1.Controls.Add(this.tbNumTagsAll);
             this.groupControl1.Controls.Add(this.btnShowChosenTags);
-            this.groupControl1.Controls.Add(this.btnShowNotyetTags);
+            this.groupControl1.Controls.Add(this.btnShowStageTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
             this.groupControl1.Location = new System.Drawing.Point(12, 461);
             this.groupControl1.Name = "groupControl1";
@@ -90,13 +90,13 @@ namespace Plc2DsApp.Forms
             this.tbNumTagsChosen.Size = new System.Drawing.Size(90, 28);
             this.tbNumTagsChosen.TabIndex = 9;
             // 
-            // tbNumTagsNotyet
+            // tbNumTagsStage
             // 
-            this.tbNumTagsNotyet.Location = new System.Drawing.Point(118, 82);
-            this.tbNumTagsNotyet.Name = "tbNumTagsNotyet";
-            this.tbNumTagsNotyet.Properties.ReadOnly = true;
-            this.tbNumTagsNotyet.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsNotyet.TabIndex = 8;
+            this.tbNumTagsStage.Location = new System.Drawing.Point(118, 82);
+            this.tbNumTagsStage.Name = "tbNumTagsStage";
+            this.tbNumTagsStage.Properties.ReadOnly = true;
+            this.tbNumTagsStage.Size = new System.Drawing.Size(90, 28);
+            this.tbNumTagsStage.TabIndex = 8;
             // 
             // tbNumTagsAll
             // 
@@ -114,13 +114,13 @@ namespace Plc2DsApp.Forms
             this.btnShowChosenTags.TabIndex = 5;
             this.btnShowChosenTags.Text = "Chosen";
             // 
-            // btnShowNotyetTags
+            // btnShowStageTags
             // 
-            this.btnShowNotyetTags.Location = new System.Drawing.Point(118, 42);
-            this.btnShowNotyetTags.Name = "btnShowNotyetTags";
-            this.btnShowNotyetTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowNotyetTags.TabIndex = 4;
-            this.btnShowNotyetTags.Text = "Not yet.";
+            this.btnShowStageTags.Location = new System.Drawing.Point(118, 42);
+            this.btnShowStageTags.Name = "btnShowStageTags";
+            this.btnShowStageTags.Size = new System.Drawing.Size(90, 34);
+            this.btnShowStageTags.TabIndex = 4;
+            this.btnShowStageTags.Text = "Stage";
             // 
             // btnShowAllTags
             // 
@@ -178,7 +178,7 @@ namespace Plc2DsApp.Forms
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).EndInit();
             this.groupControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsNotyet.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).EndInit();
             this.ResumeLayout(false);
 
@@ -190,10 +190,10 @@ namespace Plc2DsApp.Forms
         private DevExpress.XtraGrid.Views.Grid.GridView gridView1;
         private DevExpress.XtraEditors.GroupControl groupControl1;
         private DevExpress.XtraEditors.TextEdit tbNumTagsChosen;
-        private DevExpress.XtraEditors.TextEdit tbNumTagsNotyet;
+        private DevExpress.XtraEditors.TextEdit tbNumTagsStage;
         private DevExpress.XtraEditors.TextEdit tbNumTagsAll;
         private DevExpress.XtraEditors.SimpleButton btnShowChosenTags;
-        private DevExpress.XtraEditors.SimpleButton btnShowNotyetTags;
+        private DevExpress.XtraEditors.SimpleButton btnShowStageTags;
         private DevExpress.XtraEditors.SimpleButton btnShowAllTags;
         private DevExpress.XtraEditors.SimpleButton btnCancel;
         private DevExpress.XtraEditors.SimpleButton btnOK;
