@@ -44,8 +44,9 @@ namespace Plc2DsApp
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
         public PlcTagBaseFDA[] TagsDiscarded => selectTags(Choice.Discarded);
-        public PlcTagBaseFDA[] TagsFixed => selectTags(Choice.Fixed);
-        public PlcTagBaseFDA[] TagsNotYet => selectTags(Choice.Undefined);
+        public PlcTagBaseFDA[] TagsChosen => selectTags(Choice.Chosen);
+        public PlcTagBaseFDA[] TagsCategorized => selectTags(Choice.Categorized);
+        public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
         FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null) => FormTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption);
 
 
@@ -82,15 +83,16 @@ namespace Plc2DsApp
         private void FormMain_Load(object sender, EventArgs e)
         {
             //loadTags(tbCsvFile.Text);
-            btnShowAllTags      .Click += (s, e) => showTags(TagsAll);
-            btnShowNotyetTags   .Click += (s, e) => showTags(selectTags(Choice.Undefined));
-            btnShowFixedTags    .Click += (s, e) => showTags(selectTags(Choice.Fixed));
-            btnShowDiscardedTags.Click += (s, e) =>
+            btnShowAllTags        .Click += (s, e) => showTags(TagsAll);
+            btnShowStageTags      .Click += (s, e) => showTags(selectTags(Choice.Stage));
+            btnShowChosenTags     .Click += (s, e) => showTags(selectTags(Choice.Chosen));
+            btnShowCategorizedTags.Click += (s, e) => showTags(selectTags(Choice.Categorized));
+            btnShowDiscardedTags  .Click += (s, e) =>
             {
                 FormTags form = showTags(selectTags(Choice.Discarded), selectionColumnCaption: "Resurrect");
                 if (form.DialogResult == DialogResult.OK && form.SelectedTags.Any())
                 {
-                    form.SelectedTags.Iter(t => t.Choice = Choice.Undefined);
+                    form.SelectedTags.Iter(t => t.Choice = Choice.Stage);
                     updateUI();
                 }
             };
@@ -118,7 +120,7 @@ namespace Plc2DsApp
 
             TagsAll.Iter(t => {
                 t.CsSetFDA(t.CsTryGetFDA(Semantic));
-                t.Choice = Choice.Undefined;
+                t.Choice = Choice.Stage;
             });
 
             updateUI();
@@ -127,10 +129,11 @@ namespace Plc2DsApp
 
         void updateUI()
         {
-            tbNumTagsAll      .Text = TagsAll      .Length.ToString();
-            tbNumTagsDiscarded.Text = TagsDiscarded.Length.ToString();
-            tbNumTagsFixed    .Text = TagsFixed    .Length.ToString();
-            tbNumTagsNotyet   .Text = TagsNotYet   .Length.ToString();
+            tbNumTagsAll        .Text = TagsAll        .Length.ToString();
+            tbNumTagsDiscarded  .Text = TagsDiscarded  .Length.ToString();
+            tbNumTagsChosen     .Text = TagsChosen     .Length.ToString();
+            tbNumTagsCategorized.Text = TagsCategorized.Length.ToString();
+            tbNumTagsStage      .Text = TagsStage      .Length.ToString();
         }
 
         private void btnSelectCSV_Click(object sender, EventArgs e)
@@ -169,7 +172,7 @@ namespace Plc2DsApp
                 , new Pattern { Name = "'_BOLTING_ERR_' 포함",  PatternString = @"__BOLTING_ERR__", Description = "'_BOLTING_ERR_' 을 포함하는 항목" }
                 , new Pattern { Name = "'_MANUAL_INT' 포함",  PatternString = @"_(MANUAL|MUTUAL)_INT\d*", Description = "'_MANUAL_INT' 을 포함하는 항목" }
             };
-            var _ = selectTags(Choice.Undefined);   // load TagsAll if null or empty
+            var _ = selectTags(Choice.Stage);   // load TagsAll if null or empty
             var form = new FormPattern(TagsAll, patterns);
             if (form.ShowDialog() == DialogResult.OK)
             {
@@ -182,14 +185,16 @@ namespace Plc2DsApp
         {
             Pattern[] patterns = new Pattern[] {
                   new Pattern { Name = "ROBOT 패턴",      PatternString = @"^(?<flow>[^_]+)_([IQM]_)?(?<device>(RB|RBT|ROBOT)\d+)_(?<action>.*)$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
+                  , new Pattern { Name = "AUX/ERR 패턴",     PatternString = @"^(?<flow>[^_]+)_(?<device>(.*))_(?<action>(ADV|RET)_(AUX|ERR))$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
+                  , new Pattern { Name = "LS/SOL 패턴",     PatternString = @"^(?<flow>[^_]+)_((LS|SOL|I|Q)_)?(?<device>(.*))_(?<action>[^_]+)$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
                   , new Pattern { Name = "일반 패턴",      PatternString = @"^(?<flow>[^_]+)_(?<device>.*)_(?<action>[^_]+)$", Description = "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리" }
                 //, new Pattern { Name = "'_' 로 시작", PatternString = @"^_",         Description = "'_' 로 시작하는 항목" }
             };
 
-            var form = new FormExtractFDA(TagsNotYet, patterns);
+            var form = new FormExtractFDA(TagsStage, patterns);
             if (form.ShowDialog() == DialogResult.OK)
             {
-                form.TagsCategorized.Iter(t => t.Choice = Choice.Fixed);
+                form.TagsStage.Iter(t => t.Choice = Choice.Chosen);
                 updateUI();
             }
         }

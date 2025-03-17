@@ -13,9 +13,14 @@ open System
 type IPlcTag = interface end
 
 type Choice =
-    | Undefined = 0
-    | Fixed = 1
-    | Discarded = 2
+    /// 아무런 결정도 내려지지 않은 상태
+    | Stage = 0
+    /// 버릴 tags
+    | Discarded = 1
+    /// 선택된 tags
+    | Chosen = 2
+    /// FDA 이름까지 확정된 tags
+    | Categorized = 3
 
 //[<AbstractClass>]
 [<DebuggerDisplay("{Stringify()}")>]
@@ -27,7 +32,7 @@ type PlcTagBaseFDA(flow:string, device:string, action:string) =
     member val FlowName = flow with get, set
     member val DeviceName = device with get, set
     member val ActionName = action with get, set
-    member val Choice = Choice.Undefined with get, set
+    member val Choice = Choice.Stage with get, set
     member val Temporary :obj = null with get, set
 
     member x.Set(flow, device, action) =

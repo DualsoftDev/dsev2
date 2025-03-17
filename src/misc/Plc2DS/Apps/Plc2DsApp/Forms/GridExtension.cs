@@ -74,10 +74,37 @@ public static class GridExtension
             inputForm.Height = 250;
             inputForm.Text = "새로운 값 입력";
 
-            TextBox textBox = new TextBox() { Left = 50, Top = 20, Width = 200, Text = currentValue?.ToString() };
+            Control inputControl;
+            if (typeof(T).IsEnum) // 🔹 T가 Enum이면 ComboBox 사용
+            {
+                ComboBox comboBox = new ComboBox()
+                {
+                    Left = 50,
+                    Top = 20,
+                    Width = 200,
+                    DropDownStyle = ComboBoxStyle.DropDownList // 🔹 드롭다운 리스트
+                };
+
+                var enumValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
+                comboBox.Items.AddRange(enumValues.Cast<object>().ToArray());
+                comboBox.SelectedItem = currentValue; // 현재 값 선택
+                inputControl = comboBox;
+            }
+            else // 🔹 일반 타입이면 TextBox 사용
+            {
+                TextBox textBox = new TextBox()
+                {
+                    Left = 50,
+                    Top = 20,
+                    Width = 200,
+                    Text = currentValue?.ToString()
+                };
+                inputControl = textBox;
+            }
+
             Button okButton = new Button() { Text = "확인", Left = 100, Width = 100, Top = 50, DialogResult = DialogResult.OK };
 
-            inputForm.Controls.Add(textBox);
+            inputForm.Controls.Add(inputControl);
             inputForm.Controls.Add(okButton);
             inputForm.AcceptButton = okButton;
 
@@ -85,7 +112,10 @@ public static class GridExtension
             {
                 try
                 {
-                    return new FSharpOption<T>((T)Convert.ChangeType(textBox.Text, typeof(T)));
+                    if (inputControl is ComboBox comboBox)
+                        return new FSharpOption<T>((T)comboBox.SelectedItem); // 🔹 Enum 변환
+                    else if (inputControl is TextBox textBox)
+                        return new FSharpOption<T>((T)Convert.ChangeType(textBox.Text, typeof(T))); // 🔹 일반 타입 변환
                 }
                 catch
                 {
@@ -93,7 +123,7 @@ public static class GridExtension
                 }
             }
 
-            return FSharpOption<T>.None;    // 변경 없음
+            return FSharpOption<T>.None; // 변경 없음
         }
     }
 }

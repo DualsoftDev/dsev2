@@ -4,21 +4,22 @@ namespace Plc2DsApp.Forms
 {
 	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm
 	{
-        PlcTagBaseFDA[] tags = [];
-        PlcTagBaseFDA[] tagsNotYet => tags.Where(t => t.Choice == Choice.Undefined).ToArray();
-        public PlcTagBaseFDA[] TagsCategorized = [];
+        PlcTagBaseFDA[] _tags = [];
+        public PlcTagBaseFDA[] TagsStage => _tags.Where(t => t.Choice == Choice.Stage).ToArray();
+        public PlcTagBaseFDA[] TagsNonStage => _tags.Where(t => t.Choice != Choice.Stage).ToArray();    // chosen + categorized
         void updateUI()
         {
-            tbNumTagsAll.Text = tags.Length.ToString();
-            tbNumTagsChosen.Text = TagsCategorized.Length.ToString();
-            tbNumTagsNotyet.Text = tagsNotYet.Length.ToString();
+            tbNumTagsAll.Text = _tags.Length.ToString();
+            tbNumTagsNonStage.Text = TagsNonStage.Length.ToString();
+            tbNumTagsStage.Text = TagsStage.Length.ToString();
+            tbNumTagsCategorized.Text = _tags.Where(t => t.Choice == Choice.Categorized).Count().ToString();
         }
         void showTags(PlcTagBaseFDA[] tags) => FormTags.ShowTags(tags);
         public FormExtractFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
 
-            this.tags = tags;
+            this._tags = tags;
 
             gridControl1.DataSource = patterns;
             tbPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
@@ -35,9 +36,9 @@ namespace Plc2DsApp.Forms
 
         private void FormExtractFDA_Load(object sender, EventArgs e)
         {
-            btnShowAllTags.Click += (s, e) => showTags(tags);
-            btnShowNotyetTags.Click += (s, e) => showTags(tagsNotYet);
-            btnShowChosenTags.Click += (s, e) => showTags(TagsCategorized);
+            btnShowAllTags.Click += (s, e) => showTags(_tags);
+            btnShowStageTags.Click += (s, e) => showTags(TagsStage);
+            btnShowChosenTags.Click += (s, e) => showTags(TagsNonStage);
             updateUI();
         }
 
@@ -46,7 +47,7 @@ namespace Plc2DsApp.Forms
             var pattern = new Regex(tbPattern.Text, RegexOptions.Compiled);
             IEnumerable<PlcTagBaseFDA> collectCategorized()
             {
-                foreach (var t in tagsNotYet)
+                foreach (var t in TagsStage)
                 {
                     var match = pattern.Match(t.CsGetName());
                     if (match.Success)
@@ -55,16 +56,16 @@ namespace Plc2DsApp.Forms
                         t.FlowName = match.Groups["flow"].Value;
                         t.DeviceName = match.Groups["device"].Value;
                         t.ActionName = match.Groups["action"].Value;
-                        t.Choice = Choice.Fixed;
+                        //t.Choice = Choice.Categorized;
                         yield return t;
                     }
                 }
             }
-            TagsCategorized = TagsCategorized.Concat(collectCategorized()).ToArray();
-            var form = FormTags.ShowTags(TagsCategorized, TagsCategorized);
-            if (DialogResult.OK == form.ShowDialog())
+            var categorizedCandidates = collectCategorized().ToArray();
+            var form = FormTags.ShowTags(categorizedCandidates, categorizedCandidates);
+            if (form.DialogResult == DialogResult.OK)
             {
-                TagsCategorized = form.SelectedTags;
+                form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
                 updateUI();
             }
         }

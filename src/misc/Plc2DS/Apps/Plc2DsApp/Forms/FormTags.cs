@@ -19,6 +19,8 @@ namespace Plc2DsApp.Forms
             gridView1.OptionsSelection.MultiSelect = true;
             gridView1.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
 
+            gridView1.OptionsView.ShowAutoFilterRow = true;
+
             // 다중 column sorting 기능 지원.  Flow 로 먼저 sorting 하고, flow 내 device 로 sorting
             // Shift + 클릭으로 다중 컬럼 정렬 가능
             // Ctrl + 클릭으로 특정 컬럼 정렬 해제 가능

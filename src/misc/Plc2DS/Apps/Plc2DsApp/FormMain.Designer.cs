@@ -32,25 +32,28 @@ namespace Plc2DsApp
             this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
             this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
             this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
+            this.tbNumTagsCategorized = new DevExpress.XtraEditors.TextEdit();
+            this.btnShowCategorizedTags = new DevExpress.XtraEditors.SimpleButton();
             this.tbNumTagsDiscarded = new DevExpress.XtraEditors.TextEdit();
-            this.tbNumTagsFixed = new DevExpress.XtraEditors.TextEdit();
-            this.tbNumTagsNotyet = new DevExpress.XtraEditors.TextEdit();
+            this.tbNumTagsChosen = new DevExpress.XtraEditors.TextEdit();
+            this.tbNumTagsStage = new DevExpress.XtraEditors.TextEdit();
             this.tbNumTagsAll = new DevExpress.XtraEditors.TextEdit();
             this.btnShowDiscardedTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnShowFixedTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnShowNotyetTags = new DevExpress.XtraEditors.SimpleButton();
+            this.btnShowChosenTags = new DevExpress.XtraEditors.SimpleButton();
+            this.btnShowStageTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnReadCsvFile = new DevExpress.XtraEditors.SimpleButton();
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             this.btnExtractFDA = new DevExpress.XtraEditors.SimpleButton();
-            this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             this.ucVisibleFields = new Dual.Common.Winform.DevX.UcSelectableStringList();
+            this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsDiscarded.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsFixed.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsNotyet.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).BeginInit();
             this.groupControl2.SuspendLayout();
@@ -85,47 +88,67 @@ namespace Plc2DsApp
             // 
             // groupControl1
             // 
+            this.groupControl1.Controls.Add(this.tbNumTagsCategorized);
+            this.groupControl1.Controls.Add(this.btnShowCategorizedTags);
             this.groupControl1.Controls.Add(this.tbNumTagsDiscarded);
-            this.groupControl1.Controls.Add(this.tbNumTagsFixed);
-            this.groupControl1.Controls.Add(this.tbNumTagsNotyet);
+            this.groupControl1.Controls.Add(this.tbNumTagsChosen);
+            this.groupControl1.Controls.Add(this.tbNumTagsStage);
             this.groupControl1.Controls.Add(this.tbNumTagsAll);
             this.groupControl1.Controls.Add(this.btnShowDiscardedTags);
-            this.groupControl1.Controls.Add(this.btnShowFixedTags);
-            this.groupControl1.Controls.Add(this.btnShowNotyetTags);
+            this.groupControl1.Controls.Add(this.btnShowChosenTags);
+            this.groupControl1.Controls.Add(this.btnShowStageTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
             this.groupControl1.Location = new System.Drawing.Point(12, 336);
             this.groupControl1.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl1.Name = "groupControl1";
-            this.groupControl1.Size = new System.Drawing.Size(465, 122);
+            this.groupControl1.Size = new System.Drawing.Size(594, 122);
             this.groupControl1.TabIndex = 3;
             this.groupControl1.Text = "Show tags";
             // 
+            // tbNumTagsCategorized
+            // 
+            this.tbNumTagsCategorized.Location = new System.Drawing.Point(345, 82);
+            this.tbNumTagsCategorized.Margin = new System.Windows.Forms.Padding(2);
+            this.tbNumTagsCategorized.Name = "tbNumTagsCategorized";
+            this.tbNumTagsCategorized.Properties.ReadOnly = true;
+            this.tbNumTagsCategorized.Size = new System.Drawing.Size(110, 28);
+            this.tbNumTagsCategorized.TabIndex = 12;
+            // 
+            // btnShowCategorizedTags
+            // 
+            this.btnShowCategorizedTags.Location = new System.Drawing.Point(345, 42);
+            this.btnShowCategorizedTags.Margin = new System.Windows.Forms.Padding(2);
+            this.btnShowCategorizedTags.Name = "btnShowCategorizedTags";
+            this.btnShowCategorizedTags.Size = new System.Drawing.Size(110, 34);
+            this.btnShowCategorizedTags.TabIndex = 11;
+            this.btnShowCategorizedTags.Text = "Categorized";
+            // 
             // tbNumTagsDiscarded
             // 
-            this.tbNumTagsDiscarded.Location = new System.Drawing.Point(344, 82);
+            this.tbNumTagsDiscarded.Location = new System.Drawing.Point(476, 82);
             this.tbNumTagsDiscarded.Margin = new System.Windows.Forms.Padding(2);
             this.tbNumTagsDiscarded.Name = "tbNumTagsDiscarded";
             this.tbNumTagsDiscarded.Properties.ReadOnly = true;
             this.tbNumTagsDiscarded.Size = new System.Drawing.Size(90, 28);
             this.tbNumTagsDiscarded.TabIndex = 10;
             // 
-            // tbNumTagsFixed
+            // tbNumTagsChosen
             // 
-            this.tbNumTagsFixed.Location = new System.Drawing.Point(231, 82);
-            this.tbNumTagsFixed.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsFixed.Name = "tbNumTagsFixed";
-            this.tbNumTagsFixed.Properties.ReadOnly = true;
-            this.tbNumTagsFixed.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsFixed.TabIndex = 9;
+            this.tbNumTagsChosen.Location = new System.Drawing.Point(231, 82);
+            this.tbNumTagsChosen.Margin = new System.Windows.Forms.Padding(2);
+            this.tbNumTagsChosen.Name = "tbNumTagsChosen";
+            this.tbNumTagsChosen.Properties.ReadOnly = true;
+            this.tbNumTagsChosen.Size = new System.Drawing.Size(90, 28);
+            this.tbNumTagsChosen.TabIndex = 9;
             // 
-            // tbNumTagsNotyet
+            // tbNumTagsStage
             // 
-            this.tbNumTagsNotyet.Location = new System.Drawing.Point(118, 82);
-            this.tbNumTagsNotyet.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsNotyet.Name = "tbNumTagsNotyet";
-            this.tbNumTagsNotyet.Properties.ReadOnly = true;
-            this.tbNumTagsNotyet.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsNotyet.TabIndex = 8;
+            this.tbNumTagsStage.Location = new System.Drawing.Point(118, 82);
+            this.tbNumTagsStage.Margin = new System.Windows.Forms.Padding(2);
+            this.tbNumTagsStage.Name = "tbNumTagsStage";
+            this.tbNumTagsStage.Properties.ReadOnly = true;
+            this.tbNumTagsStage.Size = new System.Drawing.Size(90, 28);
+            this.tbNumTagsStage.TabIndex = 8;
             // 
             // tbNumTagsAll
             // 
@@ -138,30 +161,30 @@ namespace Plc2DsApp
             // 
             // btnShowDiscardedTags
             // 
-            this.btnShowDiscardedTags.Location = new System.Drawing.Point(344, 42);
+            this.btnShowDiscardedTags.Location = new System.Drawing.Point(476, 42);
             this.btnShowDiscardedTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnShowDiscardedTags.Name = "btnShowDiscardedTags";
             this.btnShowDiscardedTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowDiscardedTags.TabIndex = 6;
             this.btnShowDiscardedTags.Text = "Discarded";
             // 
-            // btnShowFixedTags
+            // btnShowChosenTags
             // 
-            this.btnShowFixedTags.Location = new System.Drawing.Point(231, 42);
-            this.btnShowFixedTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowFixedTags.Name = "btnShowFixedTags";
-            this.btnShowFixedTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowFixedTags.TabIndex = 5;
-            this.btnShowFixedTags.Text = "Fixed";
+            this.btnShowChosenTags.Location = new System.Drawing.Point(231, 42);
+            this.btnShowChosenTags.Margin = new System.Windows.Forms.Padding(2);
+            this.btnShowChosenTags.Name = "btnShowChosenTags";
+            this.btnShowChosenTags.Size = new System.Drawing.Size(90, 34);
+            this.btnShowChosenTags.TabIndex = 5;
+            this.btnShowChosenTags.Text = "Chosen";
             // 
-            // btnShowNotyetTags
+            // btnShowStageTags
             // 
-            this.btnShowNotyetTags.Location = new System.Drawing.Point(118, 42);
-            this.btnShowNotyetTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowNotyetTags.Name = "btnShowNotyetTags";
-            this.btnShowNotyetTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowNotyetTags.TabIndex = 4;
-            this.btnShowNotyetTags.Text = "Working";
+            this.btnShowStageTags.Location = new System.Drawing.Point(118, 42);
+            this.btnShowStageTags.Margin = new System.Windows.Forms.Padding(2);
+            this.btnShowStageTags.Name = "btnShowStageTags";
+            this.btnShowStageTags.Size = new System.Drawing.Size(90, 34);
+            this.btnShowStageTags.TabIndex = 4;
+            this.btnShowStageTags.Text = "Stage";
             // 
             // btnReadCsvFile
             // 
@@ -203,6 +226,13 @@ namespace Plc2DsApp
             this.btnExtractFDA.ToolTip = "Flow, Device, Action 명 추출";
             this.btnExtractFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
             // 
+            // ucVisibleFields
+            // 
+            this.ucVisibleFields.Location = new System.Drawing.Point(598, 302);
+            this.ucVisibleFields.Name = "ucVisibleFields";
+            this.ucVisibleFields.Size = new System.Drawing.Size(150, 150);
+            this.ucVisibleFields.TabIndex = 12;
+            // 
             // ucRadioSelector1
             // 
             this.ucRadioSelector1.Location = new System.Drawing.Point(488, 180);
@@ -210,13 +240,6 @@ namespace Plc2DsApp
             this.ucRadioSelector1.Name = "ucRadioSelector1";
             this.ucRadioSelector1.Size = new System.Drawing.Size(387, 90);
             this.ucRadioSelector1.TabIndex = 11;
-            // 
-            // ucVisibleFields
-            // 
-            this.ucVisibleFields.Location = new System.Drawing.Point(598, 302);
-            this.ucVisibleFields.Name = "ucVisibleFields";
-            this.ucVisibleFields.Size = new System.Drawing.Size(150, 150);
-            this.ucVisibleFields.TabIndex = 12;
             // 
             // FormMain
             // 
@@ -238,9 +261,10 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).EndInit();
             this.groupControl1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsDiscarded.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsFixed.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsNotyet.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).EndInit();
             this.groupControl2.ResumeLayout(false);
@@ -255,11 +279,11 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.TextEdit tbCsvFile;
         private DevExpress.XtraEditors.GroupControl groupControl1;
         private DevExpress.XtraEditors.SimpleButton btnShowDiscardedTags;
-        private DevExpress.XtraEditors.SimpleButton btnShowFixedTags;
-        private DevExpress.XtraEditors.SimpleButton btnShowNotyetTags;
+        private DevExpress.XtraEditors.SimpleButton btnShowChosenTags;
+        private DevExpress.XtraEditors.SimpleButton btnShowStageTags;
         private DevExpress.XtraEditors.TextEdit tbNumTagsDiscarded;
-        private DevExpress.XtraEditors.TextEdit tbNumTagsFixed;
-        private DevExpress.XtraEditors.TextEdit tbNumTagsNotyet;
+        private DevExpress.XtraEditors.TextEdit tbNumTagsChosen;
+        private DevExpress.XtraEditors.TextEdit tbNumTagsStage;
         private DevExpress.XtraEditors.TextEdit tbNumTagsAll;
         private DevExpress.XtraEditors.SimpleButton btnReadCsvFile;
         private DevExpress.XtraEditors.SimpleButton btnDiscardTags;
@@ -267,6 +291,8 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnExtractFDA;
         private UcRadioSelector ucRadioSelector1;
         private UcSelectableStringList ucVisibleFields;
+        private DevExpress.XtraEditors.TextEdit tbNumTagsCategorized;
+        private DevExpress.XtraEditors.SimpleButton btnShowCategorizedTags;
     }
 }
 
