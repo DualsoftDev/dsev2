@@ -45,7 +45,6 @@ namespace Plc2DsApp
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             this.btnExtractFDA = new DevExpress.XtraEditors.SimpleButton();
-            this.ucVisibleFields = new Dual.Common.Winform.DevX.UcSelectableStringList();
             this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
@@ -226,13 +225,6 @@ namespace Plc2DsApp
             this.btnExtractFDA.ToolTip = "Flow, Device, Action 명 추출";
             this.btnExtractFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
             // 
-            // ucVisibleFields
-            // 
-            this.ucVisibleFields.Location = new System.Drawing.Point(598, 302);
-            this.ucVisibleFields.Name = "ucVisibleFields";
-            this.ucVisibleFields.Size = new System.Drawing.Size(150, 150);
-            this.ucVisibleFields.TabIndex = 12;
-            // 
             // ucRadioSelector1
             // 
             this.ucRadioSelector1.Location = new System.Drawing.Point(488, 180);
@@ -246,7 +238,6 @@ namespace Plc2DsApp
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1052, 471);
-            this.Controls.Add(this.ucVisibleFields);
             this.Controls.Add(this.ucRadioSelector1);
             this.Controls.Add(this.btnExtractFDA);
             this.Controls.Add(this.groupControl2);
@@ -290,7 +281,6 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.GroupControl groupControl2;
         private DevExpress.XtraEditors.SimpleButton btnExtractFDA;
         private UcRadioSelector ucRadioSelector1;
-        private UcSelectableStringList ucVisibleFields;
         private DevExpress.XtraEditors.TextEdit tbNumTagsCategorized;
         private DevExpress.XtraEditors.SimpleButton btnShowCategorizedTags;
     }

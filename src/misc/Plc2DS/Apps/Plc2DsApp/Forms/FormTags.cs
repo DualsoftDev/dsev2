@@ -1,3 +1,5 @@
+using DevExpress.Utils.Extensions;
+
 using System.ComponentModel;
 
 namespace Plc2DsApp.Forms
@@ -38,11 +40,15 @@ namespace Plc2DsApp.Forms
             }
 
 
-            if (FormMain.Instance.VisibleFields.NonNullAny())
+            if (FormMain.Instance.VisibleColumns.NonNullAny())
             {
+                var visibles = new HashSet<string>(FormMain.Instance.VisibleColumns); // 빠른 검색을 위한 HashSet
+
                 foreach (GridColumn column in gridView1.Columns)
                 {
-                    column.Visible = FormMain.Instance.VisibleFields.Contains(column.FieldName);
+                    column.Visible = visibles.Contains(column.FieldName);
+                    if (column.Visible)
+                        column.VisibleIndex = Array.IndexOf(FormMain.Instance.VisibleColumns, column.FieldName);
                 }
             }
 
