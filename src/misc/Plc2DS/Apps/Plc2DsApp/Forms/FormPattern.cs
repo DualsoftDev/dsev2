@@ -78,11 +78,4 @@ namespace Plc2DsApp.Forms
             applyPatterns(patterns);
         }
     }
-
-    public class Pattern
-    {
-        public string Name { get; set; }
-        public string PatternString { get; set; }
-        public string Description { get; set; }
-    }
 }

@@ -6,6 +6,7 @@ namespace Plc2DsApp.Forms
 {
 	public partial class FormTags: DevExpress.XtraEditors.XtraForm
 	{
+        PlcTagBaseFDA[] _tags = null;
         // 선택 상태를 저장하는 Dictionary (선택 정보 관리)
         HashSet<PlcTagBaseFDA> _selectedTags = new();
         public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
@@ -14,9 +15,10 @@ namespace Plc2DsApp.Forms
         {
             InitializeComponent();
 
+            _tags = tags.ToArray();
             _usageHint = usageHint;
             // PlcTagBaseFDA[] 를 GridView 에서 보기 위해서 최종 subclass type (e.g LS.PlcTagInfo[]) 으로 변환
-            var vendorTags = FormMain.Instance.ConvertToVendorTags(tags);
+            var vendorTags = FormMain.Instance.ConvertToVendorTags(_tags);
             gridControl1.DataSource = new BindingList<object>(vendorTags as object[]);
 
 
@@ -36,7 +38,7 @@ namespace Plc2DsApp.Forms
 
             _selectedTags = new HashSet<PlcTagBaseFDA>(selectedTags ?? Array.Empty<PlcTagBaseFDA>());
 
-            Text = $"{usageHint} Tags: {tags.Count()}";
+            Text = $"{usageHint} Tags: {_tags.Count()}";
 
             if (FormMain.Instance.VisibleColumns.NonNullAny())
             {
@@ -110,6 +112,6 @@ namespace Plc2DsApp.Forms
             return form;
         }
 
-        private void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(SelectedTags);
+        private void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(_tags);
     }
 }

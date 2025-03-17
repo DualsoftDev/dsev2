@@ -29,6 +29,15 @@ namespace Plc2DsApp.Forms
             _tags = tags;
 
             gridControl1.DataSource = patterns;
+            gridView1.AddActionColumn<Pattern>("Apply", p =>
+            {
+                return ("Apply", new Action<Pattern>(p =>
+                {
+                    var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
+                    applyPatterns(new Regex[] { pattern });
+                }));
+            });
+
             tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
 
             gridView1.SelectionChanged += (s, e) =>

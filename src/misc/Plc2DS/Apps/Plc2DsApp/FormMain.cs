@@ -1,3 +1,6 @@
+using DevExpress.XtraEditors;
+using DevExpress.XtraEditors.Controls;
+
 namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm {
@@ -46,7 +49,7 @@ namespace Plc2DsApp
             btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
             //btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
 
-            ucRadioSelector1.SetOptions(new string[] { "LS", "AB", "S7", "MX" });
+            ucRadioSelector1.SetOptions(new string[] { "LS", "AB", "S7", "MX" }, itemLayout:RadioGroupItemsLayout.Flow);
             ucRadioSelector1.SelectedOptionChanged += (s, e) =>
             {
                 Vendor = e switch
