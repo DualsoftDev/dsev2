@@ -1,11 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using DevExpress.UserSkins;
-using DevExpress.Skins;
-using DevExpress.LookAndFeel;
-
 namespace Plc2DsApp {
     static class Program {
         /// <summary>
@@ -13,6 +5,9 @@ namespace Plc2DsApp {
         /// </summary>
         [STAThread]
         static void Main() {
+            // 전역 예외 핸들러 설치
+            UnhandledExceptionHandler.InstallUnhandledExceptionHandler();
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new FormMain());

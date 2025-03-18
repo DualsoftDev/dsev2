@@ -162,6 +162,10 @@
       <Project>{9844813a-ccac-43cf-928f-0ef95935837d}</Project>
       <Name>Dual.Common.Winform.DevX.24.1.7</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Windows\Dual.Common.Winform\Dual.Common.Winform.csproj">
+      <Project>{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}</Project>
+      <Name>Dual.Common.Winform</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj">
       <Project>{947fc14d-f726-49dd-9132-c27b7aadf8f7}</Project>
       <Name>Dual.Plc2DS</Name>

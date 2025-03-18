@@ -5,10 +5,15 @@ global using System.Linq;
 global using System.Windows.Forms;
 global using System.Text.RegularExpressions;
 global using System.Collections.Generic;
+global using System.ComponentModel;
+
+global using Microsoft.FSharp.Core;
+
 
 global using DevExpress.XtraGrid.Views.Grid;
 global using DevExpress.XtraEditors.Repository;
 global using DevExpress.XtraGrid.Columns;
+global using DevExpress.Utils.Extensions;
 
 global using Dual.Common.Winform.DevX;
 global using Dual.Common.Core;

@@ -1,10 +1,3 @@
-using DevExpress.Utils.Extensions;
-using DevExpress.XtraEditors;
-
-using System.Runtime.InteropServices.WindowsRuntime;
-
-using static DevExpress.Utils.MVVM.Internal.ILReader;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm

@@ -1,8 +1,3 @@
-using System.Security.Cryptography;
-using System.Windows.Forms;
-
-using static DevExpress.Utils.MVVM.Internal.ILReader;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormDiscardFDA: DevExpress.XtraEditors.XtraForm

@@ -1,7 +1,4 @@
 using DevExpress.XtraEditors;
-using DevExpress.XtraEditors.Controls;
-
-using System.Windows.Forms;
 
 namespace Plc2DsApp
 {

@@ -1,7 +1,3 @@
-using DevExpress.Utils.Extensions;
-
-using System.ComponentModel;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormTags: DevExpress.XtraEditors.XtraForm

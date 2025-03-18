@@ -1,4 +1,3 @@
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormPattern: DevExpress.XtraEditors.XtraForm
@@ -35,7 +34,13 @@ namespace Plc2DsApp.Forms
                     applyPatterns(new Regex[] { pattern });
                 }));
             });
-            btnOK    .Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
+            gridView1.SelectionChanged += (s, e) =>
+            {
+                var pattern = gridView1.GetFocusedRow() as Pattern;
+                tbCustomPattern.Text = pattern.PatternString;
+            };
+
+            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
             btnApplyAllPatterns.Click += (s, e) =>
             {
