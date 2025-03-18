@@ -1,9 +1,12 @@
 namespace Dual.Plc2DS.LS
 
-open Dual.Common.Core.FS
-open Dual.Plc2DS
 open System
 open System.Diagnostics
+open System.Runtime.Serialization
+open Newtonsoft.Json
+
+open Dual.Common.Core.FS
+open Dual.Plc2DS
 
 (*
 Remark,Title=CSV File
@@ -18,6 +21,7 @@ Tag,GlobalVariable,"AGV_M_I_AUTO_MODE",%MW24000.0,"BOOL",,"AGV 자동모드"
 *)
 
 [<DebuggerDisplay("{Stringify()}")>]
+[<DataContract>]
 type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?comment) =
     inherit PlcTagBaseFDA()
 
@@ -29,17 +33,19 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     let property = property |? ""
     let comment  = comment  |? ""
 
-    member val Type    = typ      with get, set
-    member val Scope   = scope    with get, set
-    member val Variable= variable.ToUpper().Replace(".", "_") with get, set
-    member val Address = address  with get, set
-    member val DataType= dataType with get, set
-    member val Property= property with get, set
-    member val Comment = comment  with get, set
-    member val VariableOriginal = variable with get, set
+    [<DataMember>] member val Type    = typ      with get, set
+    [<DataMember>] member val Scope   = scope    with get, set
+    [<DataMember>] member val Variable= variable.ToUpper().Replace(".", "_") with get, set
+    [<DataMember>] member val Address = address  with get, set
+    [<DataMember>] member val DataType= dataType with get, set
+    [<DataMember>] member val Property= property with get, set
+    [<DataMember>] member val Comment = comment  with get, set
+    [<JsonIgnore>] member val VariableOriginal = variable with get, set
 
     override x.Stringify() = $"{x.Variable} = {base.Stringify()}, {x.Address}, {x.Type}, {x.DataType}, {x.Comment}"
 
+    override x.OnDeserialized() = x.VariableOriginal <- x.Variable
+    override x.OnSerializing() = x.Variable <- x.VariableOriginal
 
 
 /// LS.CsvReader

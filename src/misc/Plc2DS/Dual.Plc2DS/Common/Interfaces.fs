@@ -5,6 +5,8 @@ open Dual.Common.Core.FS
 open System.Collections.Generic
 open System.Diagnostics
 open System
+open System.Runtime.Serialization
+open Newtonsoft.Json
 
 //type IDataReader = interface end
 //type ILogicReader = interface end
@@ -24,16 +26,17 @@ type Choice =
 
 //[<AbstractClass>]
 [<DebuggerDisplay("{Stringify()}")>]
+[<DataContract>]
 type PlcTagBaseFDA(flow:string, device:string, action:string) =
     new () = PlcTagBaseFDA(null, null, null)
 
     interface IPlcTag
 
-    member val FlowName = flow with get, set
-    member val DeviceName = device with get, set
-    member val ActionName = action with get, set
-    member val Choice = Choice.Stage with get, set
-    member val Temporary :obj = null with get, set
+    [<DataMember>] member val FlowName = flow with get, set
+    [<DataMember>] member val DeviceName = device with get, set
+    [<DataMember>] member val ActionName = action with get, set
+    [<DataMember>] member val Choice = Choice.Stage with get, set
+    [<JsonIgnore>] member val Temporary :obj = null with get, set
 
     member x.Set(flow, device, action) =
         x.FlowName <- flow
@@ -47,8 +50,16 @@ type PlcTagBaseFDA(flow:string, device:string, action:string) =
             None
 
     member x.GetTuples() = x.FlowName, x.DeviceName, x.ActionName
+
     abstract member Stringify: unit -> string
+    abstract member OnDeserialized: unit -> unit
+    abstract member OnSerializing: unit -> unit
     default x.Stringify() = $"{x.FlowName}:{x.DeviceName}:{x.ActionName}"
+    default x.OnDeserialized() = ()
+    default x.OnSerializing() = ()
+
+    [<OnDeserialized>] member x.OnDeserializedMethod(context: StreamingContext) = x.OnDeserialized()
+    [<OnSerializing>]  member x.OnSerializingMethod(context: StreamingContext) = x.OnSerializing()
 
 
 type Vendor =

@@ -2,10 +2,11 @@ namespace Dual.Plc2DS.AB
 
 open System
 open System.Text.RegularExpressions
+open System.Runtime.Serialization
 
 open Dual.Common.Core.FS
 open Dual.Plc2DS
-open Dual.Common.Core
+
 
 (* 샘플 CSV format
 
@@ -20,6 +21,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 
 *)
 
+[<DataContract>]
 type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attributes) =
     inherit PlcTagBaseFDA()
 
@@ -31,13 +33,13 @@ type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attri
     let specifier   = specifier   |? ""
     let attributes  = attributes  |? ""
 
-    member val Type        = typ         with get, set
-    member val Scope       = scope       with get, set
-    member val Name        = name        with get, set
-    member val Description = description with get, set
-    member val DataType    = dataType    with get, set
-    member val Specifier   = specifier   with get, set
-    member val Attributes  = attributes  with get, set
+    [<DataMember>] member val Type        = typ         with get, set
+    [<DataMember>] member val Scope       = scope       with get, set
+    [<DataMember>] member val Name        = name        with get, set
+    [<DataMember>] member val Description = description with get, set
+    [<DataMember>] member val DataType    = dataType    with get, set
+    [<DataMember>] member val Specifier   = specifier   with get, set
+    [<DataMember>] member val Attributes  = attributes  with get, set
 
 
 

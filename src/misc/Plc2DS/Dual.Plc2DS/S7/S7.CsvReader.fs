@@ -5,10 +5,13 @@ S7 *.SDF 파일 한계
 
 namespace Dual.Plc2DS.S7
 
+open System.Runtime.Serialization
+
 open Dual.Plc2DS
 open Dual.Common.Core.FS
 
 
+[<DataContract>]
 type PlcTagInfo(?name, ?address, ?dataType, ?comment) =
     inherit PlcTagBaseFDA()
 
@@ -17,10 +20,10 @@ type PlcTagInfo(?name, ?address, ?dataType, ?comment) =
     let dataType = dataType |? ""
     let comment  = comment  |? ""
 
-    member val Name     = name     with get, set
-    member val Comment  = comment  with get, set
-    member val Address  = address  with get, set
-    member val DataType = dataType with get, set
+    [<DataMember>] member val Name     = name     with get, set
+    [<DataMember>] member val Comment  = comment  with get, set
+    [<DataMember>] member val Address  = address  with get, set
+    [<DataMember>] member val DataType = dataType with get, set
 
 
 

@@ -1,10 +1,12 @@
 namespace Dual.Plc2DS.MX
 
+open System.Runtime.Serialization
+
 open Dual.Common.Core.FS
 open Dual.Plc2DS
 
 
-
+[<DataContract>]
 type PlcTagInfo(?device, ?comment, ?label) =
     inherit PlcTagBaseFDA()
 
@@ -12,9 +14,9 @@ type PlcTagInfo(?device, ?comment, ?label) =
     let comment  = comment  |? ""
     let label  = label  |? ""
 
-    member val Device  = device  with get, set
-    member val Comment = comment with get, set
-    member val Label   = label   with get, set
+    [<DataMember>] member val Device  = device  with get, set
+    [<DataMember>] member val Comment = comment with get, set
+    [<DataMember>] member val Label   = label   with get, set
 
 
 
