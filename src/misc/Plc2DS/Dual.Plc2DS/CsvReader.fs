@@ -50,6 +50,15 @@ module rec ReaderModule =
             | :? MX.PlcTagInfo as mx -> mx.Device
             | _ -> failwith "Invalid PlcTagInfo"
 
+        member x.SetName(n) =
+            match x with
+            | :? LS.PlcTagInfo as ls -> ls.Variable <- n
+            | :? AB.PlcTagInfo as ab -> ab.Name <- n
+            | :? S7.PlcTagInfo as s7 -> s7.Name <- n
+            | :? MX.PlcTagInfo as mx -> mx.Device <- n
+            | _ -> failwith "Invalid PlcTagInfo"
+
+
         member x.GetComment() =
             match x with
             | :? LS.PlcTagInfo as ls -> ls.Comment

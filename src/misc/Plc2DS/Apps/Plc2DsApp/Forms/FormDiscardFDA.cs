@@ -1,3 +1,5 @@
+using log4net.Util;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormDiscardFDA: DevExpress.XtraEditors.XtraForm
@@ -43,15 +45,17 @@ namespace Plc2DsApp.Forms
         {
         }
 
-        static string getPatternApplication(PlcTagBaseFDA tag, Regex[] patterns, Func<PlcTagBaseFDA, string> fdaGetter)
+        static string getPatternApplication(PlcTagBaseFDA tag, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdaGetter)
         {
             string fda = fdaGetter(tag);
-            foreach (var p in patterns)
-                fda = p.Replace(fda, "");
+            foreach (var p in replacePatterns)
+            {
+                fda = p.RegexPattern.Replace(fda, p.Replacement);
+            }
             return fda;
         }
 
-        void applyPatterns(Regex[] patterns, string desc=null)
+        void applyPatterns(ReplacePattern[] patterns, string desc=null)
         {
             PlcTagBaseFDA[] candidates = ApplyPattern(_tags, patterns, _fdaGetter, _fdaSetter);
             var form = new FormTags(candidates, candidates, usageHint: $"(Extract {desc} pattern)");
@@ -67,48 +71,48 @@ namespace Plc2DsApp.Forms
 
         void applyPatterns(Pattern[] patterns)
         {
-            Regex[] regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
+            ReplacePattern[] replacePatterns =
+                patterns.Select(p => ReplacePattern.FromPattern(p)).ToArray();
+
             string descs = patterns.Select(p => p.Name).JoinString("|");
-            applyPatterns(regexPatterns, descs);
+            applyPatterns(replacePatterns, descs);
         }
 
         public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdaGetter, Action<PlcTagBaseFDA, string> fdaSetter)
         {
-            Regex[] regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
-            return ApplyPattern(tags, regexPatterns, fdaGetter, fdaSetter);
-        }
 
-        public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Regex[] patterns, Func<PlcTagBaseFDA, string> fdaGetter, Action<PlcTagBaseFDA, string> fdaSetter)
-        {
-            IEnumerable<PlcTagBaseFDA> collectCandidates(Regex pattern)
+            IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
             {
                 foreach (var t in tags)
                 {
                     string fda = fdaGetter(t); // f, d, a 중 하나를 가져옴
-                    var match = pattern.Match(fda);
+                    var match = replacePattern.RegexPattern.Match(fda);
                     if (match.Success)
                         yield return t;
                 }
             }
 
-            PlcTagBaseFDA[] candidates = patterns.SelectMany(collectCandidates).ToArray();
+            ReplacePattern[] replacePatterns = patterns.Select(ReplacePattern.FromPattern).ToArray();
+
+            PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
             // 변경 내용 적용
             foreach (var t in candidates)
-                fdaSetter(t, getPatternApplication(t, patterns, fdaGetter));
+                fdaSetter(t, getPatternApplication(t, replacePatterns, fdaGetter));
 
             return candidates;
         }
 
         private void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
-            var pattern = new Regex(tbCustomPattern.Text, RegexOptions.Compiled);
-            applyPatterns([pattern]);
+            // default 는 discard 이므로, replaceString 이 "" 가 됨
+            var replacePattern = ReplacePattern.Create("NoName", tbCustomPattern.Text, "", "");
+            applyPatterns([replacePattern]);
         }
 
         private void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {
-            var patterns = _patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
-            applyPatterns(patterns);
+            var replacePatterns = _patterns.Select(ReplacePattern.FromPattern).ToArray();
+            applyPatterns(replacePatterns);
         }
     }
 }

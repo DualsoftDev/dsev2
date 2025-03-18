@@ -8,7 +8,7 @@ global using System.Collections.Generic;
 global using System.ComponentModel;
 
 global using Microsoft.FSharp.Core;
-
+global using Newtonsoft.Json;
 
 global using DevExpress.XtraGrid.Views.Grid;
 global using DevExpress.XtraEditors.Repository;

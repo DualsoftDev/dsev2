@@ -1,3 +1,8 @@
+//using System.Runtime.Serialization;
+
+
+using System.Runtime.Serialization;
+
 namespace Plc2DsApp
 {
     public class AppSettings
@@ -17,16 +22,41 @@ namespace Plc2DsApp
         public string PrimaryCsv { get; set; }
     }
 
+    [DataContract]
     public class Pattern
     {
-        public string Name { get; set; }
-        public string PatternString { get; set; }
-        public string Description { get; set; }
+        [DataMember] public string Name { get; set; } = "";
+        [DataMember] public string PatternString { get; set; } = "";
+        [DataMember] public string Description { get; set; } = "";
+        [JsonIgnore] public Regex RegexPattern { get; set; }
+        public void OnDeserialized()
+        {
+            if (PatternString.NonNullAny())
+                RegexPattern = new Regex(PatternString, RegexOptions.Compiled);
+        }
+        [OnDeserialized]
+        public void OnDeserializedMethod(StreamingContext context) => OnDeserialized();
     }
 
+    [DataContract]
     public class ReplacePattern : Pattern
     {
-        public string ReplacePatternString { get; set; }
+        [DataMember] public string Replacement { get; set; } = "";
+        [OnDeserialized]
+        public void OnDeserializedMethod(StreamingContext context) => OnDeserialized();
+        public static ReplacePattern FromPattern(Pattern p)
+        {
+            if (p is ReplacePattern rp)
+                return rp;
+
+            return ReplacePattern.Create(p.Name, p.PatternString, replace:"", p.Description);
+        }
+        public static ReplacePattern Create(string name, string pattern, string replace, string desc = null)
+        {
+            var rp = new ReplacePattern { Name = name, PatternString = pattern, Description = desc, Replacement = replace };
+            rp.OnDeserialized();
+            return rp;
+        }
     }
 
 }

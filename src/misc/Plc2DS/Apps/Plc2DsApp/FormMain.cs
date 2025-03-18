@@ -88,28 +88,30 @@ namespace Plc2DsApp
             btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
             btnDiscardActionName.Enabled = _appSettings.ActionPatternDiscards.Any();
 
-            btnDiscardFlowName  .Click += (s, e) => discardFDA(_appSettings.FlowPatternDiscards, FDA.Flow);
-            btnDiscardDeviceName.Click += (s, e) => discardFDA(_appSettings.DevicePatternDiscards, FDA.Device);
-            btnDiscardActionName.Click += (s, e) => discardFDA(_appSettings.ActionPatternDiscards, FDA.Action);
+            btnDiscardFlowName  .Click += (s, e) => discardFDA(_appSettings.FlowPatternDiscards, FDAT.DuFlow);
+            btnDiscardDeviceName.Click += (s, e) => discardFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice);
+            btnDiscardActionName.Click += (s, e) => discardFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction);
         }
 
-        void discardFDA(Pattern[] pattern, FDA fda, bool withUI=true)
+        void discardFDA(Pattern[] pattern, FDAT fdat, bool withUI = true) => discardFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
+        void discardFDA(PlcTagBaseFDA[] tags, Pattern[] pattern, FDAT fdat, bool withUI=true)
         {
-            var tags = TagsCategorized.Concat(TagsChosen).ToArray();
             Func<PlcTagBaseFDA, string> fdaGetter =
-                fda switch
+                fdat switch
                 {
-                    _ when fda.IsFlow => t => t.FlowName,
-                    _ when fda.IsDevice => t => t.DeviceName,
-                    _ when fda.IsAction => t => t.ActionName,
+                    _ when fdat.IsDuFlow   => t => t.FlowName,
+                    _ when fdat.IsDuDevice => t => t.DeviceName,
+                    _ when fdat.IsDuAction => t => t.ActionName,
+                    _ when fdat.IsDuTag    => t => t.CsGetName(),
                     _ => throw new NotImplementedException()
                 };
             Action< PlcTagBaseFDA, string> fdaSetter =
-                fda switch
+                fdat switch
                 {
-                    _ when fda.IsFlow => (t, v) => t.FlowName = v,
-                    _ when fda.IsDevice => (t, v) => t.DeviceName = v,
-                    _ when fda.IsAction => (t, v) => t.ActionName = v,
+                    _ when fdat.IsDuFlow   => (t, v) => t.FlowName = v,
+                    _ when fdat.IsDuDevice => (t, v) => t.DeviceName = v,
+                    _ when fdat.IsDuAction => (t, v) => t.ActionName = v,
+                    _ when fdat.IsDuTag    => (t, v) => t.CsSetName(v),
                     _ => throw new NotImplementedException()
                 };
             if (withUI)
@@ -257,14 +259,20 @@ namespace Plc2DsApp
             updateUI();
         }
 
+        void applyReplaceTags(bool withUI)
+        {
+            discardFDA(TagsStage, _appSettings.TagPatternReplaces, FDAT.DuTag, withUI);
+        }
+
         private void btnApplyAll_Click(object sender, EventArgs e)
         {
             bool withUI = false;
             applyDiscardTags(withUI);
+            applyReplaceTags(withUI);
             applyExtractFDA(withUI);
-            discardFDA(_appSettings.FlowPatternDiscards,   FDA.Flow, withUI);
-            discardFDA(_appSettings.DevicePatternDiscards, FDA.Device, withUI);
-            discardFDA(_appSettings.ActionPatternDiscards, FDA.Action, withUI);
+            discardFDA(_appSettings.FlowPatternDiscards,   FDAT.DuFlow, withUI);
+            discardFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice, withUI);
+            discardFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction, withUI);
         }
     }
 }
