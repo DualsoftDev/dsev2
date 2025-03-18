@@ -7,6 +7,7 @@ open System.Diagnostics
 open System
 open System.Runtime.Serialization
 open Newtonsoft.Json
+open System.ComponentModel
 
 //type IDataReader = interface end
 //type ILogicReader = interface end
@@ -36,7 +37,7 @@ type PlcTagBaseFDA(flow:string, device:string, action:string) =
     [<DataMember>] member val DeviceName = device with get, set
     [<DataMember>] member val ActionName = action with get, set
     [<DataMember>] member val Choice = Choice.Stage with get, set
-    [<JsonIgnore>] member val Temporary :obj = null with get, set
+    [<JsonIgnore>] [<Browsable(false)>] member val Temporary :obj = null with get, set
 
     member x.Set(flow, device, action) =
         x.FlowName <- flow

@@ -104,5 +104,10 @@ namespace Plc2DsApp.Forms
 
 
         private void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(_tags);
+
+        private void btnMasterDetailView_Click(object sender, EventArgs e)
+        {
+            new FormFDAMasterDetail(_tags).ShowDialog();
+        }
     }
 }

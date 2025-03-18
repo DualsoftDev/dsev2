@@ -35,6 +35,7 @@ namespace Plc2DsApp.Forms
             this.gridControl1 = new DevExpress.XtraGrid.GridControl();
             this.gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.btnSaveTagsAs = new DevExpress.XtraEditors.SimpleButton();
+            this.btnMasterDetailView = new DevExpress.XtraEditors.SimpleButton();
             ((System.ComponentModel.ISupportInitialize)(this.cbShowWithFDA.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.cbShowWithoutFDA.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).BeginInit();
@@ -115,6 +116,18 @@ namespace Plc2DsApp.Forms
             this.btnSaveTagsAs.Text = "Save as..";
             this.btnSaveTagsAs.Click += new System.EventHandler(this.btnSaveTagsAs_Click);
             // 
+            // btnMasterDetailView
+            // 
+            this.btnMasterDetailView.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnMasterDetailView.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnMasterDetailView.Location = new System.Drawing.Point(439, 621);
+            this.btnMasterDetailView.Margin = new System.Windows.Forms.Padding(2);
+            this.btnMasterDetailView.Name = "btnMasterDetailView";
+            this.btnMasterDetailView.Size = new System.Drawing.Size(213, 35);
+            this.btnMasterDetailView.TabIndex = 9;
+            this.btnMasterDetailView.Text = "Flow/Device grouping..";
+            this.btnMasterDetailView.Click += new System.EventHandler(this.btnMasterDetailView_Click);
+            // 
             // FormTags
             // 
             this.AcceptButton = this.btnOK;
@@ -122,6 +135,7 @@ namespace Plc2DsApp.Forms
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(1062, 669);
+            this.Controls.Add(this.btnMasterDetailView);
             this.Controls.Add(this.btnSaveTagsAs);
             this.Controls.Add(this.gridControl1);
             this.Controls.Add(this.btnCancel);
@@ -148,5 +162,6 @@ namespace Plc2DsApp.Forms
         private DevExpress.XtraGrid.GridControl gridControl1;
         private DevExpress.XtraGrid.Views.Grid.GridView gridView1;
         private DevExpress.XtraEditors.SimpleButton btnSaveTagsAs;
+        private DevExpress.XtraEditors.SimpleButton btnMasterDetailView;
     }
 }

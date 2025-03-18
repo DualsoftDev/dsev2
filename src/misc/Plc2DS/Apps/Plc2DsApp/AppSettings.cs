@@ -39,8 +39,6 @@ namespace Plc2DsApp
     public class ReplacePattern : Pattern
     {
         [DataMember] public string Replacement { get; set; } = "";
-        [OnDeserialized]
-        public void OnDeserializedMethod(StreamingContext context) => OnDeserialized();
         public static ReplacePattern FromPattern(Pattern p)
         {
             if (p is ReplacePattern rp)
