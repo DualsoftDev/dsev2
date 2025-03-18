@@ -1,20 +1,18 @@
-using log4net.Util;
-
 namespace Plc2DsApp.Forms
 {
-	public partial class FormDiscardFDA: DevExpress.XtraEditors.XtraForm
+	public partial class FormReplaceFDAT: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] _tags = [];
         Pattern[] _patterns = [];
-        Func<PlcTagBaseFDA, string> _fdaGetter = null;
-        Action<PlcTagBaseFDA, string> _fdaSetter = null;
+        Func<PlcTagBaseFDA, string> _fdatGetter = null;
+        Action<PlcTagBaseFDA, string> _fdatSetter = null;
 
-        public FormDiscardFDA(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdaGetter, Action<PlcTagBaseFDA, string> fdaSetter)
+        public FormReplaceFDAT(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter)
 		{
             InitializeComponent();
 
-            _fdaSetter = fdaSetter;
-            _fdaGetter = fdaGetter;
+            _fdatSetter = fdatSetter;
+            _fdatGetter = fdatGetter;
             _patterns = patterns;
             _tags = tags;
 
@@ -45,9 +43,9 @@ namespace Plc2DsApp.Forms
         {
         }
 
-        static string getPatternApplication(PlcTagBaseFDA tag, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdaGetter)
+        static string getPatternApplication(PlcTagBaseFDA tag, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdatGetter)
         {
-            string fda = fdaGetter(tag);
+            string fda = fdatGetter(tag);
             foreach (var p in replacePatterns)
             {
                 fda = p.RegexPattern.Replace(fda, p.Replacement);
@@ -57,15 +55,15 @@ namespace Plc2DsApp.Forms
 
         void applyPatterns(ReplacePattern[] patterns, string desc=null)
         {
-            PlcTagBaseFDA[] candidates = ApplyPattern(_tags, patterns, _fdaGetter, _fdaSetter);
+            PlcTagBaseFDA[] candidates = ApplyPattern(_tags, patterns, _fdatGetter, _fdatSetter);
             var form = new FormTags(candidates, candidates, usageHint: $"(Extract {desc} pattern)");
-            var getter = new Func<PlcTagBaseFDA, string>(t => getPatternApplication(t, patterns, _fdaGetter));
+            var getter = new Func<PlcTagBaseFDA, string>(t => getPatternApplication(t, patterns, _fdatGetter));
             form.GridView.AddUnboundColumnCustom<PlcTagBaseFDA, string>($"AppliedNewName", getter, null);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 // 변경 내용 적용
                 foreach (var t in form.SelectedTags)
-                    _fdaSetter(t, getPatternApplication(t, patterns, _fdaGetter));
+                    _fdatSetter(t, getPatternApplication(t, patterns, _fdatGetter));
             }
         }
 
@@ -78,14 +76,14 @@ namespace Plc2DsApp.Forms
             applyPatterns(replacePatterns, descs);
         }
 
-        public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdaGetter, Action<PlcTagBaseFDA, string> fdaSetter)
+        public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter)
         {
 
             IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
             {
                 foreach (var t in tags)
                 {
-                    string fda = fdaGetter(t); // f, d, a 중 하나를 가져옴
+                    string fda = fdatGetter(t); // f, d, a 중 하나를 가져옴
                     var match = replacePattern.RegexPattern.Match(fda);
                     if (match.Success)
                         yield return t;
@@ -97,7 +95,7 @@ namespace Plc2DsApp.Forms
             PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
             // 변경 내용 적용
             foreach (var t in candidates)
-                fdaSetter(t, getPatternApplication(t, replacePatterns, fdaGetter));
+                fdatSetter(t, getPatternApplication(t, replacePatterns, fdatGetter));
 
             return candidates;
         }

@@ -81,11 +81,11 @@
     <Compile Include="FormMain.Designer.cs">
       <DependentUpon>FormMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FormDiscardFDA.cs">
+    <Compile Include="Forms\FormReplaceFDAT.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FormDiscardFDA.Designer.cs">
-      <DependentUpon>FormDiscardFDA.cs</DependentUpon>
+    <Compile Include="Forms\FormReplaceFDAT.Designer.cs">
+      <DependentUpon>FormReplaceFDAT.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\FormExtractFDA.cs">
       <SubType>Form</SubType>
@@ -112,8 +112,8 @@
     <EmbeddedResource Include="FormMain.resx">
       <DependentUpon>FormMain.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FormDiscardFDA.resx">
-      <DependentUpon>FormDiscardFDA.cs</DependentUpon>
+    <EmbeddedResource Include="Forms\FormReplaceFDAT.resx">
+      <DependentUpon>FormReplaceFDAT.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FormExtractFDA.resx">
       <DependentUpon>FormExtractFDA.cs</DependentUpon>

@@ -96,7 +96,7 @@ namespace Plc2DsApp
         void discardFDA(Pattern[] pattern, FDAT fdat, bool withUI = true) => discardFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
         void discardFDA(PlcTagBaseFDA[] tags, Pattern[] pattern, FDAT fdat, bool withUI=true)
         {
-            Func<PlcTagBaseFDA, string> fdaGetter =
+            Func<PlcTagBaseFDA, string> fdatGetter =
                 fdat switch
                 {
                     _ when fdat.IsDuFlow   => t => t.FlowName,
@@ -105,7 +105,7 @@ namespace Plc2DsApp
                     _ when fdat.IsDuTag    => t => t.CsGetName(),
                     _ => throw new NotImplementedException()
                 };
-            Action< PlcTagBaseFDA, string> fdaSetter =
+            Action< PlcTagBaseFDA, string> fdatSetter =
                 fdat switch
                 {
                     _ when fdat.IsDuFlow   => (t, v) => t.FlowName = v,
@@ -116,11 +116,11 @@ namespace Plc2DsApp
                 };
             if (withUI)
             {
-                var form = new FormDiscardFDA(tags, pattern, fdaGetter, fdaSetter);
+                var form = new FormReplaceFDAT(tags, pattern, fdatGetter, fdatSetter);
                 form.ShowDialog();
             }
             else
-                FormDiscardFDA.ApplyPattern(tags, pattern, fdaGetter, fdaSetter);
+                FormReplaceFDAT.ApplyPattern(tags, pattern, fdatGetter, fdatSetter);
         }
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)

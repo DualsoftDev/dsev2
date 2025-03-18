@@ -1,6 +1,6 @@
 namespace Plc2DsApp.Forms
 {
-    partial class FormDiscardFDA
+    partial class FormReplaceFDAT
     {
         /// <summary>
         /// Required designer variable.
