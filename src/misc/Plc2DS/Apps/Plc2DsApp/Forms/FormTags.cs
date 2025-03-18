@@ -37,17 +37,7 @@ namespace Plc2DsApp.Forms
 
             Text = $"{usageHint} Tags: {_tags.Count()}";
 
-            if (FormMain.Instance.VisibleColumns.NonNullAny())
-            {
-                var visibles = new HashSet<string>(FormMain.Instance.VisibleColumns); // 빠른 검색을 위한 HashSet
-
-                foreach (GridColumn column in gridView1.Columns)
-                {
-                    column.Visible = visibles.Contains(column.FieldName);
-                    if (column.Visible)
-                        column.VisibleIndex = Array.IndexOf(FormMain.Instance.VisibleColumns, column.FieldName);
-                }
-            }
+            gridView1.ApplyVisibleColumns(FormMain.Instance.VisibleColumns);
 
             //if (selectedTags.NonNullAny())
             {

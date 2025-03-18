@@ -8,7 +8,9 @@ namespace Plc2DsApp
         public string[] VisibleColumns => _appSettings.VisibleColumns;
         public string DataDir => _appSettings.DataDir;
 
-        // abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
+        /// <summary>
+        /// abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
+        /// </summary>
         public object ConvertToVendorTags(IEnumerable<PlcTagBaseFDA> tags)
         {
             var typ = FormMain.Instance.Vendor.CsGetTagType();

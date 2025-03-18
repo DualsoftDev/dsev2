@@ -1,3 +1,5 @@
+using Plc2DsApp;
+
 using System;
 using System.Diagnostics;
 
@@ -121,6 +123,20 @@ public static class GridExtension
             return FSharpOption<T>.None; // 변경 없음
         }
     }
+
+    public static void ApplyVisibleColumns(this GridView gridView, string[] visibleColumnNames)
+    {
+        if (visibleColumnNames.NonNullAny())
+        {
+            foreach (GridColumn column in gridView.Columns)
+            {
+                column.Visible = visibleColumnNames.Contains(column.FieldName);
+                if (column.Visible)
+                    column.VisibleIndex = Array.IndexOf(FormMain.Instance.VisibleColumns, column.FieldName);
+            }
+        }
+    }
+
 }
 
 

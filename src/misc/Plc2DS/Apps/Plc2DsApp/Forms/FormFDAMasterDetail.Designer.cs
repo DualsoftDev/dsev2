@@ -33,16 +33,18 @@ namespace Plc2DsApp.Forms
             this.gridControl1 = new DevExpress.XtraGrid.GridControl();
             this.gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.gridView2 = new DevExpress.XtraGrid.Views.Grid.GridView();
+            this.cbShowSingletonToo = new DevExpress.XtraEditors.CheckEdit();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cbShowSingletonToo.Properties)).BeginInit();
             this.SuspendLayout();
             // 
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(1101, 587);
+            this.btnCancel.Location = new System.Drawing.Point(1101, 599);
             this.btnCancel.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(70, 35);
@@ -52,7 +54,7 @@ namespace Plc2DsApp.Forms
             // btnOK
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOK.Location = new System.Drawing.Point(1025, 587);
+            this.btnOK.Location = new System.Drawing.Point(1025, 599);
             this.btnOK.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(70, 35);
@@ -83,11 +85,20 @@ namespace Plc2DsApp.Forms
             this.gridView2.GridControl = this.gridControl1;
             this.gridView2.Name = "gridView2";
             // 
+            // cbShowSingletonToo
+            // 
+            this.cbShowSingletonToo.Location = new System.Drawing.Point(746, 604);
+            this.cbShowSingletonToo.Name = "cbShowSingletonToo";
+            this.cbShowSingletonToo.Properties.Caption = "Show singletons, too";
+            this.cbShowSingletonToo.Size = new System.Drawing.Size(205, 27);
+            this.cbShowSingletonToo.TabIndex = 19;
+            // 
             // FormFDAMasterDetail
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1182, 649);
+            this.Controls.Add(this.cbShowSingletonToo);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.gridControl1);
@@ -96,6 +107,7 @@ namespace Plc2DsApp.Forms
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cbShowSingletonToo.Properties)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -107,5 +119,6 @@ namespace Plc2DsApp.Forms
         private DevExpress.XtraGrid.GridControl gridControl1;
         private GridView gridView1;
         private GridView gridView2;
+        private DevExpress.XtraEditors.CheckEdit cbShowSingletonToo;
     }
 }
