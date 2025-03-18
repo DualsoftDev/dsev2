@@ -31,8 +31,12 @@ namespace Plc2DsApp
         public PlcTagBaseFDA[] TagsChosen => selectTags(Choice.Chosen);
         public PlcTagBaseFDA[] TagsCategorized => selectTags(Choice.Categorized);
         public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
-        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null) =>
-            FormTags.ShowTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
+        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null)
+        {
+            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
+            form.ShowDialog();
+            return form;
+        }
 
 
         public FormMain() {
@@ -80,6 +84,39 @@ namespace Plc2DsApp
             };
 
             btnReadCsvFile.Click += (s, e) => loadTags(tbCsvFile.Text);
+
+            btnDiscardFlowName  .Enabled = _appSettings.FlowPatternDiscards.Any();
+            btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
+            btnDiscardActionName.Enabled = _appSettings.ActionPatternDiscards.Any();
+
+            btnDiscardFlowName  .Click += (s, e) => openFDADiscardForm(_appSettings.FlowPatternDiscards, FDA.Flow);
+            btnDiscardDeviceName.Click += (s, e) => openFDADiscardForm(_appSettings.DevicePatternDiscards, FDA.Device);
+            btnDiscardActionName.Click += (s, e) => openFDADiscardForm(_appSettings.ActionPatternDiscards, FDA.Action);
+        }
+
+        void openFDADiscardForm(Pattern[] pattern, FDA fda)
+        {
+            var tags = TagsCategorized.Concat(TagsChosen).ToArray();
+            Func<PlcTagBaseFDA, string> fdaGetter =
+                fda switch
+                {
+                    _ when fda.IsFlow => t => t.FlowName,
+                    _ when fda.IsDevice => t => t.DeviceName,
+                    _ when fda.IsAction => t => t.ActionName,
+                    _ => throw new NotImplementedException()
+                };
+            Action< PlcTagBaseFDA, string> fdaSetter =
+                fda switch
+                {
+                    _ when fda.IsFlow => (t, v) => t.FlowName = v,
+                    _ when fda.IsDevice => (t, v) => t.DeviceName = v,
+                    _ when fda.IsAction => (t, v) => t.ActionName = v,
+                    _ => throw new NotImplementedException()
+                };
+
+            var form = new FormDiscardFDA(tags, pattern, fdaGetter, fdaSetter);
+            form.ShowDialog();
+
         }
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)

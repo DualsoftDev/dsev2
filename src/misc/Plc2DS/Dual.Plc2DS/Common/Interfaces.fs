@@ -57,6 +57,11 @@ type Vendor =
     | LS
     | MX
 
+type FDA =
+    | Flow
+    | Device
+    | Action
+
 type SemanticCategory =
     | DuNone
     | DuAction

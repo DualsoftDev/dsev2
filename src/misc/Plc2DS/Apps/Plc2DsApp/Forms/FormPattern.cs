@@ -14,7 +14,8 @@ namespace Plc2DsApp.Forms
             tbNumTagsChosen.Text = TagsChosen.Length.ToString();
             tbNumTagsStage.Text = _tagsStage.Length.ToString();
         }
-        void showTags(PlcTagBaseFDA[] tags, string usageHint = null) => FormTags.ShowTags(tags, usageHint: usageHint);
+        void showTags(PlcTagBaseFDA[] tags, string usageHint = null) =>
+            new FormTags(tags, usageHint: usageHint).ShowDialog();
 
         public FormPattern(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{

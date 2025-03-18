@@ -20,7 +20,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsStage.Text = TagsStage.Length.ToString();
             tbNumTagsCategorized.Text = _tags.Where(t => t.Choice == Choice.Categorized).Count().ToString();
         }
-        void showTags(IEnumerable<PlcTagBaseFDA> tags) => FormTags.ShowTags(tags);
+        void showTags(IEnumerable<PlcTagBaseFDA> tags) => new FormTags(tags).ShowDialog();
         public FormExtractFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
@@ -79,8 +79,8 @@ namespace Plc2DsApp.Forms
 
             var categorizedCandidates = patterns.SelectMany(collectCategorized);
 
-            var form = FormTags.ShowTags(categorizedCandidates, categorizedCandidates, usageHint: "(Extract FDA pattern)");
-            if (form.DialogResult == DialogResult.OK)
+            var form = new FormTags(categorizedCandidates, categorizedCandidates, usageHint: "(Extract FDA pattern)");
+            if (form.ShowDialog() == DialogResult.OK)
             {
                 form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
                 updateUI();

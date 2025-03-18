@@ -37,7 +37,7 @@ module GetFDA =
                 |> function
                     |Some xs -> xs
                     | None ->
-                        logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
+                        //logWarn $"WARN: {name} 에서 Flow/Device/Action 추출 실패"
                         [||]
             xxx
 

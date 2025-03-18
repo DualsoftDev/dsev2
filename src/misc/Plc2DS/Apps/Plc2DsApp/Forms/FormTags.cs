@@ -10,6 +10,7 @@ namespace Plc2DsApp.Forms
         // 선택 상태를 저장하는 Dictionary (선택 정보 관리)
         HashSet<PlcTagBaseFDA> _selectedTags = new();
         public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
+        public GridView GridView => gridView1;
         string _usageHint = null;
         public FormTags(IEnumerable<PlcTagBaseFDA> tags, IEnumerable<PlcTagBaseFDA> selectedTags = null, string usageHint = null, string selectionColumnCaption = null)
         {
@@ -105,12 +106,6 @@ namespace Plc2DsApp.Forms
 
         }
 
-        public static FormTags ShowTags(IEnumerable<PlcTagBaseFDA> tags, IEnumerable<PlcTagBaseFDA> selectedTags = null, string selectionColumnCaption = null, string usageHint = null)
-        {
-            var form = new FormTags(tags, selectedTags:selectedTags, selectionColumnCaption: selectionColumnCaption, usageHint:usageHint);
-            form.ShowDialog();
-            return form;
-        }
 
         private void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(_tags);
     }
