@@ -1,6 +1,8 @@
 using DevExpress.XtraEditors;
 using DevExpress.XtraEditors.Controls;
 
+using System.Windows.Forms;
+
 namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm {
@@ -89,12 +91,12 @@ namespace Plc2DsApp
             btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
             btnDiscardActionName.Enabled = _appSettings.ActionPatternDiscards.Any();
 
-            btnDiscardFlowName  .Click += (s, e) => openFDADiscardForm(_appSettings.FlowPatternDiscards, FDA.Flow);
-            btnDiscardDeviceName.Click += (s, e) => openFDADiscardForm(_appSettings.DevicePatternDiscards, FDA.Device);
-            btnDiscardActionName.Click += (s, e) => openFDADiscardForm(_appSettings.ActionPatternDiscards, FDA.Action);
+            btnDiscardFlowName  .Click += (s, e) => discardFDA(_appSettings.FlowPatternDiscards, FDA.Flow);
+            btnDiscardDeviceName.Click += (s, e) => discardFDA(_appSettings.DevicePatternDiscards, FDA.Device);
+            btnDiscardActionName.Click += (s, e) => discardFDA(_appSettings.ActionPatternDiscards, FDA.Action);
         }
 
-        void openFDADiscardForm(Pattern[] pattern, FDA fda)
+        void discardFDA(Pattern[] pattern, FDA fda, bool withUI=true)
         {
             var tags = TagsCategorized.Concat(TagsChosen).ToArray();
             Func<PlcTagBaseFDA, string> fdaGetter =
@@ -113,10 +115,13 @@ namespace Plc2DsApp
                     _ when fda.IsAction => (t, v) => t.ActionName = v,
                     _ => throw new NotImplementedException()
                 };
-
-            var form = new FormDiscardFDA(tags, pattern, fdaGetter, fdaSetter);
-            form.ShowDialog();
-
+            if (withUI)
+            {
+                var form = new FormDiscardFDA(tags, pattern, fdaGetter, fdaSetter);
+                form.ShowDialog();
+            }
+            else
+                FormDiscardFDA.ApplyPattern(tags, pattern, fdaGetter, fdaSetter);
         }
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
@@ -214,29 +219,55 @@ namespace Plc2DsApp
             }
         }
 
-        void btnDiscardTags_Click(object sender, EventArgs e)
+        void applyDiscardTags(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternDiscards;
             var json = EmJson.ToJson(patterns);
 
             var _ = selectTags(Choice.Stage);   // load TagsAll if null or empty
-            var form = new FormPattern(TagsAll, patterns);
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                form.TagsChosen.Iter(t => t.Choice = Choice.Discarded);
-                updateUI();
-            }
-        }
 
-        private void btnExtractFDA_Click(object sender, EventArgs e)
+            PlcTagBaseFDA[] chosen = [];
+            if (withUI)
+            {
+                var form = new FormPattern(TagsAll, patterns);
+                if (form.ShowDialog() == DialogResult.OK)
+                    chosen = form.TagsChosen;
+            }
+            else
+                chosen = FormPattern.ApplyPatterns(TagsAll, patterns);
+
+            chosen.Iter(t => t.Choice = Choice.Discarded);
+            updateUI();
+        }
+        void btnDiscardTags_Click(object sender, EventArgs e) => applyDiscardTags();
+
+        private void btnExtractFDA_Click(object sender, EventArgs e) => applyExtractFDA();
+
+        void applyExtractFDA(bool withUI = true)
         {
             Pattern[] patterns = _appSettings.TagPatternFDAs;
-            var form = new FormExtractFDA(TagsStage, patterns);
-            if (form.ShowDialog() == DialogResult.OK)
+            PlcTagBaseFDA[] chosen = [];
+            if (withUI)
             {
-                form.TagsStage.Iter(t => t.Choice = Choice.Chosen);
-                updateUI();
+                var form = new FormExtractFDA(TagsStage, patterns);
+                if (form.ShowDialog() == DialogResult.OK)
+                    chosen = form.TagsStage;
             }
+            else
+                chosen = FormExtractFDA.ApplyPatterns(TagsStage, patterns);
+
+            chosen.Iter(t => t.Choice = Choice.Categorized);
+            updateUI();
+        }
+
+        private void btnApplyAll_Click(object sender, EventArgs e)
+        {
+            bool withUI = false;
+            applyDiscardTags(withUI);
+            applyExtractFDA(withUI);
+            discardFDA(_appSettings.FlowPatternDiscards,   FDA.Flow, withUI);
+            discardFDA(_appSettings.DevicePatternDiscards, FDA.Device, withUI);
+            discardFDA(_appSettings.ActionPatternDiscards, FDA.Action, withUI);
         }
     }
 }

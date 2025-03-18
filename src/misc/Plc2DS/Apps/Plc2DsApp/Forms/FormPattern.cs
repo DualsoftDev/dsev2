@@ -43,6 +43,16 @@ namespace Plc2DsApp.Forms
                 applyPatterns(regexPatterns);
             };
         }
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Regex[] patterns)
+        {
+            var gr = tags.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
+            return gr.ContainsKey(true) ? gr[true] : [];
+        }
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns)
+        {
+            var regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
+            return ApplyPatterns(tags, regexPatterns);
+        }
 
         private void FormPattern_Load(object sender, EventArgs e)
         {
@@ -53,17 +63,20 @@ namespace Plc2DsApp.Forms
         }
         void applyPatterns(Regex[] patterns)
         {
-            var gr = _tagsStage.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
-
-            if (gr.ContainsKey(true))
+            var chosens = ApplyPatterns(_tagsStage, patterns);
+            if (chosens.Any())
             {
-                var form = new FormTags(gr[true], selectedTags: gr[true], usageHint: "(Pattern matching)");
+                var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)");
                 if (DialogResult.OK == form.ShowDialog())
                 {
-                    TagsChosen = TagsChosen.Concat(gr[true]).ToArray();
+                    TagsChosen = TagsChosen.Concat(chosens).ToArray();
                     _tagsStage = _tagsStage.Except(TagsChosen).ToArray();
                     updateUI();
                 }
+                TagsChosen = TagsChosen.Concat(chosens).ToArray();
+                _tagsStage = _tagsStage.Except(TagsChosen).ToArray();
+                updateUI();
+
             }
         }
 

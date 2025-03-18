@@ -1,3 +1,4 @@
+using DevExpress.Utils.Extensions;
 using DevExpress.XtraEditors;
 
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -59,11 +60,30 @@ namespace Plc2DsApp.Forms
             updateUI();
         }
 
-        void applyPatterns(Regex[] patterns)
+        void applyPatterns(Regex[] patterns) => applyPatterns(TagsStage, patterns);
+        void applyPatterns(PlcTagBaseFDA[] tags, Regex[] patterns)
         {
+            var categorizedCandidates = ApplyPatterns(tags, patterns);
+
+            var form = new FormTags(categorizedCandidates, categorizedCandidates, usageHint: "(Extract FDA pattern)");
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
+                updateUI();
+            }
+        }
+
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns)
+        {
+            var regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
+            return ApplyPatterns(tags, regexPatterns);
+        }
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Regex[] patterns)
+        {
+            var done = new HashSet<PlcTagBaseFDA>();
             IEnumerable<PlcTagBaseFDA> collectCategorized(Regex pattern)
             {
-                foreach (var t in TagsStage)
+                foreach (var t in tags.Where(t => ! done.Contains(t)))
                 {
                     var match = pattern.Match(t.CsGetName());
                     if (match.Success)
@@ -76,16 +96,13 @@ namespace Plc2DsApp.Forms
                     }
                 }
             }
-
-            var categorizedCandidates = patterns.SelectMany(collectCategorized);
-
-            var form = new FormTags(categorizedCandidates, categorizedCandidates, usageHint: "(Extract FDA pattern)");
-            if (form.ShowDialog() == DialogResult.OK)
+            foreach(var p in patterns)
             {
-                form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
-                updateUI();
+                var matches = collectCategorized(p);
+                done.AddRange(matches);
             }
 
+            return done.ToArray();
         }
 
 
