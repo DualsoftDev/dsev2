@@ -61,7 +61,7 @@ module rec ReaderModule =
         member x.GetAddress() =
             match x with
             | :? LS.PlcTagInfo as ls -> ls.Address
-            | :? AB.PlcTagInfo as ab -> ab.Specifier
+            | :? AB.PlcTagInfo as ab -> ab.Specifier |? ab.DataType
             | :? S7.PlcTagInfo as s7 -> s7.Address
             | :? MX.PlcTagInfo as mx -> mx.Device        // Device, Comment, Label 중 어느 것??
             | _ -> failwith "Invalid PlcTagInfo"

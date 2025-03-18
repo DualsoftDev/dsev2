@@ -1,3 +1,6 @@
+using System;
+using System.Diagnostics;
+
 public static class GridExtension
 {
     // T: 필드 타입
@@ -15,7 +18,7 @@ public static class GridExtension
             object cellValue = gridView.GetRowCellValue(e.RowHandle, e.Column);
             T currentValue = cellValue is T ? (T)cellValue : default;
 
-            TryGetNewValueViaPrompt(currentValue).Match(
+            tryGetNewValueViaPrompt(currentValue).Match(
                 newValue =>
                 {
                     foreach (int rowIndex in selectedRows)
@@ -58,7 +61,7 @@ public static class GridExtension
     }
 
 
-    private static FSharpOption<T> TryGetNewValueViaPrompt<T>(T currentValue)
+    static FSharpOption<T> tryGetNewValueViaPrompt<T>(T currentValue)
     {
         using (Form inputForm = new Form())
         {

@@ -4,6 +4,7 @@ namespace Plc2DsApp
     {
         public SemanticSettings Semantics { get; set; }
         public Pattern[] TagPatternDiscards { get; set; }
+        public ReplacePattern[] TagPatternReplaces { get; set; }
         public Pattern[] TagPatternFDAs { get; set; }
         public Pattern[] FlowPatternDiscards { get; set; }
         public Pattern[] DevicePatternDiscards { get; set; }

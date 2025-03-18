@@ -65,9 +65,15 @@ module Ab =
 type CsvReader =
     static member CreatePlcTagInfo(line: string) : PlcTagInfo =
         let cols = Csv.ParseLine line |> map decodeEncodedString
-        assert(cols.Length = 7)
+        let attributes =
+            match cols.Length with
+            | 6 ->
+                assert(cols[0] = "COMMENT")
+                ""
+            | 7 -> cols[6]
+            | _ -> failwith $"Incorrect format: {line}"
         PlcTagInfo(typ = cols[0], scope = cols[1], name = cols[2], description = cols[3],
-            dataType = cols[4], specifier = cols[5], attributes = cols[6])
+            dataType = cols[4], specifier = cols[5], attributes = attributes)
 
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
