@@ -21,8 +21,6 @@ namespace Plc2DsApp
         [DataMember] public ReplacePattern[] DevicePatternReplaces { get; set; }
         [DataMember] public ReplacePattern[] ActionPatternReplaces { get; set; }
         [DataMember] public string[] VisibleColumns { get; set; }
-        [DataMember] public string DataDir { get; set; }
-        [DataMember] public string PrimaryCsv { get; set; }
         [OnDeserialized]
         public void OnDeserializedMethod(StreamingContext context)
         {
@@ -37,39 +35,27 @@ namespace Plc2DsApp
 
     }
 
-    [DataContract]
-    public class Pattern
+    public class LastFileInfo
     {
-        [DataMember] public string Name { get; set; } = "";
-        [DataMember] public string PatternString { get; set; } = "";
-        [DataMember] public string Description { get; set; } = "";
-        [JsonIgnore] public Regex RegexPattern { get; set; }
-        public void OnDeserialized()
+        string _read;
+        string _write;
+        public string Read
         {
-            if (PatternString.NonNullAny())
-                RegexPattern = new Regex(PatternString, RegexOptions.Compiled);
+            get => _read;
+            set
+            {
+                _read = value;
+                File.WriteAllText("lastFile.json", EmJson.ToJson(this));
+            }
         }
-        [OnDeserialized]
-        public void OnDeserializedMethod(StreamingContext context) => OnDeserialized();
-    }
-
-    [DataContract]
-    public class ReplacePattern : Pattern
-    {
-        [DataMember] public string Replacement { get; set; } = "";
-        public static ReplacePattern FromPattern(Pattern p)
+        public string Write
         {
-            if (p is ReplacePattern rp)
-                return rp;
-
-            return ReplacePattern.Create(p.Name, p.PatternString, replace:"", p.Description);
-        }
-        public static ReplacePattern Create(string name, string pattern, string replace, string desc = null)
-        {
-            var rp = new ReplacePattern { Name = name, PatternString = pattern, Description = desc, Replacement = replace };
-            rp.OnDeserialized();
-            return rp;
+            get => _write;
+            set
+            {
+                _write = value;
+                File.WriteAllText("lastFile.json", EmJson.ToJson(this));
+            }
         }
     }
-
 }

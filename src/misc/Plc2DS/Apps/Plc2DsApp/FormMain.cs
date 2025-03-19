@@ -6,7 +6,6 @@ namespace Plc2DsApp
         AppSettings _appSettings = null;
         public Vendor Vendor { get; set; } = Vendor.LS;
         public string[] VisibleColumns => _appSettings.VisibleColumns;
-        public string DataDir => _appSettings.DataDir;
 
         /// <summary>
         /// abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
@@ -38,17 +37,19 @@ namespace Plc2DsApp
             return form;
         }
 
-
+        LastFileInfo _lastFileInfo = new LastFileInfo();
         public FormMain() {
             InitializeComponent();
 
             _appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
+            if (File.Exists("lastFile.json"))
+                _lastFileInfo = EmJson.FromJson<LastFileInfo>(File.ReadAllText("lastFile.json"));
 
             Instance = this;
             Dual.Plc2DS.ModuleInitializer.Initialize();
             DcLogger.EnableTrace = false;
 
-            tbCsvFile.Text = Path.Combine(DataDir, _appSettings.PrimaryCsv);
+            tbCsvFile.Text = _lastFileInfo.Read;
 
             btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
             //btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
@@ -82,8 +83,6 @@ namespace Plc2DsApp
                     updateUI();
                 }
             };
-
-            btnReadCsvFile.Click += (s, e) => loadTags(tbCsvFile.Text);
 
             btnDiscardFlowName  .Enabled = _appSettings.FlowPatternDiscards.Any();
             btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
@@ -129,7 +128,7 @@ namespace Plc2DsApp
             using SaveFileDialog sfd =
                 new SaveFileDialog()
                 {
-                    InitialDirectory = FormMain.Instance.DataDir,
+                    InitialDirectory = Path.GetDirectoryName(_lastFileInfo.Write),
                     Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
                 };
 
@@ -137,6 +136,7 @@ namespace Plc2DsApp
             {
                 string json = EmJson.ToJson(tags);
                 File.WriteAllText(sfd.FileName, json);
+                _lastFileInfo.Write = sfd.FileName;
             }
 
         }
@@ -204,19 +204,21 @@ namespace Plc2DsApp
             tbNumTagsStage      .Text = TagsStage      .Length.ToString();
         }
 
-        void btnSelectCSV_Click(object sender, EventArgs e)
+        void btnLoadTags_Click(object sender, EventArgs e)
         {
             using OpenFileDialog ofd =
                 new OpenFileDialog()
                 {
-                    InitialDirectory = DataDir,
+                    InitialDirectory = Path.GetDirectoryName(_lastFileInfo.Read),
                     Filter = "CSV files (*.csv)|*.csv|JSON files (*.json)|*.json|All files (*.*)|*.*",
                 };
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                tbCsvFile.Text = ofd.FileName;
-                loadTags(tbCsvFile.Text);
+                var f = ofd.FileName;
+                tbCsvFile.Text = f;
+                loadTags(f);
+                _lastFileInfo.Read = f;
             }
         }
 

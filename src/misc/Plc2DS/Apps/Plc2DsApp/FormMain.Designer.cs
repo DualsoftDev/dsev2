@@ -28,9 +28,8 @@ namespace Plc2DsApp
         /// </summary>
         void InitializeComponent()
         {
-            this.btnOpenCSV = new DevExpress.XtraEditors.SimpleButton();
+            this.btnLoadTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
-            this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
             this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
             this.tbNumTagsCategorized = new DevExpress.XtraEditors.TextEdit();
             this.btnShowCategorizedTags = new DevExpress.XtraEditors.SimpleButton();
@@ -41,7 +40,6 @@ namespace Plc2DsApp
             this.btnShowDiscardedTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnShowChosenTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnShowStageTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnReadCsvFile = new DevExpress.XtraEditors.SimpleButton();
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             this.btnReplaceTags = new DevExpress.XtraEditors.SimpleButton();
@@ -53,7 +51,7 @@ namespace Plc2DsApp
             this.btnDiscardDeviceName = new DevExpress.XtraEditors.SimpleButton();
             this.btnDiscardFlowName = new DevExpress.XtraEditors.SimpleButton();
             this.btnApplyAll = new DevExpress.XtraEditors.SimpleButton();
-            ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
+            this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).BeginInit();
@@ -65,17 +63,18 @@ namespace Plc2DsApp
             this.groupControl2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).BeginInit();
             this.groupControl4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
             this.SuspendLayout();
             // 
-            // btnOpenCSV
+            // btnLoadTags
             // 
-            this.btnOpenCSV.Location = new System.Drawing.Point(12, 87);
-            this.btnOpenCSV.Margin = new System.Windows.Forms.Padding(2);
-            this.btnOpenCSV.Name = "btnOpenCSV";
-            this.btnOpenCSV.Size = new System.Drawing.Size(112, 34);
-            this.btnOpenCSV.TabIndex = 0;
-            this.btnOpenCSV.Text = "Select CSV..";
-            this.btnOpenCSV.Click += new System.EventHandler(this.btnSelectCSV_Click);
+            this.btnLoadTags.Location = new System.Drawing.Point(12, 87);
+            this.btnLoadTags.Margin = new System.Windows.Forms.Padding(2);
+            this.btnLoadTags.Name = "btnLoadTags";
+            this.btnLoadTags.Size = new System.Drawing.Size(112, 34);
+            this.btnLoadTags.TabIndex = 0;
+            this.btnLoadTags.Text = "Load tags..";
+            this.btnLoadTags.Click += new System.EventHandler(this.btnLoadTags_Click);
             // 
             // btnShowAllTags
             // 
@@ -85,16 +84,6 @@ namespace Plc2DsApp
             this.btnShowAllTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowAllTags.TabIndex = 1;
             this.btnShowAllTags.Text = "All";
-            // 
-            // tbCsvFile
-            // 
-            this.tbCsvFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbCsvFile.Location = new System.Drawing.Point(148, 91);
-            this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
-            this.tbCsvFile.Name = "tbCsvFile";
-            this.tbCsvFile.Size = new System.Drawing.Size(350, 28);
-            this.tbCsvFile.TabIndex = 2;
             // 
             // groupControl1
             // 
@@ -197,16 +186,6 @@ namespace Plc2DsApp
             this.btnShowStageTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowStageTags.TabIndex = 4;
             this.btnShowStageTags.Text = "Stage";
-            // 
-            // btnReadCsvFile
-            // 
-            this.btnReadCsvFile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnReadCsvFile.Location = new System.Drawing.Point(513, 87);
-            this.btnReadCsvFile.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReadCsvFile.Name = "btnReadCsvFile";
-            this.btnReadCsvFile.Size = new System.Drawing.Size(112, 34);
-            this.btnReadCsvFile.TabIndex = 6;
-            this.btnReadCsvFile.Text = "Read";
             // 
             // btnDiscardTags
             // 
@@ -324,6 +303,16 @@ namespace Plc2DsApp
             this.btnApplyAll.ToolTip = "일괄 적용";
             this.btnApplyAll.Click += new System.EventHandler(this.btnApplyAll_Click);
             // 
+            // tbCsvFile
+            // 
+            this.tbCsvFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbCsvFile.Location = new System.Drawing.Point(148, 91);
+            this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
+            this.tbCsvFile.Name = "tbCsvFile";
+            this.tbCsvFile.Size = new System.Drawing.Size(473, 28);
+            this.tbCsvFile.TabIndex = 2;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
@@ -334,15 +323,13 @@ namespace Plc2DsApp
             this.Controls.Add(this.labelControl1);
             this.Controls.Add(this.ucRadioSelector1);
             this.Controls.Add(this.groupControl2);
-            this.Controls.Add(this.btnReadCsvFile);
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.tbCsvFile);
-            this.Controls.Add(this.btnOpenCSV);
+            this.Controls.Add(this.btnLoadTags);
             this.Margin = new System.Windows.Forms.Padding(5);
             this.Name = "FormMain";
             this.Text = "Plc2Ds";
             this.Load += new System.EventHandler(this.FormMain_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).EndInit();
             this.groupControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).EndInit();
@@ -354,6 +341,7 @@ namespace Plc2DsApp
             this.groupControl2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).EndInit();
             this.groupControl4.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -361,9 +349,8 @@ namespace Plc2DsApp
 
         #endregion
 
-        private DevExpress.XtraEditors.SimpleButton btnOpenCSV;
+        private DevExpress.XtraEditors.SimpleButton btnLoadTags;
         private DevExpress.XtraEditors.SimpleButton btnShowAllTags;
-        private DevExpress.XtraEditors.TextEdit tbCsvFile;
         private DevExpress.XtraEditors.GroupControl groupControl1;
         private DevExpress.XtraEditors.SimpleButton btnShowDiscardedTags;
         private DevExpress.XtraEditors.SimpleButton btnShowChosenTags;
@@ -372,7 +359,6 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.TextEdit tbNumTagsChosen;
         private DevExpress.XtraEditors.TextEdit tbNumTagsStage;
         private DevExpress.XtraEditors.TextEdit tbNumTagsAll;
-        private DevExpress.XtraEditors.SimpleButton btnReadCsvFile;
         private DevExpress.XtraEditors.SimpleButton btnDiscardTags;
         private DevExpress.XtraEditors.GroupControl groupControl2;
         private DevExpress.XtraEditors.SimpleButton btnSplitFDA;
@@ -386,6 +372,7 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnDiscardDeviceName;
         private DevExpress.XtraEditors.SimpleButton btnApplyAll;
         private DevExpress.XtraEditors.SimpleButton btnReplaceTags;
+        private DevExpress.XtraEditors.TextEdit tbCsvFile;
     }
 }
 
