@@ -55,7 +55,7 @@ namespace Plc2DsApp.Forms
 
         void applyPatterns(ReplacePattern[] patterns, string desc=null)
         {
-            PlcTagBaseFDA[] candidates = ApplyPattern(_tags, patterns, _fdatGetter, _fdatSetter);
+            PlcTagBaseFDA[] candidates = ApplyPattern(_tags, patterns, _fdatGetter, null);
             var form = new FormTags(candidates, candidates, usageHint: $"(Extract {desc} pattern)");
             var getter = new Func<PlcTagBaseFDA, string>(t => getPatternApplication(t, patterns, _fdatGetter));
             form.GridView.AddUnboundColumnCustom<PlcTagBaseFDA, string>($"AppliedNewName", getter, null);
@@ -76,7 +76,7 @@ namespace Plc2DsApp.Forms
             applyPatterns(replacePatterns, descs);
         }
 
-        public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter)
+        public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
         {
 
             IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
@@ -93,9 +93,12 @@ namespace Plc2DsApp.Forms
             ReplacePattern[] replacePatterns = patterns.Select(ReplacePattern.FromPattern).ToArray();
 
             PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
-            // 변경 내용 적용
-            foreach (var t in candidates)
-                fdatSetter(t, getPatternApplication(t, replacePatterns, fdatGetter));
+            if (fdatSetter != null)
+            {
+                // 변경 내용 적용
+                foreach (var t in candidates)
+                    fdatSetter(t, getPatternApplication(t, replacePatterns, fdatGetter));
+            }
 
             return candidates;
         }

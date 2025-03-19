@@ -120,7 +120,7 @@ namespace Plc2DsApp.Forms
     "서 실행.";
             this.btnApplyAllPatterns.Click += new System.EventHandler(this.btnApplyAllPatterns_Click);
             // 
-            // FormDiscardFDA
+            // FormReplaceFDAT
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -132,8 +132,8 @@ namespace Plc2DsApp.Forms
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.gridControl1);
-            this.Name = "FormDiscardFDA";
-            this.Text = "FormDiscardFDA";
+            this.Name = "FormReplaceFDAT";
+            this.Text = "FormReplaceFDAT";
             this.Load += new System.EventHandler(this.FormDiscardFDA_Load);
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).EndInit();

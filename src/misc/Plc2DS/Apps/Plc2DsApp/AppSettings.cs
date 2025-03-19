@@ -2,21 +2,39 @@ using System.Runtime.Serialization;
 
 namespace Plc2DsApp
 {
+    [DataContract]
     public class AppSettings
     {
-        public SemanticSettings Semantics { get; set; }
-        public Pattern[] TagPatternDiscards { get; set; }
-        public ReplacePattern[] TagPatternReplaces { get; set; }
-        public Pattern[] TagPatternFDAs { get; set; }
-        public Pattern[] FlowPatternDiscards { get; set; }
-        public Pattern[] DevicePatternDiscards { get; set; }
-        public Pattern[] ActionPatternDiscards { get; set; }
-        public ReplacePattern[] FlowPatternReplaces { get; set; }
-        public ReplacePattern[] DevicePatternReplaces { get; set; }
-        public ReplacePattern[] ActionPatternReplaces { get; set; }
-        public string[] VisibleColumns { get; set; }
-        public string DataDir { get; set; }
-        public string PrimaryCsv { get; set; }
+        [DataMember] public string FDASplitPattern { get; set; }
+
+        /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
+        [DataMember] public string[][] Dialects { get; set; } = [];
+        [JsonIgnore] public ReplacePattern[] DialectPatterns = [];
+
+        [DataMember] public Pattern[] TagPatternDiscards { get; set; }
+        [DataMember] public ReplacePattern[] TagPatternReplaces { get; set; }
+        [DataMember] public Pattern[] TagPatternFDAs { get; set; }
+        [DataMember] public Pattern[] FlowPatternDiscards { get; set; }
+        [DataMember] public Pattern[] DevicePatternDiscards { get; set; }
+        [DataMember] public Pattern[] ActionPatternDiscards { get; set; }
+        [DataMember] public ReplacePattern[] FlowPatternReplaces { get; set; }
+        [DataMember] public ReplacePattern[] DevicePatternReplaces { get; set; }
+        [DataMember] public ReplacePattern[] ActionPatternReplaces { get; set; }
+        [DataMember] public string[] VisibleColumns { get; set; }
+        [DataMember] public string DataDir { get; set; }
+        [DataMember] public string PrimaryCsv { get; set; }
+        [OnDeserialized]
+        public void OnDeserializedMethod(StreamingContext context)
+        {
+            DialectPatterns =
+                Dialects.SelectMany( (ds, i) =>
+                {
+                    var std = ds[0];
+                    return ds.Skip(1).Select((d, j) => ReplacePattern.Create($"Dialect{i}_{j}", d, std));
+                }).ToArray()
+                ;
+        }
+
     }
 
     [DataContract]

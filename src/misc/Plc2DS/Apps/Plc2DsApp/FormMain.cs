@@ -17,7 +17,6 @@ namespace Plc2DsApp
             return tags.Select(t => Convert.ChangeType(t, typ)).ToArray();
         }
         public static FormMain Instance { get; private set; }
-        public SemanticSettings Semantic => _appSettings.Semantics;
 
         public PlcTagBaseFDA[] TagsAll = [];
 
@@ -175,9 +174,10 @@ namespace Plc2DsApp
             else
                 throw new NotImplementedException();
 
+            var fdaSplitPattern = new Regex(_appSettings.FDASplitPattern, RegexOptions.Compiled);
             TagsAll.Iter(t =>
                 {
-                    t.CsSetFDA(t.CsTryGetFDA(Semantic));
+                    t.CsSetFDA(t.CsTryGetFDA([fdaSplitPattern]));
                     t.Choice = Choice.Stage;
                 });
 
@@ -241,10 +241,11 @@ namespace Plc2DsApp
             updateUI();
         }
         void btnDiscardTags_Click(object sender, EventArgs e) => applyDiscardTags();
+        void btnReplaceTags_Click(object sender, EventArgs e) => applyReplaceTags();
 
         private void btnExtractFDA_Click(object sender, EventArgs e) => applyExtractFDA();
 
-        void applyExtractFDA(bool withUI = true)
+        void applyExtractFDA(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternFDAs;
             PlcTagBaseFDA[] chosen = [];
@@ -261,9 +262,10 @@ namespace Plc2DsApp
             updateUI();
         }
 
-        void applyReplaceTags(bool withUI)
+        void applyReplaceTags(bool withUI=true)
         {
-            discardFDA(TagsStage, _appSettings.TagPatternReplaces, FDAT.DuTag, withUI);
+            var patterns = _appSettings.TagPatternReplaces.Concat(_appSettings.DialectPatterns).ToArray();
+            discardFDA(TagsStage, patterns, FDAT.DuTag, withUI);
         }
 
         private void btnApplyAll_Click(object sender, EventArgs e)
@@ -276,6 +278,7 @@ namespace Plc2DsApp
             discardFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice, withUI);
             discardFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction, withUI);
         }
+
     }
 }
 

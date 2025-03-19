@@ -44,10 +44,10 @@ namespace Plc2DsApp
             this.btnReadCsvFile = new DevExpress.XtraEditors.SimpleButton();
             this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
-            this.btnExtractFDA = new DevExpress.XtraEditors.SimpleButton();
+            this.btnReplaceTags = new DevExpress.XtraEditors.SimpleButton();
+            this.btnSplitFDA = new DevExpress.XtraEditors.SimpleButton();
             this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
-            this.groupControl3 = new DevExpress.XtraEditors.GroupControl();
             this.groupControl4 = new DevExpress.XtraEditors.GroupControl();
             this.btnDiscardActionName = new DevExpress.XtraEditors.SimpleButton();
             this.btnDiscardDeviceName = new DevExpress.XtraEditors.SimpleButton();
@@ -63,8 +63,6 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).BeginInit();
             this.groupControl2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl3)).BeginInit();
-            this.groupControl3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).BeginInit();
             this.groupControl4.SuspendLayout();
             this.SuspendLayout();
@@ -222,24 +220,36 @@ namespace Plc2DsApp
             // 
             // groupControl2
             // 
+            this.groupControl2.Controls.Add(this.btnReplaceTags);
+            this.groupControl2.Controls.Add(this.btnSplitFDA);
             this.groupControl2.Controls.Add(this.btnDiscardTags);
             this.groupControl2.Location = new System.Drawing.Point(12, 148);
             this.groupControl2.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl2.Name = "groupControl2";
-            this.groupControl2.Size = new System.Drawing.Size(169, 94);
+            this.groupControl2.Size = new System.Drawing.Size(609, 94);
             this.groupControl2.TabIndex = 9;
-            this.groupControl2.Text = "Select tags";
+            this.groupControl2.Text = "Tags";
             // 
-            // btnExtractFDA
+            // btnReplaceTags
             // 
-            this.btnExtractFDA.Location = new System.Drawing.Point(4, 45);
-            this.btnExtractFDA.Margin = new System.Windows.Forms.Padding(2);
-            this.btnExtractFDA.Name = "btnExtractFDA";
-            this.btnExtractFDA.Size = new System.Drawing.Size(139, 45);
-            this.btnExtractFDA.TabIndex = 10;
-            this.btnExtractFDA.Text = "Extract";
-            this.btnExtractFDA.ToolTip = "Flow, Device, Action 명 추출";
-            this.btnExtractFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
+            this.btnReplaceTags.Location = new System.Drawing.Point(164, 45);
+            this.btnReplaceTags.Margin = new System.Windows.Forms.Padding(2);
+            this.btnReplaceTags.Name = "btnReplaceTags";
+            this.btnReplaceTags.Size = new System.Drawing.Size(139, 45);
+            this.btnReplaceTags.TabIndex = 11;
+            this.btnReplaceTags.Text = "Replace";
+            this.btnReplaceTags.Click += new System.EventHandler(this.btnReplaceTags_Click);
+            // 
+            // btnSplitFDA
+            // 
+            this.btnSplitFDA.Location = new System.Drawing.Point(330, 45);
+            this.btnSplitFDA.Margin = new System.Windows.Forms.Padding(2);
+            this.btnSplitFDA.Name = "btnSplitFDA";
+            this.btnSplitFDA.Size = new System.Drawing.Size(139, 45);
+            this.btnSplitFDA.TabIndex = 10;
+            this.btnSplitFDA.Text = "Split";
+            this.btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출";
+            this.btnSplitFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
             // 
             // ucRadioSelector1
             // 
@@ -259,16 +269,6 @@ namespace Plc2DsApp
             this.labelControl1.TabIndex = 12;
             this.labelControl1.Text = "Vendor:";
             // 
-            // groupControl3
-            // 
-            this.groupControl3.Controls.Add(this.btnExtractFDA);
-            this.groupControl3.Location = new System.Drawing.Point(243, 148);
-            this.groupControl3.Margin = new System.Windows.Forms.Padding(2);
-            this.groupControl3.Name = "groupControl3";
-            this.groupControl3.Size = new System.Drawing.Size(169, 94);
-            this.groupControl3.TabIndex = 10;
-            this.groupControl3.Text = "Split tags";
-            // 
             // groupControl4
             // 
             this.groupControl4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -285,20 +285,20 @@ namespace Plc2DsApp
             // 
             // btnDiscardActionName
             // 
-            this.btnDiscardActionName.Location = new System.Drawing.Point(266, 45);
+            this.btnDiscardActionName.Location = new System.Drawing.Point(330, 45);
             this.btnDiscardActionName.Margin = new System.Windows.Forms.Padding(2);
             this.btnDiscardActionName.Name = "btnDiscardActionName";
-            this.btnDiscardActionName.Size = new System.Drawing.Size(108, 45);
+            this.btnDiscardActionName.Size = new System.Drawing.Size(139, 45);
             this.btnDiscardActionName.TabIndex = 12;
             this.btnDiscardActionName.Text = "Action";
             this.btnDiscardActionName.ToolTip = "Action 명에서 불필요한 부분 제거";
             // 
             // btnDiscardDeviceName
             // 
-            this.btnDiscardDeviceName.Location = new System.Drawing.Point(136, 45);
+            this.btnDiscardDeviceName.Location = new System.Drawing.Point(164, 45);
             this.btnDiscardDeviceName.Margin = new System.Windows.Forms.Padding(2);
             this.btnDiscardDeviceName.Name = "btnDiscardDeviceName";
-            this.btnDiscardDeviceName.Size = new System.Drawing.Size(108, 45);
+            this.btnDiscardDeviceName.Size = new System.Drawing.Size(139, 45);
             this.btnDiscardDeviceName.TabIndex = 11;
             this.btnDiscardDeviceName.Text = "Device";
             this.btnDiscardDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거";
@@ -308,7 +308,7 @@ namespace Plc2DsApp
             this.btnDiscardFlowName.Location = new System.Drawing.Point(4, 45);
             this.btnDiscardFlowName.Margin = new System.Windows.Forms.Padding(2);
             this.btnDiscardFlowName.Name = "btnDiscardFlowName";
-            this.btnDiscardFlowName.Size = new System.Drawing.Size(108, 45);
+            this.btnDiscardFlowName.Size = new System.Drawing.Size(139, 45);
             this.btnDiscardFlowName.TabIndex = 10;
             this.btnDiscardFlowName.Text = "Flow";
             this.btnDiscardFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거";
@@ -331,7 +331,6 @@ namespace Plc2DsApp
             this.ClientSize = new System.Drawing.Size(634, 600);
             this.Controls.Add(this.btnApplyAll);
             this.Controls.Add(this.groupControl4);
-            this.Controls.Add(this.groupControl3);
             this.Controls.Add(this.labelControl1);
             this.Controls.Add(this.ucRadioSelector1);
             this.Controls.Add(this.groupControl2);
@@ -353,8 +352,6 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).EndInit();
             this.groupControl2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl3)).EndInit();
-            this.groupControl3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).EndInit();
             this.groupControl4.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -378,17 +375,17 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnReadCsvFile;
         private DevExpress.XtraEditors.SimpleButton btnDiscardTags;
         private DevExpress.XtraEditors.GroupControl groupControl2;
-        private DevExpress.XtraEditors.SimpleButton btnExtractFDA;
+        private DevExpress.XtraEditors.SimpleButton btnSplitFDA;
         private UcRadioSelector ucRadioSelector1;
         private DevExpress.XtraEditors.TextEdit tbNumTagsCategorized;
         private DevExpress.XtraEditors.SimpleButton btnShowCategorizedTags;
         private DevExpress.XtraEditors.LabelControl labelControl1;
-        private DevExpress.XtraEditors.GroupControl groupControl3;
         private DevExpress.XtraEditors.GroupControl groupControl4;
         private DevExpress.XtraEditors.SimpleButton btnDiscardFlowName;
         private DevExpress.XtraEditors.SimpleButton btnDiscardActionName;
         private DevExpress.XtraEditors.SimpleButton btnDiscardDeviceName;
         private DevExpress.XtraEditors.SimpleButton btnApplyAll;
+        private DevExpress.XtraEditors.SimpleButton btnReplaceTags;
     }
 }
 

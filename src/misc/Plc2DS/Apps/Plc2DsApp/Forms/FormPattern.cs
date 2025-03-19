@@ -40,6 +40,8 @@ namespace Plc2DsApp.Forms
                 tbCustomPattern.Text = pattern.PatternString;
             };
 
+            gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), "Relacement", nameof(Pattern.Description)]);
+
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
             btnApplyAllPatterns.Click += (s, e) =>
