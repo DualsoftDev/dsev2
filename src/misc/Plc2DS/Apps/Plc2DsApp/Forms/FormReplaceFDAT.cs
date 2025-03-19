@@ -5,11 +5,11 @@ namespace Plc2DsApp.Forms
 	public partial class FormReplaceFDAT: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] _tags = [];
-        Pattern[] _patterns = [];
+        ReplacePattern[] _patterns = [];
         Func<PlcTagBaseFDA, string> _fdatGetter = null;
         Action<PlcTagBaseFDA, string> _fdatSetter = null;
 
-        public FormReplaceFDAT(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter)
+        public FormReplaceFDAT(PlcTagBaseFDA[] tags, ReplacePattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter)
 		{
             InitializeComponent();
 
@@ -37,7 +37,7 @@ namespace Plc2DsApp.Forms
                 var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p], _fdatGetter).Length);
                 this.Do(() =>
                 {
-                    var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                    var numMatchColumn = gridView1.AddUnboundColumnCustom<ReplacePattern, int>("NumMatches", p => dict[p], null);
                     gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
                     gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
                     numMatchColumn.VisibleIndex = 100;
@@ -96,9 +96,9 @@ namespace Plc2DsApp.Forms
             applyPatterns(replacePatterns, descs);
         }
 
-        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
         {
-            if (patterns.IsNullOrEmpty())
+            if (replacePatterns.IsNullOrEmpty())
                 return [];
 
             IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
@@ -111,8 +111,6 @@ namespace Plc2DsApp.Forms
                         yield return t;
                 }
             }
-
-            ReplacePattern[] replacePatterns = patterns.Select(ReplacePattern.FromPattern).ToArray();
 
             PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
             if (fdatSetter != null)

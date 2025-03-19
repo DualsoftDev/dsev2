@@ -88,13 +88,13 @@ namespace Plc2DsApp
             btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
             btnDiscardActionName.Enabled = _appSettings.ActionPatternDiscards.Any();
 
-            btnDiscardFlowName  .Click += (s, e) => replaceFDA(_appSettings.FlowPatternDiscards, FDAT.DuFlow);
-            btnDiscardDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice);
-            btnDiscardActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction);
+            btnDiscardFlowName  .Click += (s, e) => replaceFDA(_appSettings.FlowPatternDiscards.Select(ReplacePattern.FromPattern).ToArray(),   FDAT.DuFlow);
+            btnDiscardDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuDevice);
+            btnDiscardActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuAction);
         }
 
-        void replaceFDA(Pattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
-        void replaceFDA(PlcTagBaseFDA[] tags, Pattern[] pattern, FDAT fdat, bool withUI=true)
+        void replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
+        void replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
         {
             Func<PlcTagBaseFDA, string> fdatGetter =
                 fdat switch
@@ -274,9 +274,9 @@ namespace Plc2DsApp
             applyDiscardTags(withUI);
             applyReplaceTags(withUI);
             applySplitFDA(withUI);
-            replaceFDA(_appSettings.FlowPatternDiscards,   FDAT.DuFlow,   withUI);
-            replaceFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice, withUI);
-            replaceFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction, withUI);
+            replaceFDA(_appSettings.FlowPatternDiscards  .Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuFlow,   withUI);
+            replaceFDA(_appSettings.DevicePatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuDevice, withUI);
+            replaceFDA(_appSettings.ActionPatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuAction, withUI);
 
             replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
             replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice, withUI);
