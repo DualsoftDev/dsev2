@@ -87,6 +87,7 @@ namespace Plc2DsApp.Forms
             // 
             // cbShowSingletonToo
             // 
+            this.cbShowSingletonToo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cbShowSingletonToo.Location = new System.Drawing.Point(746, 604);
             this.cbShowSingletonToo.Name = "cbShowSingletonToo";
             this.cbShowSingletonToo.Properties.Caption = "Show singletons, too";

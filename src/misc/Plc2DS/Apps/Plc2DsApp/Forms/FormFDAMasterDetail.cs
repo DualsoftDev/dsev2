@@ -3,7 +3,7 @@ namespace Plc2DsApp.Forms
 	public partial class FormFDAMasterDetail: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] _tags = [];
-        List<dynamic> masterList; // Master 데이터를 담을 리스트
+        List<MasterItem> masterList; // Master 데이터를 담을 리스트
         public FormFDAMasterDetail(PlcTagBaseFDA[] tags)
 		{
             InitializeComponent();
@@ -21,13 +21,14 @@ namespace Plc2DsApp.Forms
             // 2️⃣ Master 데이터 생성 (FlowName + DeviceName 기준 그룹화)
             masterList = _tags
                 .GroupBy(t => new { t.FlowName, t.DeviceName })
-                .Select(g => new
+                .Select(g => new MasterItem()
                 {
                     FlowName = g.Key.FlowName,
                     DeviceName = g.Key.DeviceName,
+                    Details = g.ToList(),
                     Count = g.Count() // 개수 계산
                 })
-                .ToList<object>();
+                .ToList();
 
             // 3️⃣ Master 데이터 바인딩
             gridControl1.DataSource = masterList;
@@ -41,6 +42,10 @@ namespace Plc2DsApp.Forms
             gridView1.MasterRowExpanded += gridView1_MasterRowExpanded;
             gridView1.MasterRowGetRelationName += (s, e) => e.RelationName = "DetailView";
             gridView1.MasterRowGetRelationCount += (s, e) => e.RelationCount = 1;
+            gridView1.AddUnboundColumnCustom<MasterItem, string>("Actions", m => m.Details.Select(t => t.ActionName).JoinString(", "), null);
+
+            gridView1.EnableColumnSearch();
+
 
 
             gridView2.OptionsView.ShowGroupPanel = false;
@@ -67,6 +72,15 @@ namespace Plc2DsApp.Forms
             object[] vendorTags = FormMain.Instance.ConvertToVendorTags(fdTags) as object[];
             e.ChildList = vendorTags;
         }
+    }
+
+    class MasterItem
+    {
+        public string FlowName { get; set; } = "";
+        public string DeviceName { get; set; } = "";
+        [Browsable(false)]
+        public List<PlcTagBaseFDA> Details { get; set; }
+        public int Count { get; set; }
     }
 }
 
