@@ -28,40 +28,15 @@ namespace Plc2DsApp.Forms
         /// </summary>
         private void InitializeComponent()
         {
-            this.cbShowWithFDA = new DevExpress.XtraEditors.CheckEdit();
-            this.cbShowWithoutFDA = new DevExpress.XtraEditors.CheckEdit();
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
             this.btnOK = new DevExpress.XtraEditors.SimpleButton();
             this.gridControl1 = new DevExpress.XtraGrid.GridControl();
             this.gridView1 = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.btnSaveTagsAs = new DevExpress.XtraEditors.SimpleButton();
             this.btnMasterDetailView = new DevExpress.XtraEditors.SimpleButton();
-            ((System.ComponentModel.ISupportInitialize)(this.cbShowWithFDA.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.cbShowWithoutFDA.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // cbShowWithFDA
-            // 
-            this.cbShowWithFDA.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.cbShowWithFDA.EditValue = true;
-            this.cbShowWithFDA.Location = new System.Drawing.Point(0, 642);
-            this.cbShowWithFDA.Margin = new System.Windows.Forms.Padding(2);
-            this.cbShowWithFDA.Name = "cbShowWithFDA";
-            this.cbShowWithFDA.Properties.Caption = "Show w/ FDA";
-            this.cbShowWithFDA.Size = new System.Drawing.Size(155, 27);
-            this.cbShowWithFDA.TabIndex = 1;
-            // 
-            // cbShowWithoutFDA
-            // 
-            this.cbShowWithoutFDA.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.cbShowWithoutFDA.Location = new System.Drawing.Point(0, 615);
-            this.cbShowWithoutFDA.Margin = new System.Windows.Forms.Padding(2);
-            this.cbShowWithoutFDA.Name = "cbShowWithoutFDA";
-            this.cbShowWithoutFDA.Properties.Caption = "Show w/o FDA";
-            this.cbShowWithoutFDA.Size = new System.Drawing.Size(171, 27);
-            this.cbShowWithoutFDA.TabIndex = 2;
             // 
             // btnCancel
             // 
@@ -140,14 +115,10 @@ namespace Plc2DsApp.Forms
             this.Controls.Add(this.gridControl1);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnOK);
-            this.Controls.Add(this.cbShowWithoutFDA);
-            this.Controls.Add(this.cbShowWithFDA);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "FormTags";
             this.Text = "FormGridTags";
             this.Load += new System.EventHandler(this.FormGridTags_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.cbShowWithFDA.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.cbShowWithoutFDA.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).EndInit();
             this.ResumeLayout(false);
@@ -155,8 +126,6 @@ namespace Plc2DsApp.Forms
         }
 
         #endregion
-        private DevExpress.XtraEditors.CheckEdit cbShowWithFDA;
-        private DevExpress.XtraEditors.CheckEdit cbShowWithoutFDA;
         private DevExpress.XtraEditors.SimpleButton btnCancel;
         private DevExpress.XtraEditors.SimpleButton btnOK;
         private DevExpress.XtraGrid.GridControl gridControl1;

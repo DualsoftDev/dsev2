@@ -33,9 +33,10 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     let property = property |? ""
     let comment  = comment  |? ""
 
+    new() = PlcTagInfo(null, null, null, null, null, null, null)    // for JSON parameterless constructor
     [<DataMember>] member val Type    = typ      with get, set
     [<DataMember>] member val Scope   = scope    with get, set
-    [<DataMember>] member val Variable= variable.ToUpper().Replace(".", "_") with get, set
+    [<DataMember>] member val Variable= variable with get, set
     [<DataMember>] member val Address = address  with get, set
     [<DataMember>] member val DataType= dataType with get, set
     [<DataMember>] member val Property= property with get, set

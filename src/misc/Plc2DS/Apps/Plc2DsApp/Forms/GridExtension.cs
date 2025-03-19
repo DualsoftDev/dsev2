@@ -1,3 +1,5 @@
+using Microsoft.FSharp.Reflection;
+
 using Plc2DsApp;
 
 public static class GridExtension
@@ -68,20 +70,32 @@ public static class GridExtension
             inputForm.Height = 250;
             inputForm.Text = "새로운 값 입력";
 
+            ComboBox comboBox = new ComboBox()
+            {
+                Left = 50,
+                Top = 20,
+                Width = 200,
+                DropDownStyle = ComboBoxStyle.DropDownList // 🔹 드롭다운 리스트
+            };
+
             Control inputControl;
             if (typeof(T).IsEnum) // 🔹 T가 Enum이면 ComboBox 사용
             {
-                ComboBox comboBox = new ComboBox()
-                {
-                    Left = 50,
-                    Top = 20,
-                    Width = 200,
-                    DropDownStyle = ComboBoxStyle.DropDownList // 🔹 드롭다운 리스트
-                };
-
                 var enumValues = Enum.GetValues(typeof(T)).Cast<T>().ToList();
                 comboBox.Items.AddRange(enumValues.Cast<object>().ToArray());
                 comboBox.SelectedItem = currentValue; // 현재 값 선택
+                inputControl = comboBox;
+            }
+            else if (FSharpType.IsUnion(typeof(T), null)) // 🔹 F# Union Type이면 ComboBox 사용
+            {
+                var unionCases =
+                    FSharpType.GetUnionCases(typeof(T), null)
+                        .Select(caseInfo => FSharpValue.MakeUnion(caseInfo, new object[0], null))
+                        .Cast<T>()
+                        .ToList();
+
+                comboBox.Items.AddRange(unionCases.Cast<object>().ToArray());
+                comboBox.SelectedItem = currentValue;
                 inputControl = comboBox;
             }
             else // 🔹 일반 타입이면 TextBox 사용
@@ -106,8 +120,8 @@ public static class GridExtension
             {
                 try
                 {
-                    if (inputControl is ComboBox comboBox)
-                        return new FSharpOption<T>((T)comboBox.SelectedItem); // 🔹 Enum 변환
+                    if (inputControl is ComboBox combo)
+                        return new FSharpOption<T>((T)combo.SelectedItem); // 🔹 Enum 변환
                     else if (inputControl is TextBox textBox)
                         return new FSharpOption<T>((T)Convert.ChangeType(textBox.Text, typeof(T))); // 🔹 일반 타입 변환
                 }

@@ -4,6 +4,12 @@ open System
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
 
+type FDAT =
+    | DuFlow
+    | DuDevice
+    | DuAction
+    | DuTag
+
 type Plc2DsExtensionForCSharp =
     [<Extension>] static member CsTryGetFDA(tag:IPlcTag, fdaPatterns:Regex[]) = tag.TryGetFDA(fdaPatterns);
     [<Extension>] static member CsSetFDA(tag:IPlcTag, optFDA:PlcTagBaseFDA option) = tag.SetFDA(optFDA);

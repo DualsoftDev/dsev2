@@ -20,6 +20,7 @@ type PlcTagInfo(?name, ?address, ?dataType, ?comment) =
     let dataType = dataType |? ""
     let comment  = comment  |? ""
 
+    new() = PlcTagInfo(null, null, null, null)    // for JSON parameterless constructor
     [<DataMember>] member val Name     = name     with get, set
     [<DataMember>] member val Comment  = comment  with get, set
     [<DataMember>] member val Address  = address  with get, set

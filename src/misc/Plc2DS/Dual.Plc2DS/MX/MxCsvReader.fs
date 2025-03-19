@@ -14,6 +14,7 @@ type PlcTagInfo(?device, ?comment, ?label) =
     let comment  = comment  |? ""
     let label  = label  |? ""
 
+    new() = PlcTagInfo(null, null, null)    // for JSON parameterless constructor
     [<DataMember>] member val Device  = device  with get, set
     [<DataMember>] member val Comment = comment with get, set
     [<DataMember>] member val Label   = label   with get, set

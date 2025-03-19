@@ -33,6 +33,7 @@ type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attri
     let specifier   = specifier   |? ""
     let attributes  = attributes  |? ""
 
+    new() = PlcTagInfo(null, null, null, null, null, null, null)    // for JSON parameterless constructor
     [<DataMember>] member val Type        = typ         with get, set
     [<DataMember>] member val Scope       = scope       with get, set
     [<DataMember>] member val Name        = name        with get, set

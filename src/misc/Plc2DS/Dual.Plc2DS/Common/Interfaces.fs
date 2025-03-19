@@ -17,13 +17,14 @@ type IPlcTag = interface end
 
 type Choice =
     /// 아무런 결정도 내려지지 않은 상태
-    | Stage = 0
+    | Stage
     /// 버릴 tags
-    | Discarded = 1
+    | Discarded
     /// 선택된 tags
-    | Chosen = 2
+    | Chosen
     /// FDA 이름까지 확정된 tags
-    | Categorized = 3
+    | Categorized
+
 
 //[<AbstractClass>]
 [<DebuggerDisplay("{Stringify()}")>]
@@ -68,12 +69,6 @@ type Vendor =
     | S7
     | LS
     | MX
-
-type FDAT =
-    | DuFlow
-    | DuDevice
-    | DuAction
-    | DuTag
 
 type SemanticCategory =
     | DuNone
