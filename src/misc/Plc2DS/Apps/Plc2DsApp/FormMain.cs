@@ -114,13 +114,9 @@ namespace Plc2DsApp
                     _ when fdat.IsDuTag    => (t, v) => t.CsSetName(v),
                     _ => throw new NotImplementedException()
                 };
-            if (withUI)
-            {
-                var form = new FormReplaceFDAT(tags, pattern, fdatGetter, fdatSetter);
-                form.ShowDialog();
-            }
-            else
-                FormReplaceFDAT.ApplyPatterns(tags, pattern, fdatGetter, fdatSetter);
+
+            var form = new FormReplaceFDAT(tags, pattern, fdatGetter, fdatSetter, withUI);
+            form.ShowDialog();
         }
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
@@ -222,44 +218,40 @@ namespace Plc2DsApp
             }
         }
 
-        void applyDiscardTags(bool withUI=true)
+        int applyDiscardTags(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternDiscards;
             var _ = selectTags(Choice.Stage);   // load TagsAll if null or empty
 
-            PlcTagBaseFDA[] chosen = [];
-            if (withUI)
-            {
-                var form = new FormPattern(TagsAll, patterns);
-                if (form.ShowDialog() == DialogResult.OK)
-                    chosen = form.TagsChosen;
-            }
-            else
-                chosen = FormPattern.ApplyPatterns(TagsAll, patterns);
+            var form = new FormPattern(TagsAll, patterns, withUI);
 
-            chosen.Iter(t => t.Choice = Choice.Discarded);
-            updateUI();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                var chosen = form.TagsChosen.ToArray();
+                form.TagsChosen.Iter(t => t.Choice = Choice.Discarded);
+                updateUI();
+                return chosen.Length;
+            }
+
+            return 0;
         }
         void btnDiscardTags_Click(object sender, EventArgs e) => applyDiscardTags();
         void btnReplaceTags_Click(object sender, EventArgs e) => applyReplaceTags();
 
         void btnSplitFDA_Click(object sender, EventArgs e) => applySplitFDA();
 
-        void applySplitFDA(bool withUI=true)
+        int applySplitFDA(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternFDAs;
             PlcTagBaseFDA[] chosen = [];
-            if (withUI)
+            var form = new FormSplitFDA(TagsStage, patterns, withUI);
+            if (form.ShowDialog() == DialogResult.OK)
             {
-                var form = new FormSplitFDA(TagsStage, patterns);
-                if (form.ShowDialog() == DialogResult.OK)
-                    chosen = form.TagsStage;
+                chosen = form.TagsStage;
+                chosen.Iter(t => t.Choice = Choice.Categorized);
+                updateUI();
             }
-            else
-                chosen = FormSplitFDA.ApplyPatterns(TagsStage, patterns);
-
-            chosen.Iter(t => t.Choice = Choice.Categorized);
-            updateUI();
+            return chosen.Length;
         }
 
         void applyReplaceTags(bool withUI=true)
@@ -271,7 +263,7 @@ namespace Plc2DsApp
         void btnApplyAll_Click(object sender, EventArgs e)
         {
             bool withUI = false;
-            applyDiscardTags(withUI);
+            int discarded = applyDiscardTags(withUI);
             applyReplaceTags(withUI);
             applySplitFDA(withUI);
             replaceFDA(_appSettings.FlowPatternDiscards  .Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuFlow,   withUI);
@@ -282,7 +274,6 @@ namespace Plc2DsApp
             replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice, withUI);
             replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction, withUI);
         }
-
     }
 }
 

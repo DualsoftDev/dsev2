@@ -171,3 +171,17 @@ public static class GridExtension
 }
 
 
+public static class FormExtension
+{
+    /// <summary>
+    /// 생성된 Form 이 ShowDialog() 실행 시, 자동으로 dialog reusult OK 값 갖도록 설정
+    /// <br/> - form 을 생성해서 OK button 누르는 것과 동일한 효과
+    /// </summary>
+    public static void MakeHiddenSelfOK(this Form form)
+    {
+        form.ShowInTaskbar = false;
+        form.StartPosition = FormStartPosition.Manual;
+        form.Opacity = 0;   // 완전 투명하게 해서 보이지 않게
+        form.Load += (s, e) => form.DialogResult = DialogResult.OK;
+    }
+}

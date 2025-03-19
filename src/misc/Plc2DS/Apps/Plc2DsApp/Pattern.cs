@@ -16,6 +16,12 @@ namespace Plc2DsApp
         }
         [OnDeserialized]
         public void OnDeserializedMethod(StreamingContext context) => OnDeserialized();
+        public static Pattern Create(string name, string pattern, string desc = null)
+        {
+            var rp = new ReplacePattern { Name = name, PatternString = pattern, Description = desc};
+            rp.OnDeserialized();
+            return rp;
+        }
     }
 
     [DataContract]

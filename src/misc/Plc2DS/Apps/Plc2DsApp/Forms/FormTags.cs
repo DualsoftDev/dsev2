@@ -1,3 +1,5 @@
+using System.Windows.Forms;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormTags: DevExpress.XtraEditors.XtraForm
@@ -8,9 +10,12 @@ namespace Plc2DsApp.Forms
         public PlcTagBaseFDA[] SelectedTags => _selectedTags.ToArray();
         public GridView GridView => gridView1;
         string _usageHint = null;
-        public FormTags(IEnumerable<PlcTagBaseFDA> tags, IEnumerable<PlcTagBaseFDA> selectedTags = null, string usageHint = null, string selectionColumnCaption = null)
+        public FormTags(IEnumerable<PlcTagBaseFDA> tags, IEnumerable<PlcTagBaseFDA> selectedTags = null, string usageHint = null, string selectionColumnCaption = null, bool withUI=true)
         {
             InitializeComponent();
+
+            if (!withUI)
+                this.MakeHiddenSelfOK();
 
             _tags = tags.ToArray();
             _usageHint = usageHint;
