@@ -99,11 +99,11 @@
     <Compile Include="Forms\FormSplitFDA.Designer.cs">
       <DependentUpon>FormSplitFDA.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FormPattern.cs">
+    <Compile Include="Forms\FormDiscardTags.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FormPattern.Designer.cs">
-      <DependentUpon>FormPattern.cs</DependentUpon>
+    <Compile Include="Forms\FormDiscardTags.Designer.cs">
+      <DependentUpon>FormDiscardTags.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\FormTags.cs">
       <SubType>Form</SubType>
@@ -128,8 +128,8 @@
     <EmbeddedResource Include="Forms\FormSplitFDA.resx">
       <DependentUpon>FormSplitFDA.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FormPattern.resx">
-      <DependentUpon>FormPattern.cs</DependentUpon>
+    <EmbeddedResource Include="Forms\FormDiscardTags.resx">
+      <DependentUpon>FormDiscardTags.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FormTags.resx">
       <DependentUpon>FormTags.cs</DependentUpon>

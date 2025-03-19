@@ -1,6 +1,6 @@
 namespace Plc2DsApp.Forms
 {
-    partial class FormPattern
+    partial class FormDiscardTags
     {
         /// <summary>
         /// Required designer variable.
@@ -209,7 +209,7 @@ namespace Plc2DsApp.Forms
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.gridControl1);
             this.Name = "FormPattern";
-            this.Text = "FormPattern";
+            this.Text = "FormDiscardTags";
             this.Load += new System.EventHandler(this.FormPattern_Load);
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).EndInit();

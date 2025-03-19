@@ -58,6 +58,7 @@ namespace Plc2DsApp.Forms
                         actionColumn.VisibleIndex = 101;
 
                         gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
+                        gridView1.Invalidate();
                     });
                 });
             }

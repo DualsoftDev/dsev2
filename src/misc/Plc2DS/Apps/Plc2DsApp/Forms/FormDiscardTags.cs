@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace Plc2DsApp.Forms
 {
-	public partial class FormPattern: DevExpress.XtraEditors.XtraForm
+	public partial class FormDiscardTags: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] _tags = [];
         PlcTagBaseFDA[] _tagsStage = [];
@@ -19,7 +19,7 @@ namespace Plc2DsApp.Forms
         void showTags(PlcTagBaseFDA[] tags, string usageHint = null) =>
             new FormTags(tags, usageHint: usageHint).ShowDialog();
 
-        public FormPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
+        public FormDiscardTags(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
 		{
             InitializeComponent();
 
@@ -30,21 +30,21 @@ namespace Plc2DsApp.Forms
 
             gridControl1.DataSource = patterns;
 
-            gridView1.AddActionColumn<Pattern>("Apply", p =>
-            {
-                return ("Apply", new Action<Pattern>(p =>
+            var actionColumn =
+                gridView1.AddActionColumn<Pattern>("Apply", p =>
                 {
-                    var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
-                    applyPatterns(new Regex[] { pattern }, withUI);
-                }));
-            });
+                    return ("Apply", new Action<Pattern>(p =>
+                    {
+                        var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
+                        applyPatterns(new Regex[] { pattern }, withUI);
+                    }));
+                });
             gridView1.SelectionChanged += (s, e) =>
             {
                 var pattern = gridView1.GetFocusedRow() as Pattern;
                 tbCustomPattern.Text = pattern.PatternString;
             };
 
-            gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), "Relacement", nameof(Pattern.Description)]);
 
             if (withUI)
             {
@@ -54,7 +54,13 @@ namespace Plc2DsApp.Forms
                     var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p]).Length);
                     this.Do(() =>
                     {
-                        gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                        var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                        gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
+                        gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
+                        numMatchColumn.VisibleIndex = 100;
+                        actionColumn.VisibleIndex = 101;
+                        gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), "Relacement", nameof(Pattern.Description), "NumMatches", "Apply"]);
+                        gridView1.Invalidate();
                     });
                 });
             }

@@ -224,7 +224,7 @@ namespace Plc2DsApp
             Pattern[] patterns = _appSettings.TagPatternDiscards;
             var _ = selectTags(Choice.Stage);   // load TagsAll if null or empty
 
-            var form = new FormPattern(TagsAll, patterns, withUI);
+            var form = new FormDiscardTags(TagsAll, patterns, withUI);
 
             if (form.ShowDialog() == DialogResult.OK)
             {
