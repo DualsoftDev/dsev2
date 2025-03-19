@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormReplaceFDAT: DevExpress.XtraEditors.XtraForm
@@ -17,14 +19,32 @@ namespace Plc2DsApp.Forms
             _tags = tags;
 
             gridControl1.DataSource = patterns;
-            gridView1.AddActionColumn<Pattern>("Apply", p =>
-            {
-                return ("Apply", new Action<Pattern>(p =>
+
+
+            var actionColumn =
+                gridView1.AddActionColumn<Pattern>("Apply", p =>
                 {
-                    var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
-                    //applyPatterns(new Regex[] { pattern });
-                    applyPatterns([p]);
-                }));
+                    return ("Apply", new Action<Pattern>(p =>
+                    {
+                        var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
+                        applyPatterns([p]);
+                    }));
+                });
+
+
+            Task.Run(() =>
+            {
+                var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p], _fdatGetter).Length);
+                this.Do(() =>
+                {
+                    var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                    gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
+                    gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
+                    numMatchColumn.VisibleIndex = 100;
+                    actionColumn.VisibleIndex = 101;
+
+                    gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
+                });
             });
 
             tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
@@ -39,7 +59,7 @@ namespace Plc2DsApp.Forms
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
 
-        private void FormDiscardFDA_Load(object sender, EventArgs e)
+        void FormDiscardFDA_Load(object sender, EventArgs e)
         {
         }
 
@@ -55,7 +75,7 @@ namespace Plc2DsApp.Forms
 
         void applyPatterns(ReplacePattern[] patterns, string desc=null)
         {
-            PlcTagBaseFDA[] candidates = ApplyPattern(_tags, patterns, _fdatGetter, null);
+            PlcTagBaseFDA[] candidates = ApplyPatterns(_tags, patterns, _fdatGetter, null);
             var form = new FormTags(candidates, candidates, usageHint: $"(Extract {desc} pattern)");
             var getter = new Func<PlcTagBaseFDA, string>(t => getPatternApplication(t, patterns, _fdatGetter));
             form.GridView.AddUnboundColumnCustom<PlcTagBaseFDA, string>($"AppliedNewName", getter, null);
@@ -76,7 +96,7 @@ namespace Plc2DsApp.Forms
             applyPatterns(replacePatterns, descs);
         }
 
-        public static PlcTagBaseFDA[] ApplyPattern(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
         {
 
             IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
@@ -103,14 +123,14 @@ namespace Plc2DsApp.Forms
             return candidates;
         }
 
-        private void btnApplyCustomPattern_Click(object sender, EventArgs e)
+        void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
             // default 는 discard 이므로, replaceString 이 "" 가 됨
             var replacePattern = ReplacePattern.Create("NoName", tbCustomPattern.Text, "", "");
             applyPatterns([replacePattern]);
         }
 
-        private void btnApplyAllPatterns_Click(object sender, EventArgs e)
+        void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {
             var replacePatterns = _patterns.Select(ReplacePattern.FromPattern).ToArray();
             applyPatterns(replacePatterns);

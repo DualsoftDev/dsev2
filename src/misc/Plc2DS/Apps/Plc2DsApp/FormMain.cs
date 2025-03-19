@@ -66,7 +66,7 @@ namespace Plc2DsApp
                 };
             };
         }
-        private void FormMain_Load(object sender, EventArgs e)
+        void FormMain_Load(object sender, EventArgs e)
         {
             //loadTags(tbCsvFile.Text);
             btnShowAllTags        .Click += (s, e) => showTags(TagsAll);
@@ -89,13 +89,13 @@ namespace Plc2DsApp
             btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
             btnDiscardActionName.Enabled = _appSettings.ActionPatternDiscards.Any();
 
-            btnDiscardFlowName  .Click += (s, e) => discardFDA(_appSettings.FlowPatternDiscards, FDAT.DuFlow);
-            btnDiscardDeviceName.Click += (s, e) => discardFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice);
-            btnDiscardActionName.Click += (s, e) => discardFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction);
+            btnDiscardFlowName  .Click += (s, e) => replaceFDA(_appSettings.FlowPatternDiscards, FDAT.DuFlow);
+            btnDiscardDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice);
+            btnDiscardActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction);
         }
 
-        void discardFDA(Pattern[] pattern, FDAT fdat, bool withUI = true) => discardFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
-        void discardFDA(PlcTagBaseFDA[] tags, Pattern[] pattern, FDAT fdat, bool withUI=true)
+        void replaceFDA(Pattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
+        void replaceFDA(PlcTagBaseFDA[] tags, Pattern[] pattern, FDAT fdat, bool withUI=true)
         {
             Func<PlcTagBaseFDA, string> fdatGetter =
                 fdat switch
@@ -121,7 +121,7 @@ namespace Plc2DsApp
                 form.ShowDialog();
             }
             else
-                FormReplaceFDAT.ApplyPattern(tags, pattern, fdatGetter, fdatSetter);
+                FormReplaceFDAT.ApplyPatterns(tags, pattern, fdatGetter, fdatSetter);
         }
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
@@ -204,7 +204,7 @@ namespace Plc2DsApp
             tbNumTagsStage      .Text = TagsStage      .Length.ToString();
         }
 
-        private void btnSelectCSV_Click(object sender, EventArgs e)
+        void btnSelectCSV_Click(object sender, EventArgs e)
         {
             using OpenFileDialog ofd =
                 new OpenFileDialog()
@@ -243,7 +243,7 @@ namespace Plc2DsApp
         void btnDiscardTags_Click(object sender, EventArgs e) => applyDiscardTags();
         void btnReplaceTags_Click(object sender, EventArgs e) => applyReplaceTags();
 
-        private void btnExtractFDA_Click(object sender, EventArgs e) => applyExtractFDA();
+        void btnExtractFDA_Click(object sender, EventArgs e) => applyExtractFDA();
 
         void applyExtractFDA(bool withUI=true)
         {
@@ -251,12 +251,12 @@ namespace Plc2DsApp
             PlcTagBaseFDA[] chosen = [];
             if (withUI)
             {
-                var form = new FormExtractFDA(TagsStage, patterns);
+                var form = new FormSplitFDA(TagsStage, patterns);
                 if (form.ShowDialog() == DialogResult.OK)
                     chosen = form.TagsStage;
             }
             else
-                chosen = FormExtractFDA.ApplyPatterns(TagsStage, patterns);
+                chosen = FormSplitFDA.ApplyPatterns(TagsStage, patterns);
 
             chosen.Iter(t => t.Choice = Choice.Categorized);
             updateUI();
@@ -265,18 +265,22 @@ namespace Plc2DsApp
         void applyReplaceTags(bool withUI=true)
         {
             var patterns = _appSettings.TagPatternReplaces.Concat(_appSettings.DialectPatterns).ToArray();
-            discardFDA(TagsStage, patterns, FDAT.DuTag, withUI);
+            replaceFDA(TagsStage, patterns, FDAT.DuTag, withUI);
         }
 
-        private void btnApplyAll_Click(object sender, EventArgs e)
+        void btnApplyAll_Click(object sender, EventArgs e)
         {
             bool withUI = false;
             applyDiscardTags(withUI);
             applyReplaceTags(withUI);
             applyExtractFDA(withUI);
-            discardFDA(_appSettings.FlowPatternDiscards,   FDAT.DuFlow, withUI);
-            discardFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice, withUI);
-            discardFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction, withUI);
+            replaceFDA(_appSettings.FlowPatternDiscards,   FDAT.DuFlow,   withUI);
+            replaceFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice, withUI);
+            replaceFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction, withUI);
+
+            replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
+            replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice, withUI);
+            replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction, withUI);
         }
 
     }

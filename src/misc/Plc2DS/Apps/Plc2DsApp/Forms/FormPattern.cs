@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormPattern: DevExpress.XtraEditors.XtraForm
@@ -42,6 +44,18 @@ namespace Plc2DsApp.Forms
 
             gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), "Relacement", nameof(Pattern.Description)]);
 
+            Task.Run(() =>
+            {
+                //var dict = new Dictionary<PlcTagBaseFDA, int>();
+                var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p]).Length);
+                this.Do(() =>
+                {
+                    gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                });
+            });
+
+
+
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
             btnApplyAllPatterns.Click += (s, e) =>
@@ -61,7 +75,7 @@ namespace Plc2DsApp.Forms
             return ApplyPatterns(tags, regexPatterns);
         }
 
-        private void FormPattern_Load(object sender, EventArgs e)
+        void FormPattern_Load(object sender, EventArgs e)
         {
             btnShowAllTags.Click += (s, e) => showTags(_tags, usageHint:"(All Tags)");
             btnShowStageTags.Click += (s, e) => showTags(_tagsStage, usageHint: "(Stage Tags)");
@@ -87,13 +101,13 @@ namespace Plc2DsApp.Forms
             }
         }
 
-        private void btnApplyCustomPattern_Click(object sender, EventArgs e)
+        void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
             var pattern = new Regex(tbCustomPattern.Text, RegexOptions.Compiled);
             applyPatterns([pattern]);
         }
 
-        private void btnApplyAllPatterns_Click(object sender, EventArgs e)
+        void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {
             var patterns = _patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
             applyPatterns(patterns);

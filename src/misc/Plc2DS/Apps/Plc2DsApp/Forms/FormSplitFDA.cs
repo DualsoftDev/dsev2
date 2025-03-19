@@ -1,6 +1,8 @@
+using System.Threading.Tasks;
+
 namespace Plc2DsApp.Forms
 {
-	public partial class FormExtractFDA: DevExpress.XtraEditors.XtraForm
+	public partial class FormSplitFDA: DevExpress.XtraEditors.XtraForm
 	{
         PlcTagBaseFDA[] _tags = [];
         Pattern[] _patterns = [];
@@ -15,7 +17,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsCategorized.Text = _tags.Where(t => t.Choice == Choice.Categorized).Count().ToString();
         }
         void showTags(IEnumerable<PlcTagBaseFDA> tags) => new FormTags(tags).ShowDialog();
-        public FormExtractFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
+        public FormSplitFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
 
@@ -23,13 +25,30 @@ namespace Plc2DsApp.Forms
             _tags = tags;
 
             gridControl1.DataSource = patterns;
-            gridView1.AddActionColumn<Pattern>("Apply", p =>
-            {
-                return ("Apply", new Action<Pattern>(p =>
+            var actionColumn =
+                gridView1.AddActionColumn<Pattern>("Apply", p =>
                 {
-                    var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
-                    applyPatterns(new Regex[] { pattern });
-                }));
+                    return ("Apply", new Action<Pattern>(p =>
+                    {
+                        var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
+                        applyPatterns(new Regex[] { pattern });
+                    }));
+                });
+
+            Task.Run(() =>
+            {
+                //var dict = new Dictionary<PlcTagBaseFDA, int>();
+                var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p]).Length);
+                this.Do(() =>
+                {
+                    var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                    gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
+                    gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
+                    numMatchColumn.VisibleIndex = 100;
+                    actionColumn.VisibleIndex = 101;
+
+                    gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
+                });
             });
 
             tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
@@ -44,7 +63,7 @@ namespace Plc2DsApp.Forms
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
 
-        private void FormExtractFDA_Load(object sender, EventArgs e)
+        void FormExtractFDA_Load(object sender, EventArgs e)
         {
             btnShowAllTags.Click += (s, e) => showTags(_tags);
             btnShowStageTags.Click += (s, e) => showTags(TagsStage);
@@ -99,13 +118,13 @@ namespace Plc2DsApp.Forms
         }
 
 
-        private void btnApplyCustomPattern_Click(object sender, EventArgs e)
+        void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
             var pattern = new Regex(tbCustomPattern.Text, RegexOptions.Compiled);
             applyPatterns([pattern]);
         }
 
-        private void btnApplyAllPatterns_Click(object sender, EventArgs e)
+        void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {
             var patterns = _patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
             applyPatterns(patterns);

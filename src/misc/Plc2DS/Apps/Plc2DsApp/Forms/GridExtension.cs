@@ -146,7 +146,7 @@ public static class GridExtension
             {
                 column.Visible = visibleColumnNames.Contains(column.FieldName);
                 if (column.Visible)
-                    column.VisibleIndex = Array.IndexOf(FormMain.Instance.VisibleColumns, column.FieldName);
+                    column.VisibleIndex = Array.IndexOf(visibleColumnNames, column.FieldName);
             }
         }
     }

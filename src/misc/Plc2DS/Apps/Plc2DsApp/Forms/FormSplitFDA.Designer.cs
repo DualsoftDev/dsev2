@@ -1,6 +1,6 @@
 namespace Plc2DsApp.Forms
 {
-    partial class FormExtractFDA
+    partial class FormSplitFDA
     {
         /// <summary>
         /// Required designer variable.
@@ -26,7 +26,7 @@ namespace Plc2DsApp.Forms
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        void InitializeComponent()
         {
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
@@ -216,7 +216,7 @@ namespace Plc2DsApp.Forms
     "서 실행.";
             this.btnApplyAllPatterns.Click += new System.EventHandler(this.btnApplyAllPatterns_Click);
             // 
-            // FormExtractFDA
+            // FormSplitFDA
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -229,8 +229,8 @@ namespace Plc2DsApp.Forms
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.gridControl1);
-            this.Name = "FormExtractFDA";
-            this.Text = "FormExtractFDA";
+            this.Name = "FormSplitFDA";
+            this.Text = "FormSplitFDA";
             this.Load += new System.EventHandler(this.FormExtractFDA_Load);
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).EndInit();
             this.groupControl1.ResumeLayout(false);

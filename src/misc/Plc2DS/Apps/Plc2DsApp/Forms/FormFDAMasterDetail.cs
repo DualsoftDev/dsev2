@@ -16,7 +16,7 @@ namespace Plc2DsApp.Forms
 
         void showSingletonToo() => gridView1.ActiveFilterString = cbShowSingletonToo.Checked ? "" : "[Count] > 1";
 
-        private void doMasterDetailView()
+        void doMasterDetailView()
         {
             // 2️⃣ Master 데이터 생성 (FlowName + DeviceName 기준 그룹화)
             masterList = _tags

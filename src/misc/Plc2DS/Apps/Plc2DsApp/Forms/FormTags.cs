@@ -79,15 +79,15 @@ namespace Plc2DsApp.Forms
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
-        private void FormGridTags_Load(object sender, EventArgs e)
+        void FormGridTags_Load(object sender, EventArgs e)
         {
 
         }
 
 
-        private void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(_tags);
+        void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(_tags);
 
-        private void btnMasterDetailView_Click(object sender, EventArgs e)
+        void btnMasterDetailView_Click(object sender, EventArgs e)
         {
             new FormFDAMasterDetail(_tags).ShowDialog();
         }
