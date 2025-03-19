@@ -228,7 +228,7 @@ namespace Plc2DsApp
             this.btnSplitFDA.TabIndex = 10;
             this.btnSplitFDA.Text = "Split";
             this.btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출";
-            this.btnSplitFDA.Click += new System.EventHandler(this.btnExtractFDA_Click);
+            this.btnSplitFDA.Click += new System.EventHandler(this.btnSplitFDA_Click);
             // 
             // ucRadioSelector1
             // 

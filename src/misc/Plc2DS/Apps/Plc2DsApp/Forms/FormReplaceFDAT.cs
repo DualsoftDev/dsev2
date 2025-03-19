@@ -98,6 +98,8 @@ namespace Plc2DsApp.Forms
 
         public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
         {
+            if (patterns.IsNullOrEmpty())
+                return [];
 
             IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
             {

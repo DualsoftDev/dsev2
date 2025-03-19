@@ -225,8 +225,6 @@ namespace Plc2DsApp
         void applyDiscardTags(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternDiscards;
-            var json = EmJson.ToJson(patterns);
-
             var _ = selectTags(Choice.Stage);   // load TagsAll if null or empty
 
             PlcTagBaseFDA[] chosen = [];
@@ -245,9 +243,9 @@ namespace Plc2DsApp
         void btnDiscardTags_Click(object sender, EventArgs e) => applyDiscardTags();
         void btnReplaceTags_Click(object sender, EventArgs e) => applyReplaceTags();
 
-        void btnExtractFDA_Click(object sender, EventArgs e) => applyExtractFDA();
+        void btnSplitFDA_Click(object sender, EventArgs e) => applySplitFDA();
 
-        void applyExtractFDA(bool withUI=true)
+        void applySplitFDA(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternFDAs;
             PlcTagBaseFDA[] chosen = [];
@@ -275,7 +273,7 @@ namespace Plc2DsApp
             bool withUI = false;
             applyDiscardTags(withUI);
             applyReplaceTags(withUI);
-            applyExtractFDA(withUI);
+            applySplitFDA(withUI);
             replaceFDA(_appSettings.FlowPatternDiscards,   FDAT.DuFlow,   withUI);
             replaceFDA(_appSettings.DevicePatternDiscards, FDAT.DuDevice, withUI);
             replaceFDA(_appSettings.ActionPatternDiscards, FDAT.DuAction, withUI);
