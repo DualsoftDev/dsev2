@@ -94,8 +94,7 @@ module GetFDA =
                 let f, d, a = xs[0], xs[1], xs[2]
                 if [f; d; a] |> exists (fun x -> Regex.IsMatch(x, @"^\d+$")) then
                     logWarn $"WARN: number only item exists: {f}/{d}/{a} on {x.GetName()}"
-                    None
-                else
-                    Some (PlcTagBaseFDA(f, d, a))
+
+                Some (PlcTagBaseFDA(f, d, a))
 
         member x.TryGetFDA(semantic:Semantic): PlcTagBaseFDA option = x.TryGetFDA(semantic.CompiledFDARegexPatterns)

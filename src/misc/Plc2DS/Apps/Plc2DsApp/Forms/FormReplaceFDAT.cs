@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -11,6 +12,7 @@ namespace Plc2DsApp.Forms
         ReplacePattern[] _patterns = [];
         Func<PlcTagBaseFDA, string> _fdatGetter = null;
         Action<PlcTagBaseFDA, string> _fdatSetter = null;
+        public int NumChanged { get; set; }
 
         public FormReplaceFDAT(PlcTagBaseFDA[] tags, ReplacePattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter, bool withUI)
 		{
@@ -30,6 +32,18 @@ namespace Plc2DsApp.Forms
                     return ("Apply", new Action<ReplacePattern>(p => applyPatterns([p], withUI)));
                 });
 
+            if (patterns.Any())
+                tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
+
+            gridView1.SelectionChanged += (s, e) =>
+            {
+                var pattern = gridView1.GetFocusedRow() as Pattern;
+                tbCustomPattern.Text = pattern.PatternString;
+            };
+
+            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
+            btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
+
             if (withUI)
             {
                 Task.Run(() =>
@@ -47,20 +61,7 @@ namespace Plc2DsApp.Forms
                     });
                 });
             }
-
-            if (patterns.Any())
-                tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
-
-            gridView1.SelectionChanged += (s, e) =>
-            {
-                var pattern = gridView1.GetFocusedRow() as Pattern;
-                tbCustomPattern.Text = pattern.PatternString;
-            };
-
-            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
-            btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
-
-            if (!withUI)
+            else
             {
                 this.MakeHiddenSelfOK();
                 this.btnApplyAllPatterns_Click(null, null);
@@ -76,12 +77,18 @@ namespace Plc2DsApp.Forms
             string fda = fdatGetter(tag);
             foreach (var p in replacePatterns)
             {
-                fda = p.RegexPattern.Replace(fda, p.Replacement);
+                while(p.RegexPattern.IsMatch(fda))
+                {
+                    if (p.PatternString == "(?<word>[A-Za-z]+)/(?<number>\\d+)")
+                        Noop();
+
+                    fda = p.RegexPattern.Replace(fda, p.Replacement);
+                }
             }
             return fda;
         }
 
-        void applyPatterns(ReplacePattern[] patterns, bool withUI)
+        int applyPatterns(ReplacePattern[] patterns, bool withUI)
         {
             PlcTagBaseFDA[] candidates = ApplyPatterns(_tags, patterns, _fdatGetter, null);
             string descs = patterns.Select(p => p.Name).JoinString("|");
@@ -93,7 +100,11 @@ namespace Plc2DsApp.Forms
                 // 변경 내용 적용
                 foreach (var t in form.SelectedTags)
                     _fdatSetter(t, getPatternApplication(t, patterns, _fdatGetter));
+
+                return form.SelectedTags.Length;
             }
+
+            return 0;
         }
 
 
@@ -128,13 +139,13 @@ namespace Plc2DsApp.Forms
         {
             // default 는 discard 이므로, replaceString 이 "" 가 됨
             var replacePattern = ReplacePattern.Create("NoName", tbCustomPattern.Text, "", "");
-            applyPatterns([replacePattern], withUI: sender != null);
+            NumChanged = applyPatterns([replacePattern], withUI: sender != null);
         }
 
         public void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {
             var replacePatterns = _patterns.Select(ReplacePattern.FromPattern).ToArray();
-            applyPatterns(replacePatterns, withUI:sender != null);
+            NumChanged = applyPatterns(replacePatterns, withUI:sender != null);
         }
     }
 }

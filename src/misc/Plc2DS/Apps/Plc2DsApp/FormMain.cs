@@ -84,17 +84,17 @@ namespace Plc2DsApp
                 }
             };
 
-            btnDiscardFlowName  .Enabled = _appSettings.FlowPatternDiscards.Any();
-            btnDiscardDeviceName.Enabled = _appSettings.DevicePatternDiscards.Any();
-            btnDiscardActionName.Enabled = _appSettings.ActionPatternDiscards.Any();
+            btnReplaceFlowName  .Enabled = _appSettings.FlowPatternReplaces.Any();
+            btnReplaceDeviceName.Enabled = _appSettings.DevicePatternReplaces.Any();
+            btnReplaceActionName.Enabled = _appSettings.ActionPatternReplaces.Any();
 
-            btnDiscardFlowName  .Click += (s, e) => replaceFDA(_appSettings.FlowPatternDiscards.Select(ReplacePattern.FromPattern).ToArray(),   FDAT.DuFlow);
-            btnDiscardDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuDevice);
-            btnDiscardActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuAction);
+            btnReplaceFlowName  .Click += (s, e) => replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow);
+            btnReplaceDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice);
+            btnReplaceActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction);
         }
 
-        void replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
-        void replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
+        int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
+        int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
         {
             Func<PlcTagBaseFDA, string> fdatGetter =
                 fdat switch
@@ -117,6 +117,7 @@ namespace Plc2DsApp
 
             var form = new FormReplaceFDAT(tags, pattern, fdatGetter, fdatSetter, withUI);
             form.ShowDialog();
+            return form.NumChanged;
         }
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
@@ -266,13 +267,15 @@ namespace Plc2DsApp
             int discarded = applyDiscardTags(withUI);
             applyReplaceTags(withUI);
             applySplitFDA(withUI);
-            replaceFDA(_appSettings.FlowPatternDiscards  .Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuFlow,   withUI);
-            replaceFDA(_appSettings.DevicePatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuDevice, withUI);
-            replaceFDA(_appSettings.ActionPatternDiscards.Select(ReplacePattern.FromPattern).ToArray(), FDAT.DuAction, withUI);
 
-            replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
-            replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice, withUI);
-            replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction, withUI);
+            int changedF = replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
+            int changedD = replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice, withUI);
+            int changedA = replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction, withUI);
+
+
+            int standardF = replaceFDA(_appSettings.DialectPatterns, FDAT.DuFlow, withUI);
+            int standardD = replaceFDA(_appSettings.DialectPatterns, FDAT.DuDevice, withUI);
+            int standardA = replaceFDA(_appSettings.DialectPatterns, FDAT.DuAction, withUI);
         }
     }
 }

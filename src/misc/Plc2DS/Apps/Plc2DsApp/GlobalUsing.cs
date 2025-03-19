@@ -29,3 +29,4 @@ global using MX = Dual.Plc2DS.MX;
 
 global using static Dual.Plc2DS.AppSettingsModule;
 global using Plc2DsApp.Forms;
+global using static GridExtension;

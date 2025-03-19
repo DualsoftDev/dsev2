@@ -14,9 +14,6 @@ namespace Plc2DsApp
         [DataMember] public Pattern[] TagPatternDiscards { get; set; }
         [DataMember] public ReplacePattern[] TagPatternReplaces { get; set; }
         [DataMember] public Pattern[] TagPatternFDAs { get; set; }
-        [DataMember] public Pattern[] FlowPatternDiscards { get; set; }
-        [DataMember] public Pattern[] DevicePatternDiscards { get; set; }
-        [DataMember] public Pattern[] ActionPatternDiscards { get; set; }
         [DataMember] public ReplacePattern[] FlowPatternReplaces { get; set; }
         [DataMember] public ReplacePattern[] DevicePatternReplaces { get; set; }
         [DataMember] public ReplacePattern[] ActionPatternReplaces { get; set; }
@@ -25,10 +22,12 @@ namespace Plc2DsApp
         public void OnDeserializedMethod(StreamingContext context)
         {
             DialectPatterns =
-                Dialects.SelectMany( (ds, i) =>
+                Dialects.Select( (ds, i) =>
                 {
                     var std = ds[0];
-                    return ds.Skip(1).Select((d, j) => ReplacePattern.Create($"Dialect{i}_{j}", d, std));
+                    var dialects = ds.Skip(1).ToArray();
+                    var dialectsPattern = dialects.Select(d => $"^{d}_|_{d}|^{d}$").JoinString("|");
+                    return ReplacePattern.Create($"Dialect{i}", dialectsPattern, std);
                 }).ToArray()
                 ;
         }

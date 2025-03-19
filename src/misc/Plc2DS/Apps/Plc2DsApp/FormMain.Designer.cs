@@ -47,9 +47,9 @@ namespace Plc2DsApp
             this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
             this.groupControl4 = new DevExpress.XtraEditors.GroupControl();
-            this.btnDiscardActionName = new DevExpress.XtraEditors.SimpleButton();
-            this.btnDiscardDeviceName = new DevExpress.XtraEditors.SimpleButton();
-            this.btnDiscardFlowName = new DevExpress.XtraEditors.SimpleButton();
+            this.btnReplaceActionName = new DevExpress.XtraEditors.SimpleButton();
+            this.btnReplaceDeviceName = new DevExpress.XtraEditors.SimpleButton();
+            this.btnReplaceFlowName = new DevExpress.XtraEditors.SimpleButton();
             this.btnApplyAll = new DevExpress.XtraEditors.SimpleButton();
             this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
@@ -252,9 +252,9 @@ namespace Plc2DsApp
             // 
             this.groupControl4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupControl4.Controls.Add(this.btnDiscardActionName);
-            this.groupControl4.Controls.Add(this.btnDiscardDeviceName);
-            this.groupControl4.Controls.Add(this.btnDiscardFlowName);
+            this.groupControl4.Controls.Add(this.btnReplaceActionName);
+            this.groupControl4.Controls.Add(this.btnReplaceDeviceName);
+            this.groupControl4.Controls.Add(this.btnReplaceFlowName);
             this.groupControl4.Location = new System.Drawing.Point(12, 257);
             this.groupControl4.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl4.Name = "groupControl4";
@@ -264,33 +264,33 @@ namespace Plc2DsApp
             // 
             // btnDiscardActionName
             // 
-            this.btnDiscardActionName.Location = new System.Drawing.Point(330, 45);
-            this.btnDiscardActionName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnDiscardActionName.Name = "btnDiscardActionName";
-            this.btnDiscardActionName.Size = new System.Drawing.Size(139, 45);
-            this.btnDiscardActionName.TabIndex = 12;
-            this.btnDiscardActionName.Text = "Action";
-            this.btnDiscardActionName.ToolTip = "Action 명에서 불필요한 부분 제거";
+            this.btnReplaceActionName.Location = new System.Drawing.Point(330, 45);
+            this.btnReplaceActionName.Margin = new System.Windows.Forms.Padding(2);
+            this.btnReplaceActionName.Name = "btnDiscardActionName";
+            this.btnReplaceActionName.Size = new System.Drawing.Size(139, 45);
+            this.btnReplaceActionName.TabIndex = 12;
+            this.btnReplaceActionName.Text = "Action";
+            this.btnReplaceActionName.ToolTip = "Action 명에서 불필요한 부분 제거";
             // 
             // btnDiscardDeviceName
             // 
-            this.btnDiscardDeviceName.Location = new System.Drawing.Point(164, 45);
-            this.btnDiscardDeviceName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnDiscardDeviceName.Name = "btnDiscardDeviceName";
-            this.btnDiscardDeviceName.Size = new System.Drawing.Size(139, 45);
-            this.btnDiscardDeviceName.TabIndex = 11;
-            this.btnDiscardDeviceName.Text = "Device";
-            this.btnDiscardDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거";
+            this.btnReplaceDeviceName.Location = new System.Drawing.Point(164, 45);
+            this.btnReplaceDeviceName.Margin = new System.Windows.Forms.Padding(2);
+            this.btnReplaceDeviceName.Name = "btnDiscardDeviceName";
+            this.btnReplaceDeviceName.Size = new System.Drawing.Size(139, 45);
+            this.btnReplaceDeviceName.TabIndex = 11;
+            this.btnReplaceDeviceName.Text = "Device";
+            this.btnReplaceDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거";
             // 
             // btnDiscardFlowName
             // 
-            this.btnDiscardFlowName.Location = new System.Drawing.Point(4, 45);
-            this.btnDiscardFlowName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnDiscardFlowName.Name = "btnDiscardFlowName";
-            this.btnDiscardFlowName.Size = new System.Drawing.Size(139, 45);
-            this.btnDiscardFlowName.TabIndex = 10;
-            this.btnDiscardFlowName.Text = "Flow";
-            this.btnDiscardFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거";
+            this.btnReplaceFlowName.Location = new System.Drawing.Point(4, 45);
+            this.btnReplaceFlowName.Margin = new System.Windows.Forms.Padding(2);
+            this.btnReplaceFlowName.Name = "btnDiscardFlowName";
+            this.btnReplaceFlowName.Size = new System.Drawing.Size(139, 45);
+            this.btnReplaceFlowName.TabIndex = 10;
+            this.btnReplaceFlowName.Text = "Flow";
+            this.btnReplaceFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거";
             // 
             // btnApplyAll
             // 
@@ -367,9 +367,9 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnShowCategorizedTags;
         private DevExpress.XtraEditors.LabelControl labelControl1;
         private DevExpress.XtraEditors.GroupControl groupControl4;
-        private DevExpress.XtraEditors.SimpleButton btnDiscardFlowName;
-        private DevExpress.XtraEditors.SimpleButton btnDiscardActionName;
-        private DevExpress.XtraEditors.SimpleButton btnDiscardDeviceName;
+        private DevExpress.XtraEditors.SimpleButton btnReplaceFlowName;
+        private DevExpress.XtraEditors.SimpleButton btnReplaceActionName;
+        private DevExpress.XtraEditors.SimpleButton btnReplaceDeviceName;
         private DevExpress.XtraEditors.SimpleButton btnApplyAll;
         private DevExpress.XtraEditors.SimpleButton btnReplaceTags;
         private DevExpress.XtraEditors.TextEdit tbCsvFile;

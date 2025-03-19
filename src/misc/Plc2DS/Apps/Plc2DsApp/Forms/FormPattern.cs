@@ -27,13 +27,6 @@ namespace Plc2DsApp.Forms
             _tags = tags;
             _tagsStage = tags;
 
-            if (!withUI)
-            {
-                this.MakeHiddenSelfOK();
-                this.ApplyAllPatterns(false);
-            }
-
-
 
             gridControl1.DataSource = patterns;
 
@@ -64,6 +57,11 @@ namespace Plc2DsApp.Forms
                         gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
                     });
                 });
+            }
+            else
+            {
+                this.MakeHiddenSelfOK();
+                this.ApplyAllPatterns(false);
             }
 
 

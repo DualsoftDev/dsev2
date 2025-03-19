@@ -168,6 +168,8 @@ public static class GridExtension
         gridView.OptionsCustomization.AllowQuickHideColumns = true; // 빠른 숨기기 기능
 
     }
+
+    public static void Noop() {}
 }
 
 

@@ -29,6 +29,17 @@ namespace Plc2DsApp.Forms
             var actionColumn =
                 gridView1.AddActionColumn<Pattern>("Apply", p => ("Apply", new Action<Pattern>(p => applyPatterns([p], withUI))));
 
+            tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
+
+            gridView1.SelectionChanged += (s, e) =>
+            {
+                var pattern = gridView1.GetFocusedRow() as Pattern;
+                tbCustomPattern.Text = pattern.PatternString;
+            };
+
+            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
+            btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
+
             if (withUI)
             {
                 Task.Run(() =>
@@ -47,19 +58,7 @@ namespace Plc2DsApp.Forms
                     });
                 });
             }
-
-            tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
-
-            gridView1.SelectionChanged += (s, e) =>
-            {
-                var pattern = gridView1.GetFocusedRow() as Pattern;
-                tbCustomPattern.Text = pattern.PatternString;
-            };
-
-            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
-            btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
-
-            if (!withUI)
+            else
             {
                 this.MakeHiddenSelfOK();
                 this.btnApplyAllPatterns_Click(null, null);
