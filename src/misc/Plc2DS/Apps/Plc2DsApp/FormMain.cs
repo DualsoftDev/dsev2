@@ -7,45 +7,27 @@ namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm, IAppender
     {
-        AppSettings _appSettings = null;
         public Vendor Vendor { get; set; } = Vendor.LS;
         public string[] VisibleColumns => _appSettings.VisibleColumns;
 
-        /// <summary>
-        /// abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
-        /// </summary>
-        public object ConvertToVendorTags(IEnumerable<PlcTagBaseFDA> tags)
-        {
-            var typ = FormMain.Instance.Vendor.CsGetTagType();
-            return tags.Select(t => Convert.ChangeType(t, typ)).ToArray();
-        }
         public static FormMain Instance { get; private set; }
 
         public PlcTagBaseFDA[] TagsAll = [];
 
 
-        PlcTagBaseFDA[] selectTags(Choice cat)
-        {
-            if (TagsAll.IsNullOrEmpty())
-                TagsAll = loadTags(tbCsvFile.Text, _appSettings.CsvFilterPatterns);
-
-            return TagsAll.Where(t => t.Choice == cat).ToArray();
-        }
         public PlcTagBaseFDA[] TagsDiscarded => selectTags(Choice.Discarded);
         public PlcTagBaseFDA[] TagsChosen => selectTags(Choice.Chosen);
         public PlcTagBaseFDA[] TagsCategorized => selectTags(Choice.Categorized);
         public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
-        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null)
-        {
-            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
-            form.ShowDialog();
-            return form;
-        }
 
         LastFileInfo _lastFileInfo = new LastFileInfo();
+        AppSettings _appSettings = null;
+        UiUpdator _uiUpdator = new UiUpdator();
+
         public FormMain() {
             InitializeComponent();
 
+            _uiUpdator.StartMainLoop(this, updateUI);
             _appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
             if (File.Exists("lastFile.json"))
                 _lastFileInfo = EmJson.FromJson<LastFileInfo>(File.ReadAllText("lastFile.json"));
@@ -57,36 +39,22 @@ namespace Plc2DsApp
             tbCsvFile.Text = _lastFileInfo.Read;
 
             btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
-            //btnAcceptTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Accept 합니다.";
 
             ucRadioSelector1.SetOptions(new string[] { "LS", "AB", "S7", "MX" }, itemLayout:RadioGroupItemsLayout.Flow);
-            ucRadioSelector1.SelectedOptionChanged += (s, e) =>
-            {
-                Vendor = e switch
-                {
-                    "LS" => Vendor.LS,
-                    "AB" => Vendor.AB,
-                    "S7" => Vendor.S7,
-                    "MX" => Vendor.MX,
-                    _ => throw new NotImplementedException()
-                };
-            };
+            ucRadioSelector1.SelectedOptionChanged += (s, e) => Vendor = Vendor.FromString(e);
         }
         void FormMain_Load(object sender, EventArgs e)
         {
             //loadTags(tbCsvFile.Text);
             btnShowAllTags        .Click += (s, e) => showTags(TagsAll);
-            btnShowStageTags      .Click += (s, e) => showTags(selectTags(Choice.Stage));
-            btnShowChosenTags     .Click += (s, e) => showTags(selectTags(Choice.Chosen));
-            btnShowCategorizedTags.Click += (s, e) => showTags(selectTags(Choice.Categorized));
+            btnShowStageTags      .Click += (s, e) => showTags(selectTags(Choice.Stage, true));
+            btnShowChosenTags     .Click += (s, e) => showTags(selectTags(Choice.Chosen, true));
+            btnShowCategorizedTags.Click += (s, e) => showTags(selectTags(Choice.Categorized, true));
             btnShowDiscardedTags  .Click += (s, e) =>
             {
-                FormTags form = showTags(selectTags(Choice.Discarded), selectionColumnCaption: "Resurrect");
+                FormTags form = showTags(selectTags(Choice.Discarded, true), selectionColumnCaption: "Resurrect");
                 if (form.DialogResult == DialogResult.OK && form.SelectedTags.Any())
-                {
                     form.SelectedTags.Iter(t => t.Choice = Choice.Stage);
-                    updateUI();
-                }
             };
 
             btnReplaceFlowName  .Enabled = _appSettings.FlowPatternReplaces.Any();
@@ -101,6 +69,32 @@ namespace Plc2DsApp
         {
             this.Do(() => ucPanelLog1.AddLog(loggingEvent));
         }
+
+        /// <summary>
+        /// abstract class 인 PlcTagBaseFDA 를 vendor 에 맞는 subclass type 으로 변환
+        /// </summary>
+        public object ConvertToVendorTags(IEnumerable<PlcTagBaseFDA> tags)
+        {
+            var typ = FormMain.Instance.Vendor.CsGetTagType();
+            return tags.Select(t => Convert.ChangeType(t, typ)).ToArray();
+        }
+
+
+        PlcTagBaseFDA[] selectTags(Choice cat, bool loadOnDemand=false)
+        {
+            if (loadOnDemand && TagsAll.IsNullOrEmpty())
+                TagsAll = loadTags(tbCsvFile.Text, _appSettings.CsvFilterPatterns);
+
+            return TagsAll.Where(t => t.Choice == cat).ToArray();
+        }
+
+        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null)
+        {
+            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
+            form.ShowDialog();
+            return form;
+        }
+
 
         int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
         int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
@@ -156,38 +150,32 @@ namespace Plc2DsApp
         PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterPattern[] patterns)
         {
             Logger.Info($"Loading tags from {csvFile}");
-            PlcTagBaseFDA[] tags = [];
 
             using var wf = DcWaitForm.CreateWaitForm("Loading tags...");
             var ext = Path.GetExtension(csvFile).ToLower();
-            if ( ext == ".csv")
+            var vendor = Vendor.ToString();
+
+            PlcTagBaseFDA[] tags = ext switch
             {
-                if (Vendor.IsLS)
+                ".csv" => vendor switch
                 {
-                    tags =
-                        CsvReader.ReadLs(csvFile)
-                        //.Where(t => t.DataType.ToUpper() == "BOOL")
-                        //.Where(t => t.Scope == "GlobalVariable")
-                        .ToArray();
-                }
-                else if (Vendor.IsAB)
-                    tags = CsvReader.ReadAb(csvFile).ToArray();
-                else if (Vendor.IsS7)
-                    tags = CsvReader.ReadS7(csvFile).ToArray();
-                else if (Vendor.IsMX)
-                    tags = CsvReader.ReadMx(csvFile).ToArray();
-            }
-            else if (ext == ".json")
-            {
-                var json = File.ReadAllText(csvFile);
-                if      (Vendor.IsLS) tags = EmJson.FromJson<LS.PlcTagInfo[]>(json);
-                else if (Vendor.IsAB) tags = EmJson.FromJson<AB.PlcTagInfo[]>(json);
-                else if (Vendor.IsS7) tags = EmJson.FromJson<S7.PlcTagInfo[]>(json);
-                else if (Vendor.IsMX) tags = EmJson.FromJson<MX.PlcTagInfo[]>(json);
-                else throw new Exception("ERROR");
-            }
-            else
-                throw new NotImplementedException();
+                    "LS" => CsvReader.ReadLs(csvFile).ToArray(),
+                    "AB" => CsvReader.ReadAb(csvFile).ToArray(),
+                    "S7" => CsvReader.ReadS7(csvFile).ToArray(),
+                    "MX" => CsvReader.ReadMx(csvFile).ToArray(),
+                    _ => throw new NotImplementedException()
+                },
+                ".json" => vendor switch
+                {
+                    "LS" => EmJson.FromJson<LS.PlcTagInfo[]>(File.ReadAllText(csvFile)),
+                    "AB" => EmJson.FromJson<AB.PlcTagInfo[]>(File.ReadAllText(csvFile)),
+                    "S7" => EmJson.FromJson<S7.PlcTagInfo[]>(File.ReadAllText(csvFile)),
+                    "MX" => EmJson.FromJson<MX.PlcTagInfo[]>(File.ReadAllText(csvFile)),
+                    _ => throw new NotImplementedException()
+                },
+                _ => throw new NotImplementedException()
+            };
+
 
             Logger.Info($"  Loaded {tags.Length} tags from {csvFile}");
             var grDic = tags.GroupByToDictionary(t => patterns.Any(p => p.IsExclude(t)));
@@ -214,8 +202,6 @@ namespace Plc2DsApp
                     return [];
             }
 
-
-            updateUI();
             return TagsAll;
         }
 
@@ -226,6 +212,20 @@ namespace Plc2DsApp
             tbNumTagsChosen     .Text = TagsChosen     .Length.ToString();
             tbNumTagsCategorized.Text = TagsCategorized.Length.ToString();
             tbNumTagsStage      .Text = TagsStage      .Length.ToString();
+            var buttons =
+                new[] {
+                    btnDiscardTags, btnReplaceTags, btnSplitFDA,
+                    btnReplaceFlowName, btnReplaceDeviceName, btnReplaceActionName,
+                    btnApplyAll
+                };
+            if (tbCsvFile.Text.IsNullOrEmpty())
+                buttons.Iter(b => b.Enabled = false);
+            else
+            {
+                btnReplaceFlowName.Enabled = _appSettings.FlowPatternReplaces.Any();
+                btnReplaceDeviceName.Enabled = _appSettings.DevicePatternReplaces.Any();
+                btnReplaceActionName.Enabled = _appSettings.ActionPatternReplaces.Any();
+            }
         }
 
         void btnLoadTags_Click(object sender, EventArgs e)
@@ -249,7 +249,7 @@ namespace Plc2DsApp
         int applyDiscardTags(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternDiscards;
-            var _ = selectTags(Choice.Stage);   // load TagsAll if null or empty
+            var _ = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
 
             var form = new FormDiscardTags(TagsAll, patterns, withUI);
 
@@ -257,7 +257,6 @@ namespace Plc2DsApp
             {
                 var chosen = form.TagsChosen.ToArray();
                 form.TagsChosen.Iter(t => t.Choice = Choice.Discarded);
-                updateUI();
                 return chosen.Length;
             }
 
@@ -278,7 +277,6 @@ namespace Plc2DsApp
             if (form.ShowDialog() == DialogResult.OK)
             {
                 form.TagsDoneSplit.Iter(t => t.Choice = Choice.Categorized);
-                updateUI();
 
                 var dones = new HashSet<PlcTagBaseFDA>(form.TagsDoneSplit);
                 foreach(var t in tags.Where(tags => ! dones.Contains(tags)))

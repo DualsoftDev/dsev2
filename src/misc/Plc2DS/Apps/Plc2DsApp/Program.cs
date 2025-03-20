@@ -8,6 +8,13 @@ namespace Plc2DsApp {
         /// </summary>
         [STAThread]
         static void Main() {
+            //var regex = new Regex("^(?<station>S\\d+)(?<device>[a-zA-Z]+\\d+)_.*$");
+            //var match = regex.Match("S302RBT4_A_B");
+
+            var regex = new Regex(@"(?<=_)ROBOT\d*|RB\d*(?=_)");
+            var match = regex.Match("S302_ROBOT12_A_B");
+
+
             // 전역 예외 핸들러 설치
             UnhandledExceptionHandler.InstallUnhandledExceptionHandler();
 

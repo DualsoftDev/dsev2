@@ -41,6 +41,10 @@ namespace Plc2DsApp
             rp.OnDeserialized();
             return rp;
         }
+
+        public static ReplacePattern Create(string name, Regex pattern, string replace, string desc = null)
+            => new ReplacePattern { Name = name, RegexPattern = pattern, PatternString = pattern.ToString(), Description = desc, Replacement = replace };
+
     }
 
 

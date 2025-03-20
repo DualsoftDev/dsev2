@@ -69,6 +69,16 @@ type Vendor =
     | S7
     | LS
     | MX
+type Vendor with
+    static member FromString(vendor:string) =
+        match vendor with
+        | "LS" -> Vendor.LS
+        | "AB" -> Vendor.AB
+        | "S7" -> Vendor.S7
+        | "MX" -> Vendor.MX
+        | _ -> failwith "ERROR"
+
+
 
 type SemanticCategory =
     | DuNone

@@ -119,7 +119,7 @@ namespace Plc2DsApp.Forms
                 foreach (var t in tags)
                 {
                     string fda = fdatGetter(t); // f, d, a 중 하나를 가져옴
-                    if (fda == null)
+                    if (fda == null || fda.Contains("S302RBT4_"))
                         Noop();
                     var match = replacePattern.RegexPattern.Match(fda);
                     if (match.Success)

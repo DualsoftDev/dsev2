@@ -43,8 +43,18 @@ namespace Plc2DsApp
                 {
                     var std = ds[0];
                     var dialects = ds.Skip(1).ToArray();
-                    var dialectsPattern = dialects.Select(d => $"^{d}_|_{d}|^{d}$").JoinString("|");
-                    return ReplacePattern.Create($"Dialect{i}", dialectsPattern, std);
+                    var dialectsPattern =
+                        dialects.Select(d =>
+$@"(?<=_)({d})(?=_)  # _{d}_
+| ^({d})(?=_)        # {d}_ (문자열 시작)
+| (?<=_)({d})$       # _{d} (문자열 끝)
+| ^({d})$            # {d} (혼자 있을 때)
+# 이 모든 것들을 {std} 로 변환
+"
+                        ).Aggregate((a, b) => $"{a}|{b}")
+                        ;
+                    var regex = new Regex(dialectsPattern, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+                    return ReplacePattern.Create($"Dialect{i}", regex, std);
                 }).ToArray()
                 ;
         }
