@@ -10,6 +10,8 @@ namespace Plc2DsApp.Forms
 
         public PlcTagBaseFDA[] TagsStage => _tags.Where(t => t.Choice == Choice.Stage).ToArray();
         public PlcTagBaseFDA[] TagsNonStage => _tags.Where(t => t.Choice != Choice.Stage).ToArray();    // chosen + categorized
+
+        public HashSet<PlcTagBaseFDA> TagsDoneSplit = new();
         void updateUI()
         {
             tbNumTagsAll.Text = _tags.Length.ToString();
@@ -27,7 +29,7 @@ namespace Plc2DsApp.Forms
 
             gridControl1.DataSource = patterns;
             var actionColumn =
-                gridView1.AddActionColumn<Pattern>("Apply", p => ("Apply", new Action<Pattern>(p => applyPatterns([p], withUI))));
+                gridView1.AddActionColumn<Pattern>("Apply", p => ("Apply", new Action<Pattern>(p => applyPatterns(TagsStage, [p], withUI))));
 
             tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
 
@@ -75,8 +77,8 @@ namespace Plc2DsApp.Forms
             updateUI();
         }
 
-        void applyPatterns(Pattern[] patterns, bool withUI) => applyPatterns(TagsStage, patterns, withUI);
-        void applyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
+        //void applyPatterns(Pattern[] patterns, bool withUI) => applyPatterns(TagsStage, patterns, withUI);
+        PlcTagBaseFDA[] applyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
         {
             var categorizedCandidates = ApplyPatterns(tags, patterns);
 
@@ -85,7 +87,10 @@ namespace Plc2DsApp.Forms
             {
                 form.SelectedTags.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
                 updateUI();
+                TagsDoneSplit.AddRange(form.SelectedTags);
+                return form.SelectedTags;
             }
+            return [];
         }
 
         public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns)
@@ -119,9 +124,12 @@ namespace Plc2DsApp.Forms
         void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
             var pattern = Pattern.Create("임시 패턴", tbCustomPattern.Text);
-            applyPatterns([pattern], true);
+            applyPatterns(TagsStage, [pattern], true);
         }
 
-        void btnApplyAllPatterns_Click(object sender, EventArgs e) => applyPatterns(_patterns, withUI: sender != null);
+        void btnApplyAllPatterns_Click(object sender, EventArgs e)
+        {
+            var splited = applyPatterns(TagsStage, _patterns, withUI: sender != null).ToArray();
+        }
     }
 }

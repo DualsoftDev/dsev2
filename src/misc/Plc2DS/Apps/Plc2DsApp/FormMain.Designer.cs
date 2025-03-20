@@ -28,6 +28,7 @@ namespace Plc2DsApp
         /// </summary>
         void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.btnLoadTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
@@ -196,6 +197,7 @@ namespace Plc2DsApp
             this.btnDiscardTags.Size = new System.Drawing.Size(139, 45);
             this.btnDiscardTags.TabIndex = 7;
             this.btnDiscardTags.Text = "Discard";
+            this.btnDiscardTags.ToolTip = "TagPatternDiscards 를 이용해서 Tags 의 이름에서 match 되는 항목을 버립니다.";
             this.btnDiscardTags.Click += new System.EventHandler(this.btnDiscardTags_Click);
             // 
             // groupControl2
@@ -220,6 +222,7 @@ namespace Plc2DsApp
             this.btnReplaceTags.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceTags.TabIndex = 11;
             this.btnReplaceTags.Text = "Replace";
+            this.btnReplaceTags.ToolTip = "TagPatternReplaces 를 이용해서 Tags 의 이름 자체를 치환합니다.";
             this.btnReplaceTags.Click += new System.EventHandler(this.btnReplaceTags_Click);
             // 
             // btnSplitFDA
@@ -230,7 +233,8 @@ namespace Plc2DsApp
             this.btnSplitFDA.Size = new System.Drawing.Size(139, 45);
             this.btnSplitFDA.TabIndex = 10;
             this.btnSplitFDA.Text = "Split";
-            this.btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출";
+            this.btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출\r\nTagPatternFDAs 를 이용해서 Tags 이름을 Flow, Device, Action 으로" +
+    " 나눕니다.";
             this.btnSplitFDA.Click += new System.EventHandler(this.btnSplitFDA_Click);
             // 
             // labelControl1

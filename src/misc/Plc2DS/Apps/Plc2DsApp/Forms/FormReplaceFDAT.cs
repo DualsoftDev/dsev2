@@ -119,6 +119,8 @@ namespace Plc2DsApp.Forms
                 foreach (var t in tags)
                 {
                     string fda = fdatGetter(t); // f, d, a 중 하나를 가져옴
+                    if (fda == null)
+                        Noop();
                     var match = replacePattern.RegexPattern.Match(fda);
                     if (match.Success)
                         yield return t;

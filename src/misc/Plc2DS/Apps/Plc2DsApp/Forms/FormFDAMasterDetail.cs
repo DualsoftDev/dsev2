@@ -36,7 +36,6 @@ namespace Plc2DsApp.Forms
             // 4️⃣ Master-Detail 설정
             gridControl1.LevelTree.Nodes.Add("DetailView", gridView2);
             gridView1.OptionsDetail.EnableMasterViewMode = true;
-            gridView1.OptionsBehavior.Editable = false;
 
             gridView1.MasterRowGetChildList += gridView1_MasterRowGetChildList;
             gridView1.MasterRowExpanded += gridView1_MasterRowExpanded;
@@ -44,12 +43,9 @@ namespace Plc2DsApp.Forms
             gridView1.MasterRowGetRelationCount += (s, e) => e.RelationCount = 1;
             gridView1.AddUnboundColumnCustom<MasterItem, string>("Actions", m => m.Details.Select(t => t.ActionName).JoinString(", "), null);
 
+            gridView2.OptionsView.ShowGroupPanel = false;
             gridView1.EnableColumnSearch();
 
-
-
-            gridView2.OptionsView.ShowGroupPanel = false;
-            gridView2.OptionsBehavior.Editable = false;
         }
 
         void gridView1_MasterRowExpanded(object sender, CustomMasterRowEventArgs e)

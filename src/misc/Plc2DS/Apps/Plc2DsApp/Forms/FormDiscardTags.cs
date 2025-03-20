@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormDiscardTags: DevExpress.XtraEditors.XtraForm
@@ -33,12 +35,9 @@ namespace Plc2DsApp.Forms
             var actionColumn =
                 gridView1.AddActionColumn<Pattern>("Apply", p =>
                 {
-                    return ("Apply", new Action<Pattern>(p =>
-                    {
-                        var pattern = new Regex(p.PatternString, RegexOptions.Compiled);
-                        applyPatterns(new Regex[] { pattern }, withUI);
-                    }));
+                    return ("Apply", new Action<Pattern>(p => applyPatterns([p])));
                 });
+
             gridView1.SelectionChanged += (s, e) =>
             {
                 var pattern = gridView1.GetFocusedRow() as Pattern;
@@ -51,7 +50,7 @@ namespace Plc2DsApp.Forms
                 Task.Run(() =>
                 {
                     //var dict = new Dictionary<PlcTagBaseFDA, int>();
-                    var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p]).Length);
+                    var dict = patterns.ToDictionary(p => p, p => collectMatchedTags(tags, [p]).Length);
                     this.Do(() =>
                     {
                         var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
@@ -67,7 +66,7 @@ namespace Plc2DsApp.Forms
             else
             {
                 this.MakeHiddenSelfOK();
-                this.ApplyAllPatterns(false);
+                applyPatterns(_patterns, false);
             }
 
 
@@ -75,17 +74,6 @@ namespace Plc2DsApp.Forms
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
-        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Regex[] patterns)
-        {
-            var gr = tags.GroupByToDictionary(t => patterns.Any(p => p.IsMatch(t.CsGetName())));
-            return gr.ContainsKey(true) ? gr[true] : [];
-        }
-        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns)
-        {
-            var regexPatterns = patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
-            return ApplyPatterns(tags, regexPatterns);
-        }
-
         void FormPattern_Load(object sender, EventArgs e)
         {
             btnShowAllTags.Click += (s, e) => showTags(_tags, usageHint:"(All Tags)");
@@ -93,30 +81,40 @@ namespace Plc2DsApp.Forms
             btnShowChosenTags.Click += (s, e) => showTags(TagsChosen, usageHint: "(Chosen Tags)");
             updateUI();
         }
-        void applyPatterns(Regex[] patterns, bool withUI)
+
+        static PlcTagBaseFDA[] collectMatchedTags(PlcTagBaseFDA[] tags, Pattern[] patterns)
         {
-            var chosens = ApplyPatterns(_tagsStage, patterns);
+            var gr = tags.GroupByToDictionary(t => patterns.Any(p => p.RegexPattern.IsMatch(t.CsGetName())));
+            return gr.ContainsKey(true) ? gr[true] : [];
+        }
+
+        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
+        {
+            var chosens = collectMatchedTags(tags, patterns);
             if (chosens.Any())
             {
                 var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)", withUI:withUI);
                 form.ShowDialog();
-
-                TagsChosen = TagsChosen.Concat(chosens).ToArray();
-                _tagsStage = _tagsStage.Except(TagsChosen).ToArray();
-                updateUI();
             }
+            return chosens;
         }
 
-        public void ApplyAllPatterns(bool withUI)
+        void applyPatterns(Pattern[] patterns, bool withUI=true)
         {
-            var patterns = _patterns.Select(p => new Regex(p.PatternString, RegexOptions.Compiled)).ToArray();
-            applyPatterns(patterns, withUI);
+            var chosen = ApplyPatterns(_tagsStage, patterns, withUI);
+            _tagsStage = _tagsStage.Except(chosen).ToArray();
+            TagsChosen = TagsChosen.Concat(chosen).ToArray();
+            updateUI();
         }
+
+
+
         void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
-            var pattern = new Regex(tbCustomPattern.Text, RegexOptions.Compiled);
-            applyPatterns([pattern], true);
+            var pattern = Pattern.Create("사용자 패턴", tbCustomPattern.Text);
+            ApplyPatterns(_tagsStage, [pattern], true);
         }
 
-        void btnApplyAllPatterns_Click(object sender, EventArgs e) => ApplyAllPatterns(true);    }
+        void btnApplyAllPatterns_Click(object sender, EventArgs e) => applyPatterns(_patterns);
+    }
 }

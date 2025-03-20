@@ -104,13 +104,19 @@ namespace Plc2DsApp
         int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
         int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
         {
+            string verify(PlcTagBaseFDA tag, string category, string x)
+            {
+                if (x.IsNullOrEmpty())
+                    Logger.Error($"Empty {category} on Tag {tag.Stringify()}");
+                return x;
+            }
             Func<PlcTagBaseFDA, string> fdatGetter =
                 fdat switch
                 {
-                    _ when fdat.IsDuFlow   => t => t.FlowName,
-                    _ when fdat.IsDuDevice => t => t.DeviceName,
-                    _ when fdat.IsDuAction => t => t.ActionName,
-                    _ when fdat.IsDuTag    => t => t.CsGetName(),
+                    _ when fdat.IsDuFlow   => t => t.FlowName   .Tee(x => verify(t, "FlowName", x)),
+                    _ when fdat.IsDuDevice => t => t.DeviceName .Tee(x => verify(t, "DeviceName", x)),
+                    _ when fdat.IsDuAction => t => t.ActionName .Tee(x => verify(t, "ActionName", x)),
+                    _ when fdat.IsDuTag    => t => t.CsGetName().Tee(x => verify(t, "Name", x)),
                     _ => throw new NotImplementedException()
                 };
             Action< PlcTagBaseFDA, string> fdatSetter =
@@ -256,15 +262,23 @@ namespace Plc2DsApp
         int applySplitFDA(bool withUI=true)
         {
             Pattern[] patterns = _appSettings.TagPatternFDAs;
-            PlcTagBaseFDA[] chosen = [];
-            var form = new FormSplitFDA(TagsStage, patterns, withUI);
+
+            var tags = TagsStage.ToArray();
+            var form = new FormSplitFDA(tags, patterns, withUI);
+
             if (form.ShowDialog() == DialogResult.OK)
             {
-                chosen = form.TagsStage;
-                chosen.Iter(t => t.Choice = Choice.Categorized);
+                form.TagsDoneSplit.Iter(t => t.Choice = Choice.Categorized);
                 updateUI();
+
+                var dones = new HashSet<PlcTagBaseFDA>(form.TagsDoneSplit);
+                foreach(var t in tags.Where(tags => ! dones.Contains(tags)))
+                {
+                    t.Choice = Choice.Discarded;
+                    Logger.Error($"Discarding tag failed to split F/D/A: {t.Stringify()}");
+                }
             }
-            return chosen.Length;
+            return form.TagsDoneSplit.Count();
         }
 
         void applyReplaceTags(bool withUI=true)
