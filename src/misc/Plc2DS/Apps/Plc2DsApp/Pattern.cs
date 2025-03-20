@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace Plc2DsApp
@@ -72,14 +73,20 @@ namespace Plc2DsApp
 
     public static class PatternExtension
     {
-        public static bool IsInclude(this CsvFilterPattern pattern, PlcTagBaseFDA tag)
+        public static bool? IsInclude(this CsvFilterPattern pattern, PlcTagBaseFDA tag)
         {
             // tag 객체로부터 reflection 을 이용해서 Filed 이름의 값을 가져온다.
-            string value = tag.GetType().GetProperty(pattern.Field).GetValue(tag).ToString();
+            PropertyInfo propertyInfo = tag.GetType().GetProperty(pattern.Field);
+            if (propertyInfo == null)
+                return null;
+
+            string value = propertyInfo.GetValue(tag).ToString();
+            if (value.IsNullOrEmpty())
+                return null;
 
             var match = pattern.RegexPattern.Match(value);
             return pattern.Include ? match.Success : !match.Success;
         }
-        public static bool IsExclude(this CsvFilterPattern pattern, PlcTagBaseFDA tag) => !pattern.IsInclude(tag);
+        public static bool? IsExclude(this CsvFilterPattern pattern, PlcTagBaseFDA tag) => !pattern.IsInclude(tag);
     }
 }

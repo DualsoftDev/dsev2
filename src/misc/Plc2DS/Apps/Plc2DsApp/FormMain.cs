@@ -178,7 +178,15 @@ namespace Plc2DsApp
 
 
             Logger.Info($"  Loaded {tags.Length} tags from {csvFile}");
-            var grDic = tags.GroupByToDictionary(t => patterns.Any(p => p.IsExclude(t)));
+            var grDic =
+                tags.GroupByToDictionary(t =>
+                    patterns.Any(p => {
+                            return p.IsExclude(t) switch {
+                                null => false,
+                                false => false,
+                                true => true
+                            };
+                        }  ));
             var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(true) ? grDic[true] : [] );
             excludes.Iter(t => t.Choice = Choice.Discarded);
             if (excludes.Any())

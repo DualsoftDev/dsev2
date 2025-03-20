@@ -45,10 +45,10 @@ namespace Plc2DsApp
                     var dialects = ds.Skip(1).ToArray();
                     var dialectsPattern =
                         dialects.Select(d =>
-$@"(?<=_)({d})(?=_)  # _{d}_
-| ^({d})(?=_)        # {d}_ (문자열 시작)
-| (?<=_)({d})$       # _{d} (문자열 끝)
-| ^({d})$            # {d} (혼자 있을 때)
+$@"(?<=_)({d})(?=[_\d])  # _{d}_
+| ^({d})(?=[_\d])        # {d}_ (문자열 시작)
+| (?<=_)({d})$           # _{d} (문자열 끝)
+| ^({d})$                # {d} (혼자 있을 때)
 # 이 모든 것들을 {std} 로 변환
 "
                         ).Aggregate((a, b) => $"{a}|{b}")
