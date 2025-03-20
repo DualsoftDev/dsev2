@@ -42,4 +42,40 @@ namespace Plc2DsApp
             return rp;
         }
     }
+
+
+
+    [DataContract]
+    public class CsvFilterPattern : Pattern
+    {
+        /// <summary>
+        /// 패턴 매치를 적용할 PlcTagBaseFDA 의 Filed 이름
+        /// </summary>
+        [DataMember] public string Field { get; set; }
+
+        /// <summary>
+        /// <br/> Include == true 이면
+        ///     <br/> - match 되면 keep
+        ///     <br/> - match 안되면 discard
+        /// <br/> Include == false 이면
+        ///     <br/> - match 되면 discard
+        ///     <br/> - match 안되면 keep
+        /// </summary>
+        [DataMember] public bool Include { get; set; }
+
+    }
+
+
+    public static class PatternExtension
+    {
+        public static bool IsInclude(this CsvFilterPattern pattern, PlcTagBaseFDA tag)
+        {
+            // tag 객체로부터 reflection 을 이용해서 Filed 이름의 값을 가져온다.
+            string value = tag.GetType().GetProperty(pattern.Field).GetValue(tag).ToString();
+
+            var match = pattern.RegexPattern.Match(value);
+            return pattern.Include ? match.Success : !match.Success;
+        }
+        public static bool IsExclude(this CsvFilterPattern pattern, PlcTagBaseFDA tag) => !pattern.IsInclude(tag);
+    }
 }

@@ -27,7 +27,8 @@ namespace Plc2DsApp
         PlcTagBaseFDA[] selectTags(Choice cat)
         {
             if (TagsAll.IsNullOrEmpty())
-                TagsAll = loadTags(tbCsvFile.Text);
+                TagsAll = loadTags(tbCsvFile.Text, _appSettings.CsvFilterPatterns);
+
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
         public PlcTagBaseFDA[] TagsDiscarded => selectTags(Choice.Discarded);
@@ -152,9 +153,10 @@ namespace Plc2DsApp
 
         }
 
-        PlcTagBaseFDA[] loadTags(string csvFile)
+        PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterPattern[] patterns)
         {
             Logger.Info($"Loading tags from {csvFile}");
+            PlcTagBaseFDA[] tags = [];
 
             using var wf = DcWaitForm.CreateWaitForm("Loading tags...");
             var ext = Path.GetExtension(csvFile).ToLower();
@@ -162,32 +164,39 @@ namespace Plc2DsApp
             {
                 if (Vendor.IsLS)
                 {
-                    TagsAll =
+                    tags =
                         CsvReader.ReadLs(csvFile)
-                        .Where(t => t.DataType.ToUpper() == "BOOL")
-                        .Where(t => t.Scope == "GlobalVariable")
+                        //.Where(t => t.DataType.ToUpper() == "BOOL")
+                        //.Where(t => t.Scope == "GlobalVariable")
                         .ToArray();
                 }
                 else if (Vendor.IsAB)
-                    TagsAll = CsvReader.ReadAb(csvFile).ToArray();
+                    tags = CsvReader.ReadAb(csvFile).ToArray();
                 else if (Vendor.IsS7)
-                    TagsAll = CsvReader.ReadS7(csvFile).ToArray();
+                    tags = CsvReader.ReadS7(csvFile).ToArray();
                 else if (Vendor.IsMX)
-                    TagsAll = CsvReader.ReadMx(csvFile).ToArray();
+                    tags = CsvReader.ReadMx(csvFile).ToArray();
             }
             else if (ext == ".json")
             {
                 var json = File.ReadAllText(csvFile);
-                if      (Vendor.IsLS) TagsAll = EmJson.FromJson<LS.PlcTagInfo[]>(json);
-                else if (Vendor.IsAB) TagsAll = EmJson.FromJson<AB.PlcTagInfo[]>(json);
-                else if (Vendor.IsS7) TagsAll = EmJson.FromJson<S7.PlcTagInfo[]>(json);
-                else if (Vendor.IsMX) TagsAll = EmJson.FromJson<MX.PlcTagInfo[]>(json);
+                if      (Vendor.IsLS) tags = EmJson.FromJson<LS.PlcTagInfo[]>(json);
+                else if (Vendor.IsAB) tags = EmJson.FromJson<AB.PlcTagInfo[]>(json);
+                else if (Vendor.IsS7) tags = EmJson.FromJson<S7.PlcTagInfo[]>(json);
+                else if (Vendor.IsMX) tags = EmJson.FromJson<MX.PlcTagInfo[]>(json);
                 else throw new Exception("ERROR");
             }
             else
                 throw new NotImplementedException();
 
-            Logger.Info($"  Loaded tags from {csvFile}");
+            Logger.Info($"  Loaded {tags.Length} tags from {csvFile}");
+            var grDic = tags.GroupByToDictionary(t => patterns.Any(p => p.IsExclude(t)));
+            var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(true) ? grDic[true] : [] );
+            excludes.Iter(t => t.Choice = Choice.Discarded);
+            if (excludes.Any())
+                Logger.Info($"  Discarded {excludes.Count} tags from {csvFile} using CsvFilterPatterns");
+
+            TagsAll = tags.Where(t => ! excludes.Contains(t)).ToArray();
 
             var fdaSplitPattern = new Regex(_appSettings.FDASplitPattern, RegexOptions.Compiled);
             TagsAll.Iter(t =>
@@ -232,7 +241,7 @@ namespace Plc2DsApp
             {
                 var f = ofd.FileName;
                 tbCsvFile.Text = f;
-                loadTags(f);
+                loadTags(f, _appSettings.CsvFilterPatterns);
                 _lastFileInfo.Read = f;
             }
         }

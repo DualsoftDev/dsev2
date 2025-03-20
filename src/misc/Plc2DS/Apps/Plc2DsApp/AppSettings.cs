@@ -5,6 +5,8 @@ namespace Plc2DsApp
     [DataContract]
     public class AppSettings
     {
+        [DataMember] public CsvFilterPattern[] CsvFilterPatterns { get; set; } = [];
+
         [DataMember] public string FDASplitPattern { get; set; }
 
         /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
@@ -14,13 +16,28 @@ namespace Plc2DsApp
         [DataMember] public Pattern[] TagPatternDiscards { get; set; }
         [DataMember] public ReplacePattern[] TagPatternReplaces { get; set; }
         [DataMember] public Pattern[] TagPatternFDAs { get; set; }
+        /// <summary>
+        /// split 된 FlowName 에서 replace 할 패턴
+        /// </summary>
         [DataMember] public ReplacePattern[] FlowPatternReplaces { get; set; }
+        /// <summary>
+        /// split 된 DeviceName 에서 replace 할 패턴
+        /// </summary>
         [DataMember] public ReplacePattern[] DevicePatternReplaces { get; set; }
+        /// <summary>
+        /// split 된 ActionName 에서 replace 할 패턴
+        /// </summary>
         [DataMember] public ReplacePattern[] ActionPatternReplaces { get; set; }
+        /// <summary>
+        /// Gridview 에 표출할 column 명
+        /// </summary>
         [DataMember] public string[] VisibleColumns { get; set; }
         [OnDeserialized]
         public void OnDeserializedMethod(StreamingContext context)
         {
+            // string array 로 구성된 Dialects 를 ReplacePattern[] 로 변환
+            // [표준어, 방언1, 방언2, ...] 형태로 구성된 Dialects 를
+            // (방언1|방언2|..) => 표준어 ... 형태의 replace patterns 로 변환
             DialectPatterns =
                 Dialects.Select( (ds, i) =>
                 {
