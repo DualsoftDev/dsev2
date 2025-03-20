@@ -7,7 +7,10 @@ namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm, IAppender
     {
-        public Vendor Vendor { get => _appRegistry.Vendor; set => _appRegistry.Vendor = value; }
+        public Vendor Vendor {
+            get => _appRegistry.Vendor;
+            set => _appRegistry.Vendor = value;
+        }
         public string[] VisibleColumns => _appSettings.VisibleColumns;
 
         public static FormMain Instance { get; private set; }
@@ -227,14 +230,24 @@ namespace Plc2DsApp
                     btnReplaceFlowName, btnReplaceDeviceName, btnReplaceActionName,
                     btnApplyAll
                 };
-            if (tbCsvFile.Text.IsNullOrEmpty())
-                buttons.Iter(b => b.Enabled = false);
-            else
+            bool fileSpecified = tbCsvFile.Text.Any();
+            buttons.Iter(b => b.Enabled = fileSpecified);
+            if (fileSpecified)
             {
                 btnReplaceFlowName.Enabled = _appSettings.FlowPatternReplaces.Any();
                 btnReplaceDeviceName.Enabled = _appSettings.DevicePatternReplaces.Any();
                 btnReplaceActionName.Enabled = _appSettings.ActionPatternReplaces.Any();
             }
+
+            SimpleButton[] showTagButtons = [
+                btnShowAllTags,
+                btnShowStageTags,
+                btnShowChosenTags,
+                btnShowCategorizedTags,
+                btnShowDiscardedTags
+            ];
+            showTagButtons.Iter(b => b.Enabled = TagsAll.Any());
+
         }
 
         void btnLoadTags_Click(object sender, EventArgs e)

@@ -74,6 +74,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppRegistry.cs" />
     <Compile Include="AppSettings.cs" />
     <Compile Include="FormMain.cs">
       <SubType>Form</SubType>
