@@ -22,14 +22,18 @@ namespace Plc2DsApp {
             XmlConfigurator.Configure(new FileInfo(Path.Combine(baseDir, "log4net.config")));
             var logger = LogManager.GetLogger("AppLogger");
             DcLogger.Logger = logger;
-            logger.Info($":: ===== Starting up addin..");
-
-            logger.Info($":: Base directory = {baseDir}");
 
 
             var root = ((log4net.Repository.Hierarchy.Hierarchy)log4net.LogManager.GetRepository()).Root;
             var form = new FormMain();
             root.AddAppender(form);
+
+            form.Load += (s, e) =>
+            {
+                logger.Info($":: ===== Starting up application..");
+                logger.Info($":: Base directory = {baseDir}");
+            };
+
             Application.Run(form);
         }
     }

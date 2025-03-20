@@ -44,7 +44,6 @@ namespace Plc2DsApp
             this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
             this.btnReplaceTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnSplitFDA = new DevExpress.XtraEditors.SimpleButton();
-            this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
             this.groupControl4 = new DevExpress.XtraEditors.GroupControl();
             this.btnReplaceActionName = new DevExpress.XtraEditors.SimpleButton();
@@ -53,6 +52,7 @@ namespace Plc2DsApp
             this.btnApplyAll = new DevExpress.XtraEditors.SimpleButton();
             this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
             this.ucPanelLog1 = new Dual.Common.Winform.DevX.UserControls.UcPanelLog();
+            this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).BeginInit();
@@ -88,7 +88,7 @@ namespace Plc2DsApp
             // 
             // groupControl1
             // 
-            this.groupControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.groupControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupControl1.Controls.Add(this.tbNumTagsCategorized);
             this.groupControl1.Controls.Add(this.btnShowCategorizedTags);
@@ -100,10 +100,10 @@ namespace Plc2DsApp
             this.groupControl1.Controls.Add(this.btnShowChosenTags);
             this.groupControl1.Controls.Add(this.btnShowStageTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(12, 481);
+            this.groupControl1.Location = new System.Drawing.Point(18, 434);
             this.groupControl1.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl1.Name = "groupControl1";
-            this.groupControl1.Size = new System.Drawing.Size(896, 122);
+            this.groupControl1.Size = new System.Drawing.Size(1023, 122);
             this.groupControl1.TabIndex = 3;
             this.groupControl1.Text = "Show tags";
             // 
@@ -200,13 +200,15 @@ namespace Plc2DsApp
             // 
             // groupControl2
             // 
+            this.groupControl2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupControl2.Controls.Add(this.btnReplaceTags);
             this.groupControl2.Controls.Add(this.btnSplitFDA);
             this.groupControl2.Controls.Add(this.btnDiscardTags);
             this.groupControl2.Location = new System.Drawing.Point(12, 148);
             this.groupControl2.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl2.Name = "groupControl2";
-            this.groupControl2.Size = new System.Drawing.Size(609, 94);
+            this.groupControl2.Size = new System.Drawing.Size(1029, 94);
             this.groupControl2.TabIndex = 9;
             this.groupControl2.Text = "Tags";
             // 
@@ -231,16 +233,6 @@ namespace Plc2DsApp
             this.btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출";
             this.btnSplitFDA.Click += new System.EventHandler(this.btnSplitFDA_Click);
             // 
-            // ucRadioSelector1
-            // 
-            this.ucRadioSelector1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.ucRadioSelector1.Location = new System.Drawing.Point(148, 12);
-            this.ucRadioSelector1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
-            this.ucRadioSelector1.Name = "ucRadioSelector1";
-            this.ucRadioSelector1.Size = new System.Drawing.Size(762, 39);
-            this.ucRadioSelector1.TabIndex = 11;
-            // 
             // labelControl1
             // 
             this.labelControl1.Location = new System.Drawing.Point(17, 22);
@@ -259,7 +251,7 @@ namespace Plc2DsApp
             this.groupControl4.Location = new System.Drawing.Point(12, 257);
             this.groupControl4.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl4.Name = "groupControl4";
-            this.groupControl4.Size = new System.Drawing.Size(895, 98);
+            this.groupControl4.Size = new System.Drawing.Size(1029, 98);
             this.groupControl4.TabIndex = 13;
             this.groupControl4.Text = "Discards F/D/A";
             // 
@@ -295,7 +287,8 @@ namespace Plc2DsApp
             // 
             // btnApplyAll
             // 
-            this.btnApplyAll.Location = new System.Drawing.Point(387, 407);
+            this.btnApplyAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnApplyAll.Location = new System.Drawing.Point(807, 374);
             this.btnApplyAll.Margin = new System.Windows.Forms.Padding(2);
             this.btnApplyAll.Name = "btnApplyAll";
             this.btnApplyAll.Size = new System.Drawing.Size(234, 45);
@@ -311,23 +304,36 @@ namespace Plc2DsApp
             this.tbCsvFile.Location = new System.Drawing.Point(148, 91);
             this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
             this.tbCsvFile.Name = "tbCsvFile";
-            this.tbCsvFile.Size = new System.Drawing.Size(758, 28);
+            this.tbCsvFile.Size = new System.Drawing.Size(897, 28);
             this.tbCsvFile.TabIndex = 2;
             // 
             // ucPanelLog1
             // 
-            this.ucPanelLog1.Location = new System.Drawing.Point(13, 626);
+            this.ucPanelLog1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ucPanelLog1.Location = new System.Drawing.Point(12, 576);
             this.ucPanelLog1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.ucPanelLog1.Name = "ucPanelLog1";
             this.ucPanelLog1.SelectedIndex = -1;
-            this.ucPanelLog1.Size = new System.Drawing.Size(893, 253);
+            this.ucPanelLog1.Size = new System.Drawing.Size(1029, 292);
             this.ucPanelLog1.TabIndex = 15;
+            // 
+            // ucRadioSelector1
+            // 
+            this.ucRadioSelector1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ucRadioSelector1.Location = new System.Drawing.Point(148, 12);
+            this.ucRadioSelector1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.ucRadioSelector1.Name = "ucRadioSelector1";
+            this.ucRadioSelector1.Size = new System.Drawing.Size(897, 39);
+            this.ucRadioSelector1.TabIndex = 11;
             // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(919, 893);
+            this.ClientSize = new System.Drawing.Size(1056, 882);
             this.Controls.Add(this.ucPanelLog1);
             this.Controls.Add(this.btnApplyAll);
             this.Controls.Add(this.groupControl4);

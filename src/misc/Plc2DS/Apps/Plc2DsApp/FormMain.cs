@@ -96,6 +96,10 @@ namespace Plc2DsApp
             btnReplaceDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice);
             btnReplaceActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction);
         }
+        public void DoAppend(LoggingEvent loggingEvent)
+        {
+            this.Do(() => ucPanelLog1.AddLog(loggingEvent));
+        }
 
         int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
         int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
@@ -144,6 +148,8 @@ namespace Plc2DsApp
 
         PlcTagBaseFDA[] loadTags(string csvFile)
         {
+            Logger.Info($"Loading tags from {csvFile}");
+
             using var wf = DcWaitForm.CreateWaitForm("Loading tags...");
             var ext = Path.GetExtension(csvFile).ToLower();
             if ( ext == ".csv")
@@ -174,6 +180,8 @@ namespace Plc2DsApp
             }
             else
                 throw new NotImplementedException();
+
+            Logger.Info($"  Loaded tags from {csvFile}");
 
             var fdaSplitPattern = new Regex(_appSettings.FDASplitPattern, RegexOptions.Compiled);
             TagsAll.Iter(t =>

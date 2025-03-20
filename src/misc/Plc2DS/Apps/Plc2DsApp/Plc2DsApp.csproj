@@ -81,9 +81,6 @@
     <Compile Include="FormMain.Designer.cs">
       <DependentUpon>FormMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="FormMain.Log.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Forms\FormFDAMasterDetail.cs">
       <SubType>Form</SubType>
     </Compile>
