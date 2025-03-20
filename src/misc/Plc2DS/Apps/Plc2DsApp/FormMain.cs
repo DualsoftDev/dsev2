@@ -7,7 +7,7 @@ namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm, IAppender
     {
-        public Vendor Vendor { get; set; } = Vendor.LS;
+        public Vendor Vendor { get => _appRegistry.Vendor; set => _appRegistry.Vendor = value; }
         public string[] VisibleColumns => _appSettings.VisibleColumns;
 
         public static FormMain Instance { get; private set; }
@@ -20,7 +20,7 @@ namespace Plc2DsApp
         public PlcTagBaseFDA[] TagsCategorized => selectTags(Choice.Categorized);
         public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
 
-        LastFileInfo _lastFileInfo = new LastFileInfo();
+        AppRegistry _appRegistry = new AppRegistry();
         AppSettings _appSettings = null;
         UiUpdator _uiUpdator = new UiUpdator();
 
@@ -30,17 +30,18 @@ namespace Plc2DsApp
             _uiUpdator.StartMainLoop(this, updateUI);
             _appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
             if (File.Exists("lastFile.json"))
-                _lastFileInfo = EmJson.FromJson<LastFileInfo>(File.ReadAllText("lastFile.json"));
+                _appRegistry = EmJson.FromJson<AppRegistry>(File.ReadAllText("lastFile.json"));
 
             Instance = this;
             Dual.Plc2DS.ModuleInitializer.Initialize();
             DcLogger.EnableTrace = false;
 
-            tbCsvFile.Text = _lastFileInfo.Read;
+            tbCsvFile.Text = _appRegistry.LastRead;
 
-            btnDiscardTags.ToolTip = "Tag 이름에 대한 패턴을 찾아서 Discard 합니다.";
-
-            ucRadioSelector1.SetOptions(new string[] { "LS", "AB", "S7", "MX" }, itemLayout:RadioGroupItemsLayout.Flow);
+            string[] vendors = ["LS", "AB", "S7", "MX"];
+            string lastVendor = _appRegistry.Vendor?.ToString();
+            int selectedIndex = lastVendor == null ? 0 : Array.IndexOf(vendors, lastVendor);
+            ucRadioSelector1.SetOptions(vendors, selectedIndex: selectedIndex, itemLayout:RadioGroupItemsLayout.Flow);
             ucRadioSelector1.SelectedOptionChanged += (s, e) => Vendor = Vendor.FromString(e);
         }
         void FormMain_Load(object sender, EventArgs e)
@@ -134,7 +135,7 @@ namespace Plc2DsApp
             using SaveFileDialog sfd =
                 new SaveFileDialog()
                 {
-                    InitialDirectory = Path.GetDirectoryName(_lastFileInfo.Write),
+                    InitialDirectory = Path.GetDirectoryName(_appRegistry.LastWrite),
                     Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
                 };
 
@@ -142,7 +143,7 @@ namespace Plc2DsApp
             {
                 string json = EmJson.ToJson(tags);
                 File.WriteAllText(sfd.FileName, json);
-                _lastFileInfo.Write = sfd.FileName;
+                _appRegistry.LastWrite = sfd.FileName;
             }
 
         }
@@ -241,7 +242,7 @@ namespace Plc2DsApp
             using OpenFileDialog ofd =
                 new OpenFileDialog()
                 {
-                    InitialDirectory = Path.GetDirectoryName(_lastFileInfo.Read),
+                    InitialDirectory = Path.GetDirectoryName(_appRegistry.LastRead),
                     Filter = "CSV files (*.csv)|*.csv|JSON files (*.json)|*.json|All files (*.*)|*.*",
                 };
 
@@ -250,7 +251,7 @@ namespace Plc2DsApp
                 var f = ofd.FileName;
                 tbCsvFile.Text = f;
                 loadTags(f, _appSettings.CsvFilterPatterns);
-                _lastFileInfo.Read = f;
+                _appRegistry.LastRead = f;
             }
         }
 

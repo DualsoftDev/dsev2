@@ -61,25 +61,35 @@ $@"(?<=_)({d})(?=[_\d])  # _{d}_
 
     }
 
-    public class LastFileInfo
+    public class AppRegistry
     {
-        string _read;
-        string _write;
-        public string Read
+        string _lastRead;
+        string _lastWrite;
+        Vendor _vendor;
+        public string LastRead
         {
-            get => _read;
+            get => _lastRead;
             set
             {
-                _read = value;
+                _lastRead = value;
                 File.WriteAllText("lastFile.json", EmJson.ToJson(this));
             }
         }
-        public string Write
+        public string LastWrite
         {
-            get => _write;
+            get => _lastWrite;
             set
             {
-                _write = value;
+                _lastWrite = value;
+                File.WriteAllText("lastFile.json", EmJson.ToJson(this));
+            }
+        }
+        public Vendor Vendor
+        {
+            get => _vendor;
+            set
+            {
+                _vendor = value;
                 File.WriteAllText("lastFile.json", EmJson.ToJson(this));
             }
         }

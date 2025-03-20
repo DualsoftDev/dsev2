@@ -28,7 +28,6 @@ namespace Plc2DsApp
         /// </summary>
         void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.btnLoadTags = new DevExpress.XtraEditors.SimpleButton();
             this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
             this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
@@ -76,6 +75,8 @@ namespace Plc2DsApp
             this.btnLoadTags.Size = new System.Drawing.Size(112, 34);
             this.btnLoadTags.TabIndex = 0;
             this.btnLoadTags.Text = "Load tags..";
+            this.btnLoadTags.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서" +
+    " 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
             this.btnLoadTags.Click += new System.EventHandler(this.btnLoadTags_Click);
             // 
             // btnShowAllTags
@@ -86,6 +87,7 @@ namespace Plc2DsApp
             this.btnShowAllTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowAllTags.TabIndex = 1;
             this.btnShowAllTags.Text = "All";
+            this.btnShowAllTags.ToolTip = "모든 tags 보이기\r\n- CsvFilterPatterns 에 의해서 버려진 tags 는 제외한 모든 tags";
             // 
             // groupControl1
             // 
@@ -125,6 +127,7 @@ namespace Plc2DsApp
             this.btnShowCategorizedTags.Size = new System.Drawing.Size(110, 34);
             this.btnShowCategorizedTags.TabIndex = 11;
             this.btnShowCategorizedTags.Text = "Categorized";
+            this.btnShowCategorizedTags.ToolTip = "Split 되어 Flow, Device, Action 명이 지정된 tags";
             // 
             // tbNumTagsDiscarded
             // 
@@ -170,6 +173,7 @@ namespace Plc2DsApp
             this.btnShowDiscardedTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowDiscardedTags.TabIndex = 6;
             this.btnShowDiscardedTags.Text = "Discarded";
+            this.btnShowDiscardedTags.ToolTip = "버려진 tags";
             // 
             // btnShowChosenTags
             // 
@@ -179,6 +183,7 @@ namespace Plc2DsApp
             this.btnShowChosenTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowChosenTags.TabIndex = 5;
             this.btnShowChosenTags.Text = "Chosen";
+            this.btnShowChosenTags.ToolTip = "취할 tags.  버려질 tags 가 아님을 의미";
             // 
             // btnShowStageTags
             // 
@@ -188,6 +193,7 @@ namespace Plc2DsApp
             this.btnShowStageTags.Size = new System.Drawing.Size(90, 34);
             this.btnShowStageTags.TabIndex = 4;
             this.btnShowStageTags.Text = "Stage";
+            this.btnShowStageTags.ToolTip = "버릴지 취할지 결정되지 않은 tags";
             // 
             // btnDiscardTags
             // 
@@ -267,7 +273,7 @@ namespace Plc2DsApp
             this.btnReplaceActionName.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceActionName.TabIndex = 12;
             this.btnReplaceActionName.Text = "Action";
-            this.btnReplaceActionName.ToolTip = "Action 명에서 불필요한 부분 제거";
+            this.btnReplaceActionName.ToolTip = "Action 명에서 불필요한 부분 제거\r\n- ActionPatternReplaces 에 정의";
             // 
             // btnReplaceDeviceName
             // 
@@ -277,7 +283,7 @@ namespace Plc2DsApp
             this.btnReplaceDeviceName.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceDeviceName.TabIndex = 11;
             this.btnReplaceDeviceName.Text = "Device";
-            this.btnReplaceDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거";
+            this.btnReplaceDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거\r\n- DevicePatternReplaces 에 정의";
             // 
             // btnReplaceFlowName
             // 
@@ -287,7 +293,7 @@ namespace Plc2DsApp
             this.btnReplaceFlowName.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceFlowName.TabIndex = 10;
             this.btnReplaceFlowName.Text = "Flow";
-            this.btnReplaceFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거";
+            this.btnReplaceFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거\r\n- FlowPatternReplaces 에 정의";
             // 
             // btnApplyAll
             // 
@@ -298,7 +304,7 @@ namespace Plc2DsApp
             this.btnApplyAll.Size = new System.Drawing.Size(234, 45);
             this.btnApplyAll.TabIndex = 14;
             this.btnApplyAll.Text = "Apply all rules";
-            this.btnApplyAll.ToolTip = "일괄 적용";
+            this.btnApplyAll.ToolTip = "모든 규칙 일괄 적용";
             this.btnApplyAll.Click += new System.EventHandler(this.btnApplyAll_Click);
             // 
             // tbCsvFile
