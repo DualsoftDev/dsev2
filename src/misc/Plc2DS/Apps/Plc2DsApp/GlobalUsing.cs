@@ -9,6 +9,8 @@ global using System.ComponentModel;
 
 global using Microsoft.FSharp.Core;
 global using Newtonsoft.Json;
+global using log4net;
+
 
 global using DevExpress.XtraGrid.Views.Grid;
 global using DevExpress.XtraEditors.Repository;

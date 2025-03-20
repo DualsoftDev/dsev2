@@ -1,8 +1,12 @@
 using DevExpress.XtraEditors;
 
+using log4net.Appender;
+using log4net.Core;
+
 namespace Plc2DsApp
 {
-    public partial class FormMain : DevExpress.XtraEditors.XtraForm {
+    public partial class FormMain : DevExpress.XtraEditors.XtraForm, IAppender
+    {
         AppSettings _appSettings = null;
         public Vendor Vendor { get; set; } = Vendor.LS;
         public string[] VisibleColumns => _appSettings.VisibleColumns;

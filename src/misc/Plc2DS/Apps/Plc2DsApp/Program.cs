@@ -1,3 +1,6 @@
+using DevExpress.XtraEditors;
+using log4net.Config;
+
 namespace Plc2DsApp {
     static class Program {
         /// <summary>
@@ -10,7 +13,24 @@ namespace Plc2DsApp {
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormMain());
+
+
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            if (!File.Exists(Path.Combine(baseDir, "log4net.config")))
+                MessageBox.Show($"log4net.config not found");
+
+            XmlConfigurator.Configure(new FileInfo(Path.Combine(baseDir, "log4net.config")));
+            var logger = LogManager.GetLogger("AppLogger");
+            DcLogger.Logger = logger;
+            logger.Info($":: ===== Starting up addin..");
+
+            logger.Info($":: Base directory = {baseDir}");
+
+
+            var root = ((log4net.Repository.Hierarchy.Hierarchy)log4net.LogManager.GetRepository()).Root;
+            var form = new FormMain();
+            root.AddAppender(form);
+            Application.Run(form);
         }
     }
 }

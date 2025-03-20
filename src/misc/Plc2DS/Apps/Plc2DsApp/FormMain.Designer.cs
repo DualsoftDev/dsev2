@@ -52,6 +52,7 @@ namespace Plc2DsApp
             this.btnReplaceFlowName = new DevExpress.XtraEditors.SimpleButton();
             this.btnApplyAll = new DevExpress.XtraEditors.SimpleButton();
             this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
+            this.ucPanelLog1 = new Dual.Common.Winform.DevX.UserControls.UcPanelLog();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).BeginInit();
@@ -99,10 +100,10 @@ namespace Plc2DsApp
             this.groupControl1.Controls.Add(this.btnShowChosenTags);
             this.groupControl1.Controls.Add(this.btnShowStageTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(11, 467);
+            this.groupControl1.Location = new System.Drawing.Point(12, 481);
             this.groupControl1.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl1.Name = "groupControl1";
-            this.groupControl1.Size = new System.Drawing.Size(611, 122);
+            this.groupControl1.Size = new System.Drawing.Size(896, 122);
             this.groupControl1.TabIndex = 3;
             this.groupControl1.Text = "Show tags";
             // 
@@ -237,7 +238,7 @@ namespace Plc2DsApp
             this.ucRadioSelector1.Location = new System.Drawing.Point(148, 12);
             this.ucRadioSelector1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.ucRadioSelector1.Name = "ucRadioSelector1";
-            this.ucRadioSelector1.Size = new System.Drawing.Size(477, 39);
+            this.ucRadioSelector1.Size = new System.Drawing.Size(762, 39);
             this.ucRadioSelector1.TabIndex = 11;
             // 
             // labelControl1
@@ -258,35 +259,35 @@ namespace Plc2DsApp
             this.groupControl4.Location = new System.Drawing.Point(12, 257);
             this.groupControl4.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl4.Name = "groupControl4";
-            this.groupControl4.Size = new System.Drawing.Size(610, 98);
+            this.groupControl4.Size = new System.Drawing.Size(895, 98);
             this.groupControl4.TabIndex = 13;
             this.groupControl4.Text = "Discards F/D/A";
             // 
-            // btnDiscardActionName
+            // btnReplaceActionName
             // 
             this.btnReplaceActionName.Location = new System.Drawing.Point(330, 45);
             this.btnReplaceActionName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceActionName.Name = "btnDiscardActionName";
+            this.btnReplaceActionName.Name = "btnReplaceActionName";
             this.btnReplaceActionName.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceActionName.TabIndex = 12;
             this.btnReplaceActionName.Text = "Action";
             this.btnReplaceActionName.ToolTip = "Action 명에서 불필요한 부분 제거";
             // 
-            // btnDiscardDeviceName
+            // btnReplaceDeviceName
             // 
             this.btnReplaceDeviceName.Location = new System.Drawing.Point(164, 45);
             this.btnReplaceDeviceName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceDeviceName.Name = "btnDiscardDeviceName";
+            this.btnReplaceDeviceName.Name = "btnReplaceDeviceName";
             this.btnReplaceDeviceName.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceDeviceName.TabIndex = 11;
             this.btnReplaceDeviceName.Text = "Device";
             this.btnReplaceDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거";
             // 
-            // btnDiscardFlowName
+            // btnReplaceFlowName
             // 
             this.btnReplaceFlowName.Location = new System.Drawing.Point(4, 45);
             this.btnReplaceFlowName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceFlowName.Name = "btnDiscardFlowName";
+            this.btnReplaceFlowName.Name = "btnReplaceFlowName";
             this.btnReplaceFlowName.Size = new System.Drawing.Size(139, 45);
             this.btnReplaceFlowName.TabIndex = 10;
             this.btnReplaceFlowName.Text = "Flow";
@@ -310,14 +311,24 @@ namespace Plc2DsApp
             this.tbCsvFile.Location = new System.Drawing.Point(148, 91);
             this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
             this.tbCsvFile.Name = "tbCsvFile";
-            this.tbCsvFile.Size = new System.Drawing.Size(473, 28);
+            this.tbCsvFile.Size = new System.Drawing.Size(758, 28);
             this.tbCsvFile.TabIndex = 2;
+            // 
+            // ucPanelLog1
+            // 
+            this.ucPanelLog1.Location = new System.Drawing.Point(13, 626);
+            this.ucPanelLog1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.ucPanelLog1.Name = "ucPanelLog1";
+            this.ucPanelLog1.SelectedIndex = -1;
+            this.ucPanelLog1.Size = new System.Drawing.Size(893, 253);
+            this.ucPanelLog1.TabIndex = 15;
             // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(634, 600);
+            this.ClientSize = new System.Drawing.Size(919, 893);
+            this.Controls.Add(this.ucPanelLog1);
             this.Controls.Add(this.btnApplyAll);
             this.Controls.Add(this.groupControl4);
             this.Controls.Add(this.labelControl1);
@@ -373,6 +384,7 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnApplyAll;
         private DevExpress.XtraEditors.SimpleButton btnReplaceTags;
         private DevExpress.XtraEditors.TextEdit tbCsvFile;
+        private Dual.Common.Winform.DevX.UserControls.UcPanelLog ucPanelLog1;
     }
 }
 
