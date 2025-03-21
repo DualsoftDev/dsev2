@@ -27,37 +27,37 @@ type Rulebase() =
     member val DialectPatterns      : ReplacePattern[]      = [||] with get, set
 
     [<DataMember>]
-    member val TagPatternDiscards   : Pattern[]             = null with get, set
+    member val TagPatternDiscards   : Pattern[]             = [||] with get, set
 
     [<DataMember>]
-    member val TagPatternReplaces   : ReplacePattern[]      = null with get, set
+    member val TagPatternReplaces   : ReplacePattern[]      = [||] with get, set
 
     [<DataMember>]
-    member val TagPatternFDAs       : Pattern[]             = null with get, set
+    member val TagPatternFDAs       : Pattern[]             = [||] with get, set
 
     /// <summary>
     /// split 된 FlowName 에서 replace 할 패턴
     /// </summary>
     [<DataMember>]
-    member val FlowPatternReplaces  : ReplacePattern[]      = null with get, set
+    member val FlowPatternReplaces  : ReplacePattern[]      = [||] with get, set
 
     /// <summary>
     /// split 된 DeviceName 에서 replace 할 패턴
     /// </summary>
     [<DataMember>]
-    member val DevicePatternReplaces: ReplacePattern[]      = null with get, set
+    member val DevicePatternReplaces: ReplacePattern[]      = [||] with get, set
 
     /// <summary>
     /// split 된 ActionName 에서 replace 할 패턴
     /// </summary>
     [<DataMember>]
-    member val ActionPatternReplaces: ReplacePattern[]      = null with get, set
+    member val ActionPatternReplaces: ReplacePattern[]      = [||] with get, set
 
     /// <summary>
     /// Gridview 에 표출할 column 명
     /// </summary>
     [<DataMember>]
-    member val VisibleColumns       : string[]              = null with get, set
+    member val VisibleColumns       : string[]              = [||] with get, set
 
     member this.OnDeserialized() =
         // string array 로 구성된 Dialects 를 ReplacePattern[] 로 변환
@@ -103,42 +103,42 @@ type Rulebase() =
         y
 
     member this.Merge(other: Rulebase) =
-        this.CsvFilterPatterns     <- Array.append other.CsvFilterPatterns        this.CsvFilterPatterns
-        this.Dialects              <- Array.append other.Dialects                 this.Dialects
-        this.DialectPatterns       <- Array.append other.DialectPatterns          this.DialectPatterns
-        this.TagPatternDiscards    <- Array.append other.TagPatternDiscards       this.TagPatternDiscards
-        this.TagPatternReplaces    <- Array.append other.TagPatternReplaces       this.TagPatternReplaces
-        this.TagPatternFDAs        <- Array.append other.TagPatternFDAs           this.TagPatternFDAs
-        this.FlowPatternReplaces   <- Array.append other.FlowPatternReplaces      this.FlowPatternReplaces
-        this.DevicePatternReplaces <- Array.append other.DevicePatternReplaces    this.DevicePatternReplaces
-        this.ActionPatternReplaces <- Array.append other.ActionPatternReplaces    this.ActionPatternReplaces
-        this.VisibleColumns        <- Array.append other.VisibleColumns           this.VisibleColumns
+        this.CsvFilterPatterns     <- other.CsvFilterPatterns     @ this.CsvFilterPatterns
+        this.Dialects              <- other.Dialects              @ this.Dialects
+        this.DialectPatterns       <- other.DialectPatterns       @ this.DialectPatterns
+        this.TagPatternDiscards    <- other.TagPatternDiscards    @ this.TagPatternDiscards
+        this.TagPatternReplaces    <- other.TagPatternReplaces    @ this.TagPatternReplaces
+        this.TagPatternFDAs        <- other.TagPatternFDAs        @ this.TagPatternFDAs
+        this.FlowPatternReplaces   <- other.FlowPatternReplaces   @ this.FlowPatternReplaces
+        this.DevicePatternReplaces <- other.DevicePatternReplaces @ this.DevicePatternReplaces
+        this.ActionPatternReplaces <- other.ActionPatternReplaces @ this.ActionPatternReplaces
+        this.VisibleColumns        <- other.VisibleColumns        @ this.VisibleColumns
         //this.FDASplitPattern     <- this.FDASplitPattern                         // 기존 유지
 
         this.OnDeserialized()
 
     member this.Override(replace: Rulebase) =
-        if not (isNull replace.CsvFilterPatterns) && replace.CsvFilterPatterns.Length > 0 then
+        if replace.CsvFilterPatterns.NonNullAny() then
             this.CsvFilterPatterns <- replace.CsvFilterPatterns
-        if not (isNull replace.Dialects) && replace.Dialects.Length > 0 then
+        if replace.Dialects.NonNullAny() then
             this.Dialects <- replace.Dialects
-        if not (isNull replace.DialectPatterns) && replace.DialectPatterns.Length > 0 then
+        if replace.DialectPatterns.NonNullAny() then
             this.DialectPatterns <- replace.DialectPatterns
-        if not (isNull replace.TagPatternDiscards) && replace.TagPatternDiscards.Length > 0 then
+        if replace.TagPatternDiscards.NonNullAny() then
             this.TagPatternDiscards <- replace.TagPatternDiscards
-        if not (isNull replace.TagPatternReplaces) && replace.TagPatternReplaces.Length > 0 then
+        if replace.TagPatternReplaces.NonNullAny() then
             this.TagPatternReplaces <- replace.TagPatternReplaces
-        if not (isNull replace.TagPatternFDAs) && replace.TagPatternFDAs.Length > 0 then
+        if replace.TagPatternFDAs.NonNullAny() then
             this.TagPatternFDAs <- replace.TagPatternFDAs
-        if not (isNull replace.FlowPatternReplaces) && replace.FlowPatternReplaces.Length > 0 then
+        if replace.FlowPatternReplaces.NonNullAny() then
             this.FlowPatternReplaces <- replace.FlowPatternReplaces
-        if not (isNull replace.DevicePatternReplaces) && replace.DevicePatternReplaces.Length > 0 then
+        if replace.DevicePatternReplaces.NonNullAny() then
             this.DevicePatternReplaces <- replace.DevicePatternReplaces
-        if not (isNull replace.ActionPatternReplaces) && replace.ActionPatternReplaces.Length > 0 then
+        if replace.ActionPatternReplaces.NonNullAny() then
             this.ActionPatternReplaces <- replace.ActionPatternReplaces
-        if not (isNull replace.VisibleColumns) && replace.VisibleColumns.Length > 0 then
+        if replace.VisibleColumns.NonNullAny() then
             this.VisibleColumns <- replace.VisibleColumns
-        if not (String.IsNullOrEmpty replace.FDASplitPattern) then
+        if replace.FDASplitPattern.NonNullAny() then
             this.FDASplitPattern <- replace.FDASplitPattern
 
         this.OnDeserialized()
@@ -155,24 +155,35 @@ type AppSettings() =
     [<DataMember>]
     member val Overrides : Dictionary<string, Rulebase> = Dictionary() with get, set
 
-    member this.CreateVendorRulebase(vendor: Vendor) =
-        let getRB (dic: Dictionary<string, Rulebase>) (vendor: string) =
-            match dic.TryGetValue(vendor) with
-            | true, rb -> rb
-            | _        -> getNull<Rulebase>()
+    //member this.CreateVendorRulebase(vendor: Vendor) =
+        //let getRB (dic: Dictionary<string, Rulebase>) (vendor: string) =
+        //    match dic.TryGetValue(vendor) with
+        //    | true, rb -> rb
+        //    | _        -> getNull<Rulebase>()
 
-        let v = vendor.ToString()
-        let addOn   = getRB this.AddOns v
-        let ovrride = getRB this.Overrides v
-        if isItNull addOn && isItNull ovrride then
-            this :> Rulebase
+        //let v = vendor.ToString()
+        //let addOn   = getRB this.AddOns v
+        //let ovrride = getRB this.Overrides v
+        //if isItNull addOn && isItNull ovrride then
+        //    this :> Rulebase
+        //else
+        //    let y = this.Duplicate()
+        //    if not (isItNull addOn) && not (isItNull ovrride) then
+        //        y.Merge(addOn)
+        //        y.Override(ovrride)
+        //        y
+        //    elif not (isItNull addOn) then addOn
+        //    elif not (isItNull ovrride) then ovrride
+        //    else raise (Exception("ERROR"))
+
+    member x.CreateVendorRulebase(vendor: Vendor): Rulebase =
+        let vendor = vendor.ToString()
+        let addOn = x.AddOns.TryGet(vendor)
+        let ovrride = x.Overrides.TryGet(vendor)
+        if addOn.IsNone && ovrride.IsNone then
+            x
         else
-            let y = this.Duplicate()
-            if not (isItNull addOn) && not (isItNull ovrride) then
-                y.Merge(addOn)
-                y.Override(ovrride)
-                y
-            elif not (isItNull addOn) then addOn
-            elif not (isItNull ovrride) then ovrride
-            else raise (Exception("ERROR"))
-
+            let y = x.Duplicate()
+            addOn.Iter (fun a -> y.Merge(a))
+            ovrride.Iter (fun o -> y.Override(o))
+            y

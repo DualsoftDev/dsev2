@@ -11,7 +11,7 @@ namespace Plc2DsApp
             get => _appRegistry.Vendor;
             set => _appRegistry.Vendor = value;
         }
-        public string[] VisibleColumns => _appSettings.VisibleColumns;
+        public string[] VisibleColumns => _vendorRule.VisibleColumns;
 
         public static FormMain Instance { get; private set; }
 
@@ -24,14 +24,14 @@ namespace Plc2DsApp
         public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
 
         AppRegistry _appRegistry = new AppRegistry();
-        AppSettings _appSettings = null;
+        //AppSettings _appSettings = null;
+        Rulebase _vendorRule = null;
         UiUpdator _uiUpdator = new UiUpdator();
 
         public FormMain() {
             InitializeComponent();
 
             _uiUpdator.StartMainLoop(this, updateUI);
-            _appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
             if (File.Exists("lastFile.json"))
                 _appRegistry = EmJson.FromJson<AppRegistry>(File.ReadAllText("lastFile.json"));
 
@@ -41,11 +41,23 @@ namespace Plc2DsApp
 
             tbCsvFile.Text = _appRegistry.LastRead;
 
+            void reloadAppsetting()
+            {
+                AppSettings appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
+                _vendorRule = appSettings.CreateVendorRulebase(Vendor);
+            }
+            reloadAppsetting();
+
             string[] vendors = ["LS", "AB", "S7", "MX"];
             string lastVendor = _appRegistry.Vendor?.ToString();
             int selectedIndex = lastVendor == null ? 0 : Array.IndexOf(vendors, lastVendor);
             ucRadioSelector1.SetOptions(vendors, selectedIndex: selectedIndex, itemLayout:RadioGroupItemsLayout.Flow);
-            ucRadioSelector1.SelectedOptionChanged += (s, e) => Vendor = Vendor.FromString(e);
+            ucRadioSelector1.SelectedOptionChanged += (s, e) =>
+            {
+                var vendor = e;
+                Vendor = Vendor.FromString(vendor);
+                reloadAppsetting();
+            };
         }
         void FormMain_Load(object sender, EventArgs e)
         {
@@ -61,13 +73,13 @@ namespace Plc2DsApp
                     form.SelectedTags.Iter(t => t.Choice = Choice.Stage);
             };
 
-            btnReplaceFlowName  .Enabled = _appSettings.FlowPatternReplaces.Any();
-            btnReplaceDeviceName.Enabled = _appSettings.DevicePatternReplaces.Any();
-            btnReplaceActionName.Enabled = _appSettings.ActionPatternReplaces.Any();
+            btnReplaceFlowName  .Enabled = _vendorRule.FlowPatternReplaces.Any();
+            btnReplaceDeviceName.Enabled = _vendorRule.DevicePatternReplaces.Any();
+            btnReplaceActionName.Enabled = _vendorRule.ActionPatternReplaces.Any();
 
-            btnReplaceFlowName  .Click += (s, e) => replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow);
-            btnReplaceDeviceName.Click += (s, e) => replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice);
-            btnReplaceActionName.Click += (s, e) => replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction);
+            btnReplaceFlowName  .Click += (s, e) => replaceFDA(_vendorRule.FlowPatternReplaces,   FDAT.DuFlow);
+            btnReplaceDeviceName.Click += (s, e) => replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice);
+            btnReplaceActionName.Click += (s, e) => replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction);
         }
         public void DoAppend(LoggingEvent loggingEvent)
         {
@@ -87,7 +99,7 @@ namespace Plc2DsApp
         PlcTagBaseFDA[] selectTags(Choice cat, bool loadOnDemand=false)
         {
             if (loadOnDemand && TagsAll.IsNullOrEmpty())
-                TagsAll = loadTags(tbCsvFile.Text, _appSettings.CsvFilterPatterns);
+                TagsAll = loadTags(tbCsvFile.Text, _vendorRule.CsvFilterPatterns);
 
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
@@ -196,7 +208,7 @@ namespace Plc2DsApp
 
             TagsAll = tags.Where(t => ! excludes.Contains(t)).ToArray();
 
-            var fdaSplitPattern = new Regex(_appSettings.FDASplitPattern, RegexOptions.Compiled);
+            var fdaSplitPattern = new Regex(_vendorRule.FDASplitPattern, RegexOptions.Compiled);
             TagsAll.Iter(t =>
                 {
                     t.CsSetFDA(t.CsTryGetFDA([fdaSplitPattern]));
@@ -232,9 +244,9 @@ namespace Plc2DsApp
             buttons.Iter(b => b.Enabled = fileSpecified);
             if (fileSpecified)
             {
-                btnReplaceFlowName.Enabled = _appSettings.FlowPatternReplaces.Any();
-                btnReplaceDeviceName.Enabled = _appSettings.DevicePatternReplaces.Any();
-                btnReplaceActionName.Enabled = _appSettings.ActionPatternReplaces.Any();
+                btnReplaceFlowName.Enabled = _vendorRule.FlowPatternReplaces.Any();
+                btnReplaceDeviceName.Enabled = _vendorRule.DevicePatternReplaces.Any();
+                btnReplaceActionName.Enabled = _vendorRule.ActionPatternReplaces.Any();
             }
 
             SimpleButton[] showTagButtons = [
@@ -261,14 +273,14 @@ namespace Plc2DsApp
             {
                 var f = ofd.FileName;
                 tbCsvFile.Text = f;
-                loadTags(f, _appSettings.CsvFilterPatterns);
+                loadTags(f, _vendorRule.CsvFilterPatterns);
                 _appRegistry.LastRead = f;
             }
         }
 
         int applyDiscardTags(bool withUI=true)
         {
-            Pattern[] patterns = _appSettings.TagPatternDiscards;
+            Pattern[] patterns = _vendorRule.TagPatternDiscards;
             var _ = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
 
             var form = new FormDiscardTags(TagsAll, patterns, withUI);
@@ -289,7 +301,7 @@ namespace Plc2DsApp
 
         int applySplitFDA(bool withUI=true)
         {
-            Pattern[] patterns = _appSettings.TagPatternFDAs;
+            Pattern[] patterns = _vendorRule.TagPatternFDAs;
 
             var tags = TagsStage.ToArray();
             var form = new FormSplitFDA(tags, patterns, withUI);
@@ -310,7 +322,7 @@ namespace Plc2DsApp
 
         void applyReplaceTags(bool withUI=true)
         {
-            var patterns = _appSettings.TagPatternReplaces.Concat(_appSettings.DialectPatterns).ToArray();
+            var patterns = _vendorRule.TagPatternReplaces.Concat(_vendorRule.DialectPatterns).ToArray();
             replaceFDA(TagsStage, patterns, FDAT.DuTag, withUI);
         }
 
@@ -321,14 +333,14 @@ namespace Plc2DsApp
             applyReplaceTags(withUI);
             applySplitFDA(withUI);
 
-            int changedF = replaceFDA(_appSettings.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
-            int changedD = replaceFDA(_appSettings.DevicePatternReplaces, FDAT.DuDevice, withUI);
-            int changedA = replaceFDA(_appSettings.ActionPatternReplaces, FDAT.DuAction, withUI);
+            int changedF = replaceFDA(_vendorRule.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
+            int changedD = replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI);
+            int changedA = replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI);
 
 
-            int standardF = replaceFDA(_appSettings.DialectPatterns, FDAT.DuFlow, withUI);
-            int standardD = replaceFDA(_appSettings.DialectPatterns, FDAT.DuDevice, withUI);
-            int standardA = replaceFDA(_appSettings.DialectPatterns, FDAT.DuAction, withUI);
+            int standardF = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuFlow, withUI);
+            int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice, withUI);
+            int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI);
         }
     }
 }
