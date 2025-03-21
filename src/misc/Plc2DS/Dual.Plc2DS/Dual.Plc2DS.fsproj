@@ -16,10 +16,9 @@
     <Compile Include="CsvReader.fs" />
     <Compile Include="Semantics.fs" />
     <Compile Include="GetFDA.fs" />
-    <Compile Include="CSharp.fs" />
-    <Compile Include="Pattern.fs" />
-    <Compile Include="Rulebase.fs" />
-    <Compile Include="ExtensionForCSharp.fs" />
+    <Compile Include="Exports\Pattern.fs" />
+    <Compile Include="Exports\Rulebase.fs" />
+    <Compile Include="Exports\ExtensionForCSharp.fs" />
     <Compile Include="EntryPoint.fs" />
 
     <!--<Compile Include="Obsolete\Semantic.Obsolted.fs" />
@@ -34,6 +33,10 @@
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
     <ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Exports\" />
   </ItemGroup>
 
 </Project>
