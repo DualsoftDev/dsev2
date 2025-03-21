@@ -123,7 +123,7 @@ namespace Plc2DsApp.Forms
 
         void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
-            var pattern = Pattern.Create("임시 패턴", tbCustomPattern.Text);
+            var pattern = Pattern.Create("임시 패턴", tbCustomPattern.Text, desc:null);
             applyPatterns(TagsStage, [pattern], true);
         }
 

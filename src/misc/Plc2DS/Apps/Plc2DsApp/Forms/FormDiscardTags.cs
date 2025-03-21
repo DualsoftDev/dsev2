@@ -111,7 +111,7 @@ namespace Plc2DsApp.Forms
 
         void btnApplyCustomPattern_Click(object sender, EventArgs e)
         {
-            var pattern = Pattern.Create("사용자 패턴", tbCustomPattern.Text);
+            var pattern = Pattern.Create("사용자 패턴", tbCustomPattern.Text, desc:null);
             ApplyPatterns(_tagsStage, [pattern], true);
         }
 

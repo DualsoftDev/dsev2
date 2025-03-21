@@ -16,6 +16,9 @@
     <Compile Include="CsvReader.fs" />
     <Compile Include="Semantics.fs" />
     <Compile Include="GetFDA.fs" />
+    <Compile Include="CSharp.fs" />
+    <Compile Include="Pattern.fs" />
+    <Compile Include="Rulebase.fs" />
     <Compile Include="ExtensionForCSharp.fs" />
     <Compile Include="EntryPoint.fs" />
 

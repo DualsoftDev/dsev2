@@ -75,7 +75,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppRegistry.cs" />
-    <Compile Include="AppSettings.cs" />
     <Compile Include="FormMain.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -114,7 +113,6 @@
     </Compile>
     <Compile Include="Forms\GridExtension.cs" />
     <Compile Include="GlobalUsing.cs" />
-    <Compile Include="Pattern.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="FormMain.resx">

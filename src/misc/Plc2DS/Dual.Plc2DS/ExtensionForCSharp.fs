@@ -17,3 +17,4 @@ type Plc2DsExtensionForCSharp =
     [<Extension>] static member CsSetName(tag:IPlcTag, n:string) = tag.SetName(n);
     [<Extension>] static member CsIsValid(tag:IPlcTag) = tag.IsValid();
     [<Extension>] static member CsGetTagType(vendor:Vendor):Type = vendor.GetVendorTagType()
+    [<Extension>] static member CsIsExclude(pattern: CsvFilterPattern, tag: PlcTagBaseFDA) : bool option = pattern.IsExclude(tag)

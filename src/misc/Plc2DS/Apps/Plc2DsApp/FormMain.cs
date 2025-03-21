@@ -185,11 +185,9 @@ namespace Plc2DsApp
             var grDic =
                 tags.GroupByToDictionary(t =>
                     patterns.Any(p => {
-                            return p.IsExclude(t) switch {
-                                null => false,
-                                false => false,
-                                true => true
-                            };
+                            return p.CsIsExclude(t).MatchMap(
+                                result => result,
+                                () => false);
                         }  ));
             var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(true) ? grDic[true] : [] );
             excludes.Iter(t => t.Choice = Choice.Discarded);
