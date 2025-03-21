@@ -54,9 +54,11 @@ type PlcTagBaseFDA(flow:string, device:string, action:string) =
     member x.GetTuples() = x.FlowName, x.DeviceName, x.ActionName
 
     abstract member Stringify: unit -> string
+    abstract member Csvify: unit -> string
     abstract member OnDeserialized: unit -> unit
     abstract member OnSerializing: unit -> unit
     default x.Stringify() = $"{x.FlowName}:{x.DeviceName}:{x.ActionName}"
+    default x.Csvify() = $"{x.FlowName},{x.DeviceName},{x.ActionName}"
     default x.OnDeserialized() = ()
     default x.OnSerializing() = ()
 

@@ -5,14 +5,7 @@ open Dual.Common.Core.FS
 open Dual.Plc2DS
 open System.Xml
 
-
-[<AutoOpen>]
 module Xgx =
-    type CsvReader =
-        static member ReadXgxTags(xmlPath: string): IPlcTag[] =
-            let xdoc = DualXmlDocument.loadFromFile xmlPath
-
-            null
 
 
         (*
@@ -54,3 +47,48 @@ module Xgx =
         ( getDirectVarXmlNodes xmlDoc
           |> _.ToEnumerables()
           |> Seq.map (fun xn -> getAttribute xn "Device"))
+
+
+open Xgx
+open System.Text.RegularExpressions
+
+type XmlReader =
+    static member ReadTags(xmlPath: string, ?usedOnly): PlcTagInfo[] =
+        let usedOnly = usedOnly |? true
+        let xdoc:XmlDocument = DualXmlDocument.loadFromFile xmlPath
+        let dvars = getDirectVarXmlNodes xdoc
+        let gvars = getGlobalSymbolXmlNodes xdoc    // <Symbol Name="RH_Servo_SA" Kind="6" Type="DINT" State="0" Address="" Trigger="" InitValue="" Comment="RH_서보 현재 위치" Device="A" DevicePos="114336" TotalSize="32" OrderIndex="-1" HMI="0" EIP="0" SturctureArrayOffset="0" ModuleInfo="" ArrayPointer="0" PtrType="" Motion="0"></Symbol>
+        let addrPattern = Regex("^%(?<iom>[IQM])(?<size>[XBW])", RegexOptions.Compiled)
+        [|
+            for v in gvars do
+                let name    = v.Attributes["Name"]   .Value
+                let addr    = v.Attributes["Address"].Value
+                let typ     = v.Attributes["Type"]   .Value
+                let comment = v.Attributes["Comment"].Value
+                let kind    = v.Attributes["Kind"]   .Value
+                let comment = v.Attributes["Comment"].Value
+                PlcTagInfo(typ="Tag", scope="GlobalVariable", variable=name, address=addr, dataType=typ)
+
+            for v in dvars do
+                let used = v.Attributes["Used"].Value
+                if not usedOnly || used = "1" then
+                    let name    = v.Attributes["Name"]   .Value
+                    let comment = v.Attributes["Comment"].Value
+                    let device  = v.Attributes["Device"] .Value
+
+                    let dataType =
+                        let m = addrPattern.Match(device)
+                        if m.Success then
+                            let iom = m.Groups.["iom"].Value
+                            let size = m.Groups.["size"].Value
+                            match size with
+                            | "X" -> "BOOL"
+                            | "B" -> "BYTE"
+                            | "W" -> "WORD"
+                            | _ -> failwithf "Unknown data type: %s" size
+                        else
+                            ""
+
+                    PlcTagInfo(typ="Tag", scope="DirectVar", variable=comment, address=device, dataType=dataType)
+        |]
+

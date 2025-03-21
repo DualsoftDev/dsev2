@@ -189,6 +189,11 @@ namespace Plc2DsApp
                     "MX" => EmJson.FromJson<MX.PlcTagInfo[]>(File.ReadAllText(csvFile)),
                     _ => throw new NotImplementedException()
                 },
+                ".xml" => vendor switch
+                {
+                    "LS" => XmlReader.ReadLs(csvFile).ToArray(),
+                    _ => throw new NotImplementedException()
+                },
                 _ => throw new NotImplementedException()
             };
 
@@ -204,7 +209,13 @@ namespace Plc2DsApp
             var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(true) ? grDic[true] : [] );
             excludes.Iter(t => t.Choice = Choice.Discarded);
             if (excludes.Any())
+            {
                 Logger.Info($"  Discarded {excludes.Count} tags from {csvFile} using CsvFilterPatterns");
+                var text = excludes.Select(t => t.Csvify()).JoinString("\r\n");
+                var file = csvFile + ".discarded.csv";
+                File.WriteAllText(file, text);
+                Logger.Info($"  You can check discarded tags on {file}");
+            }
 
             TagsAll = tags.Where(t => ! excludes.Contains(t)).ToArray();
 

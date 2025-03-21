@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -9,11 +9,12 @@
     <Compile Include="Common\Interfaces.fs" />
     <Compile Include="Common\Utilities.fs" />
     <Compile Include="LS\LsCsvReader.fs" />
-    <Compile Include="LS\LsLogicReader.fs" />
+    <Compile Include="LS\LsXmlReader.fs" />
     <Compile Include="MX\MxCsvReader.fs" />
     <Compile Include="S7\S7.CsvReader.fs" />
     <Compile Include="AB\AbCsvReader.fs" />
     <Compile Include="CsvReader.fs" />
+    <Compile Include="XmlReader.fs" />
     <Compile Include="Semantics.fs" />
     <Compile Include="GetFDA.fs" />
     <Compile Include="Exports\Pattern.fs" />

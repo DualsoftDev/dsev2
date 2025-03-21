@@ -6,8 +6,12 @@ open System.Runtime.Serialization
 open System.Text.RegularExpressions
 open Newtonsoft.Json
 
+
+type IPattern = interface end
+
 [<DataContract>]
 type Pattern() =
+    interface IPattern
     [<DataMember>]
     member val Name          : string = "" with get, set
 
