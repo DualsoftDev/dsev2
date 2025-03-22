@@ -1,9 +1,6 @@
 [submodule "submodules/nuget"]
 	path = submodules/nuget
 	url = http://dualsoft.co.kr:8081/dualsoft/nuget.git
-[submodule "submodules/ds"]
-	path = submodules/ds
-	url = http://dualsoft.co.kr:8081/dualsoft/ds.git
 [submodule "submodules/aas-core3.0-csharp"]
 	path = submodules/aas-core3.0-csharp
 	url = https://github.com/aas-core-works/aas-core3.0-csharp
