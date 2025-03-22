@@ -30,15 +30,15 @@ namespace Plc2DsApp.Forms
                     return ("Apply", new Action<ReplacePattern>(p => applyPatterns([p], withUI)));
                 });
 
-            if (patterns.Any())
-                tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
-
-            gridView1.SelectionChanged += (s, e) =>
+            gridView1.CellValueChanged += (s, e) =>
             {
-                var pattern = gridView1.GetFocusedRow() as Pattern;
-                tbCustomPattern.Text = pattern.PatternString;
+                var field = e.Column.FieldName;
+                if (field == nameof(Pattern.PatternString))
+                {
+                    var row = gridView1.GetRow<Pattern>(e.RowHandle);
+                    row.RegexPattern = new Regex(row.PatternString);
+                }
             };
-
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
 
@@ -134,13 +134,6 @@ namespace Plc2DsApp.Forms
             }
 
             return candidates;
-        }
-
-        void btnApplyCustomPattern_Click(object sender, EventArgs e)
-        {
-            // default 는 discard 이므로, replaceString 이 "" 가 됨
-            var replacePattern = ReplacePattern.Create("NoName", tbCustomPattern.Text, "", "");
-            NumChanged = applyPatterns([replacePattern], withUI: sender != null);
         }
 
         public void btnApplyAllPatterns_Click(object sender, EventArgs e)

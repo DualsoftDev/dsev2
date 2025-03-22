@@ -1,7 +1,4 @@
 using System.Threading.Tasks;
-using System.Windows.Forms;
-
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace Plc2DsApp.Forms
 {
@@ -38,10 +35,14 @@ namespace Plc2DsApp.Forms
                     return ("Apply", new Action<Pattern>(p => applyPatterns([p])));
                 });
 
-            gridView1.SelectionChanged += (s, e) =>
+            gridView1.CellValueChanged += (s, e) =>
             {
-                var pattern = gridView1.GetFocusedRow() as Pattern;
-                tbCustomPattern.Text = pattern.PatternString;
+                var field = e.Column.FieldName;
+                if (field == nameof(Pattern.PatternString))
+                {
+                    var row = gridView1.GetRow<Pattern>(e.RowHandle);
+                    row.RegexPattern = new Regex(row.PatternString);
+                }
             };
 
 
@@ -105,14 +106,6 @@ namespace Plc2DsApp.Forms
             _tagsStage = _tagsStage.Except(chosen).ToArray();
             TagsChosen = TagsChosen.Concat(chosen).ToArray();
             updateUI();
-        }
-
-
-
-        void btnApplyCustomPattern_Click(object sender, EventArgs e)
-        {
-            var pattern = Pattern.Create("사용자 패턴", tbCustomPattern.Text, desc:null);
-            ApplyPatterns(_tagsStage, [pattern], true);
         }
 
         void btnApplyAllPatterns_Click(object sender, EventArgs e) => applyPatterns(_patterns);

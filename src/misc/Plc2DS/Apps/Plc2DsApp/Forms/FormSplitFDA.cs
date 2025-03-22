@@ -31,12 +31,14 @@ namespace Plc2DsApp.Forms
             var actionColumn =
                 gridView1.AddActionColumn<Pattern>("Apply", p => ("Apply", new Action<Pattern>(p => applyPatterns(TagsStage, [p], withUI))));
 
-            tbCustomPattern.Text = patterns[0].PatternString;     // 일단 맨처음거 아무거나..
-
-            gridView1.SelectionChanged += (s, e) =>
+            gridView1.CellValueChanged += (s, e) =>
             {
-                var pattern = gridView1.GetFocusedRow() as Pattern;
-                tbCustomPattern.Text = pattern.PatternString;
+                var field = e.Column.FieldName;
+                if (field == nameof(Pattern.PatternString))
+                {
+                    var row = gridView1.GetRow<Pattern>(e.RowHandle);
+                    row.RegexPattern = new Regex(row.PatternString);
+                }
             };
 
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
@@ -118,13 +120,6 @@ namespace Plc2DsApp.Forms
             }
 
             return done.ToArray();
-        }
-
-
-        void btnApplyCustomPattern_Click(object sender, EventArgs e)
-        {
-            var pattern = Pattern.Create("임시 패턴", tbCustomPattern.Text, desc:null);
-            applyPatterns(TagsStage, [pattern], true);
         }
 
         void btnApplyAllPatterns_Click(object sender, EventArgs e)

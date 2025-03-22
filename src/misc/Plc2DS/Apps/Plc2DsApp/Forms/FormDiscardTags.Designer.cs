@@ -40,9 +40,6 @@ namespace Plc2DsApp.Forms
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
             this.btnOK = new DevExpress.XtraEditors.SimpleButton();
             this.btnApplyAllPatterns = new DevExpress.XtraEditors.SimpleButton();
-            this.btnApplyCustomPattern = new DevExpress.XtraEditors.SimpleButton();
-            this.tbCustomPattern = new DevExpress.XtraEditors.TextEdit();
-            this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
@@ -50,7 +47,6 @@ namespace Plc2DsApp.Forms
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbCustomPattern.Properties)).BeginInit();
             this.SuspendLayout();
             // 
             // gridControl1
@@ -61,7 +57,7 @@ namespace Plc2DsApp.Forms
             this.gridControl1.Location = new System.Drawing.Point(22, 12);
             this.gridControl1.MainView = this.gridView1;
             this.gridControl1.Name = "gridControl1";
-            this.gridControl1.Size = new System.Drawing.Size(1037, 307);
+            this.gridControl1.Size = new System.Drawing.Size(1037, 375);
             this.gridControl1.TabIndex = 0;
             this.gridControl1.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.gridView1});
@@ -158,7 +154,7 @@ namespace Plc2DsApp.Forms
             // btnApplyAllPatterns
             // 
             this.btnApplyAllPatterns.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnApplyAllPatterns.Location = new System.Drawing.Point(866, 325);
+            this.btnApplyAllPatterns.Location = new System.Drawing.Point(868, 393);
             this.btnApplyAllPatterns.Name = "btnApplyAllPatterns";
             this.btnApplyAllPatterns.Size = new System.Drawing.Size(191, 34);
             this.btnApplyAllPatterns.TabIndex = 10;
@@ -167,48 +163,17 @@ namespace Plc2DsApp.Forms
     "서 실행.";
             this.btnApplyAllPatterns.Click += new System.EventHandler(this.btnApplyAllPatterns_Click);
             // 
-            // btnApplyCustomPattern
-            // 
-            this.btnApplyCustomPattern.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnApplyCustomPattern.Location = new System.Drawing.Point(967, 388);
-            this.btnApplyCustomPattern.Name = "btnApplyCustomPattern";
-            this.btnApplyCustomPattern.Size = new System.Drawing.Size(90, 34);
-            this.btnApplyCustomPattern.TabIndex = 18;
-            this.btnApplyCustomPattern.Text = "Apply";
-            this.btnApplyCustomPattern.Click += new System.EventHandler(this.btnApplyCustomPattern_Click);
-            // 
-            // tbCustomPattern
-            // 
-            this.tbCustomPattern.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbCustomPattern.Location = new System.Drawing.Point(156, 392);
-            this.tbCustomPattern.Name = "tbCustomPattern";
-            this.tbCustomPattern.Size = new System.Drawing.Size(805, 28);
-            this.tbCustomPattern.TabIndex = 20;
-            // 
-            // labelControl1
-            // 
-            this.labelControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.labelControl1.Location = new System.Drawing.Point(22, 395);
-            this.labelControl1.Name = "labelControl1";
-            this.labelControl1.Size = new System.Drawing.Size(128, 22);
-            this.labelControl1.TabIndex = 19;
-            this.labelControl1.Text = "Custom Pattern:";
-            // 
-            // FormPattern
+            // FormDiscardTags
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 591);
-            this.Controls.Add(this.btnApplyCustomPattern);
-            this.Controls.Add(this.tbCustomPattern);
-            this.Controls.Add(this.labelControl1);
             this.Controls.Add(this.btnApplyAllPatterns);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.groupControl1);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.gridControl1);
-            this.Name = "FormPattern";
+            this.Name = "FormDiscardTags";
             this.Text = "FormDiscardTags";
             this.Load += new System.EventHandler(this.FormPattern_Load);
             ((System.ComponentModel.ISupportInitialize)(this.gridControl1)).EndInit();
@@ -218,9 +183,7 @@ namespace Plc2DsApp.Forms
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbCustomPattern.Properties)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -238,8 +201,5 @@ namespace Plc2DsApp.Forms
         private DevExpress.XtraEditors.SimpleButton btnCancel;
         private DevExpress.XtraEditors.SimpleButton btnOK;
         private DevExpress.XtraEditors.SimpleButton btnApplyAllPatterns;
-        private DevExpress.XtraEditors.SimpleButton btnApplyCustomPattern;
-        private DevExpress.XtraEditors.TextEdit tbCustomPattern;
-        private DevExpress.XtraEditors.LabelControl labelControl1;
     }
 }
