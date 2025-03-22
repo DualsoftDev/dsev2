@@ -14,7 +14,7 @@ open Dual.Common.Core.FS
 type Rulebase() =
 
     [<DataMember>]
-    member val CsvFilterExpressions : CsvFilterExpression[]   = [||] with get, set
+    member val CsvFilterExpression : CsvFilterExpression   = getNull<CsvFilterExpression>() with get, set
 
     [<DataMember>]
     member val FDASplitPattern      : string                = null with get, set
@@ -86,8 +86,11 @@ type Rulebase() =
 
     member this.Duplicate() =
         let y = Rulebase()
+
         // deep copy
-        y.CsvFilterExpressions     <- this.CsvFilterExpressions        |> Array.copy
+        if isItNotNull this.CsvFilterExpression then
+            y.CsvFilterExpression   <- this.CsvFilterExpression.Duplicate()
+
         y.Dialects              <- this.Dialects                 |> Array.map Array.copy
         y.DialectPatterns       <- this.DialectPatterns          |> Array.copy
         y.TagPatternDiscards    <- this.TagPatternDiscards       |> Array.copy
@@ -103,7 +106,9 @@ type Rulebase() =
         y
 
     member this.Merge(other: Rulebase) =
-        this.CsvFilterExpressions     <- other.CsvFilterExpressions     @ this.CsvFilterExpressions
+        if isItNotNull other.CsvFilterExpression then
+            this.CsvFilterExpression     <- other.CsvFilterExpression.Merge(this.CsvFilterExpression)
+
         this.Dialects              <- other.Dialects              @ this.Dialects
         this.DialectPatterns       <- other.DialectPatterns       @ this.DialectPatterns
         this.TagPatternDiscards    <- other.TagPatternDiscards    @ this.TagPatternDiscards
@@ -118,28 +123,28 @@ type Rulebase() =
         this.OnDeserialized()
 
     member this.Override(replace: Rulebase) =
-        if replace.CsvFilterExpressions.NonNullAny() then
-            this.CsvFilterExpressions <- replace.CsvFilterExpressions
-        if replace.Dialects.NonNullAny() then
-            this.Dialects <- replace.Dialects
-        if replace.DialectPatterns.NonNullAny() then
-            this.DialectPatterns <- replace.DialectPatterns
-        if replace.TagPatternDiscards.NonNullAny() then
-            this.TagPatternDiscards <- replace.TagPatternDiscards
-        if replace.TagPatternReplaces.NonNullAny() then
-            this.TagPatternReplaces <- replace.TagPatternReplaces
-        if replace.TagPatternFDAs.NonNullAny() then
-            this.TagPatternFDAs <- replace.TagPatternFDAs
-        if replace.FlowPatternReplaces.NonNullAny() then
-            this.FlowPatternReplaces <- replace.FlowPatternReplaces
+        if isItNotNull replace.CsvFilterExpression then
+            this.CsvFilterExpression   <- replace.CsvFilterExpression
+        if replace.Dialects             .NonNullAny() then
+            this.Dialects              <- replace.Dialects
+        if replace.DialectPatterns      .NonNullAny() then
+            this.DialectPatterns       <- replace.DialectPatterns
+        if replace.TagPatternDiscards   .NonNullAny() then
+            this.TagPatternDiscards    <- replace.TagPatternDiscards
+        if replace.TagPatternReplaces   .NonNullAny() then
+            this.TagPatternReplaces    <- replace.TagPatternReplaces
+        if replace.TagPatternFDAs       .NonNullAny() then
+            this.TagPatternFDAs        <- replace.TagPatternFDAs
+        if replace.FlowPatternReplaces  .NonNullAny() then
+            this.FlowPatternReplaces   <- replace.FlowPatternReplaces
         if replace.DevicePatternReplaces.NonNullAny() then
             this.DevicePatternReplaces <- replace.DevicePatternReplaces
         if replace.ActionPatternReplaces.NonNullAny() then
             this.ActionPatternReplaces <- replace.ActionPatternReplaces
-        if replace.VisibleColumns.NonNullAny() then
-            this.VisibleColumns <- replace.VisibleColumns
-        if replace.FDASplitPattern.NonNullAny() then
-            this.FDASplitPattern <- replace.FDASplitPattern
+        if replace.VisibleColumns       .NonNullAny() then
+            this.VisibleColumns        <- replace.VisibleColumns
+        if replace.FDASplitPattern      .NonNullAny() then
+            this.FDASplitPattern       <- replace.FDASplitPattern
 
         this.OnDeserialized()
 
@@ -154,27 +159,6 @@ type AppSettings() =
     /// Vendor 별 Tag Semantic: override.  this 의 항목 override
     [<DataMember>]
     member val Overrides : Dictionary<string, Rulebase> = Dictionary() with get, set
-
-    //member this.CreateVendorRulebase(vendor: Vendor) =
-        //let getRB (dic: Dictionary<string, Rulebase>) (vendor: string) =
-        //    match dic.TryGetValue(vendor) with
-        //    | true, rb -> rb
-        //    | _        -> getNull<Rulebase>()
-
-        //let v = vendor.ToString()
-        //let addOn   = getRB this.AddOns v
-        //let ovrride = getRB this.Overrides v
-        //if isItNull addOn && isItNull ovrride then
-        //    this :> Rulebase
-        //else
-        //    let y = this.Duplicate()
-        //    if not (isItNull addOn) && not (isItNull ovrride) then
-        //        y.Merge(addOn)
-        //        y.Override(ovrride)
-        //        y
-        //    elif not (isItNull addOn) then addOn
-        //    elif not (isItNull ovrride) then ovrride
-        //    else raise (Exception("ERROR"))
 
     member x.CreateVendorRulebase(vendor: Vendor): Rulebase =
         let vendor = vendor.ToString()

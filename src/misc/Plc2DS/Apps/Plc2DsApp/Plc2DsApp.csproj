@@ -1,200 +1,202 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<PropertyGroup>
-		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-		<Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-		<ProductVersion>8.0.30703</ProductVersion>
-		<SchemaVersion>2.0</SchemaVersion>
-		<LangVersion>12.0</LangVersion>
-		<ProjectGuid>{767D99A6-208E-499E-8FC9-412A0CE34682}</ProjectGuid>
-		<OutputType>WinExe</OutputType>
-		<AppDesignerFolder>Properties</AppDesignerFolder>
-		<RootNamespace>Plc2DsApp</RootNamespace>
-		<AssemblyName>Plc2DsApp</AssemblyName>
-		<TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
-		<FileAlignment>512</FileAlignment>
-		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-		<RootNamespace>Plc2DsApp</RootNamespace>
-	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-		<PlatformTarget>AnyCPU</PlatformTarget>
-		<DebugSymbols>true</DebugSymbols>
-		<DebugType>full</DebugType>
-		<Optimize>false</Optimize>
-		<OutputPath>bin\Debug\</OutputPath>
-		<DefineConstants>DEBUG;TRACE</DefineConstants>
-		<ErrorReport>prompt</ErrorReport>
-		<WarningLevel>4</WarningLevel>
-	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-		<PlatformTarget>AnyCPU</PlatformTarget>
-		<DebugType>pdbonly</DebugType>
-		<Optimize>true</Optimize>
-		<OutputPath>bin\Release\</OutputPath>
-		<DefineConstants>TRACE</DefineConstants>
-		<ErrorReport>prompt</ErrorReport>
-		<WarningLevel>4</WarningLevel>
-	</PropertyGroup>
-	<ItemGroup>
-		<Reference Include="DevExpress.BonusSkins.v24.1" />
-		<Reference Include="DevExpress.Data.Desktop.v24.1" />
-		<Reference Include="DevExpress.Data.v24.1" />
-		<Reference Include="DevExpress.Utils.v24.1" />
-		<Reference Include="DevExpress.Sparkline.v24.1.Core" />
-		<Reference Include="DevExpress.XtraEditors.v24.1" />
-		<Reference Include="DevExpress.Printing.v24.1.Core" />
-		<Reference Include="DevExpress.Drawing.v24.1" />
-		<Reference Include="DevExpress.XtraGrid.v24.1, Version=24.1.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-		<Reference Include="DevExpress.XtraLayout.v24.1, Version=24.1.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-		<Reference Include="DevExpress.XtraPrinting.v24.1, Version=24.1.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
-		<Reference Include="FSharp.Core, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-			<HintPath>..\..\packages\FSharp.Core.9.0.201\lib\netstandard2.0\FSharp.Core.dll</HintPath>
-		</Reference>
-		<Reference Include="log4net, Version=2.0.17.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-			<HintPath>..\..\packages\log4net.2.0.17\lib\net45\log4net.dll</HintPath>
-		</Reference>
-		<Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-			<HintPath>..\..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-		</Reference>
-		<Reference Include="System" />
-		<Reference Include="System.Configuration" />
-		<Reference Include="System.Core" />
-		<Reference Include="System.Runtime.Serialization" />
-		<Reference Include="System.Web" />
-		<Reference Include="System.Xml.Linq" />
-		<Reference Include="System.Data.DataSetExtensions" />
-		<Reference Include="Microsoft.CSharp" />
-		<Reference Include="System.Data" />
-		<Reference Include="System.Deployment" />
-		<Reference Include="System.Drawing" />
-		<Reference Include="System.Windows.Forms" />
-		<Reference Include="System.Xml" />
-		<Reference Include="UtfUnknown, Version=2.0.0.0, Culture=neutral, PublicKeyToken=90217ce7a23260d4, processorArchitecture=MSIL">
-			<HintPath>..\..\packages\UTF.Unknown.2.5.1\lib\net40\UtfUnknown.dll</HintPath>
-		</Reference>
-	</ItemGroup>
-	<ItemGroup>
-		<Compile Include="AppRegistry.cs" />
-		<Compile Include="FormMain.cs">
-			<SubType>Form</SubType>
-		</Compile>
-		<Compile Include="FormMain.Designer.cs">
-			<DependentUpon>FormMain.cs</DependentUpon>
-		</Compile>
-		<Compile Include="Forms\FormFDAMasterDetail.cs">
-			<SubType>Form</SubType>
-		</Compile>
-		<Compile Include="Forms\FormFDAMasterDetail.Designer.cs">
-			<DependentUpon>FormFDAMasterDetail.cs</DependentUpon>
-		</Compile>
-		<Compile Include="Forms\FormReplaceFDAT.cs">
-			<SubType>Form</SubType>
-		</Compile>
-		<Compile Include="Forms\FormReplaceFDAT.Designer.cs">
-			<DependentUpon>FormReplaceFDAT.cs</DependentUpon>
-		</Compile>
-		<Compile Include="Forms\FormSplitFDA.cs">
-			<SubType>Form</SubType>
-		</Compile>
-		<Compile Include="Forms\FormSplitFDA.Designer.cs">
-			<DependentUpon>FormSplitFDA.cs</DependentUpon>
-		</Compile>
-		<Compile Include="Forms\FormDiscardTags.cs">
-			<SubType>Form</SubType>
-		</Compile>
-		<Compile Include="Forms\FormDiscardTags.Designer.cs">
-			<DependentUpon>FormDiscardTags.cs</DependentUpon>
-		</Compile>
-		<Compile Include="Forms\FormTags.cs">
-			<SubType>Form</SubType>
-		</Compile>
-		<Compile Include="Forms\FormTags.Designer.cs">
-			<DependentUpon>FormTags.cs</DependentUpon>
-		</Compile>
-		<Compile Include="Forms\GridExtension.cs" />
-		<Compile Include="GlobalUsing.cs" />
-		<Compile Include="Program.cs" />
-		<Compile Include="Properties\AssemblyInfo.cs" />
-		<EmbeddedResource Include="FormMain.resx">
-			<DependentUpon>FormMain.cs</DependentUpon>
-			<SubType>Designer</SubType>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Forms\FormFDAMasterDetail.resx">
-			<DependentUpon>FormFDAMasterDetail.cs</DependentUpon>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Forms\FormReplaceFDAT.resx">
-			<DependentUpon>FormReplaceFDAT.cs</DependentUpon>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Forms\FormSplitFDA.resx">
-			<DependentUpon>FormSplitFDA.cs</DependentUpon>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Forms\FormDiscardTags.resx">
-			<DependentUpon>FormDiscardTags.cs</DependentUpon>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Forms\FormTags.resx">
-			<DependentUpon>FormTags.cs</DependentUpon>
-			<SubType>Designer</SubType>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Properties\licenses.licx" />
-		<EmbeddedResource Include="Properties\Resources.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
-			<SubType>Designer</SubType>
-		</EmbeddedResource>
-		<Compile Include="Properties\Resources.Designer.cs">
-			<AutoGen>True</AutoGen>
-			<DependentUpon>Resources.resx</DependentUpon>
-		</Compile>
-		<None Include="App.config" />
-		<None Include="appsettings.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="log4net.config">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="packages.config" />
-		<None Include="Properties\Settings.settings">
-			<Generator>SettingsSingleFileGenerator</Generator>
-			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
-		</None>
-		<Compile Include="Properties\Settings.Designer.cs">
-			<AutoGen>True</AutoGen>
-			<DependentUpon>Settings.settings</DependentUpon>
-			<DesignTimeSharedInput>True</DesignTimeSharedInput>
-		</Compile>
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="Rulebases\**\*.json" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj">
-			<Project>{d2490bdd-b28c-45a9-b102-c0ae294526c8}</Project>
-			<Name>Dual.Common.Base.CS</Name>
-		</ProjectReference>
-		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj">
-			<Project>{2dfb0c85-f5db-4906-8379-40ec43cc46c5}</Project>
-			<Name>Dual.Common.Base.FS</Name>
-		</ProjectReference>
-		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj">
-			<Project>{63b0eabc-6118-447d-afde-8cd7695987aa}</Project>
-			<Name>Dual.Common.Core</Name>
-		</ProjectReference>
-		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Windows\Dual.Common.Winform.DevX\Dual.Common.Winform.DevX.24.1.7.csproj">
-			<Project>{9844813a-ccac-43cf-928f-0ef95935837d}</Project>
-			<Name>Dual.Common.Winform.DevX.24.1.7</Name>
-		</ProjectReference>
-		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Windows\Dual.Common.Winform\Dual.Common.Winform.csproj">
-			<Project>{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}</Project>
-			<Name>Dual.Common.Winform</Name>
-		</ProjectReference>
-		<ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj">
-			<Project>{947fc14d-f726-49dd-9132-c27b7aadf8f7}</Project>
-			<Name>Dual.Plc2DS</Name>
-		</ProjectReference>
-	</ItemGroup>
-	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-	<!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <LangVersion>12.0</LangVersion>
+    <ProjectGuid>{767D99A6-208E-499E-8FC9-412A0CE34682}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Plc2DsApp</RootNamespace>
+    <AssemblyName>Plc2DsApp</AssemblyName>
+    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RootNamespace>Plc2DsApp</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DevExpress.BonusSkins.v24.1" />
+    <Reference Include="DevExpress.Data.Desktop.v24.1" />
+    <Reference Include="DevExpress.Data.v24.1" />
+    <Reference Include="DevExpress.Utils.v24.1" />
+    <Reference Include="DevExpress.Sparkline.v24.1.Core" />
+    <Reference Include="DevExpress.XtraEditors.v24.1" />
+    <Reference Include="DevExpress.Printing.v24.1.Core" />
+    <Reference Include="DevExpress.Drawing.v24.1" />
+    <Reference Include="DevExpress.XtraGrid.v24.1, Version=24.1.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.XtraLayout.v24.1, Version=24.1.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.XtraPrinting.v24.1, Version=24.1.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="FSharp.Core, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\FSharp.Core.9.0.201\lib\netstandard2.0\FSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=2.0.17.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\log4net.2.0.17\lib\net45\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UtfUnknown, Version=2.0.0.0, Culture=neutral, PublicKeyToken=90217ce7a23260d4, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\UTF.Unknown.2.5.1\lib\net40\UtfUnknown.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AppRegistry.cs" />
+    <Compile Include="FormMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormMain.Designer.cs">
+      <DependentUpon>FormMain.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FormFDAMasterDetail.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FormFDAMasterDetail.Designer.cs">
+      <DependentUpon>FormFDAMasterDetail.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FormReplaceFDAT.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FormReplaceFDAT.Designer.cs">
+      <DependentUpon>FormReplaceFDAT.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FormSplitFDA.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FormSplitFDA.Designer.cs">
+      <DependentUpon>FormSplitFDA.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FormDiscardTags.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FormDiscardTags.Designer.cs">
+      <DependentUpon>FormDiscardTags.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FormTags.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FormTags.Designer.cs">
+      <DependentUpon>FormTags.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\GridExtension.cs" />
+    <Compile Include="GlobalUsing.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="FormMain.resx">
+      <DependentUpon>FormMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FormFDAMasterDetail.resx">
+      <DependentUpon>FormFDAMasterDetail.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FormReplaceFDAT.resx">
+      <DependentUpon>FormReplaceFDAT.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FormSplitFDA.resx">
+      <DependentUpon>FormSplitFDA.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FormDiscardTags.resx">
+      <DependentUpon>FormDiscardTags.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FormTags.resx">
+      <DependentUpon>FormTags.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\licenses.licx" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="App.config" />
+    <None Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Rulebases\**\*.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj">
+      <Project>{d2490bdd-b28c-45a9-b102-c0ae294526c8}</Project>
+      <Name>Dual.Common.Base.CS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj">
+      <Project>{2dfb0c85-f5db-4906-8379-40ec43cc46c5}</Project>
+      <Name>Dual.Common.Base.FS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj">
+      <Project>{63b0eabc-6118-447d-afde-8cd7695987aa}</Project>
+      <Name>Dual.Common.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Windows\Dual.Common.Winform.DevX\Dual.Common.Winform.DevX.24.1.7.csproj">
+      <Project>{9844813a-ccac-43cf-928f-0ef95935837d}</Project>
+      <Name>Dual.Common.Winform.DevX.24.1.7</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Windows\Dual.Common.Winform\Dual.Common.Winform.csproj">
+      <Project>{471C4B2A-FF16-DDC9-752B-A949C7A29ABE}</Project>
+      <Name>Dual.Common.Winform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj">
+      <Project>{947fc14d-f726-49dd-9132-c27b7aadf8f7}</Project>
+      <Name>Dual.Plc2DS</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="CheatKey.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

@@ -114,7 +114,7 @@ namespace Plc2DsApp
         PlcTagBaseFDA[] selectTags(Choice cat, bool loadOnDemand=false)
         {
             if (loadOnDemand && TagsAll.IsNullOrEmpty())
-                TagsAll = loadTags(tbCsvFile.Text, _vendorRule.CsvFilterExpressions);
+                TagsAll = loadTags(tbCsvFile.Text, _vendorRule.CsvFilterExpression);
 
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
@@ -178,7 +178,7 @@ namespace Plc2DsApp
 
         }
 
-        PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterExpression[] filters)
+        PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterExpression filter)
         {
             Logger.Info($"Loading tags from {csvFile}");
 
@@ -216,11 +216,10 @@ namespace Plc2DsApp
             Logger.Info($"  Loaded {tags.Length} tags from {csvFile}");
             var grDic =
                 tags.GroupByToDictionary(t =>
-                    filters.All(p => {
-                            return p.CsTryMatch(t).MatchMap(
-                                result => result,
-                                () => true);
-                        }  ));
+                    filter.CsTryMatch(t).MatchMap(
+                        result => result,
+                        () => true)
+                    );
             var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(false) ? grDic[false] : [] );
             excludes.Iter(t => t.Choice = Choice.Discarded);
             if (excludes.Any())
@@ -299,7 +298,7 @@ namespace Plc2DsApp
             {
                 var f = ofd.FileName;
                 tbCsvFile.Text = f;
-                loadTags(f, _vendorRule.CsvFilterExpressions);
+                loadTags(f, _vendorRule.CsvFilterExpression);
                 _appRegistry.LastRead = f;
             }
         }

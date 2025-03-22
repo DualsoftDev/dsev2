@@ -1,5 +1,33 @@
 {
-  "_CsvFilterPatterns": [],
+  "CsvFilterExpression": {
+    "Case": "And",
+    "Fields": [
+      [
+        {
+          "Case": "Unit",
+          "Fields": [
+            {
+              "Name": "GlobalVariable 만 포함",
+              "PatternString": "^GlobalVariable$",
+              "Field": "Scope",
+              "Description": "GlobalVariable 만 포함"
+            }
+          ]
+        },
+        {
+          "Case": "Unit",
+          "Fields": [
+            {
+              "Name": "IQ만 선택택",
+              "PatternString": "^%[I|Q]",
+              "Field": "Address",
+              "Description": ""
+            }
+          ]
+        }
+      ]
+    ]
+  },
 
   "TagPatternDiscards": [
     {

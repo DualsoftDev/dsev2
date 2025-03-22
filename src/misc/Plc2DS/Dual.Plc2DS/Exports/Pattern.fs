@@ -73,6 +73,10 @@ type CsvFilterPattern() =
         let p = CsvFilterPattern(Name = name, Field = field, PatternString = pattern, Description = defaultArg desc "")
         p.OnDeserialized()
         p
+    member x.Duplicate() =
+        let p = CsvFilterPattern.Create(x.Name, x.Field, x.PatternString, x.Description)
+        p.RegexPattern <- x.RegexPattern
+        p
 
 type CsvFilterExpression =
     | Unit of CsvFilterPattern
@@ -91,23 +95,37 @@ type CsvFilterExpression with
             if results |> Array.contains None then None
             elif results |> Array.forall ((=) (Some true)) then Some true
             elif results |> Array.forall ((=) (Some false)) then Some false
-            else None
+            else Some false
 
         let anyMatch (exprs:CsvFilterExpression[]) =
             let results = exprs |> Array.map (fun e -> e.TryMatch(tag))
-            if results |> Array.exists ((=) (Some true)) then Some true
+
+            if   results |> Array.exists ((=) (Some true)) then Some true
             elif results |> Array.forall ((=) (Some false)) then Some false
             elif results |> Array.contains None then None
-            else None
+            else Some false
 
         match x with
-        | Unit p -> p.TryMatch(tag)
-        | And ps -> allMatch ps
-        | Or  ps -> anyMatch ps
-        | Not p  ->
+        | Unit p  -> p.TryMatch(tag)
+        | And  ps -> allMatch ps
+        | Or   ps -> anyMatch ps
+        | Not  p  ->
             match p.TryMatch(tag) with
             | Some b -> Some (not b)
             | None   -> None
+
+    member x.Duplicate() =
+        match x with
+        | Unit p -> Unit(p.Duplicate())
+        | And ps -> And (ps |> Array.map (fun p -> p.Duplicate()))
+        | Or  ps -> Or  (ps |> Array.map (fun p -> p.Duplicate()))
+        | Not p  -> Not (p.Duplicate())
+
+    member x.Merge(other:CsvFilterExpression) =
+        if isItNull other then
+            x
+        else
+            And([|x; other|])
 
 
 [<AutoOpen>]

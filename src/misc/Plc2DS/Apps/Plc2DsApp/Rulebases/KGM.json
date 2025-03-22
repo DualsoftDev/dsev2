@@ -1,6 +1,34 @@
 {
-    "_CsvFilterPatterns": [],
-
+    "CsvFilterExpression": {
+        "Case": "And",
+        "Fields": [
+          [
+            {
+              "Case": "Unit",
+              "Fields": [
+                {
+                  "Name": "GlobalVariable, DirectVar 만 포함",
+                  "PatternString": "^(GlobalVariable|DirectVar)$",
+                  "Field": "Scope",
+                  "Description": "GlobalVariable, DirectVar 만 포함"
+                }
+              ]
+            },
+            {
+              "Case": "Unit",
+              "Fields": [
+                {
+                  "Name": "IQM만 선택택",
+                  "PatternString": "^%[I|Q|M]",
+                  "Field": "Address",
+                  "Description": ""
+                }
+              ]
+            }
+          ]
+        ]
+      },
+    
     "TagPatternDiscards": [],
     "TagPatternReplaces": [
         {
