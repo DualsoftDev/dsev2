@@ -41,13 +41,19 @@ type PlcTagInfo(?typ, ?scope, ?variable, ?address, ?dataType, ?property, ?commen
     [<DataMember>] member val DataType= dataType with get, set
     [<DataMember>] member val Property= property with get, set
     [<DataMember>] member val Comment = comment  with get, set
+
+    [<DataMember>] member val VariableProcessing = variable with get, set
     [<JsonIgnore>] member val VariableOriginal = variable with get, set
 
     override x.Stringify() = $"{x.Variable} = {base.Stringify()}, {x.Address}, {x.Type}, {x.DataType}, {x.Comment}"
     override x.Csvify() = $"{x.Type},{x.Scope},{x.Variable},{x.Address},{x.DataType},{x.Property}, {x.Comment},{x.VariableOriginal},{base.Csvify()}"
 
-    override x.OnDeserialized() = x.VariableOriginal <- x.Variable
-    override x.OnSerializing() = x.Variable <- x.VariableOriginal
+    override x.OnDeserialized() =
+        x.VariableOriginal <- x.Variable
+        x.Variable <- x.VariableProcessing
+    override x.OnSerializing() =
+        x.VariableProcessing <- x.Variable
+        x.Variable <- x.VariableOriginal
 
 
 /// LS.CsvReader

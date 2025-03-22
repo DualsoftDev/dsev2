@@ -3,6 +3,7 @@ namespace Dual.Plc2DS
 open System
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
+open Dual.Common.Core.FS
 
 type FDAT =
     | DuFlow
@@ -17,4 +18,4 @@ type Plc2DsExtensionForCSharp =
     [<Extension>] static member CsSetName(tag:IPlcTag, n:string) = tag.SetName(n);
     [<Extension>] static member CsIsValid(tag:IPlcTag) = tag.IsValid();
     [<Extension>] static member CsGetTagType(vendor:Vendor):Type = vendor.GetVendorTagType()
-    [<Extension>] static member CsTryMatch(pattern: CsvFilterExpression, tag: PlcTagBaseFDA) : bool option = pattern.TryMatch(tag)
+    [<Extension>] static member CsTryMatch(pattern: CsvFilterExpression, tag: PlcTagBaseFDA) : bool option = if isItNull pattern then None else pattern.TryMatch(tag)
