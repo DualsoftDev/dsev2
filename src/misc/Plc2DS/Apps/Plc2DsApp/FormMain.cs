@@ -122,7 +122,7 @@ namespace Plc2DsApp
         FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null)
         {
             var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
-            form.ShowDialog();
+            form.DoShow();
             return form;
         }
 

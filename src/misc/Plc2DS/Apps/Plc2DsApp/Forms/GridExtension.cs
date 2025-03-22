@@ -186,4 +186,14 @@ public static class FormExtension
         form.Opacity = 0;   // 완전 투명하게 해서 보이지 않게
         form.Load += (s, e) => form.DialogResult = DialogResult.OK;
     }
+
+    public static DialogResult DoShow(this Form form) {
+        if (Keyboard.IsShiftKeyPressed)
+        {
+            form.Show();
+            return DialogResult.None;
+        }
+        else
+            return form.ShowDialog();
+    }
 }

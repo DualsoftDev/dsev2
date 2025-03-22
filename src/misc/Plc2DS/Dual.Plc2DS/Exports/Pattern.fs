@@ -74,12 +74,6 @@ type CsvFilterPattern() =
         p.OnDeserialized()
         p
 
-//type TExpression<'T> =
-//    | Unit of 'T
-//    | And  of TExpression<'T>[]
-//    | Or   of TExpression<'T>[]
-//    | Not  of TExpression<'T>
-
 type CsvFilterExpression =
     | Unit of CsvFilterPattern
     | And  of CsvFilterExpression[]

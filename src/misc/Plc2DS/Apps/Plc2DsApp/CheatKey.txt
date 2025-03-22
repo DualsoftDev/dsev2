@@ -1,0 +1,5 @@
+- Flow / Device grouping : Flow 컬럼을 먼저 눌러 sorting 수행 한 후, Shift 키 누른 상태로 Device 컬럼을 누르면 Flow 컬럼을 기준으로 Device가 정렬됨
+- 창 Open 하는 버튼 Shift 키 누른 상태에서 누르면 창이 modeless 형태로 열림
+- Row(s) 선택 후, Flow, Device, Action, Choice 컬럼 중 하나의 cell 을 클릭하면, 값을 변경할 수 있다.
+- Grid 상에서 Pattern 값이나 Replace 값을 변경 후, 바로 적용할 수 있다.
+
