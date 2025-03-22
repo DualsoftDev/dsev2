@@ -95,6 +95,7 @@ namespace Plc2DsApp.Forms
         void btnMasterDetailView_Click(object sender, EventArgs e)
         {
             new FormFDAMasterDetail(_tags).ShowDialog();
+            DialogResult = DialogResult.None;       // 창닫힘 방지 강제
         }
     }
 }

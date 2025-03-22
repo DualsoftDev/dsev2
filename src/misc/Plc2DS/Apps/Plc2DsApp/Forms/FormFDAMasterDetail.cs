@@ -12,6 +12,9 @@ namespace Plc2DsApp.Forms
 
             cbShowSingletonToo.CheckedChanged += (s, e) => showSingletonToo();
             showSingletonToo();
+
+            btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
+            btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
 
         void showSingletonToo() => gridView1.ActiveFilterString = cbShowSingletonToo.Checked ? "" : "[Count] > 1";
@@ -52,6 +55,7 @@ namespace Plc2DsApp.Forms
         {
             GridView detailView = gridView1.GetDetailView(e.RowHandle, 0) as GridView;
             detailView.ApplyVisibleColumns(FormMain.Instance.VisibleColumns);
+            detailView.EnableColumnSearch();
         }
 
         void gridView1_MasterRowGetChildList(object sender, MasterRowGetChildListEventArgs e)

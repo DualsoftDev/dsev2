@@ -289,6 +289,8 @@ namespace Plc2DsApp
             }
         }
 
+
+
         int applyDiscardTags(bool withUI=true)
         {
             Pattern[] patterns = _vendorRule.TagPatternDiscards;
@@ -353,6 +355,24 @@ namespace Plc2DsApp
             int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice, withUI);
             int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI);
         }
+
+        void btnMergeAppSettings_Click(object sender, EventArgs e)
+        {
+            using OpenFileDialog ofd = new OpenFileDialog()
+            {
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+            };
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                Rulebase partial = EmJson.FromJson<AppSettings>(File.ReadAllText(ofd.FileName)).CreateVendorRulebase(Vendor);
+                if (cbMergeAppSettingsOverride.Checked)
+                    _vendorRule.Override(partial);
+                else
+                    _vendorRule.Merge(partial);
+            }
+        }
+
     }
 }
 

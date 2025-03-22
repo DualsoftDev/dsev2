@@ -53,6 +53,8 @@ namespace Plc2DsApp
             this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
             this.ucPanelLog1 = new Dual.Common.Winform.DevX.UserControls.UcPanelLog();
             this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
+            this.btnMergeAppSettings = new DevExpress.XtraEditors.SimpleButton();
+            this.cbMergeAppSettingsOverride = new DevExpress.XtraEditors.CheckEdit();
             ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
             this.groupControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).BeginInit();
@@ -65,11 +67,12 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).BeginInit();
             this.groupControl4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cbMergeAppSettingsOverride.Properties)).BeginInit();
             this.SuspendLayout();
             // 
             // btnLoadTags
             // 
-            this.btnLoadTags.Location = new System.Drawing.Point(12, 87);
+            this.btnLoadTags.Location = new System.Drawing.Point(12, 119);
             this.btnLoadTags.Margin = new System.Windows.Forms.Padding(2);
             this.btnLoadTags.Name = "btnLoadTags";
             this.btnLoadTags.Size = new System.Drawing.Size(112, 34);
@@ -103,7 +106,7 @@ namespace Plc2DsApp
             this.groupControl1.Controls.Add(this.btnShowChosenTags);
             this.groupControl1.Controls.Add(this.btnShowStageTags);
             this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(18, 434);
+            this.groupControl1.Location = new System.Drawing.Point(18, 453);
             this.groupControl1.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl1.Name = "groupControl1";
             this.groupControl1.Size = new System.Drawing.Size(1023, 122);
@@ -213,7 +216,7 @@ namespace Plc2DsApp
             this.groupControl2.Controls.Add(this.btnReplaceTags);
             this.groupControl2.Controls.Add(this.btnSplitFDA);
             this.groupControl2.Controls.Add(this.btnDiscardTags);
-            this.groupControl2.Location = new System.Drawing.Point(12, 148);
+            this.groupControl2.Location = new System.Drawing.Point(12, 167);
             this.groupControl2.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl2.Name = "groupControl2";
             this.groupControl2.Size = new System.Drawing.Size(1029, 94);
@@ -258,7 +261,7 @@ namespace Plc2DsApp
             this.groupControl4.Controls.Add(this.btnReplaceActionName);
             this.groupControl4.Controls.Add(this.btnReplaceDeviceName);
             this.groupControl4.Controls.Add(this.btnReplaceFlowName);
-            this.groupControl4.Location = new System.Drawing.Point(12, 257);
+            this.groupControl4.Location = new System.Drawing.Point(12, 276);
             this.groupControl4.Margin = new System.Windows.Forms.Padding(2);
             this.groupControl4.Name = "groupControl4";
             this.groupControl4.Size = new System.Drawing.Size(1029, 98);
@@ -298,7 +301,7 @@ namespace Plc2DsApp
             // btnApplyAll
             // 
             this.btnApplyAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnApplyAll.Location = new System.Drawing.Point(807, 374);
+            this.btnApplyAll.Location = new System.Drawing.Point(807, 393);
             this.btnApplyAll.Margin = new System.Windows.Forms.Padding(2);
             this.btnApplyAll.Name = "btnApplyAll";
             this.btnApplyAll.Size = new System.Drawing.Size(234, 45);
@@ -311,7 +314,7 @@ namespace Plc2DsApp
             // 
             this.tbCsvFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbCsvFile.Location = new System.Drawing.Point(148, 91);
+            this.tbCsvFile.Location = new System.Drawing.Point(148, 123);
             this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
             this.tbCsvFile.Name = "tbCsvFile";
             this.tbCsvFile.Size = new System.Drawing.Size(897, 28);
@@ -322,11 +325,11 @@ namespace Plc2DsApp
             this.ucPanelLog1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.ucPanelLog1.Location = new System.Drawing.Point(12, 576);
+            this.ucPanelLog1.Location = new System.Drawing.Point(12, 627);
             this.ucPanelLog1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.ucPanelLog1.Name = "ucPanelLog1";
             this.ucPanelLog1.SelectedIndex = -1;
-            this.ucPanelLog1.Size = new System.Drawing.Size(1029, 292);
+            this.ucPanelLog1.Size = new System.Drawing.Size(1029, 241);
             this.ucPanelLog1.TabIndex = 15;
             // 
             // ucRadioSelector1
@@ -339,11 +342,33 @@ namespace Plc2DsApp
             this.ucRadioSelector1.Size = new System.Drawing.Size(897, 39);
             this.ucRadioSelector1.TabIndex = 11;
             // 
+            // btnMergeAppSettings
+            // 
+            this.btnMergeAppSettings.Location = new System.Drawing.Point(12, 62);
+            this.btnMergeAppSettings.Margin = new System.Windows.Forms.Padding(2);
+            this.btnMergeAppSettings.Name = "btnMergeAppSettings";
+            this.btnMergeAppSettings.Size = new System.Drawing.Size(181, 34);
+            this.btnMergeAppSettings.TabIndex = 16;
+            this.btnMergeAppSettings.Text = "Merge appSettings..";
+            this.btnMergeAppSettings.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서" +
+    " 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
+            this.btnMergeAppSettings.Click += new System.EventHandler(this.btnMergeAppSettings_Click);
+            // 
+            // cbMergeAppSettingsOverride
+            // 
+            this.cbMergeAppSettingsOverride.Location = new System.Drawing.Point(223, 68);
+            this.cbMergeAppSettingsOverride.Name = "cbMergeAppSettingsOverride";
+            this.cbMergeAppSettingsOverride.Properties.Caption = "Override";
+            this.cbMergeAppSettingsOverride.Size = new System.Drawing.Size(112, 27);
+            this.cbMergeAppSettingsOverride.TabIndex = 17;
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1056, 882);
+            this.Controls.Add(this.cbMergeAppSettingsOverride);
+            this.Controls.Add(this.btnMergeAppSettings);
             this.Controls.Add(this.ucPanelLog1);
             this.Controls.Add(this.btnApplyAll);
             this.Controls.Add(this.groupControl4);
@@ -369,6 +394,7 @@ namespace Plc2DsApp
             ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).EndInit();
             this.groupControl4.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cbMergeAppSettingsOverride.Properties)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -401,6 +427,8 @@ namespace Plc2DsApp
         private DevExpress.XtraEditors.SimpleButton btnReplaceTags;
         private DevExpress.XtraEditors.TextEdit tbCsvFile;
         private Dual.Common.Winform.DevX.UserControls.UcPanelLog ucPanelLog1;
+        private DevExpress.XtraEditors.SimpleButton btnMergeAppSettings;
+        private DevExpress.XtraEditors.CheckEdit cbMergeAppSettingsOverride;
     }
 }
 

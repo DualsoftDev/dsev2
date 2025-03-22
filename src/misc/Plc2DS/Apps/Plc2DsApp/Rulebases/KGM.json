@@ -1,0 +1,63 @@
+{
+    "_CsvFilterPatterns": [],
+
+    "TagPatternDiscards": [],
+    "TagPatternReplaces": [
+        {
+            "Name": "Station, Robot 분리",
+            "PatternString": "^R(?<station>\\d+)-(?<robot>\\d+)(?<sep>[\\b ])",
+            "Replacement": "#${station}_RBT${robot}_",
+            "Description": "'R303-1 ' => '#303_RBT1_'"
+        },
+        {
+            "Name": "복합 Station 뒤에 명확히 '_' 추가",
+            "PatternString": "^#(?<station1>\\d+)~(?<station2>\\d+)",
+            "Replacement": "#${station1}<@~@>${station2}_",
+            "Description": "'#137~301이송기 후진 록단 [YL]' => '#137~301_이송기 후진 록단 [YL]'"
+        },
+        {
+            "Name": "공백을 '_' 로",
+            "PatternString": "\\s+",
+            "Replacement": "_",
+            "Description": "공백을 '_' 로 변경"
+        },
+        {
+            "Name": "꽁지 숫자 결합",
+            "PatternString": "[_\\s](?<num>\\d+)$",
+            "Replacement": "${num}",
+            "Description": "'#303 S/G O100 PNL [LH] 제품감지 1' => '#303 S/G O100 PNL [LH] 제품감지1'"
+        },
+        {
+            "Name": "강한결합 STN_RH_SAFETY_DOOR",
+            "PatternString": "STN_(?<dir>LH|RH)_(?<word1>SAFETY)_(?<word2>DOOR)",
+            "Replacement": "STN::${dir}::${word1}::${word2}",
+            "Description": "CN, CHK, OK 이 분리되지 않도록 함"
+        },
+        {
+            "Name": "강한결합 LOCK_POS",
+            "PatternString": "[_\\s](LOCK_POS)$",
+            "Replacement": "_LOCK::POS",
+            "Description": ""
+        },
+        {
+            "Name": "'_XXX [YYY]' 를 '_XXX' 으로 변경",
+            "PatternString": "[_\\s](?<dan>[^_\\s]+)[_\\s]*\\[(?<op>[\\w]+)\\]$",
+            "_Replacement": "_[${op}]_${dan}",
+            "Replacement": "_${dan}",
+            "Description": "'#137~301이송기 행거 풀림단 [GL]' => ''#137~301이송기 행거_풀림단'"
+        }
+    ],
+    "TagPatternFDAs": [],
+
+    "FlowPatternReplaces": [
+        {
+            "Name": "임시기호 복원",
+            "PatternString": "<@(?<symbol>[^@]+)@>",
+            "Replacement": "${symbol}",
+            "Description": "임시로 변경한 기호를 원복"
+        }      
+    ],
+    "DevicePatternReplaces": [],
+    "_ActionPatternReplaces": []
+  }
+
