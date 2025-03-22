@@ -14,10 +14,10 @@ open Dual.Common.Core.FS
 type Rulebase() =
 
     [<DataMember>]
-    member val CsvFilterPatterns     : CsvFilterPattern[]   = [||] with get, set
+    member val CsvFilterExpressions : CsvFilterExpression[]   = [||] with get, set
 
     [<DataMember>]
-    member val FDASplitPattern       : string                = null with get, set
+    member val FDASplitPattern      : string                = null with get, set
 
     /// Alias.  e.g [CLAMP, CLP, CMP].  [][0] 가 표준어, 나머지는 dialects
     [<DataMember>]
@@ -87,7 +87,7 @@ type Rulebase() =
     member this.Duplicate() =
         let y = Rulebase()
         // deep copy
-        y.CsvFilterPatterns     <- this.CsvFilterPatterns        |> Array.copy
+        y.CsvFilterExpressions     <- this.CsvFilterExpressions        |> Array.copy
         y.Dialects              <- this.Dialects                 |> Array.map Array.copy
         y.DialectPatterns       <- this.DialectPatterns          |> Array.copy
         y.TagPatternDiscards    <- this.TagPatternDiscards       |> Array.copy
@@ -103,7 +103,7 @@ type Rulebase() =
         y
 
     member this.Merge(other: Rulebase) =
-        this.CsvFilterPatterns     <- other.CsvFilterPatterns     @ this.CsvFilterPatterns
+        this.CsvFilterExpressions     <- other.CsvFilterExpressions     @ this.CsvFilterExpressions
         this.Dialects              <- other.Dialects              @ this.Dialects
         this.DialectPatterns       <- other.DialectPatterns       @ this.DialectPatterns
         this.TagPatternDiscards    <- other.TagPatternDiscards    @ this.TagPatternDiscards
@@ -118,8 +118,8 @@ type Rulebase() =
         this.OnDeserialized()
 
     member this.Override(replace: Rulebase) =
-        if replace.CsvFilterPatterns.NonNullAny() then
-            this.CsvFilterPatterns <- replace.CsvFilterPatterns
+        if replace.CsvFilterExpressions.NonNullAny() then
+            this.CsvFilterExpressions <- replace.CsvFilterExpressions
         if replace.Dialects.NonNullAny() then
             this.Dialects <- replace.Dialects
         if replace.DialectPatterns.NonNullAny() then

@@ -117,10 +117,59 @@
       "Description": "TYPE 과 CHK 이 분리되지 않도록 함"
     }
   ],
-  "TagPatternFDAs": [],
+  "TagPatternFDAs": [
+    {
+      "Name": "ROBOT 패턴",
+      "PatternString": "^(?<flow>[^_]+)_([IQM]_?)?(?<device>(RB|RBT|ROBOT)\\d+)_(?<action>.*)$",
+      "Description": "e.g S301_I_RB2_1ST_WORK_COMP => {S301, RB2, 1ST_WORK_COMP} 로 분리"
+    },
+    {
+      "Name": "LATch 패턴",
+      "PatternString": "^(?<flow>[^_]+)_([IQM]_)?(?<device>(.*)_LAT)_(?<action>.*)$",
+      "Description": "_LAT_ 기준으로 분리"
+    },
+    {
+      "Name": "AUX/ERR 패턴",
+      "PatternString": "^(?<flow>[^_]+)_(?<device>(.+))_(?<action>(ADV|FWD|RET|REV|STOP)_(AUX|CHK|ERR|END|LAMP|OVERRUN|RUNNING))$",
+      "Description": ""
+    },
+    {
+      "Name": "PART 패턴",
+      "PatternString": "^(?<flow>[^_]+)_(?<device>(.+))_(?<action>(PART)_(ON|NONE))$",
+      "Description": ""
+    },
+    {
+      "Name": "MOVE 패턴",
+      "PatternString": "^(?<flow>[^_]+)_(?<device>(.+))_(?<action>(MOVE)_(FAST|SLOW|MEMO))$",
+      "Description": ""
+    },
+    {
+      "Name": "NO 패턴",
+      "PatternString": "^(?<flow>[^_]+)_(?<device>(.+))_(?<action>NO_INT\\d*)$",
+      "Description": ""
+    },
+    {
+      "Name": "EM_STOP 패턴",
+      "PatternString": "^(?<flow>[^_]+)_(?<device>(.+))_(?<action>(EM)_(STOP\\d*))$",
+      "Description": ""
+    },
+    {
+      "Name": "LS/SOL 패턴",
+      "PatternString": "^(?<flow>[^_]+)_((LS|SOL|I|Q)_)+(?<device>(.+))_(?<action>[^_]+)$",
+      "Description": ""
+    }    
+  ],
 
   "FlowPatternReplaces": [],
-  "DevicePatternReplaces": [],
+  "DevicePatternReplaces": [
+    {
+      "Name": "주소 영역 패턴",
+      "PatternString": "(^([IQM]|SOL|WRS)_|_([IQM]|SOL|WRS)(?=_|$))",
+      "_PatternString": "선두에 나오는 I, Q, M 뒤에 '_' 가 붙거나, | '_' 뒤에 I, Q, M 으로 끝나거나 그 뒤에 '_' 가 나올 때의 _ 와 I, Q, M 만 삭제하는 패턴",
+      "Replacement": "",
+      "Description": "주소 영역 삭제용 패턴"
+    }    
+  ],
   "_ActionPatternReplaces": []
 }
 

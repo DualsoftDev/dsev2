@@ -3,6 +3,9 @@ using DevExpress.XtraEditors;
 using log4net.Appender;
 using log4net.Core;
 
+
+
+
 namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm, IAppender
@@ -45,6 +48,18 @@ namespace Plc2DsApp
             {
                 AppSettings appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
                 _vendorRule = appSettings.CreateVendorRulebase(Vendor);
+
+
+                //var p1 = CsvFilterPattern.Create("name1", "filed1", "pattern1", "desc1");
+                //var p2 = CsvFilterPattern.Create("name2", "filed2", "pattern2", "desc2");
+                //appSettings.CsvFilterExpressions = [
+                //    CsvFilterExpression.NewUnit(p1),
+                //    CsvFilterExpression.NewAnd([CsvFilterExpression.NewUnit(p1), CsvFilterExpression.NewUnit(p2)]),
+                //];
+                //var text = EmJson.ToJson(appSettings);
+                //Noop();
+
+
             }
             reloadAppsetting();
 
@@ -99,7 +114,7 @@ namespace Plc2DsApp
         PlcTagBaseFDA[] selectTags(Choice cat, bool loadOnDemand=false)
         {
             if (loadOnDemand && TagsAll.IsNullOrEmpty())
-                TagsAll = loadTags(tbCsvFile.Text, _vendorRule.CsvFilterPatterns);
+                TagsAll = loadTags(tbCsvFile.Text, _vendorRule.CsvFilterExpressions);
 
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
@@ -163,7 +178,7 @@ namespace Plc2DsApp
 
         }
 
-        PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterPattern[] patterns)
+        PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterExpression[] filters)
         {
             Logger.Info($"Loading tags from {csvFile}");
 
@@ -201,12 +216,12 @@ namespace Plc2DsApp
             Logger.Info($"  Loaded {tags.Length} tags from {csvFile}");
             var grDic =
                 tags.GroupByToDictionary(t =>
-                    patterns.Any(p => {
-                            return p.CsIsExclude(t).MatchMap(
+                    filters.All(p => {
+                            return p.CsTryMatch(t).MatchMap(
                                 result => result,
-                                () => false);
+                                () => true);
                         }  ));
-            var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(true) ? grDic[true] : [] );
+            var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(false) ? grDic[false] : [] );
             excludes.Iter(t => t.Choice = Choice.Discarded);
             if (excludes.Any())
             {
@@ -284,7 +299,7 @@ namespace Plc2DsApp
             {
                 var f = ofd.FileName;
                 tbCsvFile.Text = f;
-                loadTags(f, _vendorRule.CsvFilterPatterns);
+                loadTags(f, _vendorRule.CsvFilterExpressions);
                 _appRegistry.LastRead = f;
             }
         }

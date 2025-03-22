@@ -5,6 +5,7 @@ open System.Reflection
 open System.Runtime.Serialization
 open System.Text.RegularExpressions
 open Newtonsoft.Json
+open Dual.Common.Core.FS
 
 
 type IPattern = interface end
@@ -51,9 +52,9 @@ type ReplacePattern() =
         | _ -> ReplacePattern.Create(p.Name, p.PatternString, "", p.Description)
 
     static member Create(name: string, pattern: string, replace: string, ?desc: string) =
-        let rp = ReplacePattern(Name = name, PatternString = pattern, Description = defaultArg desc "", Replacement = replace)
-        rp.OnDeserialized()
-        rp
+        let p = ReplacePattern(Name = name, PatternString = pattern, Description = defaultArg desc "", Replacement = replace)
+        p.OnDeserialized()
+        p
 
     static member Create(name: string, pattern: Regex, replace: string, ?desc: string) =
         ReplacePattern(Name = name, RegexPattern = pattern, PatternString = pattern.ToString(), Description = defaultArg desc "", Replacement = replace)
@@ -68,37 +69,66 @@ type CsvFilterPattern() =
     /// </summary>
     [<DataMember>]
     member val Field : string = "" with get, set
+    static member Create(name: string, field:string, pattern: string, ?desc: string) =
+        let p = CsvFilterPattern(Name = name, Field = field, PatternString = pattern, Description = defaultArg desc "")
+        p.OnDeserialized()
+        p
 
-    /// <summary>
-    /// <br/> Include == true 이면
-    ///     <br/> - match 되면 keep
-    ///     <br/> - match 안되면 discard
-    /// <br/> Include == false 이면
-    ///     <br/> - match 되면 discard
-    ///     <br/> - match 안되면 keep
-    /// </summary>
-    [<DataMember>]
-    member val Include : bool = false with get, set
+//type TExpression<'T> =
+//    | Unit of 'T
+//    | And  of TExpression<'T>[]
+//    | Or   of TExpression<'T>[]
+//    | Not  of TExpression<'T>
+
+type CsvFilterExpression =
+    | Unit of CsvFilterPattern
+    | And  of CsvFilterExpression[]
+    | Or   of CsvFilterExpression[]
+    | Not  of CsvFilterExpression
+
+
+type CsvFilterExpression with
+    member x.TryMatch (tag: PlcTagBaseFDA) : bool option =
+        // And 인 경우, 모든 패턴이 Some true 이면 Some true 반환.  모든 패턴이 Some false 이면 Some false 반환.  하나라도 None 이면 None 반환.
+        // Or 인 경우, 하나라도 Some true 이면 Some true 반환.  모든 패턴이 Some false 이면 Some false 반환.  하나라도 None 이면 None 반환.
+        // Not 인 경우, 패턴이 Some true 이면 Some false 반환.  패턴이 Some false 이면 Some true 반환.  패턴이 None 이면 None 반환.
+        let allMatch (exprs:CsvFilterExpression[]) =
+            let results = exprs |> Array.map (fun e -> e.TryMatch(tag))
+            if results |> Array.contains None then None
+            elif results |> Array.forall ((=) (Some true)) then Some true
+            elif results |> Array.forall ((=) (Some false)) then Some false
+            else None
+
+        let anyMatch (exprs:CsvFilterExpression[]) =
+            let results = exprs |> Array.map (fun e -> e.TryMatch(tag))
+            if results |> Array.exists ((=) (Some true)) then Some true
+            elif results |> Array.forall ((=) (Some false)) then Some false
+            elif results |> Array.contains None then None
+            else None
+
+        match x with
+        | Unit p -> p.TryMatch(tag)
+        | And ps -> allMatch ps
+        | Or  ps -> anyMatch ps
+        | Not p  ->
+            match p.TryMatch(tag) with
+            | Some b -> Some (not b)
+            | None   -> None
 
 
 [<AutoOpen>]
 module PatternExtension =
     type CsvFilterPattern with
-        member x.IsInclude (tag: PlcTagBaseFDA) : bool option =
+
+        member x.TryMatch (tag: PlcTagBaseFDA) : bool option =
+
             // tag 객체로부터 reflection 을 이용해서 Field 이름의 값을 가져온다.
-            match tag.GetType().GetProperty(x.Field) with
+            let propInfo:PropertyInfo = tag.GetType().GetProperty(x.Field)
+            match propInfo with
             | null -> None
-            | propertyInfo ->
-                match propertyInfo.GetValue(tag) with
+            | _ ->
+                match propInfo.GetValue(tag) with
                 | null -> None
-                | value when String.IsNullOrEmpty(value.ToString()) -> None
                 | value ->
-                    let matchResult = x.RegexPattern.Match(value.ToString())
-                    Some (if x.Include then matchResult.Success else not matchResult.Success)
-
-        member x.IsExclude (tag: PlcTagBaseFDA) : bool option =
-            match x.IsInclude tag with
-            | Some result -> Some (not result)
-            | None -> None
-
+                    Some <| x.RegexPattern.IsMatch(value.ToString())
 
