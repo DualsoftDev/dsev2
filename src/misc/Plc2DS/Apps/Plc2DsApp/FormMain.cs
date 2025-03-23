@@ -287,12 +287,22 @@ namespace Plc2DsApp
 
         void btnLoadTags_Click(object sender, EventArgs e)
         {
+            var csv = "CSV files (*.csv)|*.csv";
+            var json = "JSON files (*.json)|*.json";
+            var xml = "XML files (*.xml)|*.xml";
+            var all = "All files (*.*)|*.*";
+            string filter = "";
+            if (Vendor == Vendor.LS)
+                filter = new[] { csv, json, xml, all }.JoinString("|");
+            else
+                filter = new[] { csv, json, all }.JoinString("|");
+
             using OpenFileDialog ofd =
-                new OpenFileDialog()
-                {
-                    InitialDirectory = Path.GetDirectoryName(_appRegistry.LastRead),
-                    Filter = "CSV files (*.csv)|*.csv|JSON files (*.json)|*.json|All files (*.*)|*.*",
-                };
+                    new OpenFileDialog()
+                    {
+                        InitialDirectory = Path.GetDirectoryName(_appRegistry.LastRead),
+                        Filter = filter,
+                    };
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
