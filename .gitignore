@@ -517,3 +517,4 @@ Directory.Build.props
 packages
 packages/
 src/engine/Ev2.Aas.FS/Json
+**/*.eds
