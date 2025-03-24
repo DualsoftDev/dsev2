@@ -2,6 +2,8 @@ using Microsoft.FSharp.Reflection;
 
 using Plc2DsApp;
 
+using System.Reactive.Disposables;
+
 public static class GridExtension
 {
     // T: 필드 타입
@@ -167,6 +169,35 @@ public static class GridExtension
         gridView.OptionsCustomization.AllowGroup = true; // 그룹핑 가능
         gridView.OptionsCustomization.AllowQuickHideColumns = true; // 빠른 숨기기 기능
 
+    }
+
+
+    public static void DoDefaultSettings(this GridView gridView)
+    {
+        gridView.BestFitColumns();
+        gridView.EnsureMinimumColumnWidths(60, ["Count"]);
+        gridView.EnsureMinimumColumnWidths(100, ["FlowName", "DeviceName", "ActionName"]);
+        gridView.HideGroupPanel();
+    }
+
+    public static void EnsureMinimumColumnWidths(this GridView gridView, int minSize, string[] columns)
+    {
+        foreach (string columnName in columns)
+        {
+            GridColumn column = gridView.Columns.ColumnByFieldName(columnName);
+            if (column != null)
+            {
+                if (column.Width < minSize)
+                {
+                    column.MinWidth = minSize;
+                    column.Width = minSize;
+                }
+                else
+                {
+                    column.MinWidth = minSize;
+                }
+            }
+        }
     }
 
     public static void Noop() {}

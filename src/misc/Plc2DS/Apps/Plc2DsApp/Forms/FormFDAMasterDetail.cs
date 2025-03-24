@@ -9,6 +9,7 @@ namespace Plc2DsApp.Forms
             InitializeComponent();
             _tags = tags;
             doMasterDetailView();
+            gridView1.DoDefaultSettings();
 
             cbShowSingletonToo.CheckedChanged += (s, e) => showSingletonToo();
             showSingletonToo();

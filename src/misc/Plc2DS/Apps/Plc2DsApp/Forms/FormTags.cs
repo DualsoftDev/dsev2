@@ -24,6 +24,7 @@ namespace Plc2DsApp.Forms
             gridControl1.DataSource = new BindingList<object>(vendorTags as object[]);
 
 
+            gridView1.DoDefaultSettings();
             gridView1.OptionsSelection.MultiSelect = true;
             gridView1.OptionsSelection.MultiSelectMode = GridMultiSelectMode.RowSelect;
 

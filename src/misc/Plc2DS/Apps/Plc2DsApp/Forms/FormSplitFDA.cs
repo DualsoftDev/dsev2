@@ -31,6 +31,7 @@ namespace Plc2DsApp.Forms
             var actionColumn =
                 gridView1.AddActionColumn<Pattern>("Apply", p => ("Apply", new Action<Pattern>(p => applyPatterns(TagsStage, [p], withUI))));
 
+            gridView1.DoDefaultSettings();
             gridView1.CellValueChanged += (s, e) =>
             {
                 var field = e.Column.FieldName;

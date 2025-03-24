@@ -244,7 +244,7 @@ namespace Plc2DsApp
             if (invalidTags.Any())
             {
                 var f = invalidTags.First();
-                var msg = $"Total {invalidTags.Length} invalid tags: {f.CsGetName()}...\r\nContinue?";
+                var msg = $"Total {invalidTags.Length} invalid tags: {f.Csvify()}...\r\nCheck essentail filed (Name or Address) non-empty!\r\nContinue?";
                 if (DialogResult.No == MessageBox.Show(msg, "ERROR", MessageBoxButtons.YesNo))
                     return [];
             }
@@ -287,6 +287,8 @@ namespace Plc2DsApp
 
         void btnLoadTags_Click(object sender, EventArgs e)
         {
+            using var _ = btnLoadTags.Disabler();
+
             var csv = "CSV files (*.csv)|*.csv";
             var json = "JSON files (*.json)|*.json";
             var xml = "XML files (*.xml)|*.xml";
@@ -331,10 +333,21 @@ namespace Plc2DsApp
 
             return 0;
         }
-        void btnDiscardTags_Click(object sender, EventArgs e) => applyDiscardTags();
-        void btnReplaceTags_Click(object sender, EventArgs e) => applyReplaceTags();
+        void btnDiscardTags_Click(object sender, EventArgs e)
+        {
+            using var _ = btnDiscardTags.Disabler();
+            applyDiscardTags();
+        }
+        void btnReplaceTags_Click(object sender, EventArgs e)
+        {
+            using var _ = btnReplaceTags.Disabler();
+            applyReplaceTags();
+        }
 
-        void btnSplitFDA_Click(object sender, EventArgs e) => applySplitFDA();
+        void btnSplitFDA_Click(object sender, EventArgs e){
+            using var _ = btnSplitFDA.Disabler();
+            applySplitFDA();
+        }
 
         int applySplitFDA(bool withUI=true)
         {
@@ -365,6 +378,7 @@ namespace Plc2DsApp
 
         void btnApplyAll_Click(object sender, EventArgs e)
         {
+            using var _ = btnApplyAll.Disabler();
             bool withUI = false;
             int discarded = applyDiscardTags(withUI);
             applyReplaceTags(withUI);

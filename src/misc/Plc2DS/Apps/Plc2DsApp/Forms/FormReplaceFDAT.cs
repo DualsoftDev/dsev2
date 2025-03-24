@@ -30,6 +30,7 @@ namespace Plc2DsApp.Forms
                     return ("Apply", new Action<ReplacePattern>(p => applyPatterns([p], withUI)));
                 });
 
+            gridView1.DoDefaultSettings();
             gridView1.CellValueChanged += (s, e) =>
             {
                 var field = e.Column.FieldName;
