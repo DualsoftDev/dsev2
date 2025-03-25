@@ -10,7 +10,8 @@ namespace Plc2DsApp
 {
     public partial class FormMain : DevExpress.XtraEditors.XtraForm, IAppender
     {
-        public Vendor Vendor {
+        public Vendor Vendor
+        {
             get => _appRegistry.Vendor;
             set => _appRegistry.Vendor = value;
         }
@@ -31,7 +32,8 @@ namespace Plc2DsApp
         Rulebase _vendorRule = null;
         UiUpdator _uiUpdator = new UiUpdator();
 
-        public FormMain() {
+        public FormMain()
+        {
             InitializeComponent();
 
             _uiUpdator.StartMainLoop(this, updateUI);
@@ -66,7 +68,7 @@ namespace Plc2DsApp
             string[] vendors = ["LS", "AB", "S7", "MX"];
             string lastVendor = _appRegistry.Vendor?.ToString();
             int selectedIndex = lastVendor == null ? 0 : Array.IndexOf(vendors, lastVendor);
-            ucRadioSelector1.SetOptions(vendors, selectedIndex: selectedIndex, itemLayout:RadioGroupItemsLayout.Flow);
+            ucRadioSelector1.SetOptions(vendors, selectedIndex: selectedIndex, itemLayout: RadioGroupItemsLayout.Flow);
             ucRadioSelector1.SelectedOptionChanged += (s, e) =>
             {
                 var vendor = e;
@@ -77,22 +79,22 @@ namespace Plc2DsApp
         void FormMain_Load(object sender, EventArgs e)
         {
             //loadTags(tbCsvFile.Text);
-            btnShowAllTags        .Click += (s, e) => showTags(TagsAll);
-            btnShowStageTags      .Click += (s, e) => showTags(selectTags(Choice.Stage, true));
-            btnShowChosenTags     .Click += (s, e) => showTags(selectTags(Choice.Chosen, true));
+            btnShowAllTags.Click += (s, e) => showTags(TagsAll);
+            btnShowStageTags.Click += (s, e) => showTags(selectTags(Choice.Stage, true));
+            btnShowChosenTags.Click += (s, e) => showTags(selectTags(Choice.Chosen, true));
             btnShowCategorizedTags.Click += (s, e) => showTags(selectTags(Choice.Categorized, true));
-            btnShowDiscardedTags  .Click += (s, e) =>
+            btnShowDiscardedTags.Click += (s, e) =>
             {
                 FormTags form = showTags(selectTags(Choice.Discarded, true), selectionColumnCaption: "Resurrect");
                 if (form.DialogResult == DialogResult.OK && form.SelectedTags.Any())
                     form.SelectedTags.Iter(t => t.Choice = Choice.Stage);
             };
 
-            btnReplaceFlowName  .Enabled = _vendorRule.FlowPatternReplaces.Any();
+            btnReplaceFlowName.Enabled = _vendorRule.FlowPatternReplaces.Any();
             btnReplaceDeviceName.Enabled = _vendorRule.DevicePatternReplaces.Any();
             btnReplaceActionName.Enabled = _vendorRule.ActionPatternReplaces.Any();
 
-            btnReplaceFlowName  .Click += (s, e) => replaceFDA(_vendorRule.FlowPatternReplaces,   FDAT.DuFlow);
+            btnReplaceFlowName.Click += (s, e) => replaceFDA(_vendorRule.FlowPatternReplaces, FDAT.DuFlow);
             btnReplaceDeviceName.Click += (s, e) => replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice);
             btnReplaceActionName.Click += (s, e) => replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction);
         }
@@ -111,7 +113,7 @@ namespace Plc2DsApp
         }
 
 
-        PlcTagBaseFDA[] selectTags(Choice cat, bool loadOnDemand=false)
+        PlcTagBaseFDA[] selectTags(Choice cat, bool loadOnDemand = false)
         {
             if (loadOnDemand && TagsAll.IsNullOrEmpty())
                 TagsAll = loadTags(tbCsvFile.Text, _vendorRule.CsvFilterExpression);
@@ -119,7 +121,7 @@ namespace Plc2DsApp
             return TagsAll.Where(t => t.Choice == cat).ToArray();
         }
 
-        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption=null, string usageHint=null)
+        FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption = null, string usageHint = null)
         {
             var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
             form.DoShow();
@@ -128,7 +130,7 @@ namespace Plc2DsApp
 
 
         int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
-        int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI=true)
+        int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI = true)
         {
             string verify(PlcTagBaseFDA tag, string category, string x)
             {
@@ -139,19 +141,19 @@ namespace Plc2DsApp
             Func<PlcTagBaseFDA, string> fdatGetter =
                 fdat switch
                 {
-                    _ when fdat.IsDuFlow   => t => t.FlowName   .Tee(x => verify(t, "FlowName", x)),
-                    _ when fdat.IsDuDevice => t => t.DeviceName .Tee(x => verify(t, "DeviceName", x)),
-                    _ when fdat.IsDuAction => t => t.ActionName .Tee(x => verify(t, "ActionName", x)),
-                    _ when fdat.IsDuTag    => t => t.CsGetName().Tee(x => verify(t, "Name", x)),
+                    _ when fdat.IsDuFlow => t => t.FlowName.Tee(x => verify(t, "FlowName", x)),
+                    _ when fdat.IsDuDevice => t => t.DeviceName.Tee(x => verify(t, "DeviceName", x)),
+                    _ when fdat.IsDuAction => t => t.ActionName.Tee(x => verify(t, "ActionName", x)),
+                    _ when fdat.IsDuTag => t => t.CsGetName().Tee(x => verify(t, "Name", x)),
                     _ => throw new NotImplementedException()
                 };
-            Action< PlcTagBaseFDA, string> fdatSetter =
+            Action<PlcTagBaseFDA, string> fdatSetter =
                 fdat switch
                 {
-                    _ when fdat.IsDuFlow   => (t, v) => t.FlowName = v,
+                    _ when fdat.IsDuFlow => (t, v) => t.FlowName = v,
                     _ when fdat.IsDuDevice => (t, v) => t.DeviceName = v,
                     _ when fdat.IsDuAction => (t, v) => t.ActionName = v,
-                    _ when fdat.IsDuTag    => (t, v) => t.CsSetName(v),
+                    _ when fdat.IsDuTag => (t, v) => t.CsSetName(v),
                     _ => throw new NotImplementedException()
                 };
 
@@ -220,7 +222,7 @@ namespace Plc2DsApp
                         result => result,
                         () => true)
                     );
-            var excludes = new HashSet<PlcTagBaseFDA>( grDic.ContainsKey(false) ? grDic[false] : [] );
+            var excludes = new HashSet<PlcTagBaseFDA>(grDic.ContainsKey(false) ? grDic[false] : []);
             excludes.Iter(t => t.Choice = Choice.Discarded);
             if (excludes.Any())
             {
@@ -231,7 +233,7 @@ namespace Plc2DsApp
                 Logger.Info($"  You can check discarded tags on {file}");
             }
 
-            TagsAll = tags.Where(t => ! excludes.Contains(t)).ToArray();
+            TagsAll = tags.Where(t => !excludes.Contains(t)).ToArray();
 
             var fdaSplitPattern = new Regex(_vendorRule.FDASplitPattern, RegexOptions.Compiled);
             TagsAll.Iter(t =>
@@ -254,11 +256,11 @@ namespace Plc2DsApp
 
         void updateUI()
         {
-            tbNumTagsAll        .Text = TagsAll        .Length.ToString();
-            tbNumTagsDiscarded  .Text = TagsDiscarded  .Length.ToString();
-            tbNumTagsChosen     .Text = TagsChosen     .Length.ToString();
+            tbNumTagsAll.Text = TagsAll.Length.ToString();
+            tbNumTagsDiscarded.Text = TagsDiscarded.Length.ToString();
+            tbNumTagsChosen.Text = TagsChosen.Length.ToString();
             tbNumTagsCategorized.Text = TagsCategorized.Length.ToString();
-            tbNumTagsStage      .Text = TagsStage      .Length.ToString();
+            tbNumTagsStage.Text = TagsStage.Length.ToString();
             var buttons =
                 new[] {
                     btnDiscardTags, btnReplaceTags, btnSplitFDA,
@@ -317,7 +319,7 @@ namespace Plc2DsApp
 
 
 
-        int applyDiscardTags(bool withUI=true)
+        int applyDiscardTags(bool withUI = true)
         {
             Pattern[] patterns = _vendorRule.TagPatternDiscards;
             var _ = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
@@ -344,12 +346,13 @@ namespace Plc2DsApp
             applyReplaceTags();
         }
 
-        void btnSplitFDA_Click(object sender, EventArgs e){
+        void btnSplitFDA_Click(object sender, EventArgs e)
+        {
             using var _ = btnSplitFDA.Disabler();
             applySplitFDA();
         }
 
-        int applySplitFDA(bool withUI=true)
+        int applySplitFDA(bool withUI = true)
         {
             Pattern[] patterns = _vendorRule.TagPatternFDAs;
 
@@ -361,7 +364,7 @@ namespace Plc2DsApp
                 form.TagsDoneSplit.Iter(t => t.Choice = Choice.Categorized);
 
                 var dones = new HashSet<PlcTagBaseFDA>(form.TagsDoneSplit);
-                foreach(var t in tags.Where(tags => ! dones.Contains(tags)))
+                foreach (var t in tags.Where(tags => !dones.Contains(tags)))
                 {
                     t.Choice = Choice.Discarded;
                     Logger.Error($"Discarding tag failed to split F/D/A: {t.Stringify()}");
@@ -370,7 +373,7 @@ namespace Plc2DsApp
             return form.TagsDoneSplit.Count();
         }
 
-        void applyReplaceTags(bool withUI=true)
+        void applyReplaceTags(bool withUI = true)
         {
             var patterns = _vendorRule.TagPatternReplaces.Concat(_vendorRule.DialectPatterns).ToArray();
             replaceFDA(TagsStage, patterns, FDAT.DuTag, withUI);
@@ -412,6 +415,15 @@ namespace Plc2DsApp
             int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI);
         }
 
+        private void btnOpenInstallDir_Click(object sender, EventArgs e)
+        {
+            // 현재 실행 파일이 있는 폴더
+            string installFolder = System.AppDomain.CurrentDomain.BaseDirectory;
+
+            // 탐색기로 열기
+            System.Diagnostics.Process.Start("explorer.exe", installFolder);
+
+        }
     }
 }
 

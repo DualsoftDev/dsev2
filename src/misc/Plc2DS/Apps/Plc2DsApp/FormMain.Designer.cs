@@ -28,375 +28,376 @@ namespace Plc2DsApp
         /// </summary>
         void InitializeComponent()
         {
-            this.btnLoadTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
-            this.groupControl1 = new DevExpress.XtraEditors.GroupControl();
-            this.tbNumTagsCategorized = new DevExpress.XtraEditors.TextEdit();
-            this.btnShowCategorizedTags = new DevExpress.XtraEditors.SimpleButton();
-            this.tbNumTagsDiscarded = new DevExpress.XtraEditors.TextEdit();
-            this.tbNumTagsChosen = new DevExpress.XtraEditors.TextEdit();
-            this.tbNumTagsStage = new DevExpress.XtraEditors.TextEdit();
-            this.tbNumTagsAll = new DevExpress.XtraEditors.TextEdit();
-            this.btnShowDiscardedTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnShowChosenTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnShowStageTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
-            this.groupControl2 = new DevExpress.XtraEditors.GroupControl();
-            this.btnReplaceTags = new DevExpress.XtraEditors.SimpleButton();
-            this.btnSplitFDA = new DevExpress.XtraEditors.SimpleButton();
-            this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
-            this.groupControl4 = new DevExpress.XtraEditors.GroupControl();
-            this.btnReplaceActionName = new DevExpress.XtraEditors.SimpleButton();
-            this.btnReplaceDeviceName = new DevExpress.XtraEditors.SimpleButton();
-            this.btnReplaceFlowName = new DevExpress.XtraEditors.SimpleButton();
-            this.btnApplyAll = new DevExpress.XtraEditors.SimpleButton();
-            this.tbCsvFile = new DevExpress.XtraEditors.TextEdit();
-            this.ucPanelLog1 = new Dual.Common.Winform.DevX.UserControls.UcPanelLog();
-            this.ucRadioSelector1 = new Dual.Common.Winform.DevX.UcRadioSelector();
-            this.btnMergeAppSettings = new DevExpress.XtraEditors.SimpleButton();
-            this.cbMergeAppSettingsOverride = new DevExpress.XtraEditors.CheckEdit();
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).BeginInit();
-            this.groupControl1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsDiscarded.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).BeginInit();
-            this.groupControl2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).BeginInit();
-            this.groupControl4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.cbMergeAppSettingsOverride.Properties)).BeginInit();
-            this.SuspendLayout();
+            btnLoadTags = new DevExpress.XtraEditors.SimpleButton();
+            btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
+            groupControl1 = new DevExpress.XtraEditors.GroupControl();
+            tbNumTagsCategorized = new DevExpress.XtraEditors.TextEdit();
+            btnShowCategorizedTags = new DevExpress.XtraEditors.SimpleButton();
+            tbNumTagsDiscarded = new DevExpress.XtraEditors.TextEdit();
+            tbNumTagsChosen = new DevExpress.XtraEditors.TextEdit();
+            tbNumTagsStage = new DevExpress.XtraEditors.TextEdit();
+            tbNumTagsAll = new DevExpress.XtraEditors.TextEdit();
+            btnShowDiscardedTags = new DevExpress.XtraEditors.SimpleButton();
+            btnShowChosenTags = new DevExpress.XtraEditors.SimpleButton();
+            btnShowStageTags = new DevExpress.XtraEditors.SimpleButton();
+            btnDiscardTags = new DevExpress.XtraEditors.SimpleButton();
+            groupControl2 = new DevExpress.XtraEditors.GroupControl();
+            btnReplaceTags = new DevExpress.XtraEditors.SimpleButton();
+            btnSplitFDA = new DevExpress.XtraEditors.SimpleButton();
+            labelControl1 = new DevExpress.XtraEditors.LabelControl();
+            groupControl4 = new DevExpress.XtraEditors.GroupControl();
+            btnReplaceActionName = new DevExpress.XtraEditors.SimpleButton();
+            btnReplaceDeviceName = new DevExpress.XtraEditors.SimpleButton();
+            btnReplaceFlowName = new DevExpress.XtraEditors.SimpleButton();
+            btnApplyAll = new DevExpress.XtraEditors.SimpleButton();
+            tbCsvFile = new DevExpress.XtraEditors.TextEdit();
+            ucPanelLog1 = new Dual.Common.Winform.DevX.UserControls.UcPanelLog();
+            ucRadioSelector1 = new UcRadioSelector();
+            btnMergeAppSettings = new DevExpress.XtraEditors.SimpleButton();
+            cbMergeAppSettingsOverride = new DevExpress.XtraEditors.CheckEdit();
+            btnOpenInstallDir = new DevExpress.XtraEditors.SimpleButton();
+            ((ISupportInitialize)groupControl1).BeginInit();
+            groupControl1.SuspendLayout();
+            ((ISupportInitialize)tbNumTagsCategorized.Properties).BeginInit();
+            ((ISupportInitialize)tbNumTagsDiscarded.Properties).BeginInit();
+            ((ISupportInitialize)tbNumTagsChosen.Properties).BeginInit();
+            ((ISupportInitialize)tbNumTagsStage.Properties).BeginInit();
+            ((ISupportInitialize)tbNumTagsAll.Properties).BeginInit();
+            ((ISupportInitialize)groupControl2).BeginInit();
+            groupControl2.SuspendLayout();
+            ((ISupportInitialize)groupControl4).BeginInit();
+            groupControl4.SuspendLayout();
+            ((ISupportInitialize)tbCsvFile.Properties).BeginInit();
+            ((ISupportInitialize)cbMergeAppSettingsOverride.Properties).BeginInit();
+            SuspendLayout();
             // 
             // btnLoadTags
             // 
-            this.btnLoadTags.Location = new System.Drawing.Point(12, 119);
-            this.btnLoadTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnLoadTags.Name = "btnLoadTags";
-            this.btnLoadTags.Size = new System.Drawing.Size(112, 34);
-            this.btnLoadTags.TabIndex = 0;
-            this.btnLoadTags.Text = "Load tags..";
-            this.btnLoadTags.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서" +
-    " 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
-            this.btnLoadTags.Click += new System.EventHandler(this.btnLoadTags_Click);
+            btnLoadTags.Location = new System.Drawing.Point(12, 119);
+            btnLoadTags.Margin = new Padding(2);
+            btnLoadTags.Name = "btnLoadTags";
+            btnLoadTags.Size = new System.Drawing.Size(112, 34);
+            btnLoadTags.TabIndex = 0;
+            btnLoadTags.Text = "Load tags..";
+            btnLoadTags.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
+            btnLoadTags.Click += btnLoadTags_Click;
             // 
             // btnShowAllTags
             // 
-            this.btnShowAllTags.Location = new System.Drawing.Point(5, 42);
-            this.btnShowAllTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowAllTags.Name = "btnShowAllTags";
-            this.btnShowAllTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowAllTags.TabIndex = 1;
-            this.btnShowAllTags.Text = "All";
-            this.btnShowAllTags.ToolTip = "모든 tags 보이기\r\n- CsvFilterPatterns 에 의해서 버려진 tags 는 제외한 모든 tags";
+            btnShowAllTags.Location = new System.Drawing.Point(5, 42);
+            btnShowAllTags.Margin = new Padding(2);
+            btnShowAllTags.Name = "btnShowAllTags";
+            btnShowAllTags.Size = new System.Drawing.Size(90, 34);
+            btnShowAllTags.TabIndex = 1;
+            btnShowAllTags.Text = "All";
+            btnShowAllTags.ToolTip = "모든 tags 보이기\r\n- CsvFilterPatterns 에 의해서 버려진 tags 는 제외한 모든 tags";
             // 
             // groupControl1
             // 
-            this.groupControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupControl1.Controls.Add(this.tbNumTagsCategorized);
-            this.groupControl1.Controls.Add(this.btnShowCategorizedTags);
-            this.groupControl1.Controls.Add(this.tbNumTagsDiscarded);
-            this.groupControl1.Controls.Add(this.tbNumTagsChosen);
-            this.groupControl1.Controls.Add(this.tbNumTagsStage);
-            this.groupControl1.Controls.Add(this.tbNumTagsAll);
-            this.groupControl1.Controls.Add(this.btnShowDiscardedTags);
-            this.groupControl1.Controls.Add(this.btnShowChosenTags);
-            this.groupControl1.Controls.Add(this.btnShowStageTags);
-            this.groupControl1.Controls.Add(this.btnShowAllTags);
-            this.groupControl1.Location = new System.Drawing.Point(18, 453);
-            this.groupControl1.Margin = new System.Windows.Forms.Padding(2);
-            this.groupControl1.Name = "groupControl1";
-            this.groupControl1.Size = new System.Drawing.Size(1023, 122);
-            this.groupControl1.TabIndex = 3;
-            this.groupControl1.Text = "Show tags";
+            groupControl1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupControl1.Controls.Add(tbNumTagsCategorized);
+            groupControl1.Controls.Add(btnShowCategorizedTags);
+            groupControl1.Controls.Add(tbNumTagsDiscarded);
+            groupControl1.Controls.Add(tbNumTagsChosen);
+            groupControl1.Controls.Add(tbNumTagsStage);
+            groupControl1.Controls.Add(tbNumTagsAll);
+            groupControl1.Controls.Add(btnShowDiscardedTags);
+            groupControl1.Controls.Add(btnShowChosenTags);
+            groupControl1.Controls.Add(btnShowStageTags);
+            groupControl1.Controls.Add(btnShowAllTags);
+            groupControl1.Location = new System.Drawing.Point(18, 453);
+            groupControl1.Margin = new Padding(2);
+            groupControl1.Name = "groupControl1";
+            groupControl1.Size = new System.Drawing.Size(1023, 122);
+            groupControl1.TabIndex = 3;
+            groupControl1.Text = "Show tags";
             // 
             // tbNumTagsCategorized
             // 
-            this.tbNumTagsCategorized.Location = new System.Drawing.Point(345, 82);
-            this.tbNumTagsCategorized.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsCategorized.Name = "tbNumTagsCategorized";
-            this.tbNumTagsCategorized.Properties.ReadOnly = true;
-            this.tbNumTagsCategorized.Size = new System.Drawing.Size(110, 28);
-            this.tbNumTagsCategorized.TabIndex = 12;
+            tbNumTagsCategorized.Location = new System.Drawing.Point(345, 82);
+            tbNumTagsCategorized.Margin = new Padding(2);
+            tbNumTagsCategorized.Name = "tbNumTagsCategorized";
+            tbNumTagsCategorized.Properties.ReadOnly = true;
+            tbNumTagsCategorized.Size = new System.Drawing.Size(110, 28);
+            tbNumTagsCategorized.TabIndex = 12;
             // 
             // btnShowCategorizedTags
             // 
-            this.btnShowCategorizedTags.Location = new System.Drawing.Point(345, 42);
-            this.btnShowCategorizedTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowCategorizedTags.Name = "btnShowCategorizedTags";
-            this.btnShowCategorizedTags.Size = new System.Drawing.Size(110, 34);
-            this.btnShowCategorizedTags.TabIndex = 11;
-            this.btnShowCategorizedTags.Text = "Categorized";
-            this.btnShowCategorizedTags.ToolTip = "Split 되어 Flow, Device, Action 명이 지정된 tags";
+            btnShowCategorizedTags.Location = new System.Drawing.Point(345, 42);
+            btnShowCategorizedTags.Margin = new Padding(2);
+            btnShowCategorizedTags.Name = "btnShowCategorizedTags";
+            btnShowCategorizedTags.Size = new System.Drawing.Size(110, 34);
+            btnShowCategorizedTags.TabIndex = 11;
+            btnShowCategorizedTags.Text = "Categorized";
+            btnShowCategorizedTags.ToolTip = "Split 되어 Flow, Device, Action 명이 지정된 tags";
             // 
             // tbNumTagsDiscarded
             // 
-            this.tbNumTagsDiscarded.Location = new System.Drawing.Point(476, 82);
-            this.tbNumTagsDiscarded.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsDiscarded.Name = "tbNumTagsDiscarded";
-            this.tbNumTagsDiscarded.Properties.ReadOnly = true;
-            this.tbNumTagsDiscarded.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsDiscarded.TabIndex = 10;
+            tbNumTagsDiscarded.Location = new System.Drawing.Point(476, 82);
+            tbNumTagsDiscarded.Margin = new Padding(2);
+            tbNumTagsDiscarded.Name = "tbNumTagsDiscarded";
+            tbNumTagsDiscarded.Properties.ReadOnly = true;
+            tbNumTagsDiscarded.Size = new System.Drawing.Size(90, 28);
+            tbNumTagsDiscarded.TabIndex = 10;
             // 
             // tbNumTagsChosen
             // 
-            this.tbNumTagsChosen.Location = new System.Drawing.Point(231, 82);
-            this.tbNumTagsChosen.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsChosen.Name = "tbNumTagsChosen";
-            this.tbNumTagsChosen.Properties.ReadOnly = true;
-            this.tbNumTagsChosen.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsChosen.TabIndex = 9;
+            tbNumTagsChosen.Location = new System.Drawing.Point(231, 82);
+            tbNumTagsChosen.Margin = new Padding(2);
+            tbNumTagsChosen.Name = "tbNumTagsChosen";
+            tbNumTagsChosen.Properties.ReadOnly = true;
+            tbNumTagsChosen.Size = new System.Drawing.Size(90, 28);
+            tbNumTagsChosen.TabIndex = 9;
             // 
             // tbNumTagsStage
             // 
-            this.tbNumTagsStage.Location = new System.Drawing.Point(118, 82);
-            this.tbNumTagsStage.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsStage.Name = "tbNumTagsStage";
-            this.tbNumTagsStage.Properties.ReadOnly = true;
-            this.tbNumTagsStage.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsStage.TabIndex = 8;
+            tbNumTagsStage.Location = new System.Drawing.Point(118, 82);
+            tbNumTagsStage.Margin = new Padding(2);
+            tbNumTagsStage.Name = "tbNumTagsStage";
+            tbNumTagsStage.Properties.ReadOnly = true;
+            tbNumTagsStage.Size = new System.Drawing.Size(90, 28);
+            tbNumTagsStage.TabIndex = 8;
             // 
             // tbNumTagsAll
             // 
-            this.tbNumTagsAll.Location = new System.Drawing.Point(5, 82);
-            this.tbNumTagsAll.Margin = new System.Windows.Forms.Padding(2);
-            this.tbNumTagsAll.Name = "tbNumTagsAll";
-            this.tbNumTagsAll.Properties.ReadOnly = true;
-            this.tbNumTagsAll.Size = new System.Drawing.Size(90, 28);
-            this.tbNumTagsAll.TabIndex = 7;
+            tbNumTagsAll.Location = new System.Drawing.Point(5, 82);
+            tbNumTagsAll.Margin = new Padding(2);
+            tbNumTagsAll.Name = "tbNumTagsAll";
+            tbNumTagsAll.Properties.ReadOnly = true;
+            tbNumTagsAll.Size = new System.Drawing.Size(90, 28);
+            tbNumTagsAll.TabIndex = 7;
             // 
             // btnShowDiscardedTags
             // 
-            this.btnShowDiscardedTags.Location = new System.Drawing.Point(476, 42);
-            this.btnShowDiscardedTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowDiscardedTags.Name = "btnShowDiscardedTags";
-            this.btnShowDiscardedTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowDiscardedTags.TabIndex = 6;
-            this.btnShowDiscardedTags.Text = "Discarded";
-            this.btnShowDiscardedTags.ToolTip = "버려진 tags";
+            btnShowDiscardedTags.Location = new System.Drawing.Point(476, 42);
+            btnShowDiscardedTags.Margin = new Padding(2);
+            btnShowDiscardedTags.Name = "btnShowDiscardedTags";
+            btnShowDiscardedTags.Size = new System.Drawing.Size(90, 34);
+            btnShowDiscardedTags.TabIndex = 6;
+            btnShowDiscardedTags.Text = "Discarded";
+            btnShowDiscardedTags.ToolTip = "버려진 tags";
             // 
             // btnShowChosenTags
             // 
-            this.btnShowChosenTags.Location = new System.Drawing.Point(231, 42);
-            this.btnShowChosenTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowChosenTags.Name = "btnShowChosenTags";
-            this.btnShowChosenTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowChosenTags.TabIndex = 5;
-            this.btnShowChosenTags.Text = "Chosen";
-            this.btnShowChosenTags.ToolTip = "취할 tags.  버려질 tags 가 아님을 의미";
+            btnShowChosenTags.Location = new System.Drawing.Point(231, 42);
+            btnShowChosenTags.Margin = new Padding(2);
+            btnShowChosenTags.Name = "btnShowChosenTags";
+            btnShowChosenTags.Size = new System.Drawing.Size(90, 34);
+            btnShowChosenTags.TabIndex = 5;
+            btnShowChosenTags.Text = "Chosen";
+            btnShowChosenTags.ToolTip = "취할 tags.  버려질 tags 가 아님을 의미";
             // 
             // btnShowStageTags
             // 
-            this.btnShowStageTags.Location = new System.Drawing.Point(118, 42);
-            this.btnShowStageTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnShowStageTags.Name = "btnShowStageTags";
-            this.btnShowStageTags.Size = new System.Drawing.Size(90, 34);
-            this.btnShowStageTags.TabIndex = 4;
-            this.btnShowStageTags.Text = "Stage";
-            this.btnShowStageTags.ToolTip = "버릴지 취할지 결정되지 않은 tags";
+            btnShowStageTags.Location = new System.Drawing.Point(118, 42);
+            btnShowStageTags.Margin = new Padding(2);
+            btnShowStageTags.Name = "btnShowStageTags";
+            btnShowStageTags.Size = new System.Drawing.Size(90, 34);
+            btnShowStageTags.TabIndex = 4;
+            btnShowStageTags.Text = "Stage";
+            btnShowStageTags.ToolTip = "버릴지 취할지 결정되지 않은 tags";
             // 
             // btnDiscardTags
             // 
-            this.btnDiscardTags.Location = new System.Drawing.Point(6, 45);
-            this.btnDiscardTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnDiscardTags.Name = "btnDiscardTags";
-            this.btnDiscardTags.Size = new System.Drawing.Size(139, 45);
-            this.btnDiscardTags.TabIndex = 7;
-            this.btnDiscardTags.Text = "Discard";
-            this.btnDiscardTags.ToolTip = "TagPatternDiscards 를 이용해서 Tags 의 이름에서 match 되는 항목을 버립니다.";
-            this.btnDiscardTags.Click += new System.EventHandler(this.btnDiscardTags_Click);
+            btnDiscardTags.Location = new System.Drawing.Point(6, 45);
+            btnDiscardTags.Margin = new Padding(2);
+            btnDiscardTags.Name = "btnDiscardTags";
+            btnDiscardTags.Size = new System.Drawing.Size(139, 45);
+            btnDiscardTags.TabIndex = 7;
+            btnDiscardTags.Text = "Discard";
+            btnDiscardTags.ToolTip = "TagPatternDiscards 를 이용해서 Tags 의 이름에서 match 되는 항목을 버립니다.";
+            btnDiscardTags.Click += btnDiscardTags_Click;
             // 
             // groupControl2
             // 
-            this.groupControl2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupControl2.Controls.Add(this.btnReplaceTags);
-            this.groupControl2.Controls.Add(this.btnSplitFDA);
-            this.groupControl2.Controls.Add(this.btnDiscardTags);
-            this.groupControl2.Location = new System.Drawing.Point(12, 167);
-            this.groupControl2.Margin = new System.Windows.Forms.Padding(2);
-            this.groupControl2.Name = "groupControl2";
-            this.groupControl2.Size = new System.Drawing.Size(1029, 94);
-            this.groupControl2.TabIndex = 9;
-            this.groupControl2.Text = "Tags";
+            groupControl2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupControl2.Controls.Add(btnReplaceTags);
+            groupControl2.Controls.Add(btnSplitFDA);
+            groupControl2.Controls.Add(btnDiscardTags);
+            groupControl2.Location = new System.Drawing.Point(12, 167);
+            groupControl2.Margin = new Padding(2);
+            groupControl2.Name = "groupControl2";
+            groupControl2.Size = new System.Drawing.Size(1029, 94);
+            groupControl2.TabIndex = 9;
+            groupControl2.Text = "Tags";
             // 
             // btnReplaceTags
             // 
-            this.btnReplaceTags.Location = new System.Drawing.Point(164, 45);
-            this.btnReplaceTags.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceTags.Name = "btnReplaceTags";
-            this.btnReplaceTags.Size = new System.Drawing.Size(139, 45);
-            this.btnReplaceTags.TabIndex = 11;
-            this.btnReplaceTags.Text = "Replace";
-            this.btnReplaceTags.ToolTip = "TagPatternReplaces 를 이용해서 Tags 의 이름 자체를 치환합니다.";
-            this.btnReplaceTags.Click += new System.EventHandler(this.btnReplaceTags_Click);
+            btnReplaceTags.Location = new System.Drawing.Point(164, 45);
+            btnReplaceTags.Margin = new Padding(2);
+            btnReplaceTags.Name = "btnReplaceTags";
+            btnReplaceTags.Size = new System.Drawing.Size(139, 45);
+            btnReplaceTags.TabIndex = 11;
+            btnReplaceTags.Text = "Replace";
+            btnReplaceTags.ToolTip = "TagPatternReplaces 를 이용해서 Tags 의 이름 자체를 치환합니다.";
+            btnReplaceTags.Click += btnReplaceTags_Click;
             // 
             // btnSplitFDA
             // 
-            this.btnSplitFDA.Location = new System.Drawing.Point(330, 45);
-            this.btnSplitFDA.Margin = new System.Windows.Forms.Padding(2);
-            this.btnSplitFDA.Name = "btnSplitFDA";
-            this.btnSplitFDA.Size = new System.Drawing.Size(139, 45);
-            this.btnSplitFDA.TabIndex = 10;
-            this.btnSplitFDA.Text = "Split";
-            this.btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출\r\nTagPatternFDAs 를 이용해서 Tags 이름을 Flow, Device, Action 으로" +
-    " 나눕니다.";
-            this.btnSplitFDA.Click += new System.EventHandler(this.btnSplitFDA_Click);
+            btnSplitFDA.Location = new System.Drawing.Point(330, 45);
+            btnSplitFDA.Margin = new Padding(2);
+            btnSplitFDA.Name = "btnSplitFDA";
+            btnSplitFDA.Size = new System.Drawing.Size(139, 45);
+            btnSplitFDA.TabIndex = 10;
+            btnSplitFDA.Text = "Split";
+            btnSplitFDA.ToolTip = "Flow, Device, Action 명 추출\r\nTagPatternFDAs 를 이용해서 Tags 이름을 Flow, Device, Action 으로 나눕니다.";
+            btnSplitFDA.Click += btnSplitFDA_Click;
             // 
             // labelControl1
             // 
-            this.labelControl1.Location = new System.Drawing.Point(17, 22);
-            this.labelControl1.Name = "labelControl1";
-            this.labelControl1.Size = new System.Drawing.Size(62, 22);
-            this.labelControl1.TabIndex = 12;
-            this.labelControl1.Text = "Vendor:";
+            labelControl1.Location = new System.Drawing.Point(17, 22);
+            labelControl1.Name = "labelControl1";
+            labelControl1.Size = new System.Drawing.Size(62, 22);
+            labelControl1.TabIndex = 12;
+            labelControl1.Text = "Vendor:";
             // 
             // groupControl4
             // 
-            this.groupControl4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupControl4.Controls.Add(this.btnReplaceActionName);
-            this.groupControl4.Controls.Add(this.btnReplaceDeviceName);
-            this.groupControl4.Controls.Add(this.btnReplaceFlowName);
-            this.groupControl4.Location = new System.Drawing.Point(12, 276);
-            this.groupControl4.Margin = new System.Windows.Forms.Padding(2);
-            this.groupControl4.Name = "groupControl4";
-            this.groupControl4.Size = new System.Drawing.Size(1029, 98);
-            this.groupControl4.TabIndex = 13;
-            this.groupControl4.Text = "Discards F/D/A";
+            groupControl4.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupControl4.Controls.Add(btnReplaceActionName);
+            groupControl4.Controls.Add(btnReplaceDeviceName);
+            groupControl4.Controls.Add(btnReplaceFlowName);
+            groupControl4.Location = new System.Drawing.Point(12, 276);
+            groupControl4.Margin = new Padding(2);
+            groupControl4.Name = "groupControl4";
+            groupControl4.Size = new System.Drawing.Size(1029, 98);
+            groupControl4.TabIndex = 13;
+            groupControl4.Text = "Discards F/D/A";
             // 
             // btnReplaceActionName
             // 
-            this.btnReplaceActionName.Location = new System.Drawing.Point(330, 45);
-            this.btnReplaceActionName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceActionName.Name = "btnReplaceActionName";
-            this.btnReplaceActionName.Size = new System.Drawing.Size(139, 45);
-            this.btnReplaceActionName.TabIndex = 12;
-            this.btnReplaceActionName.Text = "Action";
-            this.btnReplaceActionName.ToolTip = "Action 명에서 불필요한 부분 제거\r\n- ActionPatternReplaces 에 정의";
+            btnReplaceActionName.Location = new System.Drawing.Point(330, 45);
+            btnReplaceActionName.Margin = new Padding(2);
+            btnReplaceActionName.Name = "btnReplaceActionName";
+            btnReplaceActionName.Size = new System.Drawing.Size(139, 45);
+            btnReplaceActionName.TabIndex = 12;
+            btnReplaceActionName.Text = "Action";
+            btnReplaceActionName.ToolTip = "Action 명에서 불필요한 부분 제거\r\n- ActionPatternReplaces 에 정의";
             // 
             // btnReplaceDeviceName
             // 
-            this.btnReplaceDeviceName.Location = new System.Drawing.Point(164, 45);
-            this.btnReplaceDeviceName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceDeviceName.Name = "btnReplaceDeviceName";
-            this.btnReplaceDeviceName.Size = new System.Drawing.Size(139, 45);
-            this.btnReplaceDeviceName.TabIndex = 11;
-            this.btnReplaceDeviceName.Text = "Device";
-            this.btnReplaceDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거\r\n- DevicePatternReplaces 에 정의";
+            btnReplaceDeviceName.Location = new System.Drawing.Point(164, 45);
+            btnReplaceDeviceName.Margin = new Padding(2);
+            btnReplaceDeviceName.Name = "btnReplaceDeviceName";
+            btnReplaceDeviceName.Size = new System.Drawing.Size(139, 45);
+            btnReplaceDeviceName.TabIndex = 11;
+            btnReplaceDeviceName.Text = "Device";
+            btnReplaceDeviceName.ToolTip = "Device 명에서 불필요한 부분 제거\r\n- DevicePatternReplaces 에 정의";
             // 
             // btnReplaceFlowName
             // 
-            this.btnReplaceFlowName.Location = new System.Drawing.Point(4, 45);
-            this.btnReplaceFlowName.Margin = new System.Windows.Forms.Padding(2);
-            this.btnReplaceFlowName.Name = "btnReplaceFlowName";
-            this.btnReplaceFlowName.Size = new System.Drawing.Size(139, 45);
-            this.btnReplaceFlowName.TabIndex = 10;
-            this.btnReplaceFlowName.Text = "Flow";
-            this.btnReplaceFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거\r\n- FlowPatternReplaces 에 정의";
+            btnReplaceFlowName.Location = new System.Drawing.Point(4, 45);
+            btnReplaceFlowName.Margin = new Padding(2);
+            btnReplaceFlowName.Name = "btnReplaceFlowName";
+            btnReplaceFlowName.Size = new System.Drawing.Size(139, 45);
+            btnReplaceFlowName.TabIndex = 10;
+            btnReplaceFlowName.Text = "Flow";
+            btnReplaceFlowName.ToolTip = "Flow 명에서 불필요한 부분 제거\r\n- FlowPatternReplaces 에 정의";
             // 
             // btnApplyAll
             // 
-            this.btnApplyAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnApplyAll.Location = new System.Drawing.Point(807, 393);
-            this.btnApplyAll.Margin = new System.Windows.Forms.Padding(2);
-            this.btnApplyAll.Name = "btnApplyAll";
-            this.btnApplyAll.Size = new System.Drawing.Size(234, 45);
-            this.btnApplyAll.TabIndex = 14;
-            this.btnApplyAll.Text = "Apply all rules";
-            this.btnApplyAll.ToolTip = "모든 규칙 일괄 적용";
-            this.btnApplyAll.Click += new System.EventHandler(this.btnApplyAll_Click);
+            btnApplyAll.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnApplyAll.Location = new System.Drawing.Point(807, 393);
+            btnApplyAll.Margin = new Padding(2);
+            btnApplyAll.Name = "btnApplyAll";
+            btnApplyAll.Size = new System.Drawing.Size(234, 45);
+            btnApplyAll.TabIndex = 14;
+            btnApplyAll.Text = "Apply all rules";
+            btnApplyAll.ToolTip = "모든 규칙 일괄 적용";
+            btnApplyAll.Click += btnApplyAll_Click;
             // 
             // tbCsvFile
             // 
-            this.tbCsvFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbCsvFile.Location = new System.Drawing.Point(148, 123);
-            this.tbCsvFile.Margin = new System.Windows.Forms.Padding(2);
-            this.tbCsvFile.Name = "tbCsvFile";
-            this.tbCsvFile.Size = new System.Drawing.Size(897, 28);
-            this.tbCsvFile.TabIndex = 2;
+            tbCsvFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            tbCsvFile.Location = new System.Drawing.Point(148, 123);
+            tbCsvFile.Margin = new Padding(2);
+            tbCsvFile.Name = "tbCsvFile";
+            tbCsvFile.Size = new System.Drawing.Size(897, 28);
+            tbCsvFile.TabIndex = 2;
             // 
             // ucPanelLog1
             // 
-            this.ucPanelLog1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.ucPanelLog1.Location = new System.Drawing.Point(12, 627);
-            this.ucPanelLog1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.ucPanelLog1.Name = "ucPanelLog1";
-            this.ucPanelLog1.SelectedIndex = -1;
-            this.ucPanelLog1.Size = new System.Drawing.Size(1029, 241);
-            this.ucPanelLog1.TabIndex = 15;
+            ucPanelLog1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ucPanelLog1.Location = new System.Drawing.Point(12, 627);
+            ucPanelLog1.Margin = new Padding(4, 5, 4, 5);
+            ucPanelLog1.Name = "ucPanelLog1";
+            ucPanelLog1.SelectedIndex = -1;
+            ucPanelLog1.Size = new System.Drawing.Size(1029, 241);
+            ucPanelLog1.TabIndex = 15;
             // 
             // ucRadioSelector1
             // 
-            this.ucRadioSelector1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.ucRadioSelector1.Location = new System.Drawing.Point(148, 12);
-            this.ucRadioSelector1.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
-            this.ucRadioSelector1.Name = "ucRadioSelector1";
-            this.ucRadioSelector1.Size = new System.Drawing.Size(897, 39);
-            this.ucRadioSelector1.TabIndex = 11;
+            ucRadioSelector1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            ucRadioSelector1.Location = new System.Drawing.Point(148, 12);
+            ucRadioSelector1.Margin = new Padding(2, 3, 2, 3);
+            ucRadioSelector1.Name = "ucRadioSelector1";
+            ucRadioSelector1.Size = new System.Drawing.Size(897, 39);
+            ucRadioSelector1.TabIndex = 11;
             // 
             // btnMergeAppSettings
             // 
-            this.btnMergeAppSettings.Location = new System.Drawing.Point(12, 62);
-            this.btnMergeAppSettings.Margin = new System.Windows.Forms.Padding(2);
-            this.btnMergeAppSettings.Name = "btnMergeAppSettings";
-            this.btnMergeAppSettings.Size = new System.Drawing.Size(181, 34);
-            this.btnMergeAppSettings.TabIndex = 16;
-            this.btnMergeAppSettings.Text = "Merge appSettings..";
-            this.btnMergeAppSettings.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서" +
-    " 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
-            this.btnMergeAppSettings.Click += new System.EventHandler(this.btnMergeAppSettings_Click);
+            btnMergeAppSettings.Location = new System.Drawing.Point(12, 62);
+            btnMergeAppSettings.Margin = new Padding(2);
+            btnMergeAppSettings.Name = "btnMergeAppSettings";
+            btnMergeAppSettings.Size = new System.Drawing.Size(181, 34);
+            btnMergeAppSettings.TabIndex = 16;
+            btnMergeAppSettings.Text = "Merge appSettings..";
+            btnMergeAppSettings.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
+            btnMergeAppSettings.Click += btnMergeAppSettings_Click;
             // 
             // cbMergeAppSettingsOverride
             // 
-            this.cbMergeAppSettingsOverride.Location = new System.Drawing.Point(223, 68);
-            this.cbMergeAppSettingsOverride.Name = "cbMergeAppSettingsOverride";
-            this.cbMergeAppSettingsOverride.Properties.Caption = "Override";
-            this.cbMergeAppSettingsOverride.Size = new System.Drawing.Size(112, 27);
-            this.cbMergeAppSettingsOverride.TabIndex = 17;
+            cbMergeAppSettingsOverride.Location = new System.Drawing.Point(223, 68);
+            cbMergeAppSettingsOverride.Name = "cbMergeAppSettingsOverride";
+            cbMergeAppSettingsOverride.Properties.Caption = "Override";
+            cbMergeAppSettingsOverride.Size = new System.Drawing.Size(112, 27);
+            cbMergeAppSettingsOverride.TabIndex = 17;
+            // 
+            // btnOpenInstallDir
+            // 
+            btnOpenInstallDir.Location = new System.Drawing.Point(506, 62);
+            btnOpenInstallDir.Name = "btnOpenInstallDir";
+            btnOpenInstallDir.Size = new System.Drawing.Size(168, 34);
+            btnOpenInstallDir.TabIndex = 18;
+            btnOpenInstallDir.Text = "Open install folder";
+            btnOpenInstallDir.Click += btnOpenInstallDir_Click;
             // 
             // FormMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1056, 882);
-            this.Controls.Add(this.cbMergeAppSettingsOverride);
-            this.Controls.Add(this.btnMergeAppSettings);
-            this.Controls.Add(this.ucPanelLog1);
-            this.Controls.Add(this.btnApplyAll);
-            this.Controls.Add(this.groupControl4);
-            this.Controls.Add(this.labelControl1);
-            this.Controls.Add(this.ucRadioSelector1);
-            this.Controls.Add(this.groupControl2);
-            this.Controls.Add(this.groupControl1);
-            this.Controls.Add(this.tbCsvFile);
-            this.Controls.Add(this.btnLoadTags);
-            this.Margin = new System.Windows.Forms.Padding(5);
-            this.Name = "FormMain";
-            this.Text = "Plc2Ds";
-            this.Load += new System.EventHandler(this.FormMain_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl1)).EndInit();
-            this.groupControl1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsCategorized.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsDiscarded.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsChosen.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsStage.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tbNumTagsAll.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl2)).EndInit();
-            this.groupControl2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.groupControl4)).EndInit();
-            this.groupControl4.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.tbCsvFile.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.cbMergeAppSettingsOverride.Properties)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(1056, 882);
+            Controls.Add(btnOpenInstallDir);
+            Controls.Add(cbMergeAppSettingsOverride);
+            Controls.Add(btnMergeAppSettings);
+            Controls.Add(ucPanelLog1);
+            Controls.Add(btnApplyAll);
+            Controls.Add(groupControl4);
+            Controls.Add(labelControl1);
+            Controls.Add(ucRadioSelector1);
+            Controls.Add(groupControl2);
+            Controls.Add(groupControl1);
+            Controls.Add(tbCsvFile);
+            Controls.Add(btnLoadTags);
+            Margin = new Padding(5);
+            Name = "FormMain";
+            Text = "Plc2Ds";
+            Load += FormMain_Load;
+            ((ISupportInitialize)groupControl1).EndInit();
+            groupControl1.ResumeLayout(false);
+            ((ISupportInitialize)tbNumTagsCategorized.Properties).EndInit();
+            ((ISupportInitialize)tbNumTagsDiscarded.Properties).EndInit();
+            ((ISupportInitialize)tbNumTagsChosen.Properties).EndInit();
+            ((ISupportInitialize)tbNumTagsStage.Properties).EndInit();
+            ((ISupportInitialize)tbNumTagsAll.Properties).EndInit();
+            ((ISupportInitialize)groupControl2).EndInit();
+            groupControl2.ResumeLayout(false);
+            ((ISupportInitialize)groupControl4).EndInit();
+            groupControl4.ResumeLayout(false);
+            ((ISupportInitialize)tbCsvFile.Properties).EndInit();
+            ((ISupportInitialize)cbMergeAppSettingsOverride.Properties).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 
@@ -429,6 +430,7 @@ namespace Plc2DsApp
         private Dual.Common.Winform.DevX.UserControls.UcPanelLog ucPanelLog1;
         private DevExpress.XtraEditors.SimpleButton btnMergeAppSettings;
         private DevExpress.XtraEditors.CheckEdit cbMergeAppSettingsOverride;
+        private DevExpress.XtraEditors.SimpleButton btnOpenInstallDir;
     }
 }
 

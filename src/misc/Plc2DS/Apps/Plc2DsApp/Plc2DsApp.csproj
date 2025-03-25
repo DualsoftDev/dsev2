@@ -10,14 +10,14 @@
 		<ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 		<NoWarn>$(NoWarn);CA1416</NoWarn>
 	</PropertyGroup>
+
+	<!--<Target Name="CleanOldPublish" AfterTargets="Publish">
+		<Exec Command="call &quot;$(ProjectDir)CleanOldPublish.bat&quot;" />
+	</Target>-->
+
+
 	<ItemGroup>
 		<EmbeddedResource Include="Properties\licenses.licx" />
-		<None Update="appsettings.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="log4net.config">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="Rulebases\**\*.json">
@@ -33,7 +33,14 @@
 		<ProjectReference Include="..\..\Dual.Plc2DS\Dual.Plc2DS.fsproj" />
 	</ItemGroup>
 	<ItemGroup>
+		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Publish>true</Publish>
+		</Content>
 		<Content Include="CheatKey.txt" />
+		<Content Include="log4net.config">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -48,4 +55,12 @@
 	<ItemGroup>
 		<Compile Remove="Unused\AppSettings.cs" />
 	</ItemGroup>
+	<!--<ItemGroup>
+		<None Remove="appsettings.json" />
+		<None Remove="log4net.config" />
+		<None Remove="Rulebases\KGM.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<EditorConfigFiles Include="Rulebases\KGM.json" />
+	</ItemGroup>-->
 </Project>
