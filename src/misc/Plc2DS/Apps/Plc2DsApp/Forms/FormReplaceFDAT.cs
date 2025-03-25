@@ -1,7 +1,3 @@
-using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormReplaceFDAT: DevExpress.XtraEditors.XtraForm
@@ -77,13 +73,9 @@ namespace Plc2DsApp.Forms
             string fda = fdatGetter(tag);
             foreach (var p in replacePatterns)
             {
+                // 하나의 tag 에 하나의 pattern 을 적용할 수 있을 때까지 반복한 최종 결과 문자열 반환
                 while(p.RegexPattern.IsMatch(fda))
-                {
-                    if (p.PatternString == "(?<word>[A-Za-z]+)/(?<number>\\d+)")
-                        Noop();
-
                     fda = p.RegexPattern.Replace(fda, p.Replacement);
-                }
             }
             return fda;
         }
@@ -129,7 +121,7 @@ namespace Plc2DsApp.Forms
             PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
             if (fdatSetter != null)
             {
-                // 변경 내용 적용
+                // setter 존재할 때만, 변경 내용 적용
                 foreach (var t in candidates)
                     fdatSetter(t, getPatternApplication(t, replacePatterns, fdatGetter));
             }

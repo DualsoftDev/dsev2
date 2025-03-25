@@ -28,7 +28,7 @@
           ]
         ]
       },
-    
+
     "TagPatternDiscards": [],
     "TagPatternReplaces": [
         {
@@ -48,6 +48,12 @@
             "PatternString": "\\s+",
             "Replacement": "_",
             "Description": "공백을 '_' 로 변경"
+        },
+        {
+            "Name": "[DI04] 제거",
+            "PatternString": "[_\\s]\\[D[IOio]\\d+\\]",
+            "Replacement": "",
+            "Description": "'RBT1_[DO004]_그리퍼_차종유니트_LOCK_지령' => 'RBT1_그리퍼_차종유니트_LOCK_지령'"
         },
         {
             "Name": "꽁지 숫자 결합",
@@ -73,6 +79,24 @@
             "_Replacement": "_[${op}]_${dan}",
             "Replacement": "_${dan}",
             "Description": "'#137~301이송기 행거 풀림단 [GL]' => ''#137~301이송기 행거_풀림단'"
+        },
+        {
+          "Name": "강한 결합 ' L/S '",
+          "PatternString": "[_\\s](?<ls>[L|R]/S)[_\\s]",
+          "Replacement": "::${ls}::",
+          "Description": " 'R303-2 그리퍼 동작 1 전진 L/S 이상'  ==> 'R303-2 그리퍼 동작 1 전진::L/S::이상'"
+        },
+        {
+          "Name": "강한 결합 '_XXX_이상' ",
+          "PatternString": "[_\\s](?<err>TURN|LOCK|CLP|UNCLP|잠김|풀림)[_\\s]이상",
+          "Replacement": "_${err}::이상",
+          "Description": " 'R303-2 그리퍼 동작 1 전진_이상'  ==> 'R303-2 그리퍼 동작 1 전진::이상'"
+        },
+        {
+          "Name": "강한 결합 'TRUN 지령 LH' ",
+          "PatternString": "[_\\s](?<cmd1>TURN|LOCK)[_\\s](?<cmd2>지령|확인단)[_\\s](?<cmd3>LH|RH)",
+          "Replacement": "_${cmd1}::${cmd2}::${cmd3}",
+          "Description": " 'R303-1 [Do002] 그리퍼 차종유니트 LOCK 지령 LH'  ==> 'R303-1 [Do002] 그리퍼 차종유니트_LOCK::지령::LH'"
         }
     ],
     "TagPatternFDAs": [],
@@ -83,7 +107,7 @@
             "PatternString": "<@(?<symbol>[^@]+)@>",
             "Replacement": "${symbol}",
             "Description": "임시로 변경한 기호를 원복"
-        }      
+        }
     ],
     "DevicePatternReplaces": [],
     "_ActionPatternReplaces": []

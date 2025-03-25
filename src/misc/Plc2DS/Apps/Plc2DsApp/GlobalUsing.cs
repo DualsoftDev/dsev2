@@ -6,6 +6,7 @@ global using System.Windows.Forms;
 global using System.Text.RegularExpressions;
 global using System.Collections.Generic;
 global using System.ComponentModel;
+global using System.Threading.Tasks;
 
 global using Microsoft.FSharp.Core;
 global using Newtonsoft.Json;

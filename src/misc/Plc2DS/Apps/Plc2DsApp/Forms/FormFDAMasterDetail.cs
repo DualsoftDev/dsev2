@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Plc2DsApp.Forms
 {
 	public partial class FormFDAMasterDetail: DevExpress.XtraEditors.XtraForm
@@ -36,6 +38,7 @@ namespace Plc2DsApp.Forms
 
             // 3️⃣ Master 데이터 바인딩
             gridControl1.DataSource = masterList;
+            this.Text = $"{nameof(FormFDAMasterDetail)}: {masterList.Count}, none-group:{masterList.Where(m => m.Count == 1).Count()}";
 
             // 4️⃣ Master-Detail 설정
             gridControl1.LevelTree.Nodes.Add("DetailView", gridView2);
@@ -57,6 +60,7 @@ namespace Plc2DsApp.Forms
             GridView detailView = gridView1.GetDetailView(e.RowHandle, 0) as GridView;
             detailView.ApplyVisibleColumns(FormMain.Instance.VisibleColumns);
             detailView.EnableColumnSearch();
+            detailView.SetupDefaults();
         }
 
         void gridView1_MasterRowGetChildList(object sender, MasterRowGetChildListEventArgs e)
@@ -75,6 +79,7 @@ namespace Plc2DsApp.Forms
         }
     }
 
+    [DebuggerDisplay("{Stringify()}")]
     class MasterItem
     {
         public string FlowName { get; set; } = "";
@@ -82,6 +87,7 @@ namespace Plc2DsApp.Forms
         [Browsable(false)]
         public List<PlcTagBaseFDA> Details { get; set; }
         public int Count { get; set; }
+        public string Stringify() => $"{FlowName}/{DeviceName} ({Count})";
     }
 }
 

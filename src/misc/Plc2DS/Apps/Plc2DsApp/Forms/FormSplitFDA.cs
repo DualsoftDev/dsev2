@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormSplitFDA: DevExpress.XtraEditors.XtraForm
@@ -80,7 +77,7 @@ namespace Plc2DsApp.Forms
             updateUI();
         }
 
-        //void applyPatterns(Pattern[] patterns, bool withUI) => applyPatterns(TagsStage, patterns, withUI);
+
         PlcTagBaseFDA[] applyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
         {
             var categorizedCandidates = ApplyPatterns(tags, patterns);

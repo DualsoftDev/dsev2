@@ -376,24 +376,6 @@ namespace Plc2DsApp
             replaceFDA(TagsStage, patterns, FDAT.DuTag, withUI);
         }
 
-        void btnApplyAll_Click(object sender, EventArgs e)
-        {
-            using var _ = btnApplyAll.Disabler();
-            bool withUI = false;
-            int discarded = applyDiscardTags(withUI);
-            applyReplaceTags(withUI);
-            applySplitFDA(withUI);
-
-            int changedF = replaceFDA(_vendorRule.FlowPatternReplaces,   FDAT.DuFlow,   withUI);
-            int changedD = replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI);
-            int changedA = replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI);
-
-
-            int standardF = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuFlow, withUI);
-            int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice, withUI);
-            int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI);
-        }
-
         void btnMergeAppSettings_Click(object sender, EventArgs e)
         {
             using OpenFileDialog ofd = new OpenFileDialog()
@@ -409,6 +391,25 @@ namespace Plc2DsApp
                 else
                     _vendorRule.Merge(partial);
             }
+        }
+
+
+        void btnApplyAll_Click(object sender, EventArgs e)
+        {
+            using var _ = btnApplyAll.Disabler();
+            bool withUI = false;
+            int discarded = applyDiscardTags(withUI);
+            applyReplaceTags(withUI);
+            applySplitFDA(withUI);
+
+            int changedF = replaceFDA(_vendorRule.FlowPatternReplaces, FDAT.DuFlow, withUI);
+            int changedD = replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI);
+            int changedA = replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI);
+
+
+            int standardF = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuFlow, withUI);
+            int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice, withUI);
+            int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI);
         }
 
     }

@@ -1,5 +1,3 @@
-using System.Windows.Forms;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormTags: DevExpress.XtraEditors.XtraForm

@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Plc2DsApp.Forms
 {
 	public partial class FormDiscardTags: DevExpress.XtraEditors.XtraForm
@@ -51,7 +49,7 @@ namespace Plc2DsApp.Forms
             {
                 Task.Run(() =>
                 {
-                    //var dict = new Dictionary<PlcTagBaseFDA, int>();
+                    // pattern 별 match 된 tag 수 계산
                     var dict = patterns.ToDictionary(p => p, p => collectMatchedTags(tags, [p]).Length);
                     this.Do(() =>
                     {

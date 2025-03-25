@@ -4,6 +4,7 @@
 		<Platform Condition=" '$(Platform)' == '' ">x86</Platform>
 		<LangVersion>12.0</LangVersion>
 		<OutputType>WinExe</OutputType>
+		<SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
