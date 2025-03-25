@@ -20,9 +20,11 @@
 		<EmbeddedResource Include="Properties\licenses.licx" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="Rulebases\**\*.json">
+		<Content Include="Rulebases\**\*.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory >
+			<Publish>true</Publish>
+		</Content>
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj" />
