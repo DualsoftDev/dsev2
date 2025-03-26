@@ -1,7 +1,5 @@
 using DevExpress.XtraEditors;
 
-using Dual.Plc2DS;
-
 using log4net.Appender;
 using log4net.Core;
 
@@ -52,18 +50,6 @@ namespace Plc2DsApp
             {
                 AppSettings appSettings = EmJson.FromJson<AppSettings>(File.ReadAllText("appsettings.json"));
                 _vendorRule = appSettings.CreateVendorRulebase(Vendor);
-
-
-                //var p1 = CsvFilterPattern.Create("name1", "filed1", "pattern1", "desc1");
-                //var p2 = CsvFilterPattern.Create("name2", "filed2", "pattern2", "desc2");
-                //appSettings.CsvFilterExpressions = [
-                //    CsvFilterExpression.NewUnit(p1),
-                //    CsvFilterExpression.NewAnd([CsvFilterExpression.NewUnit(p1), CsvFilterExpression.NewUnit(p2)]),
-                //];
-                //var text = EmJson.ToJson(appSettings);
-                //Noop();
-
-
             }
             reloadAppsetting();
 
@@ -345,6 +331,7 @@ namespace Plc2DsApp
             Pattern[] patterns = _vendorRule.TagPatternFDAs;
 
             var tags = TagsStage.ToArray();
+
             var form = new FormSplitFDA(tags, patterns, withUI);
 
             if (form.ShowDialog() == DialogResult.OK)
@@ -381,6 +368,8 @@ namespace Plc2DsApp
                     _vendorRule.Override(partial);
                 else
                     _vendorRule.Merge(partial);
+
+                MessageBox.Show("Merged AppSettings!");
             }
         }
 
