@@ -28,7 +28,6 @@ module private PatternExtImpl =
         | DuDevice -> fun t -> t.DeviceName |> verify t "DeviceName"
         | DuAction -> fun t -> t.ActionName |> verify t "ActionName"
         | DuTag -> fun t -> t.GetName() |> verify t "Name"
-        | _ -> raise (NotImplementedException())
 
     let getFdatSetter (fdat: FDAT) : PlcTagBaseFDA -> string -> unit  =
         match fdat with
@@ -36,7 +35,6 @@ module private PatternExtImpl =
         | DuDevice -> fun t v -> t.DeviceName <- v
         | DuAction -> fun t v -> t.ActionName <- v
         | DuTag -> fun t v -> t.SetName(v)
-        | _ -> raise (NotImplementedException())
 
     let collectCandidates (replacePattern: ReplacePattern) (tags: PlcTagBaseFDA[]) (fdat:FDAT) : PlcTagBaseFDA[] =
         [|

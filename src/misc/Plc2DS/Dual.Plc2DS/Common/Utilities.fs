@@ -11,21 +11,30 @@ open System.Runtime.CompilerServices
 [<AutoOpen>]
 module Util =
     type File =
-        /// CVS 파일에서 헤더가 나올 때까지 읽음.  Header 자체는 포함하지 않음
-        static member TryReadUntilHeader(filePath: string, csvHeader: string, ?maxLine: int, ?encoding: Encoding): string[] option =
+        /// 파일에서 조건을 만족하는 line 이 나올 때까지 읽어서 반환
+        static member TryReadUntil(filePath: string, pred:string -> bool, ?maxLine: int, ?encoding: Encoding): string[] option =
             let encoding = encoding |? FileEx.GetEncoding(filePath)
             let maxLine = maxLine |? 20 //Int32.MaxValue // 최대 라인이 없으면 무제한으로 설정
-            let mutable found = false
+            let mutable found:string = null
             let headers =
                 File.ReadLines(filePath, encoding)
                 |> Seq.truncate maxLine
                 |> Seq.takeWhile (fun line ->
-                    if line = csvHeader then found <- true
-                    not found
+                    if pred line then
+                        found <- line
+                        false
+                    else
+                        true
                 )
                 |> Seq.toArray
+            match found with
+            | null -> None
+            | _ -> Some (headers @ [|found|])
 
-            if found then Some (headers @ [|csvHeader|]) else None
+        /// CVS 파일에서 헤더가 나올 때까지 읽음.  Header 자체는 포함하지 않음
+        static member TryReadUntilHeader(filePath: string, csvHeader: string, ?maxLine: int, ?encoding: Encoding): string[] option =
+            File.TryReadUntil(filePath, ((=) csvHeader), ?maxLine=maxLine, ?encoding=encoding)
+
 
         static member PeekLines(filePath: string, ?startLine: int, ?lineCount: int, ?encoding:Encoding): string seq =
             let startLine = startLine |? 0

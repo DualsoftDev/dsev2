@@ -22,7 +22,7 @@ TAG,,A,"$D55C$AE00A","DINT","","(RADIX := Decimal, Constant := false, ExternalAc
 *)
 
 [<DataContract>]
-type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attributes) =
+type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attributes, ?owningElement) =
     inherit PlcTagBaseFDA()
 
     let typ         = typ         |? ""
@@ -32,8 +32,9 @@ type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attri
     let dataType    = dataType    |? ""
     let specifier   = specifier   |? ""
     let attributes  = attributes  |? ""
+    let owningElement  = owningElement  |? ""
 
-    new() = PlcTagInfo(null, null, null, null, null, null, null)    // for JSON parameterless constructor
+    new() = PlcTagInfo(null, null, null, null, null, null, null, null)    // for JSON parameterless constructor
     [<DataMember>] member val Type        = typ         with get, set
     [<DataMember>] member val Scope       = scope       with get, set
     [<DataMember>] member val Name        = name        with get, set
@@ -41,12 +42,13 @@ type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attri
     [<DataMember>] member val DataType    = dataType    with get, set
     [<DataMember>] member val Specifier   = specifier   with get, set
     [<DataMember>] member val Attributes  = attributes  with get, set
+    [<DataMember>] member val OwningElement  = owningElement  with get, set
 
 
 
 
 [<AutoOpen>]
-module Ab =
+module private Ab =
     /// $XXXX를 유니코드 문자로 디코딩
     let decodeEncodedString (encoded: string) =
         let encoded =
@@ -63,32 +65,65 @@ module Ab =
             unicodeChar.ToString()
         )
 
+    let isHeader (line:string) = !! line.Contains("\"") && line.Contains(",")
+
+    /// AB CSV 에서 header 가 가변적으로 변동되는 것을 처리하기 위함
+    type VariableHeader(headerLine:string, ?separator) =
+        let separator = separator |? ","
+        let mutable fields:string[] = [||]
+        let reset(headerLine:string) = fields <- headerLine.Split(separator)
+        do
+            reset(headerLine)
+
+        member x.Reset(line:string) = reset(line)
+        member x.TryGetField(field:string, data:string[]) =
+            match fields.TryFindIndex((=) field) with
+            | Some n when n < data.Length -> Some data[n]
+            | _ -> None
+
 
 /// AB.CsvReader
 type CsvReader =
-    static member CreatePlcTagInfo(line: string) : PlcTagInfo =
+    static member private TryCreatePlcTagInfo(line: string, variableHeader:VariableHeader) : PlcTagInfo option =
         let cols = Csv.ParseLine line |> map decodeEncodedString
-        let attributes =
-            match cols.Length with
-            | 6 ->
-                assert(cols[0] = "COMMENT")
-                ""
-            | 7 -> cols[6]
-            | _ -> failwith $"Incorrect format: {line}"
-        PlcTagInfo(typ = cols[0], scope = cols[1], name = cols[2], description = cols[3],
-            dataType = cols[4], specifier = cols[5], attributes = attributes)
+
+        /// get field data
+        let gf (filedNames:string[]) =
+            // 여러 fieldName 중에서 제일 먼저 match 되는 것 반환.  없으면 ""
+            filedNames |> Array.tryPick(fun f -> variableHeader.TryGetField(f, cols)) |? ""
+
+        if isHeader line then
+            variableHeader.Reset line
+            None
+        else
+            let typ           = gf([|"TYPE"|])
+            let scope         = gf([|"SCOPE"|])
+            let name          = gf([|"NAME"; "COMMENT"|])
+            let dataType      = gf([|"DATATYPE"|])
+            let description   = gf([|"DESCRIPTION"|])
+            let routine       = gf([|"ROUTINE"|])
+            let specifier     = gf([|"SPECIFIER"|])
+            let owningElement = gf([|"OWNING_ELEMENT"|])
+
+            let location      = gf([|"LOCATION"|])
+            let attributes    = gf([|"ATTRIBUTES"|])
+
+            Some <| PlcTagInfo(typ = typ, scope = scope, name = name, description = description,
+                dataType = dataType, specifier = specifier, attributes = attributes, owningElement = owningElement)
 
 
     static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
-        let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
-        match File.TryReadUntilHeader(filePath, header) with
+
+        //let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
+        match File.TryReadUntil(filePath, isHeader) with
         | Some headers ->
+            let variableHeader = VariableHeader(headers |> last)
             let skipLines = headers.Length
             File.PeekLines(filePath, skipLines)
             |> toArray
-            |> map CsvReader.CreatePlcTagInfo
+            |> choose (fun line -> CsvReader.TryCreatePlcTagInfo(line, variableHeader))
         | None ->
-            failwith $"ERROR: failed to find header {header}"
+            failwith $"ERROR: failed to find header on file {filePath}"
 
 
 
