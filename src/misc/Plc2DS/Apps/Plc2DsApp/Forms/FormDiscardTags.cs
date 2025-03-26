@@ -50,7 +50,7 @@ namespace Plc2DsApp.Forms
                 Task.Run(() =>
                 {
                     // pattern 별 match 된 tag 수 계산
-                    var dict = patterns.ToDictionary(p => p, p => collectMatchedTags(tags, [p]).Length);
+                    var dict = patterns.ToDictionary(p => p, p => p.FindMatches(tags).Length);
                     this.Do(() =>
                     {
                         var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
@@ -82,15 +82,15 @@ namespace Plc2DsApp.Forms
             updateUI();
         }
 
-        static PlcTagBaseFDA[] collectMatchedTags(PlcTagBaseFDA[] tags, Pattern[] patterns)
-        {
-            var gr = tags.GroupByToDictionary(t => patterns.Any(p => p.RegexPattern.IsMatch(t.CsGetName())));
-            return gr.ContainsKey(true) ? gr[true] : [];
-        }
+        //static PlcTagBaseFDA[] collectMatchedTags(PlcTagBaseFDA[] tags, Pattern[] patterns)
+        //{
+        //    var gr = tags.GroupByToDictionary(t => patterns.Any(p => p.RegexPattern.IsMatch(t.CsGetName())));
+        //    return gr.ContainsKey(true) ? gr[true] : [];
+        //}
 
         public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
         {
-            var chosens = collectMatchedTags(tags, patterns);
+            var chosens = patterns.FindMatches(tags);
             if (chosens.Any())
             {
                 var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)", withUI:withUI);

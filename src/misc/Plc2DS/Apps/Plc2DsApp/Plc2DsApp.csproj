@@ -11,10 +11,6 @@
 		<NoWarn>$(NoWarn);CA1416</NoWarn>
 	</PropertyGroup>
 
-	<!--<Target Name="CleanOldPublish" AfterTargets="Publish">
-		<Exec Command="call &quot;$(ProjectDir)CleanOldPublish.bat&quot;" />
-	</Target>-->
-
 
 	<ItemGroup>
 		<EmbeddedResource Include="Properties\licenses.licx" />
@@ -22,7 +18,7 @@
 	<ItemGroup>
 		<Content Include="Rulebases\**\*.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory >
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 			<Publish>true</Publish>
 		</Content>
 	</ItemGroup>
@@ -57,12 +53,4 @@
 	<ItemGroup>
 		<Compile Remove="Unused\AppSettings.cs" />
 	</ItemGroup>
-	<!--<ItemGroup>
-		<None Remove="appsettings.json" />
-		<None Remove="log4net.config" />
-		<None Remove="Rulebases\KGM.json" />
-	</ItemGroup>
-	<ItemGroup>
-		<EditorConfigFiles Include="Rulebases\KGM.json" />
-	</ItemGroup>-->
 </Project>

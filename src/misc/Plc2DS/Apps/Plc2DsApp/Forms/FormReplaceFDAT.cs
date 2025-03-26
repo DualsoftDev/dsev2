@@ -4,16 +4,13 @@ namespace Plc2DsApp.Forms
 	{
         PlcTagBaseFDA[] _tags = [];
         ReplacePattern[] _patterns = [];
-        Func<PlcTagBaseFDA, string> _fdatGetter = null;
-        Action<PlcTagBaseFDA, string> _fdatSetter = null;
+        FDAT _fdat;
         public int NumChanged { get; set; }
 
-        public FormReplaceFDAT(PlcTagBaseFDA[] tags, ReplacePattern[] patterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter, bool withUI)
+        public FormReplaceFDAT(PlcTagBaseFDA[] tags, ReplacePattern[] patterns, FDAT fdat, bool withUI)
 		{
             InitializeComponent();
-
-            _fdatSetter = fdatSetter;
-            _fdatGetter = fdatGetter;
+            _fdat = fdat;
             _patterns = patterns;
             _tags = tags;
 
@@ -43,7 +40,8 @@ namespace Plc2DsApp.Forms
             {
                 Task.Run(() =>
                 {
-                    var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p], _fdatGetter).Length);
+                    //var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p], _fdatGetter).Length);
+                    var dict = patterns.ToDictionary(p => p, p => p.CollectCandidates(tags, _fdat).Length);
                     this.Do(() =>
                     {
                         var numMatchColumn = gridView1.AddUnboundColumnCustom<ReplacePattern, int>("NumMatches", p => dict[p], null);
@@ -68,30 +66,36 @@ namespace Plc2DsApp.Forms
         {
         }
 
-        static string getPatternApplication(PlcTagBaseFDA tag, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdatGetter)
-        {
-            string fda = fdatGetter(tag);
-            foreach (var p in replacePatterns)
-            {
-                // 하나의 tag 에 하나의 pattern 을 적용할 수 있을 때까지 반복한 최종 결과 문자열 반환
-                while(p.RegexPattern.IsMatch(fda))
-                    fda = p.RegexPattern.Replace(fda, p.Replacement);
-            }
-            return fda;
-        }
+        //static string getPatternApplication(PlcTagBaseFDA tag, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdatGetter)
+        //{
+        //    string fda = fdatGetter(tag);
+        //    foreach (var p in replacePatterns)
+        //    {
+        //        // 하나의 tag 에 하나의 pattern 을 적용할 수 있을 때까지 반복한 최종 결과 문자열 반환
+        //        while(p.RegexPattern.IsMatch(fda))
+        //            fda = p.RegexPattern.Replace(fda, p.Replacement);
+        //    }
+        //    return fda;
+        //}
 
         int applyPatterns(ReplacePattern[] patterns, bool withUI)
         {
-            PlcTagBaseFDA[] candidates = ApplyPatterns(_tags, patterns, _fdatGetter, null);
+            //PlcTagBaseFDA[] candidates = ApplyPatterns(_tags, patterns, _fdatGetter, null);
+            PlcTagBaseFDA[] candidates = patterns.CollectCandidates(_tags, _fdat);
             string descs = patterns.Select(p => p.Name).JoinString("|");
+
             var form = new FormTags(candidates, candidates, usageHint: $"(Extract {descs} pattern)", withUI:withUI);
-            var getter = new Func<PlcTagBaseFDA, string>(t => getPatternApplication(t, patterns, _fdatGetter));
+            //var getter = new Func<PlcTagBaseFDA, string>(t => getPatternApplication(t, patterns, _fdatGetter));
+            var getter = new Func<PlcTagBaseFDA, string>(t => t.GetPatternApplication(patterns, _fdat));
             form.GridView.AddUnboundColumnCustom<PlcTagBaseFDA, string>($"AppliedNewName", getter, null);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 // 변경 내용 적용
-                foreach (var t in form.SelectedTags)
-                    _fdatSetter(t, getPatternApplication(t, patterns, _fdatGetter));
+                //foreach (var t in form.SelectedTags)
+                //    _fdatSetter(t, getPatternApplication(t, patterns, _fdatGetter));
+
+                // 변경 내용 적용
+                patterns.Apply(form.SelectedTags, _fdat);
 
                 return form.SelectedTags.Length;
             }
@@ -100,34 +104,34 @@ namespace Plc2DsApp.Forms
         }
 
 
-        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
-        {
-            if (replacePatterns.IsNullOrEmpty())
-                return [];
+        //public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, ReplacePattern[] replacePatterns, Func<PlcTagBaseFDA, string> fdatGetter, Action<PlcTagBaseFDA, string> fdatSetter=null)
+        //{
+        //    if (replacePatterns.IsNullOrEmpty())
+        //        return [];
 
-            IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
-            {
-                foreach (var t in tags)
-                {
-                    string fda = fdatGetter(t); // f, d, a 중 하나를 가져옴
-                    if (fda == null || fda.Contains("<@"))
-                        Noop();
-                    var match = replacePattern.RegexPattern.Match(fda);
-                    if (match.Success)
-                        yield return t;
-                }
-            }
+        //    IEnumerable<PlcTagBaseFDA> collectCandidates(ReplacePattern replacePattern)
+        //    {
+        //        foreach (var t in tags)
+        //        {
+        //            string fda = fdatGetter(t); // f, d, a 중 하나를 가져옴
+        //            if (fda == null || fda.Contains("<@"))
+        //                Noop();
+        //            var match = replacePattern.RegexPattern.Match(fda);
+        //            if (match.Success)
+        //                yield return t;
+        //        }
+        //    }
 
-            PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
-            if (fdatSetter != null)
-            {
-                // setter 존재할 때만, 변경 내용 적용
-                foreach (var t in candidates)
-                    fdatSetter(t, getPatternApplication(t, replacePatterns, fdatGetter));
-            }
+        //    PlcTagBaseFDA[] candidates = replacePatterns.SelectMany(collectCandidates).ToArray();
+        //    if (fdatSetter != null)
+        //    {
+        //        // setter 존재할 때만, 변경 내용 적용
+        //        foreach (var t in candidates)
+        //            fdatSetter(t, getPatternApplication(t, replacePatterns, fdatGetter));
+        //    }
 
-            return candidates;
-        }
+        //    return candidates;
+        //}
 
         public void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {

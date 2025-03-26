@@ -128,39 +128,51 @@ namespace Plc2DsApp
             return form;
         }
 
-
-        int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
-        int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI = true)
+        int replaceFDA(ReplacePattern[] patterns, FDAT fdat)
         {
-            string verify(PlcTagBaseFDA tag, string category, string x)
-            {
-                if (x.IsNullOrEmpty())
-                    Logger.Error($"Empty {category} on Tag {tag.Stringify()}");
-                return x;
-            }
-            Func<PlcTagBaseFDA, string> fdatGetter =
-                fdat switch
-                {
-                    _ when fdat.IsDuFlow => t => t.FlowName.Tee(x => verify(t, "FlowName", x)),
-                    _ when fdat.IsDuDevice => t => t.DeviceName.Tee(x => verify(t, "DeviceName", x)),
-                    _ when fdat.IsDuAction => t => t.ActionName.Tee(x => verify(t, "ActionName", x)),
-                    _ when fdat.IsDuTag => t => t.CsGetName().Tee(x => verify(t, "Name", x)),
-                    _ => throw new NotImplementedException()
-                };
-            Action<PlcTagBaseFDA, string> fdatSetter =
-                fdat switch
-                {
-                    _ when fdat.IsDuFlow => (t, v) => t.FlowName = v,
-                    _ when fdat.IsDuDevice => (t, v) => t.DeviceName = v,
-                    _ when fdat.IsDuAction => (t, v) => t.ActionName = v,
-                    _ when fdat.IsDuTag => (t, v) => t.CsSetName(v),
-                    _ => throw new NotImplementedException()
-                };
-
-            var form = new FormReplaceFDAT(tags, pattern, fdatGetter, fdatSetter, withUI);
-            form.ShowDialog();
-            return form.NumChanged;
+            var tags = TagsCategorized.Concat(TagsChosen).ToArray();
+            return replaceFDA(tags, patterns, fdat);
         }
+
+        int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] patterns, FDAT fdat)
+        {
+            var applied = patterns.Apply(tags, fdat);
+            return applied.Length;
+        }
+
+
+        //int replaceFDA(ReplacePattern[] pattern, FDAT fdat, bool withUI = true) => replaceFDA(TagsCategorized.Concat(TagsChosen).ToArray(), pattern, fdat, withUI);
+        //int replaceFDA(PlcTagBaseFDA[] tags, ReplacePattern[] pattern, FDAT fdat, bool withUI = true)
+        //{
+        //    string verify(PlcTagBaseFDA tag, string category, string x)
+        //    {
+        //        if (x.IsNullOrEmpty())
+        //            Logger.Error($"Empty {category} on Tag {tag.Stringify()}");
+        //        return x;
+        //    }
+        //    Func<PlcTagBaseFDA, string> fdatGetter =
+        //        fdat switch
+        //        {
+        //            _ when fdat.IsDuFlow => t => t.FlowName.Tee(x => verify(t, "FlowName", x)),
+        //            _ when fdat.IsDuDevice => t => t.DeviceName.Tee(x => verify(t, "DeviceName", x)),
+        //            _ when fdat.IsDuAction => t => t.ActionName.Tee(x => verify(t, "ActionName", x)),
+        //            _ when fdat.IsDuTag => t => t.CsGetName().Tee(x => verify(t, "Name", x)),
+        //            _ => throw new NotImplementedException()
+        //        };
+        //    Action<PlcTagBaseFDA, string> fdatSetter =
+        //        fdat switch
+        //        {
+        //            _ when fdat.IsDuFlow => (t, v) => t.FlowName = v,
+        //            _ when fdat.IsDuDevice => (t, v) => t.DeviceName = v,
+        //            _ when fdat.IsDuAction => (t, v) => t.ActionName = v,
+        //            _ when fdat.IsDuTag => (t, v) => t.CsSetName(v),
+        //            _ => throw new NotImplementedException()
+        //        };
+
+        //    var form = new FormReplaceFDAT(tags, pattern, fdatGetter, fdatSetter, withUI);
+        //    form.ShowDialog();
+        //    return form.NumChanged;
+        //}
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
         {
@@ -319,27 +331,22 @@ namespace Plc2DsApp
 
 
 
-        int applyDiscardTags(bool withUI = true)
+        void btnDiscardTags_Click(object sender, EventArgs e)
         {
-            Pattern[] patterns = _vendorRule.TagPatternDiscards;
-            var _ = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
+            using var _ = btnDiscardTags.Disabler();
 
-            var form = new FormDiscardTags(TagsAll, patterns, withUI);
+            Pattern[] patterns = _vendorRule.TagPatternDiscards;
+            var _2 = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
+
+            var form = new FormDiscardTags(TagsAll, patterns, withUI:true);
 
             if (form.ShowDialog() == DialogResult.OK)
             {
                 var chosen = form.TagsChosen.ToArray();
                 form.TagsChosen.Iter(t => t.Choice = Choice.Discarded);
-                return chosen.Length;
             }
+        }
 
-            return 0;
-        }
-        void btnDiscardTags_Click(object sender, EventArgs e)
-        {
-            using var _ = btnDiscardTags.Disabler();
-            applyDiscardTags();
-        }
         void btnReplaceTags_Click(object sender, EventArgs e)
         {
             using var _ = btnReplaceTags.Disabler();
@@ -373,10 +380,10 @@ namespace Plc2DsApp
             return form.TagsDoneSplit.Count();
         }
 
-        void applyReplaceTags(bool withUI = true)
+        void applyReplaceTags()
         {
             var patterns = _vendorRule.TagPatternReplaces.Concat(_vendorRule.DialectPatterns).ToArray();
-            replaceFDA(TagsStage, patterns, FDAT.DuTag, withUI);
+            replaceFDA(TagsStage, patterns, FDAT.DuTag);
         }
 
         void btnMergeAppSettings_Click(object sender, EventArgs e)
@@ -396,25 +403,6 @@ namespace Plc2DsApp
             }
         }
 
-
-        void btnApplyAll_Click(object sender, EventArgs e)
-        {
-            using var _ = btnApplyAll.Disabler();
-            bool withUI = false;
-            int discarded = applyDiscardTags(withUI);
-            applyReplaceTags(withUI);
-            applySplitFDA(withUI);
-
-            int changedF = replaceFDA(_vendorRule.FlowPatternReplaces, FDAT.DuFlow, withUI);
-            int changedD = replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI);
-            int changedA = replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI);
-
-
-            int standardF = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuFlow, withUI);
-            int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice, withUI);
-            int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI);
-        }
-
         private void btnOpenInstallDir_Click(object sender, EventArgs e)
         {
             // 현재 실행 파일이 있는 폴더
@@ -423,6 +411,28 @@ namespace Plc2DsApp
             // 탐색기로 열기
             System.Diagnostics.Process.Start("explorer.exe", installFolder);
 
+        }
+
+        void btnApplyAll_Click(object sender, EventArgs e)
+        {
+            using var _ = btnApplyAll.Disabler();
+            bool withUI = false;
+            var _2 = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
+
+            var r = _vendorRule;
+            r.DialectPatterns.FindMatches(TagsAll).Iter(t => t.Choice = Choice.Discarded);
+
+            applyReplaceTags();
+            applySplitFDA(withUI);
+
+            int changedF = replaceFDA(_vendorRule.FlowPatternReplaces, FDAT.DuFlow);
+            int changedD = replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice);
+            int changedA = replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction);
+
+
+            int standardF = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuFlow);
+            int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice);
+            int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction);
         }
     }
 }
