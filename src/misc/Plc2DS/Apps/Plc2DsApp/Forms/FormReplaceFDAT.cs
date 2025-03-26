@@ -56,7 +56,7 @@ namespace Plc2DsApp.Forms
             PlcTagBaseFDA[] candidates = patterns.CollectCandidates(_tags, _fdat);
             string descs = patterns.Select(p => p.Name).JoinString("|");
 
-            var form = new FormTags(candidates, candidates, usageHint: $"(Extract {descs} pattern)");
+            var form = new FormTags(candidates, candidates, usageHint: $"(Extract {descs} pattern)").Tee(f => f.PlaceAtScreenCenter());
             var getter = new Func<PlcTagBaseFDA, string>(t => t.GetPatternApplication(patterns, _fdat));
             form.GridView.AddUnboundColumnCustom<PlcTagBaseFDA, string>($"AppliedNewName", getter, null);
             if (form.ShowDialog() == DialogResult.OK)

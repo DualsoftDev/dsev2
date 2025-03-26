@@ -32,7 +32,7 @@ namespace Plc2DsApp {
 
 
             var root = ((log4net.Repository.Hierarchy.Hierarchy)log4net.LogManager.GetRepository()).Root;
-            var form = new FormMain();
+            var form = new FormMain().Tee(f => f.PlaceAtScreenCenter());
             root.AddAppender(form);
 
             form.Load += (s, e) =>

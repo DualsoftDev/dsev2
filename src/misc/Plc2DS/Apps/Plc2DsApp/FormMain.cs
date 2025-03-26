@@ -111,7 +111,7 @@ namespace Plc2DsApp
 
         FormTags showTags(PlcTagBaseFDA[] tags, string selectionColumnCaption = null, string usageHint = null)
         {
-            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint);
+            var form = new FormTags(tags, selectionColumnCaption: selectionColumnCaption, usageHint: usageHint).Tee(f => f.PlaceAtScreenCenter());
             form.DoShow();
             return form;
         }
@@ -126,7 +126,7 @@ namespace Plc2DsApp
         {
             if (withUI)
             {
-                var form = new FormReplaceFDAT(tags, patterns, fdat);
+                var form = new FormReplaceFDAT(tags, patterns, fdat).Tee(f => f.PlaceAtScreenCenter());
                 form.ShowDialog();
                 return form.NumChanged;
             }
@@ -302,7 +302,7 @@ namespace Plc2DsApp
             Pattern[] patterns = _vendorRule.TagPatternDiscards;
             var _2 = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
 
-            var form = new FormDiscardTags(TagsAll, patterns);
+            var form = new FormDiscardTags(TagsAll, patterns).Tee(f => f.PlaceAtScreenCenter());
 
             if (form.ShowDialog() == DialogResult.OK)
             {
@@ -316,7 +316,7 @@ namespace Plc2DsApp
             using var _ = btnReplaceTags.Disabler();
             var patterns = _vendorRule.TagPatternReplaces.Concat(_vendorRule.DialectPatterns).ToArray();
 
-            var form = new FormReplaceFDAT(TagsStage, patterns, FDAT.DuTag);
+            var form = new FormReplaceFDAT(TagsStage, patterns, FDAT.DuTag).PlaceAtScreenCenter();
             form.ShowDialog();
         }
 
@@ -328,7 +328,7 @@ namespace Plc2DsApp
 
             var tags = TagsStage.ToArray();
 
-            var form = new FormSplitFDA(tags, patterns);
+            var form = new FormSplitFDA(tags, patterns).Tee(f => f.PlaceAtScreenCenter());
 
             if (form.ShowDialog() == DialogResult.OK)
             {

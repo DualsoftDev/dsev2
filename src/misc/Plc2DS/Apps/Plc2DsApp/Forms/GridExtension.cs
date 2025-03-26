@@ -62,7 +62,7 @@ public static class GridExtension
 
     static FSharpOption<T> tryGetNewValueViaPrompt<T>(T currentValue)
     {
-        using (Form inputForm = new Form())
+        using (Form inputForm = new Form().PlaceAtScreenCenter())
         {
             inputForm.Width = 400;
             inputForm.Height = 250;

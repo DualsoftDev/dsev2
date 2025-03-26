@@ -90,7 +90,7 @@ namespace Plc2DsApp.Forms
 
         void btnMasterDetailView_Click(object sender, EventArgs e)
         {
-            new FormFDAMasterDetail(_tags).DoShow();
+            new FormFDAMasterDetail(_tags).PlaceAtScreenCenter().DoShow();
             DialogResult = DialogResult.None;       // 창닫힘 방지 강제
         }
     }

@@ -14,7 +14,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsStage.Text = _tagsStage.Length.ToString();
         }
         void showTags(PlcTagBaseFDA[] tags, string usageHint = null) =>
-            new FormTags(tags, usageHint: usageHint).ShowDialog();
+            new FormTags(tags, usageHint: usageHint).PlaceAtScreenCenter().ShowDialog();
 
         public FormDiscardTags(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
@@ -77,7 +77,7 @@ namespace Plc2DsApp.Forms
             var chosens = patterns.FindMatches(_tagsStage);
             if (chosens.Any())
             {
-                var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)");
+                var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)").PlaceAtScreenCenter();
                 form.ShowDialog();
             }
 
