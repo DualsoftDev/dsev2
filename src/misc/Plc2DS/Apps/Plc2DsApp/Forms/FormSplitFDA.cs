@@ -17,7 +17,7 @@ namespace Plc2DsApp.Forms
             tbNumTagsCategorized.Text = _tags.Where(t => t.Choice == Choice.Categorized).Count().ToString();
         }
         void showTags(IEnumerable<PlcTagBaseFDA> tags) => new FormTags(tags).ShowDialog();
-        public FormSplitFDA(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
+        public FormSplitFDA(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
 
@@ -42,23 +42,15 @@ namespace Plc2DsApp.Forms
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
 
-            if (withUI)
-            {
-                var dict = patterns.ToDictionary(p => p, p => p.Categorize(tags).Length);
-                var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
-                gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
-                gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
-                numMatchColumn.VisibleIndex = 100;
-                actionColumn.VisibleIndex = 101;
+            var dict = patterns.ToDictionary(p => p, p => p.Categorize(tags).Length);
+            var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+            gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
+            gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
+            numMatchColumn.VisibleIndex = 100;
+            actionColumn.VisibleIndex = 101;
 
-                gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
-                gridView1.Invalidate();
-            }
-            else
-            {
-                this.MakeHiddenSelfOK();
-                this.btnApplyAllPatterns_Click(null, null);
-            }
+            gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
+            gridView1.Invalidate();
         }
 
         void FormExtractFDA_Load(object sender, EventArgs e)

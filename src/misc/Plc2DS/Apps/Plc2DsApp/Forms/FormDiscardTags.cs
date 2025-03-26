@@ -72,28 +72,17 @@ namespace Plc2DsApp.Forms
             updateUI();
         }
 
-        //static PlcTagBaseFDA[] collectMatchedTags(PlcTagBaseFDA[] tags, Pattern[] patterns)
-        //{
-        //    var gr = tags.GroupByToDictionary(t => patterns.Any(p => p.RegexPattern.IsMatch(t.CsGetName())));
-        //    return gr.ContainsKey(true) ? gr[true] : [];
-        //}
-
-        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
+        void applyPatterns(Pattern[] patterns)
         {
-            var chosens = patterns.FindMatches(tags);
+            var chosens = patterns.FindMatches(_tagsStage);
             if (chosens.Any())
             {
-                var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)", withUI:withUI);
+                var form = new FormTags(chosens, selectedTags: chosens, usageHint: "(Pattern matching)");
                 form.ShowDialog();
             }
-            return chosens;
-        }
 
-        void applyPatterns(Pattern[] patterns, bool withUI=true)
-        {
-            var chosen = ApplyPatterns(_tagsStage, patterns, withUI);
-            _tagsStage = _tagsStage.Except(chosen).ToArray();
-            TagsChosen = TagsChosen.Concat(chosen).ToArray();
+            _tagsStage = _tagsStage.Except(chosens).ToArray();
+            TagsChosen = TagsChosen.Concat(chosens).ToArray();
             updateUI();
         }
 

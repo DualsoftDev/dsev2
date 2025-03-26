@@ -126,7 +126,7 @@ namespace Plc2DsApp
         {
             if (withUI)
             {
-                var form = new FormReplaceFDAT(tags, patterns, fdat, withUI);
+                var form = new FormReplaceFDAT(tags, patterns, fdat);
                 form.ShowDialog();
                 return form.NumChanged;
             }
@@ -316,23 +316,19 @@ namespace Plc2DsApp
             using var _ = btnReplaceTags.Disabler();
             var patterns = _vendorRule.TagPatternReplaces.Concat(_vendorRule.DialectPatterns).ToArray();
 
-            var form = new FormReplaceFDAT(TagsStage, patterns, FDAT.DuTag, true);
+            var form = new FormReplaceFDAT(TagsStage, patterns, FDAT.DuTag);
             form.ShowDialog();
         }
 
         void btnSplitFDA_Click(object sender, EventArgs e)
         {
             using var _ = btnSplitFDA.Disabler();
-            applySplitFDA();
-        }
 
-        int applySplitFDA(bool withUI = true)
-        {
             Pattern[] patterns = _vendorRule.TagPatternFDAs;
 
             var tags = TagsStage.ToArray();
 
-            var form = new FormSplitFDA(tags, patterns, withUI);
+            var form = new FormSplitFDA(tags, patterns);
 
             if (form.ShowDialog() == DialogResult.OK)
             {
@@ -345,14 +341,8 @@ namespace Plc2DsApp
                     Logger.Error($"Discarding tag failed to split F/D/A: {t.Stringify()}");
                 }
             }
-            return form.TagsDoneSplit.Count();
         }
 
-        void applyReplaceTags()
-        {
-            var patterns = _vendorRule.TagPatternReplaces.Concat(_vendorRule.DialectPatterns).ToArray();
-            replaceFDA(TagsStage, patterns, FDAT.DuTag);
-        }
 
         void btnMergeAppSettings_Click(object sender, EventArgs e)
         {
@@ -383,26 +373,55 @@ namespace Plc2DsApp
 
         }
 
+
+
+
         void btnApplyAll_Click(object sender, EventArgs e)
         {
             using var _ = btnApplyAll.Disabler();
-            bool withUI = false;
             var _2 = selectTags(Choice.Stage, true);   // load TagsAll if null or empty
 
             var r = _vendorRule;
-            r.DialectPatterns.FindMatches(TagsAll).Iter(t => t.Choice = Choice.Discarded);
 
-            applyReplaceTags();
-            applySplitFDA(withUI);
+            // discards tags
+            r.TagPatternDiscards.FindMatches(TagsAll).Iter(t => t.Choice = Choice.Discarded);
 
-            int changedF = replaceFDA(_vendorRule.FlowPatternReplaces,   FDAT.DuFlow  , withUI:false);
-            int changedD = replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI:false);
-            int changedA = replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI:false);
+            // replaces tags
+            {
+                var patterns = r.TagPatternReplaces.Concat(r.DialectPatterns).ToArray();
+                replaceFDA(TagsStage, patterns, FDAT.DuTag);
+            }
+
+            // split tag name => {flow, device, action}
+            applySplitFDA();
+
+            // replaces {flow, device, action}
+            int changedF = replaceFDA(r.FlowPatternReplaces,   FDAT.DuFlow  , withUI:false);
+            int changedD = replaceFDA(r.DevicePatternReplaces, FDAT.DuDevice, withUI:false);
+            int changedA = replaceFDA(r.ActionPatternReplaces, FDAT.DuAction, withUI:false);
+
+            // standardizes {flow, device, action}
+            int standardF = replaceFDA(r.DialectPatterns, FDAT.DuFlow,   withUI:false);
+            int standardD = replaceFDA(r.DialectPatterns, FDAT.DuDevice, withUI:false);
+            int standardA = replaceFDA(r.DialectPatterns, FDAT.DuAction, withUI:false);
 
 
-            int standardF = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuFlow,   withUI:false);
-            int standardD = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuDevice, withUI:false);
-            int standardA = replaceFDA(_vendorRule.DialectPatterns, FDAT.DuAction, withUI:false);
+
+            int applySplitFDA()
+            {
+                Pattern[] patterns = r.TagPatternFDAs;
+
+                var tags = TagsStage.ToArray();
+                var categorized = patterns.Categorize(tags);
+                categorized.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
+
+                tags.Except(categorized).Iter(t => {
+                    t.Choice = Choice.Discarded;
+                    Logger.Error($"Discarding tag failed to split F/D/A: {t.Stringify()}");
+                });
+
+                return categorized.Length;
+            }
         }
     }
 }
