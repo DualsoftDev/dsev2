@@ -133,67 +133,14 @@ public static class GridExtension
         }
     }
 
-    /// <summary>
-    /// Visible column 이름 목록에 포함된 column 만 순서대로 보이게 설정
-    /// </summary>
-    public static void ApplyVisibleColumns(this GridView gridView, string[] visibleColumnNames)
-    {
-        if (visibleColumnNames.NonNullAny())
-        {
-            foreach (GridColumn column in gridView.Columns)
-            {
-                column.Visible = visibleColumnNames.Contains(column.FieldName);
-                if (column.Visible)
-                    column.VisibleIndex = Array.IndexOf(visibleColumnNames, column.FieldName);
-            }
-        }
-    }
-
-    /// <summary>
-    /// GridView 의 column 별 search 지원
-    /// </summary>
-    public static void EnableColumnSearch(this GridView gridView)
-    {
-        gridView.OptionsView.ShowAutoFilterRow = true;
-
-        // 다중 column sorting 기능 지원.  Flow 로 먼저 sorting 하고, flow 내 device 로 sorting
-        // Shift + 클릭으로 다중 컬럼 정렬 가능
-        // Ctrl + 클릭으로 특정 컬럼 정렬 해제 가능
-        gridView.OptionsCustomization.AllowSort = true;  // 사용자가 정렬 가능
-        gridView.OptionsCustomization.AllowFilter = true; // 필터링도 허용
-        gridView.OptionsCustomization.AllowColumnMoving = true; // 컬럼 이동 가능
-        gridView.OptionsCustomization.AllowGroup = true; // 그룹핑 가능
-        gridView.OptionsCustomization.AllowQuickHideColumns = true; // 빠른 숨기기 기능
-
-    }
-
-
     public static void DoDefaultSettings(this GridView gridView)
     {
-        gridView.BestFitColumns();
-        gridView.HideGroupPanel();
-        gridView.EnableZoom();
-        gridView.EnableHotkeys();
+        gridView.SetupDefaults();
 
         gridView.EnsureMinimumColumnWidths(60, ["Count"]);
         gridView.EnsureMinimumColumnWidths(100, ["FlowName", "DeviceName", "ActionName"]);
     }
 
-    public static void EnsureMinimumColumnWidths(this GridView gridView, int minSize, string[] columns)
-    {
-        foreach (string columnName in columns)
-        {
-            GridColumn column = gridView.Columns.ColumnByFieldName(columnName);
-            if (column != null)
-            {
-                column.MinWidth = minSize;
-                if (column.Width < minSize)
-                    column.Width = minSize;
-            }
-        }
-    }
-
-    public static void Noop() {}
 }
 
 

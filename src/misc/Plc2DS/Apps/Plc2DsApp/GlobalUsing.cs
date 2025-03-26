@@ -34,3 +34,4 @@ global using static Dual.Plc2DS.AppSettingsModule;
 global using Plc2DsApp.Forms;
 global using static GridExtension;
 global using static Dual.Common.Base.CS.DcLogger;
+global using static Dual.Common.Base.CS.GlobalFunctions;

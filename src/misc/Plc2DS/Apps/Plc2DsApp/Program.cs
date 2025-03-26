@@ -35,6 +35,8 @@ namespace Plc2DsApp {
             var form = new FormMain().Tee(f => f.PlaceAtScreenCenter());
             root.AddAppender(form);
 
+            Noop();
+
             form.Load += (s, e) =>
             {
                 logger.Info($":: ===== Starting up application..");
