@@ -3,8 +3,11 @@ namespace Dual.Plc2DS
 
 open System
 open System.Linq
-open Dual.Common.Core.FS
 open System.Runtime.CompilerServices
+open System.Collections.Generic
+open System.Text.RegularExpressions
+
+open Dual.Common.Core.FS
 
 
 [<AutoOpen>]
@@ -44,6 +47,7 @@ module private PatternExtImpl =
                 if m.Success then
                     yield t
         |]
+
     let getPatternApplication (tag: PlcTagBaseFDA) (replacePatterns: ReplacePattern[]) (fdat:FDAT) : string =
         let fdatGetter = getFdatGetter fdat
         let mutable fda = fdatGetter(tag)
@@ -53,13 +57,36 @@ module private PatternExtImpl =
         fda
 
 
+    let categorizeFDA (patterns: Pattern[]) (tags: PlcTagBaseFDA[]) : PlcTagBaseFDA[] =
+        let doneSet = HashSet<PlcTagBaseFDA>()
+
+        let collectCategorized (pattern: Pattern) : seq<PlcTagBaseFDA> =
+            seq {
+                for t in tags do
+                    if not (doneSet.Contains(t)) then
+                        let m: Match = pattern.RegexPattern.Match(t.CsGetName())
+                        if m.Success then
+                            t.FlowName <- m.Groups.["flow"].Value
+                            t.DeviceName <- m.Groups.["device"].Value
+                            t.ActionName <- m.Groups.["action"].Value
+                            yield t
+            }
+
+        for p in patterns do
+            let matches = collectCategorized p
+            for t in matches do
+                doneSet.Add(t) |> ignore
+
+        doneSet.ToArray()
+
+
 type PatternExt =
     [<Extension>] static member FindMatches(patterns: Pattern[], tags: PlcTagBaseFDA[]) = collectMatchedTags tags patterns
     [<Extension>] static member FindMatches(pattern: Pattern, tags: PlcTagBaseFDA[]) = collectMatchedTags tags [|pattern|]
 
     [<Extension>] static member GetPatternApplication(tag:PlcTagBaseFDA, replacePatterns:ReplacePattern[], fdat:FDAT) = getPatternApplication tag replacePatterns fdat
     [<Extension>]
-    static member Apply(patterns: ReplacePattern[], tags: PlcTagBaseFDA[], fdat:FDAT) =
+    static member Apply(patterns: ReplacePattern[], tags:PlcTagBaseFDA[], fdat:FDAT) =
         let setter = getFdatSetter fdat
         let candidates =
             patterns
@@ -74,7 +101,7 @@ type PatternExt =
     [<Extension>] static member CollectCandidates(pattern: ReplacePattern, tags: PlcTagBaseFDA[], fdat:FDAT) =
                     collectCandidates pattern tags fdat |> distinct
 
-
-
+    [<Extension>] static member Categorize(patterns: Pattern[], tags:PlcTagBaseFDA[]) = categorizeFDA patterns tags
+    [<Extension>] static member Categorize(pattern: Pattern, tags:PlcTagBaseFDA[]) = categorizeFDA [|pattern|] tags
 
 

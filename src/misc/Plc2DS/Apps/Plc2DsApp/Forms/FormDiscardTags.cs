@@ -16,7 +16,7 @@ namespace Plc2DsApp.Forms
         void showTags(PlcTagBaseFDA[] tags, string usageHint = null) =>
             new FormTags(tags, usageHint: usageHint).ShowDialog();
 
-        public FormDiscardTags(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
+        public FormDiscardTags(PlcTagBaseFDA[] tags, Pattern[] patterns)
 		{
             InitializeComponent();
 
@@ -45,31 +45,21 @@ namespace Plc2DsApp.Forms
             };
 
 
-            if (withUI)
+            Task.Run(() =>
             {
-                Task.Run(() =>
+                // pattern 별 match 된 tag 수 계산
+                var dict = patterns.ToDictionary(p => p, p => p.FindMatches(tags).Length);
+                this.Do(() =>
                 {
-                    // pattern 별 match 된 tag 수 계산
-                    var dict = patterns.ToDictionary(p => p, p => p.FindMatches(tags).Length);
-                    this.Do(() =>
-                    {
-                        var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
-                        gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
-                        gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
-                        numMatchColumn.VisibleIndex = 100;
-                        actionColumn.VisibleIndex = 101;
-                        gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), "Relacement", nameof(Pattern.Description), "NumMatches", "Apply"]);
-                        gridView1.Invalidate();
-                    });
+                    var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
+                    gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
+                    gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
+                    numMatchColumn.VisibleIndex = 100;
+                    actionColumn.VisibleIndex = 101;
+                    gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), "Relacement", nameof(Pattern.Description), "NumMatches", "Apply"]);
+                    gridView1.Invalidate();
                 });
-            }
-            else
-            {
-                this.MakeHiddenSelfOK();
-                applyPatterns(_patterns, false);
-            }
-
-
+            });
 
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };

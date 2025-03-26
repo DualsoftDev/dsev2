@@ -46,8 +46,8 @@ namespace Plc2DsApp.Forms
             {
                 Task.Run(() =>
                 {
-                    //var dict = new Dictionary<PlcTagBaseFDA, int>();
-                    var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p]).Length);
+                //var dict = new Dictionary<PlcTagBaseFDA, int>();
+                var dict = patterns.ToDictionary(p => p, p => p.Categorize(tags).Length); // ApplyPatterns(tags, [p]).Length);
                     this.Do(() =>
                     {
                         var numMatchColumn = gridView1.AddUnboundColumnCustom<Pattern, int>("NumMatches", p => dict[p], null);
@@ -80,7 +80,7 @@ namespace Plc2DsApp.Forms
 
         PlcTagBaseFDA[] applyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns, bool withUI)
         {
-            var categorizedCandidates = ApplyPatterns(tags, patterns);
+            var categorizedCandidates = patterns.Categorize(tags);
 
             var form = new FormTags(categorizedCandidates, categorizedCandidates, usageHint: "(Extract FDA pattern)", withUI: withUI);
             if (form.ShowDialog() == DialogResult.OK)
@@ -93,32 +93,32 @@ namespace Plc2DsApp.Forms
             return [];
         }
 
-        public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns)
-        {
-            var done = new HashSet<PlcTagBaseFDA>();
-            IEnumerable<PlcTagBaseFDA> collectCategorized(Pattern pattern)
-            {
-                foreach (var t in tags.Where(t => ! done.Contains(t)))
-                {
-                    var match = pattern.RegexPattern.Match(t.CsGetName());
-                    if (match.Success)
-                    {
-                        // match group 의 이름 중에 flow, device, action 을 찾아서 t 에 저장
-                        t.FlowName = match.Groups["flow"].Value;
-                        t.DeviceName = match.Groups["device"].Value;
-                        t.ActionName = match.Groups["action"].Value;
-                        yield return t;
-                    }
-                }
-            }
-            foreach(var p in patterns)
-            {
-                var matches = collectCategorized(p);
-                done.AddRange(matches);
-            }
+        //public static PlcTagBaseFDA[] ApplyPatterns(PlcTagBaseFDA[] tags, Pattern[] patterns)
+        //{
+        //    var done = new HashSet<PlcTagBaseFDA>();
+        //    IEnumerable<PlcTagBaseFDA> collectCategorized(Pattern pattern)
+        //    {
+        //        foreach (var t in tags.Where(t => ! done.Contains(t)))
+        //        {
+        //            var match = pattern.RegexPattern.Match(t.CsGetName());
+        //            if (match.Success)
+        //            {
+        //                // match group 의 이름 중에 flow, device, action 을 찾아서 t 에 저장
+        //                t.FlowName = match.Groups["flow"].Value;
+        //                t.DeviceName = match.Groups["device"].Value;
+        //                t.ActionName = match.Groups["action"].Value;
+        //                yield return t;
+        //            }
+        //        }
+        //    }
+        //    foreach(var p in patterns)
+        //    {
+        //        var matches = collectCategorized(p);
+        //        done.AddRange(matches);
+        //    }
 
-            return done.ToArray();
-        }
+        //    return done.ToArray();
+        //}
 
         void btnApplyAllPatterns_Click(object sender, EventArgs e)
         {

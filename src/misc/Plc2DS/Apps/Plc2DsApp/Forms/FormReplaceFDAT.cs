@@ -38,22 +38,22 @@ namespace Plc2DsApp.Forms
 
             if (withUI)
             {
-                Task.Run(() =>
-                {
-                    //var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p], _fdatGetter).Length);
-                    var dict = patterns.ToDictionary(p => p, p => p.CollectCandidates(tags, _fdat).Length);
-                    this.Do(() =>
-                    {
-                        var numMatchColumn = gridView1.AddUnboundColumnCustom<ReplacePattern, int>("NumMatches", p => dict[p], null);
-                        gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
-                        gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
-                        numMatchColumn.VisibleIndex = 100;
-                        actionColumn.VisibleIndex = 101;
+                //var dict = patterns.ToDictionary(p => p, p => ApplyPatterns(tags, [p], _fdatGetter).Length);
+                var dict = patterns.ToDictionary(p => p, p => p.CollectCandidates(tags, _fdat).Length);
+                var numMatchColumn = gridView1.AddUnboundColumnCustom<ReplacePattern, int>("NumMatches", p => dict[p], null);
+                gridView1.Columns.Add(numMatchColumn); // 컬럼을 명확히 추가
+                gridView1.Columns.Add(actionColumn); // 컬럼을 명확히 추가
+                numMatchColumn.VisibleIndex = 100;
+                actionColumn.VisibleIndex = 101;
 
-                        gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
-                        gridView1.Invalidate();
-                    });
-                });
+                gridView1.ApplyVisibleColumns([nameof(Pattern.Name), nameof(Pattern.PatternString), nameof(ReplacePattern.Replacement), nameof(Pattern.Description), "NumMatches", "Apply"]);
+                gridView1.Invalidate();
+                //Task.Run(() =>
+                //{
+                //    this.Do(() =>
+                //    {
+                //    });
+                //});
             }
             else
             {
