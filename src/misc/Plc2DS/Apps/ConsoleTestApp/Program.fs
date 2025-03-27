@@ -3,7 +3,7 @@ open Dual.Common.Core.FS
 open Dual.Plc2DS
 open System
 open System.IO
-open Dual.Common.Base.FS
+open Dual.Common.Base
 
 // For more information see https://aka.ms/fsharp-console-apps
 printfn "Hello from F#"

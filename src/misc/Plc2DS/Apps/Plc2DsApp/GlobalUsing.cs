@@ -20,9 +20,8 @@ global using DevExpress.Utils.Extensions;
 
 global using Dual.Common.Winform.DevX;
 global using Dual.Common.Core;
-global using Dual.Common.Base.CS;
+global using Dual.Common.Base;
 global using Dual.Common.Winform;
-global using Dual.Common.Base.FS;
 global using Dual.Plc2DS;
 
 global using LS = Dual.Plc2DS.LS;
@@ -33,5 +32,5 @@ global using MX = Dual.Plc2DS.MX;
 global using static Dual.Plc2DS.AppSettingsModule;
 global using Plc2DsApp.Forms;
 global using static GridExtension;
-global using static Dual.Common.Base.CS.DcLogger;
-global using static Dual.Common.Base.CS.GlobalFunctions;
+global using static Dual.Common.Base.DcLogger;
+global using static Dual.Common.Base.GlobalFunctions;

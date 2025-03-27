@@ -6,7 +6,7 @@ open System.Runtime.Serialization
 open Newtonsoft.Json
 
 open Dual.Common.Core.FS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Plc2DS
 
 (*

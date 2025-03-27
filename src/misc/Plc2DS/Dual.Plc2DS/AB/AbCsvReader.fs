@@ -5,7 +5,7 @@ open System.Text.RegularExpressions
 open System.Runtime.Serialization
 
 open Dual.Common.Core.FS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Plc2DS
 
 (* 샘플 CSV format
