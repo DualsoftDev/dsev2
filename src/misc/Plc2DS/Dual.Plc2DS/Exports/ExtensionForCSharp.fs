@@ -19,3 +19,4 @@ type Plc2DsExtensionForCSharp =
     [<Extension>] static member CsIsValid(tag:IPlcTag) = tag.IsValid();
     [<Extension>] static member CsGetTagType(vendor:Vendor):Type = vendor.GetVendorTagType()
     [<Extension>] static member CsTryMatch(pattern: CsvFilterExpression, tag: PlcTagBaseFDA) : bool option = if isItNull pattern then None else pattern.TryMatch(tag)
+

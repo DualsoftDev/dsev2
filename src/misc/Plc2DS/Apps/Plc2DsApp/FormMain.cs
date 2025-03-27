@@ -1,9 +1,7 @@
 using System.Diagnostics;
-using System.Reflection;
 
-using DevExpress.Utils;
+using DevExpress.Images;
 using DevExpress.XtraEditors;
-using DevExpress.XtraSpreadsheet.Model;
 
 using log4net.Appender;
 using log4net.Core;
@@ -33,7 +31,6 @@ namespace Plc2DsApp
         public PlcTagBaseFDA[] TagsStage => selectTags(Choice.Stage);
 
         AppRegistry _appRegistry = new AppRegistry();
-        //AppSettings _appSettings = null;
         Rulebase _vendorRule = null;
         UiUpdator _uiUpdator = new UiUpdator();
 
@@ -69,10 +66,16 @@ namespace Plc2DsApp
                 reloadAppsetting();
             };
 
-            this.AddMenuItem(["File", "Load tags"],           () => btnLoadTags.PerformClick());
-            this.AddMenuItem(["File", "Save"],                () => MessageBox.Show("Save clicked"));
-            this.AddMenuItem(["File", "Open install folder"], () => Process.Start("explorer.exe", System.AppDomain.CurrentDomain.BaseDirectory));
-            this.AddMenuItem(["Help", "About"],               () => new FormAbout().ShowDialog(this));
+            // C:\Program Files\DevExpress 23.2\Components\Sources\Win\DevExpress.Images\Images\Actions\Open2_16x16.png
+
+            this.AddMenuItem("File/Tag/Open..",          () => btnLoadTags.PerformClick())           .ImageOptions.Image = ImageResourceCache.Default.GetImage("images/actions/open2_16x16.png");
+            this.AddMenuItem("File/Tag/Save as..",       () => FormMain.Instance.SaveTagsAs(TagsAll)).ImageOptions.Image = ImageResourceCache.Default.GetImage("images/save/save_16x16.png");
+            this.AddMenuItem("File/Tag/Decode AB csv..", () => decodeAbCsv());
+            this.AddMenuItem("File/Open install folder", () => Process.Start("explorer.exe", System.AppDomain.CurrentDomain.BaseDirectory));
+            this.AddMenuItem("File/Merge appsettings..", () => btnMergeAppSettings.PerformClick());
+            this.AddMenuItem("Help/About",               () => new FormAbout().ShowDialog(this)).ImageOptions.Image = ImageResourceCache.Default.GetImage("images/support/info_16x16.png"); ;
+
+            this.FindSubItem("File/Tag").ImageOptions.Image = ImageResourceCache.Default.GetImage("images/programming/tag_16x16.png");
         }
         void FormMain_Load(object sender, EventArgs e)
         {
@@ -150,20 +153,14 @@ namespace Plc2DsApp
 
         public void SaveTagsAs(IEnumerable<PlcTagBaseFDA> tags)
         {
-            using SaveFileDialog sfd =
-                new SaveFileDialog()
-                {
-                    InitialDirectory = Path.GetDirectoryName(_appRegistry.LastWrite),
-                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
-                };
-
-            if (sfd.ShowDialog() == DialogResult.OK)
+            string filter = new[] { filterJson, filterAll }.JoinString("|");
+            var f = DcFileDialog.SaveFile(filter, Path.GetDirectoryName(_appRegistry.LastWrite));
+            if (f.NonNullAny())
             {
                 string json = EmJson.ToJson(tags);
-                File.WriteAllText(sfd.FileName, json);
-                _appRegistry.LastWrite = sfd.FileName;
+                File.WriteAllText(f, json);
+                _appRegistry.LastWrite = f;
             }
-
         }
 
         PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterExpression filter)
@@ -273,34 +270,41 @@ namespace Plc2DsApp
 
         }
 
+
+        string filterCsv  = "CSV files (*.csv)|*.csv";
+        string filterJson = "JSON files (*.json)|*.json";
+        string filterXml  = "XML files (*.xml)|*.xml";
+        string filterAll  = "All files (*.*)|*.*";
+
         void btnLoadTags_Click(object sender, EventArgs e)
         {
             using var _ = btnLoadTags.Disabler();
 
-            var csv = "CSV files (*.csv)|*.csv";
-            var json = "JSON files (*.json)|*.json";
-            var xml = "XML files (*.xml)|*.xml";
-            var all = "All files (*.*)|*.*";
             string filter = "";
             if (Vendor == Vendor.LS)
-                filter = new[] { csv, json, xml, all }.JoinString("|");
+                filter = new[] { filterCsv, filterJson, filterXml, filterAll }.JoinString("|");
             else
-                filter = new[] { csv, json, all }.JoinString("|");
+                filter = new[] { filterCsv, filterJson, filterAll }.JoinString("|");
 
-            using OpenFileDialog ofd =
-                    new OpenFileDialog()
-                    {
-                        InitialDirectory = Path.GetDirectoryName(_appRegistry.LastRead),
-                        Filter = filter,
-                    };
-
-            if (ofd.ShowDialog() == DialogResult.OK)
+            var f = DcFileDialog.OpenFile(filter, Path.GetDirectoryName(_appRegistry.LastRead));
+            if (f.NonNullAny())
             {
-                var f = ofd.FileName;
                 tbCsvFile.Text = f;
                 loadTags(f, _vendorRule.CsvFilterExpression);
                 _appRegistry.LastRead = f;
             }
+        }
+
+        void decodeAbCsv()
+        {
+            string filter = new[] { filterCsv, filterAll }.JoinString("|");
+            string r = DcFileDialog.OpenFile(filter, Path.GetDirectoryName(_appRegistry.LastRead));
+            if (r.IsNullOrEmpty()) return;
+            string w = DcFileDialog.SaveFile(filter, Path.GetDirectoryName(_appRegistry.LastWrite));
+            if (w.IsNullOrEmpty()) return;
+
+            var decoded = AB.CsvReader.Decode(File.ReadAllText(r), decodeSpecialChar:false, decodeHangule:true);
+            File.WriteAllText(w, decoded);
         }
 
 
@@ -356,14 +360,11 @@ namespace Plc2DsApp
 
         void btnMergeAppSettings_Click(object sender, EventArgs e)
         {
-            using OpenFileDialog ofd = new OpenFileDialog()
+            string filter = new[] { filterJson, filterAll }.JoinString("|");
+            var f = DcFileDialog.OpenFile(filter, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Rulebases"));
+            if (f.NonNullAny())
             {
-                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
-            };
-
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                Rulebase partial = EmJson.FromJson<AppSettings>(File.ReadAllText(ofd.FileName)).CreateVendorRulebase(Vendor);
+                Rulebase partial = EmJson.FromJson<AppSettings>(File.ReadAllText(f)).CreateVendorRulebase(Vendor);
                 if (cbMergeAppSettingsOverride.Checked)
                     _vendorRule.Override(partial);
                 else
@@ -422,12 +423,6 @@ namespace Plc2DsApp
 
                 return categorized.Length;
             }
-        }
-
-        private void btnVersion_Click(object sender, EventArgs e)
-        {
-            using (var about = new FormAbout())
-                about.ShowDialog(this);
         }
     }
 }

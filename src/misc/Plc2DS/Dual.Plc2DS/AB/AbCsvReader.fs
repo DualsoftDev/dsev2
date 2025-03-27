@@ -49,21 +49,27 @@ type PlcTagInfo(?typ, ?scope, ?name, ?description, ?dataType, ?specifier, ?attri
 
 [<AutoOpen>]
 module private Ab =
-    /// $XXXX를 유니코드 문자로 디코딩
-    let decodeEncodedString (encoded: string) =
-        let encoded =
-            encoded
-                .Replace("$$", "$")
-                .Replace("$Q", "\"")
-                .Replace("$N", "\n")
-                .Replace("$T", "\t")
-                .Replace("$'", "'")
-        let pattern = @"\$(\w{4})" // $XXXX 패턴 감지
+    let doDecodeHangulString (encoded: string) =
+        //let pattern = @"\$(\w{4})" // $XXXX 패턴 감지  (특수문자를 먼저 제거했다면 이 수식만으로 OK.  그러나 특수문자가 남아 있는 상태라면 부족)
+
+        let pattern = @"\$(?!\$|[QNT'])([0-9A-Fa-f]{4})"  // ${$, Q, N, T, '} 를 제외한 $XXXX 패턴 감지
+
         Regex.Replace(encoded, pattern, fun m ->
             let hexValue = m.Groups.[1].Value
             let unicodeChar = Convert.ToInt32(hexValue, 16) |> char
             unicodeChar.ToString()
         )
+
+    let doDecodeSpecialChar (encoded: string) =
+        encoded
+            .Replace("$$", "$")
+            .Replace("$Q", "\"")
+            .Replace("$N", "\n")
+            .Replace("$T", "\t")
+            .Replace("$'", "'")
+
+    /// $XXXX를 유니코드 문자로 디코딩
+    let decodeEncodedString (encoded: string) = encoded |> doDecodeSpecialChar |> doDecodeHangulString
 
     let isHeader (line:string) = !! line.Contains("\"") && line.Contains(",")
 
@@ -126,6 +132,19 @@ type CsvReader =
             failwith $"ERROR: failed to find header on file {filePath}"
 
 
+    /// AB CSV 파일의 특수문자, 한글 decoding
+    /// CSV 를 decoding 해서 CSV 로 저장하려면, 특수문자까지 decoding 하면 CSV 파일 포맷이 망가지므로, 한글만 decoding 한다.
+    static member Decode(encoded: string, ?decodeSpecialChar, ?decodeHangule): string =
+        let mutable decoded = encoded
+        let decodeSpecialChar = decodeSpecialChar |? true
+        let decodeHangule = decodeHangule |? true
+
+        if decodeSpecialChar then
+            decoded <- doDecodeSpecialChar decoded
+        if decodeHangule then
+            decoded <- doDecodeHangulString decoded
+
+        decoded
 
 
 

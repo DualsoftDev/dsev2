@@ -28,6 +28,7 @@ namespace Plc2DsApp
         /// </summary>
         void InitializeComponent()
         {
+            ComponentResourceManager resources = new ComponentResourceManager(typeof(FormMain));
             btnLoadTags = new DevExpress.XtraEditors.SimpleButton();
             btnShowAllTags = new DevExpress.XtraEditors.SimpleButton();
             groupControl1 = new DevExpress.XtraEditors.GroupControl();
@@ -72,10 +73,11 @@ namespace Plc2DsApp
             // 
             // btnLoadTags
             // 
+            btnLoadTags.ImageOptions.Image = (System.Drawing.Image)resources.GetObject("btnLoadTags.ImageOptions.Image");
             btnLoadTags.Location = new System.Drawing.Point(12, 158);
             btnLoadTags.Margin = new Padding(2);
             btnLoadTags.Name = "btnLoadTags";
-            btnLoadTags.Size = new System.Drawing.Size(112, 34);
+            btnLoadTags.Size = new System.Drawing.Size(163, 34);
             btnLoadTags.TabIndex = 0;
             btnLoadTags.Text = "Load tags..";
             btnLoadTags.ToolTip = "다음 두가지 type 에 대해서 tags 를 읽어 들인다.\r\n- *.csv: PLC vendor 에서 제공하는 tag export 기능을 이용해서 저장한 파일\r\n  - Siemens 의 경우, *.sdf\r\n- *.json: 이 프로그램에서 저장한 tag file";
@@ -308,10 +310,10 @@ namespace Plc2DsApp
             // tbCsvFile
             // 
             tbCsvFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            tbCsvFile.Location = new System.Drawing.Point(148, 162);
+            tbCsvFile.Location = new System.Drawing.Point(191, 162);
             tbCsvFile.Margin = new Padding(2);
             tbCsvFile.Name = "tbCsvFile";
-            tbCsvFile.Size = new System.Drawing.Size(897, 28);
+            tbCsvFile.Size = new System.Drawing.Size(854, 28);
             tbCsvFile.TabIndex = 2;
             // 
             // ucPanelLog1
