@@ -9,6 +9,7 @@ open System.Runtime.Serialization
 
 open Dual.Plc2DS
 open Dual.Common.Core.FS
+open Dual.Common.Base.FS
 
 
 [<DataContract>]

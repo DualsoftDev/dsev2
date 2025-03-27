@@ -3,6 +3,7 @@ namespace Dual.Plc2DS.MX
 open System.Runtime.Serialization
 
 open Dual.Common.Core.FS
+open Dual.Common.Base.FS
 open Dual.Plc2DS
 
 
