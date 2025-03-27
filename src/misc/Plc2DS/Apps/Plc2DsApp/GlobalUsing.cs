@@ -9,7 +9,6 @@ global using System.ComponentModel;
 global using System.Threading.Tasks;
 
 global using Microsoft.FSharp.Core;
-global using Newtonsoft.Json;
 global using log4net;
 
 
@@ -28,9 +27,6 @@ global using LS = Dual.Plc2DS.LS;
 global using AB = Dual.Plc2DS.AB;
 global using S7 = Dual.Plc2DS.S7;
 global using MX = Dual.Plc2DS.MX;
-
-global using static Dual.Plc2DS.AppSettingsModule;
 global using Plc2DsApp.Forms;
-global using static GridExtension;
 global using static Dual.Common.Base.DcLogger;
 global using static Dual.Common.Base.GlobalFunctions;

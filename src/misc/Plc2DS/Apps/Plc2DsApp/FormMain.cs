@@ -7,6 +7,8 @@ using log4net.Appender;
 using log4net.Core;
 
 
+using static Dual.Common.Winform.DevX.GlobalFunctions;
+
 
 
 namespace Plc2DsApp
@@ -68,14 +70,14 @@ namespace Plc2DsApp
 
             // C:\Program Files\DevExpress 23.2\Components\Sources\Win\DevExpress.Images\Images\Actions\Open2_16x16.png
 
-            this.AddMenuItem("File/Tag/Open..",          () => btnLoadTags.PerformClick())           .ImageOptions.Image = ImageResourceCache.Default.GetImage("images/actions/open2_16x16.png");
-            this.AddMenuItem("File/Tag/Save as..",       () => FormMain.Instance.SaveTagsAs(TagsAll)).ImageOptions.Image = ImageResourceCache.Default.GetImage("images/save/save_16x16.png");
+            this.AddMenuItem("File/Tag/Open..",          () => btnLoadTags.PerformClick())           .ImageOptions.Image = LoadDevXImage("images/actions/open2_16x16.png");
+            this.AddMenuItem("File/Tag/Save as..",       () => FormMain.Instance.SaveTagsAs(TagsAll)).ImageOptions.Image = LoadDevXImage("images/save/save_16x16.png");
             this.AddMenuItem("File/Tag/Decode AB csv..", () => decodeAbCsv());
             this.AddMenuItem("File/Open install folder", () => Process.Start("explorer.exe", System.AppDomain.CurrentDomain.BaseDirectory));
             this.AddMenuItem("File/Merge appsettings..", () => btnMergeAppSettings.PerformClick());
-            this.AddMenuItem("Help/About",               () => new FormAbout().ShowDialog(this)).ImageOptions.Image = ImageResourceCache.Default.GetImage("images/support/info_16x16.png"); ;
+            this.AddMenuItem("Help/About",               () => new FormAbout().ShowDialog(this)).ImageOptions.Image = LoadDevXImage("images/support/info_16x16.png"); ;
 
-            this.FindSubItem("File/Tag").ImageOptions.Image = ImageResourceCache.Default.GetImage("images/programming/tag_16x16.png");
+            this.FindSubItem("File/Tag").ImageOptions.Image = LoadDevXImage("images/programming/tag_16x16.png");
         }
         void FormMain_Load(object sender, EventArgs e)
         {
