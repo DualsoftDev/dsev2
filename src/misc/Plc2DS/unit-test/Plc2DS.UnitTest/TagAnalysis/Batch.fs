@@ -15,7 +15,7 @@ open System.Text.RegularExpressions
 [<AutoOpen>]
 module BatchCommon =
     let dataDir = "Z:/dsev2/src/misc/Plc2DS/unit-test/Plc2DS.UnitTest/Samples/LS/Autoland광명2"
-    let sm = EmJson.FromJson<SemanticSettings>(File.ReadAllText("Z:/dsev2/src/misc/Plc2DS/ConsoleTestApp/appsettings.json"))
+    let sm = EmJson.FromJson<SemanticSettings>(File.ReadAllText("Z:/dsev2/src/misc/Plc2DS/Apps/ConsoleTestApp/appsettings.json"))
 
     let csvs = [|
         "BB 메인제어반.csv"
@@ -71,6 +71,8 @@ module BatchCommon =
 
 module Batch =
     type B() =
+        [<SetUp>] member _.Setup() = Dual.Plc2DS.ModuleInitializer.Initialize()
+
         [<Test>]
         member _.``Minimal`` () =
             let inputTags: IPlcTag[] = C.CollectTags([|"BC 로컬 메인제어반.csv"|], addressFilter = fun addr -> addr.StartsWith("%I"))
