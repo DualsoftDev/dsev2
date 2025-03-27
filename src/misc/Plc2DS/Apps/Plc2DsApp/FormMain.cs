@@ -1,4 +1,9 @@
+using System.Diagnostics;
+using System.Reflection;
+
+using DevExpress.Utils;
 using DevExpress.XtraEditors;
+using DevExpress.XtraSpreadsheet.Model;
 
 using log4net.Appender;
 using log4net.Core;
@@ -63,6 +68,11 @@ namespace Plc2DsApp
                 Vendor = Vendor.FromString(vendor);
                 reloadAppsetting();
             };
+
+            this.AddMenuItem(["File", "Load tags"],           () => btnLoadTags.PerformClick());
+            this.AddMenuItem(["File", "Save"],                () => MessageBox.Show("Save clicked"));
+            this.AddMenuItem(["File", "Open install folder"], () => Process.Start("explorer.exe", System.AppDomain.CurrentDomain.BaseDirectory));
+            this.AddMenuItem(["Help", "About"],               () => new FormAbout().ShowDialog(this));
         }
         void FormMain_Load(object sender, EventArgs e)
         {
@@ -82,9 +92,9 @@ namespace Plc2DsApp
             btnReplaceDeviceName.Enabled = _vendorRule.DevicePatternReplaces.Any();
             btnReplaceActionName.Enabled = _vendorRule.ActionPatternReplaces.Any();
 
-            btnReplaceFlowName.Click += (s, e) => replaceFDA(_vendorRule.FlowPatternReplaces,     FDAT.DuFlow  , withUI:true);
-            btnReplaceDeviceName.Click += (s, e) => replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI:true);
-            btnReplaceActionName.Click += (s, e) => replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI:true);
+            btnReplaceFlowName.Click += (s, e) => replaceFDA(_vendorRule.FlowPatternReplaces, FDAT.DuFlow, withUI: true);
+            btnReplaceDeviceName.Click += (s, e) => replaceFDA(_vendorRule.DevicePatternReplaces, FDAT.DuDevice, withUI: true);
+            btnReplaceActionName.Click += (s, e) => replaceFDA(_vendorRule.ActionPatternReplaces, FDAT.DuAction, withUI: true);
         }
         public void DoAppend(LoggingEvent loggingEvent)
         {
@@ -116,7 +126,7 @@ namespace Plc2DsApp
             return form;
         }
 
-        int replaceFDA(ReplacePattern[] patterns, FDAT fdat, bool withUI=false)
+        int replaceFDA(ReplacePattern[] patterns, FDAT fdat, bool withUI = false)
         {
             var tags = TagsCategorized.Concat(TagsChosen).ToArray();
             return replaceFDA(tags, patterns, fdat, withUI);
@@ -363,17 +373,6 @@ namespace Plc2DsApp
             }
         }
 
-        private void btnOpenInstallDir_Click(object sender, EventArgs e)
-        {
-            // 현재 실행 파일이 있는 폴더
-            string installFolder = System.AppDomain.CurrentDomain.BaseDirectory;
-
-            // 탐색기로 열기
-            System.Diagnostics.Process.Start("explorer.exe", installFolder);
-
-        }
-
-
 
 
         void btnApplyAll_Click(object sender, EventArgs e)
@@ -396,14 +395,14 @@ namespace Plc2DsApp
             applySplitFDA();
 
             // replaces {flow, device, action}
-            int changedF = replaceFDA(r.FlowPatternReplaces,   FDAT.DuFlow  , withUI:false);
-            int changedD = replaceFDA(r.DevicePatternReplaces, FDAT.DuDevice, withUI:false);
-            int changedA = replaceFDA(r.ActionPatternReplaces, FDAT.DuAction, withUI:false);
+            int changedF = replaceFDA(r.FlowPatternReplaces, FDAT.DuFlow, withUI: false);
+            int changedD = replaceFDA(r.DevicePatternReplaces, FDAT.DuDevice, withUI: false);
+            int changedA = replaceFDA(r.ActionPatternReplaces, FDAT.DuAction, withUI: false);
 
             // standardizes {flow, device, action}
-            int standardF = replaceFDA(r.DialectPatterns, FDAT.DuFlow,   withUI:false);
-            int standardD = replaceFDA(r.DialectPatterns, FDAT.DuDevice, withUI:false);
-            int standardA = replaceFDA(r.DialectPatterns, FDAT.DuAction, withUI:false);
+            int standardF = replaceFDA(r.DialectPatterns, FDAT.DuFlow, withUI: false);
+            int standardD = replaceFDA(r.DialectPatterns, FDAT.DuDevice, withUI: false);
+            int standardA = replaceFDA(r.DialectPatterns, FDAT.DuAction, withUI: false);
 
 
 
@@ -415,13 +414,20 @@ namespace Plc2DsApp
                 var categorized = patterns.Categorize(tags);
                 categorized.Where(t => t.Choice == Choice.Stage).Iter(t => t.Choice = Choice.Categorized);
 
-                tags.Except(categorized).Iter(t => {
+                tags.Except(categorized).Iter(t =>
+                {
                     t.Choice = Choice.Discarded;
                     Logger.Error($"Discarding tag failed to split F/D/A: {t.Stringify()}");
                 });
 
                 return categorized.Length;
             }
+        }
+
+        private void btnVersion_Click(object sender, EventArgs e)
+        {
+            using (var about = new FormAbout())
+                about.ShowDialog(this);
         }
     }
 }

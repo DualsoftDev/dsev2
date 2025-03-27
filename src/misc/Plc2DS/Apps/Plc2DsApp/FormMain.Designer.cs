@@ -55,7 +55,6 @@ namespace Plc2DsApp
             ucRadioSelector1 = new UcRadioSelector();
             btnMergeAppSettings = new DevExpress.XtraEditors.SimpleButton();
             cbMergeAppSettingsOverride = new DevExpress.XtraEditors.CheckEdit();
-            btnOpenInstallDir = new DevExpress.XtraEditors.SimpleButton();
             ((ISupportInitialize)groupControl1).BeginInit();
             groupControl1.SuspendLayout();
             ((ISupportInitialize)tbNumTagsCategorized.Properties).BeginInit();
@@ -73,7 +72,7 @@ namespace Plc2DsApp
             // 
             // btnLoadTags
             // 
-            btnLoadTags.Location = new System.Drawing.Point(12, 119);
+            btnLoadTags.Location = new System.Drawing.Point(12, 158);
             btnLoadTags.Margin = new Padding(2);
             btnLoadTags.Name = "btnLoadTags";
             btnLoadTags.Size = new System.Drawing.Size(112, 34);
@@ -84,7 +83,7 @@ namespace Plc2DsApp
             // 
             // btnShowAllTags
             // 
-            btnShowAllTags.Location = new System.Drawing.Point(5, 42);
+            btnShowAllTags.Location = new System.Drawing.Point(3, 40);
             btnShowAllTags.Margin = new Padding(2);
             btnShowAllTags.Name = "btnShowAllTags";
             btnShowAllTags.Size = new System.Drawing.Size(90, 34);
@@ -105,16 +104,16 @@ namespace Plc2DsApp
             groupControl1.Controls.Add(btnShowChosenTags);
             groupControl1.Controls.Add(btnShowStageTags);
             groupControl1.Controls.Add(btnShowAllTags);
-            groupControl1.Location = new System.Drawing.Point(18, 453);
+            groupControl1.Location = new System.Drawing.Point(18, 492);
             groupControl1.Margin = new Padding(2);
             groupControl1.Name = "groupControl1";
-            groupControl1.Size = new System.Drawing.Size(1023, 122);
+            groupControl1.Size = new System.Drawing.Size(1023, 123);
             groupControl1.TabIndex = 3;
             groupControl1.Text = "Show tags";
             // 
             // tbNumTagsCategorized
             // 
-            tbNumTagsCategorized.Location = new System.Drawing.Point(345, 82);
+            tbNumTagsCategorized.Location = new System.Drawing.Point(343, 80);
             tbNumTagsCategorized.Margin = new Padding(2);
             tbNumTagsCategorized.Name = "tbNumTagsCategorized";
             tbNumTagsCategorized.Properties.ReadOnly = true;
@@ -123,7 +122,7 @@ namespace Plc2DsApp
             // 
             // btnShowCategorizedTags
             // 
-            btnShowCategorizedTags.Location = new System.Drawing.Point(345, 42);
+            btnShowCategorizedTags.Location = new System.Drawing.Point(343, 40);
             btnShowCategorizedTags.Margin = new Padding(2);
             btnShowCategorizedTags.Name = "btnShowCategorizedTags";
             btnShowCategorizedTags.Size = new System.Drawing.Size(110, 34);
@@ -133,7 +132,7 @@ namespace Plc2DsApp
             // 
             // tbNumTagsDiscarded
             // 
-            tbNumTagsDiscarded.Location = new System.Drawing.Point(476, 82);
+            tbNumTagsDiscarded.Location = new System.Drawing.Point(474, 80);
             tbNumTagsDiscarded.Margin = new Padding(2);
             tbNumTagsDiscarded.Name = "tbNumTagsDiscarded";
             tbNumTagsDiscarded.Properties.ReadOnly = true;
@@ -142,7 +141,7 @@ namespace Plc2DsApp
             // 
             // tbNumTagsChosen
             // 
-            tbNumTagsChosen.Location = new System.Drawing.Point(231, 82);
+            tbNumTagsChosen.Location = new System.Drawing.Point(229, 80);
             tbNumTagsChosen.Margin = new Padding(2);
             tbNumTagsChosen.Name = "tbNumTagsChosen";
             tbNumTagsChosen.Properties.ReadOnly = true;
@@ -151,7 +150,7 @@ namespace Plc2DsApp
             // 
             // tbNumTagsStage
             // 
-            tbNumTagsStage.Location = new System.Drawing.Point(118, 82);
+            tbNumTagsStage.Location = new System.Drawing.Point(116, 80);
             tbNumTagsStage.Margin = new Padding(2);
             tbNumTagsStage.Name = "tbNumTagsStage";
             tbNumTagsStage.Properties.ReadOnly = true;
@@ -160,7 +159,7 @@ namespace Plc2DsApp
             // 
             // tbNumTagsAll
             // 
-            tbNumTagsAll.Location = new System.Drawing.Point(5, 82);
+            tbNumTagsAll.Location = new System.Drawing.Point(3, 80);
             tbNumTagsAll.Margin = new Padding(2);
             tbNumTagsAll.Name = "tbNumTagsAll";
             tbNumTagsAll.Properties.ReadOnly = true;
@@ -169,7 +168,7 @@ namespace Plc2DsApp
             // 
             // btnShowDiscardedTags
             // 
-            btnShowDiscardedTags.Location = new System.Drawing.Point(476, 42);
+            btnShowDiscardedTags.Location = new System.Drawing.Point(474, 40);
             btnShowDiscardedTags.Margin = new Padding(2);
             btnShowDiscardedTags.Name = "btnShowDiscardedTags";
             btnShowDiscardedTags.Size = new System.Drawing.Size(90, 34);
@@ -179,7 +178,7 @@ namespace Plc2DsApp
             // 
             // btnShowChosenTags
             // 
-            btnShowChosenTags.Location = new System.Drawing.Point(231, 42);
+            btnShowChosenTags.Location = new System.Drawing.Point(229, 40);
             btnShowChosenTags.Margin = new Padding(2);
             btnShowChosenTags.Name = "btnShowChosenTags";
             btnShowChosenTags.Size = new System.Drawing.Size(90, 34);
@@ -189,7 +188,7 @@ namespace Plc2DsApp
             // 
             // btnShowStageTags
             // 
-            btnShowStageTags.Location = new System.Drawing.Point(118, 42);
+            btnShowStageTags.Location = new System.Drawing.Point(116, 40);
             btnShowStageTags.Margin = new Padding(2);
             btnShowStageTags.Name = "btnShowStageTags";
             btnShowStageTags.Size = new System.Drawing.Size(90, 34);
@@ -199,7 +198,7 @@ namespace Plc2DsApp
             // 
             // btnDiscardTags
             // 
-            btnDiscardTags.Location = new System.Drawing.Point(6, 45);
+            btnDiscardTags.Location = new System.Drawing.Point(6, 43);
             btnDiscardTags.Margin = new Padding(2);
             btnDiscardTags.Name = "btnDiscardTags";
             btnDiscardTags.Size = new System.Drawing.Size(139, 45);
@@ -214,16 +213,16 @@ namespace Plc2DsApp
             groupControl2.Controls.Add(btnReplaceTags);
             groupControl2.Controls.Add(btnSplitFDA);
             groupControl2.Controls.Add(btnDiscardTags);
-            groupControl2.Location = new System.Drawing.Point(12, 167);
+            groupControl2.Location = new System.Drawing.Point(12, 206);
             groupControl2.Margin = new Padding(2);
             groupControl2.Name = "groupControl2";
-            groupControl2.Size = new System.Drawing.Size(1029, 94);
+            groupControl2.Size = new System.Drawing.Size(1029, 95);
             groupControl2.TabIndex = 9;
             groupControl2.Text = "Tags";
             // 
             // btnReplaceTags
             // 
-            btnReplaceTags.Location = new System.Drawing.Point(164, 45);
+            btnReplaceTags.Location = new System.Drawing.Point(164, 43);
             btnReplaceTags.Margin = new Padding(2);
             btnReplaceTags.Name = "btnReplaceTags";
             btnReplaceTags.Size = new System.Drawing.Size(139, 45);
@@ -234,7 +233,7 @@ namespace Plc2DsApp
             // 
             // btnSplitFDA
             // 
-            btnSplitFDA.Location = new System.Drawing.Point(330, 45);
+            btnSplitFDA.Location = new System.Drawing.Point(330, 43);
             btnSplitFDA.Margin = new Padding(2);
             btnSplitFDA.Name = "btnSplitFDA";
             btnSplitFDA.Size = new System.Drawing.Size(139, 45);
@@ -245,7 +244,7 @@ namespace Plc2DsApp
             // 
             // labelControl1
             // 
-            labelControl1.Location = new System.Drawing.Point(17, 22);
+            labelControl1.Location = new System.Drawing.Point(17, 61);
             labelControl1.Name = "labelControl1";
             labelControl1.Size = new System.Drawing.Size(62, 22);
             labelControl1.TabIndex = 12;
@@ -257,7 +256,7 @@ namespace Plc2DsApp
             groupControl4.Controls.Add(btnReplaceActionName);
             groupControl4.Controls.Add(btnReplaceDeviceName);
             groupControl4.Controls.Add(btnReplaceFlowName);
-            groupControl4.Location = new System.Drawing.Point(12, 276);
+            groupControl4.Location = new System.Drawing.Point(12, 315);
             groupControl4.Margin = new Padding(2);
             groupControl4.Name = "groupControl4";
             groupControl4.Size = new System.Drawing.Size(1029, 98);
@@ -266,7 +265,7 @@ namespace Plc2DsApp
             // 
             // btnReplaceActionName
             // 
-            btnReplaceActionName.Location = new System.Drawing.Point(330, 45);
+            btnReplaceActionName.Location = new System.Drawing.Point(330, 43);
             btnReplaceActionName.Margin = new Padding(2);
             btnReplaceActionName.Name = "btnReplaceActionName";
             btnReplaceActionName.Size = new System.Drawing.Size(139, 45);
@@ -276,7 +275,7 @@ namespace Plc2DsApp
             // 
             // btnReplaceDeviceName
             // 
-            btnReplaceDeviceName.Location = new System.Drawing.Point(164, 45);
+            btnReplaceDeviceName.Location = new System.Drawing.Point(164, 43);
             btnReplaceDeviceName.Margin = new Padding(2);
             btnReplaceDeviceName.Name = "btnReplaceDeviceName";
             btnReplaceDeviceName.Size = new System.Drawing.Size(139, 45);
@@ -286,7 +285,7 @@ namespace Plc2DsApp
             // 
             // btnReplaceFlowName
             // 
-            btnReplaceFlowName.Location = new System.Drawing.Point(4, 45);
+            btnReplaceFlowName.Location = new System.Drawing.Point(4, 43);
             btnReplaceFlowName.Margin = new Padding(2);
             btnReplaceFlowName.Name = "btnReplaceFlowName";
             btnReplaceFlowName.Size = new System.Drawing.Size(139, 45);
@@ -297,7 +296,7 @@ namespace Plc2DsApp
             // btnApplyAll
             // 
             btnApplyAll.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnApplyAll.Location = new System.Drawing.Point(807, 393);
+            btnApplyAll.Location = new System.Drawing.Point(807, 432);
             btnApplyAll.Margin = new Padding(2);
             btnApplyAll.Name = "btnApplyAll";
             btnApplyAll.Size = new System.Drawing.Size(234, 45);
@@ -309,7 +308,7 @@ namespace Plc2DsApp
             // tbCsvFile
             // 
             tbCsvFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            tbCsvFile.Location = new System.Drawing.Point(148, 123);
+            tbCsvFile.Location = new System.Drawing.Point(148, 162);
             tbCsvFile.Margin = new Padding(2);
             tbCsvFile.Name = "tbCsvFile";
             tbCsvFile.Size = new System.Drawing.Size(897, 28);
@@ -318,17 +317,17 @@ namespace Plc2DsApp
             // ucPanelLog1
             // 
             ucPanelLog1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            ucPanelLog1.Location = new System.Drawing.Point(12, 627);
+            ucPanelLog1.Location = new System.Drawing.Point(12, 622);
             ucPanelLog1.Margin = new Padding(4, 5, 4, 5);
             ucPanelLog1.Name = "ucPanelLog1";
             ucPanelLog1.SelectedIndex = -1;
-            ucPanelLog1.Size = new System.Drawing.Size(1029, 241);
+            ucPanelLog1.Size = new System.Drawing.Size(1029, 246);
             ucPanelLog1.TabIndex = 15;
             // 
             // ucRadioSelector1
             // 
             ucRadioSelector1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            ucRadioSelector1.Location = new System.Drawing.Point(148, 12);
+            ucRadioSelector1.Location = new System.Drawing.Point(148, 51);
             ucRadioSelector1.Margin = new Padding(2, 3, 2, 3);
             ucRadioSelector1.Name = "ucRadioSelector1";
             ucRadioSelector1.Size = new System.Drawing.Size(897, 39);
@@ -336,7 +335,7 @@ namespace Plc2DsApp
             // 
             // btnMergeAppSettings
             // 
-            btnMergeAppSettings.Location = new System.Drawing.Point(12, 62);
+            btnMergeAppSettings.Location = new System.Drawing.Point(12, 101);
             btnMergeAppSettings.Margin = new Padding(2);
             btnMergeAppSettings.Name = "btnMergeAppSettings";
             btnMergeAppSettings.Size = new System.Drawing.Size(181, 34);
@@ -347,27 +346,17 @@ namespace Plc2DsApp
             // 
             // cbMergeAppSettingsOverride
             // 
-            cbMergeAppSettingsOverride.Location = new System.Drawing.Point(223, 68);
+            cbMergeAppSettingsOverride.Location = new System.Drawing.Point(223, 107);
             cbMergeAppSettingsOverride.Name = "cbMergeAppSettingsOverride";
             cbMergeAppSettingsOverride.Properties.Caption = "Override";
             cbMergeAppSettingsOverride.Size = new System.Drawing.Size(112, 27);
             cbMergeAppSettingsOverride.TabIndex = 17;
-            // 
-            // btnOpenInstallDir
-            // 
-            btnOpenInstallDir.Location = new System.Drawing.Point(506, 62);
-            btnOpenInstallDir.Name = "btnOpenInstallDir";
-            btnOpenInstallDir.Size = new System.Drawing.Size(168, 34);
-            btnOpenInstallDir.TabIndex = 18;
-            btnOpenInstallDir.Text = "Open install folder";
-            btnOpenInstallDir.Click += btnOpenInstallDir_Click;
             // 
             // FormMain
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(10F, 22F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new System.Drawing.Size(1056, 882);
-            Controls.Add(btnOpenInstallDir);
             Controls.Add(cbMergeAppSettingsOverride);
             Controls.Add(btnMergeAppSettings);
             Controls.Add(ucPanelLog1);
@@ -430,7 +419,6 @@ namespace Plc2DsApp
         private Dual.Common.Winform.DevX.UserControls.UcPanelLog ucPanelLog1;
         private DevExpress.XtraEditors.SimpleButton btnMergeAppSettings;
         private DevExpress.XtraEditors.CheckEdit cbMergeAppSettingsOverride;
-        private DevExpress.XtraEditors.SimpleButton btnOpenInstallDir;
     }
 }
 
