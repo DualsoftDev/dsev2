@@ -118,7 +118,7 @@ type CsvReader =
                 dataType = dataType, specifier = specifier, attributes = attributes, owningElement = owningElement)
 
 
-    static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
+    static member Read(filePath: string): PlcTagInfo[] =
 
         //let header = "TYPE,SCOPE,NAME,DESCRIPTION,DATATYPE,SPECIFIER,ATTRIBUTES"
         match File.TryReadUntil(filePath, isHeader) with

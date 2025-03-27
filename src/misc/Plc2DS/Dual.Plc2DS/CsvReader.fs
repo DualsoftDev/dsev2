@@ -13,10 +13,10 @@ type CsvReader =
     static member Read(vendor:Vendor, filePath:string, ?addressFilter:string -> bool): IPlcTag[] =
         let tags =
             match vendor with
-            | LS -> LS.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
-            | AB -> AB.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
-            | S7 -> S7.CsvReader.ReadCommentSDF(filePath) |> map (fun x -> x :> IPlcTag)
-            | MX -> MX.CsvReader.ReadCommentCSV(filePath) |> map (fun x -> x :> IPlcTag)
+            | LS -> LS.CsvReader.Read(filePath) |> map (fun x -> x :> IPlcTag)
+            | AB -> AB.CsvReader.Read(filePath) |> map (fun x -> x :> IPlcTag)
+            | S7 -> S7.SdfReader.Read(filePath) |> map (fun x -> x :> IPlcTag)
+            | MX -> MX.CsvReader.Read(filePath) |> map (fun x -> x :> IPlcTag)
         let filtered =
             match addressFilter with
             //| Some pred -> tags |> filter (fun t ->  pred (t.GetAddress()))
@@ -25,10 +25,10 @@ type CsvReader =
         filtered
     static member CsRead(vendor:Vendor, filePath:string): IPlcTag[] = CsvReader.Read(vendor, filePath)
 
-    static member ReadLs(filePath:string): LS.PlcTagInfo[] = LS.CsvReader.ReadCommentCSV(filePath)
-    static member ReadAb(filePath:string): AB.PlcTagInfo[] = AB.CsvReader.ReadCommentCSV(filePath)
-    static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.CsvReader.ReadCommentSDF(filePath)
-    static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.ReadCommentCSV(filePath)
+    static member ReadLs(filePath:string): LS.PlcTagInfo[] = LS.CsvReader.Read(filePath)
+    static member ReadAb(filePath:string): AB.PlcTagInfo[] = AB.CsvReader.Read(filePath)
+    static member ReadS7(filePath:string): S7.PlcTagInfo[] = S7.SdfReader.Read(filePath)
+    static member ReadMx(filePath:string): MX.PlcTagInfo[] = MX.CsvReader.Read(filePath)
 
 
 [<AutoOpen>]

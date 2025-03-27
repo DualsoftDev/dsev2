@@ -29,8 +29,8 @@ type PlcTagInfo(?name, ?address, ?dataType, ?comment) =
 
 
 
-/// S7.CsvReader
-type CsvReader =
+/// S7.SdfReader (Csv 와 동일 형식)
+type SdfReader =
     static member CreatePlcTagInfo(line: string) : PlcTagInfo =
         let cols = Csv.ParseLine line
         let name = cols[0]
@@ -52,11 +52,11 @@ type CsvReader =
             failwith "Invalid file format"
 
     /// read .SDF comment file
-    static member ReadCommentSDF(sdfPath: string) : PlcTagInfo[] =
+    static member Read(sdfPath: string) : PlcTagInfo[] =
         File.PeekLines(sdfPath, 0)
         |> toArray
-        |> map CsvReader.CreatePlcTagInfo
+        |> map SdfReader.CreatePlcTagInfo
 
-    static member ReadCommentCSV(sdfPath: string) = CsvReader.ReadCommentSDF(sdfPath)
+    static member ReadCommentCSV(sdfPath: string) = SdfReader.Read(sdfPath)
 
 

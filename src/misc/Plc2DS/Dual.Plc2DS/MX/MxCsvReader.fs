@@ -39,7 +39,7 @@ type CsvReader =
 
         PlcTagInfo(device, comment, label)
 
-    static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
+    static member Read(filePath: string): PlcTagInfo[] =
         let headers = File.PeekLines(filePath, 0, 2) |> toArray
         let delimeter, hasLabel, skipLines =
             match headers with

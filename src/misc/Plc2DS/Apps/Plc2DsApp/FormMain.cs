@@ -272,6 +272,7 @@ namespace Plc2DsApp
 
 
         string filterCsv  = "CSV files (*.csv)|*.csv";
+        string filterSdf  = "SDF files (*.sdf)|*.sdf";
         string filterJson = "JSON files (*.json)|*.json";
         string filterXml  = "XML files (*.xml)|*.xml";
         string filterAll  = "All files (*.*)|*.*";
@@ -279,12 +280,15 @@ namespace Plc2DsApp
         void btnLoadTags_Click(object sender, EventArgs e)
         {
             using var _ = btnLoadTags.Disabler();
+            string[] filters = [];
 
-            string filter = "";
             if (Vendor == Vendor.LS)
-                filter = new[] { filterCsv, filterJson, filterXml, filterAll }.JoinString("|");
+                filters = [filterCsv, filterXml, filterJson, filterAll];
+            else if (Vendor == Vendor.S7)
+                filters = [filterSdf, filterJson, filterAll];
             else
-                filter = new[] { filterCsv, filterJson, filterAll }.JoinString("|");
+                filters = [filterCsv, filterJson, filterAll];
+            string filter = filters.JoinString("|");
 
             var f = DcFileDialog.OpenFile(filter, Path.GetDirectoryName(_appRegistry.LastRead));
             if (f.NonNullAny())

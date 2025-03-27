@@ -65,7 +65,7 @@ type CsvReader =
         PlcTagInfo(typ = cols[0], scope = cols[1], variable = cols[2], address = cols[3],
             dataType = cols[4], Property = cols[5], Comment = cols[6])
 
-    static member ReadCommentCSV(filePath: string): PlcTagInfo[] =
+    static member Read(filePath: string): PlcTagInfo[] =
         let header = "Type,Scope,Variable,Address,DataType,Property,Comment"
         match File.TryReadUntilHeader(filePath, header) with
         | Some headers ->
