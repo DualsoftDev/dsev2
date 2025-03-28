@@ -77,6 +77,12 @@ namespace Plc2DsApp.Forms
                 view.MakeEditableMultiRows<Choice>(new string[] { "Choice" });
             }
 
+
+            btnSaveTagsAs.AttachContextMenu(menu =>
+            {
+                menu.AddAction("보이는 항목만 순서대로 저장", () => FormMain.Instance.SaveVisibleItems(gridView1));
+            });
+
             btnOK.Click += (s, e) => { Close(); DialogResult = DialogResult.OK; };
             btnCancel.Click += (s, e) => { Close(); DialogResult = DialogResult.Cancel; };
         }
@@ -88,10 +94,6 @@ namespace Plc2DsApp.Forms
 
         void btnSaveTagsAs_Click(object sender, EventArgs e) => FormMain.Instance.SaveTagsAs(_tags);
 
-        void btnMasterDetailView_Click(object sender, EventArgs e)
-        {
-            new FormFDAMasterDetail(_tags).PlaceAtScreenCenter().DoShow();
-            DialogResult = DialogResult.None;       // 창닫힘 방지 강제
-        }
+        void btnMasterDetailView_Click(object sender, EventArgs e) => new FormFDAMasterDetail(_tags).PlaceAtScreenCenter().DoShow();
     }
 }

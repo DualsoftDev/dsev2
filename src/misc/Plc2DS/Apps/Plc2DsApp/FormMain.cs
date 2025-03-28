@@ -164,6 +164,16 @@ namespace Plc2DsApp
                 _appRegistry.LastWrite = f;
             }
         }
+        public void SaveVisibleItems(GridView gridView)
+        {
+            string filter = new[] { filterJson, filterAll }.JoinString("|");
+            var f = DcFileDialog.SaveFile(filter, Path.GetDirectoryName(_appRegistry.LastWrite));
+            if (f.NonNullAny())
+            {
+                gridView.SaveVisibleDataAsJson(f);
+                _appRegistry.LastWrite = f;
+            }
+        }
 
         PlcTagBaseFDA[] loadTags(string csvFile, CsvFilterExpression filter)
         {
