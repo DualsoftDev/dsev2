@@ -1,6 +1,5 @@
 using System.Diagnostics;
 
-using DevExpress.Images;
 using DevExpress.XtraEditors;
 
 using log4net.Appender;

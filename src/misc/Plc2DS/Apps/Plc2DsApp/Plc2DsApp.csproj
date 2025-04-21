@@ -44,11 +44,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="DevExpress.Win" Version="24.1.7" />
-		<PackageReference Include="DevExpress.Win.Design" Version="24.1.7" />
 		<PackageReference Include="log4net" Version="2.0.17" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
 		<PackageReference Include="UTF.Unknown" Version="2.5.1" />
 	</ItemGroup>
+
 </Project>
