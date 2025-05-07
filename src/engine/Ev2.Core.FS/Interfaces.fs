@@ -1,6 +1,6 @@
 namespace Dual.Ev2
 
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.Core.FS
 open Newtonsoft.Json
 open System

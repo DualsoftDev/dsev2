@@ -18,8 +18,8 @@ open System.Collections.Generic
 
 open Dual.Common
 open Dual.Common.Core.FS
-open Dual.Common.Base.CS
-open Dual.Common.Base.FS
+open Dual.Common.Base
+open Dual.Common.Base
 
 
 // ✅ `TypeNameHandling.Auto`를 특정 필드에만 적용하는 커스텀 변환기

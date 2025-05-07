@@ -2,7 +2,7 @@ namespace Dual.Ev2
 
 open System
 
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.Core.FS
 
 [<AutoOpen>]

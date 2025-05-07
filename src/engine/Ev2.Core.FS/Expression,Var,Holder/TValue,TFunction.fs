@@ -5,11 +5,9 @@ open System.Runtime.Serialization
 open System.Reactive.Subjects
 
 open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.Core.FS
-open Dual.Common.Base.CS
 open System.Collections.Generic
 
 [<AutoOpen>]

@@ -1,0 +1,27 @@
+https://learn.automationcommunity.com/relay-ladder-logic/
+—( )— A regular coil, energized whenever its rung is closed.
+
+—(\)— A “not” coil, energized whenever its rung is open.
+
+—[ ]— A regular contact, closed whenever its corresponding coil or input which controls it is energized.
+
+—[\]— A “not” contact, closed whenever its corresponding coil or input which controls it is not energized.
+
+
+
+
+
+
+http://www2.ene.unb.br/gaborges/disciplinas/ca/PLC5_ladder_relay_type_instructions.pdf
+eXamine If Closed        XIC		——–] [——–			Examine a bit for an ON condition
+eXamine If Open          XIO		——–]/[——–			Examine a bit for an OFF condition
+OutpuT Energize (OTE)    OTE		———( )———
+OutpuT Unlatch (OTU)     OTU		———(R)———
+OutpuT Latch (OTL)       OTL		———(S)———
+Immediately perform an update of the ControlNet™ data input file from the ControlNet memory buffers                         IDI
+Immediately perform an update of the ControlNet memory buffers from the source file before the next output-image update     IDO
+
+
+
+
+BTE (Bit Test Equivalent) / BTI (Bit Test Instruction)      ???

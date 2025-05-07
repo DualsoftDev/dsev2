@@ -5,7 +5,7 @@ namespace rec Dual.Ev2.Aas
 open Dual.Common.Core.FS
 open Dual.Ev2
 open System
-open Dual.Common.Base.FS
+open Dual.Common.Base
 
 [<AutoOpen>]
 module CoreGraphToAas =

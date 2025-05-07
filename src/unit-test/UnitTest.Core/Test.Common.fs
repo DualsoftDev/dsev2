@@ -5,7 +5,7 @@ open System
 open System.Text.RegularExpressions
 open System.Xml.Linq
 open Newtonsoft.Json.Linq
-open Dual.Common.Base.CS
+open Dual.Common.Base
 
 let private isGuid (value: string) =
     let guidPattern = @"^[{(]?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[)}]?$"

@@ -1,7 +1,7 @@
 namespace rec Dual.Ev2
 
 
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Antlr.FS
 open Ev2.Parser

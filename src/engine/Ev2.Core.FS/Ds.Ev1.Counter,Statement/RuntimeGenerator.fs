@@ -3,7 +3,7 @@ namespace Dual.Ev2
 open System.Reactive.Subjects
 open Dual.Common.Core.FS
 open System.Collections.Generic
-open Dual.Common.Base.FS.Functions
+open Dual.Common.Base.Functions
 open System
 
 [<AutoOpen>]

@@ -22,8 +22,8 @@ open System
 open System.IO
 open Dual.Common
 open Dual.Common.Core.FS
-open Dual.Common.Base.CS
-open Dual.Common.Base.FS
+open Dual.Common.Base
+open Dual.Common.Base
 
 open AasCore.Aas3_0
 

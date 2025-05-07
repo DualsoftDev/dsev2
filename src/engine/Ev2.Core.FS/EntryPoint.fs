@@ -1,6 +1,6 @@
 namespace Dual.Ev2
 
-open Dual.Common.Base.CS
+open Dual.Common.Base
 
 module ModuleInitializer =
     let private isLiteralizable (value:IValue) =

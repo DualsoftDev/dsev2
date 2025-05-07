@@ -74,6 +74,6 @@ type CsvReader =
             |> map CsvReader.CreatePlcTagInfo
             |> toArray
         | None ->
-            failwith $"ERROR: failed to find header {header}"
+            failwith $"ERROR: failed to find header {header} on {filePath}"
 
 

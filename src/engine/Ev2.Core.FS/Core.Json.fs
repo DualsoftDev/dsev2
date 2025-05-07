@@ -4,7 +4,7 @@ open Newtonsoft.Json
 open System.Linq
 
 open Dual.Common.Core.FS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 
 (*
  * 코드 없이(최소한의 코드로) Newtonsoft.Json 을 이용해서 serialize/deserialize 하는 것이 목적.

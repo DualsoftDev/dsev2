@@ -1,7 +1,7 @@
 namespace Dual.Ev2
 
 open Dual.Common.Core.FS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 
 [<AutoOpen>]
 module CounterStatementModule =

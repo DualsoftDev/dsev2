@@ -3,7 +3,7 @@ namespace rec Dual.Ev2
 open System.Linq
 open Newtonsoft.Json
 
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.Core.FS
 open System.Runtime.CompilerServices
 open System.Xml.Serialization

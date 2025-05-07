@@ -3,10 +3,10 @@ namespace T
 open NUnit.Framework
 
 open Dual.Common.Core.FS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.UnitTest.FS
 open Dual.Ev2
-open Dual.Common.Base.FS.SampleDataTypes
+open Dual.Common.Base.SampleDataTypes
 
 
 open Newtonsoft.Json
@@ -77,7 +77,7 @@ module TerminalTestModule =
             let s = Student("John", 13)
             let json = EmJson.ToJson(s, settings)
             json === """{
-  "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
+  "$type": "Dual.Common.Base.SampleDataTypes+Student, Dual.Common.Base.FS",
   "Name": "John",
   "Age": 13
 }"""
@@ -86,7 +86,7 @@ module TerminalTestModule =
             json === """{
   "$type": "Dual.Ev2.TExpressionModule+TValue`1[[System.Double, System.Private.CoreLib]], Ev2.Core.FS",
   "ObjectHolder": {
-    "$type": "Dual.Common.Base.FS.NsJsonS11nSafeObjectModule+NsJsonS11nSafeObject, Dual.Common.Base.FS",
+    "$type": "Dual.Common.Base.NsJsonS11nSafeObjectModule+NsJsonS11nSafeObject, Dual.Common.Base.FS",
     "ValueTypeName": "System.Double",
     "Value": 3.14
   }
@@ -97,7 +97,7 @@ module TerminalTestModule =
 
         [<Test>]
         member _.TypeSerialization() =
-            EmJson.GetType("Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS") === typeof<Student>
+            EmJson.GetType("Dual.Common.Base.SampleDataTypes+Student, Dual.Common.Base.FS") === typeof<Student>
             EmJson.GetType("Dual.Ev2.TExpressionModule+TValue`1[System.Int32], Ev2.Core.FS") === typeof<TValue<int>>
             EmJson.GetType("System.Int32, System.Private.CoreLib") === typeof<int>
 

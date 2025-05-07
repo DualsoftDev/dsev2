@@ -4,7 +4,7 @@ namespace T.Core
 open NUnit.Framework
 open Newtonsoft.Json
 
-open Dual.Common.Base.CS
+open Dual.Common.Base
 
 open Dual.Ev2
 open System.Xml.Linq
@@ -14,7 +14,7 @@ open System.Xml.Linq
 open System.Xml
 open Newtonsoft.Json.Converters
 open Dual.Common.UnitTest.FS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 
 module Xml =
     let json = DsJson.dsJson

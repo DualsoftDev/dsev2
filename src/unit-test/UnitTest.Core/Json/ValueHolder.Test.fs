@@ -3,12 +3,12 @@ namespace T
 open Dual.Common.Core.FS
 open NUnit.Framework
 open Newtonsoft.Json
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.UnitTest.FS
 open JsonSubTypes
-open Dual.Common.Base.CS
+open Dual.Common.Base
 open Dual.Ev2
-open Dual.Common.Base.FS.SampleDataTypes
+open Dual.Common.Base.SampleDataTypes
 
 
 
@@ -111,7 +111,7 @@ module ValueHolderTestModule =
     "name": "PI",
     "tolerarnce": 0.001,
     "student": {
-      "$type": "Dual.Common.Base.FS.SampleDataTypes+Student, Dual.Common.Base.FS",
+      "$type": "Dual.Common.Base.SampleDataTypes+Student, Dual.Common.Base.FS",
       "Name": "John",
       "Age": 16
     }

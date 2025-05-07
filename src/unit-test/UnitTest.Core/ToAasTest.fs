@@ -5,9 +5,9 @@ open Dual.Ev2.Aas
 open Dual.Ev2.Aas.CoreToJsonViaCode
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
-open Dual.Common.Base.CS
+open Dual.Common.Base
 open System
-open Dual.Common.Base.FS
+open Dual.Common.Base
 
 
 module ToAasTest =

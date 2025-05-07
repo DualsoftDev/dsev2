@@ -6,8 +6,7 @@ open NUnit.Framework
 open Newtonsoft.Json
 
 open Dual.Common.UnitTest.FS
-open Dual.Common.Base.CS
-open Dual.Common.Base.FS
+open Dual.Common.Base
 open Dual.Common.Core.FS
 
 open Dual.Ev2

@@ -1,6 +1,6 @@
 using CpuEvalTest;
 
-using Dual.Common.Base.CS;
+using Dual.Common.Base;
 
 using static CpuEvalTest.Common;
 
