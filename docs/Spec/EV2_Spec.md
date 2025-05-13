@@ -21,7 +21,7 @@
 
 #### EV2의 설계 방향
 
-- **모델 기반 구조화**: Work / Call / Flow를 기반으로 한 추론 가능한 구조 설계
+- **모델 기반 구조화**: Work / Call 를 기반으로 한 추론 가능한 구조 설계
 - **View-Model-Storage 분리**: 사용자 인터페이스와 로직을 분리하여 다양한 클라이언트 플랫폼 대응
 - **저장 구조의 표준화**: JSON, AASX, SQLite 등으로 저장 포맷 통일
 - **디지털 트윈 대응**: AAS 기반 모델 구성과 OPC-UA 연동 구조 설계
@@ -30,25 +30,24 @@
 
 1. **구조 중심 설계 (Structure-Oriented Design)**
    - 실행 단위를 정점(Vertex), 흐름을 간선(Edge)으로 표현하는 그래프 기반 구조
-   - `System → Flow → Work → Call → Job → TaskDev`흐름 구조
+   - `System → Work → Call → ApiCall(System.ApiDef)`흐름 구조
 
 2. **기본 저장구조를 DSL (Dualsoft Language)에서 Json 형식으로 전환**
    - 확장성을 고려해 json 규격으로 전환 json <-> DS or AASX
    - 모델링된 UI 기반 정보 → Json형태로 변환 → 실행 엔진에 의해 로직화
 
 3. **사이클 지원 그래프 구조**
-    - Work 내부 Call 연결은 비순환(Directed Acyclic Graph)  원칙으로 함
+    - Work 내부 Call 연결은 반드시 비순환(Directed Acyclic Graph) 구조
     - Work 간 연결은 순환 그래프(Cyclic Directed Graph) 허용을 하며 런타임 변환 시 안전성 확보
 
-
 4. **디지털 트윈 정합성 확보**
-   - AAS 기반 구조를 통해 각 디바이스, Job, API가 하나의 Submodel로 변환 가능
-   - 물리 자산과 논리 흐름 사이의 1:1 연결 매핑 보장
+   - AAS 기반 구조를 통해 각 System, Work, Call, Api가 하나의 Submodel로 변환 가능
+   - 물리 자산(ChildSystem-ApiDef)과 논리(ParentSystem-ApiCall) 흐름 사이의 1:1 연결 매핑 보장
 
 ### 1.4 사용자 시나리오
 
 - PowerPoint, 전용 WinForms 또는 Web 기반 모델러에서 구성
-- 각 도형은 Work, Call, Job에 대응하는 논리 요소
+- 각 도형은 Work, Call에 대응하는 논리 요소
 - 구성된 흐름은 `.json` 또는 `.aasx` 파일로 저장되어 시뮬레이터 또는 PLC로 전달
 - 동작 이력, 로그 추적, API 통계 수집 가능
 
@@ -77,21 +76,20 @@
 
 EV2 실행 모델은 다음과 같은 계층 구조를 가집니다:
 
-- **System**: 전체 프로젝트 단위. 여러 Flow와 Work 간 전역 흐름 그래프(`WorkGraph`) 포함
-- **Flow**: 논리 단위로서 여러 Work를 포함
-- **Work**: 작업 단위. 내부적으로 Call을 포함하며, `CallGraph`로 Call 간 흐름 구성. `Vertex`를 상속함
-- **Call**: 특정 Job을 호출하는 노드. `Vertex`를 상속함
-- **Job**: 실제 API 호출을 수행. 여러 `TaskDev`를 포함
-- **TaskDev**: 디바이스 연계 IO 정의 (입출력 주소, 심볼 등 포함)
+- **System**: 전체 프로젝트 단위. Work 간 전역 흐름 그래프(`WorkGraph`, Start, Reset가능능) 포함
+- **Work**: 작업 단위. 내부적으로 Call을 포함하며, `CallGraph`로 Call 간 흐름(Reset금지, DAG만 가능) 구성. `Vertex`를 상속함
+- **Flow**: 논리 단위로서 여러 Work를 포함하는 그룹
+- **Call**: 특정 API(동시호출가능)를 호출하는 노드. `Vertex`를 상속함
+- **ApiCall**: 실제 API 호출을 수행. 디바이스 연계 IO 정의 (입출력 주소)
+- **ApiDef**: Child System의 Interface 정의 부분
 
 ```plaintext
 System
- ├─ Flow (1:N)
- │    └─ Work (1:N)
- │         ├─ Call (1:N)
- │         │    └─ Job (1:1)
- │         │         └─ TaskDev (1:N)
- │         └─ CallGraph (Directed Acyclic Graph)
+ │  └─ Work (1:N)
+ │       ├─ Call (1:N)
+ │       │    └─ ApiCall (1:N)
+ │       │         └─ ApiDef (1:1)
+ │       └─ CallGraph (Directed Acyclic Graph)
  └─ WorkGraph (Directed Graph)
 ```
 
@@ -123,15 +121,14 @@ type DsSystem(name: string) =
 ```fsharp
 type Flow(name: string) =
     inherit Identifiable(name)
-    member val Works = ResizeArray<Work>()
-    member val WorkGraph = ResizeArray<(string * string)>()
     member val Param = defaultFlowParam
 ```
 
 #### Work
 ```fsharp
-type Work(name: string) =
+type Work(name: string, flow:Flow) =
     inherit Identifiable(name)
+    member val Flow = flow with get, set
     member val Calls = ResizeArray<Call>()
     member val CallGraph = ResizeArray<(string * string)>()
     member val Param = defaultWorkParam
@@ -141,29 +138,25 @@ type Work(name: string) =
 
 #### Call
 ```fsharp
-type Call(jobName: string) =
-    inherit Identifiable(jobName)
+type Call(name: string) =
+    inherit Identifiable(name)
     member val Param = defaultCallParam
+    member val ApiCalls = ResizeArray<ApiCall>()
 ```
-- Job 이름으로 정의됨
 - `CallGraph`에 따라 연결됨
 
-#### Job
+#### ApiCall
 ```fsharp
-type Job(name: string, target: string) =
-    inherit Identifiable(name)
-    member val Target = target
-    member val TaskDefs = ResizeArray<TaskDev>()
-    member val Param = defaultJobParam
+type ApiCall(deviceName: string, apiDef: ApiDef) =
+    member this.DeviceName = deviceName
+    member val Param = defaultApiCallParam
 ```
-- Target: 실제 실행 대상 함수 또는 API 명칭
 
-#### TaskDev
+#### ApiDef
 ```fsharp
-type TaskDev(deviceName: string, apiItem: string) =
-    inherit Identifiable(apiItem)
-    member val DeviceName = deviceName
-    member val Param = defaultTaskDevParam
+type ApiDef(name: string) =
+    inherit Identifiable(name)
+    member val Param = defaultApiDefParam
 ```
 
 ### 2.4 파라미터 모델
@@ -171,26 +164,93 @@ type TaskDev(deviceName: string, apiItem: string) =
 모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 예시:
 
 ```fsharp
-type CallParam = {
-    CallType: string
-    Timeout: int
-    ActionType: string
-    AutoPreConditions: ResizeArray<string>
-    SafetyConditions: ResizeArray<string>
-}
+    type SystemParam = {
+        LangVersion: string
+        EngineVersion: string
+    }
+
+    let defaultSystemParam = {
+        LangVersion = "1.0.0.0"
+        EngineVersion = "1.0.0.0"
+    }
+
+    type CallParam = {
+        CallType: string 
+        Timeout: int
+        ActionType: string
+        AutoPreConditions: ResizeArray<string>
+        SafetyConditions: ResizeArray<string>
+    }
+
+    let defaultCallParam = {
+        CallType = "Normal"
+        Timeout = 1000
+        ActionType = "ActionNormal"
+        AutoPreConditions = ResizeArray()
+        SafetyConditions = ResizeArray()
+    }
+
+    type WorkParam = {
+        Motion: string
+        Script: string
+        DsTime: int * int
+        Finished: bool
+        RepeatCount: int
+    }
+
+    let defaultWorkParam = {
+        Motion = ""
+        Script = ""
+        DsTime = (500, 5)
+        Finished = false
+        RepeatCount = 1
+    }
+
+    type ApiCallParam = {
+        InAddress: string
+        OutAddress: string
+        InSymbol: string
+        OutSymbol: string
+        IsAnalogSensor: bool
+        IsAnalogActuator: bool
+    }
+
+    let defaultApiCallParam = {
+        InAddress = ""
+        OutAddress = ""
+        InSymbol = ""
+        OutSymbol = ""
+        IsAnalogSensor = false
+        IsAnalogActuator = false
+    }
+
+    type ApiDefParam = {
+        ActionType : ActionType
+    }
+
+    let defaultApiDefParam = {
+        ActionType = ActionType.Normal
+    }
+
+    type FlowParam = {
+        ButtonAuto: string
+        LampAuto : string
+        MetaInfo: string
+    }
+
+    let defaultFlowParam = {
+        ButtonAuto = ""
+        LampAuto = ""
+        MetaInfo = ""
+    }
+
+
 ```
 
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
-### 2.5 연결 관계
 
-- **System → WorkGraph**: 모든 Work의 전역 흐름 정의
-- **Flow → Work**: 하나의 Flow에 속한 Work 그룹
-- **Work → CallGraph**: Work 내에서 순차적/병렬 흐름
-- **Call → Job**: Job은 Call을 통해 호출됨
-- **Job → TaskDev**: IO를 수행할 장치 정의 포함
-
-### 2.6 예시 코드
+### 2.5 예시 코드
 
 ```fsharp
 let sys = DsSystem("Example")
@@ -213,7 +273,7 @@ w1.Calls.Add(c2)
 w1.CallGraph.Add((c1.Id, c2.Id))
 ```
 
-### 2.7 정리
+### 2.6 정리
 
 - **그래프 기반 구성**으로 복잡한 실행 흐름을 시각적, 논리적으로 명확히 표현
 - **순환 허용**은 Work 단위에서 가능하며, Flow는 비순환으로 구성하여 전체 실행 경로 안정성 확보
@@ -227,7 +287,7 @@ w1.CallGraph.Add((c1.Id, c2.Id))
 
 ### 3.1 개요
 
-EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `Job`, `TaskDev`)를 효율적으로 저장 및 조회할 수 있도록 관계형 데이터베이스 기반으로 모델링됩니다. 각 시스템은 **타입(Type)** 과 **인스턴스(Instance)** 로 구분되며, 향후 **AASX (Asset Administration Shell XML)** 파일로 확장 가능하도록 설계됩니다.
+EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `ApiCall`, `ApiDef`)를 효율적으로 저장 및 조회할 수 있도록 관계형 데이터베이스 기반으로 모델링됩니다. 각 시스템은 **타입(Type)** 과 **인스턴스(Instance)** 로 구분되며, 향후 **AASX (Asset Administration Shell XML)** 파일로 확장 가능하도록 설계됩니다.
 
 ### 3.2 시스템 모델: 타입과 인스턴스
 
@@ -236,7 +296,7 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `Job`
   - **Device**: 자식 시스템 포함 (내장 생성)
   - **ExternalSystem**: 외부 시스템 참조 (외부 불러오기)
 
-> 실행 인스턴스는 최소 구성만 유지하며, 연관된 `Job`, `TaskDev`를 통해 외부 연동됩니다.
+> 실행 인스턴스는 최소 구성만 유지하며, 연관된 `ApiDef`, `ApiCall`를 통해 외부 연동됩니다.
 
 ### 3.3 주요 테이블 구조
 
@@ -246,11 +306,6 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `Job`
 | `Flows`       | 시스템 내 작업 흐름 정의 (Work 포함) |
 | `Works`       | 개별 실행 단위, 내부에 Call 및 CallGraph 포함 |
 | `Calls`       | `Job` 호출 노드, 조건 및 시간 정보 포함 |
-| `Jobs`        | API 연결 지점, 여러 `TaskDev` 포함 |
-| `TaskDevs`    | `Job`의 디바이스 실행 세부 구성 |
-| `ApiItems`    | 공통 API 정의 집합 |
-| `ApiStatistics` | API 실행 평균/표준편차 기록용 |
-| `Params`      | 모든 객체별 파라미터 키-값 저장용 (EV2 고유 구조)
 
 ### 3.4 데이터 무결성 및 인덱싱 전략
 
