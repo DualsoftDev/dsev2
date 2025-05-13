@@ -168,11 +168,11 @@ type ApiDef(name: string) =
         LangVersion: string
         EngineVersion: string
     }
-
     let defaultSystemParam = {
         LangVersion = "1.0.0.0"
         EngineVersion = "1.0.0.0"
     }
+
 
     type CallParam = {
         CallType: string 
@@ -233,16 +233,18 @@ type ApiDef(name: string) =
     }
 
     type FlowParam = {
-        ButtonAuto: string
-        LampAuto : string
-        MetaInfo: string
+        ButtonDefs: ButtonDef list
+        LampDefs: LampDef list
+        ConditionDefs: ConditionDef list
+        ActionDefs: ActionDef list
+    }
+    let defaultFlowParam = {
+        ButtonDefs = []
+        LampDefs = []
+        ConditionDefs = []
+        ActionDefs = []
     }
 
-    let defaultFlowParam = {
-        ButtonAuto = ""
-        LampAuto = ""
-        MetaInfo = ""
-    }
 
 
 ```
