@@ -58,9 +58,12 @@
 | UI         | WinForms, Blazor, PowerPoint VSTO               |
 | 그래프 엔진 | Directed Graph, Vertex-Edge 구조, 순환 처리 지원     |
 | 저장 구조   | JSON (.json), AASX (.aasx), SQLite (.db)        |
-| 직렬화     | System.Text.Json, AasxLib                        |
+| 직렬화     | Json, AasxLib                        |
 | 분석 도구   | Job 실행 통계, API 실행 카운터, 트랜잭션 추적 도구     |
 | 디지털트윈  | AAS 구조 기반 Submodel 매핑, OPC-UA 연동           |
+  - Json 은 필요에 따라서 System.Text.Json 나 NewtonSoft.Json 중 선택
+  - DS 의 일반 json 저장 : NewtonSoft.Json
+  - DS 의 AAS xml 대응 json 저장 : System.Text.Json
 
 ### 1.6 기대 효과
 
@@ -92,13 +95,17 @@ System
  │       └─ CallGraph (Directed Acyclic Graph)
  └─ WorkGraph (Directed Graph)
 ```
+  - x:y 는 `부모` 대 `나` 와의 관계
 
 ### 2.2 공통 베이스 클래스
 
 ```fsharp
-type Identifiable(name: string) =
-    member val Id = Guid.NewGuid().ToString()
-    member val Name = name
+type IUnique =
+  abstract Id: Guid
+  abstract Name: string
+type IParameter = interface end
+type IArrow = IUnique * IUnique
+
 ```
 모든 요소는 고유 ID와 이름(Name)을 가짐
 
@@ -106,57 +113,62 @@ type Identifiable(name: string) =
 
 #### System
 ```fsharp
-type DsSystem(name: string) =
-    inherit Identifiable(name)
-    member val Flows = ResizeArray<Flow>()
-    member val WorkGraph = ResizeArray<(string * string)>()
-    member val Jobs = ResizeArray<Job>()
-    member val Devices = ResizeArray<Device>()
-    member val Param = defaultDsSystemParam
+// 1. ResizeArray member 를 불변 list 나 array 로 잡으면??
+// 2. WorkGraph = ResizeArray<(string * string)>() ???
+type DsSystem(name: string, flows:Flow[], jobs:Job[], edges:IArrow[], devices:device[], param:IParameter ) =
+    interface IUnique with
+      member _.Name = name
+      member _.Id = x.Guid
+    member val Guid = Guid.NewGuid()
+    member _.Flows = flows
+    member _.WorkGraph = edges
+    member _.Jobs = jobs
+    member _.Devices = devices
+    member _.Param = param
 ```
 - Flows: 여러 Flow 그룹
 - WorkGraph: 전역 작업 흐름 정의 (Work 간 연결)
 
 #### Flow
 ```fsharp
-type Flow(name: string) =
-    inherit Identifiable(name)
-    member val Param = defaultFlowParam
+type Flow(name: string, param:IParameter) =
+    interface IUnique with ...
+    member _.Param = param
 ```
 
 #### Work
 ```fsharp
-type Work(name: string, flow:Flow) =
-    inherit Identifiable(name)
-    member val Flow = flow with get, set
-    member val Calls = ResizeArray<Call>()
-    member val CallGraph = ResizeArray<(string * string)>()
-    member val Param = defaultWorkParam
+type Work(name: string, flow:Flow, calls::Call[], edges:IArrow[], param:IParameter) =
+    interface IUnique with ...
+    member _.Flow = flow
+    member _.Calls = calls
+    member _.CallGraph = edges
+    member _.Param = param
 ```
 - 순환 구조 허용 (Cyclic Directed Graph)
 - 내부 Call 흐름 정의 가능
 
 #### Call
 ```fsharp
-type Call(name: string) =
-    inherit Identifiable(name)
-    member val Param = defaultCallParam
-    member val ApiCalls = ResizeArray<ApiCall>()
+type Call(name: string, apiCalls:ApiCall[], param:IParameter) =
+    interface IUnique with ...
+    member _.Param = param
+    member _.ApiCalls = apiCalls
 ```
 - `CallGraph`에 따라 연결됨
 
 #### ApiCall
 ```fsharp
-type ApiCall(deviceName: string, apiDef: ApiDef) =
+type ApiCall(deviceName: string, apiDef: ApiDef, param:IParameter) =
     member this.DeviceName = deviceName
-    member val Param = defaultApiCallParam
+    member _.Param = param
 ```
 
 #### ApiDef
 ```fsharp
-type ApiDef(name: string) =
-    inherit Identifiable(name)
-    member val Param = defaultApiDefParam
+type ApiDef(name: string, param:IParameter) =
+    interface IUnique with ...
+    member _.Param = param
 ```
 
 ### 2.4 파라미터 모델
@@ -167,7 +179,8 @@ type ApiDef(name: string) =
     type SystemParam = {
         LangVersion: string
         EngineVersion: string
-    }
+    } with interface IParameter
+
     let defaultSystemParam = {
         LangVersion = "1.0.0.0"
         EngineVersion = "1.0.0.0"
@@ -178,9 +191,9 @@ type ApiDef(name: string) =
         CallType: string 
         Timeout: int
         ActionType: string
-        AutoPreConditions: ResizeArray<string>
-        SafetyConditions: ResizeArray<string>
-    }
+        AutoPreConditions: string list
+        SafetyConditions: string list
+    } with interface IParameter
 
     let defaultCallParam = {
         CallType = "Normal"
@@ -196,11 +209,11 @@ type ApiDef(name: string) =
         DsTime: int * int
         Finished: bool
         RepeatCount: int
-    }
+    } with interface IParameter
 
     let defaultWorkParam = {
-        Motion = ""
-        Script = ""
+        Motion = null
+        Script = null
         DsTime = (500, 5)
         Finished = false
         RepeatCount = 1
@@ -213,16 +226,16 @@ type ApiDef(name: string) =
         OutSymbol: string
         IsAnalogSensor: bool
         IsAnalogActuator: bool
-    }
+    } with interface IParameter
 
     let defaultApiCallParam = {
-        InAddress = ""
-        OutAddress = ""
-        InSymbol = ""
-        OutSymbol = ""
+        InAddress = null
+        OutAddress = null
+        InSymbol = null
+        OutSymbol = null
         IsAnalogSensor = false
         IsAnalogActuator = false
-    }
+    } with interface IParameter
 
     type ApiDefParam = {
         ActionType : ActionType
@@ -252,8 +265,7 @@ type ApiDef(name: string) =
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
 
-### 2.5 예시 코드
-
+### ~~2.5 예시 코드 Obsolete version~~
 ```fsharp
 let sys = DsSystem("Example")
 let flow = Flow("Main")
@@ -275,11 +287,26 @@ w1.Calls.Add(c2)
 w1.CallGraph.Add((c1.Id, c2.Id))
 ```
 
+### 2.5 예시 코드
+```fsharp
+let c1 = Call("Device1.API")
+let c2 = Call("Device1.API")
+let w1 = Work("W1", [c1; c2], [(c1.Id, c2.Id)])
+let w2 = Work("W2")
+let flow = Flow("Main", [w1; w2], [(w1.Id, w2.Id)])
+let job = Job("JobA", "Device1.API")
+
+let sys = DsSystem("Example", [flow], [job])
+```
+- Bottom up build 를 통해 DsSystem 등의 ResizeArray member 제거하고 불변 list 화 수행
+
+
+
 ### 2.6 정리
 
 - **그래프 기반 구성**으로 복잡한 실행 흐름을 시각적, 논리적으로 명확히 표현
 - **순환 허용**은 Work 단위에서 가능하며, Flow는 비순환으로 구성하여 전체 실행 경로 안정성 확보
-- **모든 객체는 Identifiable 기반**으로 ID-Name 기준 구조화되어 직렬화/저장/추적 가능
+- **모든 객체는 IUnique 기반**으로 ID-Name 기준 구조화되어 직렬화/저장/추적 가능
 
 > 다음 파트에서는 Part 3: 저장 구조 및 DB 스키마로 이어집니다.
 
@@ -304,87 +331,106 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `ApiC
 
 | 테이블 명     | 설명 |
 |---------------|------|
-| `Systems`     | 시스템 정의 및 인스턴스 구분, 버전 및 IRI 포함 |
-| `Flows`       | 시스템 내 작업 흐름 정의 (Work 포함) |
-| `Works`       | 개별 실행 단위, 내부에 Call 및 CallGraph 포함 |
-| `Calls`       | `Job` 호출 노드, 조건 및 시간 정보 포함 |
+| `system`     | 시스템 정의 및 인스턴스 구분, 버전 및 IRI 포함 |
+| `flow`       | 시스템 내 작업 흐름 정의 (Work 포함) |
+| `work`       | 개별 실행 단위, 내부에 Call 및 CallGraph 포함 |
+| `call`       | `Job` 호출 노드, 조건 및 시간 정보 포함 |
+
+#### 3.3.1 Database notation 규칙
+- table, filed 명 소문자로 시작하는 camelCase  
+- SQL 문법에 해당하는 부분은 대문자
+- table 명 끝에는 's' 를 제거.  (의미적으로 모두 s 가 붙으므로 무의미)
+- 모든 table 에는 `id` 이름의 int type primary key 
 
 ### 3.4 데이터 무결성 및 인덱싱 전략
 
 - PK, FK 제약조건으로 무결성 보장
 - 이름+버전 조합으로 `Systems`, `Jobs`, `ApiItems`는 Unique 인덱스 필요
 - `Calls`, `TaskDevs`는 복합 인덱스로 빠른 탐색 지원
+- GUID 는 성능 문제로 Primary key 로 사용하지 않음
 
 ### 3.5 테이블 생성 예시 (SQL)
 
 ```sql
-CREATE TABLE Systems (
-    SystemId UUID PRIMARY KEY,
-    Name TEXT NOT NULL,
-    CreatedAt TIMESTAMP DEFAULT NOW(),
-    LangVersion TEXT,
-    EngineVersion TEXT,
-    IsDevice BOOLEAN DEFAULT FALSE,
-    IsExternal BOOLEAN DEFAULT FALSE,
-    IsInstance BOOLEAN DEFAULT FALSE,
-    IRI TEXT
+CREATE TABLE system (
+    id int PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdAt TIMESTAMP DEFAULT NOW(),
+    langVersion TEXT,
+    engineVersion TEXT,
+    isDevice BOOLEAN DEFAULT FALSE,
+    isExternal BOOLEAN DEFAULT FALSE,
+    isInstance BOOLEAN DEFAULT FALSE,
+    iri TEXT
 );
 
-CREATE TABLE Flows (
-    FlowId UUID PRIMARY KEY,
-    SystemId UUID REFERENCES Systems(SystemId),
+CREATE TABLE flow (
+    id int PRIMARY KEY,
+    systemId int  REFERENCES system(id),
     Name TEXT NOT NULL
 );
 
-CREATE TABLE Works (
-    WorkId UUID PRIMARY KEY,
-    FlowId UUID REFERENCES Flows(FlowId),
+CREATE TABLE work (
+    id int PRIMARY KEY,
+    flowId int REFERENCES flow(id),
     Name TEXT NOT NULL
 );
 
-CREATE TABLE Calls (
-    CallId UUID PRIMARY KEY,
-    WorkId UUID REFERENCES Works(WorkId),
-    JobId UUID REFERENCES Jobs(JobId),
-    CallTimeout INT,
-    IsDisabled BOOLEAN,
-    AutoPre BOOLEAN DEFAULT FALSE
+CREATE TABLE call (
+    id int PRIMARY KEY,
+    workId int REFERENCES work(id),
+    jobId int REFERENCES job(id),
+    callTimeout INT,
+    isDisabled BOOLEAN,
+    autoPre BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE Jobs (
-    JobId UUID PRIMARY KEY,
-    Name TEXT NOT NULL,
-    Description TEXT
+CREATE TABLE job (
+    id int PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT
 );
 
-CREATE TABLE TaskDevs (
-    TaskDevId UUID PRIMARY KEY,
-    JobId UUID REFERENCES Jobs(JobId),
-    DeviceSystemId UUID REFERENCES Systems(SystemId),
-    DeviceName TEXT,
-    ApiItemId UUID REFERENCES ApiItems(ApiItemId)
+CREATE TABLE taskDev (
+    id int PRIMARY KEY,
+    jobId int REFERENCES jobs(id),
+    deviceSystemId int REFERENCES system(id),
+    deviceName TEXT,
+    apiItemId int REFERENCES apiItem(id)
 );
 
-CREATE TABLE ApiItems (
-    ApiItemId UUID PRIMARY KEY,
+CREATE TABLE apiItem (
+    id int PRIMARY KEY,
     Name TEXT NOT NULL
 );
 
-CREATE TABLE ApiStatistics (
-    ApiStatId UUID PRIMARY KEY,
-    ApiItemId UUID REFERENCES ApiItems(ApiItemId),
-    DeviceSystemId UUID REFERENCES Systems(SystemId),
-    AvgTime INT,
-    StdDevTime INT,
-    ExecutionCount INT,
-    UpdatedAt TIMESTAMP DEFAULT NOW()
+CREATE TABLE apiStatistic (
+    id int PRIMARY KEY,
+    apiItemId int REFERENCES apiItem(id),
+    deviceSystemId int REFERENCES system(id),
+    avgTime INT,
+    stdDevTime INT,
+    executionCount INT,
+    updatedAt TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE Params (
-    OwnerId TEXT,
-    ParamKey TEXT,
-    ParamValue TEXT
+--- ???? 위에서 정의한 parameter type 이 다양한데 어떻게 담을지?  3.6 방식???
+CREATE TABLE param (
+    id int PRIMARY KEY,
+    ownerId int,
+    paramKey TEXT,
+    paramValue TEXT
 );
+
+
+-- 모든 객체의 UUID 정보 저장 table
+CREATE TABLE guidMap (
+    id int PRIMARY KEY,
+    tableName:Text, -- e.g 'someTable'
+    tableId:int, -- 의미적으로 REFERENCES someTable(id)
+    guid:UUID
+);
+
 ```
 
 ### 3.6 파라미터 직렬화 및 저장 방식
@@ -402,7 +448,7 @@ let private serializeCallParam (p: CallParam) =
     @ (p.SafetyConditions  |> Seq.map (fun v -> nameof(p.SafetyConditions), v) |> Seq.toList)
 ```
 
-### 3.7 실전 SQL 연산 예시
+### 3.7 실전 SQL 연산 예시 : 위 수정 사항 fix 후 update 필요!!
 
 #### 1. 특정 Job의 Device API 추적
 ```sql
@@ -533,9 +579,10 @@ EV1은 구조적인 `.ds` 도메인 언어 기반 정의를 사용했지만, EV2
 
 ### 4.3 요약
 
-* 모든 객체는 `GUID` 기반 `Id`로 식별됩니다 (System, Flow, Work, Call, Job, Button, Lamp 등).
+* 모든 객체는 고유한 `Id`로 식별됩니다 (System, Flow, Work, Call, Job, Button, Lamp 등).
+* 고유한 Id 는 GUID 일 수도 있고, 아닐 수도 있습니다.  고유함을 보장하기만 하면 됩니다.  import/export 시에는 GUID 가 필수.
 * 이름(Name)은 UI 편의용이며, 내부 연산 및 DB 저장 시에는 Id 기준.
-* 관계(WorkGraph, CallGraph 등)는 모두 GUID 기반으로 연결.
+* 관계(WorkGraph, CallGraph 등)는 모두 고유한 ID 기반으로 연결.
 * 향후 AASX 파일 export 시에도 이 구조를 사용하여 타입-인스턴스 명확 구분 가능.
 
 ---
