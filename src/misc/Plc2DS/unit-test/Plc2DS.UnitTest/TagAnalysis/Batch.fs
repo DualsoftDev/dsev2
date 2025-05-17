@@ -71,7 +71,7 @@ module BatchCommon =
 
 module Batch =
     type B() =
-        [<SetUp>] member _.Setup() = Dual.Plc2DS.ModuleInitializer.Initialize()
+        [<SetUp>] member _.Setup() = Dual.Plc2DS.ModuleInitializer.Initialize(null)
 
         [<Test>]
         member _.``Minimal`` () =

@@ -38,6 +38,7 @@ open Dual.Plc2DS
 open Dual.Common.Core.FS
 open System.Text.RegularExpressions
 open Dual.Plc2DS.LS
+open Dual.Common.Base
 
 module MultiStaging =
 

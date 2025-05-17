@@ -6,6 +6,7 @@ open Dual.Plc2DS
 open Dual.Common.Core.FS
 open System
 open System.Runtime.CompilerServices
+open Dual.Common.Base
 
 [<AutoOpen>]
 module GetFDA =

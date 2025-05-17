@@ -3,7 +3,7 @@ namespace Dual.Plc2DS
 open System
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
-open Dual.Common.Core.FS
+open Dual.Common.Base
 
 type FDAT =
     | DuFlow

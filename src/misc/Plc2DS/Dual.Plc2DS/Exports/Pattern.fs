@@ -6,6 +6,7 @@ open System.Runtime.Serialization
 open System.Text.RegularExpressions
 open Newtonsoft.Json
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 
 type IPattern = interface end

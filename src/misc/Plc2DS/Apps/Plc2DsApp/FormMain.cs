@@ -44,7 +44,7 @@ namespace Plc2DsApp
                 _appRegistry = EmJson.FromJson<AppRegistry>(File.ReadAllText("lastFile.json"));
 
             Instance = this;
-            Dual.Plc2DS.ModuleInitializer.Initialize();
+            Dual.Plc2DS.ModuleInitializer.Initialize(null);
             DcLogger.EnableTrace = false;
 
             tbCsvFile.Text = _appRegistry.LastRead;

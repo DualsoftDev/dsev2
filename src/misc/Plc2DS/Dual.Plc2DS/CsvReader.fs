@@ -3,6 +3,7 @@ namespace Dual.Plc2DS
 open System.Text.RegularExpressions
 open Dual.Common.Core.FS
 open Dual.Plc2DS
+open Dual.Common.Base
 
 module private PrivateFwdDeclImpl =
     let mutable fwdGetAddress: IPlcTag -> string = let dummy (tag:IPlcTag) = failwithlog "Should be reimplemented." in dummy

@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 
 [<AutoOpen>]

@@ -9,6 +9,7 @@ open Newtonsoft.Json
 
 open Dual.Plc2DS
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 [<DataContract>]
 type Rulebase() =

@@ -8,6 +8,7 @@ open NUnit.Framework
 open Dual.Common.Core.FS
 open Dual.Plc2DS
 open Dual.Plc2DS.LS
+open Dual.Common.Base
 
 module GroupingTest =
 

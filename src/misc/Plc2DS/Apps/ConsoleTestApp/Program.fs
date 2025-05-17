@@ -8,7 +8,7 @@ open Dual.Common.Base
 // For more information see https://aka.ms/fsharp-console-apps
 printfn "Hello from F#"
 
-ModuleInitializer.Initialize()
+ModuleInitializer.Initialize(null)
 
 let appSettingsPath =
     let baseDir = AppDomain.CurrentDomain.BaseDirectory;
