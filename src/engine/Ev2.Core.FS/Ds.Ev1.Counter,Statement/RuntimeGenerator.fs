@@ -5,6 +5,7 @@ open Dual.Common.Core.FS
 open System.Collections.Generic
 open Dual.Common.Base.Functions
 open System
+open Dual.Common.Base
 
 [<AutoOpen>]
 module RuntimeGeneratorModule =

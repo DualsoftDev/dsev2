@@ -7,6 +7,7 @@ open System.Linq
 open System.Runtime.CompilerServices
 open Dual.Common.Core.FS
 open System.Collections.Generic
+open Dual.Common.Base
 
 
 module private ExpressionHelperModule =

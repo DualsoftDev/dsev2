@@ -349,6 +349,16 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `ApiC
 - `Calls`, `TaskDevs`는 복합 인덱스로 빠른 탐색 지원
 - GUID 는 성능 문제로 Primary key 로 사용하지 않음
 
+```
+▶ SQLite Primary Key 성능 비교 테스트 시작
+[INT PK]               Inserted 1,000,000 rows in 0.62 seconds
+[GUID as PK]           Inserted 1,000,000 rows in 8.34 seconds
+[INT PK + GUID COL]    Inserted 1,000,000 rows in 1.81 seconds
+[INT PK + GUID + IDX]  Inserted 1,000,000 rows in 8.26 seconds
+[DB Size] test_pk_perf.db: 279.20 MB
+▶ 테스트 완료
+```
+
 ### 3.5 테이블 생성 예시 (SQL)
 
 ```sql

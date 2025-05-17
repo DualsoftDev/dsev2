@@ -7,6 +7,25 @@ open System
 
 [<AutoOpen>]
 module Interfaces =
+    /// 기본 객체 인터페이스
+    type IDsObject = interface end
+    type IUnique =
+        inherit IDsObject
+
+
+
+    type IParameter = inherit IDsObject
+    type IArrow = inherit IDsObject
+
+
+
+
+
+
+
+
+
+
     /// Graph 의 interface.  subclasses: Flow, Work
     type IGraph = interface end
 
@@ -15,8 +34,6 @@ module Interfaces =
         inherit IWithName
 
 
-    /// 기본 객체 인터페이스
-    type IDsObject = interface end
 
     /// IDsObject와 INamed 를 구현한 인터페이스
     type IDsDsNamedObject =
@@ -50,6 +67,11 @@ module Interfaces =
     type IValueBag = interface end
     type IEventBag = interface end
     type IModelConfig = interface end
+
+
+
+
+
 
 
     /// script 샘플 interface

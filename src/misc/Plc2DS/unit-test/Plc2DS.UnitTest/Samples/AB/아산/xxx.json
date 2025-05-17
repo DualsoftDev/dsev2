@@ -1,0 +1,2790 @@
+[
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:1:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[1]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:1:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:2:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[2]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:2:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:3:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[3]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:3:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:4:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[4]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:4:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:5:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:5:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:5:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:O.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:5:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:6:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:6:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:6:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:O.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:6:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:7:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:I.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:7:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:7:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_ASSY_PLT_PLC_BOX:O.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:7:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:10:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[10]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:10:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:11:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[11]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:11:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:1:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[1]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:1:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:2:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[2]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:2:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:3:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[3]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:3:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:4:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[4]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:4:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:5:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:5:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:5:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:5:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:6:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:6:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:6:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:6:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:7:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:I.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:7:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:7:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:7:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:8:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[8]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:8:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:9:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_STORAGE_INV_PNL:O.Data[9]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:9:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:10:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[10]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:10:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:10:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[10]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:10:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:11:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[11]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:11:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:11:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[11]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:11:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:12:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[12]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:12:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:12:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[12]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:12:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:13:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[13]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:13:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:13:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[13]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:13:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:14:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[14]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:14:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:14:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[14]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:14:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:15:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[15]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:15:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:15:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[15]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:15:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:1:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[1]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:1:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:2:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[2]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:2:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:3:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[3]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:3:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:4:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[4]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:4:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:5:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:5:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:6:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:6:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:7:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:7:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:8:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[8]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:8:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:9:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:I.Data[9]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:9:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:9:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4471_HEMMING_PLC_BOX:O.Data[9]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:9:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:10:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[10]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:10:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:10:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[10]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:10:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:11:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[11]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:11:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:11:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[11]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:11:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:12:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[12]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:12:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:12:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[12]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:12:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:13:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[13]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:13:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:13:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[13]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:13:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:14:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[14]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:14:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:14:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[14]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:14:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:15:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[15]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:15:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:15:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[15]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:15:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:1:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[1]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:1:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:2:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[2]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:2:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:3:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[3]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:3:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:4:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[4]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:4:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:5:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:5:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:6:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:6:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:7:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:7:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:8:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[8]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:8:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:9:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:I.Data[9]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:9:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:9:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_S4472_HEMMING_PLC_BOX:O.Data[9]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:9:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:1:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:I.Data[1]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:1:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:2:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:I.Data[2]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:2:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:3:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:I.Data[3]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:3:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:4:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:I.Data[4]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:4:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:5:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:I.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:5:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:5:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:O.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:5:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:6:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:I.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:6:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:6:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_TRAVES_PLC_BOX:O.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:6:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:10:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:O.Data[10]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:10:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:1:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:I.Data[1]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:1:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:2:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:I.Data[2]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:2:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:3:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:I.Data[3]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:3:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:4:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:I.Data[4]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:4:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:5:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:I.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:5:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:5:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:O.Data[5]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:5:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:6:I",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:I.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:6:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:6:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:O.Data[6]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:6:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:7:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:O.Data[7]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:7:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:8:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:O.Data[8]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:8:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "ALIAS",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:9:O",
+    "Description": "",
+    "DataType": "",
+    "Specifier": "Z_AUTO_PLT_PLC_BOX:O.Data[9]",
+    "Attributes": "(RADIX := Binary, ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:9:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:I",
+    "Description": "",
+    "DataType": "AB:1734_11SLOT:I:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:O",
+    "Description": "",
+    "DataType": "AB:1734_11SLOT:O:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:I",
+    "Description": "",
+    "DataType": "AB:1734_12SLOT:I:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:O",
+    "Description": "",
+    "DataType": "AB:1734_12SLOT:O:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:I",
+    "Description": "",
+    "DataType": "AB:1734_16SLOT:I:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:I",
+    "Description": "",
+    "DataType": "AB:1734_16SLOT:I:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:O",
+    "Description": "",
+    "DataType": "AB:1734_16SLOT:O:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:O",
+    "Description": "",
+    "DataType": "AB:1734_16SLOT:O:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:I",
+    "Description": "",
+    "DataType": "AB:1734_7SLOT:I:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:O",
+    "Description": "",
+    "DataType": "AB:1734_7SLOT:O:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:I",
+    "Description": "",
+    "DataType": "AB:1734_8SLOT:I:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:I",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:O",
+    "Description": "",
+    "DataType": "AB:1734_8SLOT:O:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:O",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:1:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:1:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:2:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:2:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:3:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:3:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:4:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:4:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:1:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:1:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:2:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:2:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:3:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:3:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:4:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:4:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:1:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:1:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:2:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:2:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:3:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:3:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:4:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:4:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:5:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:5:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:6:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:6:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:7:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:7:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:8:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:8:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:1:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:1:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:2:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:2:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:3:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:3:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:4:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:4:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:5:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:5:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:6:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:6:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:7:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:7:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:8:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:8:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:1:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:1:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:2:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:2:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:3:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:3:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:4:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:4:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:1:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:1:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:2:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:2:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:3:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:3:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:4:C",
+    "Description": "",
+    "DataType": "AB:1734_DI8:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:4:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:10:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:10:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:11:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:11:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:8:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:8:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:9:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:9:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:10:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:10:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:7:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:7:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:8:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:8:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:9:C",
+    "Description": "",
+    "DataType": "AB:1734_DO4:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:9:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:5:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:5:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:6:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:6:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_ASSY_PLT_PLC_BOX:7:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "ASSY_PLT_PLC",
+    "ActionName": "BOX:7:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:5:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:5:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:6:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:6:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_STORAGE_INV_PNL:7:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "STORAGE_INV",
+    "ActionName": "PNL:7:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:10:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:10:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:11:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:11:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:12:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:12:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:13:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:13:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:14:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:14:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:15:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:15:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4471_HEMMING_PLC_BOX:9:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4471_HEMMING_PLC",
+    "ActionName": "BOX:9:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:10:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:10:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:11:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:11:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:12:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:12:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:13:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:13:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:14:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:14:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:15:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:15:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_S4472_HEMMING_PLC_BOX:9:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "S4472_HEMMING_PLC",
+    "ActionName": "BOX:9:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:5:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:5:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_TRAVES_PLC_BOX:6:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "TRAVES_PLC",
+    "ActionName": "BOX:6:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:5:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:5:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  },
+  {
+    "Type": "TAG",
+    "Scope": "",
+    "Name": "Z_AUTO_PLT_PLC_BOX:6:C",
+    "Description": "",
+    "DataType": "AB:1734_DO8_NoDiag:C:0",
+    "Specifier": "",
+    "Attributes": "(ExternalAccess := Read/Write)",
+    "OwningElement": "",
+    "FlowName": "Z",
+    "DeviceName": "AUTO_PLT_PLC",
+    "ActionName": "BOX:6:C",
+    "Choice": {
+      "Case": "Categorized"
+    },
+    "IsChecked": false
+  }
+]

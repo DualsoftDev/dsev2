@@ -6,6 +6,7 @@ open Dual.Common.Core.FS
 open Dual.Ev2
 open System.Reactive.PlatformServices
 open NUnit.Framework
+open Dual.Common.Base
 
 
 [<AutoOpen>]

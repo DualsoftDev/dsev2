@@ -2,6 +2,7 @@ namespace Dual.Ev2
 
 open System
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 [<AutoOpen>]
 module TypeConversionModule =

@@ -4,6 +4,7 @@ open System.Collections.Generic
 open System.Linq
 open System
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 [<AutoOpen>]
 module rec Common =

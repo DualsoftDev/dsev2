@@ -5,6 +5,7 @@ namespace rec Dual.Ev2.Aas
 open Dual.Common.Core.FS
 open System.Text.Json
 open System
+open Dual.Common.Base
 
 type JObj = System.Text.Json.Nodes.JsonObject
 type JArr = System.Text.Json.Nodes.JsonArray

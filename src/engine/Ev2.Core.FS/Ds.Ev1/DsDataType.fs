@@ -4,6 +4,7 @@ namespace Dual.Ev2
 open Dual.Common.Core.FS
 open System
 open System.Collections.Generic
+open Dual.Common.Base
 
 
 [<AutoOpen>]

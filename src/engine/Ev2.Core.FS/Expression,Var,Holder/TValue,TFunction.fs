@@ -270,7 +270,7 @@ module rec TExpressionModule =
         inherit OFunction(op, args)
 
         let valueBag = valueBag |? theValueBag
-        let mutable lazyValue:ResettableLazy<'T> = null
+        let mutable lazyValue = getNull<ResettableLazy<'T>>()
 
         interface INonTerminal<'T>
 
@@ -297,7 +297,7 @@ module rec TExpressionModule =
                     f args
                 objValue :?> 'T
             )
-            lazyValue.OnValueChanged <- fun v -> valueBag.ValueChangedSubject.OnNext(x, v)
+            lazyValue.OnValueChanged <- Some (fun v -> valueBag.ValueChangedSubject.OnNext(x, v))
             noop()
 
         // F#에서는 어트리뷰트를 [<OnDeserialized>] 형식으로 사용해야 합니다.

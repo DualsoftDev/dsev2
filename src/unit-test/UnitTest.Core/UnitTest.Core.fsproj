@@ -16,6 +16,7 @@
 		<Compile Include="Expression\CounterTest.fs" />
 		<Compile Include="Expression\TimerTest.fs" />
 		<Compile Include="Expression\Express.Eval.Test.fs" />
+		<Compile Include="Json\DataType.Serialize.Test.fs" />
 		<Compile Include="Json\ValueHolder.Test.fs" />
 		<Compile Include="Json\Terminal.NonTerminal.Test.fs" />
 		<Compile Include="AasCore3.0Test.fs" />
