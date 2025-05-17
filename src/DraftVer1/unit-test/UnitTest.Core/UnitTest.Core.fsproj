@@ -36,12 +36,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--<PackageReference Include="AasCore.Aas3_0" Version="1.0.3" />-->
-		<ProjectReference Include="..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
+		<ProjectReference Include="..\..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
+		<ProjectReference Include="..\..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
 		<ProjectReference Include="..\..\engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj" />
 		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 	</ItemGroup>

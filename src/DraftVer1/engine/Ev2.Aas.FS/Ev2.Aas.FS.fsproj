@@ -20,11 +20,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Remove="JsonData\**" />
+		<!--<EmbeddedResource Remove="JsonData\**" />-->
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
+		<ProjectReference Include="..\..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
 		<ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 	</ItemGroup>
 
