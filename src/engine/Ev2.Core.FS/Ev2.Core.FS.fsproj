@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
+		<LangVersion>8.0</LangVersion>
+		<OutputType>Library</OutputType>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Include="AppSettings.fs" />
+	  <Compile Include="database\Database.Schema.fs" />
+	  <Compile Include="database\DbApi.fs" />
+	  <Compile Include="EntryPoint.fs" />
+	  <Compile Include="Interfaces.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="appSettings.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="appSettings.json.template" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="System.Reactive" Version="6.0.1" />
+		<PackageReference Include="log4net" Version="2.0.17" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Dapper" Version="2.1.35" />
+	</ItemGroup>
+
+</Project>

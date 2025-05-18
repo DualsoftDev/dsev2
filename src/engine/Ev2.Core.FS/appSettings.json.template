@@ -1,0 +1,4 @@
+{
+  "ConnectionString": "Data Source=F:\\tmp\\TiaBackup\\Tia.sqlite3;Version=3;BusyTimeout=20000",
+  "DatabaseWatchdogIntervalSec": 10
+}

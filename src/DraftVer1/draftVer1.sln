@@ -11,43 +11,43 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{A16695D8
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{50373E21-A670-4255-AD30-4A026C74B7B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.AppSettings", "submodules\nuget\Common\Dual.Common.AppSettings\Dual.Common.AppSettings.csproj", "{23357691-2228-407C-A0FD-3F63F9194A3F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.AppSettings", "..\..\submodules\nuget\Common\Dual.Common.AppSettings\Dual.Common.AppSettings.csproj", "{23357691-2228-407C-A0FD-3F63F9194A3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.Base.CS", "submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj", "{6B8B1499-0D98-4D84-BDDA-D84F6A1767CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.Base.CS", "..\..\submodules\nuget\Common\Dual.Common.Base.CS\Dual.Common.Base.CS.csproj", "{6B8B1499-0D98-4D84-BDDA-D84F6A1767CA}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Base.FS", "submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj", "{54928E86-A3E2-4545-9E90-0FFCFFC9D988}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Base.FS", "..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj", "{54928E86-A3E2-4545-9E90-0FFCFFC9D988}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.Core", "submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj", "{7991EE28-49E0-4BD9-A2BC-31E5708BDD1F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dual.Common.Core", "..\..\submodules\nuget\Common\Dual.Common.Core\Dual.Common.Core.csproj", "{7991EE28-49E0-4BD9-A2BC-31E5708BDD1F}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Core.FS", "submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj", "{46798250-C873-4CD3-A705-5C79D4845EE5}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Core.FS", "..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj", "{46798250-C873-4CD3-A705-5C79D4845EE5}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.UnitTest.FS", "submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj", "{05D721B6-4B89-4577-8790-4DCD4DA9F88C}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.UnitTest.FS", "..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj", "{05D721B6-4B89-4577-8790-4DCD4DA9F88C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plc", "plc", "{EFC555D8-D28A-4BED-A1D1-AB70233B4EF7}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.PLC.TagParser.FS", "submodules\nuget\PLC\Dual.PLC.TagParser.FS\Dual.PLC.TagParser.FS.fsproj", "{F201606D-5EB0-496E-B1F4-45A05263ADFC}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.PLC.TagParser.FS", "..\..\submodules\nuget\PLC\Dual.PLC.TagParser.FS\Dual.PLC.TagParser.FS.fsproj", "{F201606D-5EB0-496E-B1F4-45A05263ADFC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "engine", "engine", "{3DF60941-BDDE-445C-B28C-0874203046C2}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Core.FS", "src\DraftVer1\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj", "{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Core.FS", "engine\Ev2.Core.FS\Ev2.Core.FS.fsproj", "{B75CEEEF-8D57-468B-8F8C-0B98B50FC3A4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit-test", "unit-test", "{322F9673-46AC-4124-8D96-2AF12A4F89EB}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTest.Core", "src\DraftVer1\unit-test\UnitTest.Core\UnitTest.Core.fsproj", "{9C40C272-8026-47F1-B2E1-1F003BC3EC52}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTest.Core", "unit-test\UnitTest.Core\UnitTest.Core.fsproj", "{9C40C272-8026-47F1-B2E1-1F003BC3EC52}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{54A225D1-EA8A-4B59-B245-F34D02B78A4B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aas-core", "aas-core", "{572E059F-BFF9-4187-B823-1F67A44D0830}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasCore.Aas3_0", "submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj", "{E9654960-0E8D-42E3-A5F4-58489FB9198D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasCore.Aas3_0", "..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj", "{E9654960-0E8D-42E3-A5F4-58489FB9198D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasCore.Aas3_0.Tests", "submodules\aas-core3.0-csharp\src\AasCore.Aas3_0.Tests\AasCore.Aas3_0.Tests.csproj", "{12E8535C-7C39-4F3D-9B6B-9D19F6B8C570}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasCore.Aas3_0.Tests", "..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0.Tests\AasCore.Aas3_0.Tests.csproj", "{12E8535C-7C39-4F3D-9B6B-9D19F6B8C570}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "obsolete", "obsolete", "{38835E54-8496-4CBC-B7AC-6521D72869C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev2.Core", "src\DraftVer1\obsolete\Ev2.Core\Ev2.Core.csproj", "{DC1AAC91-9FCE-42B7-8839-D9C92855242D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev2.Core", "obsolete\Ev2.Core\Ev2.Core.csproj", "{DC1AAC91-9FCE-42B7-8839-D9C92855242D}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Aas.FS", "src\DraftVer1\engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj", "{C59A6843-DA53-4F74-AC29-F638A405C739}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Aas.FS", "engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj", "{C59A6843-DA53-4F74-AC29-F638A405C739}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripting", "Scripting", "{29846525-2863-49F1-877D-81767997E0A1}"
 EndProject
@@ -61,9 +61,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpuEvalTestApp", "TestApps\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ScriptingTest", "TestApps\Scripting\ScriptingTest\ScriptingTest.fsproj", "{D420B61F-6080-46B6-B7D4-9DAD0E6A697C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev2.Parser", "src\DraftVer1\engine\Ev2.Parser\Ev2.Parser.csproj", "{86ED2A49-2D7D-4615-9E28-A37046900201}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev2.Parser", "engine\Ev2.Parser\Ev2.Parser.csproj", "{86ED2A49-2D7D-4615-9E28-A37046900201}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Antlr.FS", "submodules\nuget\Common\Dual.Common.Antlr.FS\Dual.Common.Antlr.FS.fsproj", "{6B242178-662B-4E80-9FF3-3B866B520F56}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Antlr.FS", "..\..\submodules\nuget\Common\Dual.Common.Antlr.FS\Dual.Common.Antlr.FS.fsproj", "{6B242178-662B-4E80-9FF3-3B866B520F56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
