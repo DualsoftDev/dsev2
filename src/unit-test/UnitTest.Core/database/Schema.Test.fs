@@ -41,7 +41,8 @@ module SchemaTestModule =
 
     [<Test>]
     let ``insert test`` () =
-        use conn = dbApi.CreateConnection()
+        //use conn = dbApi.CreateConnection()
+        use conn = createMemoryConnection()
         let newGuid() = Guid.NewGuid().ToString("N")
 
         // system 삽입

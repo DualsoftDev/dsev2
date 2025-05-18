@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open System
 
 open Dual.Common.Core.FS
+open Dual.Common.Db.FS
 
 [<AutoOpen>]
 module DatabaseSchemaModule =
@@ -159,7 +160,6 @@ COMMIT;
 
 
     type RowId = int
-    type IORMRow        = interface end
     type IORMSystem     = inherit IORMRow
     type IORMFlow       = inherit IORMRow
     type IORMWork       = inherit IORMRow
@@ -172,7 +172,6 @@ COMMIT;
     type IORMMeta       = inherit IORMRow
     type IORMLog        = inherit IORMRow
 
-    type IORMTableHistory = inherit IORMRow
 
     [<AbstractClass>]
     type ORMUniq(id:int, name:string, guid:Nullable<Guid>) =
@@ -218,15 +217,6 @@ COMMIT;
         new() = ORMApiDef(-1, null, Nullable(), -1)
         member val WorkId = workId with get, set
 
-
-    type ORMTableHistory(id:int, name:string, operation:string, oldId:int, newId:int) =
-        interface IORMTableHistory
-        new () = ORMTableHistory(-1, null, null, -1, -1)
-        member val Id = id with get, set
-        member val Name = name with get, set
-        member val Operation = operation with get, set
-        member val OldId = oldId with get, set
-        member val NewId = newId with get, set
 
 
 

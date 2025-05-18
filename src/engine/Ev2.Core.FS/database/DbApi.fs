@@ -11,6 +11,8 @@ open System.Data
 open System.Reactive.Disposables
 open System.IO
 open System.Collections.Generic
+open Dual.Common.Db.FS
+
 
 [<AutoOpen>]
 module DbApiModule =
@@ -26,17 +28,10 @@ module DbApiModule =
     /// Database API
     type DbApi(connStr:string) =
         let mutable initialized = false
-        let walHash = HashSet<string>()
+        let sqlite = DcSqlite(connStr, enableWAL=true, enableForeignKey=true)
         let conn() =
-            new SQLiteConnection(connStr)
+            sqlite.CreateConnection()
             |> tee (fun conn ->
-                conn.Open()
-                if not <| walHash.Contains(connStr) then
-                    conn.Execute("PRAGMA journal_mode = WAL;") |> ignore     // Write-Ahead Logging: 데이터 변경을 별도 WAL 파일에 먼저 기록하여 동시성 및 읽기/쓰기 분리 가능
-                    walHash.Add(connStr) |> ignore
-
-                conn.Execute("PRAGMA foreign_keys = ON;") |> ignore     // Write-Ahead Logging: 데이터 변경을 별도 WAL 파일에 먼저 기록하여 동시성 및 읽기/쓰기를 분리 가능
-
                 if not initialized then
                     initialized <- true
                     DcLogger.EnableTrace <- true        // TODO: 삭제 필요
@@ -63,48 +58,33 @@ module DbApiModule =
             x.WorkCache.Reset() |> ignore
             x.CallCache.Reset() |> ignore
 
-        member private x.EnumerateRows<'T>(tableName:string, criteriaName:string, criteriaIds:int[]) =
-            let filter =
-                match criteriaIds with
-                | [||] -> ""
-                | criteriaIds ->
-                    let ids = criteriaIds |-> toString |> String.concat ", "
-                    $" WHERE {criteriaName} IN ({ids})"
-            use conn = conn()
-            conn.Query<'T> $"SELECT * FROM {tableName} {filter};" |> toArray
-
-        member x.EnumerateWorks(?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
-        member x.EnumerateWorksOfFlows(?flowIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "flowId", flowIds|? [||])
-        member x.EnumerateCalls(?workIds:int[]) = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds |? [||])
-
-
         member x.CreateConnection() = conn()
+
+        member private x.EnumerateRows<'T>(tableName:string, criteriaName:string, criteriaIds:int[]) =
+            use conn = x.CreateConnection()
+            conn.EnumerateRows<'T>(tableName, criteriaName, criteriaIds) |> toArray
+
+        member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
+        member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId", flowIds|? [||])
+        member x.EnumerateCalls       (?workIds:int[])   = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds |? [||])
+
+
 
         static member GetDefaultConnectionString(dbName:string, ?busyTimeoutSec) =
             let busyTimeoutSec = busyTimeoutSec |? 20
             let dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{dbName}.sqlite3")
             $"Data Source={dbPath};Version=3;BusyTimeout={busyTimeoutSec}"
 
-        /// DB connection 및 transaction wrapper 생성.
-        /// - 기존 connection 이나 transaction 이 있으면 그걸 사용하고 dispose 시 아무것도 안함.
-        /// - 없으면 새로 생성하고, dispose 시 clear 함.
-        ///
-        /// wrapping 된 tr.Commint() 이나 tr.Rollback() 을 수행해서는 안됨.
-        /// trWrapper.NeedRolback 을 true 로 설정시 rollback 수행되고, 그렇지 않으면 자동으로 commit 되는 모델
-        member x.CreateSQLiteWrapper(?conn, ?tr:IDbTransaction) =
-            DbWrapper.CreateConnectionAndTransactionWrapper(conn, tr, (fun () -> x.CreateConnection()), (fun conn -> conn.BeginTransaction()))
+        ///// DB connection 및 transaction wrapper 생성.
+        ///// - 기존 connection 이나 transaction 이 있으면 그걸 사용하고 dispose 시 아무것도 안함.
+        ///// - 없으면 새로 생성하고, dispose 시 clear 함.
+        /////
+        ///// wrapping 된 tr.Commint() 이나 tr.Rollback() 을 수행해서는 안됨.
+        ///// trWrapper.NeedRolback 을 true 로 설정시 rollback 수행되고, 그렇지 않으면 자동으로 commit 되는 모델
+        //member x.CreateSQLiteWrapper(?conn, ?tr:IDbTransaction) =
+        //    DbWrapper.CreateConnectionAndTransactionWrapper(conn, tr, (fun () -> x.CreateConnection()), (fun conn -> conn.BeginTransaction()))
 
 
-
-        /// 시스템 초기 세팅에서 추가한 db 항목들을 table history 에 넣지 않도록 (추가된 항목 삭제) 한다.
-        // e.g.  use _ = createTableHistoryDisabler(conn)
-        member x.CreateTableHistoryDisabler (conn:IDbConnection) =
-            let existingTableHistoryIds =
-                conn.Query<int>($"SELECT id FROM [{Tn.TableHistory}];").ToArray()
-            Disposable.Create(fun () ->
-                let query = $"DELETE FROM [{Tn.TableHistory}] WHERE id NOT IN @Ids"
-                conn.Execute(query, {| Ids = existingTableHistoryIds |}) |> ignore
-            )
 
         // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
         // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
