@@ -7,6 +7,7 @@ open System
 
 [<AutoOpen>]
 module Interfaces =
+    type Id = int64
     /// 기본 객체 인터페이스
     type IDsObject = interface end
     type IParameter = inherit IDsObject
@@ -26,27 +27,164 @@ module Interfaces =
     let nullId = Nullable<int>()
     let nullGuid = Nullable<Guid>()
     let nullDateTime = Nullable<DateTime>()
+    let toResizeArray (xs:'x seq) = ResizeArray(xs)
+
 
     [<AbstractClass>]
-    type Unique(name:string, ?id:int64, ?guid:Guid, ?dateTime:DateTime) =
+    type Unique(name:string, ?id:Id, ?guid:Guid, ?dateTime:DateTime) =
         interface IUnique
         member val Id = id with get, set
         member val Guid = guid with get, set
         member val Name = name with get, set
         member val DateTime = dateTime with get, set
 
-        override this.ToString() = this.Name
-        override this.GetHashCode() = this.Guid.GetHashCode()
-        override this.Equals(obj: obj) =
-            match obj with
-            | :? Unique as other -> this.Guid = other.Guid
-            | _ -> false
-    type DsSystem(name:string, ?id, ?guid:Guid, ?dateTime:DateTime) =
-        inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+        override x.ToString() = x.Name
+        //override x.GetHashCode() = x.Guid.GetHashCode()
+        //override x.Equals(obj: obj) =
+        //    match obj with
+        //    | :? Unique as other -> x.Guid = other.Guid
+        //    | _ -> false
 
-        interface IDsSystem
-        //member val Id = -1 with get, set
-        member val FlowId = -1 with get, set
-        member val FlowName = "" with get, set
-        member val FlowGuid = Nullable() with get, set
-        member val FlowDateTime = Nullable() with get, set
+    [<AutoOpen>]
+    module rec DsObjectModule =
+        type Arrow<'T>(source:'T, target:'T, ?id:Id, ?guid:Guid, ?dateTime:DateTime) =
+            inherit Unique(null, ?id=id, ?guid=guid, ?dateTime=dateTime)
+            interface IArrow
+            member val Source = source with get, set
+            member val Target = target with get, set
+
+
+        type DsSystem(name:string, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], ?id, ?guid:Guid, ?dateTime:DateTime) =
+            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+            interface IDsSystem
+            member val Flows = flows |> toList
+            member val Works = works |> toList
+            member val Arrows = arrows |> toList
+
+        type DsFlow(name:string, pGuid:Guid, works:DsWork[], ?id, ?guid:Guid, ?dateTime:DateTime) =
+            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+            interface IDsFlow
+            member x.Pid = pGuid
+            member x.Works = works
+
+        type DsWork(name:string, pGuid:Guid, calls:DsCall[], arrows:Arrow<DsCall>[], ?flowGuid:Guid, ?id, ?guid:Guid, ?dateTime:DateTime) =
+            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+            interface IDsWork
+            member x.OptFlowGuid = flowGuid
+            member val Arrows = arrows |> toList
+            member x.Pid = pGuid
+            member x.Calls = calls
+
+        type DsCall(name:string, pGuid:Guid, ?id, ?guid:Guid, ?dateTime:DateTime) =
+            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+            interface IDsCall
+            member val Pid = pGuid with get, set
+
+
+        type IEdObject = interface end
+        type IEdSystem = inherit IEdObject inherit IDsSystem
+        type IEdFlow   = inherit IEdObject inherit IDsFlow
+        type IEdWork   = inherit IEdObject inherit IDsWork
+        type IEdCall   = inherit IEdObject inherit IDsCall
+
+        //{ 편집 가능한 버젼
+        type EdSystem private (name:string, flows:ResizeArray<EdFlow>, works:ResizeArray<EdWork>, arrows:Arrow<EdWork> seq,  guid:Guid, dateTime:DateTime, ?id) =
+            inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id)
+            interface IEdSystem
+            member x.Flows = flows |> toArray
+            member x.Works = works |> toArray
+            member x.Arrows = arrows
+            member x.AddFlows(fs:EdFlow seq) =
+                flows.AddRange(fs)
+                fs |> iter (fun f -> f.OptParent <- Some x)
+            member x.AddWorks(ws:EdWork seq) =
+                works.AddRange(ws)
+                ws |> iter (fun w -> w.OptParent <- Some x)
+
+            static member Create(name:string, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:Arrow<EdWork> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
+                let guid = guid |? Guid.NewGuid()
+                let dateTime = dateTime |? DateTime.UtcNow
+                let flows = flows |? Seq.empty |> ResizeArray
+                let works = works |? Seq.empty |> ResizeArray
+                let arrows = arrows |? Seq.empty |> ResizeArray
+                EdSystem(name, flows, works, arrows, guid, dateTime)
+
+        type EdFlow private (name:string, guid:Guid, dateTime:DateTime, ?id, ?parent:EdSystem) =
+            inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id)
+            interface IEdFlow
+            member val OptParent = parent with get, set
+            static member Create(name, ?id, ?guid, ?dateTime) =
+                let guid = guid |? Guid.NewGuid()
+                let dateTime = dateTime |? DateTime.UtcNow
+                EdFlow(name, guid, dateTime, ?id=id)
+
+            member x.AddWorks(ws:EdWork seq) =
+                ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
+            member x.Works = //x.OptParent |> map _.Works //|> choose id
+                match x.OptParent with
+                | Some p -> p.Works |> filter (fun w -> w.OptOwnerFlow = Some x) |> toArray
+                | None -> failwith "Parent is not set. Cannot get works from flow."
+
+
+        type EdWork private(name:string, guid:Guid, dateTime:DateTime, calls:ResizeArray<EdCall>, arrows:ResizeArray<Arrow<EdCall>>, ?parent:EdSystem, ?ownerFlow:#Unique, ?id) =
+            inherit Unique(name, ?id=id, guid=guid, dateTime=dateTime)
+            interface IEdWork
+            member val OptOwnerFlow = ownerFlow with get, set
+            member x.Calls = calls |> toArray
+            member x.Arrows = arrows
+            member val OptParent = parent with get, set
+
+            member x.AddCalls(cs:EdCall seq) =
+                calls.AddRange(cs)
+                cs |> iter (fun c -> c.OptParent <- Some x)
+
+            static member Create(name:string, ?parent:EdSystem, ?calls:EdCall seq, ?ownerFlow:#Unique, ?arrows:Arrow<EdCall> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
+                let guid = guid |? Guid.NewGuid()
+                let dateTime = dateTime |? DateTime.UtcNow
+                let calls = calls |? Seq.empty |> ResizeArray
+                let arrows = arrows |? Seq.empty |> ResizeArray
+                EdWork(name, guid, dateTime, calls, arrows, ?parent=parent, ?ownerFlow=ownerFlow, ?id=id)
+
+
+        type EdCall private(name:string, guid:Guid, dateTime:DateTime, ?parent:EdWork, ?id) =
+            inherit Unique(name, ?id=id, guid=guid, dateTime=dateTime)
+            interface IEdCall
+            member val OptParent = parent with get, set
+
+            static member Create(name:string, ?parent:EdWork, ?id, ?guid:Guid, ?dateTime:DateTime) =
+                let guid = guid |? Guid.NewGuid()
+                let dateTime = dateTime |? DateTime.UtcNow
+                EdCall(name, guid, dateTime, ?parent=parent, ?id=id)
+
+
+        //} 편집 가능한 버젼
+
+
+
+[<AutoOpen>]
+module rec DsConvertorModule =
+    type EdFlow with
+        member x.ToDsFlow() =
+            let works = x.Works |-> _.ToDsWork() |> toArray
+            DsFlow(x.Name, x.OptParent.Value.Guid.Value, works, ?id=x.Id, ?guid=x.Guid, ?dateTime=x.DateTime)
+
+    type EdWork with
+        member x.ToDsWork() =
+            let callDic = x.Calls.ToDictionary(id, fun c -> c.ToDsCall())
+            let arrows = x.Arrows |-> (fun a -> Arrow<DsCall>(callDic[a.Source], callDic[a.Target])) |> Seq.toArray
+            let optOwnerFlowGuid = x.OptOwnerFlow >>= _.Guid
+            let calls = callDic.Values |> toArray
+            DsWork(x.Name, x.OptParent.Value.Guid.Value, calls, arrows, ?flowGuid=optOwnerFlowGuid, ?id=x.Id, ?guid=x.Guid, ?dateTime=x.DateTime)
+
+
+    type EdCall with
+        member x.ToDsCall() =
+            let xxx = x
+            DsCall(x.Name, x.OptParent.Value.Guid.Value, ?id=x.Id, ?guid=x.Guid, ?dateTime=x.DateTime)
+
+    type EdSystem with
+        member x.ToDsSystem() =
+            let flows = x.Flows |> Seq.map (fun f -> f.ToDsFlow()) |> Seq.toArray
+            let workDic = x.Works.ToDictionary(id, fun w -> w.ToDsWork())
+            let arrows = x.Arrows |-> (fun w -> Arrow<DsWork>(workDic[w.Source], workDic[w.Target])) |> toArray
+            DsSystem(x.Name, flows, workDic.Values.ToArray(), arrows, ?id=x.Id, ?guid=x.Guid, ?dateTime=x.DateTime)

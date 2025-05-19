@@ -25,6 +25,8 @@ module DatabaseSchemaModule =
         let [<Literal>] Flow         = "flow"
         let [<Literal>] Work         = "work"
         let [<Literal>] Call         = "call"
+        let [<Literal>] ArrowWork    = "arrowWork"
+        let [<Literal>] ArrowCall    = "arrowCall"
         let [<Literal>] ApiCall      = "apiCall"
         let [<Literal>] ApiDef       = "apiDef"
 
@@ -35,7 +37,7 @@ module DatabaseSchemaModule =
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
 
-        let AllTableNames = [ System; Flow; Work; Call; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ]        // Log;
+        let AllTableNames = [ System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ]        // Log;
 
     // database view names
     module Vn =
@@ -118,6 +120,23 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
 );
+
+-- Work 간 연결.  System 에 속함
+CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
+    , [source]        {intKeyType} NOT NULL
+    , [target]        {intKeyType} NOT NULL
+    , FOREIGN KEY(source)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(target)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+);
+
+-- Call 간 연결.  Work 에 속함
+CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
+    , [source]        {intKeyType} NOT NULL
+    , [target]        {intKeyType} NOT NULL
+    , FOREIGN KEY(source)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(target)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+);
+
 
 CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
 );

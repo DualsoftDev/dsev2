@@ -115,3 +115,51 @@ module SchemaTestModule =
         ()
 
 
+    [<Test>]
+    let ``EdObject -> DsObject -> OrmObject -> DB insert test`` () =
+        let system = EdSystem.Create("MainSystem")
+        let flow = EdFlow.Create("MainFlow")
+        let work1 = EdWork.Create("BoundedWork1")
+        let work2 = EdWork.Create("BoundedWork2", ownerFlow=flow)
+        let work3 = EdWork.Create("FreeWork1")
+        let call1 = EdCall.Create("Call1")
+        let call2= EdCall.Create("Call2")
+        work1.AddCalls([call1])
+        flow.AddWorks([work1])
+
+        work2.AddCalls([call2])
+        system.AddFlows([flow])
+        system.AddWorks([work1; work2; work3])
+
+        let dsSystem = system.ToDsSystem()
+        let dsFlow = dsSystem.Flows[0]
+        dsFlow.Guid === flow.Guid
+        dsFlow.Works.Length === 2
+        dsSystem.Works.Length === 3
+        let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
+        let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
+        let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
+        dsWork1.Guid === work1.Guid
+        dsWork2.Guid === work2.Guid
+        dsWork3.Guid === work3.Guid
+        dsWork1.Name === work1.Name
+        dsWork2.Name === work2.Name
+        dsWork3.Name === work3.Name
+
+        dsFlow.Works.Length === 2
+        dsFlow.Works[0].Guid === work1.Guid
+        dsFlow.Works[1].Guid === work2.Guid
+        dsFlow.Name === flow.Name
+
+        work1.Calls.Length === 1
+        work2.Calls.Length === 1
+        let dsCall1 = dsWork1.Calls[0]
+        let dsCall2 = dsWork2.Calls[0]
+        dsCall1.Guid === call1.Guid
+        dsCall2.Guid === call2.Guid
+        dsCall1.Pid === dsWork1.Guid.Value
+        dsCall2.Pid === dsWork2.Guid.Value
+
+        dsCall1.Name === call1.Name
+        dsCall2.Name === call2.Name
+        ()
