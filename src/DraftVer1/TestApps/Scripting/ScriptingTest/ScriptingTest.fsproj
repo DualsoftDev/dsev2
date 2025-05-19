@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\DraftVer1\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
-    <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+    <ProjectReference Include="..\..\..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+    <ProjectReference Include="..\..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
   </ItemGroup>
 
 </Project>

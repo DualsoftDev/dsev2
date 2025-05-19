@@ -1,27 +1,39 @@
 namespace T
 
-open System.IO
-open System.Reactive.Disposables
-open Xunit
 
+
+open System
+open System.Data.SQLite
+open NUnit.Framework
+open Dapper
 
 open Dual.Common.Base
-open Dual.Common.Core.FS
-
-open Ev2.Core.FS
-open NUnit.Framework
-open System.Data.SQLite
-open Dapper
-open System
 open Dual.Common.UnitTest.FS
 open Dual.Common.Db.FS
+
+open Ev2.Core.FS
+open System.IO
 
 
 [<AutoOpen>]
 module SchemaTestModule =
-    do
-        DcLogger.EnableTrace <- true
+    let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test.sqlite3")
+    //let connectionString = "Data Source=Z:\\ds\\tmp\\ev2.sqlite3;Version=3;BusyTimeout=20000"    //
+    let connectionString = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
 
+    [<SetUpFixture>]
+    type GlobalTestSetup() =
+        [<OneTimeSetUp>]
+        member _.GlobalSetup() =
+            DcLogger.EnableTrace <- true
+            DapperTypeHandler.AddHandlers()
+            checkHandlers()
+
+
+        [<OneTimeTearDown>]
+        member _.Cleanup() =
+            //File.Delete(dbFilePath)
+            ()
 
     let createMemoryConnection () =
         let conn = new SQLiteConnection("Data Source=:memory:")
@@ -30,7 +42,6 @@ module SchemaTestModule =
         conn.Execute(sqlCreateSchema) |> ignore
         conn
 
-    let connectionString = "Data Source=Z:\\ds\\tmp\\ev2.sqlite3;Version=3;BusyTimeout=20000"
     let dbApi = DbApi(connectionString)
 
     [<Test>]
@@ -41,9 +52,10 @@ module SchemaTestModule =
 
     [<Test>]
     let ``insert test`` () =
-        //use conn = dbApi.CreateConnection()
-        use conn = createMemoryConnection()
-        let newGuid() = Guid.NewGuid().ToString("N")
+        use conn = dbApi.CreateConnection()
+        conn.TruncateAllTables()
+        //use conn = createMemoryConnection()
+        let newGuid() = Guid.NewGuid().ToString()
 
         // system 삽입
         let sysGuid = newGuid()
@@ -90,5 +102,16 @@ module SchemaTestModule =
         1 === countFlow
         2 === countWork
         1 === countCall
+
+
+        let systems = conn.EnumerateRows<ORMSystem>(Tn.System) |> List.ofSeq
+        let flows = conn.EnumerateRows<ORMFlow>(Tn.Flow) |> List.ofSeq
+        let works = conn.EnumerateRows<ORMWork>(Tn.Work) |> List.ofSeq
+        let calls = conn.EnumerateRows<ORMCall>(Tn.Call) |> List.ofSeq
+
+        systems.Length === 1
+        systems[0].Name === sysName
+
+        ()
 
 

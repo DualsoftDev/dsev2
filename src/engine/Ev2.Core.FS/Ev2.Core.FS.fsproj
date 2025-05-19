@@ -10,10 +10,10 @@
 
 	<ItemGroup>
 	  <Compile Include="AppSettings.fs" />
+	  <Compile Include="Interfaces.fs" />
 	  <Compile Include="database\Database.Schema.fs" />
 	  <Compile Include="database\DbApi.fs" />
 	  <Compile Include="EntryPoint.fs" />
-	  <Compile Include="Interfaces.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
