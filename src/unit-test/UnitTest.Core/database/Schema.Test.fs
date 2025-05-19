@@ -162,4 +162,14 @@ module SchemaTestModule =
 
         dsCall1.Name === call1.Name
         dsCall2.Name === call2.Name
+
+
+
+        let json = dsSystem.ToJson()
+        dsSystem.ToAasJson() |> ignore
+
+        let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
+        let connectionString = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
+        dsSystem.ToSqlite3(connectionString) |> ignore
+
         ()
