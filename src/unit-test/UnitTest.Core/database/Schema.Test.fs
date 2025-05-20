@@ -19,16 +19,16 @@ open Dual.Common.Core.FS
 [<AutoOpen>]
 module SchemaTestModule =
     let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test.sqlite3")
+    let path2ConnectionString (dbFilePath:string) = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
     //let connectionString = "Data Source=Z:\\ds\\tmp\\ev2.sqlite3;Version=3;BusyTimeout=20000"    //
-    let connectionString = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
 
     [<SetUpFixture>]
     type GlobalTestSetup() =
         [<OneTimeSetUp>]
         member _.GlobalSetup() =
             DcLogger.EnableTrace <- true
-            DapperTypeHandler.AddHandlers()
-            checkHandlers()
+            //DapperTypeHandler.AddHandlers()
+            //checkHandlers()
 
 
         [<OneTimeTearDown>]
@@ -43,7 +43,7 @@ module SchemaTestModule =
         conn.Execute(sqlCreateSchema) |> ignore
         conn
 
-    let dbApi = DbApi(connectionString)
+    let dbApi = path2ConnectionString dbFilePath |> DbApi
 
     [<Test>]
     //[<Fact>]
@@ -165,6 +165,34 @@ module SchemaTestModule =
         dsCall2.Name === call2.Name
 
 
+        do
+            let dbApi = path2ConnectionString dbFilePath |> DbApi
+            use conn = dbApi.CreateConnection()
+            conn.TruncateAllTables()
+            //use conn = createMemoryConnection()
+            let newGuid() = Guid.NewGuid()//.ToString()
+
+            // system 삽입
+            let sysGuid = newGuid()
+            let sysName = "XXXMainSystem"
+            conn.Execute($"INSERT INTO {Tn.System} (guid, name) VALUES (@guid, @name)",
+                         {| guid=Some sysGuid; name=sysName |}) |> ignore
+
+            let systemId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.System} WHERE guid = @guid",
+                                                   dict ["guid", box sysGuid])  // Dapper의 파라미터 바인딩에 사용하는 매우 유용한 방법입니다. 이 패턴은 **익명 객체 대신 IDictionary<string, obj>**를 사용하여 매개변수를 지정
+
+            // flow 삽입
+            let flowGuid = newGuid()
+            conn.Execute($"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@guid, @name, @systemId)",
+                         {| guid=flowGuid; name="MainFlow"; systemId=systemId |}) |> ignore
+
+            let flowId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Flow} WHERE guid = @guid",
+                                                 dict ["guid", box flowGuid])
+            ()
+        noop()
+
+
+
 
         let json = dsSystem.ToJson()
         tracefn $"---------------------- json:\r\n{json}"
@@ -175,8 +203,8 @@ module SchemaTestModule =
 
         dsSystem.ToAasJson() |> ignore
 
-        let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
-        let connectionString = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
-        dsSystem.ToSqlite3(connectionString) |> ignore
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
+        |> path2ConnectionString
+        |> dsSystem2.ToSqlite3
 
         ()

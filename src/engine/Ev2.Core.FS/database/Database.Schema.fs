@@ -89,7 +89,7 @@ module DatabaseSchemaModule =
     let sqlUniq() = $"""
     [id]              {intKeyType} PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
-    , [dateTime]      DATETIME2(1)
+    , [dateTime]      DATETIME(7)
 """
 
     let sqlUniqWithName() = sqlUniq() + $"""

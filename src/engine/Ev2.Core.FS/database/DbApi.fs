@@ -73,14 +73,14 @@ module DbApiModule =
             let dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{dbName}.sqlite3")
             $"Data Source={dbPath};Version=3;BusyTimeout={busyTimeoutSec}"
 
-        ///// DB connection 및 transaction wrapper 생성.
-        ///// - 기존 connection 이나 transaction 이 있으면 그걸 사용하고 dispose 시 아무것도 안함.
-        ///// - 없으면 새로 생성하고, dispose 시 clear 함.
-        /////
-        ///// wrapping 된 tr.Commint() 이나 tr.Rollback() 을 수행해서는 안됨.
-        ///// trWrapper.NeedRolback 을 true 로 설정시 rollback 수행되고, 그렇지 않으면 자동으로 commit 되는 모델
-        //member x.CreateSQLiteWrapper(?conn, ?tr:IDbTransaction) =
-        //    DbWrapper.CreateConnectionAndTransactionWrapper(conn, tr, (fun () -> x.CreateConnection()), (fun conn -> conn.BeginTransaction()))
+        /// DB connection 및 transaction wrapper 생성.
+        /// - 기존 connection 이나 transaction 이 있으면 그걸 사용하고 dispose 시 아무것도 안함.
+        /// - 없으면 새로 생성하고, dispose 시 clear 함.
+        ///
+        /// wrapping 된 tr.Commint() 이나 tr.Rollback() 을 수행해서는 안됨.
+        /// trWrapper.NeedRolback 을 true 로 설정시 rollback 수행되고, 그렇지 않으면 자동으로 commit 되는 모델
+        member x.CreateSQLiteWrapper(?conn, ?tr:IDbTransaction) =
+            DbWrapper.CreateConnectionAndTransactionWrapper(conn, tr, (fun () -> x.CreateConnection()), (fun conn -> conn.BeginTransaction()))
 
 
 
