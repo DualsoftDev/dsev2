@@ -30,35 +30,41 @@ module Interfaces =
     let nullDateTime = Nullable<DateTime>()
     let toResizeArray (xs:'x seq) = ResizeArray(xs)
 
-
     [<AbstractClass>]
+    //[<JsonObject(MemberSerialization = MemberSerialization.OptOut)>]
     type Unique(name:string, guid:Guid, ?id:Id, ?pGuid:Guid, ?dateTime:DateTime) =
         interface IUnique
 
+        //new() = Unique(null, Guid.Empty)
+
         member val Id = id with get, set
-        [<JsonIgnore>] member val Guid = guid with get, set
-        /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
-        [<JsonIgnore>] member val PGuid = pGuid with get, set
         member val Name = name with get, set
+
+        member val Guid:Guid = guid with get, set
+        //member val PGuid:Guid option = pGuid with get, set
+        //member val DateTime:DateTime option = dateTime with get, set
+
+
+        //[<JsonIgnore>] member val Guid = guid with get, set
+        ///// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
+        [<JsonIgnore>] member val PGuid = pGuid with get, set
         [<JsonIgnore>] member val DateTime = dateTime with get, set
 
-        override x.ToString() = x.Name
-        //override x.GetHashCode() = x.Guid.GetHashCode()
-        //override x.Equals(obj: obj) =
-        //    match obj with
-        //    | :? Unique as other -> x.Guid = other.Guid
-        //    | _ -> false
+        //// 직렬화 대상: Nullable<Id> or other serializable type
+        //[<JsonProperty("DateTime", NullValueHandling = NullValueHandling.Ignore)>]
+        //member val (*internal*) rawDateTime: Nullable<DateTime> = dateTime |> Option.toNullable with get, set
 
-        // 직렬화 대상: Nullable<Id> or other serializable type
-        [<JsonProperty("DateTime", NullValueHandling = NullValueHandling.Ignore)>]
-        member val internal rawDateTime: Nullable<DateTime> = dateTime |> Option.toNullable with get, set
+        //[<JsonProperty("Guid", NullValueHandling = NullValueHandling.Ignore)>]
+        //member val (*internal*) rawGuid: Nullable<Guid> = Nullable guid with get, set
 
-        [<JsonProperty("Guid", NullValueHandling = NullValueHandling.Ignore)>]
-        member val internal rawGuid: Nullable<Guid> = Nullable guid with get, set
-        [<OnDeserialized>]
-        member x.OnDeserializedMethod(ctx: StreamingContext) =
-            x.DateTime <- x.rawDateTime |> Option.ofNullable
-            x.Guid     <- x.rawGuid.Value
+        //[<JsonProperty("PGuid", NullValueHandling = NullValueHandling.Ignore)>]
+        //member val (*internal*) rawPGuid = pGuid |> Option.toNullable with get, set
+
+        //[<OnDeserialized>]
+        //member x.OnDeserializedMethod(ctx: StreamingContext) =
+        //    x.DateTime <- x.rawDateTime |> Option.ofNullable
+        //    x.Guid     <- x.rawGuid.Value
+        //    x.PGuid    <- x.rawPGuid  |> Option.ofNullable
 
 
 
@@ -66,6 +72,7 @@ module Interfaces =
     module rec DsObjectModule =
         type Arrow<'T>(source:'T, target:'T, ?guid:Guid, ?id:Id, ?dateTime:DateTime) =
             inherit Unique(null, guid=(guid |? Guid.NewGuid()), ?id=id, ?dateTime=dateTime)
+            //new() = Arrow<'T>(Unchecked.defaultof<'T>, Unchecked.defaultof<'T>, Guid.Empty)      // for JSON
             interface IArrow
             member val Source = source with get, set
             member val Target = target with get, set
@@ -74,6 +81,8 @@ module Interfaces =
         type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], ?id, ?dateTime:DateTime) =
             inherit Unique(name, guid, ?id=id, ?dateTime=dateTime)
             interface IDsSystem
+            //new() = DsSystem(null, Guid.Empty, [||], [||], [||])      // for JSON
+
             member val Flows = flows |> toList
             member val Works = works |> toList
             member val Arrows = arrows |> toList
@@ -81,6 +90,7 @@ module Interfaces =
         type DsFlow(name, guid, pGuid, works:DsWork[], ?id, ?dateTime:DateTime) =
             inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
             let mutable works = if isNull works then [||] else works
+            //new() = DsFlow(null, Guid.Empty, Guid.Empty, [||])      // for JSON
             interface IDsFlow
             member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
             [<JsonIgnore>] member x.Works = works
@@ -89,15 +99,22 @@ module Interfaces =
 
         type DsWork(name, guid, pGuid, calls:DsCall[], arrows:Arrow<DsCall>[], ?flowGuid:Guid, ?id, ?dateTime:DateTime) =
             inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
+
+            //new() = DsWork(null, Guid.Empty, Guid.Empty, [||], [||])      // for JSON
             interface IDsWork
-            member val OptFlowGuid = flowGuid with get, set //!! get, set 삭제
+            [<JsonIgnore>] member val OptFlowGuid = flowGuid with get, set //!! get, set 삭제
             member val Arrows = arrows |> toList
             member x.Calls = calls
 
+            [<JsonProperty>]
+            //[<JsonProperty("FlowGuid", NullValueHandling = NullValueHandling.Ignore)>]
+            //member val internal rawFlowGuid = flowGuid |> Option.toNullable with get, set
+            member val internal rawFlowGuid = flowGuid |-> toString |? null with get, set
 
         type DsCall(name, guid, pGuid, ?id, ?dateTime:DateTime) =
             inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
             interface IDsCall
+            //new() = DsCall(null, Guid.Empty, Guid.Empty)      // for JSON
 
 
 
@@ -135,10 +152,19 @@ module Interfaces =
                 ()
             [<OnDeserialized>]
             member x.OnDeserializedMethod(ctx: StreamingContext) =
+                tracefn $"Add works with guid: {x.Guid}"
+                //let works = ctx.DDic.Get<ResizeArray<DsWork>>("works") |> tee (fun xs -> xs.Add x)
                 let calls = ctx.DDic.Get<ResizeArray<DsCall>>("calls")
                 for c in x.Calls do
                     c.PGuid <- Some x.Guid
                 calls.Clear()
+
+                //x.OptFlowGuid <- x.rawFlowGuid |> Option.ofNullable
+                x.OptFlowGuid <-
+                    match x.rawFlowGuid with
+                    | null | "" -> None
+                    | g -> Guid.Parse g |> Some
+
 
         type DsFlow with
             [<OnDeserializing>]
