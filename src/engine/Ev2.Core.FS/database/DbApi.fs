@@ -40,9 +40,7 @@ module DbApiModule =
                         tracefn $"CreateSchema:\r\n{sqlCreateSchema}"
                         conn.Execute(sqlCreateSchema) |> ignore
                     try
-                        (* 예외 발생해도 OK! DB 초기화되지 않은 상태의 예외 *)
-                        let numAssetTypes = conn.QuerySingleOrDefault<int>($"SELECT COUNT(*) FROM {Tn.Meta}")
-                        if numAssetTypes = 0 then
+                        if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()
                     with exn ->
                         createDb() )

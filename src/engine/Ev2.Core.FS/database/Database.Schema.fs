@@ -36,6 +36,7 @@ module DatabaseSchemaModule =
         let [<Literal>] Meta         = "meta"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
+        let [<Literal>] EOT          = "endOfTable"
 
         let AllTableNames = [ System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ]        // Log;
 
@@ -78,6 +79,7 @@ module DatabaseSchemaModule =
             BEGIN {update} END;
             """
         let historyTargetTables = Tn.AllTableNames |> except [Tn.TableHistory]
+
         [ for t in historyTargetTables do
             for op in ["INSERT"; "UPDATE"; "DELETE"] do
                 createTrigger op t ]
@@ -175,6 +177,10 @@ CREATE TABLE [{Tn.TableHistory}] (
 
 INSERT INTO [{Tn.Meta}] (key, val) VALUES ('Version', '1.0.0.0');
 DELETE FROM {Tn.TableHistory};
+
+CREATE TABLE [{Tn.EOT}](
+    id {intKeyType} PRIMARY KEY NOT NULL
+);
 
 COMMIT;
 """

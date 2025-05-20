@@ -169,6 +169,10 @@ module SchemaTestModule =
         let json = dsSystem.ToJson()
         tracefn $"---------------------- json:\r\n{json}"
         let dsSystem2 = DsSystem.FromJson json
+        let json2 = dsSystem2.ToJson()
+
+        json === json2
+
         dsSystem.ToAasJson() |> ignore
 
         let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")

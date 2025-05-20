@@ -19,7 +19,7 @@ module rec Ed2DsModule =
             let arrows = x.Arrows |-> (fun a -> Arrow<DsCall>(callDic[a.Source], callDic[a.Target])) |> Seq.toArray
             let optOwnerFlowGuid = x.OptOwnerFlow |-> _.Guid
             let calls = callDic.Values |> toArray
-            DsWork(x.Name, x.Guid, x.OptParent.Value.Guid, calls, arrows, ?flowGuid=optOwnerFlowGuid, ?id=x.Id, ?dateTime=x.DateTime)
+            DsWork(x.Name, x.Guid, x.OptParent.Value.Guid, calls, arrows, optOwnerFlowGuid, ?id=x.Id, ?dateTime=x.DateTime)
 
 
     type EdCall with
