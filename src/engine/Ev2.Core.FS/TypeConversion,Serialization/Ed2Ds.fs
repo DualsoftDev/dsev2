@@ -31,5 +31,13 @@ module rec Ed2DsModule =
         member x.ToDsSystem() =
             let flows = x.Flows |> Seq.map (fun f -> f.ToDsFlow()) |> Seq.toArray
             let workDic = x.Works.ToDictionary(id, fun w -> w.ToDsWork())
+            let works = workDic.Values |> toArray
             let arrows = x.Arrows |-> (fun w -> Arrow<DsWork>(workDic[w.Source], workDic[w.Target])) |> toArray
-            DsSystem(x.Name, x.Guid, flows, workDic.Values.ToArray(), arrows, ?id=x.Id, ?dateTime=x.DateTime)
+            let system = DsSystem(x.Name, x.Guid, flows, workDic.Values.ToArray(), arrows, ?id=x.Id, ?dateTime=x.DateTime)
+
+            // parent 객체 할당
+            flows |> iter (fun z -> z.RawParent <- Some system)
+            works |> iter (fun z -> z.RawParent <- Some system)
+            for w in works do
+                w.Calls |> iter (fun c -> c.RawParent <- Some w)
+            system

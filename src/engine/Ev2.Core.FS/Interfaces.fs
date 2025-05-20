@@ -8,7 +8,7 @@ open System.Runtime.Serialization
 
 [<AutoOpen>]
 module Interfaces =
-    type Id = int64
+    type Id = int   //int64
     /// 기본 객체 인터페이스
     type IDsObject = interface end
     type IParameter = inherit IDsObject
@@ -35,8 +35,9 @@ module Interfaces =
         member val Guid:Guid = guid with get, set
 
         ///// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
-        [<JsonIgnore>] member val PGuid = pGuid with get, set
+        [<JsonIgnore>] member val RawParent = Option<Unique>.None with get, set
         [<JsonIgnore>] member val DateTime = dateTime with get, set
+        [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
 [<AutoOpen>]
 module rec DsObjectModule =
@@ -93,7 +94,7 @@ module rec DsObjectModule =
 
             // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
             for f in flows do
-                f.PGuid <- Some x.Guid
+                f.RawParent <- Some x
                 let fWorks = works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid) |> toArray
                 for w in fWorks do
                     w.OptFlowGuid <- Some f.Guid
@@ -102,7 +103,7 @@ module rec DsObjectModule =
 
             // works 의 Parent 를 this(system) 으로 설정
             for w in works do
-                w.PGuid <- Some x.Guid
+                w.RawParent <- Some x
             ()
 
     type DsFlow with
@@ -124,7 +125,7 @@ module rec DsObjectModule =
             // 현재까지 수집된 call 목록에 대해 parent 를 this 로 설정하고, call 목록을 clear 한다.
             let calls = ctx.DDic.Get<ResizeArray<DsCall>>("calls")
             for c in x.Calls do
-                c.PGuid <- Some x.Guid
+                c.RawParent <- Some x
             calls.Clear()
 
 

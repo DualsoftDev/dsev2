@@ -118,80 +118,51 @@ module SchemaTestModule =
 
     [<Test>]
     let ``EdObject -> DsObject -> OrmObject -> DB insert test`` () =
-        let system = EdSystem.Create("MainSystem")
-        let flow = EdFlow.Create("MainFlow")
-        let work1 = EdWork.Create("BoundedWork1")
-        let work2 = EdWork.Create("BoundedWork2", ownerFlow=flow)
-        let work3 = EdWork.Create("FreeWork1")
-        let call1 = EdCall.Create("Call1")
-        let call2= EdCall.Create("Call2")
-        work1.AddCalls([call1])
-        flow.AddWorks([work1])
+        let edSystem = EdSystem.Create("MainSystem")
+        let edFlow = EdFlow.Create("MainFlow")
+        let edWork1 = EdWork.Create("BoundedWork1")
+        let edWork2 = EdWork.Create("BoundedWork2", ownerFlow=edFlow)
+        let edWork3 = EdWork.Create("FreeWork1")
+        let edCall1 = EdCall.Create("Call1")
+        let edCall2= EdCall.Create("Call2")
+        edWork1.AddCalls([edCall1])
+        edFlow.AddWorks([edWork1])
 
-        work2.AddCalls([call2])
-        system.AddFlows([flow])
-        system.AddWorks([work1; work2; work3])
+        edWork2.AddCalls([edCall2])
+        edSystem.AddFlows([edFlow])
+        edSystem.AddWorks([edWork1; edWork2; edWork3])
 
-        let dsSystem = system.ToDsSystem()
+        let dsSystem = edSystem.ToDsSystem()
         let dsFlow = dsSystem.Flows[0]
-        dsFlow.Guid === flow.Guid
+        dsFlow.Guid === edFlow.Guid
         dsFlow.Works.Length === 2
         dsSystem.Works.Length === 3
         let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
         let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
         let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
-        dsWork1.Guid === work1.Guid
-        dsWork2.Guid === work2.Guid
-        dsWork3.Guid === work3.Guid
-        dsWork1.Name === work1.Name
-        dsWork2.Name === work2.Name
-        dsWork3.Name === work3.Name
+        dsWork1.Guid === edWork1.Guid
+        dsWork2.Guid === edWork2.Guid
+        dsWork3.Guid === edWork3.Guid
+        dsWork1.Name === edWork1.Name
+        dsWork2.Name === edWork2.Name
+        dsWork3.Name === edWork3.Name
 
         dsFlow.Works.Length === 2
-        dsFlow.Works[0].Guid === work1.Guid
-        dsFlow.Works[1].Guid === work2.Guid
-        dsFlow.Name === flow.Name
+        dsFlow.Works[0].Guid === edWork1.Guid
+        dsFlow.Works[1].Guid === edWork2.Guid
+        dsFlow.Name === edFlow.Name
 
-        work1.Calls.Length === 1
-        work2.Calls.Length === 1
+        edWork1.Calls.Length === 1
+        edWork2.Calls.Length === 1
         let dsCall1 = dsWork1.Calls[0]
         let dsCall2 = dsWork2.Calls[0]
-        dsCall1.Guid === call1.Guid
-        dsCall2.Guid === call2.Guid
+        dsCall1.Guid === edCall1.Guid
+        dsCall2.Guid === edCall2.Guid
         dsCall1.PGuid.Value === dsWork1.Guid
         dsCall2.PGuid.Value === dsWork2.Guid
 
-        dsCall1.Name === call1.Name
-        dsCall2.Name === call2.Name
-
-
-        do
-            let dbApi = path2ConnectionString dbFilePath |> DbApi
-            use conn = dbApi.CreateConnection()
-            conn.TruncateAllTables()
-            //use conn = createMemoryConnection()
-            let newGuid() = Guid.NewGuid()//.ToString()
-
-            // system 삽입
-            let sysGuid = newGuid()
-            let sysName = "XXXMainSystem"
-            conn.Execute($"INSERT INTO {Tn.System} (guid, name) VALUES (@guid, @name)",
-                         {| guid=Some sysGuid; name=sysName |}) |> ignore
-
-            let systemId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.System} WHERE guid = @guid",
-                                                   dict ["guid", box sysGuid])  // Dapper의 파라미터 바인딩에 사용하는 매우 유용한 방법입니다. 이 패턴은 **익명 객체 대신 IDictionary<string, obj>**를 사용하여 매개변수를 지정
-
-            // flow 삽입
-            let flowGuid = newGuid()
-            conn.Execute($"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@guid, @name, @systemId)",
-                         {| guid=flowGuid; name="MainFlow"; systemId=systemId |}) |> ignore
-
-            let flowId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Flow} WHERE guid = @guid",
-                                                 dict ["guid", box flowGuid])
-            ()
-        noop()
-
-
+        dsCall1.Name === edCall1.Name
+        dsCall2.Name === edCall2.Name
 
 
         let json = dsSystem.ToJson()

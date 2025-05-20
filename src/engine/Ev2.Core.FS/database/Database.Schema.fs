@@ -4,6 +4,7 @@ open System
 
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
+open Dual.Common.Base
 
 [<AutoOpen>]
 module DatabaseSchemaModule =
@@ -185,6 +186,8 @@ CREATE TABLE [{Tn.EOT}](
 COMMIT;
 """
 
+[<AutoOpen>]
+module ORMTypesModule =
 
     type RowId = int
     type IORMSystem     = inherit IORMRow
@@ -200,52 +203,92 @@ COMMIT;
     type IORMLog        = inherit IORMRow
 
     [<AbstractClass>]
-    type ORMUniq(name, guid, ?id, ?dateTime) =
-        inherit Unique(name, guid, ?id=id, ?dateTime=dateTime)
+    type ORMUniq(name, guid:Guid, id:Nullable<Id>, dateTime:Nullable<DateTime>) =
+        interface IUnique
         interface IORMRow
 
-        new() = ORMUniq(null, Guid.Empty)
-        new(name, id:int) = ORMUniq(name, id=id)
+        member val Id = id with get, set
+        member val Pid = Nullable<Id>() with get, set
+        member val Name = name with get, set
+
+        member val Guid = guid.ToString("D") with get, set
+
+        member val DateTime = dateTime with get, set
+
+        new() = ORMUniq(null, Guid.Empty, Nullable(), Nullable())
+        new(name, guid:Guid, id:Nullable<Id>) = ORMUniq(name, guid, id, Nullable())
 
         //member val Name = name with get, set
         //member val Guid = guid with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMSystem(name, guid, ?id) =
-        inherit ORMUniq(name, guid, ?id=id)
+    type ORMSystem(name, guid, id:Id) =
+        inherit ORMUniq(name, guid, id)
         interface IORMSystem
-        new() = ORMSystem(null, Guid.Empty)
+        new() = ORMSystem(null, Guid.Empty, -1)
+        new(name, guid) = ORMSystem(name, guid, -1)
 
-    type ORMFlow(name, guid, systemId:int64, ?id) =
-        inherit ORMUniq(name, guid, ?id=id)
+    type ORMFlow(name, guid, systemId:Id, id:Nullable<Id>) as this =
+        inherit ORMUniq(name, guid, id)
+        do
+            this.Pid <- systemId
+
         interface IORMFlow
-        new() = ORMFlow(null, Guid.Empty, -1)
-        member val SystemId = systemId with get, set
+        new() = ORMFlow(null, Guid.Empty, -1, -1)
+        member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
-    type ORMWork(name, guid, ?flowId:int64, ?id) =
-        inherit ORMUniq(name, guid, ?id=id)
+    type ORMWork(name, guid, flowId:Id, id:Id) =
+        inherit ORMUniq(name, guid, id)
         interface IORMWork
-        new() = ORMWork(null, Guid.Empty)
+        new() = ORMWork(null, Guid.Empty, -1, -1)
         member val FlowId = flowId with get, set
+        member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
-    type ORMCall(name, guid, workId:int64, ?id) =
-        inherit ORMUniq(name, guid, ?id=id)
+    type ORMCall(name, guid, workId:Id, id:Id) as this =
+        inherit ORMUniq(name, guid, id)
+        do
+            this.Pid <- workId
+
         interface IORMCall
-        new() = ORMCall(null, Guid.Empty, -1)
-        member val WorkId = workId with get, set
+        new() = ORMCall(null, Guid.Empty, -1, -1)
+        member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
-    type ORMApiCall(name, guid, workId:int64, ?id) =
-        inherit ORMUniq(name, guid, ?id=id)
+    type ORMApiCall(name, guid, workId:Id, id:Id) as this =
+        inherit ORMUniq(name, guid, id)
+        do
+            this.Pid <- workId
+
         interface IORMApiCall
-        new() = ORMApiCall(null, Guid.Empty, -1)
-        member val WorkId = workId with get, set
+        new() = ORMApiCall(null, Guid.Empty, -1, -1)
+        member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
-    type ORMApiDef(name, guid, workId:int64, ?id) =
-        inherit ORMUniq(name, guid, ?id=id)
+    type ORMApiDef(name, guid, workId:Id, id:Id) as this =
+        inherit ORMUniq(name, guid, id)
+        do
+            this.Pid <- workId
+
         interface IORMApiDef
-        new() = ORMApiDef(null, Guid.Empty, -1)
-        member val WorkId = workId with get, set
+        new() = ORMApiDef(null, Guid.Empty, -1, -1)
+        member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
 
+[<AutoOpen>]
+module ORMTypeConversionModule =
+    type IDsObject with
+        member x.ToORM() =
+            match x |> tryCast<Unique> with
+            | Some uniq ->
+                let id = uniq.Id |? -1
+                let pid = (uniq.RawParent >>= _.Id) |? -1
+                let guid, name = uniq.Guid, uniq.Name
+                let pGuid, dateTime = uniq.PGuid, uniq.DateTime
+
+                match uniq with
+                | :? DsSystem as z -> ORMSystem(name, guid, id) :> ORMUniq
+                | :? DsFlow as z -> ORMFlow(name, guid, pid, id)
+                | :? DsWork as z -> ORMWork(name, guid, pid, id)
+                | :? DsCall as z -> ORMCall(name, guid, pid, id)
+                | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
+            | _ -> failwithf "Cannot convert to ORM. %A" x
 
 
