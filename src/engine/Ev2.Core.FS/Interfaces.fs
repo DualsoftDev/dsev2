@@ -4,6 +4,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Newtonsoft.Json
 open System
+open System.Runtime.Serialization
 
 [<AutoOpen>]
 module Interfaces =
@@ -31,12 +32,15 @@ module Interfaces =
 
 
     [<AbstractClass>]
-    type Unique(name:string, ?id:Id, ?guid:Guid, ?dateTime:DateTime) =
+    type Unique(name:string, guid:Guid, ?id:Id, ?pGuid:Guid, ?dateTime:DateTime) =
         interface IUnique
+
         member val Id = id with get, set
-        member val Guid = guid with get, set
+        [<JsonIgnore>] member val Guid = guid with get, set
+        /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
+        [<JsonIgnore>] member val PGuid = pGuid with get, set
         member val Name = name with get, set
-        member val DateTime = dateTime with get, set
+        [<JsonIgnore>] member val DateTime = dateTime with get, set
 
         override x.ToString() = x.Name
         //override x.GetHashCode() = x.Guid.GetHashCode()
@@ -45,40 +49,114 @@ module Interfaces =
         //    | :? Unique as other -> x.Guid = other.Guid
         //    | _ -> false
 
+        // 직렬화 대상: Nullable<Id> or other serializable type
+        [<JsonProperty("DateTime", NullValueHandling = NullValueHandling.Ignore)>]
+        member val internal rawDateTime: Nullable<DateTime> = dateTime |> Option.toNullable with get, set
+
+        [<JsonProperty("Guid", NullValueHandling = NullValueHandling.Ignore)>]
+        member val internal rawGuid: Nullable<Guid> = Nullable guid with get, set
+        [<OnDeserialized>]
+        member x.OnDeserializedMethod(ctx: StreamingContext) =
+            x.DateTime <- x.rawDateTime |> Option.ofNullable
+            x.Guid     <- x.rawGuid.Value
+
+
+
     [<AutoOpen>]
     module rec DsObjectModule =
-        type Arrow<'T>(source:'T, target:'T, ?id:Id, ?guid:Guid, ?dateTime:DateTime) =
-            inherit Unique(null, ?id=id, ?guid=guid, ?dateTime=dateTime)
+        type Arrow<'T>(source:'T, target:'T, ?guid:Guid, ?id:Id, ?dateTime:DateTime) =
+            inherit Unique(null, guid=(guid |? Guid.NewGuid()), ?id=id, ?dateTime=dateTime)
             interface IArrow
             member val Source = source with get, set
             member val Target = target with get, set
 
 
-        type DsSystem(name:string, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], ?id, ?guid:Guid, ?dateTime:DateTime) =
-            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+        type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], ?id, ?dateTime:DateTime) =
+            inherit Unique(name, guid, ?id=id, ?dateTime=dateTime)
             interface IDsSystem
             member val Flows = flows |> toList
             member val Works = works |> toList
             member val Arrows = arrows |> toList
 
-        type DsFlow(name:string, pGuid:Guid, works:DsWork[], ?id, ?guid:Guid, ?dateTime:DateTime) =
-            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+        type DsFlow(name, guid, pGuid, works:DsWork[], ?id, ?dateTime:DateTime) =
+            inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
+            let mutable works = if isNull works then [||] else works
             interface IDsFlow
-            member x.Pid = pGuid
-            member x.Works = works
+            member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
+            [<JsonIgnore>] member x.Works = works
+            [<JsonProperty("WorksGuids")>]
+            member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
 
-        type DsWork(name:string, pGuid:Guid, calls:DsCall[], arrows:Arrow<DsCall>[], ?flowGuid:Guid, ?id, ?guid:Guid, ?dateTime:DateTime) =
-            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+        type DsWork(name, guid, pGuid, calls:DsCall[], arrows:Arrow<DsCall>[], ?flowGuid:Guid, ?id, ?dateTime:DateTime) =
+            inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
             interface IDsWork
-            member x.OptFlowGuid = flowGuid
+            member val OptFlowGuid = flowGuid with get, set //!! get, set 삭제
             member val Arrows = arrows |> toList
-            member x.Pid = pGuid
             member x.Calls = calls
 
-        type DsCall(name:string, pGuid:Guid, ?id, ?guid:Guid, ?dateTime:DateTime) =
-            inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+
+        type DsCall(name, guid, pGuid, ?id, ?dateTime:DateTime) =
+            inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
             interface IDsCall
-            member val Pid = pGuid with get, set
+
+
+
+
+
+
+
+        // OnDeserializ-[ing/ed] : 반드시 동일 파일, 동일 module 에 있어야 실행 됨.
+        type DsSystem with
+            [<OnDeserializing>]
+            member x.OnDeserializingMethod(ctx: StreamingContext) =
+                ()
+            [<OnDeserialized>]
+            member x.OnDeserializedMethod(ctx: StreamingContext) =
+                let flows = ctx.DDic.Get<ResizeArray<DsFlow>>("flows")
+                let works = ctx.DDic.Get<ResizeArray<DsWork>>("works")
+                //    |> filter (fun w -> x.WorkGuids |> Seq.contains w.Guid)
+                //x.forceSetWorks works
+                for f in flows do
+                    f.PGuid <- Some x.Guid
+                    let fWorks = works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid) |> toArray
+                    for w in fWorks do
+                        w.OptFlowGuid <- Some f.Guid
+
+                    f.forceSetWorks fWorks
+                for w in works do
+                    w.PGuid <- Some x.Guid
+                ()
+
+
+        type DsWork with
+            [<OnDeserializing>]
+            member x.OnDeserializingMethod(ctx: StreamingContext) =
+                let works = ctx.DDic.Get<ResizeArray<DsWork>>("works") |> tee (fun xs -> xs.Add x)
+                ()
+            [<OnDeserialized>]
+            member x.OnDeserializedMethod(ctx: StreamingContext) =
+                let calls = ctx.DDic.Get<ResizeArray<DsCall>>("calls")
+                for c in x.Calls do
+                    c.PGuid <- Some x.Guid
+                calls.Clear()
+
+        type DsFlow with
+            [<OnDeserializing>]
+            member x.OnDeserializingMethod(ctx: StreamingContext) =
+                let flows = ctx.DDic.Get<ResizeArray<DsFlow>>("flows") |> tee (fun xs -> xs.Add x)
+                ()
+            //[<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = ()
+
+
+        type DsCall with
+            [<OnDeserializing>]
+            member x.OnDeserializingMethod(ctx: StreamingContext) =
+                let calls = ctx.DDic.Get<ResizeArray<DsCall>>("calls") |> tee (fun xs -> xs.Add x)
+                ()
+
+
+
+
 
 
         type IEdObject = interface end
@@ -158,6 +236,5 @@ module Interfaces =
 
 
         //} 편집 가능한 버젼
-
 
 

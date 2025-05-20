@@ -13,6 +13,7 @@ open Dual.Common.Db.FS
 
 open Ev2.Core.FS
 open System.IO
+open Dual.Common.Core.FS
 
 
 [<AutoOpen>]
@@ -157,8 +158,8 @@ module SchemaTestModule =
         let dsCall2 = dsWork2.Calls[0]
         dsCall1.Guid === call1.Guid
         dsCall2.Guid === call2.Guid
-        dsCall1.Pid === dsWork1.Guid.Value
-        dsCall2.Pid === dsWork2.Guid.Value
+        dsCall1.PGuid.Value === dsWork1.Guid
+        dsCall2.PGuid.Value === dsWork2.Guid
 
         dsCall1.Name === call1.Name
         dsCall2.Name === call2.Name
@@ -166,6 +167,8 @@ module SchemaTestModule =
 
 
         let json = dsSystem.ToJson()
+        tracefn $"---------------------- json:\r\n{json}"
+        let dsSystem2 = DsSystem.FromJson json
         dsSystem.ToAasJson() |> ignore
 
         let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")

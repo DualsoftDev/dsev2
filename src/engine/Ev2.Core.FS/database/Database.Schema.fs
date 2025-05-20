@@ -193,52 +193,51 @@ COMMIT;
     type IORMMeta       = inherit IORMRow
     type IORMLog        = inherit IORMRow
 
-
     [<AbstractClass>]
-    type ORMUniq(name:string, ?id:int64, ?guid:Guid, ?dateTime:DateTime) =
-        inherit Unique(name, ?id=id, ?guid=guid, ?dateTime=dateTime)
+    type ORMUniq(name, guid, ?id, ?dateTime) =
+        inherit Unique(name, guid, ?id=id, ?dateTime=dateTime)
         interface IORMRow
 
-        new() = ORMUniq(null)
+        new() = ORMUniq(null, Guid.Empty)
         new(name, id:int) = ORMUniq(name, id=id)
 
         //member val Name = name with get, set
         //member val Guid = guid with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMSystem(name, ?id, ?guid) =
-        inherit ORMUniq(name, ?id=id, ?guid=guid)
+    type ORMSystem(name, guid, ?id) =
+        inherit ORMUniq(name, guid, ?id=id)
         interface IORMSystem
-        new() = ORMSystem(null)
+        new() = ORMSystem(null, Guid.Empty)
 
-    type ORMFlow(name, systemId:int64, ?id, ?guid) =
-        inherit ORMUniq(name, ?id=id, ?guid=guid)
+    type ORMFlow(name, guid, systemId:int64, ?id) =
+        inherit ORMUniq(name, guid, ?id=id)
         interface IORMFlow
-        new() = ORMFlow(null, -1)
+        new() = ORMFlow(null, Guid.Empty, -1)
         member val SystemId = systemId with get, set
 
-    type ORMWork(name, ?flowId:int64, ?id, ?guid) =
-        inherit ORMUniq(name, ?id=id, ?guid=guid)
+    type ORMWork(name, guid, ?flowId:int64, ?id) =
+        inherit ORMUniq(name, guid, ?id=id)
         interface IORMWork
-        new() = ORMWork(null)
+        new() = ORMWork(null, Guid.Empty)
         member val FlowId = flowId with get, set
 
-    type ORMCall(name, workId:int64, ?id, ?guid) =
-        inherit ORMUniq(name, ?id=id, ?guid=guid)
+    type ORMCall(name, guid, workId:int64, ?id) =
+        inherit ORMUniq(name, guid, ?id=id)
         interface IORMCall
-        new() = ORMCall(null, -1)
+        new() = ORMCall(null, Guid.Empty, -1)
         member val WorkId = workId with get, set
 
-    type ORMApiCall(name, workId:int64, ?id, ?guid) =
-        inherit ORMUniq(name, ?id=id, ?guid=guid)
+    type ORMApiCall(name, guid, workId:int64, ?id) =
+        inherit ORMUniq(name, guid, ?id=id)
         interface IORMApiCall
-        new() = ORMApiCall(null, -1)
+        new() = ORMApiCall(null, Guid.Empty, -1)
         member val WorkId = workId with get, set
 
-    type ORMApiDef(name, workId:int64, ?id, ?guid) =
-        inherit ORMUniq(name, ?id=id, ?guid=guid)
+    type ORMApiDef(name, guid, workId:int64, ?id) =
+        inherit ORMUniq(name, guid, ?id=id)
         interface IORMApiDef
-        new() = ORMApiDef(null, -1)
+        new() = ORMApiDef(null, Guid.Empty, -1)
         member val WorkId = workId with get, set
 
 
