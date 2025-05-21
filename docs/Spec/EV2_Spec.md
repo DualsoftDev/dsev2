@@ -78,11 +78,11 @@
 ### 2.1 구성 요소 계층 구조
 
 EV2 실행 모델은 다음과 같은 계층 구조를 가집니다:
-- **Project**:   다수의 System을 포함을 포함하는 최상위 단위. TargetSystems 필드를 통해 제어코드 생성 대상 명시 가능
-- **System**:  Work 간 전역 흐름 그래프(`WorkGraph`, Start, Reset가능능) 포함
-- **Work**: 작업 단위. 내부적으로 Call을 포함하며, `CallGraph`로 Call 간 흐름(Reset금지, DAG만 가능) 구성. `Vertex`를 상속함
+- **Project**:   다수의 System을 포함하는 최상위 단위. TargetSystems 필드를 통해 제어코드 생성 대상 명시 가능
+- **System**:  Work 간 전역 흐름 그래프(`WorkGraph`, Start, Reset 가능) 포함
+- **Work**: 작업 단위. 내부적으로 Call을 포함하며, `CallGraph`로 Call 간 흐름(Reset 금지, DAG만 가능) 구성. `Vertex`를 상속함
 - **Flow**: 논리 단위로서 여러 Work를 포함하는 그룹
-- **Call**: 특정 API(동시호출가능)를 호출하는 노드. `Vertex`를 상속함
+- **Call**: 특정 API(동시 호출 가능)를 호출하는 노드. `Vertex`를 상속함
 - **ApiCall**: 실제 API 호출을 수행. 디바이스 연계 IO 정의 (입출력 주소)
 - **ApiDef**: Child System의 Interface 정의 부분
 
@@ -96,46 +96,64 @@ Project
      │    │         └── ApiDef // 다른 System의 디바이스 정의 참조
      │    └── CallGraph        // Call 간 흐름 (Directed Acyclic Graph)
      └── WorkGraph             // Work 간 흐름 (Cyclic Directed Graph, Start/Reset 포함)
-
 ```
   - x:y 는 `부모` 대 `나` 와의 관계
 
 ### 2.2 공통 베이스 클래스
 
+#### SystemUsage
+```fsharp
+type SystemUsage =
+  | Target   // 프로젝트에 정의되어 있고, 직접 제어 대상
+  | Linked   // 외부 프로젝트에서 정의된 간접 제어 대상
+  | Device   // 이 프로젝트에서 정의되었으나 간접 제어 대상
+  | Unused   // 이 프로젝트에서 사용되지 않음 (정의 및 참조 없음)
+```
+
 ```fsharp
 type IUnique =
   abstract Id: Guid
   abstract Name: string
-type IParameter = interface end
-type IArrow = IUnique * IUnique
 
+type IParameter = interface end
+
+type IArrow = IUnique * IUnique
 ```
 모든 요소는 고유 ID와 이름(Name)을 가짐
 
 ### 2.3 주요 클래스 및 속성
 
-#### System
+#### Project
 ```fsharp
+type ProjectParam = {
+    Name: string
+    Version: string
+    Description: string option
+    Author: string option
+    CreatedAt: System.DateTime
+    TargetSystems: string list // 제어 대상 시스템 이름
+    LinkSystems: string list    // 참조 링크 시스템
+} with interface IParameter
 
-
-type Project(name: string, systems: DsSystem list, param: ProjectParam) =
+type Project(idOpt: Guid option, name: string, systems: DsSystem list, param: ProjectParam) =
+    let id = defaultArg idOpt (Guid.NewGuid())
     interface IUnique with
         member _.Name = name
-        member _.Id = Guid.NewGuid()
+        member _.Id = id
     member _.Systems = systems
     member _.Param = param
     member _.GetTargetSystems() =
         systems |> List.filter (fun s -> param.TargetSystems |> List.contains s.Name)
+```
 
-
-
-// 1. ResizeArray member 를 불변 list 나 array 로 잡으면??
-// 2. WorkGraph = ResizeArray<(string * string)>() ???
-type DsSystem(name: string, flows:Flow[], jobs:Job[], edges:IArrow[], devices:device[], param:IParameter ) =
+#### System
+```fsharp
+type DsSystem(idOpt: Guid option, name: string, flows: Flow[], jobs: Job[], edges: IArrow[], devices: device[], param: IParameter ) =
+    let id = defaultArg idOpt (Guid.NewGuid())
     interface IUnique with
-      member _.Name = name
-      member _.Id = x.Guid
-    member val Guid = Guid.NewGuid()
+        member _.Name = name
+        member _.Id = id
+    member val Guid = id
     member _.Flows = flows
     member _.WorkGraph = edges
     member _.Jobs = jobs
@@ -147,15 +165,21 @@ type DsSystem(name: string, flows:Flow[], jobs:Job[], edges:IArrow[], devices:de
 
 #### Flow
 ```fsharp
-type Flow(name: string, param:IParameter) =
-    interface IUnique with ...
+type Flow(idOpt: Guid option, name: string, param: IParameter) =
+    let id = defaultArg idOpt (Guid.NewGuid())
+    interface IUnique with
+        member _.Id = id
+        member _.Name = name
     member _.Param = param
 ```
 
 #### Work
 ```fsharp
-type Work(name: string, flow:Flow, calls::Call[], edges:IArrow[], param:IParameter) =
-    interface IUnique with ...
+type Work(idOpt: Guid option, name: string, flow: Flow, calls: Call[], edges: IArrow[], param: IParameter) =
+    let id = defaultArg idOpt (Guid.NewGuid())
+    interface IUnique with
+        member _.Id = id
+        member _.Name = name
     member _.Flow = flow
     member _.Calls = calls
     member _.CallGraph = edges
@@ -166,7 +190,8 @@ type Work(name: string, flow:Flow, calls::Call[], edges:IArrow[], param:IParamet
 
 #### Call
 ```fsharp
-type Call(name: string, apiCalls:ApiCall[], param:IParameter) =
+type Call(idOpt: Guid option, name: string, apiCalls: ApiCall[], param: IParameter) =
+    let id = defaultArg idOpt (Guid.NewGuid())
     interface IUnique with ...
     member _.Param = param
     member _.ApiCalls = apiCalls
@@ -175,120 +200,28 @@ type Call(name: string, apiCalls:ApiCall[], param:IParameter) =
 
 #### ApiCall
 ```fsharp
-type ApiCall(deviceName: string, apiDef: ApiDef, param:IParameter) =
+type ApiCall(deviceName: string, apiDef: ApiDef, param: IParameter) =
     member this.DeviceName = deviceName
     member _.Param = param
 ```
 
 #### ApiDef
 ```fsharp
-type ApiDef(name: string, param:IParameter) =
+type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
+    let id = defaultArg idOpt (Guid.NewGuid())
     interface IUnique with ...
     member _.Param = param
 ```
-
 ### 2.4 파라미터 모델
 
-모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 예시:
+모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 각 객체에 대한 파라미터 정의는 다음 별도 문서로 분리됨:
 
-```fsharp
-
-
-    type ProjectParam = {
-        Name: string
-        Version: string
-        Description: string option
-        Author: string option
-        CreatedAt: System.DateTime
-        TargetSystems: string list // 제어 대상 시스템 이름
-    } with interface IParameter
-
-
-    type SystemParam = {
-        LangVersion: string
-        EngineVersion: string
-    } with interface IParameter
-
-    let defaultSystemParam = {
-        LangVersion = "1.0.0.0"
-        EngineVersion = "1.0.0.0"
-    }
-
-
-    type CallParam = {
-        CallType: string 
-        Timeout: int
-        ActionType: string
-        AutoPreConditions: string list
-        SafetyConditions: string list
-    } with interface IParameter
-
-    let defaultCallParam = {
-        CallType = "Normal"
-        Timeout = 1000
-        ActionType = "ActionNormal"
-        AutoPreConditions = ResizeArray()
-        SafetyConditions = ResizeArray()
-    }
-
-    type WorkParam = {
-        Motion: string
-        Script: string
-        DsTime: int * int
-        Finished: bool
-        RepeatCount: int
-    } with interface IParameter
-
-    let defaultWorkParam = {
-        Motion = null
-        Script = null
-        DsTime = (500, 5)
-        Finished = false
-        RepeatCount = 1
-    }
-
-    type ApiCallParam = {
-        InAddress: string
-        OutAddress: string
-        InSymbol: string
-        OutSymbol: string
-        IsAnalogSensor: bool
-        IsAnalogActuator: bool
-    } with interface IParameter
-
-    let defaultApiCallParam = {
-        InAddress = null
-        OutAddress = null
-        InSymbol = null
-        OutSymbol = null
-        IsAnalogSensor = false
-        IsAnalogActuator = false
-    } with interface IParameter
-
-    type ApiDefParam = {
-        ActionType : ActionType
-    }
-
-    let defaultApiDefParam = {
-        ActionType = ActionType.Normal
-    }
-
-    type FlowParam = {
-        ButtonDefs: ButtonDef list
-        LampDefs: LampDef list
-        ConditionDefs: ConditionDef list
-        ActionDefs: ActionDef list
-    }
-    let defaultFlowParam = {
-        ButtonDefs = []
-        LampDefs = []
-        ConditionDefs = []
-        ActionDefs = []
-    }
-
-
-
-```
+- [ProjectParam](./params/ProjectParam.md)
+- [SystemParam](./params/SystemParam.md)
+- [WorkParam](./params/WorkParam.md)
+- [CallParam](./params/CallParam.md)
+- [ApiCallParam](./params/ApiCallParam.md)
+- [ApiDefParam](./params/ApiDefParam.md)
 
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
