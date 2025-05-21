@@ -23,7 +23,7 @@ module DatabaseSchemaModule =
 
 
     module Tn =
-        let [<Literal>] Project       = "project"
+        let [<Literal>] Project      = "project"
         let [<Literal>] System       = "system"
         let [<Literal>] Flow         = "flow"
         let [<Literal>] Work         = "work"
@@ -39,9 +39,10 @@ module DatabaseSchemaModule =
         let [<Literal>] Meta         = "meta"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
+        let [<Literal>] ProjectSystemMap      = "projectSystemMap"
         let [<Literal>] EOT          = "endOfTable"
 
-        let AllTableNames = [ Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ]        // Log;
+        let AllTableNames = [ Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ProjectSystemMap; ]        // Log;
 
     // database view names
     module Vn =
@@ -108,8 +109,16 @@ CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
+);
+
+
+CREATE TABLE [{Tn.ProjectSystemMap}]( {sqlUniq()}
     , [projectId]      {intKeyType} NOT NULL
+    , [systemId]       {intKeyType} NOT NULL
+    , [active]         TINYINT NOT NULL DEFAULT 0
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
+    , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.ProjectSystemMap}_uniq UNIQUE (projectId, systemId)
 );
 
 CREATE TABLE [{Tn.Flow}]( {sqlUniqWithName()}
@@ -304,7 +313,8 @@ module ORMTypeConversionModule =
                 let pGuid, dateTime = uniq.PGuid, uniq.DateTime
 
                 match uniq with
-                | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime) :> ORMUniq
+                | :? DsProject as z -> ORMProject(name, guid, id, dateTime) :> ORMUniq
+                | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime)
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
                 | :? DsWork   as z ->
                     let flowId = z.OptFlowGuid |-> (fun flowGuid -> cache[flowGuid].Id) |? Nullable<Id>()
@@ -320,8 +330,13 @@ module ORMTypeConversionModule =
     type IDsObject with
         member x.ToORM(cache:Dictionary<Guid, ORMUniq>) = ds2Orm cache x
 
-    type DsSystem with
+    type DsProject with
         member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
             let cache = Dictionary<Guid, ORMUniq>()
             cache, ds2Orm cache x
+
+    //type DsSystem with
+    //    member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
+    //        let cache = Dictionary<Guid, ORMUniq>()
+    //        cache, ds2Orm cache x
 

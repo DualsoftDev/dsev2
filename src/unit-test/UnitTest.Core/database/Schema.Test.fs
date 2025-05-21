@@ -124,13 +124,13 @@ module SchemaTestModule =
     [<Test>]
     let ``EdObject -> DsObject -> OrmObject -> DB insert test`` () =
         let edProject = EdProject.Create("MainProject")
-        let edSystem = EdSystem.Create("MainSystem", edProject)
-        let edFlow = EdFlow.Create("MainFlow", edSystem)
-        let edWork1 = EdWork.Create("BoundedWork1", edSystem)
-        let edWork2 = EdWork.Create("BoundedWork2", edSystem, ownerFlow=edFlow)
-        let edWork3 = EdWork.Create("FreeWork1", edSystem)
-        let edCall1 = EdCall.Create("Call1", edWork1)
-        let edCall2= EdCall.Create("Call2", edWork2)
+        let edSystem  = EdSystem .Create("MainSystem"  , edProject)
+        let edFlow    = EdFlow   .Create("MainFlow"    , edSystem)
+        let edWork1   = EdWork   .Create("BoundedWork1", edSystem)
+        let edWork2   = EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)
+        let edWork3   = EdWork   .Create("FreeWork1"   , edSystem)
+        let edCall1   = EdCall   .Create("Call1"       , edWork1)
+        let edCall2   = EdCall   .Create("Call2"       , edWork2)
         //edProject.AddSystems([edSystem])
         //edWork1.AddCalls([edCall1])
         edFlow.AddWorks([edWork1])
@@ -139,7 +139,8 @@ module SchemaTestModule =
         //edSystem.AddFlows([edFlow])
         //edSystem.AddWorks([edWork1; edWork2; edWork3])
 
-        let dsSystem = edSystem.ToDsSystem()
+        let dsProject = edProject.ToDsProject()
+        let dsSystem = dsProject.Systems[0]
         let dsFlow = dsSystem.Flows[0]
         dsFlow.Guid === edFlow.Guid
         dsFlow.Works.Length === 2
@@ -172,10 +173,10 @@ module SchemaTestModule =
         dsCall2.Name === edCall2.Name
 
 
-        let json = dsSystem.ToJson()
+        let json = dsProject.ToJson()
         tracefn $"---------------------- json:\r\n{json}"
-        let dsSystem2 = DsSystem.FromJson json
-        let json2 = dsSystem2.ToJson()
+        let dsProject2 = DsProject.FromJson json
+        let json2 = dsProject2.ToJson()
 
         json === json2
 
@@ -183,6 +184,6 @@ module SchemaTestModule =
 
         Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
         |> path2ConnectionString
-        |> dsSystem2.ToSqlite3
+        |> dsProject2.ToSqlite3
 
         ()

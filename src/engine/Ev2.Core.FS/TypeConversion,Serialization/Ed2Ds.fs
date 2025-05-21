@@ -41,3 +41,10 @@ module rec Ed2DsModule =
             for w in works do
                 w.Calls |> iter (fun c -> c.RawParent <- Some w)
             system
+
+    type EdProject with
+        member x.ToDsProject() =
+            let systems = x.Systems |> Seq.map (fun f -> f.ToDsSystem()) |> Seq.toArray
+            systems |> iter (fun z -> z.RawParent <- Some z)
+            let project = DsProject(x.Name, x.Guid, systems, ?id=x.Id, dateTime=x.DateTime)
+            project
