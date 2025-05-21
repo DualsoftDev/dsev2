@@ -216,12 +216,12 @@ type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
 
 모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 각 객체에 대한 파라미터 정의는 다음 별도 문서로 분리됨:
 
-- [ProjectParam](../params/ProjectParam.md)
-- [SystemParam](../params/SystemParam.md)
-- [WorkParam](../params/WorkParam.md)
-- [CallParam](../params/CallParam.md)
-- [ApiCallParam](../params/ApiCallParam.md)
-- [ApiDefParam](../params/ApiDefParam.md)
+- [ProjectParam](./params/ProjectParam.md)
+- [SystemParam](./params/SystemParam.md)
+- [WorkParam](./params/WorkParam.md)
+- [CallParam](./params/CallParam.md)
+- [ApiCallParam](./params/ApiCallParam.md)
+- [ApiDefParam](./params/ApiDefParam.md)
 
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
