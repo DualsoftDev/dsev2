@@ -1,46 +1,19 @@
 namespace Ev2.Core.FS
 
 open Dual.Common.Base
-open System.Runtime.Serialization
 open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module Ds2JsonModule =
-    let private createDynamicDictionary() =
-        let ddic = DynamicDictionary()
-        ddic.Set("systems",    ResizeArray<DsSystem>())
-        ddic.Set("flows",      ResizeArray<DsFlow>())
-        ddic.Set("flowArrows", ResizeArray<Arrow<DsWork>>())
-        ddic.Set("works",      ResizeArray<DsWork>())
-        ddic.Set("workArrows", ResizeArray<Arrow<DsCall>>())
-        ddic.Set("calls",      ResizeArray<DsCall>())
-        ddic
 
     type DsProject with
-        member x.ToJson():string =
-            EmJson.ToJson(x)
-
-        static member FromJson(json:string): DsProject =
-            let settings = EmJson.CreateDefaultSettings()
-            // Json deserialize 중에 필요한 담을 그릇 준비
-            let ddic = createDynamicDictionary()
-            settings.Context <- new StreamingContext(StreamingContextStates.All, ddic)
-
-            let project = EmJson.FromJson<DsProject>(json, settings)
-            project
+        member x.ToJson():string = EmJson.ToJson(x)
+        static member FromJson(json:string): DsProject = EmJson.FromJson<DsProject>(json)
 
 
     //type DsSystem with
-    //    member x.ToJson():string =
-    //        EmJson.ToJson(x)
-
-    //    static member FromJson(json:string): DsSystem =
-    //        let settings = EmJson.CreateDefaultSettings()
-    //        let ddic = createDynamicDictionary()
-    //        settings.Context <- new StreamingContext(StreamingContextStates.All, ddic)
-
-    //        let system = EmJson.FromJson<DsSystem>(json, settings)
-    //        system
+    //    member x.ToJson():string = EmJson.ToJson(x)
+    //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
 
 
     let private arrowToDto (a:IArrow) = DtoArrow(a.Guid, a.Id, a.SourceGuid, a.TargetGuid, a.DateTime)
@@ -78,6 +51,20 @@ module Ds2JsonModule =
                 sys.DtoArrows
                 |-> getArrowInfos sys.Works
                 |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
+
+            // flows, works 의 Parent 를 this(system) 으로 설정
+            sys.Flows |> iter (fun z -> z.RawParent <- Some sys)
+            sys.Works |> iter (fun z -> z.RawParent <- Some sys)
+
+            // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
+            for f in sys.Flows do
+                let fWorks = sys.Works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid) |> toArray
+                for w in fWorks do
+                    w.OptFlowGuid <- Some f.Guid
+
+                f.forceSetWorks fWorks
+
+            // 하부 구조에 대해서 재귀적으로 호출
             sys.Flows |> iter onDeserialized
             sys.Works |> iter onDeserialized
 
@@ -87,6 +74,7 @@ module Ds2JsonModule =
                 |-> getArrowInfos flow.Works
                 |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
         | :? DsWork as work ->
+            work.Calls |> iter (fun z -> z.RawParent <- Some work)
             work.Arrows <-
                 work.DtoArrows
                 |-> getArrowInfos work.Calls
