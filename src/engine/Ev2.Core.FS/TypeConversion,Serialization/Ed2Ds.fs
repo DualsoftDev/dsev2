@@ -11,7 +11,7 @@ module rec Ed2DsModule =
     type EdFlow with
         member x.ToDsFlow() =
             let works = x.Works |-> _.ToDsWork() |> toArray
-            DsFlow(x.Name, x.Guid, x.OptParent.Value.Guid, works, ?id=x.Id, dateTime=x.DateTime)
+            DsFlow(x.Name, x.Guid, x.RawParent.Value.Guid, works, ?id=x.Id, dateTime=x.DateTime)
 
     type EdWork with
         member x.ToDsWork() =
@@ -19,13 +19,13 @@ module rec Ed2DsModule =
             let arrows = x.Arrows |-> (fun a -> Arrow<DsCall>(callDic[a.Source], callDic[a.Target], now())) |> Seq.toArray
             let optOwnerFlowGuid = x.OptOwnerFlow |-> _.Guid
             let calls = callDic.Values |> toArray
-            DsWork(x.Name, x.Guid, x.OptParent.Value.Guid, calls, arrows, optOwnerFlowGuid, ?id=x.Id, dateTime=x.DateTime)
+            DsWork(x.Name, x.Guid, x.RawParent.Value.Guid, calls, arrows, optOwnerFlowGuid, ?id=x.Id, dateTime=x.DateTime)
 
 
     type EdCall with
         member x.ToDsCall() =
             let xxx = x
-            DsCall(x.Name, x.Guid, x.OptParent.Value.Guid, ?id=x.Id, dateTime=x.DateTime)
+            DsCall(x.Name, x.Guid, x.RawParent.Value.Guid, ?id=x.Id, dateTime=x.DateTime)
 
     type EdSystem with
         member x.ToDsSystem() =

@@ -23,6 +23,7 @@ module DatabaseSchemaModule =
 
 
     module Tn =
+        let [<Literal>] Project       = "project"
         let [<Literal>] System       = "system"
         let [<Literal>] Flow         = "flow"
         let [<Literal>] Work         = "work"
@@ -40,7 +41,7 @@ module DatabaseSchemaModule =
         let [<Literal>] TableHistory = "tableHistory"
         let [<Literal>] EOT          = "endOfTable"
 
-        let AllTableNames = [ System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ]        // Log;
+        let AllTableNames = [ Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ]        // Log;
 
     // database view names
     module Vn =
@@ -103,7 +104,12 @@ module DatabaseSchemaModule =
 BEGIN TRANSACTION;
 
 
+CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
+);
+
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
+    , [projectId]      {intKeyType} NOT NULL
+    , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
 );
 
 CREATE TABLE [{Tn.Flow}]( {sqlUniqWithName()}
@@ -191,6 +197,7 @@ COMMIT;
 module ORMTypesModule =
 
     type RowId = int
+    type IORMProject    = inherit IORMRow
     type IORMSystem     = inherit IORMRow
     type IORMFlow       = inherit IORMRow
     type IORMWork       = inherit IORMRow
@@ -227,6 +234,12 @@ module ORMTypesModule =
         //member val Guid = guid with get, set
 
     /// Object Releation Mapper for Asset
+    type ORMProject(name, guid, id:Id, dateTime) =
+        inherit ORMUniq(name, guid, id, dateTime)
+        interface IORMProject
+        new() = ORMProject(null, Guid.Empty, -1, nullDate)
+        new(name, guid) = ORMProject(name, guid, -1, nullDate)
+
     type ORMSystem(name, guid, id:Id, dateTime) =
         inherit ORMUniq(name, guid, id, dateTime)
         interface IORMSystem

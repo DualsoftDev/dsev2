@@ -60,35 +60,38 @@ module SchemaTestModule =
         //use conn = createMemoryConnection()
         let newGuid() = Guid.NewGuid().ToString()
 
+        // project 삽입
+        let prjGuid = newGuid()
+        let prjName = "MainProject"
+        let prjId = conn.InsertAndQueryLastRowId(
+                        $"INSERT INTO {Tn.Project} (guid, name) VALUES (@Guid, @Name)",
+                        {| Guid=prjGuid; Name=prjName; |})
+
+
         // system 삽입
         let sysGuid = newGuid()
         let sysName = "MainSystem"
-        conn.Execute($"INSERT INTO {Tn.System} (guid, name) VALUES (@guid, @name)",
-                     dict ["guid", box sysGuid; "name", box sysName]) |> ignore
-
-        let systemId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.System} WHERE guid = @guid",
-                                               dict ["guid", box sysGuid])  // Dapper의 파라미터 바인딩에 사용하는 매우 유용한 방법입니다. 이 패턴은 **익명 객체 대신 IDictionary<string, obj>**를 사용하여 매개변수를 지정
+        let systemId = conn.InsertAndQueryLastRowId(
+                        $"INSERT INTO {Tn.System} (guid, name, projectId) VALUES (@Guid, @Name, @ProjectId)",
+                        {| Guid=sysGuid; Name=sysName; ProjectId=prjId|})
 
         // flow 삽입
         let flowGuid = newGuid()
-        conn.Execute($"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@guid, @name, @systemId)",
-                     dict ["guid", box flowGuid; "name", box "MainFlow"; "systemId", box systemId]) |> ignore
-
-        let flowId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Flow} WHERE guid = @guid",
-                                             dict ["guid", box flowGuid])
+        let flowId = conn.InsertAndQueryLastRowId(
+                        $"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@Guid, @Name, @SystemId)",
+                        {| Guid=flowGuid; Name="MainFlow"; SystemId=systemId|})
 
         // work 삽입 (flow 연결된 경우)
         let workGuid1 = newGuid()
-        conn.Execute($"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@guid, @name, @systemId, @flowId)",
-                     dict ["guid", box workGuid1; "name", box "Work1"; "systemId", box systemId; "flowId", box flowId]) |> ignore
+        let workId = conn.InsertAndQueryLastRowId(
+                        $"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@Guid, @Name, @SystemId, @FlowId)",
+                        {| Guid=workGuid1; Name="Work1"; SystemId=systemId; FlowId=flowId|})
 
         // work 삽입 (flow 연결 없는 경우 - flowId = NULL)
         let workGuid2 = newGuid()
         conn.Execute($"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@guid, @name, @systemId, NULL)",
                      dict ["guid", box workGuid2; "name", box "Work2"; "systemId", box systemId]) |> ignore
 
-        let workId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Work} WHERE guid = @guid",
-                                             dict ["guid", box workGuid1])
 
         // call 삽입
         let callGuid = newGuid()
@@ -120,19 +123,21 @@ module SchemaTestModule =
 
     [<Test>]
     let ``EdObject -> DsObject -> OrmObject -> DB insert test`` () =
-        let edSystem = EdSystem.Create("MainSystem")
-        let edFlow = EdFlow.Create("MainFlow")
-        let edWork1 = EdWork.Create("BoundedWork1")
-        let edWork2 = EdWork.Create("BoundedWork2", ownerFlow=edFlow)
-        let edWork3 = EdWork.Create("FreeWork1")
-        let edCall1 = EdCall.Create("Call1")
-        let edCall2= EdCall.Create("Call2")
-        edWork1.AddCalls([edCall1])
+        let edProject = EdProject.Create("MainProject")
+        let edSystem = EdSystem.Create("MainSystem", edProject)
+        let edFlow = EdFlow.Create("MainFlow", edSystem)
+        let edWork1 = EdWork.Create("BoundedWork1", edSystem)
+        let edWork2 = EdWork.Create("BoundedWork2", edSystem, ownerFlow=edFlow)
+        let edWork3 = EdWork.Create("FreeWork1", edSystem)
+        let edCall1 = EdCall.Create("Call1", edWork1)
+        let edCall2= EdCall.Create("Call2", edWork2)
+        //edProject.AddSystems([edSystem])
+        //edWork1.AddCalls([edCall1])
         edFlow.AddWorks([edWork1])
 
-        edWork2.AddCalls([edCall2])
-        edSystem.AddFlows([edFlow])
-        edSystem.AddWorks([edWork1; edWork2; edWork3])
+        //edWork2.AddCalls([edCall2])
+        //edSystem.AddFlows([edFlow])
+        //edSystem.AddWorks([edWork1; edWork2; edWork3])
 
         let dsSystem = edSystem.ToDsSystem()
         let dsFlow = dsSystem.Flows[0]

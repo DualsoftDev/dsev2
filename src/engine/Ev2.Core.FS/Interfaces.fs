@@ -10,24 +10,25 @@ open System.Runtime.Serialization
 module Interfaces =
     type Id = int   //int64
     /// 기본 객체 인터페이스
-    type IDsObject = interface end
+    type IDsObject  = interface end
     type IParameter = inherit IDsObject
-    type IArrow = inherit IDsObject
+    type IArrow     = inherit IDsObject
 
     /// Guid, Name, DateTime
     type IUnique =
         inherit IDsObject
 
 
-    type IDsSystem = inherit IDsObject
-    type IDsFlow = inherit IDsObject
-    type IDsWork = inherit IDsObject
-    type IDsCall = inherit IDsObject
+    type IDsProject = inherit IDsObject
+    type IDsSystem  = inherit IDsObject
+    type IDsFlow    = inherit IDsObject
+    type IDsWork    = inherit IDsObject
+    type IDsCall    = inherit IDsObject
 
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?pGuid:Guid) =
+    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?pGuid:Guid, ?parent:Unique) =
         interface IUnique
 
         member val Id = id with get, set
@@ -37,7 +38,7 @@ module Interfaces =
         member val DateTime = dateTime with get, set
 
         ///// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
-        [<JsonIgnore>] member val RawParent = Option<Unique>.None with get, set
+        [<JsonIgnore>] member val RawParent = parent with get, set
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
 [<AutoOpen>]
@@ -49,6 +50,12 @@ module rec DsObjectModule =
         member val Source = source with get, set
         member val Target = target with get, set
 
+
+    type DsProject(name, guid, systems:DsSystem[], dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
+        interface IDsProject
+
+        member val Systems = systems |> toList
 
     type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
@@ -86,6 +93,15 @@ module rec DsObjectModule =
 
 
     // { OnDeserializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
+    type DsProject with
+        [<OnDeserialized>]
+        member x.OnDeserializedMethod(ctx: StreamingContext) =
+            let systems = ctx.DDic.Get<ResizeArray<DsSystem>>("systems")
+
+            // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
+            for s in systems do
+                s.RawParent <- Some x
+
     type DsSystem with
         [<OnDeserialized>]
         member x.OnDeserializedMethod(ctx: StreamingContext) =
@@ -149,6 +165,8 @@ module DsObjectUtilsModule =
             if includeMe then
                 yield x
             match x with
+            | :? DsProject as prj ->
+                yield! prj.Systems |> Seq.bind(_.EnumerateDsObjects())
             | :? DsSystem as sys ->
                 yield! sys.Works |> Seq.bind(_.EnumerateDsObjects())
                 yield! sys.Flows |> Seq.bind(_.EnumerateDsObjects())
