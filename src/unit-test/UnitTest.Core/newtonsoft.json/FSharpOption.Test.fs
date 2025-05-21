@@ -41,6 +41,7 @@ open Dual.Common.Core.FS
 open Dual.Common.Base
 open System.Drawing
 open Dual.Common.UnitTest.FS
+open Ev2.Core.FS
 
 [<Test>]
 let doTest() =
@@ -99,3 +100,15 @@ let doTest() =
     EmJson.FromJson<Person>(json4) |> EmJson.ToJson === json4
 
     printfn "%s" json3
+
+
+[<Test>]
+let arrowParse() =
+    let json = """
+        {
+            "Guid": "6ee2fb3c-0db7-461e-a28f-9750dc7d36d3",
+            "Source": "891067fc-9da0-4b48-980c-dcaf50a694ae",
+            "Target": "cf22ac6b-403c-4547-bf82-846aa356b73e"
+        }"""
+    let arrow = EmJson.FromJson<DtoArrow>(json)
+    ()

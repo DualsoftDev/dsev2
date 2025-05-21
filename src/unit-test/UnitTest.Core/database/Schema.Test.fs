@@ -135,7 +135,10 @@ module SchemaTestModule =
         //edWork1.AddCalls([edCall1])
         edFlow.AddWorks([edWork1])
 
-        //edWork1.AddArrows
+        let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now)
+        edWork1.AddArrows([edArrow1])
+        let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now)
+        edWork2.AddArrows([edArrow2])
 
         //edWork2.AddCalls([edCall2])
         //edSystem.AddFlows([edFlow])
@@ -162,8 +165,8 @@ module SchemaTestModule =
         dsFlow.Works[1].Guid === edWork2.Guid
         dsFlow.Name === edFlow.Name
 
-        edWork1.Calls.Length === 1
-        edWork2.Calls.Length === 1
+        edWork1.Calls.Length === 2
+        edWork2.Calls.Length === 2
         let dsCall1 = dsWork1.Calls[0]
         let dsCall2 = dsWork2.Calls[0]
         dsCall1.Guid === edCall1a.Guid

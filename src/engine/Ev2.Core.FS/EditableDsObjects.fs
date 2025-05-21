@@ -53,17 +53,24 @@ module rec EditableDsObjects =
             EdSystem(name, project, flows, works, arrows, guid, dateTime)
             |> tee(fun s -> if asActive then project.AddActiveSystem s else project.AddPassiveSystem s )
 
-    type EdFlow private (name:string, guid:Guid, dateTime:DateTime, system:EdSystem, ?id) =
+    type EdFlow private (name:string, guid:Guid, dateTime:DateTime, system:EdSystem, arrows:ResizeArray<Arrow<EdWork>>, ?id) =
         inherit Unique(name, guid=guid, dateTime=dateTime, parent=system, ?id=id)
         interface IEdFlow
-        static member Create(name, system, ?id, ?guid, ?dateTime) =
+        static member Create(name, system, ?arrows:Arrow<EdWork> seq, ?id, ?guid, ?dateTime) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
-            EdFlow(name, guid, dateTime, system, ?id=id)
+            let arrows = arrows |? Seq.empty |> ResizeArray
+            EdFlow(name, guid, dateTime, system, arrows, ?id=id)
             |> tee(fun f -> system.AddFlows [f])
 
         member x.AddWorks(ws:EdWork seq) =
             ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
+
+        member x.Arrows = arrows |> toArray
+        member x.AddArrows(arrs:Arrow<EdWork> seq) =
+            arrows.AddRange(arrs)
+            arrs |> iter (fun c -> c.RawParent <- Some x)
+
         member x.Works = //x.OptParent |> map _.Works //|> choose id
             match x.RawParent with
             | Some (:? EdSystem as p) -> p.Works |> filter (fun w -> w.OptOwnerFlow = Some x) |> toArray
@@ -75,11 +82,15 @@ module rec EditableDsObjects =
         interface IEdWork
         member val OptOwnerFlow = ownerFlow with get, set
         member x.Calls = calls |> toArray
-        member x.Arrows = arrows
+        member x.Arrows = arrows |> toArray
 
         member x.AddCalls(cs:EdCall seq) =
             calls.AddRange(cs)
             cs |> iter (fun c -> c.RawParent <- Some x)
+
+        member x.AddArrows(arrs:Arrow<EdCall> seq) =
+            arrows.AddRange(arrs)
+            arrs |> iter (fun c -> c.RawParent <- Some x)
 
         static member Create(name:string, system:EdSystem, ?calls:EdCall seq, ?ownerFlow:EdFlow, ?arrows:Arrow<EdCall> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
@@ -103,4 +114,9 @@ module rec EditableDsObjects =
             |> tee(fun c -> work.AddCalls [c] )
 
 
+    type EdArrowBetweenCalls(source:EdCall, target:EdCall, dateTime:DateTime, ?guid:Guid, ?id:Id) =
+        inherit Arrow<EdCall>(source, target, dateTime, ?guid=guid, ?id=id)
+
+    type EdArrowBetweenWorks(source:EdWork, target:EdWork, dateTime:DateTime, ?guid:Guid, ?id:Id) =
+        inherit Arrow<EdWork>(source, target, dateTime, ?guid=guid, ?id=id)
 
