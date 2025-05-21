@@ -104,7 +104,7 @@ module rec DsObjectModule =
 
         member val Flows = flows |> toList
         member val Works = works |> toList
-        member val DtoArrows:DtoArrow list = [] with get, set
+        member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 
     type DsFlow(name, guid, pGuid, works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
@@ -116,11 +116,10 @@ module rec DsObjectModule =
         member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
         [<JsonIgnore>] member x.Works = works
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
-        member val DtoArrows:DtoArrow list = [] with get, set
+        member val internal DtoArrows:DtoArrow list = [] with get, set
 
 
-        [<JsonProperty("WorksGuids")>]
-        member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
+        [<JsonProperty("WorksGuids")>] member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
 
     type DsWork(name, guid, pGuid, calls:DsCall[], arrows:ArrowBetweenCalls[], optFlowGuid:Guid option, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
@@ -129,10 +128,10 @@ module rec DsObjectModule =
         let mutable optFlowGuid = optFlowGuid
         interface IDsWork
         member x.Calls = calls
-        member val DtoArrows:DtoArrow list = [] with get, set
+        member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 
-        [<JsonIgnore>] member x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
+        [<JsonIgnore>] member internal x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
         [<JsonProperty>] member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
 
     type DsCall(name, guid, pGuid, dateTime:DateTime, ?id) =
@@ -148,78 +147,8 @@ module rec DsObjectModule =
 
     type DsSystem with
         [<OnSerializing>] member x.OnSerializingMethod(ctx: StreamingContext) = fwdOnSerializing x
-        //[<OnDeserializing>] member x.OnDeserializingMethod(ctx: StreamingContext) = fwdOnSerialized x
-
-
-
-
-    type DsSystem with
-        [<OnDeserializing>]
-        member x.OnDeserializingMethod(ctx: StreamingContext) =
-            ()
-
-        [<OnDeserialized>]
-        member x.OnDeserializedMethod(ctx: StreamingContext) =
-            // System에 대한 serialize 종료 시점:
-            let flows = ctx.DDic.Get<ResizeArray<DsFlow>>("flows")
-            let works = ctx.DDic.Get<ResizeArray<DsWork>>("works")
-
-            // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
-            for f in flows do
-                f.RawParent <- Some x
-                let fWorks = works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid) |> toArray
-                for w in fWorks do
-                    w.OptFlowGuid <- Some f.Guid
-
-                f.forceSetWorks fWorks
-
-            // works 의 Parent 를 this(system) 으로 설정
-            for w in works do
-                w.RawParent <- Some x
-
-
-
-    type DsFlow with
-        [<OnDeserializing>]
-        member x.OnDeserializingMethod(ctx: StreamingContext) =
-            let flows = ctx.DDic.Get<ResizeArray<DsFlow>>("flows") |> tee (fun xs -> xs.Add x)
-            ()  // flow 목록 수집 -> Dynamic Dictionary 에 저장
-
-
-
-
-    type DsWork with
-        [<OnDeserializing>]
-        member x.OnDeserializingMethod(ctx: StreamingContext) =
-            //x.DtoArrows <- x.Arrows |-> (fun a -> DtoArrow(a.Guid, a.Id, a.Source, a.Target, now()))
-            let works = ctx.DDic.Get<ResizeArray<DsWork>>("works") |> tee (fun xs -> xs.Add x)
-            ()  // work 목록 수집 -> Dynamic Dictionary 에 저장
-
-        [<OnDeserialized>]
-        member x.OnDeserializedMethod(ctx: StreamingContext) =
-            tracefn $"Add works with guid: {x.Guid}"
-            // Work 하나에 대한 serialize 종료 시점:
-            // 현재까지 수집된 call 목록에 대해 parent 를 this 로 설정하고, call 목록을 clear 한다.
-            let calls = ctx.DDic.Get<ResizeArray<DsCall>>("calls")
-            for c in x.Calls do
-                c.RawParent <- Some x
-            calls.Clear()
-
-
-    type DsCall with
-        [<OnDeserializing>]
-        member x.OnDeserializingMethod(ctx: StreamingContext) =
-            let calls = ctx.DDic.Get<ResizeArray<DsCall>>("calls") |> tee (fun xs -> xs.Add x)
-            ()  // call 목록 수집 -> Dynamic Dictionary 에 저장
-
-    //type IArrow with
-    //    [<OnDeserializing>]
-    //    member x.OnDeserializingMethod(ctx: StreamingContext) =
-    //        let calls = ctx.DDic.Get<ResizeArray<Arrow<DsCall>>>("callArrows") //|> tee (fun xs -> xs.Add x)
-    //        ()  // arrows 목록 수집 -> Dynamic Dictionary 에 저장
-
-    // } OnDeserializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
-
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
+    // } On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
 
 
 
