@@ -72,8 +72,8 @@ module SchemaTestModule =
         let sysGuid = newGuid()
         let sysName = "MainSystem"
         let systemId = conn.InsertAndQueryLastRowId(
-                        $"INSERT INTO {Tn.System} (guid, name, projectId) VALUES (@Guid, @Name, @ProjectId)",
-                        {| Guid=sysGuid; Name=sysName; ProjectId=prjId|})
+                        $"INSERT INTO {Tn.System} (guid, name) VALUES (@Guid, @Name)",
+                        {| Guid=sysGuid; Name=sysName;|})
 
         // flow 삽입
         let flowGuid = newGuid()
@@ -124,7 +124,7 @@ module SchemaTestModule =
     [<Test>]
     let ``EdObject -> DsObject -> OrmObject -> DB insert test`` () =
         let edProject = EdProject.Create("MainProject")
-        let edSystem  = EdSystem .Create("MainSystem"  , edProject)
+        let edSystem  = EdSystem .Create("MainSystem"  , edProject, asActive=true)
         let edFlow    = EdFlow   .Create("MainFlow"    , edSystem)
         let edWork1   = EdWork   .Create("BoundedWork1", edSystem)
         let edWork2   = EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)

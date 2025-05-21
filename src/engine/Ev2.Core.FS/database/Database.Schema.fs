@@ -283,6 +283,14 @@ module ORMTypesModule =
         new() = ORMCall(null, Guid.Empty, -1, -1, nullDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
+
+
+    type ORMProjectSystemMap(projectId:Id, systemId:Id, isActive:bool, name, guid, id:Id, dateTime) =
+        inherit ORMUniq(name, guid, id, dateTime)
+        member val ProjectId = projectId with get, set
+        member val SystemId = systemId with get, set
+        member val IsActive = isActive with get, set
+
     type ORMApiCall(name, guid, id:Id, workId:Id, dateTime) as this =
         inherit ORMUniq(name, guid, id, dateTime)
         do

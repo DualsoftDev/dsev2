@@ -17,19 +17,24 @@ module rec EditableDsObjects =
     type IEdWork    = inherit IEdObject inherit IDsWork
     type IEdCall    = inherit IEdObject inherit IDsCall
 
-    type EdProject private (name:string, systems:ResizeArray<EdSystem>, guid:Guid, dateTime:DateTime, ?id) =
+    type EdProject private (name:string, activeSystems:ResizeArray<EdSystem>, passiveSystems:ResizeArray<EdSystem>, guid:Guid, dateTime:DateTime, ?id) =
         inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id)
         interface IEdProject
-        member x.Systems = systems |> toArray
-        member x.AddSystems(ss:EdSystem seq) =
-            systems.AddRange(ss)
-            ss |> iter (fun s -> s.RawParent <- Some x)
+        member x.ActiveSystems = activeSystems |> toArray
+        member x.PassiveSystems = passiveSystems |> toArray
+        member x.AddActiveSystem(sys:EdSystem) =
+            activeSystems.Add(sys)
+            sys.RawParent <- Some x
+        member x.AddPassiveSystem(sys:EdSystem) =
+            passiveSystems.Add(sys)
+            sys.RawParent <- Some x
 
-        static member Create(name:string, ?systems:EdSystem seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
+        static member Create(name:string, ?activeSystems:EdSystem seq, ?passiveSystems:EdSystem seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
-            let systems = systems |? Seq.empty |> ResizeArray
-            EdProject(name, systems, guid, dateTime)
+            let activeSystems = activeSystems |? Seq.empty |> ResizeArray
+            let passiveSystems = passiveSystems |? Seq.empty |> ResizeArray
+            EdProject(name, activeSystems, passiveSystems, guid, dateTime)
 
 
 
@@ -46,14 +51,14 @@ module rec EditableDsObjects =
             works.AddRange(ws)
             ws |> iter (fun w -> w.RawParent <- Some x)
 
-        static member Create(name:string, project:EdProject, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:Arrow<EdWork> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
+        static member Create(name:string, project:EdProject, asActive:bool, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:Arrow<EdWork> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
             let flows = flows |? Seq.empty |> ResizeArray
             let works = works |? Seq.empty |> ResizeArray
             let arrows = arrows |? Seq.empty |> ResizeArray
             EdSystem(name, project, flows, works, arrows, guid, dateTime)
-            |> tee(fun s -> project.AddSystems [s] )
+            |> tee(fun s -> if asActive then project.AddActiveSystem s else project.AddPassiveSystem s )
 
     type EdFlow private (name:string, guid:Guid, dateTime:DateTime, system:EdSystem, ?id) =
         inherit Unique(name, guid=guid, dateTime=dateTime, parent=system, ?id=id)

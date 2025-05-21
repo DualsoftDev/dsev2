@@ -9,16 +9,15 @@ open Dapper
 
 [<AutoOpen>]
 module Ds2SqliteModule =
-    type DsProject with
-        member x.ToSqlite3(connStr:string) =
+    let project2Sqlite (x:DsProject) (connStr:string) =
+        let grDic = x.EnumerateDsObjects() |> groupByToDictionary _.GetType()
+        let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
 
-            let grDic = x.EnumerateDsObjects() |> groupByToDictionary _.GetType()
-            let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
-
-            let dbApi = DbApi(connStr)
-            checkHandlers()
-            use conn = dbApi.CreateConnection()
-            use tr = conn.BeginTransaction()
+        let dbApi = DbApi(connStr)
+        checkHandlers()
+        use conn = dbApi.CreateConnection()
+        use tr = conn.BeginTransaction()
+        try
             conn.TruncateAllTables()
 
             let cache, ormProject = x.ToORM()
@@ -32,10 +31,19 @@ module Ds2SqliteModule =
                 s.Id <- Some sysId
                 cache[x.Guid].Id <- sysId
 
+                // update projectSystemMap table
+                let isActive = x.ActiveSystems |> Seq.contains s
+                let isPassive = x.PassiveSystems |> Seq.contains s
+                assert(isActive <> isPassive)   // XOR
+                match conn.TryQuerySingle<ORMProjectSystemMap>($"SELECT * FROM {Tn.ProjectSystemMap} WHERE projectId = {projId} AND systemId = {sysId}") with
+                | Some row when row.IsActive = isActive -> ()
+                | Some row ->
+                    conn.Execute($"UPDATE {Tn.ProjectSystemMap} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
+                                {| DateTime = now() |}) |> ignore
+                | None -> conn.Execute(
+                            $"INSERT INTO {Tn.ProjectSystemMap} (projectId, systemId, active, guid, dateTime) VALUES (@ProjectId, @SystemId, @Active, @Guid, @DateTime)",
+                            {| ProjectId = projId; SystemId = sysId; Active = isActive; Guid=Guid.NewGuid(); DateTime=now() |}, tr) |> ignore
 
-                //let works = grDic.[typeof<DsWork>] |> Seq.cast<DsWork> |> List.ofSeq
-                //let calls = grDic.[typeof<DsCall>] |> Seq.cast<DsCall> |> List.ofSeq
-                //let flows = grDic.[typeof<DsFlow>] |> Seq.cast<DsFlow> |> List.ofSeq
 
                 // flows 삽입
                 for f in s.Flows do
@@ -71,16 +79,15 @@ module Ds2SqliteModule =
                         c.Id <- Some callId
                         cache[c.Guid].Id <- callId
 
-                //let ormWorks = works |-> _.ToORM() |> tee(fun ws -> ws |> iter (fun w -> w.Pid <- Nullable sysId))
-                //conn.Execute($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormWorks, tr) |> ignore
-
-                //// calls 삽입
-                //let ormCalls = calls |-> _.ToORM() |> tee(fun cs -> cs |> iter (fun c -> c.Pid <- Nullable sysId))
-                //conn.Execute($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormWorks, tr) |> ignore
-
-
             tr.Commit()
-            ()
+        with ex ->
+            tr.Rollback()
+            logError $"project2Sqlite failed: {ex.Message}"
+            raise ex
+
+
+    type DsProject with
+        member x.ToSqlite3(connStr:string) = project2Sqlite x connStr
 
         [<Obsolete("DB 에서 읽어 들이는 것은 금지!!!  Debugging 전용")>]
         static member FromSqlite3(connStr:string) =

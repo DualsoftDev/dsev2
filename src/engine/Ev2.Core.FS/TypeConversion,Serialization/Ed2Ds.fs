@@ -44,7 +44,8 @@ module rec Ed2DsModule =
 
     type EdProject with
         member x.ToDsProject() =
-            let systems = x.Systems |> Seq.map (fun f -> f.ToDsSystem()) |> Seq.toArray
-            systems |> iter (fun z -> z.RawParent <- Some z)
-            let project = DsProject(x.Name, x.Guid, systems, ?id=x.Id, dateTime=x.DateTime)
+            let activeSystems  = x.ActiveSystems  |> Seq.map (fun f -> f.ToDsSystem()) |> Seq.toArray
+            let passiveSystems = x.PassiveSystems |> Seq.map (fun f -> f.ToDsSystem()) |> Seq.toArray
+            (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some z)
+            let project = DsProject(x.Name, x.Guid, activeSystems, passiveSystems, ?id=x.Id, dateTime=x.DateTime)
             project

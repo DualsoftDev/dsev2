@@ -51,11 +51,13 @@ module rec DsObjectModule =
         member val Target = target with get, set
 
 
-    type DsProject(name, guid, systems:DsSystem[], dateTime:DateTime, ?id) =
+    type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsProject
 
-        member val Systems = systems |> toList
+        member val ActiveSystems = activeSystems |> toList
+        member val PassiveSystems = passiveSystems |> toList
+        member x.Systems = x.ActiveSystems @ x.PassiveSystems
 
     type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
