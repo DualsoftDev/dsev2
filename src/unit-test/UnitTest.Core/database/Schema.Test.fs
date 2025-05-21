@@ -1,26 +1,24 @@
 namespace T
 
-
-
 open System
+open System.IO
 open System.Data.SQLite
+
 open NUnit.Framework
 open Dapper
 
 open Dual.Common.Base
 open Dual.Common.UnitTest.FS
 open Dual.Common.Db.FS
+open Dual.Common.Core.FS
 
 open Ev2.Core.FS
-open System.IO
-open Dual.Common.Core.FS
 
 
 [<AutoOpen>]
 module SchemaTestModule =
     let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test.sqlite3")
     let path2ConnectionString (dbFilePath:string) = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
-    //let connectionString = "Data Source=Z:\\ds\\tmp\\ev2.sqlite3;Version=3;BusyTimeout=20000"    //
 
     [<SetUpFixture>]
     type GlobalTestSetup() =
@@ -129,11 +127,15 @@ module SchemaTestModule =
         let edWork1   = EdWork   .Create("BoundedWork1", edSystem)
         let edWork2   = EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)
         let edWork3   = EdWork   .Create("FreeWork1"   , edSystem)
-        let edCall1   = EdCall   .Create("Call1"       , edWork1)
-        let edCall2   = EdCall   .Create("Call2"       , edWork2)
+        let edCall1a  = EdCall   .Create("Call1a"      , edWork1)
+        let edCall1b  = EdCall   .Create("Call1b"      , edWork1)
+        let edCall2a  = EdCall   .Create("Call2a"      , edWork2)
+        let edCall2b  = EdCall   .Create("Call2b"      , edWork2)
         //edProject.AddSystems([edSystem])
         //edWork1.AddCalls([edCall1])
         edFlow.AddWorks([edWork1])
+
+        //edWork1.AddArrows
 
         //edWork2.AddCalls([edCall2])
         //edSystem.AddFlows([edFlow])
@@ -164,13 +166,13 @@ module SchemaTestModule =
         edWork2.Calls.Length === 1
         let dsCall1 = dsWork1.Calls[0]
         let dsCall2 = dsWork2.Calls[0]
-        dsCall1.Guid === edCall1.Guid
-        dsCall2.Guid === edCall2.Guid
+        dsCall1.Guid === edCall1a.Guid
+        dsCall2.Guid === edCall2a.Guid
         dsCall1.PGuid.Value === dsWork1.Guid
         dsCall2.PGuid.Value === dsWork2.Guid
 
-        dsCall1.Name === edCall1.Name
-        dsCall2.Name === edCall2.Name
+        dsCall1.Name === edCall1a.Name
+        dsCall2.Name === edCall2a.Name
 
 
         let json = dsProject.ToJson()
@@ -182,8 +184,10 @@ module SchemaTestModule =
 
         dsSystem.ToAasJson() |> ignore
 
-        Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
-        |> path2ConnectionString
-        |> dsProject2.ToSqlite3
+        let removeExistingData = true
+        let connStr =
+            Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
+            |> path2ConnectionString
+        dsProject2.ToSqlite3(connStr, removeExistingData)
 
         ()

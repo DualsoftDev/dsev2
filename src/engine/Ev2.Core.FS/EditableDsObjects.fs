@@ -1,10 +1,7 @@
 namespace Ev2.Core.FS
 
-open Dual.Common.Base
-open Dual.Common.Core.FS
-open Newtonsoft.Json
 open System
-open System.Runtime.Serialization
+open Dual.Common.Core.FS
 
 /// 편집 가능한 버젼
 [<AutoOpen>]
@@ -22,12 +19,8 @@ module rec EditableDsObjects =
         interface IEdProject
         member x.ActiveSystems = activeSystems |> toArray
         member x.PassiveSystems = passiveSystems |> toArray
-        member x.AddActiveSystem(sys:EdSystem) =
-            activeSystems.Add(sys)
-            sys.RawParent <- Some x
-        member x.AddPassiveSystem(sys:EdSystem) =
-            passiveSystems.Add(sys)
-            sys.RawParent <- Some x
+        member x.AddActiveSystem (sys:EdSystem) = sys.RawParent <- Some x; activeSystems.Add(sys)
+        member x.AddPassiveSystem(sys:EdSystem) = sys.RawParent <- Some x; passiveSystems.Add(sys)
 
         static member Create(name:string, ?activeSystems:EdSystem seq, ?passiveSystems:EdSystem seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()

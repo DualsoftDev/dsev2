@@ -31,20 +31,23 @@ module Interfaces =
     type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?pGuid:Guid, ?parent:Unique) =
         interface IUnique
 
+        /// Database 의 primary id key.  Database 에 삽입시 생성
         member val Id = id with get, set
         member val Name = name with get, set
 
+        /// Guid: 메모리에 최초 객체 생성시 생성
         member val Guid:Guid = guid with get, set
+        /// DateTime: 메모리에 최초 객체 생성시 생성
         member val DateTime = dateTime with get, set
 
-        ///// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member val RawParent = parent with get, set
+        /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
 [<AutoOpen>]
 module rec DsObjectModule =
     type Arrow<'T>(source:'T, target:'T, dateTime:DateTime, ?guid:Guid, ?id:Id) =
-        inherit Unique(null, guid=(guid |? Guid.NewGuid()), ?id=id, dateTime=dateTime)
+        inherit Unique(null, guid |? Guid.NewGuid(), dateTime, ?id=id)
 
         interface IArrow
         member val Source = source with get, set
@@ -161,24 +164,36 @@ module rec DsObjectModule =
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
-    type IDsObject with
-        member x.EnumerateDsObjects(?includeMe): IDsObject list = [
+    type Unique with
+        member x.EnumerateDsObjects(?includeMe): Unique list =
+            seq {
+                let includeMe = includeMe |? true
+                if includeMe then
+                    yield x
+                match x with
+                | :? DsProject as prj ->
+                    yield! prj.Systems |> Seq.bind(_.EnumerateDsObjects())
+                | :? DsSystem as sys ->
+                    yield! sys.Works |> Seq.bind(_.EnumerateDsObjects())
+                    yield! sys.Flows |> Seq.bind(_.EnumerateDsObjects())
+                | :? DsWork as work ->
+                    yield! work.Calls |> Seq.bind(_.EnumerateDsObjects())
+                //| :? DsCall as call ->
+                //    yield! (call.Pa >>= (fun z -> z.EnumerateDsObjects())
+                | _ ->
+                    tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
+                    ()
+            } |> List.ofSeq
+
+    type Unique with
+        member x.EnumerateAncestors(?includeMe): Unique list = [
             let includeMe = includeMe |? true
             if includeMe then
                 yield x
-            match x with
-            | :? DsProject as prj ->
-                yield! prj.Systems |> Seq.bind(_.EnumerateDsObjects())
-            | :? DsSystem as sys ->
-                yield! sys.Works |> Seq.bind(_.EnumerateDsObjects())
-                yield! sys.Flows |> Seq.bind(_.EnumerateDsObjects())
-            | :? DsWork as work ->
-                yield! work.Calls |> Seq.bind(_.EnumerateDsObjects())
-            //| :? DsCall as call ->
-            //    yield! (call.Pa >>= (fun z -> z.EnumerateDsObjects())
-            | _ ->
-                tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
-                ()
+            match x.RawParent with
+            | Some parent ->
+                yield! parent.EnumerateAncestors()
+            | None -> ()
         ]
 
 

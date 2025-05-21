@@ -343,8 +343,8 @@ module ORMTypeConversionModule =
             let cache = Dictionary<Guid, ORMUniq>()
             cache, ds2Orm cache x
 
-    //type DsSystem with
-    //    member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
-    //        let cache = Dictionary<Guid, ORMUniq>()
-    //        cache, ds2Orm cache x
+    type DsSystem with
+        member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
+            let cache = Dictionary<Guid, ORMUniq>()
+            cache, ds2Orm cache x
 
