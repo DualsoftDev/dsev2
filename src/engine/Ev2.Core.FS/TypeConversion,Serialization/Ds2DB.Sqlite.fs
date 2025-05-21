@@ -22,20 +22,22 @@ module Ds2SqliteModule =
             conn.TruncateAllTables()
 
 
-            let ormSystem = x.ToORM()
+            let cache, ormSystem = x.ToORM()
             let sysId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.System} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormSystem, tr)
             x.Id <- Some sysId
+            cache[x.Guid].Id <- sysId
 
             // flows 삽입
             for f in flows do
-                let ormFlow = f.ToORM() :?> ORMFlow
+                let ormFlow = f.ToORM(cache) :?> ORMFlow
                 ormFlow.SystemId <- Nullable sysId
                 let flowId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
                 f.Id <- Some flowId
+                cache[f.Guid].Id <- flowId
 
             // works, calls 삽입
             for w in works do
-                let ormWork = w.ToORM() :?> ORMWork
+                let ormWork = w.ToORM(cache) :?> ORMWork
                 ormWork.SystemId <- Nullable sysId
 
                 // work 에 flow guid 가 설정된 (즉 flow 에 소속된) work 에 대해서
@@ -50,12 +52,14 @@ module Ds2SqliteModule =
 
                 let workId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
                 w.Id <- Some workId
+                cache[w.Guid].Id <- workId
 
                 for c in w.Calls do
-                    let ormCall = c.ToORM() :?> ORMCall
+                    let ormCall = c.ToORM(cache) :?> ORMCall
                     ormCall.WorkId <- Nullable workId
                     let callId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId) VALUES (@Guid, @DateTime, @Name, @WorkId);", ormCall, tr)
                     c.Id <- Some callId
+                    cache[c.Guid].Id <- callId
 
             //let ormWorks = works |-> _.ToORM() |> tee(fun ws -> ws |> iter (fun w -> w.Pid <- Nullable sysId))
             //conn.Execute($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormWorks, tr) |> ignore

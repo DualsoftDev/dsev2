@@ -293,12 +293,22 @@ module ORMTypeConversionModule =
                 match uniq with
                 | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime) :> ORMUniq
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
-                | :? DsWork   as z -> ORMWork  (name, guid, id, pid, dateTime, Nullable<Id>())      // 여기서 flow id 제공 필요
+                | :? DsWork   as z ->
+                    let flowId = z.OptFlowGuid |-> (fun flowGuid -> cache[flowGuid].Id) |? Nullable<Id>()
+                    ORMWork  (name, guid, id, pid, dateTime, flowId)
                 | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
                 | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
+
+                |> tee (fun ormUniq -> cache.[guid] <- ormUniq )
+
             | _ -> failwithf "Cannot convert to ORM. %A" x
 
 
     type IDsObject with
-        member x.ToORM() = ds2Orm null x
+        member x.ToORM(cache:Dictionary<Guid, ORMUniq>) = ds2Orm cache x
+
+    type DsSystem with
+        member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
+            let cache = Dictionary<Guid, ORMUniq>()
+            cache, ds2Orm cache x
 
