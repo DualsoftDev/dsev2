@@ -78,8 +78,8 @@
 ### 2.1 구성 요소 계층 구조
 
 EV2 실행 모델은 다음과 같은 계층 구조를 가집니다:
-
-- **System**: 전체 프로젝트 단위. Work 간 전역 흐름 그래프(`WorkGraph`, Start, Reset가능능) 포함
+- **Project**:   다수의 System을 포함을 포함하는 최상위 단위. TargetSystems 필드를 통해 제어코드 생성 대상 명시 가능
+- **System**:  Work 간 전역 흐름 그래프(`WorkGraph`, Start, Reset가능능) 포함
 - **Work**: 작업 단위. 내부적으로 Call을 포함하며, `CallGraph`로 Call 간 흐름(Reset금지, DAG만 가능) 구성. `Vertex`를 상속함
 - **Flow**: 논리 단위로서 여러 Work를 포함하는 그룹
 - **Call**: 특정 API(동시호출가능)를 호출하는 노드. `Vertex`를 상속함
@@ -87,13 +87,16 @@ EV2 실행 모델은 다음과 같은 계층 구조를 가집니다:
 - **ApiDef**: Child System의 Interface 정의 부분
 
 ```plaintext
-System
- │  └─ Work (1:N)
- │       ├─ Call (1:N)
- │       │    └─ ApiCall (1:N)
- │       │         └─ ApiDef (1:1)
- │       └─ CallGraph (Directed Acyclic Graph)
- └─ WorkGraph (Directed Graph)
+Project
+└── System[]                   // 하나의 프로젝트에 여러 시스템 포함
+     ├── Work[]                // 각 시스템 내 작업 단위
+     │    ├── Flow             // 논리적 그룹 (공정 조작단위)
+     │    ├── Call[]           // Work 내 호출 노드
+     │    │    └── ApiCall[]   // 실제 API 호출 (디바이스 연동)
+     │    │         └── ApiDef // 다른 System의 디바이스 정의 참조
+     │    └── CallGraph        // Call 간 흐름 (Directed Acyclic Graph)
+     └── WorkGraph             // Work 간 흐름 (Cyclic Directed Graph, Start/Reset 포함)
+
 ```
   - x:y 는 `부모` 대 `나` 와의 관계
 
@@ -113,6 +116,19 @@ type IArrow = IUnique * IUnique
 
 #### System
 ```fsharp
+
+
+type Project(name: string, systems: DsSystem list, param: ProjectParam) =
+    interface IUnique with
+        member _.Name = name
+        member _.Id = Guid.NewGuid()
+    member _.Systems = systems
+    member _.Param = param
+    member _.GetTargetSystems() =
+        systems |> List.filter (fun s -> param.TargetSystems |> List.contains s.Name)
+
+
+
 // 1. ResizeArray member 를 불변 list 나 array 로 잡으면??
 // 2. WorkGraph = ResizeArray<(string * string)>() ???
 type DsSystem(name: string, flows:Flow[], jobs:Job[], edges:IArrow[], devices:device[], param:IParameter ) =
@@ -176,6 +192,18 @@ type ApiDef(name: string, param:IParameter) =
 모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 예시:
 
 ```fsharp
+
+
+    type ProjectParam = {
+        Name: string
+        Version: string
+        Description: string option
+        Author: string option
+        CreatedAt: System.DateTime
+        TargetSystems: string list // 제어 대상 시스템 이름
+    } with interface IParameter
+
+
     type SystemParam = {
         LangVersion: string
         EngineVersion: string
