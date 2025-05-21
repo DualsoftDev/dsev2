@@ -222,6 +222,7 @@ type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
 - [CallParam](./params/CallParam.md)
 - [ApiCallParam](./params/ApiCallParam.md)
 - [ApiDefParam](./params/ApiDefParam.md)
+- [FlowParam](./params/FlowParam.md)
 
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
