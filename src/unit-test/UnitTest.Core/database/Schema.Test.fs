@@ -26,9 +26,11 @@ module SchemaTestModule =
     type GlobalTestSetup() =
         [<OneTimeSetUp>]
         member _.GlobalSetup() =
+            Ev2.Core.FS.ModuleInitializer.Initialize(null)
             DcLogger.EnableTrace <- true
             //DapperTypeHandler.AddHandlers()
             //checkHandlers()
+            AppSettings.TheAppSettings <- AppSettings(UseUtcTime = false)
 
 
         [<OneTimeTearDown>]

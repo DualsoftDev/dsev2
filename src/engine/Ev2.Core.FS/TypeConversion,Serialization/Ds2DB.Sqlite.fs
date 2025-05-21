@@ -11,20 +11,6 @@ open Dapper
 module Ds2SqliteModule =
     type DsSystem with
         member x.ToSqlite3(connStr:string) =
-            //let dbApi = DbApi(connStr)
-            //use conn = dbApi.CreateConnection()
-            //conn.TruncateAllTables()
-            ////use conn = createMemoryConnection()
-            //let newGuid() = Guid.NewGuid().ToString()
-
-            //// system 삽입
-            //let sysGuid = newGuid()
-            //let sysName = "MainSystem"
-            //conn.Execute($"INSERT INTO {Tn.System} (guid, name) VALUES (@guid, @name)",
-            //             dict ["guid", box sysGuid; "name", box sysName]) |> ignore
-
-
-
             let grDic = x.EnumerateDsObjects() |> groupByToDictionary _.GetType()
             let works = grDic.[typeof<DsWork>] |> Seq.cast<DsWork> |> List.ofSeq
             let calls = grDic.[typeof<DsCall>] |> Seq.cast<DsCall> |> List.ofSeq
@@ -40,11 +26,29 @@ module Ds2SqliteModule =
             let sysId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.System} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormSystem, tr)
             x.Id <- Some sysId
 
+            // flows 삽입
+            for f in flows do
+                let ormFlow = f.ToORM() :?> ORMFlow
+                ormFlow.SystemId <- Nullable sysId
+                let flowId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
+                f.Id <- Some flowId
+
             // works, calls 삽입
             for w in works do
                 let ormWork = w.ToORM() :?> ORMWork
                 ormWork.SystemId <- Nullable sysId
-                let workId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormWork, tr)
+
+                // work 에 flow guid 가 설정된 (즉 flow 에 소속된) work 에 대해서
+                // work 의 flowId 를 설정한다.
+                w.OptFlowGuid
+                |> iter (fun flowGuid ->
+                    flows
+                    |> List.tryFind(fun f -> f.Guid = flowGuid)
+                    |> iter (fun f ->
+                        ormWork.FlowId <- f.Id.Value ))
+
+
+                let workId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
                 w.Id <- Some workId
 
                 for c in w.Calls do

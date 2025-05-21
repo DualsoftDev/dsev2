@@ -1,9 +1,6 @@
-namespace Tia.Core.FS
+namespace Ev2.Core.FS
 
-open Newtonsoft.Json
 open Dual.Common.Base
-open Dual.Common.Core.FS
-open System.Runtime.Serialization
 
 [<AutoOpen>]
 module AppSettingsModule =
@@ -14,4 +11,5 @@ module AppSettingsModule =
         static member val TheAppSettings = getNull<AppSettings>() with get, set
         member val ConnectionString:string = null with get, set
         member val DatabaseWatchdogIntervalSec = 5 with get, set
+        member val UseUtcTime = false with get, set
 

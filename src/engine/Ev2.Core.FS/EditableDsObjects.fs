@@ -31,7 +31,7 @@ module rec EditableDsObjects =
 
         static member Create(name:string, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:Arrow<EdWork> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
-            let dateTime = dateTime |? DateTime.UtcNow
+            let dateTime = dateTime |?? now
             let flows = flows |? Seq.empty |> ResizeArray
             let works = works |? Seq.empty |> ResizeArray
             let arrows = arrows |? Seq.empty |> ResizeArray
@@ -43,7 +43,7 @@ module rec EditableDsObjects =
         member val OptParent = parent with get, set
         static member Create(name, ?id, ?guid, ?dateTime) =
             let guid = guid |? Guid.NewGuid()
-            let dateTime = dateTime |? DateTime.UtcNow
+            let dateTime = dateTime |?? now
             EdFlow(name, guid, dateTime, ?id=id)
 
         member x.AddWorks(ws:EdWork seq) =
@@ -68,7 +68,7 @@ module rec EditableDsObjects =
 
         static member Create(name:string, ?parent:EdSystem, ?calls:EdCall seq, ?ownerFlow:EdFlow, ?arrows:Arrow<EdCall> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
-            let dateTime = dateTime |? DateTime.UtcNow
+            let dateTime = dateTime |?? now
             let calls = calls |? Seq.empty |> ResizeArray
             let arrows = arrows |? Seq.empty |> ResizeArray
             EdWork(name, guid, dateTime, calls, arrows, ?parent=parent, ?ownerFlow=ownerFlow, ?id=id)
@@ -81,7 +81,7 @@ module rec EditableDsObjects =
 
         static member Create(name:string, ?parent:EdWork, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
-            let dateTime = dateTime |? DateTime.UtcNow
+            let dateTime = dateTime |?? now
             EdCall(name, guid, dateTime, ?parent=parent, ?id=id)
 
 

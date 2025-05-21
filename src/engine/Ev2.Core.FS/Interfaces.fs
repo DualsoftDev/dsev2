@@ -24,41 +24,42 @@ module Interfaces =
     type IDsWork = inherit IDsObject
     type IDsCall = inherit IDsObject
 
+    let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, ?id:Id, ?pGuid:Guid, ?dateTime:DateTime) =
+    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?pGuid:Guid) =
         interface IUnique
 
         member val Id = id with get, set
         member val Name = name with get, set
 
         member val Guid:Guid = guid with get, set
+        member val DateTime = dateTime with get, set
 
         ///// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member val RawParent = Option<Unique>.None with get, set
-        [<JsonIgnore>] member val DateTime = dateTime with get, set
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
 [<AutoOpen>]
 module rec DsObjectModule =
-    type Arrow<'T>(source:'T, target:'T, ?guid:Guid, ?id:Id, ?dateTime:DateTime) =
-        inherit Unique(null, guid=(guid |? Guid.NewGuid()), ?id=id, ?dateTime=dateTime)
+    type Arrow<'T>(source:'T, target:'T, dateTime:DateTime, ?guid:Guid, ?id:Id) =
+        inherit Unique(null, guid=(guid |? Guid.NewGuid()), ?id=id, dateTime=dateTime)
 
         interface IArrow
         member val Source = source with get, set
         member val Target = target with get, set
 
 
-    type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], ?id, ?dateTime:DateTime) =
-        inherit Unique(name, guid, ?id=id, ?dateTime=dateTime)
+    type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:Arrow<DsWork>[], dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsSystem
 
         member val Flows = flows |> toList
         member val Works = works |> toList
         member val Arrows = arrows |> toList
 
-    type DsFlow(name, guid, pGuid, works:DsWork[], ?id, ?dateTime:DateTime) =
-        inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
+    type DsFlow(name, guid, pGuid, works:DsWork[], dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
         let mutable works = if isNull works then [||] else works
         interface IDsFlow
@@ -67,8 +68,8 @@ module rec DsObjectModule =
         [<JsonProperty("WorksGuids")>]
         member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
 
-    type DsWork(name, guid, pGuid, calls:DsCall[], arrows:Arrow<DsCall>[], optFlowGuid:Guid option, ?id, ?dateTime:DateTime) =
-        inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
+    type DsWork(name, guid, pGuid, calls:DsCall[], arrows:Arrow<DsCall>[], optFlowGuid:Guid option, dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
         let mutable optFlowGuid = optFlowGuid
         interface IDsWork
@@ -78,8 +79,8 @@ module rec DsObjectModule =
         [<JsonIgnore>] member x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
         [<JsonProperty>] member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
 
-    type DsCall(name, guid, pGuid, ?id, ?dateTime:DateTime) =
-        inherit Unique(name, guid, pGuid=pGuid, ?id=id, ?dateTime=dateTime)
+    type DsCall(name, guid, pGuid, dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
         interface IDsCall
 
 
