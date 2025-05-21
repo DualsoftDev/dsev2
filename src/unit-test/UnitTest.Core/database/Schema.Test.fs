@@ -135,9 +135,9 @@ module SchemaTestModule =
         //edWork1.AddCalls([edCall1])
         edFlow.AddWorks([edWork1])
 
-        let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now)
+        let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now, Guid.NewGuid())
         edWork1.AddArrows([edArrow1])
-        let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now)
+        let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now, Guid.NewGuid())
         edWork2.AddArrows([edArrow2])
 
         //edWork2.AddCalls([edCall2])

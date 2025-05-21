@@ -12,13 +12,13 @@ module rec Ed2DsModule =
         member x.ToDsFlow() =
             let workDic = x.Works.ToDictionary(id, fun z -> z.ToDsWork())
             let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(workDic[a.Source], workDic[a.Target], now())) |> Seq.toArray
+            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> Seq.toArray
             DsFlow(x.Name, x.Guid, x.RawParent.Value.Guid, works, arrows, ?id=x.Id, dateTime=x.DateTime)
 
     type EdWork with
         member x.ToDsWork() =
             let callDic = x.Calls.ToDictionary(id, fun z -> z.ToDsCall())
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(callDic[a.Source], callDic[a.Target], now())) |> Seq.toArray
+            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(a.Guid, callDic[a.Source], callDic[a.Target], a.DateTime)) |> Seq.toArray
             let optOwnerFlowGuid = x.OptOwnerFlow |-> _.Guid
             let calls = callDic.Values |> toArray
             DsWork(x.Name, x.Guid, x.RawParent.Value.Guid, calls, arrows, optOwnerFlowGuid, ?id=x.Id, dateTime=x.DateTime)
@@ -34,7 +34,7 @@ module rec Ed2DsModule =
             let flows = x.Flows |> Seq.map (fun f -> f.ToDsFlow()) |> Seq.toArray
             let workDic = x.Works.ToDictionary(id, fun w -> w.ToDsWork())
             let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun w -> ArrowBetweenWorks(workDic[w.Source], workDic[w.Target], now())) |> toArray
+            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> toArray
             let system = DsSystem(x.Name, x.Guid, flows, workDic.Values.ToArray(), arrows, ?id=x.Id, dateTime=x.DateTime)
 
             // parent 객체 할당

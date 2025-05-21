@@ -12,7 +12,12 @@ module Interfaces =
     /// 기본 객체 인터페이스
     type IDsObject  = interface end
     type IParameter = inherit IDsObject
-    type IArrow     = inherit IDsObject
+    type IArrow     =
+        abstract member SourceGuid: Guid
+        abstract member TargetGuid: Guid
+        abstract member Id: Id option
+        abstract member Guid: Guid
+        abstract member DateTime: DateTime
 
     /// Guid, Name, DateTime
     type IUnique =
@@ -24,6 +29,9 @@ module Interfaces =
     type IDsFlow    = inherit IDsObject
     type IDsWork    = inherit IDsObject
     type IDsCall    = inherit IDsObject
+
+    let mutable fwdOnSerializing: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnDeserialized:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
 
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
@@ -47,21 +55,33 @@ module Interfaces =
 [<AutoOpen>]
 module rec DsObjectModule =
     [<AbstractClass>]
-    type Arrow<'T>(source:'T, target:'T, dateTime:DateTime, ?guid:Guid, ?id:Id) =
-        inherit Unique(null, guid |? Guid.NewGuid(), dateTime, ?id=id)
+    type Arrow<'T when 'T :> Unique>(source:'T, target:'T, dateTime:DateTime, guid:Guid, ?id:Id) =
+        inherit Unique(null, guid, dateTime, ?id=id)
 
-        interface IArrow
+        interface IArrow with
+            member x.SourceGuid = x.Source.Guid
+            member x.TargetGuid = x.Target.Guid
+            member x.Id = x.Id
+            member x.Guid = guid
+            member x.DateTime = dateTime
+
         member val Source = source with get, set
         member val Target = target with get, set
 
-    type ArrowBetweenCalls(source:DsCall, target:DsCall, dateTime:DateTime, ?guid:Guid, ?id:Id) =
-        inherit Arrow<DsCall>(source, target, dateTime, ?guid=guid, ?id=id)
+    type ArrowBetweenCalls(guid:Guid, source:DsCall, target:DsCall, dateTime:DateTime, ?id:Id) =
+        inherit Arrow<DsCall>(source, target, dateTime, guid, ?id=id)
 
-    type ArrowBetweenWorks(source:DsWork, target:DsWork, dateTime:DateTime, ?guid:Guid, ?id:Id) =
-        inherit Arrow<DsWork>(source, target, dateTime, ?guid=guid, ?id=id)
+    type ArrowBetweenWorks(guid:Guid, source:DsWork, target:DsWork, dateTime:DateTime, ?id:Id) =
+        inherit Arrow<DsWork>(source, target, dateTime, guid, ?id=id)
 
     type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
-        interface IArrow
+        interface IArrow with
+            member x.SourceGuid = x.Source
+            member x.TargetGuid = x.Target
+            member x.Id = x.Id |> Option.ofNullable
+            member x.Guid = x.Guid
+            member x.DateTime = dateTime
+
         member val Id = id |> Option.toNullable with get, set
         member val Guid = guid with get, set
         member val Source = source with get, set
@@ -84,9 +104,8 @@ module rec DsObjectModule =
 
         member val Flows = flows |> toList
         member val Works = works |> toList
-        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
-        //[<JsonProperty("XArrows")>]
         member val DtoArrows:DtoArrow list = [] with get, set
+        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 
     type DsFlow(name, guid, pGuid, works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
@@ -97,7 +116,6 @@ module rec DsObjectModule =
         member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
         [<JsonIgnore>] member x.Works = works
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
-        //[<JsonProperty("XArrows")>]
         member val DtoArrows:DtoArrow list = [] with get, set
 
 
@@ -110,11 +128,9 @@ module rec DsObjectModule =
         let arrows = if isNull arrows then [||] else arrows
         let mutable optFlowGuid = optFlowGuid
         interface IDsWork
-        [<Obsolete("JSON 저장시, 정보 누락됨")>]
-        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
-        //[<JsonProperty("XArrows")>]
-        member val DtoArrows:DtoArrow list = [] with get, set
         member x.Calls = calls
+        member val DtoArrows:DtoArrow list = [] with get, set
+        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 
         [<JsonIgnore>] member x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
         [<JsonProperty>] member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
@@ -125,37 +141,16 @@ module rec DsObjectModule =
 
 
 
-    // { OnSerializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
-    type DsSystem with
-        [<OnSerializing>]
-        member x.OnSerializingMethod(ctx: StreamingContext) =
-            x.DtoArrows <- x.Arrows |-> (fun a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, now()))
-
-    type DsFlow with
-        [<OnSerializing>]
-        member x.OnSerializingMethod(ctx: StreamingContext) =
-            x.DtoArrows <- x.Arrows |-> (fun a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, now()))
-            ()
-    type DsWork with
-        [<OnSerializing>]
-        member x.OnSerializingMethod(ctx: StreamingContext) =
-            x.DtoArrows <- x.Arrows |-> (fun a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, now()))
-            ()
-    // } OnSerializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
-
-
-
-
-    // { OnDeserializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
-
+    // { On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
     type DsProject with
-        [<OnDeserialized>]
-        member x.OnDeserializedMethod(ctx: StreamingContext) =
-            let systems = ctx.DDic.Get<ResizeArray<DsSystem>>("systems")
+        [<OnSerializing>]   member x.OnSerializingMethod(ctx: StreamingContext) = fwdOnSerializing x
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
 
-            // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
-            for s in systems do
-                s.RawParent <- Some x
+    type DsSystem with
+        [<OnSerializing>] member x.OnSerializingMethod(ctx: StreamingContext) = fwdOnSerializing x
+        //[<OnDeserializing>] member x.OnDeserializingMethod(ctx: StreamingContext) = fwdOnSerialized x
+
+
 
 
     type DsSystem with
@@ -182,14 +177,6 @@ module rec DsObjectModule =
             for w in works do
                 w.RawParent <- Some x
 
-            let arrows =
-                x.DtoArrows
-                |-> (fun a ->
-                        let source = works |> Seq.find (fun w -> w.Guid = a.Source)
-                        let target = works |> Seq.find (fun w -> w.Guid = a.Target)
-                        let id = a.Id |> Option.ofNullable
-                        ArrowBetweenWorks(source, target, now(), a.Guid, ?id=id))
-            x.Arrows <- arrows
 
 
     type DsFlow with
@@ -198,18 +185,6 @@ module rec DsObjectModule =
             let flows = ctx.DDic.Get<ResizeArray<DsFlow>>("flows") |> tee (fun xs -> xs.Add x)
             ()  // flow 목록 수집 -> Dynamic Dictionary 에 저장
 
-        [<OnDeserialized>]
-        member x.OnDeserializedMethod(ctx: StreamingContext) =
-            let works = ctx.DDic.Get<ResizeArray<DsWork>>("works")
-            let arrows =
-                x.DtoArrows
-                |-> (fun a ->
-                        let source = works |> Seq.find (fun w -> w.Guid = a.Source)
-                        let target = works |> Seq.find (fun w -> w.Guid = a.Target)
-                        let id = a.Id |> Option.ofNullable
-                        ArrowBetweenWorks(source, target, now(), a.Guid, ?id=id))
-            x.Arrows <- arrows
-            ()
 
 
 
@@ -229,14 +204,6 @@ module rec DsObjectModule =
             for c in x.Calls do
                 c.RawParent <- Some x
             calls.Clear()
-            let arrows =
-                x.DtoArrows
-                |-> (fun a ->
-                        let source = calls |> Seq.find (fun w -> w.Guid = a.Source)
-                        let target = calls |> Seq.find (fun w -> w.Guid = a.Target)
-                        let id = a.Id |> Option.ofNullable
-                        ArrowBetweenCalls(source, target, now(), a.Guid, ?id=id))
-            x.Arrows <- arrows
 
 
     type DsCall with

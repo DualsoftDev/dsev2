@@ -114,9 +114,9 @@ module rec EditableDsObjects =
             |> tee(fun c -> work.AddCalls [c] )
 
 
-    type EdArrowBetweenCalls(source:EdCall, target:EdCall, dateTime:DateTime, ?guid:Guid, ?id:Id) =
-        inherit Arrow<EdCall>(source, target, dateTime, ?guid=guid, ?id=id)
+    type EdArrowBetweenCalls(source:EdCall, target:EdCall, dateTime:DateTime, guid:Guid, ?id:Id) =
+        inherit Arrow<EdCall>(source, target, dateTime, guid, ?id=id)
 
-    type EdArrowBetweenWorks(source:EdWork, target:EdWork, dateTime:DateTime, ?guid:Guid, ?id:Id) =
-        inherit Arrow<EdWork>(source, target, dateTime, ?guid=guid, ?id=id)
+    type EdArrowBetweenWorks(source:EdWork, target:EdWork, dateTime:DateTime, guid:Guid, ?id:Id) =
+        inherit Arrow<EdWork>(source, target, dateTime, guid, ?id=id)
 

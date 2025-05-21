@@ -12,4 +12,6 @@ module ModuleInitializer =
 
             Dual.Common.Base.FS.ModuleInitializer.Initialize(logger)
 
+            fwdOnSerializing <- onSerializing
+            fwdOnDeserialized <- onDeserialized
             ()
