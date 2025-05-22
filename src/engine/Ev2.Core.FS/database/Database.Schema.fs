@@ -144,16 +144,20 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
 CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
     , [source]        {intKeyType} NOT NULL
     , [target]        {intKeyType} NOT NULL
+    , [systemId]      {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
 -- Call 간 연결.  Work 에 속함
 CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
     , [source]        {intKeyType} NOT NULL
     , [target]        {intKeyType} NOT NULL
+    , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 
 
@@ -225,9 +229,6 @@ module ORMTypesModule =
     type IORMMeta       = inherit IORMRow
     type IORMLog        = inherit IORMRow
 
-    let private nullDate = DateTime.MinValue
-    let private nullId = Nullable<Id>()
-
     [<AbstractClass>]
     type ORMUniq(name, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         interface IUnique
@@ -242,23 +243,36 @@ module ORMTypesModule =
         member val DateTime = dateTime with get, set
         member val RawParent = Option<ORMUniq>.None with get, set
 
-        new() = ORMUniq(null, Guid.Empty, Nullable(), nullDate)
+        new() = ORMUniq(null, nullGuid, Nullable(), nullDate)
         new(name, guid:Guid, id:Nullable<Id>) = ORMUniq(name, guid, id, nullDate)
 
-        //member val Name = name with get, set
-        //member val Guid = guid with get, set
+    [<AbstractClass>]
+    type ORMArrowBase(srcId:int, tgtId:int, parentId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
+        inherit ORMUniq(null, guid, id, dateTime)
+        member x.Source = srcId
+        member x.Target = tgtId
+
+    /// Work 간 연결.  System 에 속함
+    type ORMArrowWork(srcId:int, tgtId:int, systemId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
+        inherit ORMArrowBase(srcId, tgtId, systemId, guid, id, dateTime)
+        member val SystemId = id with get, set
+
+    /// Call 간 연결.  Work 에 속함
+    type ORMArrowCall(srcId:int, tgtId:int, workId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
+        inherit ORMArrowBase(srcId, tgtId, workId, guid, id, dateTime)
+        member val WorkId = id with get, set
 
     /// Object Releation Mapper for Asset
     type ORMProject(name, guid, id:Id, dateTime) =
         inherit ORMUniq(name, guid, id, dateTime)
         interface IORMProject
-        new() = ORMProject(null, Guid.Empty, -1, nullDate)
+        new() = ORMProject(null, nullGuid, -1, nullDate)
         new(name, guid) = ORMProject(name, guid, -1, nullDate)
 
     type ORMSystem(name, guid, id:Id, dateTime) =
         inherit ORMUniq(name, guid, id, dateTime)
         interface IORMSystem
-        new() = ORMSystem(null, Guid.Empty, -1, nullDate)
+        new() = ORMSystem(null, nullGuid, -1, nullDate)
         new(name, guid) = ORMSystem(name, guid, -1, nullDate)
 
     type ORMFlow(name, guid, id:Id, systemId:Id, dateTime) as this =
@@ -267,7 +281,7 @@ module ORMTypesModule =
             this.Pid <- systemId
 
         interface IORMFlow
-        new() = ORMFlow(null, Guid.Empty, -1, -1, nullDate)
+        new() = ORMFlow(null, nullGuid, -1, -1, nullDate)
         member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
     type ORMWork(name, guid, id:Id, systemId:Id, dateTime, flowId:Nullable<Id>) as this =
@@ -276,7 +290,7 @@ module ORMTypesModule =
             this.Pid <- systemId
 
         interface IORMWork
-        new() = ORMWork(null, Guid.Empty, -1, -1, nullDate, nullId)
+        new() = ORMWork(null, nullGuid, -1, -1, nullDate, nullId)
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
@@ -286,7 +300,7 @@ module ORMTypesModule =
             this.Pid <- workId
 
         interface IORMCall
-        new() = ORMCall(null, Guid.Empty, -1, -1, nullDate)
+        new() = ORMCall(null, nullGuid, -1, -1, nullDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
 
@@ -303,7 +317,7 @@ module ORMTypesModule =
             this.Pid <- workId
 
         interface IORMApiCall
-        new() = ORMApiCall(null, Guid.Empty, -1, -1, nullDate)
+        new() = ORMApiCall(null, nullGuid, -1, -1, nullDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
     type ORMApiDef(name, guid, id:Id, workId:Id, dateTime) as this =
@@ -312,12 +326,13 @@ module ORMTypesModule =
             this.Pid <- workId
 
         interface IORMApiDef
-        new() = ORMApiDef(null, Guid.Empty, -1, -1, nullDate)
+        new() = ORMApiDef(null, nullGuid, -1, -1, nullDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
 
 [<AutoOpen>]
 module ORMTypeConversionModule =
+    let o2n = Option.toNullable
     let private ds2Orm (guidDic:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
             match x |> tryCast<Unique> with
             | Some uniq ->
@@ -334,6 +349,17 @@ module ORMTypeConversionModule =
                     let flowId = z.OptFlowGuid |-> (fun flowGuid -> guidDic[flowGuid].Id) |? Nullable<Id>()
                     ORMWork  (name, guid, id, pid, dateTime, flowId)
                 | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
+
+                | :? ArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
+                    let parentId = (z.RawParent >>= _.Id).Value
+                    ORMArrowWork (src, tgt, parentId, z.Guid, id, z.DateTime)
+
+                | :? ArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
+                    let parentId = (z.RawParent >>= _.Id).Value
+                    ORMArrowCall (src, tgt, parentId, z.Guid, id, z.DateTime)
+
                 | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
                 |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )

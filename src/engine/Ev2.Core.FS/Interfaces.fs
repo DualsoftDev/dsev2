@@ -25,6 +25,11 @@ module Interfaces =
     type IDsWork    = inherit IDsObject
     type IDsCall    = inherit IDsObject
 
+
+    let internal nullDate = DateTime.MinValue
+    let internal nullGuid = Guid.Empty
+    let internal nullId = Nullable<Id>()
+
     let mutable fwdOnSerializing: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
     let mutable fwdOnDeserialized:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
 
@@ -69,6 +74,7 @@ module rec DsObjectModule =
     /// Arrow 를 JSON 으로 저장하기 위한 DTO
     type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
         interface IArrow
+        internal new () = DtoArrow(nullGuid, None, nullGuid, nullGuid, nullDate)
         member val Id = id |> Option.toNullable with get, set
         member val Guid = guid with get, set
         member val Source = source with get, set

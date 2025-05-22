@@ -88,7 +88,7 @@ module SchemaTestModule =
         let r3 = conn.Upsert(
             "flow", row, [ "Id"; "Name"; "SystemId"; "Guid" ],
             [|"id"|],
-            onInserted = fun id -> row.Id <- id
+            onInserted = fun id -> row.Id <- Nullable id
         )
         ()
 

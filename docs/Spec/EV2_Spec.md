@@ -113,8 +113,8 @@ type SystemUsage =
 #### 고유 id
   - guid: 객체가 생성되는 시점에 생성되어 항상 따라 다님.  항상 Non-null 값
   - id: int 값을 갖는 database 의 primary key.  databse 에 한번이라도 저장되지 않으면 null 값을 가지고 db 에 insert 되는 순간 그 db 에서 고유한 key 값을 할당받아 계속 들고 다닌다.
-  - name: 그냥 식별자 일뿐 중복이 허용된다.
-  - dateTime: 객체 생성 시점에 그 시점의 시간이 할당되며, update 될 때마다 수정되는 값
+  - name: 그냥 식별자 일뿐 중복이 허용된다.  단 project 이름은 항상 uniq 해야 한다.
+  - dateTime: 객체 생성 시점에 그 시점의 시간이 할당되며, update 될 때마다 수정되는 값 (미정)
 
 ```fsharp
 type IUnique =

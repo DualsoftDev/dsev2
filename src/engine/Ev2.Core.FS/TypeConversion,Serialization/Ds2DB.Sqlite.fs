@@ -11,6 +11,15 @@ open System.Collections.Generic
 
 [<AutoOpen>]
 module Ds2SqliteModule =
+    /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
+    let private idUpdator (targets:IUnique seq) (id:int)=
+        for t in targets do
+            match t with
+            | :? ORMArrowBase as a -> a.Id <- Nullable id
+            | :? ArrowBetweenCalls as a -> a.Id <- Some id
+            | :? ArrowBetweenWorks as a -> a.Id <- Some id
+            | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
+
     let private system2Sqlite (s:DsSystem) (optProject:DsProject option) (cache:Dictionary<Guid, ORMUniq>) (conn:IDbConnection) (tr:IDbTransaction) =
         let ormSystem = s.ToORM(cache) :?> ORMSystem
         let sysId = conn.Insert($"INSERT INTO {Tn.System} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormSystem, tr)
@@ -76,7 +85,18 @@ module Ds2SqliteModule =
                 ormCall.Id <- callId
                 assert(cache[c.Guid] = ormCall)
 
+            // work 의 arrows 를 삽입 (calls 간 연결)
+            for a in w.Arrows do
+                let ormArrow = a.ToORM(cache) :?> ORMArrowCall
+                ormArrow.WorkId <- Nullable workId
 
+                let r = conn.Upsert(Tn.ArrowCall, ormArrow, ["Source"; "Target"; "WorkId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
+                ()
+
+        // system 의 arrows 를 삽입 (works 간 연결)
+        for a in s.Arrows do
+            let ormArrow = a.ToORM(cache) :?> ORMArrowWork
+            ormArrow.SystemId <- Nullable sysId
 
 
     /// DsProject 을 sqlite database 에 저장

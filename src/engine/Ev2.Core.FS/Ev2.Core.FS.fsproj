@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Include="devdoc\ErrorMessages.md" />
 	  <Compile Include="AppSettings.fs" />
 	  <Compile Include="Interfaces.fs" />
 	  <Compile Include="EditableDsObjects.fs" />
@@ -41,6 +42,11 @@
 		<PackageReference Include="log4net" Version="2.0.17" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Dapper" Version="2.1.35" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <Folder Include="DevDoc\" />
 	</ItemGroup>
 
 </Project>

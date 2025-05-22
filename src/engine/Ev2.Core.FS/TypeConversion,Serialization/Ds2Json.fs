@@ -21,6 +21,7 @@ module Ds2JsonModule =
         match a with
         | :? ArrowBetweenCalls as a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, a.DateTime)
         | :? ArrowBetweenWorks as a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, a.DateTime)
+        | _ -> failwith $"Unknown type {a.GetType()} in arrowToDto"
 
     let private getArrowInfos (haystack:#Unique seq) (needle:DtoArrow) =
         let source = haystack |> Seq.find (fun w -> w.Guid = needle.Source)
@@ -71,9 +72,10 @@ module Ds2JsonModule =
                 |-> getArrowInfos sys.Works
                 |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
 
-            // flows, works 의 Parent 를 this(system) 으로 설정
-            sys.Flows |> iter (fun z -> z.RawParent <- Some sys)
-            sys.Works |> iter (fun z -> z.RawParent <- Some sys)
+            // flows, works, arrows 의 Parent 를 this(system) 으로 설정
+            sys.Arrows |> iter (fun z -> z.RawParent <- Some sys)
+            sys.Flows  |> iter (fun z -> z.RawParent <- Some sys)
+            sys.Works  |> iter (fun z -> z.RawParent <- Some sys)
 
             // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
             for f in sys.Flows do
@@ -82,6 +84,7 @@ module Ds2JsonModule =
                     w.OptFlowGuid <- Some f.Guid
 
                 f.forceSetWorks fWorks
+
 
             // 하부 구조에 대해서 재귀적으로 호출
             sys.Flows |> iter onDeserialized
@@ -95,10 +98,16 @@ module Ds2JsonModule =
             ()
         | :? DsWork as work ->
             work.Calls |> iter (fun z -> z.RawParent <- Some work)
+            work.Calls |> iter onDeserialized
             work.Arrows <-
                 work.DtoArrows
                 |-> getArrowInfos work.Calls
                 |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenCalls(guid, src, tgt, dateTime, ?id=id))
+            work.Arrows |> iter (fun z -> z.RawParent <- Some work)
+
+        | :? DsCall as call ->
+            ()
+
         | _ -> failwith "ERROR.  확장 필요?"
 
 
