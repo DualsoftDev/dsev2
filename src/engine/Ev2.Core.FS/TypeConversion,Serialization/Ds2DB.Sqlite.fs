@@ -13,7 +13,7 @@ open System.Collections.Generic
 module Ds2SqliteModule =
     let private system2Sqlite (s:DsSystem) (optProject:DsProject option) (cache:Dictionary<Guid, ORMUniq>) (conn:IDbConnection) (tr:IDbTransaction) =
         let ormSystem = s.ToORM(cache) :?> ORMSystem
-        let sysId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.System} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormSystem, tr)
+        let sysId = conn.Insert($"INSERT INTO {Tn.System} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormSystem, tr)
         s.Id <- Some sysId
         cache[s.Guid].Id <- sysId
 
@@ -38,7 +38,7 @@ module Ds2SqliteModule =
         for f in s.Flows do
             let ormFlow = f.ToORM(cache) :?> ORMFlow
             ormFlow.SystemId <- Nullable sysId
-            let flowId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
+            let flowId = conn.Insert($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
             f.Id <- Some flowId
             cache[f.Guid].Id <- flowId
 
@@ -57,14 +57,14 @@ module Ds2SqliteModule =
                     ormWork.FlowId <- f.Id.Value ))
 
 
-            let workId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
+            let workId = conn.Insert($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
             w.Id <- Some workId
             cache[w.Guid].Id <- workId
 
             for c in w.Calls do
                 let ormCall = c.ToORM(cache) :?> ORMCall
                 ormCall.WorkId <- Nullable workId
-                let callId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId) VALUES (@Guid, @DateTime, @Name, @WorkId);", ormCall, tr)
+                let callId = conn.Insert($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId) VALUES (@Guid, @DateTime, @Name, @WorkId);", ormCall, tr)
                 c.Id <- Some callId
                 cache[c.Guid].Id <- callId
 
@@ -85,7 +85,7 @@ module Ds2SqliteModule =
                 conn.TruncateAllTables()
 
             let cache, ormProject = proj.ToORM()
-            let projId = conn.InsertAndQueryLastRowId($"INSERT INTO {Tn.Project} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormProject, tr)
+            let projId = conn.Insert($"INSERT INTO {Tn.Project} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormProject, tr)
             proj.Id <- Some projId
             cache[proj.Guid].Id <- projId
 

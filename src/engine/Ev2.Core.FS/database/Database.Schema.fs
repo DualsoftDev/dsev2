@@ -100,7 +100,7 @@ module DatabaseSchemaModule =
     , [name]          NVARCHAR({NameLength}) NOT NULL
 """
 
-    let sqlCreateSchema =
+    let private getSqlCreateSchemaHelper(withTrigger:bool) =
         $"""
 BEGIN TRANSACTION;
 
@@ -189,7 +189,7 @@ CREATE TABLE [{Tn.TableHistory}] (
 
 
 
-{triggerSql()}
+{ if withTrigger then triggerSql() else "" }
 
 
 INSERT INTO [{Tn.Meta}] (key, val) VALUES ('Version', '1.0.0.0');
@@ -201,6 +201,12 @@ CREATE TABLE [{Tn.EOT}](
 
 COMMIT;
 """
+
+    /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
+    let getSqlCreateSchema() = getSqlCreateSchemaHelper false
+    let getSqlCreateSchemaWithTrigger() = getSqlCreateSchemaHelper true
+
+
 
 [<AutoOpen>]
 module ORMTypesModule =

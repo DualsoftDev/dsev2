@@ -13,6 +13,7 @@ open Dual.Common.Db.FS
 open Dual.Common.Core.FS
 
 open Ev2.Core.FS
+open System.Collections
 
 
 [<AutoOpen>]
@@ -40,16 +41,45 @@ module SchemaTestModule =
         let conn = new SQLiteConnection("Data Source=:memory:")
         conn.Open()
         conn.Execute("PRAGMA foreign_keys = ON;") |> ignore
-        conn.Execute(sqlCreateSchema) |> ignore
+        conn.Execute(getSqlCreateSchema()) |> ignore
         conn
 
     let dbApi = path2ConnectionString dbFilePath |> DbApi
 
     [<Test>]
-    //[<Fact>]
     let dbCreateTest() =
         use conn = dbApi.CreateConnection()
         ()
+
+    [<Test>]
+    let upsertTest() =
+        use conn = dbApi.CreateConnection()
+        tracefn $"SQL version: {conn.GetVersionString()}"
+        conn.Upsert(
+            "flow",
+            [| "id", box 1
+               "name", box "Alice"
+               "systemId", 1
+               "guid", "b544dcdc-ca2f-43db-9d90-93843269bd3f"
+               "dateTime", box DateTime.Now
+            |],
+            [|"id"|]
+        ) |> ignore
+
+        let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f"; DateTime = DateTime.Now |}
+        conn.Upsert(
+            "flow", row, [ "id"; "name"; "systemId"; "guid" ],
+            [|"id"|]
+        ) |> ignore
+
+        let row = {| id = null; name = "Tom"; systemId = 1; guid = "aaaaaaaa-ca2f-43db-9d90-93843269bd3f"; DateTime = DateTime.Now |}
+        conn.Upsert(
+            "flow", row, [ "id"; "name"; "systemId"; "guid" ],
+            [|"id"|]
+        ) |> ignore
+        ()
+
+
 
     [<Test>]
     let ``insert test`` () =

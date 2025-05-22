@@ -37,8 +37,8 @@ module DbApiModule =
                     DcLogger.EnableTrace <- true        // TODO: 삭제 필요
                     let createDb() =
                         logInfo $"Creating database schema on {connStr}..."
-                        tracefn $"CreateSchema:\r\n{sqlCreateSchema}"
-                        conn.Execute(sqlCreateSchema) |> ignore
+                        tracefn $"CreateSchema:\r\n{getSqlCreateSchema()}"
+                        conn.Execute(getSqlCreateSchema()) |> ignore
                     try
                         if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()
