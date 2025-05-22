@@ -13,8 +13,8 @@ type ProjectParam = {
     Description: string option       // 설명 (선택)
     Author: string option            // 작성자 정보 (선택)
     CreatedAt: System.DateTime       // 생성 시간
-    TargetSystemIDs: string list     // 제어 대상 시스템 이름 목록
-    LinkSystemIDs: string list       // 외부 시스템 참조 (링크된 시스템 이름 목록)
+    TargetSystemIDs: string list     // 제어 대상 시스템 GUID 목록
+    LinkSystemIDs: string list       // 외부 시스템 참조 (링크된 시스템 GUID 목록)
 } with interface IParameter
 ```
 
