@@ -29,9 +29,11 @@ module Ds2SqliteModule =
             | Some row ->
                 conn.Execute($"UPDATE {Tn.ProjectSystemMap} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
                             {| DateTime = now() |}) |> ignore
-            | None -> conn.Execute(
+            | None ->
+                let affectedRows = conn.Execute(
                         $"INSERT INTO {Tn.ProjectSystemMap} (projectId, systemId, active, guid, dateTime) VALUES (@ProjectId, @SystemId, @Active, @Guid, @DateTime)",
-                        {| ProjectId = projId; SystemId = sysId; Active = isActive; Guid=Guid.NewGuid(); DateTime=now() |}, tr) |> ignore
+                        {| ProjectId = projId; SystemId = sysId; Active = isActive; Guid=Guid.NewGuid(); DateTime=now() |}, tr)
+                ()
         | None -> ()
 
         // flows 삽입
@@ -40,7 +42,11 @@ module Ds2SqliteModule =
             ormFlow.SystemId <- Nullable sysId
             let flowId = conn.Insert($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
             f.Id <- Some flowId
-            cache[f.Guid].Id <- flowId
+            ormFlow.Id <- flowId
+            assert (cache[f.Guid] = ormFlow)
+
+            // TODO : arrow 처리.  System, flow, work 공히...
+            //f.Arrows
 
         // works, calls 삽입
         for w in s.Works do
@@ -59,19 +65,21 @@ module Ds2SqliteModule =
 
             let workId = conn.Insert($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
             w.Id <- Some workId
-            cache[w.Guid].Id <- workId
+            ormWork.Id <- workId
+            assert(cache[w.Guid] = ormWork)
 
             for c in w.Calls do
                 let ormCall = c.ToORM(cache) :?> ORMCall
                 ormCall.WorkId <- Nullable workId
                 let callId = conn.Insert($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId) VALUES (@Guid, @DateTime, @Name, @WorkId);", ormCall, tr)
                 c.Id <- Some callId
-                cache[c.Guid].Id <- callId
+                ormCall.Id <- callId
+                assert(cache[c.Guid] = ormCall)
 
 
 
 
-
+    /// DsProject 을 sqlite database 에 저장
     let private project2Sqlite (proj:DsProject) (connStr:string) (removeExistingData:bool option) =
         let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
         let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
@@ -81,16 +89,20 @@ module Ds2SqliteModule =
         use conn = dbApi.CreateConnection()
         use tr = conn.BeginTransaction()
         try
-            if removeExistingData = Some true then
-                conn.TruncateAllTables()
+            match removeExistingData, proj.Id with
+            | Some true, Some id ->
+                //conn.TruncateAllTables()
+                conn.Execute($"DELETE FROM {Tn.Project} WHERE id = {id}", tr) |> ignore
+                //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
+            | _ -> ()
 
-            let cache, ormProject = proj.ToORM()
+            let guidDic, ormProject = proj.ToORM()
             let projId = conn.Insert($"INSERT INTO {Tn.Project} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormProject, tr)
             proj.Id <- Some projId
-            cache[proj.Guid].Id <- projId
+            ormProject.Id <- projId
 
             for s in systems do
-                system2Sqlite s (Some proj) cache conn tr
+                system2Sqlite s (Some proj) guidDic conn tr
 
             tr.Commit()
         with ex ->

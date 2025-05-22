@@ -33,19 +33,33 @@ module Ds2JsonModule =
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
     let rec internal onSerializing (dsObj:IDsObject) =
         match dsObj with
-        | :? DsProject as proj -> proj.ActiveSystems |> iter onSerializing
+        | :? Unique as uniq ->
+            uniq.DbId <- uniq.Id |> Option.toNullable
+        | _ -> ()
+
+        match dsObj with
+        | :? DsProject as proj -> proj.Systems |> iter onSerializing
         | :? DsSystem as sys ->
             sys.DtoArrows <- sys.Arrows |-> arrowToDto
             sys.Flows |> iter onSerializing
             sys.Works |> iter onSerializing
         | :? DsFlow as flow ->
-            flow.DtoArrows <- flow.Arrows |-> arrowToDto
+            //flow.DtoArrows <- flow.Arrows |-> arrowToDto
+            ()
         | :? DsWork as work ->
             work.DtoArrows <- work.Arrows |-> arrowToDto
+            work.Calls |> iter onSerializing
+        | :? DsCall as call ->
+            ()
         | _ -> failwith "ERROR.  확장 필요?"
 
     /// JSON 읽고 나서 메모리 구조에 후처리 작업
     let rec internal onDeserialized (dsObj:IDsObject) =
+        match dsObj with
+        | :? Unique as uniq ->
+            uniq.Id <- uniq.DbId |> Option.ofNullable
+        | _ -> ()
+
         match dsObj with
         | :? DsProject as proj ->
             proj.ActiveSystems |> iter onDeserialized
@@ -74,10 +88,11 @@ module Ds2JsonModule =
             sys.Works |> iter onDeserialized
 
         | :? DsFlow as flow ->
-            flow.Arrows <-
-                flow.DtoArrows
-                |-> getArrowInfos flow.Works
-                |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
+            //flow.Arrows <-
+            //    flow.DtoArrows
+            //    |-> getArrowInfos flow.Works
+            //    |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
+            ()
         | :? DsWork as work ->
             work.Calls |> iter (fun z -> z.RawParent <- Some work)
             work.Arrows <-

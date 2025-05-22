@@ -35,7 +35,7 @@ module Interfaces =
         interface IUnique
 
         /// Database 의 primary id key.  Database 에 삽입시 생성
-        member val Id = id with get, set
+        [<JsonIgnore>] member val Id = id with get, set
         member val Name = name with get, set
 
         /// Guid: 메모리에 최초 객체 생성시 생성
@@ -46,6 +46,7 @@ module Interfaces =
         [<JsonIgnore>] member val RawParent = parent with get, set
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
+        [<JsonProperty>] member val internal DbId = id |> Option.toNullable with get, set
 
 [<AutoOpen>]
 module rec DsObjectModule =
@@ -66,7 +67,7 @@ module rec DsObjectModule =
         inherit Arrow<DsWork>(source, target, dateTime, guid, ?id=id)
 
     /// Arrow 를 JSON 으로 저장하기 위한 DTO
-    type internal DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
+    type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
         interface IArrow
         member val Id = id |> Option.toNullable with get, set
         member val Guid = guid with get, set
@@ -80,7 +81,7 @@ module rec DsObjectModule =
 
         member val ActiveSystems = activeSystems |> toList
         member val PassiveSystems = passiveSystems |> toList
-        member x.Systems = x.ActiveSystems @ x.PassiveSystems
+        [<JsonIgnore>] member x.Systems = x.ActiveSystems @ x.PassiveSystems
 
     type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
@@ -90,25 +91,23 @@ module rec DsObjectModule =
 
         member val Flows = flows |> toList
         member val Works = works |> toList
-        member val internal DtoArrows:DtoArrow list = [] with get, set
+        [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
         [<JsonIgnore>] member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
 
-    type DsFlow(name, guid, pGuid, works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
+    type DsFlow(name, guid, pGuid, works:DsWork[], (*arrows:ArrowBetweenWorks[],*) dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
         let mutable works = if isNull works then [||] else works
-        let arrows = if isNull arrows then [||] else arrows
+        //let arrows = if isNull arrows then [||] else arrows
 
         interface IDsFlow
         /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
         member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        [<JsonIgnore>] member x.Works = works
-        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
-        member val internal DtoArrows:DtoArrow list = [] with get, set
-
-
+        [<JsonIgnore>] member x.Works = works   // JSON 에는 저장하지 않고, 대신 WorksGuids 를 저장하여 추적함
+        //[<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
+        [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonProperty("WorksGuids")>] member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
 
     type DsWork(name, guid, pGuid, calls:DsCall[], arrows:ArrowBetweenCalls[], optFlowGuid:Guid option, dateTime:DateTime, ?id) =
@@ -118,7 +117,7 @@ module rec DsObjectModule =
         let mutable optFlowGuid = optFlowGuid
         interface IDsWork
         member x.Calls = calls
-        member val internal DtoArrows:DtoArrow list = [] with get, set
+        [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 

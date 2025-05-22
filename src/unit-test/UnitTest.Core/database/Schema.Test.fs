@@ -14,11 +14,13 @@ open Dual.Common.Core.FS
 
 open Ev2.Core.FS
 open System.Collections
+open FsUnitTyped
 
 
 [<AutoOpen>]
 module SchemaTestModule =
-    let dbFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "test.sqlite3")
+    let testDataDir() = Path.Combine(__SOURCE_DIRECTORY__, @"..\test-data")
+    let dbFilePath = Path.Combine(testDataDir(), "test.sqlite3")
     let path2ConnectionString (dbFilePath:string) = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
 
     [<SetUpFixture>]
@@ -30,6 +32,7 @@ module SchemaTestModule =
             //DapperTypeHandler.AddHandlers()
             //checkHandlers()
             AppSettings.TheAppSettings <- AppSettings(UseUtcTime = false)
+            Directory.CreateDirectory(testDataDir()) |> ignore
 
 
         [<OneTimeTearDown>]
@@ -51,11 +54,20 @@ module SchemaTestModule =
         use conn = dbApi.CreateConnection()
         ()
 
+
+
+    type Row = {
+        mutable Id: Nullable<int>
+        Name: string
+        SystemId: int
+        Guid: string
+        DateTime: DateTime
+    }
     [<Test>]
     let upsertTest() =
         use conn = dbApi.CreateConnection()
         tracefn $"SQL version: {conn.GetVersionString()}"
-        conn.Upsert(
+        let r1 = conn.Upsert(
             "flow",
             [| "id", box 1
                "name", box "Alice"
@@ -64,19 +76,20 @@ module SchemaTestModule =
                "dateTime", box DateTime.Now
             |],
             [|"id"|]
-        ) |> ignore
+        )
 
         let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f"; DateTime = DateTime.Now |}
-        conn.Upsert(
+        let r2 = conn.Upsert(
             "flow", row, [ "id"; "name"; "systemId"; "guid" ],
             [|"id"|]
-        ) |> ignore
+        )
 
-        let row = {| id = null; name = "Tom"; systemId = 1; guid = "aaaaaaaa-ca2f-43db-9d90-93843269bd3f"; DateTime = DateTime.Now |}
-        conn.Upsert(
-            "flow", row, [ "id"; "name"; "systemId"; "guid" ],
-            [|"id"|]
-        ) |> ignore
+        let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = Guid.NewGuid().ToString("D"); DateTime = DateTime.Now }
+        let r3 = conn.Upsert(
+            "flow", row, [ "Id"; "Name"; "SystemId"; "Guid" ],
+            [|"id"|],
+            onInserted = fun id -> row.Id <- id
+        )
         ()
 
 
@@ -149,30 +162,57 @@ module SchemaTestModule =
         ()
 
 
+    let mutable edProject = getNull<EdProject>()
+    let mutable edSystem  = getNull<EdSystem >()
+    let mutable edFlow    = getNull<EdFlow   >()
+    let mutable edWork1   = getNull<EdWork   >()
+    let mutable edWork2   = getNull<EdWork   >()
+    let mutable edWork3   = getNull<EdWork   >()
+    let mutable edCall1a  = getNull<EdCall   >()
+    let mutable edCall1b  = getNull<EdCall   >()
+    let mutable edCall2a  = getNull<EdCall   >()
+    let mutable edCall2b  = getNull<EdCall   >()
+
+
     [<Test>]
-    let ``EdObject -> DsObject -> OrmObject -> DB insert test`` () =
-        let edProject = EdProject.Create("MainProject")
-        let edSystem  = EdSystem .Create("MainSystem"  , edProject, asActive=true)
-        let edFlow    = EdFlow   .Create("MainFlow"    , edSystem)
-        let edWork1   = EdWork   .Create("BoundedWork1", edSystem)
-        let edWork2   = EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)
-        let edWork3   = EdWork   .Create("FreeWork1"   , edSystem)
-        let edCall1a  = EdCall   .Create("Call1a"      , edWork1)
-        let edCall1b  = EdCall   .Create("Call1b"      , edWork1)
-        let edCall2a  = EdCall   .Create("Call2a"      , edWork2)
-        let edCall2b  = EdCall   .Create("Call2b"      , edWork2)
-        //edProject.AddSystems([edSystem])
-        //edWork1.AddCalls([edCall1])
-        edFlow.AddWorks([edWork1])
+    let createEditableProject() =
+        if isItNull edProject then
+            edProject <- EdProject.Create("MainProject")
+            edSystem  <- EdSystem .Create("MainSystem"  , edProject, asActive=true)
+            edFlow    <- EdFlow   .Create("MainFlow"    , edSystem)
+            edWork1   <- EdWork   .Create("BoundedWork1", edSystem)
+            edWork2   <- EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)
+            edWork3   <- EdWork   .Create("FreeWork1"   , edSystem)
+            edCall1a  <- EdCall   .Create("Call1a"      , edWork1)
+            edCall1b  <- EdCall   .Create("Call1b"      , edWork1)
+            edCall2a  <- EdCall   .Create("Call2a"      , edWork2)
+            edCall2b  <- EdCall   .Create("Call2b"      , edWork2)
+            //edProject.AddSystems([edSystem])
+            //edWork1.AddCalls([edCall1])
+            edFlow.AddWorks([edWork1])
 
-        let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now, Guid.NewGuid())
-        edWork1.AddArrows([edArrow1])
-        let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now, Guid.NewGuid())
-        edWork2.AddArrows([edArrow2])
+            let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now, Guid.NewGuid())
+            edWork1.AddArrows([edArrow1])
+            let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now, Guid.NewGuid())
+            edWork2.AddArrows([edArrow2])
 
-        //edWork2.AddCalls([edCall2])
-        //edSystem.AddFlows([edFlow])
-        //edSystem.AddWorks([edWork1; edWork2; edWork3])
+            //edWork2.AddCalls([edCall2])
+            //edSystem.AddFlows([edFlow])
+            //edSystem.AddWorks([edWork1; edWork2; edWork3])
+
+            edProject.EnumerateDsObjects()
+            |> iter (fun dsobj ->
+                // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
+                dsobj.Id.IsNone === true
+            )
+
+
+
+
+    [<Test>]
+    let ``EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
+        createEditableProject()
+
 
         let dsProject = edProject.ToDsProject()
         let dsSystem = dsProject.Systems[0]
@@ -219,8 +259,30 @@ module SchemaTestModule =
 
         let removeExistingData = true
         let connStr =
-            Path.Combine(__SOURCE_DIRECTORY__, "..", "test_dssystem.sqlite3")
+            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
         dsProject2.ToSqlite3(connStr, removeExistingData)
 
+        dsProject2.EnumerateDsObjects()
+        |> iter (fun dsobj ->
+            // 최초 생성시, DB 삽입 후이므로 Id 가 Some 이어야 함
+            dsobj.Id.IsSome === true
+        )
+
+
+        let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
+        File.WriteAllText(jsonPath, dsProject2.ToJson())
         ()
+
+
+    [<Test>]
+    let ``JSON -> DsObject -> DB update test`` () =
+        let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
+        let json = File.ReadAllText(jsonPath)
+        let dsProject2 = DsProject.FromJson json
+        dsProject2.Name <- "UpdatedProject"
+        let removeExistingData = true
+        let connStr =
+            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
+            |> path2ConnectionString
+        dsProject2.ToSqlite3(connStr, removeExistingData)

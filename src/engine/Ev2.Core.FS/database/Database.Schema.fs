@@ -318,7 +318,7 @@ module ORMTypesModule =
 
 [<AutoOpen>]
 module ORMTypeConversionModule =
-    let private ds2Orm (cache:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
+    let private ds2Orm (guidDic:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
             match x |> tryCast<Unique> with
             | Some uniq ->
                 let id = uniq.Id |? -1
@@ -331,26 +331,29 @@ module ORMTypeConversionModule =
                 | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime)
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
                 | :? DsWork   as z ->
-                    let flowId = z.OptFlowGuid |-> (fun flowGuid -> cache[flowGuid].Id) |? Nullable<Id>()
+                    let flowId = z.OptFlowGuid |-> (fun flowGuid -> guidDic[flowGuid].Id) |? Nullable<Id>()
                     ORMWork  (name, guid, id, pid, dateTime, flowId)
                 | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
                 | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
-                |> tee (fun ormUniq -> cache.[guid] <- ormUniq )
+                |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )
 
             | _ -> failwithf "Cannot convert to ORM. %A" x
 
 
     type IDsObject with
-        member x.ToORM(cache:Dictionary<Guid, ORMUniq>) = ds2Orm cache x
+        /// DS object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g DsProject -> ORMProject
+        member x.ToORM(guidDic:Dictionary<Guid, ORMUniq>) = ds2Orm guidDic x
 
     type DsProject with
+        /// DsProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
         member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
-            let cache = Dictionary<Guid, ORMUniq>()
-            cache, ds2Orm cache x
+            let guidDic = Dictionary<Guid, ORMUniq>()
+            guidDic, ds2Orm guidDic x
 
     type DsSystem with
+        /// DsSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
         member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
-            let cache = Dictionary<Guid, ORMUniq>()
-            cache, ds2Orm cache x
+            let guidDic = Dictionary<Guid, ORMUniq>()
+            guidDic, ds2Orm guidDic x
 

@@ -12,8 +12,9 @@ module rec Ed2DsModule =
         member x.ToDsFlow() =
             let workDic = x.Works.ToDictionary(id, fun z -> z.ToDsWork())
             let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> Seq.toArray
-            DsFlow(x.Name, x.Guid, x.RawParent.Value.Guid, works, arrows, ?id=x.Id, dateTime=x.DateTime)
+            //let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> Seq.toArray
+            //DsFlow(x.Name, x.Guid, x.RawParent.Value.Guid, works, arrows, ?id=x.Id, dateTime=x.DateTime)
+            DsFlow(x.Name, x.Guid, x.RawParent.Value.Guid, works, ?id=x.Id, dateTime=x.DateTime)
 
     type EdWork with
         member x.ToDsWork() =
