@@ -16,7 +16,12 @@ module Ds2JsonModule =
     //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
 
 
-    let private arrowToDto (a:IArrow) = DtoArrow(a.Guid, a.Id, a.SourceGuid, a.TargetGuid, a.DateTime)
+
+    let private arrowToDto (a:IArrow) =
+        match a with
+        | :? ArrowBetweenCalls as a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, a.DateTime)
+        | :? ArrowBetweenWorks as a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, a.DateTime)
+
     let private getArrowInfos (haystack:#Unique seq) (needle:DtoArrow) =
         let source = haystack |> Seq.find (fun w -> w.Guid = needle.Source)
         let target = haystack |> Seq.find (fun w -> w.Guid = needle.Target)

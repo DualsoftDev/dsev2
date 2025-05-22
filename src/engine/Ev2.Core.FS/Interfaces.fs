@@ -12,12 +12,7 @@ module Interfaces =
     /// 기본 객체 인터페이스
     type IDsObject  = interface end
     type IParameter = inherit IDsObject
-    type IArrow     =
-        abstract member SourceGuid: Guid
-        abstract member TargetGuid: Guid
-        abstract member Id: Id option
-        abstract member Guid: Guid
-        abstract member DateTime: DateTime
+    type IArrow     = inherit IDsObject
 
     /// Guid, Name, DateTime
     type IUnique =
@@ -58,30 +53,21 @@ module rec DsObjectModule =
     type Arrow<'T when 'T :> Unique>(source:'T, target:'T, dateTime:DateTime, guid:Guid, ?id:Id) =
         inherit Unique(null, guid, dateTime, ?id=id)
 
-        interface IArrow with
-            member x.SourceGuid = x.Source.Guid
-            member x.TargetGuid = x.Target.Guid
-            member x.Id = x.Id
-            member x.Guid = guid
-            member x.DateTime = dateTime
-
+        interface IArrow
         member val Source = source with get, set
         member val Target = target with get, set
 
+    /// Call 간 화살표 연결.  Work 내에 존재
     type ArrowBetweenCalls(guid:Guid, source:DsCall, target:DsCall, dateTime:DateTime, ?id:Id) =
         inherit Arrow<DsCall>(source, target, dateTime, guid, ?id=id)
 
+    /// Work 간 화살표 연결.  System 이나 Flow 내에 존재
     type ArrowBetweenWorks(guid:Guid, source:DsWork, target:DsWork, dateTime:DateTime, ?id:Id) =
         inherit Arrow<DsWork>(source, target, dateTime, guid, ?id=id)
 
-    type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
-        interface IArrow with
-            member x.SourceGuid = x.Source
-            member x.TargetGuid = x.Target
-            member x.Id = x.Id |> Option.ofNullable
-            member x.Guid = x.Guid
-            member x.DateTime = dateTime
-
+    /// Arrow 를 JSON 으로 저장하기 위한 DTO
+    type internal DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
+        interface IArrow
         member val Id = id |> Option.toNullable with get, set
         member val Guid = guid with get, set
         member val Source = source with get, set
@@ -106,14 +92,18 @@ module rec DsObjectModule =
         member val Works = works |> toList
         member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
+        [<JsonIgnore>] member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
 
     type DsFlow(name, guid, pGuid, works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
         let mutable works = if isNull works then [||] else works
         let arrows = if isNull arrows then [||] else arrows
+
         interface IDsFlow
+        /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
         member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
+        [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         [<JsonIgnore>] member x.Works = works
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
         member val internal DtoArrows:DtoArrow list = [] with get, set
@@ -129,6 +119,7 @@ module rec DsObjectModule =
         interface IDsWork
         member x.Calls = calls
         member val internal DtoArrows:DtoArrow list = [] with get, set
+        [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 
         [<JsonIgnore>] member internal x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
@@ -137,6 +128,7 @@ module rec DsObjectModule =
     type DsCall(name, guid, pGuid, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
         interface IDsCall
+        [<JsonIgnore>] member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
 
 
 
