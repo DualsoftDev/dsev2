@@ -142,8 +142,21 @@ type Project(idOpt: Guid option, name: string, systems: DsSystem list, param: Pr
         member _.Id = id
     member _.Systems = systems
     member _.Param = param
+
+    /// 제어 대상 시스템
     member _.GetTargetSystems() =
         systems |> List.filter (fun s -> param.TargetSystems |> List.contains s.Name)
+
+    /// 외부 참조 링크 시스템
+    member _.GetLinkSystems() =
+        systems |> List.filter (fun s -> param.LinkSystems |> List.contains s.Name)
+
+    /// 프로젝트 내 정의되어 있으나 Target/Link에 포함되지 않은 시스템
+    member _.GetDeviceSystems() =
+        systems
+        |> List.filter (fun s ->
+            not (param.TargetSystems |> List.contains s.Name) &&
+            not (param.LinkSystems |> List.contains s.Name))
 ```
 
 #### System
