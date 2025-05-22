@@ -218,7 +218,7 @@ type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
 
 
 - **ProjectParam**
-  - [📁 로컬 보기](../params/ProjectParam.md)
+  - [📁 로컬 보기](./params/ProjectParam.md)
   - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/ProjectParam.md)
 - **SystemParam**
   - [📁 로컬 보기](./params/SystemParam.md)
