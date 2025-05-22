@@ -216,12 +216,32 @@ type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
 
 모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 각 객체에 대한 파라미터 정의는 다음 별도 문서로 분리됨:
 
-- [ProjectParam](./params/ProjectParam.md)
-- [SystemParam](./params/SystemParam.md)
-- [WorkParam](./params/WorkParam.md)
-- [CallParam](./params/CallParam.md)
-- [ApiCallParam](./params/ApiCallParam.md)
-- [ApiDefParam](./params/ApiDefParam.md)
+
+- **ProjectParam**
+  - [📁 로컬 보기](../params/ProjectParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/ProjectParam.md)
+- **SystemParam**
+  - [📁 로컬 보기](./params/SystemParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/SystemParam.md)
+- **WorkParam**
+  - [📁 로컬 보기](./params/WorkParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/WorkParam.md)
+- **CallParam**
+  - [📁 로컬 보기](./params/CallParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/CallParam.md)
+- **ApiCallParam**
+  - [📁 로컬 보기](./params/ApiCallParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/ApiCallParam.md)
+- **ApiDefParam**
+  - [📁 로컬 보기](./params/ApiDefParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/ApiDefParam.md)
+- **FlowParam**
+  - [📁 로컬 보기](./params/FlowParam.md)
+  - [🌐 GitLab 보기](http://dualsoft.co.kr:8081/dualsoft/dsev2/-/blob/master/docs/Spec/Params/FlowParam.md)
+
+  
+
+. 각 객체별 파라미터 정의는 다음 별도 문서로 분리됨:
 
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
