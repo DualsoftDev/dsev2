@@ -46,6 +46,7 @@
 
 
 	<ItemGroup>
+	  <Compile Include="AssemblyInfo.fs" />
 	  <Folder Include="DevDoc\" />
 	</ItemGroup>
 

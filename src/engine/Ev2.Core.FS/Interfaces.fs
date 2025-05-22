@@ -104,14 +104,15 @@ module rec DsObjectModule =
     type DsFlow(name, guid, pGuid, works:DsWork[], (*arrows:ArrowBetweenWorks[],*) dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
-        let mutable works = if isNull works then [||] else works
         //let arrows = if isNull arrows then [||] else arrows
+        let works = works |> ResizeArray
 
+        internal new() = DsFlow(null, nullGuid, nullGuid, [||], nullDate, ?id=None)
         interface IDsFlow
         /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
-        member internal x.forceSetWorks(ws:DsWork[]) = works <- ws
+        member internal x.forceSetWorks(ws:DsWork[]) = works.Clear(); works.AddRange ws
+        [<JsonIgnore>] member x.Works = works |> toArray // // JSON 에는 저장하지 않고, 대신 WorksGuids 를 저장하여 추적함
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        [<JsonIgnore>] member x.Works = works   // JSON 에는 저장하지 않고, 대신 WorksGuids 를 저장하여 추적함
         //[<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonProperty("WorksGuids")>] member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
@@ -119,12 +120,15 @@ module rec DsObjectModule =
     type DsWork(name, guid, pGuid, calls:DsCall[], arrows:ArrowBetweenCalls[], optFlowGuid:Guid option, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
-        let arrows = if isNull arrows then [||] else arrows
         let mutable optFlowGuid = optFlowGuid
+
+        let arrows = if isNull arrows then [||] else arrows
+        //internal new() = DsWork(null, nullGuid, nullGuid, [||], [||], None, nullDate, ?id=None)
         interface IDsWork
         member x.Calls = calls
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
+        //[<JsonIgnore>] member val internal Arrows = arrows |> ResizeArray with get, set
         [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
 
         [<JsonIgnore>] member internal x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v

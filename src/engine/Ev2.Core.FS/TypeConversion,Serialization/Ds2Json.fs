@@ -48,7 +48,7 @@ module Ds2JsonModule =
             //flow.DtoArrows <- flow.Arrows |-> arrowToDto
             ()
         | :? DsWork as work ->
-            work.DtoArrows <- work.Arrows |-> arrowToDto
+            work.DtoArrows <- work.Arrows |-> arrowToDto |> List.ofSeq
             work.Calls |> iter onSerializing
         | :? DsCall as call ->
             ()
@@ -103,6 +103,7 @@ module Ds2JsonModule =
                 work.DtoArrows
                 |-> getArrowInfos work.Calls
                 |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenCalls(guid, src, tgt, dateTime, ?id=id))
+
             work.Arrows |> iter (fun z -> z.RawParent <- Some work)
 
         | :? DsCall as call ->
