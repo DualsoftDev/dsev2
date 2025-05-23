@@ -143,28 +143,34 @@ type ProjectParam = {
     PassiveSystems: string list    // 참조 링크 시스템 IDs
 } with interface IParameter
 
-type Project(idOpt: Guid option, name: string, systems: DsSystem list, param: ProjectParam) =
+type Project(idOpt: Guid option, name: string, acticeSystems: DsSystem list, passiveSystems: DsSystem list, param: ProjectParam) =
     let id = defaultArg idOpt (Guid.NewGuid())
     interface IUnique with
         member _.Name = name
         member _.Id = id
-    member _.Systems = systems
+        
+    /// 전체 시스템
+    member _.Systems = activeSystems @ passiveSystems
+
+    /// 직접 제어 시스템 (Active)
+    member _.ActiveSystems = activeSystems
+
+    /// 간접 제어 시스템 (Passive)
+    member _.PassiveSystems = passiveSystems
+
+    /// 외부에서 정의된 시스템 (Linked)
+    member _.GetLinkSystems(externalDefinedSystemIDs: Guid list) =
+        passiveSystems
+        |> List.filter (fun s -> externalDefinedSystemIDs |> List.contains s.Id)
+
+    /// 내부 정의된 디바이스 시스템
+    member _.GetDeviceSystems(externalDefinedSystemIDs: Guid list) =
+        passiveSystems
+        |> List.filter (fun s -> not (externalDefinedSystemIDs |> List.contains s.Id))
+
+    /// 프로젝트 메타정보
     member _.Param = param
 
-    /// 제어 대상 시스템
-    member _.GetTargetSystems() =
-        systems |> List.filter (fun s -> param.TargetSystems |> List.contains s.Name)
-
-    /// 외부 참조 링크 시스템
-    member _.GetLinkSystems() =
-        systems |> List.filter (fun s -> param.LinkSystems |> List.contains s.Name)
-
-    /// 프로젝트 내 정의되어 있으나 Target/Link에 포함되지 않은 시스템
-    member _.GetDeviceSystems() =
-        systems
-        |> List.filter (fun s ->
-            not (param.TargetSystems |> List.contains s.Name) &&
-            not (param.LinkSystems |> List.contains s.Name))
 ```
 
 #### System
