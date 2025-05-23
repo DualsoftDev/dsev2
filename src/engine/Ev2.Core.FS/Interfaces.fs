@@ -137,7 +137,7 @@ module rec DsObjectModule =
         internal new() = DsFlow(null, nullGuid, [||], nullDate, ?id=None)
         interface IDsFlow
         /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
-        member internal x.forceSetWorks(ws) = works <- ws |> toList
+        member internal x.forceSetWorks(ws) = works <- ws |> toList; x.WorksGuids <- works |-> _.Guid |> toArray
         [<JsonIgnore>] member x.Works = works // // JSON 에는 저장하지 않고, 대신 WorksGuids 를 저장하여 추적함
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
@@ -219,9 +219,11 @@ module DsObjectUtilsModule =
 [<AutoOpen>]
 module rec DsObjectCopyModule =
     type CopyBag = {
-        /// OldGuid -> NewGuid map
+        /// OldGuid -> Old object
         Oldies: Dictionary<Guid, Unique>
+        /// NewGuid -> New object
         Newbies: Dictionary<Guid, Unique>
+        /// OldGuid -> NewGuid map
         Old2NewMap: Dictionary<Guid, Guid>
     } with
         member x.Add(old:Unique) =
@@ -253,11 +255,12 @@ module rec DsObjectCopyModule =
             cc
 
         member x.FillDetails(bag:CopyBag) =
-            let cc = bag.Newbies[x.Guid] :?> DsFlow
-            x.WorksGuids
+            let oldGuid = bag.Old2NewMap |> find(fun (KeyValue(old, neo)) -> neo = x.Guid) |> _.Key //|>   Oldies[x.Guid] :?> DsFlow
+            let old = bag.Oldies[oldGuid] :?> DsFlow
+            old.WorksGuids
             |-> fun z -> bag.Old2NewMap[z]
             |-> fun z -> bag.Newbies[z] :?> DsWork
-            |> cc.forceSetWorks
+            |> x.forceSetWorks
             //cc.WorksGuids <- x.WorksGuids |-> fun z -> bag.Old2NewMap[z]
             ()
 
