@@ -82,22 +82,24 @@ module Ds2JsonModule =
         match dsObj with
         | :? DsProject as proj ->
             proj.SystemPrototypes |> iter onDeserialized
-            proj.ActiveSystems  <- [
+
+            [
                 for guid in proj.ActiveSystemGuids |-> (fun g -> Guid.Parse g) do
                     proj.SystemPrototypes |> find (fun s -> s.Guid = guid)
-            ]
-            proj.PassiveSystems  <- [
+            ] |> proj.forceSetActiveSystems
+
+            [
                 for guid in proj.PassiveSystemGuids |-> (fun g -> Guid.Parse g) do
                     proj.SystemPrototypes |> find (fun s -> s.Guid = guid)
-            ]
+            ] |> proj.forceSetPassiveSystems
 
             proj.Systems |> iter (fun z -> z.RawParent <- Some proj)
 
         | :? DsSystem as sys ->
-            sys.Arrows <-
-                sys.DtoArrows
-                |-> getArrowInfos sys.Works
-                |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
+            sys.DtoArrows
+            |-> getArrowInfos sys.Works
+            |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
+            |> sys.forceSetArrows
 
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정
             sys.Arrows |> iter (fun z -> z.RawParent <- Some sys)
@@ -106,7 +108,7 @@ module Ds2JsonModule =
 
             // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
             for f in sys.Flows do
-                let fWorks = sys.Works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid) |> toArray
+                let fWorks = sys.Works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid)
                 for w in fWorks do
                     w.OptFlowGuid <- Some f.Guid
 
@@ -122,10 +124,10 @@ module Ds2JsonModule =
         | :? DsWork as work ->
             work.Calls |> iter (fun z -> z.RawParent <- Some work)
             work.Calls |> iter onDeserialized
-            work.Arrows <-
-                work.DtoArrows
-                |-> getArrowInfos work.Calls
-                |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenCalls(guid, src, tgt, dateTime, ?id=id))
+            work.DtoArrows
+            |-> getArrowInfos work.Calls
+            |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenCalls(guid, src, tgt, dateTime, ?id=id))
+            |> work.forceSetArrows
 
             work.Arrows |> iter (fun z -> z.RawParent <- Some work)
 
