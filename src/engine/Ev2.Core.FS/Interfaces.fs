@@ -75,36 +75,36 @@ module rec DsObjectModule =
     type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
         interface IArrow
         internal new () = DtoArrow(nullGuid, None, nullGuid, nullGuid, nullDate)
-        member val Id = id |> Option.toNullable with get, set
-        member val Guid = guid with get, set
-        member val Source = source with get, set
-        member val Target = target with get, set
+        member val Id       = id |> Option.toNullable with get, set
+        member val Guid     = guid     with get, set
+        member val Source   = source   with get, set
+        member val Target   = target   with get, set
         member val DateTime = dateTime with get, set
 
     type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsProject
 
+        // TODO: 명칭 변경 (Target/Link/Device), 해당 type 에 따른 F# type 구분 필요
         member val ActiveSystems = activeSystems |> toList
         member val PassiveSystems = passiveSystems |> toList
         [<JsonIgnore>] member x.Systems = x.ActiveSystems @ x.PassiveSystems
 
     type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
-        let arrows = if isNull arrows then [||] else arrows
+        let arrows = if isNull arrows then [] else arrows |> toList
 
         interface IDsSystem
 
         member val Flows = flows |> toList
         member val Works = works |> toList
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
-        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
+        [<JsonIgnore>] member val Arrows = arrows with get, set
         [<JsonIgnore>] member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
 
-    type DsFlow(name, guid, pGuid, works:DsWork[], (*arrows:ArrowBetweenWorks[],*) dateTime:DateTime, ?id) =
+    type DsFlow(name, guid, pGuid, works:DsWork[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
-        //let arrows = if isNull arrows then [||] else arrows
         let works = works |> ResizeArray
 
         internal new() = DsFlow(null, nullGuid, nullGuid, [||], nullDate, ?id=None)
@@ -113,7 +113,6 @@ module rec DsObjectModule =
         member internal x.forceSetWorks(ws:DsWork[]) = works.Clear(); works.AddRange ws
         [<JsonIgnore>] member x.Works = works |> toArray // // JSON 에는 저장하지 않고, 대신 WorksGuids 를 저장하여 추적함
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        //[<JsonIgnore>] member val Arrows = arrows |> toList with get, set       // JSON only set
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonProperty("WorksGuids")>] member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
 
@@ -141,11 +140,11 @@ module rec DsObjectModule =
 
     // { On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
     type DsProject with
-        [<OnSerializing>]   member x.OnSerializingMethod(ctx: StreamingContext) = fwdOnSerializing x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
 
     type DsSystem with
-        [<OnSerializing>] member x.OnSerializingMethod(ctx: StreamingContext) = fwdOnSerializing x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
     // } On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
 
@@ -163,13 +162,14 @@ module DsObjectUtilsModule =
                 | :? DsProject as prj ->
                     yield! prj.Systems |> Seq.bind(_.EnumerateDsObjects())
                 | :? DsSystem as sys ->
-                    yield! sys.Works |> Seq.bind(_.EnumerateDsObjects())
-                    yield! sys.Flows |> Seq.bind(_.EnumerateDsObjects())
+                    yield! sys.Works   |> Seq.bind(_.EnumerateDsObjects())
+                    yield! sys.Flows   |> Seq.bind(_.EnumerateDsObjects())
+                    yield! sys.Arrows  |> Seq.bind(_.EnumerateDsObjects())
                 | :? DsWork as work ->
-                    yield! work.Calls |> Seq.bind(_.EnumerateDsObjects())
-                    yield! work.Arrows|> Seq.bind(_.EnumerateDsObjects())
-                //| :? DsCall as call ->
-                //    yield! (call.Pa >>= (fun z -> z.EnumerateDsObjects())
+                    yield! work.Calls  |> Seq.bind(_.EnumerateDsObjects())
+                    yield! work.Arrows |> Seq.bind(_.EnumerateDsObjects())
+                | :? DsCall as call ->
+                    ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
                     ()
