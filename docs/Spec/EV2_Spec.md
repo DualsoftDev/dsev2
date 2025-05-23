@@ -140,32 +140,38 @@ type ProjectParam = {
     Description: string option
     Author: string option
     CreatedAt: System.DateTime
-    TargetSystems: string list // 제어 대상 시스템 이름
-    LinkSystems: string list    // 참조 링크 시스템
+    ActiveSysteems: string list // 제어 대상 시스템 IDs
+    PassiveSystems: string list    // 참조 링크 시스템 IDs
 } with interface IParameter
 
-type Project(idOpt: Guid option, name: string, systems: DsSystem list, param: ProjectParam) =
+type Project(idOpt: Guid option, name: string, acticeSystems: DsSystem list, passiveSystems: DsSystem list, param: ProjectParam) =
     let id = defaultArg idOpt (Guid.NewGuid())
     interface IUnique with
         member _.Name = name
         member _.Id = id
-    member _.Systems = systems
+        
+    /// 전체 시스템
+    member _.Systems = activeSystems @ passiveSystems
+
+    /// 직접 제어 시스템 (Active)
+    member _.ActiveSystems = activeSystems
+
+    /// 간접 제어 시스템 (Passive)
+    member _.PassiveSystems = passiveSystems
+
+    /// 외부에서 정의된 시스템 (Linked)
+    member _.GetLinkSystems(externalDefinedSystemIDs: Guid list) =
+        passiveSystems
+        |> List.filter (fun s -> externalDefinedSystemIDs |> List.contains s.Id)
+
+    /// 내부 정의된 디바이스 시스템
+    member _.GetDeviceSystems(externalDefinedSystemIDs: Guid list) =
+        passiveSystems
+        |> List.filter (fun s -> not (externalDefinedSystemIDs |> List.contains s.Id))
+
+    /// 프로젝트 메타정보
     member _.Param = param
 
-    /// 제어 대상 시스템
-    member _.GetTargetSystems() =
-        systems |> List.filter (fun s -> param.TargetSystems |> List.contains s.Name)
-
-    /// 외부 참조 링크 시스템
-    member _.GetLinkSystems() =
-        systems |> List.filter (fun s -> param.LinkSystems |> List.contains s.Name)
-
-    /// 프로젝트 내 정의되어 있으나 Target/Link에 포함되지 않은 시스템
-    member _.GetDeviceSystems() =
-        systems
-        |> List.filter (fun s ->
-            not (param.TargetSystems |> List.contains s.Name) &&
-            not (param.LinkSystems |> List.contains s.Name))
 ```
 
 #### System
@@ -268,44 +274,8 @@ type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
 이를 통해 UI 또는 Json 구조에서도 명확하게 각 객체의 의미와 구성 가능
 
 
-### ~~2.5 예시 코드 Obsolete version~~
-```fsharp
-let sys = DsSystem("Example")
-let flow = Flow("Main")
-sys.Flows.Add(flow)
 
-let w1 = Work("W1")
-let w2 = Work("W2")
-flow.Works.Add(w1)
-flow.Works.Add(w2)
-flow.WorkGraph.Add((w1.Id, w2.Id))
-
-let job = Job("JobA", "Device1.API")
-sys.Jobs.Add(job)
-
-let c1 = Call("Device1.API")
-let c2 = Call("Device1.API")
-w1.Calls.Add(c1)
-w1.Calls.Add(c2)
-w1.CallGraph.Add((c1.Id, c2.Id))
-```
-
-### 2.5 예시 코드
-```fsharp
-let c1 = Call("Device1.API")
-let c2 = Call("Device1.API")
-let w1 = Work("W1", [c1; c2], [(c1.Id, c2.Id)])
-let w2 = Work("W2")
-let flow = Flow("Main", [w1; w2], [(w1.Id, w2.Id)])
-let job = Job("JobA", "Device1.API")
-
-let sys = DsSystem("Example", [flow], [job])
-```
-- Bottom up build 를 통해 DsSystem 등의 ResizeArray member 제거하고 불변 list 화 수행
-
-
-
-### 2.6 정리
+### 2.5 정리
 
 - **그래프 기반 구성**으로 복잡한 실행 흐름을 시각적, 논리적으로 명확히 표현
 - **순환 허용**은 Work 단위에서 가능하며, Flow는 비순환으로 구성하여 전체 실행 경로 안정성 확보
