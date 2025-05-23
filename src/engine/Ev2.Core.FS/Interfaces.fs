@@ -121,18 +121,16 @@ module rec DsObjectModule =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
 
         let mutable optFlowGuid = optFlowGuid
+        let arrows = if isNull arrows then [] else arrows |> List.ofSeq
 
-        let arrows = if isNull arrows then [||] else arrows
-        //internal new() = DsWork(null, nullGuid, nullGuid, [||], [||], None, nullDate, ?id=None)
         interface IDsWork
         member x.Calls = calls
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        //[<JsonIgnore>] member val internal Arrows = arrows |> ResizeArray with get, set
-        [<JsonIgnore>] member val Arrows = arrows |> toList with get, set
+        [<JsonIgnore>] member val Arrows = arrows with get, set
 
         [<JsonIgnore>] member internal x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
-        [<JsonProperty>] member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
+        member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
 
     type DsCall(name, guid, pGuid, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
