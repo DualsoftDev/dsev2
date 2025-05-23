@@ -272,6 +272,12 @@ module SchemaTestModule =
 
         let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
         File.WriteAllText(jsonPath, dsProject2.ToJson())
+
+
+        let dsProject3 = dsProject2.Copy()
+        let jsonPath = Path.Combine(testDataDir(), "copied-dssystem.json")
+        File.WriteAllText(jsonPath, dsProject3.ToJson())
+
         ()
 
 

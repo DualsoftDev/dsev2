@@ -5,6 +5,7 @@ open Dual.Common.Core.FS
 open Newtonsoft.Json
 open System
 open System.Runtime.Serialization
+open System.Collections.Generic
 
 [<AutoOpen>]
 module Interfaces =
@@ -28,6 +29,7 @@ module Interfaces =
     let internal nullDate = DateTime.MinValue
     let internal nullGuid = Guid.Empty
     let internal nullId = Nullable<Id>()
+    let internal newGuid() = Guid.NewGuid()
 
     let mutable fwdOnSerializing: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
     let mutable fwdOnDeserialized:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
@@ -35,7 +37,7 @@ module Interfaces =
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?pGuid:Guid, ?parent:Unique) =
+    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique, ?originGuid:Guid) =
         interface IUnique
 
         /// Database 의 primary id key.  Database 에 삽입시 생성
@@ -53,6 +55,8 @@ module Interfaces =
 
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
+
+        member val OriginGuid = originGuid with get, set
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         [<JsonProperty>] member val internal DbId = id |> Option.toNullable with get, set
@@ -87,31 +91,42 @@ module rec DsObjectModule =
 
     type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
-        interface IDsProject
 
-        // TODO: 명칭 변경 (Target/Link/Device), 해당 type 에 따른 F# type 구분 필요
-        member val ActiveSystems = activeSystems |> toList
-        member val PassiveSystems = passiveSystems |> toList
+        interface IDsProject
+        new() = DsProject(null, nullGuid, [||], [||], nullDate, ?id=None)
+        [<JsonProperty>] member val internal SystemPrototypes:DsSystem list = [] with get, set
+        [<JsonProperty>] member val internal ActiveSystemGuids:string list = [] with get, set
+        [<JsonProperty>] member val internal PassiveSystemGuids:string list = [] with get, set
+
+        [<JsonIgnore>] member val ActiveSystems = activeSystems |> toList with get, set
+        [<JsonIgnore>] member val PassiveSystems = passiveSystems |> toList with get, set
         [<JsonIgnore>] member x.Systems = x.ActiveSystems @ x.PassiveSystems
 
     type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
-        let arrows = if isNull arrows then [] else arrows |> toList
+        let mutable flows  = if isNull flows  then [] else flows  |> toList
+        let mutable works  = if isNull works  then [] else works  |> toList
+        let mutable arrows = if isNull arrows then [] else arrows |> toList
 
         interface IDsSystem
 
-        member val Flows = flows |> toList
-        member val Works = works |> toList
+        member val Flows = flows
+        member val Works = works
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member val Arrows = arrows with get, set
         [<JsonIgnore>] member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
+        member internal x.forceSet(newFlows, newWorks, newArrows) =
+            flows  <- newFlows |> List.ofSeq
+            works  <- newWorks |> List.ofSeq
+            arrows <- newArrows|> List.ofSeq
+            x.DateTime <- now()
 
-    type DsFlow(name, guid, pGuid, works:DsWork[], dateTime:DateTime, ?id) =
-        inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
+    type DsFlow(name, guid, works:DsWork[], dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
 
         let works = works |> ResizeArray
 
-        internal new() = DsFlow(null, nullGuid, nullGuid, [||], nullDate, ?id=None)
+        internal new() = DsFlow(null, nullGuid, [||], nullDate, ?id=None)
         interface IDsFlow
         /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
         member internal x.forceSetWorks(ws:DsWork[]) = works.Clear(); works.AddRange ws
@@ -120,8 +135,8 @@ module rec DsObjectModule =
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonProperty("WorksGuids")>] member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
 
-    type DsWork(name, guid, pGuid, calls:DsCall[], arrows:ArrowBetweenCalls[], optFlowGuid:Guid option, dateTime:DateTime, ?id) =
-        inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
+    type DsWork(name, guid, calls:DsCall[], arrows:ArrowBetweenCalls[], optFlowGuid:Guid option, dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
 
         let mutable optFlowGuid = optFlowGuid
         let arrows = if isNull arrows then [] else arrows |> List.ofSeq
@@ -135,8 +150,8 @@ module rec DsObjectModule =
         [<JsonIgnore>] member internal x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
         member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
 
-    type DsCall(name, guid, pGuid, dateTime:DateTime, ?id) =
-        inherit Unique(name, guid, pGuid=pGuid, ?id=id, dateTime=dateTime)
+    type DsCall(name, guid, dateTime:DateTime, ?id) =
+        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsCall
         [<JsonIgnore>] member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
 
@@ -179,7 +194,6 @@ module DsObjectUtilsModule =
                     ()
             } |> List.ofSeq
 
-    type Unique with
         member x.EnumerateAncestors(?includeMe): Unique list = [
             let includeMe = includeMe |? true
             if includeMe then
@@ -190,4 +204,78 @@ module DsObjectUtilsModule =
             | None -> ()
         ]
 
+[<AutoOpen>]
+module rec DsObjectCopyModule =
+    type CopyBag = {
+        /// OldGuid -> NewGuid map
+        Oldies: Dictionary<Guid, Unique>
+        Newbies: Dictionary<Guid, Unique>
+        Old2NewMap: Dictionary<Guid, Guid>
+    } with
+        member x.Add(old:Unique) =
+            let newGuid = newGuid()
+            x.Oldies.Add(old.Guid, old)
+            x.Newbies.Add(newGuid, old)
+            x.Old2NewMap.Add(old.Guid, newGuid)
+            newGuid
+        static member Create() =
+            { Oldies = Dictionary<Guid, Unique>()
+              Newbies = Dictionary<Guid, Unique>()
+              Old2NewMap = Dictionary<Guid, Guid>() }
+
+    type DsProject with
+        member x.Copy(?bag:CopyBag) =
+            let bag = bag |?? (fun () -> CopyBag.Create())
+            let guid = bag.Add(x)
+
+            let activeSystems  = x.ActiveSystems  |-> _.Copy(bag) |> toArray
+            let passiveSystems = x.PassiveSystems |-> _.Copy(bag) |> toArray
+            DsProject(x.Name, guid, activeSystems, passiveSystems, now())
+
+    type DsSystem with
+        member x.Copy(?bag:CopyBag) =
+            let bag = bag |?? (fun () -> CopyBag.Create())
+            let guid = bag.Add(x)
+            let cc = DsSystem(x.Name, guid, [||], [||], [||], now())
+            let flows  = x.Flows  |-> _.Copy(bag) |> toArray
+            let works  = x.Works  |-> _.Copy(bag) |> toArray
+            let arrows = x.Arrows |-> _.Copy(bag) |> toArray
+            cc.forceSet(flows, works, arrows)
+            cc.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)
+            cc
+
+    type DsFlow with
+        member x.Copy(bag:CopyBag) =
+            let guid = bag.Add(x)
+            let cc = DsFlow(x.Name, guid, [||], now())
+            //let works =
+
+            cc.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)
+            cc
+
+    type DsWork with
+        member x.Copy(bag:CopyBag) =
+            let guid = bag.Add(x)
+            let optFlowGuid = x.OptFlowGuid |-> fun z -> bag.Old2NewMap[z]
+            DsWork(x.Name, guid, [||], [||], optFlowGuid, now())
+            |> tee(fun z ->
+                z.RawParent <- Some bag.Oldies[x.PGuid.Value]
+                z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
+
+    type ArrowBetweenWorks with
+        member x.Copy(bag:CopyBag) =
+            let guid = bag.Add(x)
+            let source = bag.Oldies[x.Source.Guid] :?> DsWork
+            let target = bag.Oldies[x.Target.Guid] :?> DsWork
+            ArrowBetweenWorks(guid, source, target, now())
+            |> tee(fun z -> z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
+
+
+    type ArrowBetweenCalls with
+        member x.Copy(bag:CopyBag) =
+            let guid = bag.Add(x)
+            let source = bag.Oldies[x.Source.Guid] :?> DsCall
+            let target = bag.Oldies[x.Target.Guid] :?> DsCall
+            ArrowBetweenCalls(guid, source, target, now())
+            |> tee(fun z -> z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
 

@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
+open System
 
 /// Ds Object 를 JSON 으로 변환하기 위한 모듈
 [<AutoOpen>]
@@ -46,7 +47,16 @@ module Ds2JsonModule =
         | _ -> ()
 
         match dsObj with
-        | :? DsProject as proj -> proj.Systems |> iter onSerializing
+        | :? DsProject as proj ->
+            proj.SystemPrototypes <-
+                let originals, copies = proj.ActiveSystems |> partition (fun s -> s.OriginGuid.IsNone)
+                let distinctCopies = copies |> distinctBy _.Guid
+                originals @ distinctCopies
+            proj.ActiveSystemGuids  <- proj.ActiveSystems |-> _.Guid.ToString("D")
+            proj.PassiveSystemGuids <- proj.PassiveSystems |-> _.Guid.ToString("D")
+
+            proj.SystemPrototypes |> iter onSerializing
+
         | :? DsSystem as sys ->
             sys.DtoArrows <- sys.Arrows |-> arrowToDto
             sys.Flows |> iter onSerializing
@@ -71,7 +81,16 @@ module Ds2JsonModule =
 
         match dsObj with
         | :? DsProject as proj ->
-            proj.ActiveSystems |> iter onDeserialized
+            proj.SystemPrototypes |> iter onDeserialized
+            proj.ActiveSystems  <- [
+                for guid in proj.ActiveSystemGuids |-> (fun g -> Guid.Parse g) do
+                    proj.SystemPrototypes |> find (fun s -> s.Guid = guid)
+            ]
+            proj.PassiveSystems  <- [
+                for guid in proj.PassiveSystemGuids |-> (fun g -> Guid.Parse g) do
+                    proj.SystemPrototypes |> find (fun s -> s.Guid = guid)
+            ]
+
             proj.Systems |> iter (fun z -> z.RawParent <- Some proj)
 
         | :? DsSystem as sys ->
