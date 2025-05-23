@@ -15,6 +15,14 @@
         - Black system : 내부 모델 정보에 접근 불가능한 시스템.  API 호출만 허용.  API def 는 없음.
             - e.g API 를 통해 외부 CPU 제어  
 
+```fsharp
+type SystemReference =
+    | ActiveSystem of Guid
+    | PassiveSystem of Guid
+```
+
+
+
 - ~~Target/Link/Device System 구분 필요.  F# type 수준에서 구분 필요?~~
     - Target : 모델 정보(system/work/flow/call), instance 상태
     - Link: 외부 호출 API 및 instance 상태 필요

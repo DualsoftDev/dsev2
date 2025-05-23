@@ -15,8 +15,7 @@ module Interfaces =
     type IArrow     = inherit IDsObject
 
     /// Guid, Name, DateTime
-    type IUnique =
-        inherit IDsObject
+    type IUnique    = inherit IDsObject
 
 
     type IDsProject = inherit IDsObject
@@ -45,12 +44,17 @@ module Interfaces =
 
         /// Guid: 메모리에 최초 객체 생성시 생성
         member val Guid:Guid = guid with get, set
+
         /// DateTime: 메모리에 최초 객체 생성시 생성
         member val DateTime = dateTime with get, set
 
+        /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
+
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
+
+        /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         [<JsonProperty>] member val internal DbId = id |> Option.toNullable with get, set
 
 [<AutoOpen>]

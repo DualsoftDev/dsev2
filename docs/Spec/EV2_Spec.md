@@ -130,6 +130,7 @@ type IArrow = IUnique * IUnique
 모든 요소는 고유 ID와 이름(Name)을 가짐
 
 ### 2.3 주요 클래스 및 속성
+  - [📁 현재 소스 보기](../../src/engine/Ev2.Core.FS/Interfaces.fs)
 
 #### Project
 ```fsharp

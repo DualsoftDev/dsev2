@@ -3,11 +3,14 @@ namespace Ev2.Core.FS
 open Dual.Common.Base
 open Dual.Common.Core.FS
 
+/// Ds Object 를 JSON 으로 변환하기 위한 모듈
 [<AutoOpen>]
 module Ds2JsonModule =
 
     type DsProject with
+        /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string = EmJson.ToJson(x)
+        /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): DsProject = EmJson.FromJson<DsProject>(json)
 
 
@@ -16,13 +19,17 @@ module Ds2JsonModule =
     //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
 
 
-
+    /// DsArrow 를 JSON 변환하기 위한 DtoArrow 객체로 변환
     let private arrowToDto (a:IArrow) =
         match a with
         | :? ArrowBetweenCalls as a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, a.DateTime)
         | :? ArrowBetweenWorks as a -> DtoArrow(a.Guid, a.Id, a.Source.Guid, a.Target.Guid, a.DateTime)
         | _ -> failwith $"Unknown type {a.GetType()} in arrowToDto"
 
+    /// JSON 읽어서 생긴 DtoArrow 로부터 DsArrow 객체를 생성하기 위한 정보 수집
+    // haystack: Arrow 의 parent 에서 얻은 화살표 src, tgt 이 될수 있는 후보 Ds object 객체.
+    //   - needle 이 System 하부의 DtoArrow 인 경우: works
+    //   - needle 이 Works 하부의 DtoArrow 인 경우: calls
     let private getArrowInfos (haystack:#Unique seq) (needle:DtoArrow) =
         let source = haystack |> Seq.find (fun w -> w.Guid = needle.Source)
         let target = haystack |> Seq.find (fun w -> w.Guid = needle.Target)
@@ -44,9 +51,10 @@ module Ds2JsonModule =
             sys.DtoArrows <- sys.Arrows |-> arrowToDto
             sys.Flows |> iter onSerializing
             sys.Works |> iter onSerializing
+
         | :? DsFlow as flow ->
-            //flow.DtoArrows <- flow.Arrows |-> arrowToDto
             ()
+
         | :? DsWork as work ->
             work.DtoArrows <- work.Arrows |-> arrowToDto |> List.ofSeq
             work.Calls |> iter onSerializing
@@ -85,17 +93,13 @@ module Ds2JsonModule =
 
                 f.forceSetWorks fWorks
 
-
             // 하부 구조에 대해서 재귀적으로 호출
             sys.Flows |> iter onDeserialized
             sys.Works |> iter onDeserialized
 
         | :? DsFlow as flow ->
-            //flow.Arrows <-
-            //    flow.DtoArrows
-            //    |-> getArrowInfos flow.Works
-            //    |-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenWorks(guid, src, tgt, dateTime, ?id=id))
             ()
+
         | :? DsWork as work ->
             work.Calls |> iter (fun z -> z.RawParent <- Some work)
             work.Calls |> iter onDeserialized
