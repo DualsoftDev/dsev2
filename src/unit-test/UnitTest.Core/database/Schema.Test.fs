@@ -215,6 +215,8 @@ module SchemaTestModule =
 
 
         let dsProject = edProject.ToDsProject()
+        dsProject.Validate()
+
         let dsSystem = dsProject.Systems[0]
         let dsFlow = dsSystem.Flows[0]
         dsFlow.Guid === edFlow.Guid
@@ -251,6 +253,7 @@ module SchemaTestModule =
         let json = dsProject.ToJson()
         tracefn $"---------------------- json:\r\n{json}"
         let dsProject2 = DsProject.FromJson json
+        dsProject2.Validate()
         let json2 = dsProject2.ToJson()
 
         json === json2
@@ -275,8 +278,17 @@ module SchemaTestModule =
 
 
         let dsProject3 = dsProject2.Copy()
+        dsProject3.Validate()
         let jsonPath = Path.Combine(testDataDir(), "copied-dssystem.json")
         File.WriteAllText(jsonPath, dsProject3.ToJson())
+
+        let dsSystem4 = dsProject3.Systems[0].Copy()
+        dsSystem4.Validate()
+        dsSystem4.Name <- "CopiedSystem"
+
+        let dsProject4 = dsProject3.Copy(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
+        dsProject4.Validate()
+        dsProject4.ToSqlite3(connStr, removeExistingData)
 
         ()
 

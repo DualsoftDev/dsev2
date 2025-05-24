@@ -26,9 +26,10 @@ module Interfaces =
     type IDsCall    = inherit IDsObject
 
 
-    let internal nullDate = DateTime.MinValue
-    let internal nullGuid = Guid.Empty
-    let internal nullId = Nullable<Id>()
+    let internal nullDate  = DateTime.MinValue
+    let internal nullId    = Nullable<Id>()
+    let internal nullGuid  = Nullable<Guid>()
+    let internal emptyGuid = Guid.Empty
     let internal newGuid() = Guid.NewGuid()
 
     let mutable fwdOnSerializing:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
@@ -37,7 +38,7 @@ module Interfaces =
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique, ?originGuid:Guid) =
+    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) =
         interface IUnique
 
         /// Database 의 primary id key.  Database 에 삽입시 생성
@@ -55,10 +56,6 @@ module Interfaces =
 
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
-
-        /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
-        [<JsonConverter(typeof<OptionGuidConverter>)>]
-        member val OriginGuid = originGuid with get, set
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         [<JsonProperty>] member val internal DbId = id |> Option.toNullable with get, set
@@ -84,7 +81,7 @@ module rec DsObjectModule =
     /// Arrow 를 JSON 으로 저장하기 위한 DTO
     type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
         interface IArrow
-        internal new () = DtoArrow(nullGuid, None, nullGuid, nullGuid, nullDate)
+        internal new () = DtoArrow(emptyGuid, None, emptyGuid, emptyGuid, nullDate)
         member val Id       = id |> Option.toNullable with get, set
         member val Guid     = guid     with get, set
         member val Source   = source   with get, set
@@ -98,7 +95,7 @@ module rec DsObjectModule =
         let mutable passiveSystems = if isNull passiveSystems then [] else passiveSystems |> toList
 
         interface IDsProject
-        new() = DsProject(null, nullGuid, [||], [||], nullDate, ?id=None)
+        new() = DsProject(null, emptyGuid, [||], [||], nullDate, ?id=None)
         [<JsonProperty>] member val internal SystemPrototypes:DsSystem list = [] with get, set
         [<JsonProperty>] member val internal ActiveSystemGuids:string list = [] with get, set
         [<JsonProperty>] member val internal PassiveSystemGuids:string list = [] with get, set
@@ -110,7 +107,7 @@ module rec DsObjectModule =
         member internal x.forceSetPassiveSystems(newPassiveSystems) = passiveSystems <- newPassiveSystems
 
 
-    type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?id) =
+    type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid:Guid, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
         let mutable flows  = if isNull flows  then [] else flows  |> toList
         let mutable works  = if isNull works  then [] else works  |> toList
@@ -121,13 +118,17 @@ module rec DsObjectModule =
         member x.Flows = flows
         member x.Works = works
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
+        /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
+        [<JsonConverter(typeof<OptionGuidConverter>)>]
+        member val OriginGuid = originGuid with get, set
+
         [<JsonIgnore>] member x.Arrows = arrows //with get, set
         [<JsonIgnore>] member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
-        member internal x.forceSet(newFlows, newWorks, newArrows) =
-            flows  <- newFlows
-            works  <- newWorks
-            arrows <- newArrows
-            x.DateTime <- now()
+        //member internal x.forceSet(newFlows, newWorks, newArrows) =
+        //    flows  <- newFlows
+        //    works  <- newWorks
+        //    arrows <- newArrows
+        //    x.DateTime <- now()
         member internal x.forceSetArrows(newArrows) = arrows <- newArrows|> List.ofSeq
 
 
@@ -136,7 +137,7 @@ module rec DsObjectModule =
 
         let mutable works  = if isNull works  then [] else works |> toList
 
-        internal new() = DsFlow(null, nullGuid, [||], nullDate, ?id=None)
+        internal new() = DsFlow(null, emptyGuid, [||], nullDate, ?id=None)
         interface IDsFlow
         /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
         member internal x.forceSetWorks(ws) = works <- ws |> toList; x.WorksGuids <- works |-> _.Guid |> toArray

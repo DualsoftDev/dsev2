@@ -15,6 +15,7 @@
 	  <Compile Include="DsObjectUtils.fs" />
 	  <Compile Include="EditableDsObjects.fs" />
 	  <Compile Include="database\Database.Schema.fs" />
+	  <Compile Include="database\Database.ORM.fs" />
 	  <Compile Include="database\DbApi.fs" />
 	  <Compile Include="TypeConversion,Serialization\DsCopyObject.fs" />
 	  <Compile Include="TypeConversion,Serialization\Ed2Ds.fs" />

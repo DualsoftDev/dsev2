@@ -23,15 +23,17 @@ module rec Ed2DsModule =
             let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(a.Guid, callDic[a.Source], callDic[a.Target], a.DateTime)) |> Seq.toArray
             let optOwnerFlowGuid = x.OptOwnerFlow |-> _.Guid
             let calls = callDic.Values |> toArray
+
             DsWork(x.Name, x.Guid, calls, arrows, optOwnerFlowGuid, ?id=x.Id, dateTime=x.DateTime)
-            |> tee(fun z -> z.RawParent <- Some x.RawParent.Value)
+            |> tee(fun w ->
+                w.RawParent <- Some x.RawParent.Value
+                arrows |> iter (fun z -> z.RawParent <- Some w)
+                calls  |> iter (fun z -> z.RawParent <- Some w)
+                )
 
 
     type EdCall with
-        member x.ToDsCall() =
-            let xxx = x
-            DsCall(x.Name, x.Guid, ?id=x.Id, dateTime=x.DateTime)
-            |> tee(fun z -> z.RawParent <- Some x.RawParent.Value)
+        member x.ToDsCall() = DsCall(x.Name, x.Guid, ?id=x.Id, dateTime=x.DateTime)
 
     type EdSystem with
         member x.ToDsSystem() =
@@ -52,6 +54,6 @@ module rec Ed2DsModule =
         member x.ToDsProject() =
             let activeSystems  = x.ActiveSystems  |> Seq.map (fun f -> f.ToDsSystem()) |> Seq.toArray
             let passiveSystems = x.PassiveSystems |> Seq.map (fun f -> f.ToDsSystem()) |> Seq.toArray
-            (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some z)
             let project = DsProject(x.Name, x.Guid, activeSystems, passiveSystems, ?id=x.Id, dateTime=x.DateTime)
+            (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some project)
             project
