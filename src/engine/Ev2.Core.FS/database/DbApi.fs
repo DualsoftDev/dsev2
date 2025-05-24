@@ -1,17 +1,14 @@
 namespace Ev2.Core.FS
 
 open System
-
-open Dual.Common.Core.FS
-open Dual.Common.Base
+open System.Data
+open System.IO
 open System.Data.SQLite
 open Dapper
+
 open Dual.Common.Db.FS
-open System.Data
-open System.Reactive.Disposables
-open System.IO
-open System.Collections.Generic
-open Dual.Common.Db.FS
+open Dual.Common.Core.FS
+open Dual.Common.Base
 
 
 [<AutoOpen>]
@@ -36,9 +33,10 @@ module DbApiModule =
                     initialized <- true
                     DcLogger.EnableTrace <- true        // TODO: 삭제 필요
                     let createDb() =
+                        let schema = getSqlCreateSchema()
                         logInfo $"Creating database schema on {connStr}..."
-                        tracefn $"CreateSchema:\r\n{getSqlCreateSchema()}"
-                        conn.Execute(getSqlCreateSchema()) |> ignore
+                        logInfo $"CreateSchema:\r\n{schema}"
+                        conn.Execute(schema) |> ignore
                     try
                         if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()
@@ -65,8 +63,6 @@ module DbApiModule =
         member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
         member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId", flowIds|? [||])
         member x.EnumerateCalls       (?workIds:int[])   = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds |? [||])
-
-
 
         static member GetDefaultConnectionString(dbName:string, ?busyTimeoutSec) =
             let busyTimeoutSec = busyTimeoutSec |? 20

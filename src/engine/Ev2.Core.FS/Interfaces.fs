@@ -1,11 +1,11 @@
 namespace Ev2.Core.FS
 
-open Dual.Common.Base
-open Dual.Common.Core.FS
-open Newtonsoft.Json
 open System
 open System.Runtime.Serialization
-open System.Collections.Generic
+open Newtonsoft.Json
+
+open Dual.Common.Base
+open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module Interfaces =
@@ -31,8 +31,8 @@ module Interfaces =
     let internal nullId = Nullable<Id>()
     let internal newGuid() = Guid.NewGuid()
 
-    let mutable fwdOnSerializing: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
-    let mutable fwdOnDeserialized:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnSerializing:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnDeserialized: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
 
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
@@ -181,142 +181,4 @@ module rec DsObjectModule =
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
     // } On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
 
-
-
-[<AutoOpen>]
-module DsObjectUtilsModule =
-    type Unique with
-        member x.EnumerateDsObjects(?includeMe): Unique list =
-            seq {
-                let includeMe = includeMe |? true
-                if includeMe then
-                    yield x
-                match x with
-                | :? DsProject as prj ->
-                    yield! prj.Systems |> Seq.bind(_.EnumerateDsObjects())
-                | :? DsSystem as sys ->
-                    yield! sys.Works   |> Seq.bind(_.EnumerateDsObjects())
-                    yield! sys.Flows   |> Seq.bind(_.EnumerateDsObjects())
-                    yield! sys.Arrows  |> Seq.bind(_.EnumerateDsObjects())
-                | :? DsWork as work ->
-                    yield! work.Calls  |> Seq.bind(_.EnumerateDsObjects())
-                    yield! work.Arrows |> Seq.bind(_.EnumerateDsObjects())
-                | :? DsCall as call ->
-                    ()
-                | _ ->
-                    tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
-                    ()
-            } |> List.ofSeq
-
-        member x.EnumerateAncestors(?includeMe): Unique list = [
-            let includeMe = includeMe |? true
-            if includeMe then
-                yield x
-            match x.RawParent with
-            | Some parent ->
-                yield! parent.EnumerateAncestors()
-            | None -> ()
-        ]
-
-[<AutoOpen>]
-module rec DsObjectCopyModule =
-    type CopyBag = {
-        /// OldGuid -> Old object
-        Oldies: Dictionary<Guid, Unique>
-        /// NewGuid -> New object
-        Newbies: Dictionary<Guid, Unique>
-        /// OldGuid -> NewGuid map
-        Old2NewMap: Dictionary<Guid, Guid>
-    } with
-        member x.Add(old:Unique) =
-            let newGuid = newGuid()
-            x.Oldies.Add(old.Guid, old)
-            x.Newbies.Add(newGuid, old)
-            x.Old2NewMap.Add(old.Guid, newGuid)
-            newGuid
-        static member Create() =
-            { Oldies = Dictionary<Guid, Unique>()
-              Newbies = Dictionary<Guid, Unique>()
-              Old2NewMap = Dictionary<Guid, Guid>() }
-
-    type DsProject with
-        member x.Copy(?bag:CopyBag) =
-            let bag = bag |?? (fun () -> CopyBag.Create())
-            let guid = bag.Add(x)
-
-            let activeSystems  = x.ActiveSystems  |-> _.Copy(bag) |> toArray
-            let passiveSystems = x.PassiveSystems |-> _.Copy(bag) |> toArray
-            DsProject(x.Name, guid, activeSystems, passiveSystems, now())
-
-    /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
-    type DsFlow with
-        member x.CopyShallow(bag:CopyBag) =
-            let guid = bag.Add(x)
-            let cc = DsFlow(x.Name, guid, [||], now())
-            cc.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)
-            cc
-
-        member x.FillDetails(bag:CopyBag) =
-            let oldGuid = bag.Old2NewMap |> find(fun (KeyValue(old, neo)) -> neo = x.Guid) |> _.Key //|>   Oldies[x.Guid] :?> DsFlow
-            let old = bag.Oldies[oldGuid] :?> DsFlow
-            old.WorksGuids
-            |-> fun z -> bag.Old2NewMap[z]
-            |-> fun z -> bag.Newbies[z] :?> DsWork
-            |> x.forceSetWorks
-            //cc.WorksGuids <- x.WorksGuids |-> fun z -> bag.Old2NewMap[z]
-            ()
-
-    type DsSystem with
-        member x.Copy(?bag:CopyBag) =
-            let bag = bag |?? (fun () -> CopyBag.Create())
-            let guid = bag.Add(x)
-            let cc = DsSystem(x.Name, guid, [||], [||], [||], now())
-            // flow, work 상호 참조때문에 일단 flow 만 shallow copy
-            let flows  = x.Flows  |-> _.CopyShallow(bag)
-            let works  = x.Works  |-> _.Copy(bag)       // work 에서 shallow  copy 된 flow 참조 가능해짐.
-            let arrows = x.Arrows |-> _.Copy(bag)
-            flows |> iter (fun f -> f.FillDetails bag)  // flow 에서 work 참조 가능해짐.
-            cc.forceSet(flows, works, arrows)
-            cc.RawParent <- Some bag.Oldies[x.PGuid.Value]
-            cc.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)
-            cc
-
-
-    type DsWork with
-        member x.Copy(bag:CopyBag) =
-            let guid = bag.Add(x)
-            let optFlowGuid = x.OptFlowGuid |-> fun z -> bag.Old2NewMap[z]
-            let calls  = x.Calls |-> _.Copy(bag)
-            let arrows = x.Arrows |-> _.Copy(bag)
-
-            DsWork(x.Name, guid, calls, arrows, optFlowGuid, now())
-            |> tee(fun z ->
-                z.RawParent <- Some bag.Oldies[x.PGuid.Value]
-                z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
-
-    type DsCall with
-        member x.Copy(bag:CopyBag) =
-            let guid = bag.Add(x)
-            DsCall(x.Name, guid, now())
-            |> tee(fun z ->
-                z.RawParent <- Some bag.Oldies[x.PGuid.Value]
-                z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
-
-
-    type ArrowBetweenWorks with
-        member x.Copy(bag:CopyBag) =
-            let guid = bag.Add(x)
-            let source = bag.Oldies[x.Source.Guid] :?> DsWork
-            let target = bag.Oldies[x.Target.Guid] :?> DsWork
-            ArrowBetweenWorks(guid, source, target, now())
-            |> tee(fun z -> z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
-
-
-    type ArrowBetweenCalls with
-        member x.Copy(bag:CopyBag) =
-            let guid = bag.Add(x)
-            let source = bag.Oldies[x.Source.Guid] :?> DsCall
-            let target = bag.Oldies[x.Target.Guid] :?> DsCall
-            ArrowBetweenCalls(guid, source, target, now())
-            |> tee(fun z -> z.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid))
 

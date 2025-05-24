@@ -131,12 +131,33 @@ module Ds2SqliteModule =
             raise ex
 
 
+    type DbObjectIdentifier =
+        | ByGuid of Guid
+        | ById of int
+        | ByName of string
+
     type DsProject with
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = project2Sqlite x connStr removeExistingData
 
         [<Obsolete("DB 에서 읽어 들이는 것은 금지!!!  Debugging 전용")>]
-        static member FromSqlite3(connStr:string) =
+        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
+            let dbApi = DbApi(connStr)
+            use conn = dbApi.CreateConnection()
+            use tr = conn.BeginTransaction()
+            DsProject.FromSqlite3(identifier, conn, tr)
+
+        static member FromSqlite3(identifier:DbObjectIdentifier, conn:IDbConnection, tr:IDbTransaction) =
+            let ormProject =
+                let sqlBase = $"SELECT * FROM {Tn.Project} WHERE "
+                let sqlTail, param =
+                    match identifier with
+                    | ByGuid guid -> "guid = @Guid", {| Guid = guid |} |> box
+                    | ById   id   -> "id = @Id",     {| Id = id |}
+                    | ByName name -> "name = @Name", {| Name = name |}
+                let sql = sqlBase + sqlTail
+                conn.QuerySingle<ORMProject>(sql, param, tr)
             ()
+
 
     type DsSystem with
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
@@ -157,3 +178,10 @@ module Ds2SqliteModule =
                 tr.Rollback()
                 logError $"project2Sqlite failed: {ex.Message}"
                 raise ex
+
+
+        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
+            ()
+
+        static member FromSqlite3(identifier:DbObjectIdentifier, conn:IDbConnection, tr:IDbTransaction) =
+            ()
