@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open System
+open System.IO
 
 /// Ds Object 를 JSON 으로 변환하기 위한 모듈
 [<AutoOpen>]
@@ -11,6 +12,10 @@ module Ds2JsonModule =
     type DsProject with
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string = EmJson.ToJson(x)
+        member x.ToJson(jsonFilePath:string) =
+            EmJson.ToJson(x)
+            |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
+
         /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): DsProject = EmJson.FromJson<DsProject>(json)
 

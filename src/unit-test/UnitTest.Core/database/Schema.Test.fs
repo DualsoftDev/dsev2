@@ -220,7 +220,20 @@ module SchemaTestModule =
 
         let dsProject = edProject.ToDsProject()
         dsProject.Validate()
+        dsProject.EnumerateDsObjects()
+        |> iter (fun dsobj ->
+            // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
+            dsobj.Id.IsNone === true
+        )
+
         dsProject.ToSqlite3(connStr, removeExistingData)
+
+        dsProject.EnumerateDsObjects()
+        |> iter (fun dsobj ->
+            // DB 삽입 후이므로 Id 가 Some 이어야 함
+            dsobj.Id.IsSome === true
+        )
+
 
         let dsSystem = dsProject.Systems[0]
         let dsFlow = dsSystem.Flows[0]
@@ -255,11 +268,11 @@ module SchemaTestModule =
         dsCall2.Name === edCall2a.Name
 
 
-        let json = dsProject.ToJson()
+        let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
         tracefn $"---------------------- json:\r\n{json}"
         let dsProject2 = DsProject.FromJson json
         dsProject2.Validate()
-        let json2 = dsProject2.ToJson()
+        let json2 = dsProject2.ToJson(Path.Combine(testDataDir(), "json-deserialized-dssystem.json"))
 
         json === json2
 
@@ -267,29 +280,26 @@ module SchemaTestModule =
 
         (fun () -> dsProject2.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
 
-        dsProject2.EnumerateDsObjects()
-        |> iter (fun dsobj ->
-            // 최초 생성시, DB 삽입 후이므로 Id 가 Some 이어야 함
-            dsobj.Id.IsSome === true
-        )
 
+        dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
 
-        let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
-        File.WriteAllText(jsonPath, dsProject2.ToJson())
-
-
-        let dsProject3 = dsProject2.Copy()
+        let dsProject3 = dsProject2.Replicate()
         dsProject3.Validate()
-        dsProject3.ToSqlite3(connStr, removeExistingData)
 
-        let jsonPath = Path.Combine(testDataDir(), "copied-dssystem.json")
-        File.WriteAllText(jsonPath, dsProject3.ToJson())
+        dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
+        (fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
+        do
+            let dsProj = dsProject2.Duplicate()
+            dsProj.Name <- $"Replica of {dsProj.Name}"
+            dsProj.Validate()
+            dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
+            dsProj.ToSqlite3(connStr, removeExistingData)
 
-        let dsSystem4 = dsProject3.Systems[0].Copy()
+        let dsSystem4 = dsProject3.Systems[0].Duplicate()
         dsSystem4.Validate()
-        dsSystem4.Name <- "CopiedSystem"
+        dsSystem4.Name <- "DuplicatedSystem"
 
-        let dsProject4 = dsProject3.Copy(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
+        let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
         dsProject4.Validate()
         dsProject4.ToSqlite3(connStr, removeExistingData)
 

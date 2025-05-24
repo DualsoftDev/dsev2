@@ -165,6 +165,14 @@ module rec DsObjectModule =
         member internal x.forceSetArrows(arrs) = arrows <- arrs
         //member internal x.forceSetCalls(cs) = calls <- cs
 
+        member x.TryGetFlow() =
+            option {
+                let! flowGuid = x.FlowGuid
+                let! parent = x.RawParent
+                let system = parent :?> DsSystem
+                return! system.Flows |> tryFind(fun f -> f.Guid = s2guid flowGuid)
+            }
+
 
     type DsCall(name, guid, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)

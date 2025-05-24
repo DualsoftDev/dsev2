@@ -146,7 +146,7 @@ module ORMTypeConversionModule =
                 | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime, z.OriginGuid |> Option.toNullable)
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
                 | :? DsWork   as z ->
-                    let flowId = z.OptFlowGuid |-> (fun flowGuid -> guidDic[flowGuid].Id) |? Nullable<Id>()
+                    let flowId = z.OptFlowGuid |-> (fun fguid -> guidDic[fguid].Id) |? Nullable<Id>()
                     ORMWork  (name, guid, id, pid, dateTime, flowId)
                 | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
 
