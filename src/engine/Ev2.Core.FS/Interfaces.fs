@@ -56,6 +56,8 @@ module Interfaces =
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
+        /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
+        [<JsonConverter(typeof<OptionGuidConverter>)>]
         member val OriginGuid = originGuid with get, set
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
@@ -269,11 +271,13 @@ module rec DsObjectCopyModule =
             let bag = bag |?? (fun () -> CopyBag.Create())
             let guid = bag.Add(x)
             let cc = DsSystem(x.Name, guid, [||], [||], [||], now())
+            // flow, work 상호 참조때문에 일단 flow 만 shallow copy
             let flows  = x.Flows  |-> _.CopyShallow(bag)
-            let works  = x.Works  |-> _.Copy(bag)
+            let works  = x.Works  |-> _.Copy(bag)       // work 에서 shallow  copy 된 flow 참조 가능해짐.
             let arrows = x.Arrows |-> _.Copy(bag)
-            flows |> iter (fun f -> f.FillDetails bag)
+            flows |> iter (fun f -> f.FillDetails bag)  // flow 에서 work 참조 가능해짐.
             cc.forceSet(flows, works, arrows)
+            cc.RawParent <- Some bag.Oldies[x.PGuid.Value]
             cc.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)
             cc
 
