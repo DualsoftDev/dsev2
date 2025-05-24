@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 /// 편집 가능한 버젼
 [<AutoOpen>]
@@ -31,8 +32,8 @@ module rec EditableDsObjects =
 
 
 
-    type EdSystem private (name:string, project:EdProject, flows:ResizeArray<EdFlow>, works:ResizeArray<EdWork>, arrows:Arrow<EdWork> seq,  guid:Guid, dateTime:DateTime, ?id) =
-        inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id, parent=project)
+    type EdSystem private (name:string, project:EdProject option, flows:ResizeArray<EdFlow>, works:ResizeArray<EdWork>, arrows:ResizeArray<EdArrowBetweenWorks>, guid:Guid, dateTime:DateTime, ?id) =
+        inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id, ?parent=(project >>= tryCast<Unique>))
         interface IEdSystem
         member x.Flows = flows |> toArray
         member x.Works = works |> toArray
@@ -43,33 +44,30 @@ module rec EditableDsObjects =
         member x.AddWorks(ws:EdWork seq) =
             works.AddRange(ws)
             ws |> iter (fun w -> w.RawParent <- Some x)
+        member x.AddArrows(arrs:EdArrowBetweenWorks seq) =
+            arrows.AddRange(arrs)
+            arrs |> iter (fun c -> c.RawParent <- Some x)
 
-        static member Create(name:string, project:EdProject, asActive:bool, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:Arrow<EdWork> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
+        static member Create(name:string, ?project:EdProject, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:EdArrowBetweenWorks seq, ?id:Id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
             let flows = flows |? Seq.empty |> ResizeArray
             let works = works |? Seq.empty |> ResizeArray
             let arrows = arrows |? Seq.empty |> ResizeArray
-            EdSystem(name, project, flows, works, arrows, guid, dateTime)
-            |> tee(fun s -> if asActive then project.AddActiveSystem s else project.AddPassiveSystem s )
+            EdSystem(name, project, flows, works, arrows, guid, dateTime, ?id=id)
 
-    type EdFlow private (name:string, guid:Guid, dateTime:DateTime, system:EdSystem, arrows:ResizeArray<Arrow<EdWork>>, ?id) =
-        inherit Unique(name, guid=guid, dateTime=dateTime, parent=system, ?id=id)
+    type EdFlow private (name:string, guid:Guid, dateTime:DateTime, ?system:EdSystem, ?id) =
+        inherit Unique(name, guid=guid, dateTime=dateTime, ?parent=(system >>= tryCast<Unique>), ?id=id)
         interface IEdFlow
-        static member Create(name, system, ?arrows:Arrow<EdWork> seq, ?id, ?guid, ?dateTime) =
+        static member Create(name, ?arrows:EdArrowBetweenWorks seq, ?id, ?guid, ?dateTime, ?system:EdSystem) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
             let arrows = arrows |? Seq.empty |> ResizeArray
-            EdFlow(name, guid, dateTime, system, arrows, ?id=id)
-            |> tee(fun f -> system.AddFlows [f])
+            EdFlow(name, guid, dateTime, ?system=system, ?id=id)
+            |> tee(fun f -> system |> Option.iter (fun sys -> sys.AddFlows [f]))
 
         member x.AddWorks(ws:EdWork seq) =
             ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
-
-        member x.Arrows = arrows |> toArray
-        member x.AddArrows(arrs:Arrow<EdWork> seq) =
-            arrows.AddRange(arrs)
-            arrs |> iter (fun c -> c.RawParent <- Some x)
 
         member x.Works = //x.OptParent |> map _.Works //|> choose id
             match x.RawParent with
@@ -77,7 +75,7 @@ module rec EditableDsObjects =
             | _ -> failwith "Parent is not set. Cannot get works from flow."
 
 
-    type EdWork private(name:string, guid:Guid, dateTime:DateTime, calls:ResizeArray<EdCall>, arrows:ResizeArray<Arrow<EdCall>>, ?parent:EdSystem, ?ownerFlow:EdFlow, ?id) =
+    type EdWork private(name:string, guid:Guid, dateTime:DateTime, calls:ResizeArray<EdCall>, arrows:ResizeArray<EdArrowBetweenCalls>, ?parent:EdSystem, ?ownerFlow:EdFlow, ?id) =
         inherit Unique(name, ?id=id, guid=guid, dateTime=dateTime)
         interface IEdWork
         member val OptOwnerFlow = ownerFlow with get, set
@@ -88,11 +86,11 @@ module rec EditableDsObjects =
             calls.AddRange(cs)
             cs |> iter (fun c -> c.RawParent <- Some x)
 
-        member x.AddArrows(arrs:Arrow<EdCall> seq) =
+        member x.AddArrows(arrs:EdArrowBetweenCalls seq) =
             arrows.AddRange(arrs)
             arrs |> iter (fun c -> c.RawParent <- Some x)
 
-        static member Create(name:string, system:EdSystem, ?calls:EdCall seq, ?ownerFlow:EdFlow, ?arrows:Arrow<EdCall> seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
+        static member Create(name:string, system:EdSystem, ?calls:EdCall seq, ?ownerFlow:EdFlow, ?arrows:EdArrowBetweenCalls seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
             let calls = calls |? Seq.empty |> ResizeArray

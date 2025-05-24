@@ -57,3 +57,11 @@ module rec Ed2DsModule =
             let project = DsProject(x.Name, x.Guid, activeSystems, passiveSystems, ?id=x.Id, dateTime=x.DateTime)
             (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some project)
             project
+
+        static member FromDsProject(p:DsProject) =
+            let activeSystems  = p.ActiveSystems  |-> (fun s -> EdSystem.Create(s.Name, guid=s.Guid, ?id=s.Id, dateTime=s.DateTime))
+            let passiveSystems = p.PassiveSystems |-> (fun s -> EdSystem.Create(s.Name, guid=s.Guid, ?id=s.Id, dateTime=s.DateTime))
+            EdProject.Create(p.Name, activeSystems, passiveSystems, guid=p.Guid, ?id=p.Id, dateTime=p.DateTime)
+            |> tee (fun z ->
+                activeSystems |> iter (fun s -> s.RawParent <- Some z)
+                passiveSystems |> iter (fun s -> s.RawParent <- Some z))

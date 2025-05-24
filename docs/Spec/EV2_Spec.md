@@ -301,6 +301,7 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `ApiC
 > 실행 인스턴스는 최소 구성만 유지하며, 연관된 `ApiDef`, `ApiCall`를 통해 외부 연동됩니다.
 
 ### 3.3 주요 테이블 구조
+  - [📁 DB schema 보기](./sqlite-schema.sql)
 
 | 테이블 명     | 설명 |
 |---------------|------|

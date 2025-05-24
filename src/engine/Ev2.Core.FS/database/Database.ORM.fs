@@ -44,17 +44,20 @@ module ORMTypesModule =
     [<AbstractClass>]
     type ORMArrowBase(srcId:int, tgtId:int, parentId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         inherit ORMUniq(null, guid, id, dateTime)
-        member x.Source = srcId
-        member x.Target = tgtId
+        new() = ORMArrowBase(-1, -1, -1, emptyGuid, nullId, nullDate)
+        member val Source = srcId with get, set
+        member val Target = tgtId with get, set
 
     /// Work 간 연결.  System 에 속함
     type ORMArrowWork(srcId:int, tgtId:int, systemId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         inherit ORMArrowBase(srcId, tgtId, systemId, guid, id, dateTime)
+        new() = ORMArrowWork(-1, -1, -1, emptyGuid, nullId, nullDate)
         member val SystemId = id with get, set
 
     /// Call 간 연결.  Work 에 속함
     type ORMArrowCall(srcId:int, tgtId:int, workId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         inherit ORMArrowBase(srcId, tgtId, workId, guid, id, dateTime)
+        new() = ORMArrowCall(-1, -1, -1, emptyGuid, nullId, nullDate)
         member val WorkId = id with get, set
 
     /// Object Releation Mapper for Asset
@@ -103,6 +106,7 @@ module ORMTypesModule =
 
     type ORMProjectSystemMap(projectId:Id, systemId:Id, isActive:bool, name, guid, id:Id, dateTime) =
         inherit ORMUniq(name, guid, id, dateTime)
+        new() = ORMProjectSystemMap(-1, -1, false, null, emptyGuid, -1, nullDate)
         member val ProjectId = projectId with get, set
         member val SystemId = systemId with get, set
         member val IsActive = isActive with get, set

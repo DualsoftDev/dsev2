@@ -178,8 +178,8 @@ module SchemaTestModule =
     let createEditableProject() =
         if isItNull edProject then
             edProject <- EdProject.Create("MainProject")
-            edSystem  <- EdSystem .Create("MainSystem"  , edProject, asActive=true)
-            edFlow    <- EdFlow   .Create("MainFlow"    , edSystem)
+            edSystem  <- EdSystem .Create("MainSystem"  , edProject)
+            edFlow    <- EdFlow   .Create("MainFlow"    , system=edSystem)
             edWork1   <- EdWork   .Create("BoundedWork1", edSystem)
             edWork2   <- EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)
             edWork3   <- EdWork   .Create("FreeWork1"   , edSystem)
@@ -187,7 +187,7 @@ module SchemaTestModule =
             edCall1b  <- EdCall   .Create("Call1b"      , edWork1)
             edCall2a  <- EdCall   .Create("Call2a"      , edWork2)
             edCall2b  <- EdCall   .Create("Call2b"      , edWork2)
-            //edProject.AddSystems([edSystem])
+            edProject.AddActiveSystem(edSystem)
             //edWork1.AddCalls([edCall1])
             edFlow.AddWorks([edWork1])
 

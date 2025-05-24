@@ -31,6 +31,7 @@ module Interfaces =
     let internal nullGuid  = Nullable<Guid>()
     let internal emptyGuid = Guid.Empty
     let internal newGuid() = Guid.NewGuid()
+    let internal s2guid (s:string) = Guid.Parse s
 
     let mutable fwdOnSerializing:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
     let mutable fwdOnDeserialized: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy

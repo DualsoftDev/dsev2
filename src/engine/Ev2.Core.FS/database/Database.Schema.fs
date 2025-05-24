@@ -116,7 +116,7 @@ CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
 CREATE TABLE [{Tn.ProjectSystemMap}]( {sqlUniq()}
     , [projectId]      {intKeyType} NOT NULL
     , [systemId]       {intKeyType} NOT NULL
-    , [active]         TINYINT NOT NULL DEFAULT 0
+    , [isActive]       TINYINT NOT NULL DEFAULT 0
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.ProjectSystemMap}_uniq UNIQUE (projectId, systemId)
@@ -138,7 +138,9 @@ CREATE TABLE [{Tn.Work}]( {sqlUniqWithName()}
 
 CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [workId]        {intKeyType} NOT NULL
-    , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
+    -- , [apiCallId]     {intKeyType} NOT NULL
+    , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
+    -- , FOREIGN KEY(apiCallId) REFERENCES {Tn.ApiCall}(id)
 );
 
 -- Work 간 연결.  System 에 속함
@@ -163,9 +165,11 @@ CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
 
 
 CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
+    , [apiDefId]        {intKeyType} NOT NULL
 );
 
 CREATE TABLE [{Tn.ApiDef}]( {sqlUniqWithName()}
+    , [systemId]        {intKeyType} NOT NULL
 );
 
 CREATE TABLE [{Tn.ParamWork}] (  {sqlUniq()}
