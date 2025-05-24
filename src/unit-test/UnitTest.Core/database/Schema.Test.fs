@@ -213,9 +213,14 @@ module SchemaTestModule =
     let ``EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
         createEditableProject()
 
+        let removeExistingData = true
+        let connStr =
+            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
+            |> path2ConnectionString
 
         let dsProject = edProject.ToDsProject()
         dsProject.Validate()
+        dsProject.ToSqlite3(connStr, removeExistingData)
 
         let dsSystem = dsProject.Systems[0]
         let dsFlow = dsSystem.Flows[0]
@@ -260,11 +265,7 @@ module SchemaTestModule =
 
         dsSystem.ToAasJson() |> ignore
 
-        let removeExistingData = true
-        let connStr =
-            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> path2ConnectionString
-        dsProject2.ToSqlite3(connStr, removeExistingData)
+        (fun () -> dsProject2.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
 
         dsProject2.EnumerateDsObjects()
         |> iter (fun dsobj ->
@@ -279,6 +280,8 @@ module SchemaTestModule =
 
         let dsProject3 = dsProject2.Copy()
         dsProject3.Validate()
+        dsProject3.ToSqlite3(connStr, removeExistingData)
+
         let jsonPath = Path.Combine(testDataDir(), "copied-dssystem.json")
         File.WriteAllText(jsonPath, dsProject3.ToJson())
 

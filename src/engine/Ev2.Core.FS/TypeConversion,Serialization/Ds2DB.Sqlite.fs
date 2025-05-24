@@ -1,13 +1,13 @@
 namespace Ev2.Core.FS
 
+open System
+open System.Data
+open System.Collections.Generic
+open Dapper
+
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
-open Newtonsoft.Json
-open System
-open Dapper
-open System.Data
-open System.Collections.Generic
 
 [<AutoOpen>]
 module Ds2SqliteModule =
@@ -22,7 +22,7 @@ module Ds2SqliteModule =
 
     let private system2Sqlite (s:DsSystem) (optProject:DsProject option) (cache:Dictionary<Guid, ORMUniq>) (conn:IDbConnection) (tr:IDbTransaction) =
         let ormSystem = s.ToORM(cache) :?> ORMSystem
-        let sysId = conn.Insert($"INSERT INTO {Tn.System} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormSystem, tr)
+        let sysId = conn.Insert($"INSERT INTO {Tn.System} (guid, dateTime, name, originGuid) VALUES (@Guid, @DateTime, @Name, @OriginGuid);", ormSystem, tr)
         s.Id <- Some sysId
         cache[s.Guid].Id <- sysId
 

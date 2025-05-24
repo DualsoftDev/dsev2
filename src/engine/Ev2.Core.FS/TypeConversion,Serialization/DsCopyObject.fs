@@ -79,7 +79,8 @@ module internal rec DsObjectCopyImpl =
                 flows  |> iter (fun z -> z.RawParent <- Some s)
                 works  |> iter (fun z -> z.RawParent <- Some s)
                 arrows |> iter (fun z -> z.RawParent <- Some s)
-                s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)
+                //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
+                s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
             ) |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
