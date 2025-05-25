@@ -38,27 +38,19 @@ module internal rec DsObjectCopyImpl =
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
     type DsFlow with
-        member x.replicateShallow(bag:ReplicateBag) =
+        member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            DsFlow(nn x.Name, guid, [||], x.DateTime)
+            DsFlow(nn x.Name, guid, x.DateTime)
             |> tee(fun z -> bag.Newbies[guid] <- z)
-
-        member x.fillDetails(bag:ReplicateBag) =
-            let old = bag.Oldies[x.Guid] :?> DsFlow
-            old.WorksGuids
-            |-> fun z -> bag.Newbies[z] :?> DsWork
-            |> x.forceSetWorks
-            ()
 
     type DsSystem with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
-            let flows  = x.Flows  |-> _.replicateShallow(bag)  |> toArray
-            let works  = x.Works  |-> _.replicate(bag)         |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
-            let arrows = x.Arrows |-> _.replicate(bag)         |> toArray
-            flows |> iter (fun f -> f.fillDetails bag)  // flow 에서 work 참조 가능해짐.
+            let flows  = x.Flows  |-> _.replicate(bag)  |> toArray
+            let works  = x.Works  |-> _.replicate(bag)  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
+            let arrows = x.Arrows |-> _.replicate(bag)  |> toArray
 
             arrows
             |> iter (fun (a:ArrowBetweenWorks) ->
@@ -117,7 +109,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]
-module DsObjectCopyModule =
+module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
 
     type DsSystem with

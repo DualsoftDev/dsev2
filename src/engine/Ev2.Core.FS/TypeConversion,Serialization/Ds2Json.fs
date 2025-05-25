@@ -111,14 +111,6 @@ module Ds2JsonModule =
             sys.Flows  |> iter (fun z -> z.RawParent <- Some sys)
             sys.Works  |> iter (fun z -> z.RawParent <- Some sys)
 
-            // flow 가 가진 WorksGuids 에 해당하는 work 들을 모아서 flow.Works 에 instance collection 으로 저장
-            for f in sys.Flows do
-                let fWorks = sys.Works |> filter (fun w -> f.WorksGuids |> Seq.contains w.Guid)
-                for w in fWorks do
-                    w.OptFlowGuid <- Some f.Guid
-
-                f.forceSetWorks fWorks
-
             // 하부 구조에 대해서 재귀적으로 호출
             sys.Flows |> iter onDeserialized
             sys.Works |> iter onDeserialized

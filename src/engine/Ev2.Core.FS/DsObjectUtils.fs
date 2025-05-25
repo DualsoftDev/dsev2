@@ -63,8 +63,9 @@ module DsObjectUtilsModule =
                     sys.Works |> contains a.Target |> verify
 
             | :? DsFlow as flow ->
-                flow.Works |> iter _.Validate()
-                for w in flow.Works  do
+                let works = flow.Works
+                works |> iter _.Validate()
+                for w in works  do
                     verify (w.OptFlowGuid = Some flow.Guid)
 
 

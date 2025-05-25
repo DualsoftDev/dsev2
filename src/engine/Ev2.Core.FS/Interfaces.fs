@@ -133,19 +133,14 @@ module rec DsObjectModule =
         member internal x.forceSetArrows(newArrows) = arrows <- newArrows|> List.ofSeq
 
 
-    type DsFlow(name, guid, works:DsWork[], dateTime:DateTime, ?id) =
+    type DsFlow(name, guid, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)
 
-        let mutable works  = if isNull works  then [] else works |> toList
-
-        internal new() = DsFlow(null, emptyGuid, [||], nullDate, ?id=None)
+        internal new() = DsFlow(null, emptyGuid, nullDate, ?id=None)
         interface IDsFlow
-        /// Flow 의 works.  flow 가 직접 work 를 child 로 갖지 않고, id 만 가지므로, deserialize 이후에 강제로 설정할 때 필요.
-        member internal x.forceSetWorks(ws) = works <- ws |> toList; x.WorksGuids <- works |-> _.Guid |> toArray
-        [<JsonIgnore>] member x.Works = works // // JSON 에는 저장하지 않고, 대신 WorksGuids 를 저장하여 추적함
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
-        [<JsonProperty("WorksGuids")>] member val internal WorksGuids: Guid[] = works |-> _.Guid |> toArray with get, set
+        [<JsonIgnore>] member x.Works = x.System.Works |> filter (fun w -> w.OptFlowGuid = Some x.Guid)
 
     type DsWork(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlowGuid:Guid option, dateTime:DateTime, ?id) =
         inherit Unique(name, guid, ?id=id, dateTime=dateTime)

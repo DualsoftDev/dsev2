@@ -250,9 +250,10 @@ module SchemaTestModule =
         dsWork2.Name === edWork2.Name
         dsWork3.Name === edWork3.Name
 
-        dsFlow.Works.Length === 2
-        dsFlow.Works[0].Guid === edWork1.Guid
-        dsFlow.Works[1].Guid === edWork2.Guid
+        let flowWors = dsFlow.Works
+        flowWors.Length === 2
+        flowWors[0].Guid === edWork1.Guid
+        flowWors[1].Guid === edWork2.Guid
         dsFlow.Name === edFlow.Name
 
         edWork1.Calls.Length === 2
