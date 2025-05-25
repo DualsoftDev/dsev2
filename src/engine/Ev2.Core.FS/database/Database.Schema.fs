@@ -106,6 +106,7 @@ BEGIN TRANSACTION;
 
 
 CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
+    , CONSTRAINT {Tn.Project}_uniq UNIQUE (name)    -- Project 의 이름은 유일해야 함
 );
 
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}

@@ -43,6 +43,7 @@ module DbApiModule =
                     with exn ->
                         createDb() )
 
+        member val ConnectionString = connStr
 
         /// DB 의 ORMWork[] 에 대한 cache
         member val WorkCache = createCache<ORMWork>(connStr, Tn.Work)
@@ -75,21 +76,31 @@ module DbApiModule =
         ///
         /// wrapping 된 tr.Commint() 이나 tr.Rollback() 을 수행해서는 안됨.
         /// trWrapper.NeedRolback 을 true 로 설정시 rollback 수행되고, 그렇지 않으면 자동으로 commit 되는 모델
+        [<Obsolete("Use WithConnection instead")>]
         member x.CreateSQLiteWrapper(?conn, ?tr:IDbTransaction) =
             DbWrapper.CreateConnectionAndTransactionWrapper(conn, tr, (fun () -> x.CreateConnection()), (fun conn -> conn.BeginTransaction()))
+
+        member x.WithConnection<'T>(action:IDbConnection * IDbTransaction -> 'T, ?optOnError:Exception->unit) =
+            use conn = x.CreateConnection()
+            use tr = conn.BeginTransaction()
+            try
+                let result:'T = action (conn, tr)
+                tr.Commit()
+                result
+            with ex ->
+                tr.Rollback()
+                logError $"WithConnection failed: {ex.Message}\n{ex.StackTrace}"
+                optOnError |> Option.iter (fun f -> f ex)
+                raise ex
 
 
 
         // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
         // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
         member x.CheckDatabaseChange() =
-
-            use conn = x.CreateConnection()
-            // 변경 내역 없는 경우, transaction 없이 return
-            if conn.QuerySingle<int>($"SELECT COUNT (*) FROM {Tn.TableHistory}") > 0 then
-                use tr = conn.BeginTransaction()
-
-                try
+            x.WithConnection(fun (conn, tr) ->
+                // 변경 내역 없는 경우, transaction 없이 return
+                if conn.QuerySingle<int>($"SELECT COUNT (*) FROM {Tn.TableHistory}") > 0 then
                     let sql = $"SELECT * FROM {Tn.TableHistory}"
                     let rows = conn.Query<ORMTableHistory>(sql, tr) |> toArray
                     for kv in rows |> groupByToDictionary (fun row -> row.Name) do
@@ -101,7 +112,4 @@ module DbApiModule =
                         | _ -> ()
                     conn.Execute($"DELETE FROM {Tn.TableHistory}", tr) |> ignore
                     conn.Execute($"DELETE FROM sqlite_sequence WHERE name = '{Tn.TableHistory}'", tr) |> ignore     // auto increment id 초기화
-                    tr.Commit()
-                with ex ->
-                    tr.Rollback()
-                    logError $"CheckDatabaseChange failed: {ex.Message}"
+            , optOnError = fun ex -> logError $"CheckDatabaseChange failed: {ex.Message}")

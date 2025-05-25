@@ -105,7 +105,6 @@ module internal Ds2SqliteImpl =
 
     /// DsProject 을 sqlite database 에 저장
     let project2Sqlite (proj:DsProject) (connStr:string) (removeExistingData:bool option) =
-        proj.LastConnectionString <- connStr
         let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
         let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
 
@@ -130,6 +129,7 @@ module internal Ds2SqliteImpl =
                 system2SqliteHelper s (Some proj) guidDic conn tr
 
             tr.Commit()
+            proj.LastConnectionString <- connStr
         with ex ->
             tr.Rollback()
             logError $"project2Sqlite failed: {ex.Message}"
@@ -156,6 +156,14 @@ module internal Ds2SqliteImpl =
 
 module internal Sqlite2DsImpl =
 
+
+    let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
+        ()
+
+    let deleteFromDatabaseWithConnectionString(identifier:DbObjectIdentifier) (connStr:string) =
+        DbApi(connStr).WithConnection(fun (conn, tr) ->
+            deleteFromDatabase identifier conn tr
+        )
 
     let fromSqlite3(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
         let ormProject =
@@ -250,11 +258,10 @@ module internal Sqlite2DsImpl =
         edProj
         //|> _.ToDsProject
 
-    let fromSqlite3WithConnectionString(identifier:DbObjectIdentifier) (connStr:string) =
-        let dbApi = DbApi(connStr)
-        use conn = dbApi.CreateConnection()
-        use tr = conn.BeginTransaction()
-        fromSqlite3 identifier conn tr
+    let fromSqlite3WithConnectionString(identifier:DbObjectIdentifier) (connStr:string):EdProject =
+        DbApi(connStr).WithConnection(fun (conn, tr) ->
+            fromSqlite3 identifier conn tr
+        )
 
 
 [<AutoOpen>]
