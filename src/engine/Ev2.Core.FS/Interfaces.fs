@@ -39,18 +39,20 @@ module Interfaces =
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) =
+    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) as this =
         interface IUnique
 
         /// Database 의 primary id key.  Database 에 삽입시 생성
         [<JsonIgnore>] member val Id = id with get, set
-        member val Name = name with get, set
+        [<JsonProperty(Order = -99)>] member val Name = name with get, set
+        /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
+        [<JsonProperty(Order = -98)>] member val private Type = this.GetType().Name
 
         /// Guid: 메모리에 최초 객체 생성시 생성
-        member val Guid:Guid = guid with get, set
+        [<JsonProperty(Order = -98)>] member val Guid:Guid = guid with get, set
 
         /// DateTime: 메모리에 최초 객체 생성시 생성
-        member val DateTime = dateTime with get, set
+        [<JsonProperty(Order = -97)>] member val DateTime = dateTime with get, set
 
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
@@ -59,7 +61,7 @@ module Interfaces =
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        [<JsonProperty>] member val internal DbId = id |> Option.toNullable with get, set
+        [<JsonProperty(Order = -100)>] member val internal DbId = id |> Option.toNullable with get, set
 
 [<AutoOpen>]
 module rec DsObjectModule =
@@ -83,7 +85,7 @@ module rec DsObjectModule =
     type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
         interface IArrow
         internal new () = DtoArrow(emptyGuid, None, emptyGuid, emptyGuid, nullDate)
-        member val Id       = id |> Option.toNullable with get, set
+        member val DbId     = id |> Option.toNullable with get, set
         member val Guid     = guid     with get, set
         member val Source   = source   with get, set
         member val Target   = target   with get, set
@@ -97,13 +99,23 @@ module rec DsObjectModule =
 
         interface IDsProject
         new() = DsProject(null, emptyGuid, [||], [||], nullDate, ?id=None)
+
+        // { JSON 용
+        /// 마지막 저장 db 에 대한 connection string
+        member val LastConnectionString:string = null with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
+
+        /// JSON 저장시에는 prototype 1벌만 저장.  DB 저장시에는 모든 system 의 instance 들이 그대로 저장됨
         [<JsonProperty>] member val internal SystemPrototypes:DsSystem list = [] with get, set
         [<JsonProperty>] member val internal ActiveSystemGuids:string list = [] with get, set
         [<JsonProperty>] member val internal PassiveSystemGuids:string list = [] with get, set
+        // } JSON 용
 
+        // { Runtime/DB 용
         [<JsonIgnore>] member x.ActiveSystems = activeSystems
         [<JsonIgnore>] member x.PassiveSystems = passiveSystems
         [<JsonIgnore>] member x.Systems = x.ActiveSystems @ x.PassiveSystems
+        // } Runtime/DB 용
+
         member internal x.forceSetActiveSystems (newActiveSystems)  = activeSystems  <- newActiveSystems
         member internal x.forceSetPassiveSystems(newPassiveSystems) = passiveSystems <- newPassiveSystems
 

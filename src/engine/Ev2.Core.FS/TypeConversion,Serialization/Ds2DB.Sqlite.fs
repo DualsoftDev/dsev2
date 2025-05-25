@@ -105,6 +105,7 @@ module internal Ds2SqliteImpl =
 
     /// DsProject 을 sqlite database 에 저장
     let project2Sqlite (proj:DsProject) (connStr:string) (removeExistingData:bool option) =
+        proj.LastConnectionString <- connStr
         let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
         let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
 

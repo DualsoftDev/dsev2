@@ -4,6 +4,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open System
 open System.IO
+open System.Runtime.Serialization
 
 /// Ds Object 를 JSON 으로 변환하기 위한 모듈
 [<AutoOpen>]
@@ -17,7 +18,17 @@ module Ds2JsonModule =
             |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
         /// JSON 문자열을 DsProject 로 변환
-        static member FromJson(json:string): DsProject = EmJson.FromJson<DsProject>(json)
+        static member FromJson(json:string): DsProject =
+            (* Simple version *)
+            //EmJson.FromJson<DsProject>(json)
+
+            (* Withh context version *)
+            let settings = EmJson.CreateDefaultSettings()
+            // Json deserialize 중에 필요한 담을 그릇 준비
+            let ddic = DynamicDictionary() |> tee(fun dic -> ())
+            settings.Context <- new StreamingContext(StreamingContextStates.All, ddic)
+
+            EmJson.FromJson<DsProject>(json, settings)
 
 
     //type DsSystem with
@@ -39,7 +50,7 @@ module Ds2JsonModule =
     let private getArrowInfos (haystack:#Unique seq) (needle:DtoArrow) =
         let source = haystack |> Seq.find (fun w -> w.Guid = needle.Source)
         let target = haystack |> Seq.find (fun w -> w.Guid = needle.Target)
-        let id = needle.Id |> Option.ofNullable
+        let id = needle.DbId |> Option.ofNullable
         let guid = needle.Guid
         let dateTime = needle.DateTime
         guid, source, target, dateTime, id

@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 
 open Dual.Common.Core.FS
+open System
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
@@ -37,6 +38,10 @@ module DsObjectUtilsModule =
                 yield! parent.EnumerateAncestors()
             | None -> ()
         ]
+
+        member x.UpdateDateTimeUpward(?dateTime:DateTime) =
+            let dateTime = dateTime |?? now
+            x.EnumerateDsObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
 
         member x.Validate() =

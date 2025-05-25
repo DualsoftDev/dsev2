@@ -20,8 +20,24 @@ module rec EditableDsObjects =
         interface IEdProject
         member x.ActiveSystems = activeSystems |> toArray
         member x.PassiveSystems = passiveSystems |> toArray
-        member x.AddActiveSystem (sys:EdSystem) = sys.RawParent <- Some x; activeSystems.Add(sys)
-        member x.AddPassiveSystem(sys:EdSystem) = sys.RawParent <- Some x; passiveSystems.Add(sys)
+        member x.AddActiveSystem (sys:EdSystem) =
+            x.UpdateDateTimeUpward()
+            sys.RawParent <- Some x
+            activeSystems.Add(sys)
+        member x.AddPassiveSystem(sys:EdSystem) =
+            x.UpdateDateTimeUpward()
+            sys.RawParent <- Some x
+            passiveSystems.Add(sys)
+
+        member x.RemoveActiveSystem (sys:EdSystem) =
+            x.UpdateDateTimeUpward()
+            sys.RawParent <- None
+            activeSystems.Remove(sys)
+        member x.RemovePassiveSystem(sys:EdSystem) =
+            x.UpdateDateTimeUpward()
+            sys.RawParent <- None
+            passiveSystems.Remove(sys)
+
 
         static member Create(name:string, ?activeSystems:EdSystem seq, ?passiveSystems:EdSystem seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
@@ -35,18 +51,42 @@ module rec EditableDsObjects =
     type EdSystem private (name:string, project:EdProject option, flows:ResizeArray<EdFlow>, works:ResizeArray<EdWork>, arrows:ResizeArray<EdArrowBetweenWorks>, guid:Guid, dateTime:DateTime, ?id) =
         inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id, ?parent=(project >>= tryCast<Unique>))
         interface IEdSystem
+
+
         member x.Flows = flows |> toArray
         member x.Works = works |> toArray
         member x.Arrows = arrows
+
         member x.AddFlows(fs:EdFlow seq) =
+            x.UpdateDateTimeUpward()
             flows.AddRange(fs)
             fs |> iter (fun f -> f.RawParent <- Some x)
         member x.AddWorks(ws:EdWork seq) =
+            x.UpdateDateTimeUpward()
             works.AddRange(ws)
             ws |> iter (fun w -> w.RawParent <- Some x)
         member x.AddArrows(arrs:EdArrowBetweenWorks seq) =
+            x.UpdateDateTimeUpward()
             arrows.AddRange(arrs)
             arrs |> iter (fun c -> c.RawParent <- Some x)
+
+
+        member x.RemoveFlows(fs:EdFlow seq) =
+            x.UpdateDateTimeUpward()
+            for f in fs do
+                flows.Remove f |> ignore
+                f.RawParent <- None
+        member x.RemoveWorks(ws:EdWork seq) =
+            x.UpdateDateTimeUpward()
+            for w in works do
+                works.Remove w |> ignore
+                w.RawParent <- None
+        member x.RemoveArrows(arrs:EdArrowBetweenWorks seq) =
+            x.UpdateDateTimeUpward()
+            for a in arrows do
+                arrows.Remove a |> ignore
+                a.RawParent <- None
+
 
         static member Create(name:string, ?project:EdProject, ?flows:EdFlow seq, ?works:EdWork seq, ?arrows:EdArrowBetweenWorks seq, ?id:Id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
@@ -66,13 +106,17 @@ module rec EditableDsObjects =
             EdFlow(name, guid, dateTime, ?system=system, ?id=id)
             |> tee(fun f -> system |> Option.iter (fun sys -> sys.AddFlows [f]))
 
-        member x.AddWorks(ws:EdWork seq) =
-            ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
-
         member x.Works = //x.OptParent |> map _.Works //|> choose id
             match x.RawParent with
             | Some (:? EdSystem as p) -> p.Works |> filter (fun w -> w.OptOwnerFlow = Some x) |> toArray
             | _ -> failwith "Parent is not set. Cannot get works from flow."
+
+        member x.AddWorks(ws:EdWork seq) =
+            x.UpdateDateTimeUpward()
+            ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
+        member x.RemoveWorks(ws:EdWork seq) =
+            x.UpdateDateTimeUpward()
+            ws |> iter (fun w -> w.OptOwnerFlow <- None)
 
 
     type EdWork private(name:string, guid:Guid, dateTime:DateTime, calls:ResizeArray<EdCall>, arrows:ResizeArray<EdArrowBetweenCalls>, ?parent:EdSystem, ?ownerFlow:EdFlow, ?id) =
@@ -83,10 +127,12 @@ module rec EditableDsObjects =
         member x.Arrows = arrows |> toArray
 
         member x.AddCalls(cs:EdCall seq) =
+            x.UpdateDateTimeUpward()
             calls.AddRange(cs)
             cs |> iter (fun c -> c.RawParent <- Some x)
 
         member x.AddArrows(arrs:EdArrowBetweenCalls seq) =
+            x.UpdateDateTimeUpward()
             arrows.AddRange(arrs)
             arrs |> iter (fun c -> c.RawParent <- Some x)
 
