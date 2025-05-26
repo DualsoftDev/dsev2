@@ -1,11 +1,42 @@
 namespace Ev2.Core.FS
 
-
 open Dual.Common.Core.FS
 open System
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
+    type Unique with
+        member x.Import(src:Unique) =
+            x.OptId     <- src.OptId
+            x.Name      <- src.Name
+            x.Guid      <- src.Guid
+            x.DateTime  <- src.DateTime
+            x.RawParent <- src.RawParent
+
+    type DsSystem with
+        static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
+            ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description
+        ) =
+            DsSystem(name, guid, flows, works, arrows, dateTime, ?originGuid=originGuid, ?id=id,
+                ?author=author, ?langVersion=langVersion, ?engineVersion=engineVersion, ?description=description)
+            |> tee (fun z ->
+                flows  |> iter (fun y -> y.RawParent <- Some z)
+                works  |> iter (fun y -> y.RawParent <- Some z)
+                arrows |> iter (fun y -> y.RawParent <- Some z) )
+
+    type DsWork with
+        static member Create(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
+            let calls = calls |> toList
+            let arrows = arrows |> toList
+            DsWork(name, guid, calls, arrows, optFlow, dateTime, ?id=id)
+            |> tee (fun z ->
+                calls   |> iter (fun y -> y.RawParent <- Some z)
+                arrows  |> iter (fun y -> y.RawParent <- Some z)
+                optFlow |> iter (fun y -> y.RawParent <- Some z) )
+
+
+
+
     [<AbstractClass>]
     type ParameterBase() =
         interface IParameter

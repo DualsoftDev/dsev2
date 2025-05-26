@@ -66,14 +66,6 @@ module Interfaces =
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
-
-        member x.Import(src:Unique) =
-            x.OptId     <- src.OptId
-            x.Name      <- src.Name
-            x.Guid      <- src.Guid
-            x.DateTime  <- src.DateTime
-            x.RawParent <- src.RawParent
-
 [<AutoOpen>]
 module rec DsObjectModule =
     [<AbstractClass>]
@@ -133,7 +125,7 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type DsSystem private(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
+    type DsSystem internal(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
             ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description
     ) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
@@ -154,16 +146,6 @@ module rec DsObjectModule =
         member val LangVersion   = langVersion   |? Version()  with get, set
         member val Description   = description   |? nullString with get, set
 
-        static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
-            ?originGuid, ?id, ?author, ?langVersion, ?engineVersion, ?description
-        ) =
-            DsSystem(name, guid, flows, works, arrows, dateTime, ?originGuid=originGuid, ?id=id,
-                ?author=author, ?langVersion=langVersion, ?engineVersion=engineVersion, ?description=description)
-            |> tee (fun z ->
-                flows  |> iter (fun y -> y.RawParent <- Some z)
-                works  |> iter (fun y -> y.RawParent <- Some z)
-                arrows |> iter (fun y -> y.RawParent <- Some z) )
-
 
     type DsFlow(name, guid, dateTime:DateTime, ?id) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
@@ -174,7 +156,7 @@ module rec DsObjectModule =
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
         [<JsonIgnore>] member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
-    type DsWork private(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
+    type DsWork internal(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         interface IDsWork
@@ -184,25 +166,10 @@ module rec DsObjectModule =
         member x.OptFlow = optFlow
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
 
-        static member Create(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
-            let calls = calls |> toList
-            let arrows = arrows |> toList
-            DsWork(name, guid, calls, arrows, optFlow, dateTime, ?id=id)
-            |> tee (fun z ->
-                noop()
-                calls   |> iter (fun y -> y.RawParent <- Some z)
-                arrows  |> iter (fun y -> y.RawParent <- Some z)
-                optFlow |> iter (fun y -> y.RawParent <- Some z) )
-
-
-
 
     type DsCall(name, guid, dateTime:DateTime, ?id) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsCall
         [<JsonIgnore>] member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
-
-
-
 
 

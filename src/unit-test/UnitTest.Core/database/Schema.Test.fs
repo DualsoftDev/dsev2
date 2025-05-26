@@ -101,20 +101,21 @@ module SchemaTestModule =
         //use conn = createMemoryConnection()
         let newGuid() = Guid.NewGuid().ToString()
 
+        let ver = Version().ToString()
         // project 삽입
         let prjGuid = newGuid()
         let prjName = "MainProject"
         let prjId = conn.InsertAndQueryLastRowId(
-                        $"INSERT INTO {Tn.Project} (guid, name) VALUES (@Guid, @Name)",
-                        {| Guid=prjGuid; Name=prjName; |})
+                        $"INSERT INTO {Tn.Project} (guid, name, author, version) VALUES (@Guid, @Name, @Author, @Version)",
+                        {| Guid=prjGuid; Name=prjName; Author=Environment.UserName; Version=ver|})
 
 
         // system 삽입
         let sysGuid = newGuid()
         let sysName = "MainSystem"
         let systemId = conn.InsertAndQueryLastRowId(
-                        $"INSERT INTO {Tn.System} (guid, name) VALUES (@Guid, @Name)",
-                        {| Guid=sysGuid; Name=sysName;|})
+                        $"INSERT INTO {Tn.System} (guid, name, author, langVersion, engineVersion) VALUES (@Guid, @Name, @Author, @LangVersion, @EngineVersion)",
+                        {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver;|})
 
         // flow 삽입
         let flowGuid = newGuid()
