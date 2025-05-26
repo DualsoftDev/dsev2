@@ -84,7 +84,7 @@ module SchemaTestModule =
             [|"id"|]
         )
 
-        let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = Guid.NewGuid().ToString("D"); DateTime = DateTime.Now }
+        let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid(); DateTime = DateTime.Now }
         let r3 = conn.Upsert(
             "flow", row, [ "Id"; "Name"; "SystemId"; "Guid" ],
             [|"id"|],
@@ -312,6 +312,7 @@ module SchemaTestModule =
         //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
         let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
         let json = File.ReadAllText(jsonPath)
+        let dsProject1 = NjProject.FromJson json
         let dsProject2 = DsProject.FromJson json
         let sys = dsProject2.ActiveSystems[0]
         sys.Flows.Length === 1

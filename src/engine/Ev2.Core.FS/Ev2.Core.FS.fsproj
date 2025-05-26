@@ -14,6 +14,7 @@
 	  <Compile Include="Interfaces.fs" />
 	  <Compile Include="DsObjectUtils.fs" />
 	  <Compile Include="EditableDsObjects.fs" />
+	  <Compile Include="JsonDsObjects.fs" />
 	  <Compile Include="database\Database.Schema.fs" />
 	  <Compile Include="database\Database.ORM.fs" />
 	  <Compile Include="database\DbApi.fs" />

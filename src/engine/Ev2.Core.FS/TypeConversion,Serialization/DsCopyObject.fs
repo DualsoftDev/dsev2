@@ -57,11 +57,8 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            DsSystem(nn x.Name, guid, flows, works, arrows, x.DateTime)
+            DsSystem.Create(nn x.Name, guid, flows, works, arrows, x.DateTime)
             |> tee(fun s ->
-                flows  |> iter (fun z -> z.RawParent <- Some s)
-                works  |> iter (fun z -> z.RawParent <- Some s)
-                arrows |> iter (fun z -> z.RawParent <- Some s)
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
             ) |> tee(fun z -> bag.Newbies[guid] <- z)
@@ -78,10 +75,8 @@ module internal rec DsObjectCopyImpl =
                 calls |> contains a.Source |> verify
                 calls |> contains a.Target |> verify)
 
-            DsWork(nn x.Name, guid, calls, arrows, x.OptFlowGuid, x.DateTime)
-            |> tee(fun w ->
-                calls  |> iter (fun z -> z.RawParent <- Some w)
-                arrows |> iter (fun z -> z.RawParent <- Some w) )
+            let flow = x.OptFlow |-> _.replicate(bag)
+            DsWork.Create(nn x.Name, guid, calls, arrows, flow, x.DateTime)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type DsCall with
@@ -128,10 +123,13 @@ module DsObjectCopyAPIModule =
                 obj.Guid <- guidDic[obj.Guid]
                 obj.DateTime <- current)
 
-            /// flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당
+            // 삭제 요망: debug only
+            // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
             replica.Works
-            |> filter _.OptFlowGuid.IsSome
-            |> iter (fun w -> w.OptFlowGuid <- Some guidDic[w.OptFlowGuid.Value])
+            |> filter _.OptFlow.IsSome
+            |> iter (fun w -> replica.Flows |> exists (fun f -> f.Guid = w.OptFlow.Value.Guid) |> verify)
+
+
 
             replica
 

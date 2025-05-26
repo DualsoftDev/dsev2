@@ -67,16 +67,6 @@ module internal Ds2SqliteImpl =
             let ormWork = w.ToORM(cache) :?> ORMWork
             ormWork.SystemId <- Nullable sysId
 
-            // work 에 flow guid 가 설정된 (즉 flow 에 소속된) work 에 대해서
-            // work 의 flowId 를 설정한다.
-            w.OptFlowGuid
-            |> iter (fun flowGuid ->
-                s.Flows
-                |> List.tryFind(fun f -> f.Guid = flowGuid)
-                |> iter (fun f ->
-                    ormWork.FlowId <- f.Id.Value ))
-
-
             let workId = conn.Insert($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
             w.Id <- Some workId
             ormWork.Id <- workId

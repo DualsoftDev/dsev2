@@ -33,7 +33,7 @@ module ORMTypesModule =
         member val Pid = Nullable<Id>() with get, set
         member val Name = name with get, set
 
-        member val Guid = guid.ToString("D") with get, set
+        member val Guid = guid2str guid with get, set
 
         member val DateTime = dateTime with get, set
         member val RawParent = Option<ORMUniq>.None with get, set
@@ -158,7 +158,7 @@ module ORMTypeConversionModule =
                 | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime, z.OriginGuid |> Option.toNullable, z.Author, z.LangVersion, z.EngineVersion, z.Description)
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
                 | :? DsWork   as z ->
-                    let flowId = z.OptFlowGuid |-> (fun fguid -> guidDic[fguid].Id) |? Nullable<Id>()
+                    let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
                     ORMWork  (name, guid, id, pid, dateTime, flowId)
                 | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
 

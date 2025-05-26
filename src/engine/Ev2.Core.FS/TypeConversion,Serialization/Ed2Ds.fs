@@ -7,29 +7,18 @@ module rec Ed2DsModule =
 
     type EdFlow with
         member x.ToDsFlow() =
-            let workDic = x.Works.ToDictionary(id, _.ToDsWork())
-            let works = workDic.Values |> toArray
-            //let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> Seq.toArray
-            //DsFlow(x.Name, x.Guid, x.RawParent.Value.Guid, works, arrows, ?id=x.Id, dateTime=x.DateTime)
             DsFlow(x.Name, x.Guid, ?id=x.Id, dateTime=x.DateTime)
-            |> tee(fun z ->
-                z.RawParent <- Some x.RawParent.Value
-                works |> iter (fun (w:DsWork) -> w.OptFlowGuid <- Some z.Guid)
-                )
+            |> tee(fun z -> z.RawParent <- Some x.RawParent.Value )
 
     type EdWork with
-        member x.ToDsWork() =
+        member x.ToDsWork(flows:DsFlow[]) =
             let callDic = x.Calls.ToDictionary(id, _.ToDsCall())
             let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(a.Guid, callDic[a.Source], callDic[a.Target], a.DateTime)) |> Seq.toArray
-            let optOwnerFlowGuid = x.OptOwnerFlow |-> _.Guid
+            let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
             let calls = callDic.Values |> toArray
 
-            DsWork(x.Name, x.Guid, calls, arrows, optOwnerFlowGuid, ?id=x.Id, dateTime=x.DateTime)
-            |> tee(fun w ->
-                w.RawParent <- Some x.RawParent.Value
-                arrows |> iter (fun z -> z.RawParent <- Some w)
-                calls  |> iter (fun z -> z.RawParent <- Some w)
-                )
+            DsWork.Create(x.Name, x.Guid, calls, arrows, optFlowGuid, ?id=x.Id, dateTime=x.DateTime)
+            //|> tee(fun w -> w.RawParent <- Some x.RawParent.Value )
 
 
     type EdCall with
@@ -38,16 +27,15 @@ module rec Ed2DsModule =
     type EdSystem with
         member x.ToDsSystem() =
             let flows = x.Flows |-> _.ToDsFlow() |> toArray
-            let workDic = x.Works.ToDictionary(id, _.ToDsWork())
+            let workDic = x.Works.ToDictionary(id, _.ToDsWork(flows))
             let works = workDic.Values |> toArray
             let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> toArray
-            let system = DsSystem(x.Name, x.Guid, flows, workDic.Values.ToArray(), arrows, ?id=x.Id, dateTime=x.DateTime)
+            let system = DsSystem.Create(x.Name, x.Guid, flows, works, arrows, ?id=x.Id, dateTime=x.DateTime)
 
             // parent 객체 할당
-            flows |> iter (fun z -> z.RawParent <- Some system)
-            works |> iter (fun z -> z.RawParent <- Some system)
             for w in works do
-                w.Calls |> iter (fun c -> c.RawParent <- Some w)
+                w.Calls |> iter (fun c -> assert (c.RawParent = Some w))
+                //w.Calls |> iter (fun c -> c.RawParent <- Some w)
             system
 
     type EdProject with

@@ -24,6 +24,19 @@ module DsObjectUtilsModule =
             | :? DsSystem as sys -> SystemParameter()
             | _ -> failwith $"GetParameter not implemented for {x.GetType()}"
 
+
+    type IArrow with
+        member x.GetSource(): Unique =
+            match x with
+            | :? ArrowBetweenCalls as a -> a.Source
+            | :? ArrowBetweenWorks as a -> a.Source
+            | _ -> failwith "ERROR"
+        member x.GetTarget(): Unique =
+            match x with
+            | :? ArrowBetweenCalls as a -> a.Target
+            | :? ArrowBetweenWorks as a -> a.Target
+            | _ -> failwith "ERROR"
+
     type Unique with
         member x.EnumerateDsObjects(?includeMe): Unique list =
             seq {
@@ -89,7 +102,7 @@ module DsObjectUtilsModule =
                 let works = flow.Works
                 works |> iter _.Validate()
                 for w in works  do
-                    verify (w.OptFlowGuid = Some flow.Guid)
+                    verify (w.OptFlow = Some flow)
 
 
             | :? DsWork as work ->

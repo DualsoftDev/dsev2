@@ -35,15 +35,18 @@ module Interfaces =
     let internal emptyGuid    = Guid.Empty
     let internal newGuid()    = Guid.NewGuid()
     let internal s2guid (s:string) = Guid.Parse s
+    let internal guid2str (g:Guid) = g.ToString("D")
 
-    let mutable fwdOnSerializing:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
-    let mutable fwdOnDeserialized: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnSerializingDs:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnDeserializedDs: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
 
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
     type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) as this =
         interface IUnique
+
+        internal new() = Unique(nullString, emptyGuid, minDate, ?id=None, ?parent=None)
 
         /// Database 의 primary id key.  Database 에 삽입시 생성
         [<JsonIgnore>] member val Id = id with get, set
@@ -66,11 +69,25 @@ module Interfaces =
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         [<JsonProperty(Order = -100)>] member val internal DbId = id |> Option.toNullable with get, set
 
+        member x.Import(src:Unique) =
+            x.Id        <- src.Id
+            x.Name      <- src.Name
+            x.Guid      <- src.Guid
+            x.DateTime  <- src.DateTime
+            x.RawParent <- src.RawParent
+
 [<AutoOpen>]
 module rec DsObjectModule =
     [<AbstractClass>]
+    type DsUnique(name, guid, dateTime, ?id:Id, ?parent:Unique) =
+        inherit Unique(name, guid, dateTime, ?id=id, ?parent=parent)
+        do
+            assert(parent |-> (fun p -> p :? DsUnique) |? true)
+
+
+    [<AbstractClass>]
     type Arrow<'T when 'T :> Unique>(source:'T, target:'T, dateTime:DateTime, guid:Guid, ?id:Id) =
-        inherit Unique(null, guid, dateTime, ?id=id)
+        inherit DsUnique(null, guid, dateTime, ?id=id)
 
         interface IArrow
         member val Source = source with get, set
@@ -95,10 +112,7 @@ module rec DsObjectModule =
         member val DateTime = dateTime with get, set
 
     type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id, ?author, ?version, (*?langVersion, ?engineVersion,*) ?description) =
-        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
-
-        let mutable activeSystems  = if isNull activeSystems  then [] else activeSystems  |> toList
-        let mutable passiveSystems = if isNull passiveSystems then [] else passiveSystems |> toList
+        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         interface IParameterContainer
 
@@ -114,95 +128,74 @@ module rec DsObjectModule =
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = description   |? nullString with get, set
 
-
-        /// JSON 저장시에는 prototype 1벌만 저장.  DB 저장시에는 모든 system 의 instance 들이 그대로 저장됨
-        [<JsonProperty>] member val internal SystemPrototypes:DsSystem list = [] with get, set
-        [<JsonProperty>] member val internal ActiveSystemGuids:string  list = [] with get, set
-        [<JsonProperty>] member val internal PassiveSystemGuids:string list = [] with get, set
-        // } JSON 용
-
         // { Runtime/DB 용
-        [<JsonIgnore>] member x.ActiveSystems = activeSystems
-        [<JsonIgnore>] member x.PassiveSystems = passiveSystems
-        [<JsonIgnore>] member x.Systems = x.ActiveSystems @ x.PassiveSystems
+        member val ActiveSystems = activeSystems |> toList
+        member val PassiveSystems = passiveSystems |> toList
+        member val Systems = (activeSystems @ passiveSystems) |> toList
         // } Runtime/DB 용
 
-        member internal x.forceSetActiveSystems (newActiveSystems)  = activeSystems  <- newActiveSystems
-        member internal x.forceSetPassiveSystems(newPassiveSystems) = passiveSystems <- newPassiveSystems
 
-
-    type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description) =
-        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
-        let mutable flows  = if isNull flows  then [] else flows  |> toList
-        let mutable works  = if isNull works  then [] else works  |> toList
-        let mutable arrows = if isNull arrows then [] else arrows |> toList
+    type DsSystem private(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description) =
+        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         internal new() = DsSystem(nullString, emptyGuid, [||], [||], [||], minDate)
         interface IParameterContainer
 
-        //member x.Flows = flows
-        //member x.Works = works
-        member val Flows = flows with get, set
-        member val Works = works with get, set
-        [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
+        member val Flows = flows |> toList
+        member val Works = works |> toList
+        member val Arrows = arrows |> toList
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
-        [<JsonConverter(typeof<OptionGuidConverter>)>]
         member val OriginGuid = originGuid with get, set
 
-        [<JsonIgnore>] member x.Arrows = arrows //with get, set
-        [<JsonIgnore>] member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
-        //member internal x.forceSet(newFlows, newWorks, newArrows) =
-        //    flows  <- newFlows
-        //    works  <- newWorks
-        //    arrows <- newArrows
-        //    x.DateTime <- now()
-        member internal x.forceSetArrows(newArrows) = arrows <- newArrows|> List.ofSeq
+        member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
 
         member val Author        = author        |? Environment.UserName with get, set
         member val EngineVersion = engineVersion |? Version()  with get, set
         member val LangVersion   = langVersion   |? Version()  with get, set
         member val Description   = description   |? nullString with get, set
 
+        static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid, ?id, ?author, ?langVersion, ?engineVersion, ?description) =
+            DsSystem(name, guid, flows, works, arrows, dateTime, ?originGuid=originGuid, ?id=id, ?author=author, ?langVersion=langVersion, ?engineVersion=engineVersion, ?description=description)
+            |> tee (fun z ->
+                flows  |> iter (fun y -> y.RawParent <- Some z)
+                works  |> iter (fun y -> y.RawParent <- Some z)
+                arrows |> iter (fun y -> y.RawParent <- Some z) )
+
 
     type DsFlow(name, guid, dateTime:DateTime, ?id) =
-        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
+        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         internal new() = DsFlow(null, emptyGuid, minDate, ?id=None)
         interface IDsFlow
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
-        [<JsonIgnore>] member x.Works = x.System.Works |> filter (fun w -> w.OptFlowGuid = Some x.Guid)
+        [<JsonIgnore>] member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
-    type DsWork(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlowGuid:Guid option, dateTime:DateTime, ?id) =
-        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
-
-        let mutable optFlowGuid = optFlowGuid
-        let calls = if isNull calls then [] else calls |> toList
-        let mutable arrows = if isNull arrows then [] else arrows |> toList
+    type DsWork private(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
+        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         interface IDsWork
-        member x.Calls = calls
-        [<JsonProperty(Order = -30)>] member val internal FlowGuid = optFlowGuid |-> toString |? null with get, set
-        [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
+        new() = DsWork(null, emptyGuid, Seq.empty, Seq.empty, None, minDate, ?id=None)
+        member val Calls = calls |> toList
+        member val Arrows = arrows |> toList
+        member x.OptFlow = optFlow
         [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        [<JsonIgnore>] member x.Arrows = arrows
 
-        [<JsonIgnore>] member internal x.OptFlowGuid with get() = optFlowGuid and set v = optFlowGuid <- v
-        member internal x.forceSetArrows(arrs) = arrows <- arrs
-        //member internal x.forceSetCalls(cs) = calls <- cs
+        static member Create(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
+            let calls = calls |> toList
+            let arrows = arrows |> toList
+            DsWork(name, guid, calls, arrows, optFlow, dateTime, ?id=id)
+            |> tee (fun z ->
+                noop()
+                calls   |> iter (fun y -> y.RawParent <- Some z)
+                arrows  |> iter (fun y -> y.RawParent <- Some z)
+                optFlow |> iter (fun y -> y.RawParent <- Some z) )
 
-        member x.TryGetFlow() =
-            option {
-                let! flowGuid = x.FlowGuid
-                let! parent = x.RawParent
-                let system = parent :?> DsSystem
-                return! system.Flows |> tryFind(fun f -> f.Guid = s2guid flowGuid)
-            }
-        member internal x.OptFlow = x.TryGetFlow()
+
 
 
     type DsCall(name, guid, dateTime:DateTime, ?id) =
-        inherit Unique(name, guid, ?id=id, dateTime=dateTime)
+        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsCall
         [<JsonIgnore>] member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
 
@@ -210,12 +203,12 @@ module rec DsObjectModule =
 
     // { On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
     type DsProject with
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializingDs x
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserializedDs x
 
     type DsSystem with
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializingDs x
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserializedDs x
     // } On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
 
 
