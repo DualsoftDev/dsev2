@@ -203,7 +203,7 @@ module SchemaTestModule =
             edProject.EnumerateDsObjects()
             |> iter (fun dsobj ->
                 // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
-                dsobj.Id.IsNone === true
+                dsobj.OptId.IsNone === true
             )
 
 
@@ -223,7 +223,7 @@ module SchemaTestModule =
         dsProject.EnumerateDsObjects()
         |> iter (fun dsobj ->
             // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
-            dsobj.Id.IsNone === true
+            dsobj.OptId.IsNone === true
         )
 
         dsProject.ToSqlite3(connStr, removeExistingData)
@@ -231,7 +231,7 @@ module SchemaTestModule =
         dsProject.EnumerateDsObjects()
         |> iter (fun dsobj ->
             // DB 삽입 후이므로 Id 가 Some 이어야 함
-            dsobj.Id.IsSome === true
+            dsobj.OptId.IsSome === true
         )
 
 

@@ -37,9 +37,6 @@ module Interfaces =
     let internal s2guid (s:string) = Guid.Parse s
     let internal guid2str (g:Guid) = g.ToString("D")
 
-    let mutable fwdOnSerializingDs:  IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
-    let mutable fwdOnDeserializedDs: IDsObject->unit = let dummy (dsObj:IDsObject) = failwithlog "Should be reimplemented." in dummy
-
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
@@ -48,8 +45,11 @@ module Interfaces =
 
         internal new() = Unique(nullString, emptyGuid, minDate, ?id=None, ?parent=None)
 
+        /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
+        [<JsonProperty(Order = -100)>] member val internal Id = id |> Option.toNullable with get, set
         /// Database 의 primary id key.  Database 에 삽입시 생성
-        [<JsonIgnore>] member val Id = id with get, set
+        [<JsonIgnore>] member x.OptId with get() = x.Id |> Option.ofNullable and set v = x.Id <- v |> Option.toNullable
+
         [<JsonProperty(Order = -99)>] member val Name = name with get, set
         /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
         [<JsonProperty(Order = -98)>] member val private Type = this.GetType().Name
@@ -66,11 +66,9 @@ module Interfaces =
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
-        /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        [<JsonProperty(Order = -100)>] member val internal DbId = id |> Option.toNullable with get, set
 
         member x.Import(src:Unique) =
-            x.Id        <- src.Id
+            x.OptId     <- src.OptId
             x.Name      <- src.Name
             x.Guid      <- src.Guid
             x.DateTime  <- src.DateTime
@@ -135,7 +133,9 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type DsSystem private(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description) =
+    type DsSystem private(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
+            ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description
+    ) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         internal new() = DsSystem(nullString, emptyGuid, [||], [||], [||], minDate)
@@ -154,8 +154,11 @@ module rec DsObjectModule =
         member val LangVersion   = langVersion   |? Version()  with get, set
         member val Description   = description   |? nullString with get, set
 
-        static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid, ?id, ?author, ?langVersion, ?engineVersion, ?description) =
-            DsSystem(name, guid, flows, works, arrows, dateTime, ?originGuid=originGuid, ?id=id, ?author=author, ?langVersion=langVersion, ?engineVersion=engineVersion, ?description=description)
+        static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
+            ?originGuid, ?id, ?author, ?langVersion, ?engineVersion, ?description
+        ) =
+            DsSystem(name, guid, flows, works, arrows, dateTime, ?originGuid=originGuid, ?id=id,
+                ?author=author, ?langVersion=langVersion, ?engineVersion=engineVersion, ?description=description)
             |> tee (fun z ->
                 flows  |> iter (fun y -> y.RawParent <- Some z)
                 works  |> iter (fun y -> y.RawParent <- Some z)
@@ -201,14 +204,5 @@ module rec DsObjectModule =
 
 
 
-    // { On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
-    type DsProject with
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializingDs x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserializedDs x
-
-    type DsSystem with
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializingDs x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserializedDs x
-    // } On(De)serializ-[ing/ed] : 반드시 해당 type 과 동일 파일, 동일 module 에 있어야 실행 됨.
 
 

@@ -15,9 +15,16 @@ module rec EditableDsObjects =
     type IEdWork    = inherit IEdObject inherit IDsWork
     type IEdCall    = inherit IEdObject inherit IDsCall
 
-    type EdProject private (name:string, activeSystems:ResizeArray<EdSystem>, passiveSystems:ResizeArray<EdSystem>, guid:Guid, dateTime:DateTime, ?id) =
+    type EdProject private (name:string, activeSystems:ResizeArray<EdSystem>, passiveSystems:ResizeArray<EdSystem>, guid:Guid, dateTime:DateTime, ?id, ?author, ?version, (*?langVersion, ?engineVersion,*) ?description) =
         inherit Unique(name, guid=guid, dateTime=dateTime, ?id=id)
         interface IEdProject
+
+        member val Author        = author        |? System.Environment.UserName with get, set
+        member val Version       = version       |? Version()  with get, set
+        //member val LangVersion   = langVersion   |? Version()  with get, set
+        //member val EngineVersion = engineVersion |? Version()  with get, set
+        member val Description   = description   |? nullString with get, set
+
         member x.ActiveSystems = activeSystems |> toArray
         member x.PassiveSystems = passiveSystems |> toArray
         member x.AddActiveSystem (sys:EdSystem) =

@@ -147,29 +147,31 @@ module ORMTypeConversionModule =
     let private ds2Orm (guidDic:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
             match x |> tryCast<Unique> with
             | Some uniq ->
-                let id = uniq.Id |? -1
-                let pid = (uniq.RawParent >>= _.Id) |? -1
+                let id = uniq.OptId |? -1
+                let pid = (uniq.RawParent >>= _.OptId) |? -1
                 let guid, name = uniq.Guid, uniq.Name
                 let pGuid, dateTime = uniq.PGuid, uniq.DateTime
 
                 match uniq with
                 | :? DsProject as z ->
                     ORMProject(name, guid, id, dateTime, z.Author, z.Version, z.Description) :> ORMUniq
-                | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime, z.OriginGuid |> Option.toNullable, z.Author, z.LangVersion, z.EngineVersion, z.Description)
+                | :? DsSystem as z ->
+                    let originGuid = z.OriginGuid |> Option.toNullable
+                    ORMSystem(name, guid, id, dateTime, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
                 | :? DsWork   as z ->
-                    let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
+                    let flowId = (z.OptFlow >>= _.OptId) |> Option.toNullable
                     ORMWork  (name, guid, id, pid, dateTime, flowId)
                 | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
 
                 | :? ArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                    let parentId = (z.RawParent >>= _.Id).Value
+                    let id, src, tgt = o2n z.OptId, z.Source.OptId.Value, z.Target.OptId.Value
+                    let parentId = (z.RawParent >>= _.OptId).Value
                     ORMArrowWork (src, tgt, parentId, z.Guid, id, z.DateTime)
 
                 | :? ArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                    let parentId = (z.RawParent >>= _.Id).Value
+                    let id, src, tgt = o2n z.OptId, z.Source.OptId.Value, z.Target.OptId.Value
+                    let parentId = (z.RawParent >>= _.OptId).Value
                     ORMArrowCall (src, tgt, parentId, z.Guid, id, z.DateTime)
 
                 | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

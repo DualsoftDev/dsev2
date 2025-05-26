@@ -75,7 +75,7 @@ module internal rec DsObjectCopyImpl =
                 calls |> contains a.Source |> verify
                 calls |> contains a.Target |> verify)
 
-            let flow = x.OptFlow |-> _.replicate(bag)
+            let flow = x.OptFlow |-> (fun f -> bag.Newbies[f.Guid] :?> DsFlow)
             DsWork.Create(nn x.Name, guid, calls, arrows, flow, x.DateTime)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 

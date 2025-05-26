@@ -34,26 +34,27 @@ module rec NewtonsoftJsonObjects =
         member x.Import(src:Unique) =
             match src with
             | :? DsUnique -> x.DsObject <- src
-            | :? NjUnique as z ->
+            | _ ->
                 failwith "ERROR"
-                x.RawParent <- z.RawParent
+
             base.Import src
 
     type NjProject() =
         inherit NjUnique()
         interface INjProject
 
-        //member val DbId = Nullable<Id>() with get, set
-        member val LastConnectionString = null:string with get, set
-        member val Author = null:string with get, set
-        member val Version = Version() with get, set
-        member val SystemPrototypes: NjSystem[] = [||] with get, set
+        member val LastConnectionString = null:string     with get, set
+        member val Description          = null:string     with get, set
+        member val Author               = null:string     with get, set
+        member val Version              = Version()       with get, set
+        [<JsonProperty(Order = 100)>] member val SystemPrototypes     = [||]:NjSystem[] with get, set
 
-        member val ActiveSystemGuids:Guid[] = [||] with get, set
-        member val PassiveSystemGuids:Guid[] = [||] with get, set
+        [<JsonProperty(Order = 101)>] member val ActiveSystemGuids    = [||]:Guid[]     with get, set
+        [<JsonProperty(Order = 102)>] member val PassiveSystemGuids   = [||]:Guid[]     with get, set
 
         static member FromDs(ds:DsProject) =
-            NjProject() |> tee (fun z -> z.Import ds)
+            NjProject(LastConnectionString=ds.LastConnectionString, Author=ds.Author, Version=ds.Version, Description=ds.Description)
+            |> tee (fun z -> z.Import ds)
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing  None x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized None x
@@ -64,15 +65,21 @@ module rec NewtonsoftJsonObjects =
         interface INjSystem
 
 
-        member val Flows:NjFlow[] = [||] with get, set
-        member val Works:NjWork[] = [||] with get, set
-        member val Arrows:NjArrow[] = [||] with get, set
-        member val OriginGuid = Option<Guid>.None with get, set
+        [<JsonProperty(Order = 101)>] member val Flows         = [||]:NjFlow[]     with get, set
+        [<JsonProperty(Order = 102)>] member val Works         = [||]:NjWork[]     with get, set
+        [<JsonProperty(Order = 103)>] member val Arrows        = [||]:NjArrow[]    with get, set
+        member val OriginGuid    = Nullable<Guid>() with get, set
+
+        member val Author        = nullString        with get, set
+        member val EngineVersion = Version()         with get, set
+        member val LangVersion   = Version()         with get, set
+        member val Description   = nullString        with get, set
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing  (x.RawParent >>= tryCast<INjObject>) x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized (x.RawParent >>= tryCast<INjObject>) x
         static member FromDs(ds:DsSystem) =
-            NjSystem()
+            let originGuid = ds.OriginGuid |> Option.toNullable
+            NjSystem(OriginGuid=originGuid, Author=ds.Author, LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
             |> tee (fun z ->
                 z.Import ds
                 z.Flows  <- ds.Flows  |-> NjFlow.FromDs  |> toArray
@@ -128,7 +135,7 @@ module rec NewtonsoftJsonObjects =
         match njObj with
         | :? NjUnique as uniq ->
             uniq.Import uniq.DsObject
-            uniq.DbId <- uniq.Id |> Option.toNullable
+            uniq.Id <- uniq.OptId |> Option.toNullable
         | _ -> ()
 
         match njObj with
@@ -140,6 +147,7 @@ module rec NewtonsoftJsonObjects =
                 originals @ distinctCopies |-> NjSystem.FromDs |> toArray
             nj.ActiveSystemGuids  <- ds.ActiveSystems  |-> _.Guid |> toArray
             nj.PassiveSystemGuids <- ds.PassiveSystems |-> _.Guid |> toArray
+            nj.LastConnectionString <- ds.LastConnectionString
 
             nj.SystemPrototypes |> iter (onSerializing (Some nj))
 
@@ -169,31 +177,21 @@ module rec NewtonsoftJsonObjects =
     let rec internal onDeserialized (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
         | :? Unique as uniq ->
-            uniq.Id <- uniq.DbId |> Option.ofNullable
+            uniq.OptId <- uniq.Id |> Option.ofNullable
         | _ -> ()
 
         match njObj with
         | :? NjProject as proj ->
             proj.SystemPrototypes |> iter (onDeserialized (Some proj))
-
-            //[
-            //    for guid in proj.ActiveSystemGuids |-> (fun g -> Guid.Parse g) do
-            //        proj.SystemPrototypes |> find (fun s -> s.Guid = guid)
-            //] |> proj.forceSetActiveSystems
-
-            //[
-            //    for guid in proj.PassiveSystemGuids |-> (fun g -> Guid.Parse g) do
-            //        proj.SystemPrototypes |> find (fun s -> s.Guid = guid)
-            //] |> proj.forceSetPassiveSystems
-
-            //proj.Systems |> iter (fun z -> z.RawParent <- Some proj)
-
-    //type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id, ?author, ?version, (*?langVersion, ?engineVersion,*) ?description) =
             proj.DsObject <-
                 let systems = proj.SystemPrototypes |-> (fun z -> z.DsObject :?> DsSystem)
                 let actives = systems |> filter (fun s -> proj.ActiveSystemGuids |> contains (s.Guid))
                 let passives = systems |> filter (fun s -> proj.PassiveSystemGuids |> contains (s.Guid))
-                DsProject(proj.Name, proj.Guid, actives, passives, proj.DateTime)
+                noop()
+                let id = n2o proj.Id
+                DsProject(proj.Name, proj.Guid, actives, passives, proj.DateTime, ?id=id,
+                    author=proj.Author, version=proj.Version, description=proj.Description,
+                    LastConnectionString=proj.LastConnectionString)
                 |> tee(fun z ->
                     systems |> iter (fun s -> s.RawParent <- Some z)
                     z.Import z)
@@ -204,7 +202,7 @@ module rec NewtonsoftJsonObjects =
                 let works = nj.Works |-> (fun z -> z.DsObject :?> DsWork)
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- ArrowBetweenWorks(a.Guid, src, tgt, a.DateTime, ?id=a.Id)
+                a.DsObject <- ArrowBetweenWorks(a.Guid, src, tgt, a.DateTime, ?id=a.OptId)
                 ()
                 )
 
@@ -217,7 +215,6 @@ module rec NewtonsoftJsonObjects =
             nj.Flows |> iter (onDeserialized (Some nj))
             nj.Works |> iter (onDeserialized (Some nj))
 
-    //type DsSystem(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime, ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description) =
             let flows = nj.Flows |-> (fun z -> z.DsObject :?> DsFlow)
 
             let works = [|
@@ -229,45 +226,38 @@ module rec NewtonsoftJsonObjects =
                             None
                     let calls = w.Calls |-> (fun z -> z.DsObject :?> DsCall)
                     let arrows = w.Arrows |-> (fun z -> z.DsObject :?> ArrowBetweenCalls)
-                    let dsWork = DsWork.Create(w.Name, w.Guid, calls, arrows, optFlow, w.DateTime, ?id=w.Id)
+                    let dsWork = DsWork.Create(w.Name, w.Guid, calls, arrows, optFlow, w.DateTime, ?id=w.OptId)
                     yield dsWork
                     w.DsObject <- dsWork
             |]
             let arrows = nj.Arrows |-> (fun z -> z.DsObject :?> ArrowBetweenWorks)
-            nj.DsObject <- DsSystem.Create(nj.Name, nj.Guid, flows, works, arrows, nj.DateTime, ?id=nj.Id)
+            nj.DsObject <-
+                DsSystem.Create(nj.Name, nj.Guid, flows, works, arrows, nj.DateTime, ?id=nj.OptId,
+                                author=nj.Author, langVersion=nj.LangVersion, engineVersion=nj.EngineVersion, description=nj.Description)
 
-        | :? NjFlow as flow ->
-            flow.DsObject <- DsFlow() |> tee(fun f -> f.Import flow)
+        | :? NjFlow as nj ->
+            nj.DsObject <- DsFlow(nj.Name, nj.Guid, nj.DateTime, ?id=nj.OptId) |> tee(fun f -> f.Import nj)
             ()
 
         | :? NjWork as work ->
-            work.Calls |> iter (fun z -> z.RawParent <- Some work)
-            work.Calls |> iter (onDeserialized (Some work))
-            //work.DtoArrows
-            //|-> getArrowInfos work.Calls
-            //|-> (fun (guid, src, tgt, dateTime, id) -> ArrowBetweenCalls(guid, src, tgt, dateTime, ?id=id))
-            //|> work.forceSetArrows
-
+            work.Calls  |> iter (fun z -> z.RawParent <- Some work)
+            work.Calls  |> iter (onDeserialized (Some work))
+            work.Arrows |> iter (fun z -> z.RawParent <- Some work)
             work.Arrows
             |> iter (fun (a:NjArrow) ->
                 let calls = work.Calls |-> (fun z -> z.DsObject :?> DsCall)
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- ArrowBetweenCalls(a.Guid, src, tgt, a.DateTime, ?id=a.Id)
+                a.DsObject <- ArrowBetweenCalls(a.Guid, src, tgt, a.DateTime, ?id=a.OptId)
                 ()
                 )
 
+            (* DsWork 객체 생성은 flow guid 생성 시까지 지연 *)
 
-            //work.Arrows |> iter (fun z -> z.RawParent <- Some work)
-            //if work.FlowGuid.NonNullAny() then
-            //    work.OptFlowGuid <- Guid.Parse work.FlowGuid |> Some
-
-
-            // DsWork 객체 생성은 flow guid 생성 시까지 지연
             ()
 
         | :? NjCall as call ->
-            call.DsObject <- DsCall(call.Name, call.Guid, call.DateTime, ?id=call.Id)
+            call.DsObject <- DsCall(call.Name, call.Guid, call.DateTime, ?id=call.OptId)
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
