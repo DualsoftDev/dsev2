@@ -26,18 +26,49 @@ module NewtonsoftJsonForwardDecls =
 module rec NewtonsoftJsonObjects =
 
     [<AbstractClass>]
-    type NjUnique() =
-        inherit Unique()
+    type NjUnique() as this =
+        //inherit Unique()
+        interface IUnique
+
+
+        /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
+        [<JsonProperty(Order = -100)>] member val internal Id = nullableId with get, set
+        ///// Database 의 primary id key.  Database 에 삽입시 생성
+        [<JsonIgnore>] member x.OptId = x.Id |> Option.ofNullable
+
+        [<JsonProperty(Order = -99)>] member val Name = nullString with get, set
+        /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
+        [<JsonProperty(Order = -98)>] member val private Type = this.GetType().Name
+
+        /// Guid: 메모리에 최초 객체 생성시 생성
+        [<JsonProperty(Order = -98)>] member val Guid:Guid = emptyGuid with get, set
+
+        /// DateTime: 메모리에 최초 객체 생성시 생성
+        [<JsonProperty(Order = -97)>] member val DateTime = minDate with get, set
+
+        /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
+        [<JsonIgnore>] member val RawParent = Option<NjUnique>.None with get, set
+
+        /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
+        [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
+
+
+
         [<JsonIgnore>] member val DsObject:Unique = getNull<Unique>() with get, set
         [<JsonIgnore>] member x.DsRawParent:Unique option = x.DsObject.RawParent
-        [<JsonIgnore>] member x.NjRawParent:Unique option = x.RawParent
+        [<JsonIgnore>] member x.NjRawParent:NjUnique option = x.RawParent
         member x.Import(src:Unique) =
             match src with
             | :? DsUnique -> x.DsObject <- src
             | _ ->
                 failwith "ERROR"
 
-            base.Import src
+            x.Id     <- src.OptId |> Option.toNullable
+            x.Name      <- src.Name
+            x.Guid      <- src.Guid
+            x.DateTime  <- src.DateTime
+            //x.RawParent <- src.RawParent
+            //base.Import src
 
     type NjProject() =
         inherit NjUnique()
@@ -135,7 +166,6 @@ module rec NewtonsoftJsonObjects =
         match njObj with
         | :? NjUnique as uniq ->
             uniq.Import uniq.DsObject
-            uniq.Id <- uniq.OptId |> Option.toNullable
         | _ -> ()
 
         match njObj with
@@ -176,9 +206,10 @@ module rec NewtonsoftJsonObjects =
     /// JSON 읽고 나서 메모리 구조에 후처리 작업
     let rec internal onDeserialized (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
-        | :? Unique as uniq ->
-            uniq.OptId <- uniq.Id |> Option.ofNullable
-        | _ -> ()
+        | :? NjUnique as uniq ->
+            ()
+        | _ ->
+            ()
 
         match njObj with
         | :? NjProject as proj ->
@@ -192,9 +223,7 @@ module rec NewtonsoftJsonObjects =
                 DsProject(proj.Name, proj.Guid, actives, passives, proj.DateTime, ?id=id,
                     author=proj.Author, version=proj.Version, description=proj.Description,
                     LastConnectionString=proj.LastConnectionString)
-                |> tee(fun z ->
-                    systems |> iter (fun s -> s.RawParent <- Some z)
-                    z.Import z)
+                |> tee(fun z -> systems |> iter (fun s -> s.RawParent <- Some z))
 
         | :? NjSystem as nj ->
             nj.Arrows
@@ -236,7 +265,7 @@ module rec NewtonsoftJsonObjects =
                                 author=nj.Author, langVersion=nj.LangVersion, engineVersion=nj.EngineVersion, description=nj.Description)
 
         | :? NjFlow as nj ->
-            nj.DsObject <- DsFlow(nj.Name, nj.Guid, nj.DateTime, ?id=nj.OptId) |> tee(fun f -> f.Import nj)
+            nj.DsObject <- DsFlow(nj.Name, nj.Guid, nj.DateTime, ?id=nj.OptId)
             ()
 
         | :? NjWork as work ->

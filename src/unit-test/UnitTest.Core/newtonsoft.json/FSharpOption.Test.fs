@@ -175,7 +175,13 @@ let doTestNullable() =
         let nullData = NullContainer(null, Nullable(3), Some(3))
         let json = EmJson.ToJson(nullData)
         json === """{
-  "NullableInt": 3
+  "NullableInt": 3,
+  "OptNullable": {
+    "Case": "Some",
+    "Fields": [
+      3
+    ]
+  }
 }"""
         ()
     ()

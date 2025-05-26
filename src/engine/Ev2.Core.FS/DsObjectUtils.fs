@@ -5,14 +5,6 @@ open System
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
-    type Unique with
-        member x.Import(src:Unique) =
-            x.OptId     <- src.OptId
-            x.Name      <- src.Name
-            x.Guid      <- src.Guid
-            x.DateTime  <- src.DateTime
-            x.RawParent <- src.RawParent
-
     type DsSystem with
         static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
             ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description

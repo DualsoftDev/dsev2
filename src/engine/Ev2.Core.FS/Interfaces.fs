@@ -40,31 +40,29 @@ module Interfaces =
     let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) as this =
+    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) =
         interface IUnique
 
         internal new() = Unique(nullString, emptyGuid, minDate, ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        [<JsonProperty(Order = -100)>] member val internal Id = id |> Option.toNullable with get, set
+        member val internal Id = id |> Option.toNullable with get, set
         /// Database 의 primary id key.  Database 에 삽입시 생성
-        [<JsonIgnore>] member x.OptId with get() = x.Id |> Option.ofNullable and set v = x.Id <- v |> Option.toNullable
+        member x.OptId with get() = x.Id |> Option.ofNullable and set v = x.Id <- v |> Option.toNullable
 
-        [<JsonProperty(Order = -99)>] member val Name = name with get, set
-        /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
-        [<JsonProperty(Order = -98)>] member val private Type = this.GetType().Name
+        member val Name = name with get, set
 
         /// Guid: 메모리에 최초 객체 생성시 생성
-        [<JsonProperty(Order = -98)>] member val Guid:Guid = guid with get, set
+        member val Guid:Guid = guid with get, set
 
         /// DateTime: 메모리에 최초 객체 생성시 생성
-        [<JsonProperty(Order = -97)>] member val DateTime = dateTime with get, set
+        member val DateTime = dateTime with get, set
 
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
-        [<JsonIgnore>] member val RawParent = parent with get, set
+        member val RawParent = parent with get, set
 
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
-        [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
+        member x.PGuid = x.RawParent |-> _.Guid
 
 [<AutoOpen>]
 module rec DsObjectModule =
