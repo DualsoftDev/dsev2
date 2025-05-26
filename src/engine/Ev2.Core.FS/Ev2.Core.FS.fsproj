@@ -9,35 +9,35 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Include="devdoc\ErrorMessages.md" />
-	  <Compile Include="AppSettings.fs" />
-	  <Compile Include="Interfaces.fs" />
-	  <Compile Include="DsObjectUtils.fs" />
-	  <Compile Include="EditableDsObjects.fs" />
-	  <Compile Include="JsonDsObjects.fs" />
-	  <Compile Include="database\Database.Schema.fs" />
-	  <Compile Include="database\Database.ORM.fs" />
-	  <Compile Include="database\DbApi.fs" />
-	  <Compile Include="TypeConversion,Serialization\DsCopyObject.fs" />
-	  <Compile Include="TypeConversion,Serialization\Ed2Ds.fs" />
-	  <Compile Include="TypeConversion,Serialization\Ds2Json.fs" />
-	  <Compile Include="TypeConversion,Serialization\Ds2DB.Sqlite.fs" />
-	  <Compile Include="TypeConversion,Serialization\Ds2Aas.fs" />
-	  <Compile Include="EntryPoint.fs" />
+		<None Include="devdoc\ErrorMessages.md" />
+		<Compile Include="AppSettings.fs" />
+		<Compile Include="Interfaces.fs" />
+		<Compile Include="DsObjectUtils.fs" />
+		<Compile Include="database\Database.Schema.fs" />
+		<Compile Include="database\Database.ORM.fs" />
+		<Compile Include="database\DbApi.fs" />
+		<Compile Include="TypeConversion,Serialization\EditableDsObjects.fs" />
+		<Compile Include="TypeConversion,Serialization\Ed2Ds.fs" />
+		<Compile Include="TypeConversion,Serialization\JsonDsObjects.fs" />
+		<Compile Include="TypeConversion,Serialization\Ds2Json.fs" />
+		<Compile Include="TypeConversion,Serialization\DsCopyObject.fs" />
+		<Compile Include="TypeConversion,Serialization\Ds2DB.Sqlite.fs" />
+		<Compile Include="TypeConversion,Serialization\Ds2Aas.fs" />
+		<Compile Include="EntryPoint.fs" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Content Include="appSettings.json" />
+		<Content Include="appSettings.json" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Include="appSettings.json.template" />
+		<None Include="appSettings.json.template" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
-	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
-	  <ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
 	</ItemGroup>
 
 
@@ -50,8 +50,8 @@
 
 
 	<ItemGroup>
-	  <Compile Include="AssemblyInfo.fs" />
-	  <Folder Include="DevDoc\" />
+		<Compile Include="AssemblyInfo.fs" />
+		<Folder Include="DevDoc\" />
 	</ItemGroup>
 
 </Project>

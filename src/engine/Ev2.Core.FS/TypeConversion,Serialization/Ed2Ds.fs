@@ -3,25 +3,25 @@ namespace Ev2.Core.FS
 open Dual.Common.Core.FS
 
 [<AutoOpen>]
-module rec Ed2DsModule =
+module Ed2DsModule =
 
     type EdFlow with
         member x.ToDsFlow() =
             DsFlow(x.Name, x.Guid, ?id=x.OptId, dateTime=x.DateTime)
             |> tee(fun z -> z.RawParent <- Some x.RawParent.Value )
 
+    type EdCall with
+        member x.ToDsCall() = DsCall(x.Name, x.Guid, ?id=x.OptId, dateTime=x.DateTime)
+
     type EdWork with
         member x.ToDsWork(flows:DsFlow[]) =
             let callDic = x.Calls.ToDictionary(id, _.ToDsCall())
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(a.Guid, callDic[a.Source], callDic[a.Target], a.DateTime)) |> Seq.toArray
+            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(a.Guid, callDic[a.Source], callDic[a.Target], a.DateTime))
             let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
             let calls = callDic.Values |> toArray
 
             DsWork.Create(x.Name, x.Guid, calls, arrows, optFlowGuid, ?id=x.OptId, dateTime=x.DateTime)
 
-
-    type EdCall with
-        member x.ToDsCall() = DsCall(x.Name, x.Guid, ?id=x.OptId, dateTime=x.DateTime)
 
     type EdSystem with
         member x.ToDsSystem() =
@@ -31,10 +31,10 @@ module rec Ed2DsModule =
             let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> toArray
             let system = DsSystem.Create(x.Name, x.Guid, flows, works, arrows, ?id=x.OptId, dateTime=x.DateTime)
 
-            // parent 객체 할당
+            // parent 객체 확인
             for w in works do
                 w.Calls |> iter (fun c -> assert (c.RawParent = Some w))
-                //w.Calls |> iter (fun c -> c.RawParent <- Some w)
+
             system
 
     type EdProject with
