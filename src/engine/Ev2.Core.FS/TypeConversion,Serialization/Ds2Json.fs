@@ -5,6 +5,7 @@ open Dual.Common.Core.FS
 open System
 open System.IO
 open System.Runtime.Serialization
+open UtfUnknown.Core.Models.MultiByte.Chinese
 
 /// Ds Object 를 JSON 으로 변환하기 위한 모듈
 [<AutoOpen>]
@@ -84,6 +85,7 @@ module Ds2JsonModule =
         | :? DsWork as work ->
             work.DtoArrows <- work.Arrows |-> arrowToDto |> List.ofSeq
             work.Calls |> iter onSerializing
+            work.TryGetFlow() |> iter (fun f -> work.FlowGuid <- f.Guid.ToString "D")
         | :? DsCall as call ->
             ()
         | _ -> failwith "ERROR.  확장 필요?"
@@ -138,6 +140,8 @@ module Ds2JsonModule =
             |> work.forceSetArrows
 
             work.Arrows |> iter (fun z -> z.RawParent <- Some work)
+            if work.FlowGuid.NonNullAny() then
+                work.OptFlowGuid <- Guid.Parse work.FlowGuid |> Some
 
         | :? DsCall as call ->
             ()

@@ -6,6 +6,24 @@ open System
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
+    [<AbstractClass>]
+    type ParameterBase() =
+        interface IParameter
+
+    type ProjectParameter() =
+        // name, langVersion, engineVersion, description, author, dateTime, activeSystems, passiveSystems
+        inherit ParameterBase()
+
+    type SystemParameter() =
+        inherit ParameterBase()
+
+    type IParameterContainer with
+        member x.GetParameter(): IParameter =
+            match x with
+            | :? DsProject as prj -> ProjectParameter() :> IParameter
+            | :? DsSystem as sys -> SystemParameter()
+            | _ -> failwith $"GetParameter not implemented for {x.GetType()}"
+
     type Unique with
         member x.EnumerateDsObjects(?includeMe): Unique list =
             seq {
@@ -46,7 +64,7 @@ module DsObjectUtilsModule =
 
         member x.Validate() =
             verify (x.Guid <> emptyGuid)
-            verify (x.DateTime <> nullDate)
+            verify (x.DateTime <> minDate)
             match x with
             | :? DsProject | :? DsSystem | :? DsFlow  | :? DsWork  | :? DsCall -> verify (x.Name.NonNullAny())
             | _ -> ()

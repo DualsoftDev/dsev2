@@ -309,9 +309,13 @@ module SchemaTestModule =
 
     [<Test>]
     let ``JSON -> DsObject -> DB update test`` () =
-        let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
+        //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
+        let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
         let json = File.ReadAllText(jsonPath)
         let dsProject2 = DsProject.FromJson json
+        let sys = dsProject2.ActiveSystems[0]
+        sys.Flows.Length === 1
+        let flow = sys.Flows[0]
         dsProject2.Name <- "UpdatedProject"
         let removeExistingData = true
         let connStr =

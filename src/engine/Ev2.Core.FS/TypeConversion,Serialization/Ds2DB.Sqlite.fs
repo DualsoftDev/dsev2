@@ -26,7 +26,8 @@ module internal Ds2SqliteImpl =
 
     let system2SqliteHelper (s:DsSystem) (optProject:DsProject option) (cache:Dictionary<Guid, ORMUniq>) (conn:IDbConnection) (tr:IDbTransaction) =
         let ormSystem = s.ToORM(cache) :?> ORMSystem
-        let sysId = conn.Insert($"INSERT INTO {Tn.System} (guid, dateTime, name, originGuid) VALUES (@Guid, @DateTime, @Name, @OriginGuid);", ormSystem, tr)
+        let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid)
+                        VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid);""", ormSystem, tr)
         s.Id <- Some sysId
         cache[s.Guid].Id <- sysId
 
@@ -121,7 +122,9 @@ module internal Ds2SqliteImpl =
             | _ -> ()
 
             let guidDic, ormProject = proj.ToORM()
-            let projId = conn.Insert($"INSERT INTO {Tn.Project} (guid, dateTime, name) VALUES (@Guid, @DateTime, @Name);", ormProject, tr)
+            let projId =
+                conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                    VALUES (@Guid, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
             proj.Id <- Some projId
             ormProject.Id <- projId
 

@@ -102,3 +102,60 @@ let doTest() =
     printfn "%s" json3
 
 
+type GuidContainer private(guid:Guid, strGuid:string, optGuid:Guid option, nullableGuid:Nullable<Guid>) =
+
+    new() = GuidContainer(Guid.Empty, null, None, Nullable())
+    //new() = GuidContainer()
+    member val Guid = guid with get, set
+    member val StrGuid = strGuid with get, set
+
+    [<JsonConverter(typeof<OptionGuidConverter>)>]
+    member val OptGuid = optGuid with get, set
+    member val NullableGuid = nullableGuid with get, set
+    static member Create(?guid, ?strGuid, ?optGuid, ?nullableGuid) =
+        let guid = guid |? Guid.Empty
+        let strGuid = strGuid |? null:string
+        let optGuid = optGuid |? Some Guid.Empty
+        let nullableGuid = nullableGuid |? Nullable<Guid>()
+        GuidContainer(guid, strGuid, optGuid, nullableGuid)
+
+[<Test>]
+let doTestGuid() =
+    DcLogger.EnableTrace <- true
+    let guid = GuidContainer()
+    let jsonOriginal = JsonConvert.SerializeObject(guid, Formatting.Indented)
+    tracefn $"{jsonOriginal}"
+    jsonOriginal === """{
+  "Guid": "00000000-0000-0000-0000-000000000000",
+  "StrGuid": null,
+  "OptGuid": null,
+  "NullableGuid": null
+}"""
+    let json1 = EmJson.ToJson(guid)
+    json1 === """{
+  "Guid": "00000000-0000-0000-0000-000000000000"
+}"""
+    tracefn $"{json1}"
+
+
+
+    do
+        let guid = GuidContainer.Create(
+            Guid.Parse("10000000-0000-0000-0000-000000000000"),
+            "20000000-0000-0000-0000-000000000000",
+            Some(Guid.Parse("30000000-0000-0000-0000-000000000000")),
+            Nullable<Guid>(Guid.Parse("40000000-0000-0000-0000-000000000000")))
+        let json = EmJson.ToJson(guid)
+        tracefn $"{json}"
+        let jsonAnswer = """{
+  "Guid": "10000000-0000-0000-0000-000000000000",
+  "StrGuid": "20000000-0000-0000-0000-000000000000",
+  "OptGuid": "30000000-0000-0000-0000-000000000000",
+  "NullableGuid": "40000000-0000-0000-0000-000000000000"
+}"""
+        json === jsonAnswer
+        let guid2 = EmJson.FromJson<GuidContainer>(json)
+        let json2 = EmJson.ToJson(guid2)
+        json2 === jsonAnswer
+
+    ()

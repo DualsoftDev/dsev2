@@ -106,11 +106,18 @@ BEGIN TRANSACTION;
 
 
 CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
+    , [author]       TEXT NOT NULL
+    , [version]      TEXT NOT NULL
+    , [description]  TEXT
     , CONSTRAINT {Tn.Project}_uniq UNIQUE (name)    -- Project 의 이름은 유일해야 함
 );
 
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
+    , [author]        TEXT NOT NULL
+    , [langVersion]   TEXT NOT NULL
+    , [engineVersion] TEXT NOT NULL
     , [originGuid]    TEXT      -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
+    , [description]   TEXT
 );
 
 

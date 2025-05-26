@@ -134,41 +134,8 @@ type IArrow = IUnique * IUnique
 
 #### Project
 ```fsharp
-type ProjectParam = {
-    Name: string
-    Version: string
-    Description: string option
-    Author: string option
-    CreatedAt: System.DateTime
-    ActiveSysteems: string list // 제어 대상 시스템 IDs
-    PassiveSystems: string list    // 참조 링크 시스템 IDs
-} with interface IParameter
-
-type Project(idOpt: Guid option, name: string, acticeSystems: DsSystem list, passiveSystems: DsSystem list, param: ProjectParam) =
-    let id = defaultArg idOpt (Guid.NewGuid())
-    interface IUnique with
-        member _.Name = name
-        member _.Id = id
-        
-    /// 전체 시스템
-    member _.Systems = activeSystems @ passiveSystems
-
-    /// 직접 제어 시스템 (Active)
-    member _.ActiveSystems = activeSystems
-
-    /// 간접 제어 시스템 (Passive)
-    member _.PassiveSystems = passiveSystems
-
-    /// 외부에서 정의된 시스템 (Linked)
-    member _.GetLinkSystems(externalDefinedSystemIDs: Guid list) =
-        passiveSystems
-        |> List.filter (fun s -> externalDefinedSystemIDs |> List.contains s.Id)
-
-    /// 내부 정의된 디바이스 시스템
-    member _.GetDeviceSystems(externalDefinedSystemIDs: Guid list) =
-        passiveSystems
-        |> List.filter (fun s -> not (externalDefinedSystemIDs |> List.contains s.Id))
-
+type Project(..) =
+    ```
     /// 프로젝트 메타정보
     member _.Param = param
 
@@ -176,16 +143,9 @@ type Project(idOpt: Guid option, name: string, acticeSystems: DsSystem list, pas
 
 #### System
 ```fsharp
-type DsSystem(idOpt: Guid option, name: string, flows: Flow[], jobs: Job[], edges: IArrow[], devices: device[], param: IParameter ) =
-    let id = defaultArg idOpt (Guid.NewGuid())
-    interface IUnique with
-        member _.Name = name
-        member _.Id = id
-    member val Guid = id
-    member _.Flows = flows
-    member _.WorkGraph = edges
+type DsSystem(..) =
+    ```
     member _.Jobs = jobs
-    member _.Devices = devices
     member _.Param = param
 ```
 - Flows: 여러 Flow 그룹
@@ -193,24 +153,15 @@ type DsSystem(idOpt: Guid option, name: string, flows: Flow[], jobs: Job[], edge
 
 #### Flow
 ```fsharp
-type Flow(idOpt: Guid option, name: string, param: IParameter) =
-    let id = defaultArg idOpt (Guid.NewGuid())
-    interface IUnique with
-        member _.Id = id
-        member _.Name = name
+type Flow(...) =
+    ```
     member _.Param = param
 ```
 
 #### Work
 ```fsharp
-type Work(idOpt: Guid option, name: string, flow: Flow, calls: Call[], edges: IArrow[], param: IParameter) =
-    let id = defaultArg idOpt (Guid.NewGuid())
-    interface IUnique with
-        member _.Id = id
-        member _.Name = name
-    member _.Flow = flow
-    member _.Calls = calls
-    member _.CallGraph = edges
+type Work(...) =
+    ```
     member _.Param = param
 ```
 - 순환 구조 허용 (Cyclic Directed Graph)
@@ -218,9 +169,8 @@ type Work(idOpt: Guid option, name: string, flow: Flow, calls: Call[], edges: IA
 
 #### Call
 ```fsharp
-type Call(idOpt: Guid option, name: string, apiCalls: ApiCall[], param: IParameter) =
-    let id = defaultArg idOpt (Guid.NewGuid())
-    interface IUnique with ...
+type Call(..., apiCalls: ApiCall[], param: IParameter) =
+    ```
     member _.Param = param
     member _.ApiCalls = apiCalls
 ```
@@ -336,29 +286,6 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `ApiC
 ### 3.5 테이블 생성 예시 (SQL)
 
 ```sql
-CREATE TABLE system (
-    id int PRIMARY KEY,
-    name TEXT NOT NULL,
-    createdAt TIMESTAMP DEFAULT NOW(),
-    langVersion TEXT,
-    engineVersion TEXT,
-    isDevice BOOLEAN DEFAULT FALSE,
-    isExternal BOOLEAN DEFAULT FALSE,
-    isInstance BOOLEAN DEFAULT FALSE,
-    iri TEXT
-);
-
-CREATE TABLE flow (
-    id int PRIMARY KEY,
-    systemId int  REFERENCES system(id),
-    Name TEXT NOT NULL
-);
-
-CREATE TABLE work (
-    id int PRIMARY KEY,
-    flowId int REFERENCES flow(id),
-    Name TEXT NOT NULL
-);
 
 CREATE TABLE call (
     id int PRIMARY KEY,

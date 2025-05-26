@@ -38,40 +38,51 @@ module ORMTypesModule =
         member val DateTime = dateTime with get, set
         member val RawParent = Option<ORMUniq>.None with get, set
 
-        new() = ORMUniq(null, emptyGuid, nullId, nullDate)
-        new(name, guid:Guid, id:Nullable<Id>) = ORMUniq(name, guid, id, nullDate)
+        new() = ORMUniq(null, emptyGuid, nullableId, minDate)
+        new(name, guid:Guid, id:Nullable<Id>) = ORMUniq(name, guid, id, minDate)
 
     [<AbstractClass>]
     type ORMArrowBase(srcId:int, tgtId:int, parentId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         inherit ORMUniq(null, guid, id, dateTime)
-        new() = ORMArrowBase(-1, -1, -1, emptyGuid, nullId, nullDate)
+        new() = ORMArrowBase(-1, -1, -1, emptyGuid, nullableId, minDate)
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
 
     /// Work 간 연결.  System 에 속함
     type ORMArrowWork(srcId:int, tgtId:int, systemId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         inherit ORMArrowBase(srcId, tgtId, systemId, guid, id, dateTime)
-        new() = ORMArrowWork(-1, -1, -1, emptyGuid, nullId, nullDate)
+        new() = ORMArrowWork(-1, -1, -1, emptyGuid, nullableId, minDate)
         member val SystemId = id with get, set
 
     /// Call 간 연결.  Work 에 속함
     type ORMArrowCall(srcId:int, tgtId:int, workId:int, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         inherit ORMArrowBase(srcId, tgtId, workId, guid, id, dateTime)
-        new() = ORMArrowCall(-1, -1, -1, emptyGuid, nullId, nullDate)
+        new() = ORMArrowCall(-1, -1, -1, emptyGuid, nullableId, minDate)
         member val WorkId = id with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMProject(name, guid, id:Id, dateTime) =
+    type ORMProject(name, guid, id:Id, dateTime, author:string, version, (*langVersion, engineVersion,*) description) =
         inherit ORMUniq(name, guid, id, dateTime)
         interface IORMProject
-        new() = ORMProject(null, emptyGuid, -1, nullDate)
-        new(name, guid) = ORMProject(name, guid, -1, nullDate)
+        member val Author = author with get, set
+        member val Version       = version     with get, set
+        member val Description   = description with get, set
 
-    type ORMSystem(name, guid, id:Id, dateTime, originGuid:Nullable<Guid>) =
+
+        new() = ORMProject(null, emptyGuid, -1, minDate, Environment.UserName, nullVersion, nullString)
+        new(name, guid) = ORMProject(name, guid, -1, minDate, Environment.UserName, nullVersion, nullString)
+
+    type ORMSystem(name, guid, id:Id, dateTime, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
         inherit ORMUniq(name, guid, id, dateTime)
         interface IORMSystem
-        new() = ORMSystem(null, emptyGuid, -1, nullDate, nullGuid)
-        new(name, guid) = ORMSystem(name, guid, -1, now(), nullGuid)
+        new() = ORMSystem(null, emptyGuid, -1, minDate, nullableGuid, nullString, nullVersion, nullVersion, nullString)
+        new(name, guid) = ORMSystem(name, guid, -1, now(), nullableGuid, nullString, nullVersion, nullVersion, nullString)
+
+        member val Author        = author        with get, set
+        member val EngineVersion = engineVersion with get, set
+        member val LangVersion   = langVersion   with get, set
+        member val Description   = description   with get, set
+
         member val OriginGuid = originGuid with get, set
 
     type ORMFlow(name, guid, id:Id, systemId:Id, dateTime) as this =
@@ -80,7 +91,7 @@ module ORMTypesModule =
             this.Pid <- systemId
 
         interface IORMFlow
-        new() = ORMFlow(null, emptyGuid, -1, -1, nullDate)
+        new() = ORMFlow(null, emptyGuid, -1, -1, minDate)
         member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
     type ORMWork(name, guid, id:Id, systemId:Id, dateTime, flowId:Nullable<Id>) as this =
@@ -89,7 +100,7 @@ module ORMTypesModule =
             this.Pid <- systemId
 
         interface IORMWork
-        new() = ORMWork(null, emptyGuid, -1, -1, nullDate, nullId)
+        new() = ORMWork(null, emptyGuid, -1, -1, minDate, nullableId)
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
@@ -99,14 +110,14 @@ module ORMTypesModule =
             this.Pid <- workId
 
         interface IORMCall
-        new() = ORMCall(null, emptyGuid, -1, -1, nullDate)
+        new() = ORMCall(null, emptyGuid, -1, -1, minDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
 
 
     type ORMProjectSystemMap(projectId:Id, systemId:Id, isActive:bool, name, guid, id:Id, dateTime) =
         inherit ORMUniq(name, guid, id, dateTime)
-        new() = ORMProjectSystemMap(-1, -1, false, null, emptyGuid, -1, nullDate)
+        new() = ORMProjectSystemMap(-1, -1, false, null, emptyGuid, -1, minDate)
         member val ProjectId = projectId with get, set
         member val SystemId = systemId with get, set
         member val IsActive = isActive with get, set
@@ -117,7 +128,7 @@ module ORMTypesModule =
             this.Pid <- workId
 
         interface IORMApiCall
-        new() = ORMApiCall(null, emptyGuid, -1, -1, nullDate)
+        new() = ORMApiCall(null, emptyGuid, -1, -1, minDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
     type ORMApiDef(name, guid, id:Id, workId:Id, dateTime) as this =
@@ -126,7 +137,7 @@ module ORMTypesModule =
             this.Pid <- workId
 
         interface IORMApiDef
-        new() = ORMApiDef(null, emptyGuid, -1, -1, nullDate)
+        new() = ORMApiDef(null, emptyGuid, -1, -1, minDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
 
@@ -142,8 +153,9 @@ module ORMTypeConversionModule =
                 let pGuid, dateTime = uniq.PGuid, uniq.DateTime
 
                 match uniq with
-                | :? DsProject as z -> ORMProject(name, guid, id, dateTime) :> ORMUniq
-                | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime, z.OriginGuid |> Option.toNullable)
+                | :? DsProject as z ->
+                    ORMProject(name, guid, id, dateTime, z.Author, z.Version, z.Description) :> ORMUniq
+                | :? DsSystem as z -> ORMSystem(name, guid, id, dateTime, z.OriginGuid |> Option.toNullable, z.Author, z.LangVersion, z.EngineVersion, z.Description)
                 | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
                 | :? DsWork   as z ->
                     let flowId = z.OptFlowGuid |-> (fun fguid -> guidDic[fguid].Id) |? Nullable<Id>()
