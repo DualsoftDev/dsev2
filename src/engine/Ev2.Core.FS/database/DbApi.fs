@@ -89,25 +89,15 @@ module DbApiModule =
         member x.CreateSQLiteWrapper(?conn, ?tr:IDbTransaction) =
             DbWrapper.CreateConnectionAndTransactionWrapper(conn, tr, (fun () -> x.CreateConnection()), (fun conn -> conn.BeginTransaction()))
 
-        member x.WithConnection<'T>(action:IDbConnection * IDbTransaction -> 'T, ?optOnError:Exception->unit) =
-            use conn = x.CreateConnection()
-            use tr = conn.BeginTransaction()
-            try
-                let result:'T = action (conn, tr)
-                tr.Commit()
-                result
-            with ex ->
-                tr.Rollback()
-                logError $"WithConnection failed: {ex.Message}\n{ex.StackTrace}"
-                optOnError |> Option.iter (fun f -> f ex)
-                raise ex
+        member x.With<'T>(action:IDbConnection * IDbTransaction -> 'T, ?optOnError:Exception->unit) =
+            sqlite.With(action, ?optOnError=optOnError)
 
 
 
         // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
         // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
         member x.CheckDatabaseChange() =
-            x.WithConnection(fun (conn, tr) ->
+            x.With(fun (conn, tr) ->
                 // 변경 내역 없는 경우, transaction 없이 return
                 if conn.QuerySingle<int>($"SELECT COUNT (*) FROM {Tn.TableHistory}") > 0 then
                     let sql = $"SELECT * FROM {Tn.TableHistory}"

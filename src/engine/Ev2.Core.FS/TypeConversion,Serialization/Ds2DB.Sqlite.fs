@@ -154,7 +154,7 @@ module internal Sqlite2DsImpl =
         ()
 
     let deleteFromDatabaseWithConnectionString(identifier:DbObjectIdentifier) (connStr:string) =
-        DbApi(connStr).WithConnection(fun (conn, tr) ->
+        DbApi(connStr).With(fun (conn, tr) ->
             deleteFromDatabase identifier conn tr
         )
 
@@ -252,7 +252,7 @@ module internal Sqlite2DsImpl =
         //|> _.ToDsProject
 
     let fromSqlite3WithConnectionString(identifier:DbObjectIdentifier) (connStr:string):EdProject =
-        DbApi(connStr).WithConnection(fun (conn, tr) ->
+        DbApi(connStr).With(fun (conn, tr) ->
             fromSqlite3 identifier conn tr
         )
 
