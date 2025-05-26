@@ -46,9 +46,7 @@ module Interfaces =
         internal new() = Unique(nullString, emptyGuid, minDate, ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        member val internal Id = id |> Option.toNullable with get, set
-        /// Database 의 primary id key.  Database 에 삽입시 생성
-        member x.OptId with get() = x.Id |> Option.ofNullable and set v = x.Id <- v |> Option.toNullable
+        member val Id = id with get, set
 
         member val Name = name with get, set
 

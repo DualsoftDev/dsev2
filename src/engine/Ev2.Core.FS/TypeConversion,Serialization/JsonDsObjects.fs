@@ -63,7 +63,7 @@ module rec NewtonsoftJsonObjects =
             | _ ->
                 failwith "ERROR"
 
-            x.Id     <- src.OptId |> Option.toNullable
+            x.Id        <- src.Id |> Option.toNullable
             x.Name      <- src.Name
             x.Guid      <- src.Guid
             x.DateTime  <- src.DateTime
