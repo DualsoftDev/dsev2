@@ -17,9 +17,7 @@
 		<Compile Include="database\Database.ORM.fs" />
 		<Compile Include="database\DbApi.fs" />
 		<Compile Include="TypeConversion,Serialization\EditableDsObjects.fs" />
-		<Compile Include="TypeConversion,Serialization\Ed2Ds.fs" />
-		<Compile Include="TypeConversion,Serialization\JsonDsObjects.fs" />
-		<Compile Include="TypeConversion,Serialization\Ds2Json.fs" />
+		<Compile Include="TypeConversion,Serialization\NewtonsoftJsonDsObjects.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopyObject.fs" />
 		<Compile Include="TypeConversion,Serialization\Ds2DB.Sqlite.fs" />
 		<Compile Include="TypeConversion,Serialization\Ds2Aas.fs" />

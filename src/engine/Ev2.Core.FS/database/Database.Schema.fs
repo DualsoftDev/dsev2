@@ -93,12 +93,10 @@ module DatabaseSchemaModule =
     let sqlUniq() = $"""
     [id]              {intKeyType} PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
-    , [dateTime]      DATETIME(7)
-"""
+    , [dateTime]      DATETIME(7)"""
 
     let sqlUniqWithName() = sqlUniq() + $"""
-    , [name]          NVARCHAR({NameLength}) NOT NULL
-"""
+    , [name]          NVARCHAR({NameLength}) NOT NULL"""
 
     let private getSqlCreateSchemaHelper(withTrigger:bool) =
         $"""
@@ -136,10 +134,8 @@ CREATE TABLE [{Tn.Flow}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.Work}]( {sqlUniqWithName()}
-
     , [systemId]      {intKeyType} NOT NULL
     , [flowId]      {intKeyType} DEFAULT NULL    -- NULL 허용 (work가 flow에 속하지 않을 수도 있음)
-
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
 );

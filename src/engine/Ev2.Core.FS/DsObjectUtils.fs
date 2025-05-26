@@ -93,7 +93,8 @@ module DsObjectUtilsModule =
             | None -> ()
         ]
 
-        member x.UpdateDateTimeUpward(?dateTime:DateTime) =
+        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        member x.UpdateDateTime(?dateTime:DateTime) =
             let dateTime = dateTime |?? now
             x.EnumerateDsObjects() |> iter (fun z -> z.DateTime <- dateTime)
 

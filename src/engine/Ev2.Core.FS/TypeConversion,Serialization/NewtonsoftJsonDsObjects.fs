@@ -6,6 +6,7 @@ open Newtonsoft.Json
 
 open Dual.Common.Core.FS
 open Dual.Common.Base
+open System.IO
 
 [<AutoOpen>]
 module NewtonsoftJsonForwardDecls =
@@ -18,8 +19,8 @@ module NewtonsoftJsonForwardDecls =
     type INjArrow   = inherit INjObject
 
 
-    let mutable fwdOnSerializing:  INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
-    let mutable fwdOnDeserialized: INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnNsJsonSerializing:  INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnNsJsonDeserialized: INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
 
 /// Newtonsoft Json 호환 버젼
 [<AutoOpen>]
@@ -87,8 +88,8 @@ module rec NewtonsoftJsonObjects =
             NjProject(LastConnectionString=ds.LastConnectionString, Author=ds.Author, Version=ds.Version, Description=ds.Description)
             |> tee (fun z -> z.Import ds)
 
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing  None x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized None x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  None x
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized None x
 
 
     type NjSystem() =
@@ -106,8 +107,8 @@ module rec NewtonsoftJsonObjects =
         member val LangVersion   = Version()         with get, set
         member val Description   = nullString        with get, set
 
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnSerializing  (x.RawParent >>= tryCast<INjObject>) x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnDeserialized (x.RawParent >>= tryCast<INjObject>) x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  (x.RawParent >>= tryCast<INjObject>) x
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized (x.RawParent >>= tryCast<INjObject>) x
         static member FromDs(ds:DsSystem) =
             let originGuid = ds.OriginGuid |> Option.toNullable
             NjSystem(OriginGuid=originGuid, Author=ds.Author, LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
@@ -162,7 +163,7 @@ module rec NewtonsoftJsonObjects =
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
-    let rec internal onSerializing (njParent:INjObject option) (njObj:INjObject) =
+    let rec internal onNsJsonSerializing (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
         | :? NjUnique as uniq ->
             uniq.Import uniq.DsObject
@@ -179,18 +180,18 @@ module rec NewtonsoftJsonObjects =
             nj.PassiveSystemGuids <- ds.PassiveSystems |-> _.Guid |> toArray
             nj.LastConnectionString <- ds.LastConnectionString
 
-            nj.SystemPrototypes |> iter (onSerializing (Some nj))
+            nj.SystemPrototypes |> iter (onNsJsonSerializing (Some nj))
 
         | :? NjSystem as sys ->
-            sys.Arrows |> iter (onSerializing (Some sys))
-            sys.Flows  |> iter (onSerializing (Some sys))
-            sys.Works  |> iter (onSerializing (Some sys))
+            sys.Arrows |> iter (onNsJsonSerializing (Some sys))
+            sys.Flows  |> iter (onNsJsonSerializing (Some sys))
+            sys.Works  |> iter (onNsJsonSerializing (Some sys))
 
         | :? NjFlow as flow ->
             ()
 
         | :? NjWork as work ->
-            work.Arrows |> iter (onSerializing (Some work))
+            work.Arrows |> iter (onNsJsonSerializing (Some work))
             ()
             //work.Calls |> iter onSerializing
             //work.TryGetFlow() |> iter (fun f -> work.FlowGuid <- guid2str f.Guid)
@@ -204,7 +205,7 @@ module rec NewtonsoftJsonObjects =
 
 
     /// JSON 읽고 나서 메모리 구조에 후처리 작업
-    let rec internal onDeserialized (njParent:INjObject option) (njObj:INjObject) =
+    let rec internal onNsJsonDeserialized (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
         | :? NjUnique as uniq ->
             ()
@@ -213,7 +214,7 @@ module rec NewtonsoftJsonObjects =
 
         match njObj with
         | :? NjProject as proj ->
-            proj.SystemPrototypes |> iter (onDeserialized (Some proj))
+            proj.SystemPrototypes |> iter (onNsJsonDeserialized (Some proj))
             proj.DsObject <-
                 let systems = proj.SystemPrototypes |-> (fun z -> z.DsObject :?> DsSystem)
                 let actives = systems |> filter (fun s -> proj.ActiveSystemGuids |> contains (s.Guid))
@@ -241,8 +242,8 @@ module rec NewtonsoftJsonObjects =
             nj.Works  |> iter (fun z -> z.RawParent <- Some nj)
 
             // 하부 구조에 대해서 재귀적으로 호출
-            nj.Flows |> iter (onDeserialized (Some nj))
-            nj.Works |> iter (onDeserialized (Some nj))
+            nj.Flows |> iter (onNsJsonDeserialized (Some nj))
+            nj.Works |> iter (onNsJsonDeserialized (Some nj))
 
             let flows = nj.Flows |-> (fun z -> z.DsObject :?> DsFlow)
 
@@ -270,7 +271,7 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjWork as work ->
             work.Calls  |> iter (fun z -> z.RawParent <- Some work)
-            work.Calls  |> iter (onDeserialized (Some work))
+            work.Calls  |> iter (onNsJsonDeserialized (Some work))
             work.Arrows |> iter (fun z -> z.RawParent <- Some work)
             work.Arrows
             |> iter (fun (a:NjArrow) ->
@@ -292,3 +293,43 @@ module rec NewtonsoftJsonObjects =
         | _ -> failwith "ERROR.  확장 필요?"
 
 
+
+/// Ds Object 를 JSON 으로 변환하기 위한 모듈
+[<AutoOpen>]
+module Ds2JsonModule =
+    type NjProject with
+        /// DsProject 를 JSON 문자열로 변환
+        member x.ToJson():string = EmJson.ToJson(x)
+        member x.ToJson(jsonFilePath:string) =
+            EmJson.ToJson(x)
+            |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
+
+        /// JSON 문자열을 DsProject 로 변환
+        static member FromJson(json:string): NjProject =
+            (* Simple version *)
+            //EmJson.FromJson<DsProject>(json)
+
+            (* Withh context version *)
+            let settings = EmJson.CreateDefaultSettings()
+            // Json deserialize 중에 필요한 담을 그릇 준비
+            let ddic = DynamicDictionary() |> tee(fun dic -> ())
+            settings.Context <- new StreamingContext(StreamingContextStates.All, ddic)
+
+            EmJson.FromJson<NjProject>(json, settings)
+
+
+    //type DsSystem with
+    //    member x.ToJson():string = EmJson.ToJson(x)
+    //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
+
+
+    type DsProject with
+        /// DsProject 를 JSON 문자열로 변환
+        member x.ToJson():string = EmJson.ToJson(x)
+        member x.ToJson(jsonFilePath:string) =
+            NjProject.FromDs(x).ToJson(jsonFilePath)
+            //EmJson.ToJson(x)
+            //|> tee(fun json -> File.WriteAllText(jsonFilePath, json))
+
+        /// JSON 문자열을 DsProject 로 변환
+        static member FromJson(json:string): DsProject = json |> NjProject.FromJson |> _.DsObject :?> DsProject
