@@ -51,6 +51,52 @@ CREATE TABLE [flow](
     , FOREIGN KEY(systemId)   REFERENCES system(id) ON DELETE CASCADE
 );
 
+
+    CREATE TABLE [button]( 
+    [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+    , [dateTime]      DATETIME(7)
+    , [name]          NVARCHAR(128) NOT NULL
+        , [flowId]        INTEGER NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES flow(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE [lamp]( 
+    [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+    , [dateTime]      DATETIME(7)
+    , [name]          NVARCHAR(128) NOT NULL
+        , [flowId]        INTEGER NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES flow(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE [condition]( 
+    [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+    , [dateTime]      DATETIME(7)
+    , [name]          NVARCHAR(128) NOT NULL
+        , [flowId]        INTEGER NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES flow(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE [action]( 
+    [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+    , [dateTime]      DATETIME(7)
+    , [name]          NVARCHAR(128) NOT NULL
+        , [flowId]        INTEGER NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES flow(id) ON DELETE CASCADE
+    );
+
+CREATE TABLE [enum](
+    [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [name]          NVARCHAR(128) NOT NULL
+    , [category]      NVARCHAR(128) NOT NULL
+    , [value]         INT NOT NULL
+    , CONSTRAINT enum_uniq UNIQUE (name, category)
+);
+
+
 CREATE TABLE [work]( 
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
@@ -67,9 +113,14 @@ CREATE TABLE [call](
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
     , [name]          NVARCHAR(128) NOT NULL
+    , [callTypeId]    INTEGER -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
+    , [timeOut]       INT   -- ms
+    , [autoPre]       TEXT
+    , [safety]        TEXT
     , [workId]        INTEGER NOT NULL
     -- , [apiCallId]     INTEGER NOT NULL
     , FOREIGN KEY(workId)    REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
+    , FOREIGN KEY(callTypeId)   REFERENCES enum(id)
     -- , FOREIGN KEY(apiCallId) REFERENCES apiCall(id)
 );
 
@@ -99,13 +150,24 @@ CREATE TABLE [arrowCall](
     , FOREIGN KEY(workId)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 
+--
+-- Work > Call > ApiCall > ApiDef
+--
 
 CREATE TABLE [apiCall]( 
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
-    , [name]          NVARCHAR(128) NOT NULL
+    , [inAddress]       TEXT NOT NULL
+    , [outAddress]      TEXT NOT NULL
+    , [inSymbol]        TEXT NOT NULL
+    , [outSymbol]       TEXT NOT NULL
+
+    -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
+    , [value]           TEXT NOT NULL   -- 값 범위 또는 단일 값 조건 정의 (선택 사항).  ValueParam type
+    , [valueTypeId]     INTEGER NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
     , [apiDefId]        INTEGER NOT NULL
+    , FOREIGN KEY(valueTypeId)   REFERENCES enum(id)
 );
 
 CREATE TABLE [apiDef]( 
@@ -113,7 +175,8 @@ CREATE TABLE [apiDef](
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
     , [name]          NVARCHAR(128) NOT NULL
-    , [systemId]        INTEGER NOT NULL
+    , [isPush]          TINYINT NOT NULL DEFAULT 0
+    , [systemId]        INTEGER NOT NULL       -- API 가 정의된 target system
 );
 
 CREATE TABLE [paramWork] (  

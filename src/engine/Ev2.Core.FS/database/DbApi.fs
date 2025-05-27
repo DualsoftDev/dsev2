@@ -50,6 +50,8 @@ module DbApiModule =
                         File.WriteAllText(sqlSpecFile, header + schema)
 #endif
                         conn.Execute(schema) |> ignore
+                        insertEnumValues<DbCallType> conn
+                        insertEnumValues<DbDataType> conn
                     try
                         if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()

@@ -3,9 +3,6 @@ namespace Ev2.Core.FS
 open System
 
 open Dual.Common.Core.FS
-open Dual.Common.Db.FS
-open Dual.Common.Base
-open System.Collections.Generic
 
 [<AutoOpen>]
 module DatabaseSchemaModule =
@@ -36,19 +33,31 @@ module DatabaseSchemaModule =
         let [<Literal>] ParamWork    = "paramWork"
         let [<Literal>] ParamCall    = "paramCall"
 
+        // { Flow 하부 정의 용
+        let [<Literal>] Button       = "button"
+        let [<Literal>] Lamp         = "lamp"
+        let [<Literal>] Condition    = "condition"
+        let [<Literal>] Action       = "action"
+        // } Flow 하부 정의 용
+
+        let [<Literal>] Enum         = "enum"
+
+
         let [<Literal>] Meta         = "meta"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
         let [<Literal>] ProjectSystemMap      = "projectSystemMap"
         let [<Literal>] EOT          = "endOfTable"
 
-        let AllTableNames = [ Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall; Meta; TableHistory; ProjectSystemMap; ]        // Log;
+        let AllTableNames = [
+            Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall;
+            Button; Lamp; Condition; Action; Enum;
+            Meta; TableHistory; ProjectSystemMap; ]        // Log;
 
     // database view names
     module Vn =
         let Log     = "vwLog"
         let Storage = "vwStorage"
-
 
     let triggerSql() =
         // op : {INSERT, UPDATE, DELETE}
@@ -133,6 +142,36 @@ CREATE TABLE [{Tn.Flow}]( {sqlUniqWithName()}
     , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
 );
 
+
+    CREATE TABLE [{Tn.Button}]( {sqlUniqWithName()}
+        , [flowId]        {intKeyType} NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE [{Tn.Lamp}]( {sqlUniqWithName()}
+        , [flowId]        {intKeyType} NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE [{Tn.Condition}]( {sqlUniqWithName()}
+        , [flowId]        {intKeyType} NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE [{Tn.Action}]( {sqlUniqWithName()}
+        , [flowId]        {intKeyType} NOT NULL
+        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    );
+
+CREATE TABLE [{Tn.Enum}](
+    [id]              {intKeyType} PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [category]      NVARCHAR({NameLength}) NOT NULL
+    , [name]          NVARCHAR({NameLength}) NOT NULL
+    , [value]         INT NOT NULL
+    , CONSTRAINT {Tn.Enum}_uniq UNIQUE (name, category)
+);
+
+
 CREATE TABLE [{Tn.Work}]( {sqlUniqWithName()}
     , [systemId]      {intKeyType} NOT NULL
     , [flowId]      {intKeyType} DEFAULT NULL    -- NULL 허용 (work가 flow에 속하지 않을 수도 있음)
@@ -141,9 +180,14 @@ CREATE TABLE [{Tn.Work}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
+    , [callTypeId]    {intKeyType} -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
+    , [timeOut]       INT   -- ms
+    , [autoPre]       TEXT
+    , [safety]        TEXT
     , [workId]        {intKeyType} NOT NULL
     -- , [apiCallId]     {intKeyType} NOT NULL
     , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
+    , FOREIGN KEY(callTypeId)   REFERENCES {Tn.Enum}(id)
     -- , FOREIGN KEY(apiCallId) REFERENCES {Tn.ApiCall}(id)
 );
 
@@ -167,13 +211,26 @@ CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
     , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 
+--
+-- Work > Call > ApiCall > ApiDef
+--
 
-CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
+CREATE TABLE [{Tn.ApiCall}]( {sqlUniq()}
+    , [inAddress]       TEXT NOT NULL
+    , [outAddress]      TEXT NOT NULL
+    , [inSymbol]        TEXT NOT NULL
+    , [outSymbol]       TEXT NOT NULL
+
+    -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
+    , [value]           TEXT NOT NULL   -- 값 범위 또는 단일 값 조건 정의 (선택 사항).  ValueParam type
+    , [valueTypeId]     {intKeyType} NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
     , [apiDefId]        {intKeyType} NOT NULL
+    , FOREIGN KEY(valueTypeId)   REFERENCES {Tn.Enum}(id)
 );
 
 CREATE TABLE [{Tn.ApiDef}]( {sqlUniqWithName()}
-    , [systemId]        {intKeyType} NOT NULL
+    , [isPush]          TINYINT NOT NULL DEFAULT 0
+    , [systemId]        {intKeyType} NOT NULL       -- API 가 정의된 target system
 );
 
 CREATE TABLE [{Tn.ParamWork}] (  {sqlUniq()}
@@ -214,6 +271,29 @@ CREATE TABLE [{Tn.EOT}](
 
 COMMIT;
 """
+
+    open System.Data
+    open Dapper
+
+    /// enum 의 값을 DB 에 넣는다.  enum 의 이름과 값은 DB 에서 유일해야 함.
+    let insertEnumValues<'TEnum when 'TEnum : enum<int>> (conn: IDbConnection) =
+        let enumType = typeof<'TEnum>
+        let category = enumType.Name
+        let names = Enum.GetNames(enumType)
+        let values = Enum.GetValues(enumType) :?> 'TEnum[]
+
+        for i in 0 .. names.Length - 1 do
+            let name = names.[i]
+            let value = Convert.ToInt32(values.[i])
+            let sql = """
+                INSERT OR IGNORE INTO enum (name, category, value)
+                VALUES (@Name, @Category, @Value)
+            """
+            conn.Execute(sql, dict [
+                "Name", box name
+                "Category", box category
+                "Value", box value
+            ]) |> ignore
 
     /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
     let getSqlCreateSchema() = getSqlCreateSchemaHelper false

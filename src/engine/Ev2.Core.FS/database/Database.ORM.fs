@@ -112,6 +112,7 @@ module ORMTypesModule =
         interface IORMCall
         new() = ORMCall(null, emptyGuid, -1, -1, minDate)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
+        member val CallType = DbCallType.Normal with get, set
 
 
 

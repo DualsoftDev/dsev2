@@ -7,6 +7,24 @@ open Newtonsoft.Json
 open Dual.Common.Base
 open Dual.Common.Core.FS
 
+type DbCallType =
+    | Normal = 0
+    | Parallel = 1
+    | Repeat = 2
+
+type DbDataType =
+    | Int8 = 0
+    | Int16 = 1
+    | Int32 = 2
+    | Int64 = 3
+    | Uint8 = 4
+    | Uint16 = 5
+    | Uint32 = 6
+    | Uint64 = 7
+    | Single = 8
+    | Double = 9
+
+
 [<AutoOpen>]
 module Interfaces =
     type Id = int   //int64
@@ -148,9 +166,9 @@ module rec DsObjectModule =
 
         internal new() = DsFlow(null, emptyGuid, minDate, ?id=None)
         interface IDsFlow
-        [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        [<JsonProperty>] member val internal DtoArrows:DtoArrow list = [] with get, set
-        [<JsonIgnore>] member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
+        member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
+        member val internal DtoArrows:DtoArrow list = [] with get, set
+        member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
     type DsWork internal(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
@@ -160,12 +178,13 @@ module rec DsObjectModule =
         member val Calls = calls |> toList
         member val Arrows = arrows |> toList
         member x.OptFlow = optFlow
-        [<JsonIgnore>] member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
+        member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
 
 
     type DsCall(name, guid, dateTime:DateTime, ?id) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
         interface IDsCall
-        [<JsonIgnore>] member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
+        member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
+        member val CallType = DbCallType.Normal with get, set
 
 
