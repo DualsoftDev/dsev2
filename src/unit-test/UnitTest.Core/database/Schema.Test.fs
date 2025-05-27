@@ -164,15 +164,15 @@ module SchemaTestModule =
 
 
     let mutable edProject = getNull<EdProject>()
-    let mutable edSystem  = getNull<EdSystem >()
-    let mutable edFlow    = getNull<EdFlow   >()
-    let mutable edWork1   = getNull<EdWork   >()
-    let mutable edWork2   = getNull<EdWork   >()
-    let mutable edWork3   = getNull<EdWork   >()
-    let mutable edCall1a  = getNull<EdCall   >()
-    let mutable edCall1b  = getNull<EdCall   >()
-    let mutable edCall2a  = getNull<EdCall   >()
-    let mutable edCall2b  = getNull<EdCall   >()
+    let mutable edSystem  = getNull<EdSystem>()
+    let mutable edFlow    = getNull<EdFlow>()
+    let mutable edWork1   = getNull<EdWork>()
+    let mutable edWork2   = getNull<EdWork>()
+    let mutable edWork3   = getNull<EdWork>()
+    let mutable edCall1a  = getNull<EdCall>()
+    let mutable edCall1b  = getNull<EdCall>()
+    let mutable edCall2a  = getNull<EdCall>()
+    let mutable edCall2b  = getNull<EdCall>()
 
     let mutable edApiCall1a  = getNull<EdApiCall   >()
 
@@ -199,9 +199,9 @@ module SchemaTestModule =
             edProject.ActiveSystems.Add(edSystem)
             edFlow.AddWorks([edWork1])
 
-            let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now, Guid.NewGuid())
+            let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b)
             edWork1.Arrows.Add(edArrow1)
-            let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now, Guid.NewGuid())
+            let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b)
             edWork2.Arrows.Add(edArrow2)
 
             edProject.Fix()
@@ -225,17 +225,6 @@ module SchemaTestModule =
             |> path2ConnectionString
 
         let dsProject = edProject.ToDsProject()
-
-        let kkk =
-            dsProject
-            |> uniqDateTime (now())
-            |> uniqGuid (newGuid())
-            |> uniqId (Some 3)
-            |> uniqName "KKKKKKKKKKKKK"
-
-        let xxx = uniqReplicate dsProject edProject
-        let yyy = dsProject.Renew<DsProject>()
-
 
         dsProject.Validate()
         dsProject.EnumerateDsObjects()

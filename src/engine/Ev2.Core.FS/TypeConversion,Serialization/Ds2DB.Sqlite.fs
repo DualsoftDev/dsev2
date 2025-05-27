@@ -176,7 +176,13 @@ module internal Sqlite2DsImpl =
                 ormSystems
                 |-> fun s -> EdSystem() |> fromOrmUniqINGD s |> uniqParent (Some edProj)
 
-            let actives, passives = edSystems |> partition (fun s -> projSysMaps |> tryFind(fun m -> m.SystemId = s.Id.Value) |-> _.IsActive |? false)
+            let actives, passives =
+                edSystems
+                |> partition (fun s ->
+                    projSysMaps
+                    |> tryFind(fun m -> m.SystemId = s.Id.Value)
+                    |-> _.IsActive |? false)
+
             actives  |> edProj.ActiveSystems.AddRange
             passives |> edProj.PassiveSystems.AddRange
 
@@ -222,7 +228,7 @@ module internal Sqlite2DsImpl =
                         for orm in conn.Query<ORMArrowCall>($"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
                             let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
                             let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
-                            EdArrowBetweenCalls(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
+                            EdArrowBetweenCalls(src, tgt) |> fromOrmUniqINGD orm
                     ]
                     edArrows |> w.Arrows.AddRange
                     assert(setEqual w.Arrows edArrows)
@@ -241,7 +247,7 @@ module internal Sqlite2DsImpl =
                     for orm in conn.Query<ORMArrowWork>($"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
                         let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
                         let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
-                        EdArrowBetweenWorks(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
+                        EdArrowBetweenWorks(src, tgt) |> fromOrmUniqINGD orm
                 ]
                 edArrows |> s.Arrows.AddRange
                 assert(setEqual s.Arrows edArrows)

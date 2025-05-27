@@ -108,34 +108,34 @@ module rec EditableDsObjects =
 
 
 
-    type EdArrowBetweenCalls(source:EdCall, target:EdCall, dateTime:DateTime, guid:Guid, ?id:Id) =
-        inherit Arrow<EdCall>(source, target, dateTime, guid, ?id=id)
+    type EdArrowBetweenCalls(source:EdCall, target:EdCall) =
+        inherit Arrow<EdCall>(source, target)
+        new (source, target) = EdArrowBetweenCalls(source, target)
 
-    type EdArrowBetweenWorks(source:EdWork, target:EdWork, dateTime:DateTime, guid:Guid, ?id:Id) =
-        inherit Arrow<EdWork>(source, target, dateTime, guid, ?id=id)
+    type EdArrowBetweenWorks(source:EdWork, target:EdWork) =
+        inherit Arrow<EdWork>(source, target)
+        new (source, target) = EdArrowBetweenWorks(source, target)
 
 
 [<AutoOpen>]
 module Ed2DsModule =
 
     type EdFlow with
-        member x.ToDsFlow() =
-            DsFlow(x.Name, x.Guid, ?id=x.Id, dateTime=x.DateTime)
-            |> tee(fun z -> z.RawParent <- Some x.RawParent.Value )
+        member x.ToDsFlow() = DsFlow() |> uniqReplicate x
 
     type EdCall with
         member x.ToDsCall() =
-            let apiCalls = x.ApiCalls |-> (fun a -> DsApiCall(a.Guid, a.DateTime, ?id=a.Id))
-            DsCall.Create(x.Name, x.Guid, x.CallType, apiCalls, ?id=x.Id, dateTime=x.DateTime)
+            let apiCalls = x.ApiCalls |-> (fun a -> DsApiCall() |> uniqINGD_fromObj a)
+            DsCall(x.CallType, apiCalls) |> uniqINGD_fromObj x
 
     type EdWork with
         member x.ToDsWork(flows:DsFlow[]) =
             let callDic = x.Calls.ToDictionary(id, _.ToDsCall())
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(a.Guid, callDic[a.Source], callDic[a.Target], a.DateTime))
+            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(callDic[a.Source], callDic[a.Target]) |> uniqINGD_fromObj a )
             let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
             let calls = callDic.Values |> toArray
 
-            DsWork.Create(x.Name, x.Guid, calls, arrows, optFlowGuid, ?id=x.Id, dateTime=x.DateTime)
+            DsWork.Create(calls, arrows, optFlowGuid) |> uniqINGD_fromObj x
 
 
     type EdSystem with
@@ -143,8 +143,8 @@ module Ed2DsModule =
             let flows = x.Flows |-> _.ToDsFlow() |> toArray
             let workDic = x.Works.ToDictionary(id, _.ToDsWork(flows))
             let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(a.Guid, workDic[a.Source], workDic[a.Target], a.DateTime)) |> toArray
-            let system = DsSystem.Create(x.Name, x.Guid, flows, works, arrows, ?id=x.Id, dateTime=x.DateTime)
+            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(workDic[a.Source], workDic[a.Target]) |> uniqINGD_fromObj a) |> toArray
+            let system = DsSystem.Create(flows, works, arrows) |> uniqINGD_fromObj x
 
             // parent 객체 확인
             for w in works do
@@ -156,7 +156,7 @@ module Ed2DsModule =
         member x.ToDsProject() =
             let activeSystems  = x.ActiveSystems  |-> _.ToDsSystem() |> toArray
             let passiveSystems = x.PassiveSystems |-> _.ToDsSystem() |> toArray
-            let project = DsProject(x.Name, x.Guid, activeSystems, passiveSystems, ?id=x.Id, dateTime=x.DateTime)
+            let project = DsProject(activeSystems, passiveSystems) |> uniqINGD_fromObj x
             (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some project)
             project
 

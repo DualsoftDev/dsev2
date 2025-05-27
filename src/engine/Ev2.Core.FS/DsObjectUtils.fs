@@ -6,30 +6,27 @@ open System
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type DsSystem with
-        static member Create(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
-            ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description
-        ) =
-            DsSystem(name, guid, flows, works, arrows, dateTime, ?originGuid=originGuid, ?id=id,
-                ?author=author, ?langVersion=langVersion, ?engineVersion=engineVersion, ?description=description)
+        static member Create(flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[]) =
+            DsSystem(flows, works, arrows)
             |> tee (fun z ->
                 flows  |> iter (fun y -> y.RawParent <- Some z)
                 works  |> iter (fun y -> y.RawParent <- Some z)
                 arrows |> iter (fun y -> y.RawParent <- Some z) )
 
     type DsWork with
-        static member Create(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
+        static member Create(calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option) =
             let calls = calls |> toList
             let arrows = arrows |> toList
-            DsWork(name, guid, calls, arrows, optFlow, dateTime, ?id=id)
+            DsWork(calls, arrows, optFlow)
             |> tee (fun z ->
                 calls   |> iter (fun y -> y.RawParent <- Some z)
                 arrows  |> iter (fun y -> y.RawParent <- Some z)
                 optFlow |> iter (fun y -> y.RawParent <- Some z) )
 
     type DsCall with
-        static member Create(name, guid, callType:DbCallType, apiCalls:DsApiCall seq, dateTime:DateTime, ?id) =
+        static member Create(callType:DbCallType, apiCalls:DsApiCall seq) =
             let apiCalls = apiCalls |> toList
-            DsCall(name, guid, callType, apiCalls, dateTime, ?id=id)
+            DsCall(callType, apiCalls)
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 

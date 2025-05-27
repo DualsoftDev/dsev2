@@ -31,10 +31,7 @@ module internal rec DsObjectCopyImpl =
             let passiveSystems = x.PassiveSystems |-> _.replicate(bag)
             let actives  = activeSystems  @ additionalActiveSystems  |> toArray
             let passives = passiveSystems @ additionalPassiveSystems |> toArray
-            DsProject(nn x.Name, guid, actives, passives, x.DateTime)
-            |> tee(fun p ->
-                actives  |> iter (fun z -> z.RawParent <- Some p)
-                passives |> iter (fun z -> z.RawParent <- Some p) )
+            DsProject(actives, passives) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -42,7 +39,7 @@ module internal rec DsObjectCopyImpl =
     type DsFlow with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            DsFlow(nn x.Name, guid, x.DateTime)
+            DsFlow() |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type DsSystem with
@@ -59,7 +56,7 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            DsSystem.Create(nn x.Name, guid, flows, works, arrows, x.DateTime)
+            DsSystem.Create(flows, works, arrows) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
@@ -78,14 +75,14 @@ module internal rec DsObjectCopyImpl =
                 calls |> contains a.Target |> verify)
 
             let flow = x.OptFlow |-> (fun f -> bag.Newbies[f.Guid] :?> DsFlow)
-            DsWork.Create(nn x.Name, guid, calls, arrows, flow, x.DateTime)
+            DsWork.Create(calls, arrows, flow) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type DsCall with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let apiCalls = x.ApiCalls |-> _.replicate(bag)
-            DsCall(nn x.Name, guid, x.CallType, apiCalls, x.DateTime)
+            DsCall(x.CallType, apiCalls) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type DsApiCall with
@@ -98,7 +95,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> DsWork
             let target = bag.Newbies[x.Target.Guid] :?> DsWork
-            ArrowBetweenWorks(guid, source, target, x.DateTime, Name = nn null)
+            ArrowBetweenWorks(source, target) |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -107,7 +104,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> DsCall
             let target = bag.Newbies[x.Target.Guid] :?> DsCall
-            ArrowBetweenCalls(guid, source, target, x.DateTime, Name= nn null)
+            ArrowBetweenCalls(source, target) |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]
@@ -155,6 +152,6 @@ module DsObjectCopyAPIModule =
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
             let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.Duplicate() |> toArray
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.Duplicate() |> toArray
-            DsProject(nn x.Name, newGuid(), actives, passives, now())
+            DsProject(actives, passives) |> uniqName (nn x.Name)
             |> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
 

@@ -73,6 +73,14 @@ module rec NewtonsoftJsonObjects =
             //x.RawParent <- src.RawParent
             //base.Import src
 
+    let njUniqINGD_fromObj (src:#NjUnique) (dst:#Unique): #Unique =
+        dst.Id <- n2o src.Id
+        dst.Name <- src.Name
+        dst.Guid <- src.Guid
+        dst.DateTime <- src.DateTime
+        dst
+
+
     type NjProject() =
         inherit NjUnique()
         interface INjProject
@@ -229,9 +237,12 @@ module rec NewtonsoftJsonObjects =
                 let passives = systems |> filter (fun s -> proj.PassiveSystemGuids |> contains (s.Guid))
                 noop()
                 let id = n2o proj.Id
-                DsProject(proj.Name, proj.Guid, actives, passives, proj.DateTime, ?id=id,
-                    author=proj.Author, version=proj.Version, description=proj.Description,
-                    LastConnectionString=proj.LastConnectionString)
+                DsProject(actives, passives
+                    , Author=proj.Author
+                    , Version=proj.Version
+                    , Description=proj.Description
+                    , LastConnectionString=proj.LastConnectionString )
+                |> njUniqINGD_fromObj proj
                 |> tee(fun z -> systems |> iter (fun s -> s.RawParent <- Some z))
 
         | :? NjSystem as nj ->
@@ -240,7 +251,7 @@ module rec NewtonsoftJsonObjects =
                 let works = nj.Works |-> (fun z -> z.DsObject :?> DsWork)
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- ArrowBetweenWorks(a.Guid, src, tgt, a.DateTime, ?id=a.OptId)
+                a.DsObject <- ArrowBetweenWorks(src, tgt) |> njUniqINGD_fromObj a
                 ()
                 )
 
@@ -264,17 +275,21 @@ module rec NewtonsoftJsonObjects =
                             None
                     let calls = w.Calls |-> (fun z -> z.DsObject :?> DsCall)
                     let arrows = w.Arrows |-> (fun z -> z.DsObject :?> ArrowBetweenCalls)
-                    let dsWork = DsWork.Create(w.Name, w.Guid, calls, arrows, optFlow, w.DateTime, ?id=w.OptId)
+                    let dsWork = DsWork.Create(calls, arrows, optFlow) |> njUniqINGD_fromObj w
                     yield dsWork
                     w.DsObject <- dsWork
             |]
             let arrows = nj.Arrows |-> (fun z -> z.DsObject :?> ArrowBetweenWorks)
             nj.DsObject <-
-                DsSystem.Create(nj.Name, nj.Guid, flows, works, arrows, nj.DateTime, ?id=nj.OptId,
-                                author=nj.Author, langVersion=nj.LangVersion, engineVersion=nj.EngineVersion, description=nj.Description)
+                DsSystem.Create(flows, works, arrows
+                                , Author=nj.Author
+                                , LangVersion=nj.LangVersion
+                                , EngineVersion=nj.EngineVersion
+                                , Description=nj.Description)
+                |> njUniqINGD_fromObj nj
 
         | :? NjFlow as nj ->
-            nj.DsObject <- DsFlow(nj.Name, nj.Guid, nj.DateTime, ?id=nj.OptId)
+            nj.DsObject <- DsFlow() |> njUniqINGD_fromObj nj
             ()
 
         | :? NjWork as work ->
@@ -286,7 +301,7 @@ module rec NewtonsoftJsonObjects =
                 let calls = work.Calls |-> (fun z -> z.DsObject :?> DsCall)
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- ArrowBetweenCalls(a.Guid, src, tgt, a.DateTime, ?id=a.OptId)
+                a.DsObject <- ArrowBetweenCalls(src, tgt) |> njUniqINGD_fromObj a
                 ()
                 )
 
@@ -301,10 +316,10 @@ module rec NewtonsoftJsonObjects =
             let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
             let apiCalls = [
                 for ac in call.ApiCalls do
-                    let dsac = DsApiCall(ac.Guid, ac.DateTime, ?id=ac.OptId)
+                    let dsac = DsApiCall() |> njUniqINGD_fromObj ac
                     ac.DsObject <- dsac
                     yield dsac ]
-            call.DsObject <- DsCall(call.Name, call.Guid, callType, apiCalls, call.DateTime, ?id=call.OptId)
+            call.DsObject <- DsCall(callType, apiCalls) |> njUniqINGD_fromObj call
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"

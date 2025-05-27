@@ -10,44 +10,43 @@ open Dual.Common.Core.FS
 [<AutoOpen>]
 module rec DsObjectModule =
     [<AbstractClass>]
-    type DsUnique(name, guid, dateTime, ?id:Id, ?parent:Unique) =
-        inherit Unique(name, guid, dateTime, ?id=id, ?parent=parent)
-        do
-            assert(parent |-> (fun p -> p :? DsUnique) |? true)
+    type DsUnique() = inherit Unique()
 
 
     [<AbstractClass>]
-    type Arrow<'T when 'T :> Unique>(source:'T, target:'T, dateTime:DateTime, guid:Guid, ?id:Id) =
-        inherit DsUnique(null, guid, dateTime, ?id=id)
+    type Arrow<'T when 'T :> Unique>(source:'T, target:'T) =
+        inherit DsUnique()
 
         interface IArrow
         member val Source = source with get, set
         member val Target = target with get, set
 
     /// Call 간 화살표 연결.  Work 내에 존재
-    type ArrowBetweenCalls(guid:Guid, source:DsCall, target:DsCall, dateTime:DateTime, ?id:Id) =
-        inherit Arrow<DsCall>(source, target, dateTime, guid, ?id=id)
+    type ArrowBetweenCalls(source:DsCall, target:DsCall) =
+        inherit Arrow<DsCall>(source, target)
 
     /// Work 간 화살표 연결.  System 이나 Flow 내에 존재
-    type ArrowBetweenWorks(guid:Guid, source:DsWork, target:DsWork, dateTime:DateTime, ?id:Id) =
-        inherit Arrow<DsWork>(source, target, dateTime, guid, ?id=id)
+    type ArrowBetweenWorks(source:DsWork, target:DsWork) =
+        inherit Arrow<DsWork>(source, target)
 
 
-    type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id, ?author, ?version, (*?langVersion, ?engineVersion,*) ?description) =
-        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
+    type DsProject(activeSystems:DsSystem[], passiveSystems:DsSystem[]) as this =
+        inherit DsUnique()
+        do
+            activeSystems  |> iter (fun z -> z.RawParent <- Some this)
+            passiveSystems |> iter (fun z -> z.RawParent <- Some this)
 
         interface IParameterContainer
 
-        //new() = DsProject(null, emptyGuid, [||], [||], minDate, ?id=None)
         // { JSON 용
         /// 마지막 저장 db 에 대한 connection string
         member val LastConnectionString:string = null with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
 
-        member val Author        = author        |? System.Environment.UserName with get, set
-        member val Version       = version       |? Version()  with get, set
+        member val Author        = System.Environment.UserName with get, set
+        member val Version       = Version()  with get, set
         //member val LangVersion   = langVersion   |? Version()  with get, set
         //member val EngineVersion = engineVersion |? Version()  with get, set
-        member val Description   = description   |? nullString with get, set
+        member val Description   = nullString with get, set
 
         // { Runtime/DB 용
         member val ActiveSystems = activeSystems |> toList
@@ -56,42 +55,39 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type DsSystem internal(name, guid, flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[], dateTime:DateTime,
-            ?originGuid:Guid, ?id, ?author, ?langVersion, ?engineVersion, ?description
-    ) =
-        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
+    type DsSystem internal(flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[]) =
+        inherit DsUnique()
 
-        //internal new() = DsSystem(nullString, emptyGuid, [||], [||], [||], minDate)
         interface IParameterContainer
-
         member val Flows = flows |> toList
         member val Works = works |> toList
         member val Arrows = arrows |> toList
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
-        member val OriginGuid = originGuid with get, set
+        member val OriginGuid = noneGuid with get, set
 
         member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
 
-        member val Author        = author        |? Environment.UserName with get, set
-        member val EngineVersion = engineVersion |? Version()  with get, set
-        member val LangVersion   = langVersion   |? Version()  with get, set
-        member val Description   = description   |? nullString with get, set
+        member val Author        = Environment.UserName with get, set
+        member val EngineVersion = Version()  with get, set
+        member val LangVersion   = Version()  with get, set
+        member val Description   = nullString with get, set
 
 
-    type DsFlow(name, guid, dateTime:DateTime, ?id) =
-        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
+    type DsFlow() =
+        inherit DsUnique()
 
-        //internal new() = DsFlow(null, emptyGuid, minDate, ?id=None)
         interface IDsFlow
         member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
         member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
     // see static member Create
-    type DsWork internal(name, guid, calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option, dateTime:DateTime, ?id) =
-        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
+    type DsWork internal(calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option) as this =
+        inherit DsUnique()
+        do
+            calls  |> iter (fun z -> z.RawParent <- Some this)
+            arrows |> iter (fun z -> z.RawParent <- Some this)
 
         interface IDsWork
-        //new() = DsWork(null, emptyGuid, Seq.empty, Seq.empty, None, minDate, ?id=None)
         member val Calls = calls |> toList
         member val Arrows = arrows |> toList
         member x.OptFlow = optFlow
@@ -99,16 +95,16 @@ module rec DsObjectModule =
 
 
     // see static member Create
-    type DsCall(name, guid, callType:DbCallType, apiCalls:DsApiCall seq, dateTime:DateTime, ?id) =
-        inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
+    type DsCall(callType:DbCallType, apiCalls:DsApiCall seq) =
+        inherit DsUnique()
         interface IDsCall
         member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
         member val CallType = callType
         member val ApiCalls = apiCalls |> toList
 
 
-    type DsApiCall(guid, dateTime:DateTime, ?id) =
-        inherit DsUnique(nullString, guid, ?id=id, dateTime=dateTime)
+    type DsApiCall() =
+        inherit DsUnique()
         interface IDsApiCall
         member val InAddress  = nullString with get, set
         member val OutAddress = nullString with get, set

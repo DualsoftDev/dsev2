@@ -34,6 +34,7 @@ module Interfaces =
     let internal nullableInt  = Nullable<int>()
     let internal invalidInt   = -1
     let internal nullableGuid = Nullable<Guid>()
+    let internal noneGuid     = Option<Guid>.None
     let internal emptyGuid    = Guid.Empty
     let internal newGuid()    = Guid.NewGuid()
     let internal s2guid (s:string) = Guid.Parse s
@@ -76,10 +77,34 @@ module UniqueHelpers =
         dst.RawParent <- src.RawParent
         dst
 
-    let uniqDuplicate (src:#Unique) (dst:#Unique): #Unique =
+    (*
+        Chaining 해서 사용할 수 있는 Uniq 속성 수정 helper 함수들.  예제
+            dsProject
+            |> uniqDateTime (now())
+            |> uniqGuid (newGuid())
+            |> uniqId (Some 3)
+            |> uniqName "KKKKKKKKKKKKK"
+    *)
+
+    let uniqId       id       (dst:#Unique) = dst.Id        <- id;       dst
+    let uniqName     name     (dst:#Unique) = dst.Name      <- name;     dst
+    let uniqGuid     guid     (dst:#Unique) = dst.Guid      <- guid;     dst
+    let uniqDateTime dateTime (dst:#Unique) = dst.DateTime  <- dateTime; dst
+    let uniqParent   (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
+
+    let uniqGD       guid dateTime (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
+    let uniqNGD              name guid dateTime           (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime
+    /// src unique 속성 (Id, Name, Guid, DateTime) 들을 dst 에 복사
+    let uniqINGD             id name guid dateTime        (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime
+    /// src unique 속성 (Id, Name, Guid, DateTime, RawParent) 들을 dst 에 복사
+    let uniqINGDP            id name guid dateTime parent (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime |> uniqParent parent
+    let uniqAll = uniqINGDP
+
+    let uniqINGD_fromObj (src:#Unique) (dst:#Unique): #Unique =
+        dst.Id <- src.Id
         dst.Name <- src.Name
-        dst.DateTime <- now()
-        dst.RawParent <- src.RawParent
+        dst.Guid <- src.Guid
+        dst.DateTime <- src.DateTime
         dst
 
     let uniqRenew (dst:#Unique): #Unique =
@@ -87,18 +112,6 @@ module UniqueHelpers =
         dst.Guid <- newGuid()
         dst.DateTime <- now()
         dst
-
-    let uniqId       id       (dst:#Unique) = dst.Id        <- id;       dst
-    let uniqName     name     (dst:#Unique) = dst.Name      <- name;     dst
-    let uniqGuid     guid     (dst:#Unique) = dst.Guid      <- guid;     dst
-    let uniqDateTime dateTime (dst:#Unique) = dst.DateTime  <- dateTime; dst
-    let uniqParent   (parent:#Unique option)   (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>;   dst
-
-    let uniqGuidDateTime     guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
-    let uniqNameGuidDateTime name guid dateTime           (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime
-    let uniqINGD             id name guid dateTime        (dst:#Unique) = dst |> uniqId id     |> uniqNameGuidDateTime name guid dateTime
-    let uniqINGDP            id name guid dateTime parent (dst:#Unique) = dst |> uniqId id     |> uniqNameGuidDateTime name guid dateTime |> uniqParent parent
-    let uniqAll = uniqINGDP
 
 
     type Unique with
