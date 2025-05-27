@@ -333,6 +333,6 @@ module SchemaTestModule =
 
         dbApi.With(fun (conn, tr) ->
             let result =
-                conn.PreviewCascadeDeleteRecursively(Tn.System, "Id", [ box projectId ])
+                conn.CalculateCascadeDeleteAffected(Tn.System, 1)
             noop()
         )
