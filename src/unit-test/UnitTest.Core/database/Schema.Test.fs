@@ -224,6 +224,18 @@ module SchemaTestModule =
             |> path2ConnectionString
 
         let dsProject = edProject.ToDsProject()
+
+        let kkk =
+            dsProject
+            |> uniqDateTime (now())
+            |> uniqGuid (newGuid())
+            |> uniqId (Some 3)
+            |> uniqName "KKKKKKKKKKKKK"
+
+        let xxx = uniqReplicate dsProject edProject
+        let yyy = dsProject.Renew<DsProject>()
+
+
         dsProject.Validate()
         dsProject.EnumerateDsObjects()
         |> iter (fun dsobj ->
@@ -238,7 +250,6 @@ module SchemaTestModule =
             // DB 삽입 후이므로 Id 가 Some 이어야 함
             dsobj.Id.IsSome === true
         )
-
 
         let dsSystem = dsProject.Systems[0]
         let dsFlow = dsSystem.Flows[0]
