@@ -324,3 +324,15 @@ module SchemaTestModule =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
         dsProject2.ToSqlite3(connStr, removeExistingData)
+
+
+    [<Test>]
+    let ``DB Delete preview test`` () =
+        let projectId = 1
+        let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> path2ConnectionString |> DbApi
+
+        dbApi.With(fun (conn, tr) ->
+            let result =
+                conn.PreviewCascadeDeleteRecursively(Tn.System, "Id", [ box projectId ])
+            noop()
+        )

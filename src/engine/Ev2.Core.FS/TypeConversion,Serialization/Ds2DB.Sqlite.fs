@@ -100,10 +100,9 @@ module internal Ds2SqliteImpl =
         let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
 
         let dbApi = DbApi(connStr)
+        let onError (ex:Exception) = logError $"project2Sqlite failed: {ex.Message}"; raise ex
         checkHandlers()
-        use conn = dbApi.CreateConnection()
-        use tr = conn.BeginTransaction()
-        try
+        dbApi.With(fun (conn, tr) ->
             match removeExistingData, proj.Id with
             | Some true, Some id ->
                 //conn.TruncateAllTables()
@@ -121,30 +120,21 @@ module internal Ds2SqliteImpl =
             for s in systems do
                 system2SqliteHelper s (Some proj) guidDic conn tr
 
-            tr.Commit()
             proj.LastConnectionString <- connStr
-        with ex ->
-            tr.Rollback()
-            logError $"project2Sqlite failed: {ex.Message}"
-            raise ex
+        , onError)
 
     let system2Sqlite (x:DsSystem) (connStr:string) (removeExistingData:bool option) =
         let dbApi = DbApi(connStr)
+        let onError (ex:Exception) = logError $"system2Sqlite failed: {ex.Message}"; raise ex
         checkHandlers()
-        use conn = dbApi.CreateConnection()
-        use tr = conn.BeginTransaction()
-        try
+        dbApi.With(fun (conn, tr) ->
             let cache, ormSystem = x.ToORM()
             if removeExistingData = Some true then
                 //conn.TruncateAllTables()
                 conn.Execute($"DELETE FROM {Tn.System} WHERE guid = @Guid", ormSystem, tr) |> ignore
 
             system2SqliteHelper x None cache conn tr
-            tr.Commit()
-        with ex ->
-            tr.Rollback()
-            logError $"project2Sqlite failed: {ex.Message}"
-            raise ex
+        , onError)
 
 
 module internal Sqlite2DsImpl =
