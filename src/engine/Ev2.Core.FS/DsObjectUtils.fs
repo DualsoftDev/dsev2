@@ -5,28 +5,28 @@ open System
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
-    type DsSystem with
-        static member Create(flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[]) =
-            DsSystem(flows, works, arrows)
+    type RtSystem with
+        static member Create(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[]) =
+            RtSystem(flows, works, arrows)
             |> tee (fun z ->
                 flows  |> iter (fun y -> y.RawParent <- Some z)
                 works  |> iter (fun y -> y.RawParent <- Some z)
                 arrows |> iter (fun y -> y.RawParent <- Some z) )
 
-    type DsWork with
-        static member Create(calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option) =
+    type RtWork with
+        static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) =
             let calls = calls |> toList
             let arrows = arrows |> toList
-            DsWork(calls, arrows, optFlow)
+            RtWork(calls, arrows, optFlow)
             |> tee (fun z ->
                 calls   |> iter (fun y -> y.RawParent <- Some z)
                 arrows  |> iter (fun y -> y.RawParent <- Some z)
                 optFlow |> iter (fun y -> y.RawParent <- Some z) )
 
-    type DsCall with
-        static member Create(callType:DbCallType, apiCalls:DsApiCall seq) =
+    type RtCall with
+        static member Create(callType:DbCallType, apiCalls:RtApiCall seq) =
             let apiCalls = apiCalls |> toList
-            DsCall(callType, apiCalls)
+            RtCall(callType, apiCalls)
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
@@ -46,21 +46,21 @@ module DsObjectUtilsModule =
     type IParameterContainer with
         member x.GetParameter(): IParameter =
             match x with
-            | :? DsProject as prj -> ProjectParameter() :> IParameter
-            | :? DsSystem as sys -> SystemParameter()
+            | :? RtProject as prj -> ProjectParameter() :> IParameter
+            | :? RtSystem as sys -> SystemParameter()
             | _ -> failwith $"GetParameter not implemented for {x.GetType()}"
 
 
     type IArrow with
         member x.GetSource(): Unique =
             match x with
-            | :? ArrowBetweenCalls as a -> a.Source
-            | :? ArrowBetweenWorks as a -> a.Source
+            | :? RtArrowBetweenCalls as a -> a.Source
+            | :? RtArrowBetweenWorks as a -> a.Source
             | _ -> failwith "ERROR"
         member x.GetTarget(): Unique =
             match x with
-            | :? ArrowBetweenCalls as a -> a.Target
-            | :? ArrowBetweenWorks as a -> a.Target
+            | :? RtArrowBetweenCalls as a -> a.Target
+            | :? RtArrowBetweenWorks as a -> a.Target
             | _ -> failwith "ERROR"
 
     type Unique with
@@ -70,16 +70,16 @@ module DsObjectUtilsModule =
                 if includeMe then
                     yield x
                 match x with
-                | :? DsProject as prj ->
+                | :? RtProject as prj ->
                     yield! prj.Systems >>= _.EnumerateDsObjects()
-                | :? DsSystem as sys ->
+                | :? RtSystem as sys ->
                     yield! sys.Works   >>= _.EnumerateDsObjects()
                     yield! sys.Flows   >>= _.EnumerateDsObjects()
                     yield! sys.Arrows  >>= _.EnumerateDsObjects()
-                | :? DsWork as work ->
+                | :? RtWork as work ->
                     yield! work.Calls  >>= _.EnumerateDsObjects()
                     yield! work.Arrows >>= _.EnumerateDsObjects()
-                | :? DsCall as call ->
+                | :? RtCall as call ->
                     ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
@@ -106,15 +106,15 @@ module DsObjectUtilsModule =
             verify (x.Guid <> emptyGuid)
             verify (x.DateTime <> minDate)
             match x with
-            | :? DsProject | :? DsSystem | :? DsFlow  | :? DsWork  | :? DsCall -> verify (x.Name.NonNullAny())
+            | :? RtProject | :? RtSystem | :? RtFlow  | :? RtWork  | :? RtCall -> verify (x.Name.NonNullAny())
             | _ -> ()
 
             match x with
-            | :? DsProject as prj ->
+            | :? RtProject as prj ->
                 prj.Systems |> iter _.Validate()
                 for s in prj.Systems do
                     verify (s.RawParent.Value.Guid = prj.Guid)
-            | :? DsSystem as sys ->
+            | :? RtSystem as sys ->
                 sys.Works |> iter _.Validate()
                 for w in sys.Works  do
                     verify (w.RawParent.Value.Guid = sys.Guid)
@@ -125,14 +125,14 @@ module DsObjectUtilsModule =
                     sys.Works |> contains a.Source |> verify
                     sys.Works |> contains a.Target |> verify
 
-            | :? DsFlow as flow ->
+            | :? RtFlow as flow ->
                 let works = flow.Works
                 works |> iter _.Validate()
                 for w in works  do
                     verify (w.OptFlow = Some flow)
 
 
-            | :? DsWork as work ->
+            | :? RtWork as work ->
                 work.Calls |> iter _.Validate()
                 for c in work.Calls do
                     verify (c.RawParent.Value.Guid = work.Guid)
@@ -144,7 +144,7 @@ module DsObjectUtilsModule =
                     work.Calls |> contains a.Target |> verify
 
 
-            | :? DsCall as call ->
+            | :? RtCall as call ->
                 ()
             | _ ->
                 tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"

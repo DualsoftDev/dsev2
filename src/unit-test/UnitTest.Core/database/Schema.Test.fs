@@ -277,7 +277,7 @@ module SchemaTestModule =
 
         let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
         tracefn $"---------------------- json:\r\n{json}"
-        let dsProject2 = DsProject.FromJson json
+        let dsProject2 = RtProject.FromJson json
         dsProject2.Validate()
         let json2 = dsProject2.ToJson(Path.Combine(testDataDir(), "json-deserialized-dssystem.json"))
 
@@ -319,7 +319,7 @@ module SchemaTestModule =
         let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
         let json = File.ReadAllText(jsonPath)
         let dsProject1 = NjProject.FromJson json
-        let dsProject2 = DsProject.FromJson json
+        let dsProject2 = RtProject.FromJson json
         let sys = dsProject2.ActiveSystems[0]
         sys.Flows.Length === 1
         let flow = sys.Flows[0]

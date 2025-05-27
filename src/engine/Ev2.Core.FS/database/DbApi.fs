@@ -145,23 +145,23 @@ module ORMTypeConversionModule =
                 let pGuid, dateTime = uniq.PGuid, uniq.DateTime
 
                 match uniq with
-                | :? DsProject as z ->
+                | :? RtProject as z ->
                     ORMProject(name, guid, id, dateTime, z.Author, z.Version, z.Description) :> ORMUniq
-                | :? DsSystem as z ->
+                | :? RtSystem as z ->
                     let originGuid = z.OriginGuid |> Option.toNullable
                     ORMSystem(name, guid, id, dateTime, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
-                | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
-                | :? DsWork   as z ->
+                | :? RtFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
+                | :? RtWork   as z ->
                     let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
                     ORMWork  (name, guid, id, pid, dateTime, flowId)
-                | :? DsCall   as z -> ORMCall.Create (dbApi, name, guid, id, pid, dateTime, z.CallType)
+                | :? RtCall   as z -> ORMCall.Create (dbApi, name, guid, id, pid, dateTime, z.CallType)
 
-                | :? ArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                     let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
                     let parentId = (z.RawParent >>= _.Id).Value
                     ORMArrowWork (src, tgt, parentId, z.Guid, id, z.DateTime)
 
-                | :? ArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                     let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
                     let parentId = (z.RawParent >>= _.Id).Value
                     ORMArrowCall (src, tgt, parentId, z.Guid, id, z.DateTime)
@@ -178,13 +178,13 @@ module ORMTypeConversionModule =
         /// DS object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g DsProject -> ORMProject
         member x.ToORM(dbApi:DbApi, guidDic:Dictionary<Guid, ORMUniq>) = ds2Orm dbApi guidDic x
 
-    type DsProject with
+    type RtProject with
         /// DsProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
         member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUniq> * ORMUniq =
             let guidDic = Dictionary<Guid, ORMUniq>()
             guidDic, ds2Orm dbApi guidDic x
 
-    type DsSystem with
+    type RtSystem with
         /// DsSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
         member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUniq> * ORMUniq =
             let guidDic = Dictionary<Guid, ORMUniq>()

@@ -5,33 +5,59 @@ open System
 open Dual.Common.Base
 open Dual.Common.Core.FS
 
+[<AutoOpen>]
+module DsRuntimeObjectInterfaceModule =
+    /// Runtime 객체 인터페이스
+    type IRtObject  = interface end
+    type IRtParameter = inherit IParameter
+    type IRtParameterContainer = inherit IParameterContainer
+    type IRtArrow     = inherit IArrow
+
+    /// Guid, Name, DateTime
+    type IRtUnique    = inherit IUnique
+
+
+    type IRtProject = inherit IDsProject
+    type IRtSystem  = inherit IDsSystem
+    type IRtFlow    = inherit IDsFlow
+    type IRtWork    = inherit IDsWork
+    type IRtCall    = inherit IDsCall
+    type IRtApiCall = inherit IDsApiCall
+
+
 
 
 [<AutoOpen>]
 module rec DsObjectModule =
     [<AbstractClass>]
-    type DsUnique() = inherit Unique()
+    type RtUnique() =
+        inherit Unique()
+        interface IRtUnique
 
 
     [<AbstractClass>]
     type Arrow<'T when 'T :> Unique>(source:'T, target:'T) =
-        inherit DsUnique()
+        inherit Unique()
 
         interface IArrow
         member val Source = source with get, set
         member val Target = target with get, set
 
     /// Call 간 화살표 연결.  Work 내에 존재
-    type ArrowBetweenCalls(source:DsCall, target:DsCall) =
-        inherit Arrow<DsCall>(source, target)
+    type RtArrowBetweenCalls(source:RtCall, target:RtCall) =
+        inherit Arrow<RtCall>(source, target)
+        interface IRtUnique
+        interface IRtApiCall
 
     /// Work 간 화살표 연결.  System 이나 Flow 내에 존재
-    type ArrowBetweenWorks(source:DsWork, target:DsWork) =
-        inherit Arrow<DsWork>(source, target)
+    type RtArrowBetweenWorks(source:RtWork, target:RtWork) =
+        inherit Arrow<RtWork>(source, target)
+        interface IRtUnique
+        interface IRtApiCall
 
 
-    type DsProject(activeSystems:DsSystem[], passiveSystems:DsSystem[]) as this =
-        inherit DsUnique()
+    type RtProject(activeSystems:RtSystem[], passiveSystems:RtSystem[]) as this =
+        inherit RtUnique()
         do
             activeSystems  |> iter (fun z -> z.RawParent <- Some this)
             passiveSystems |> iter (fun z -> z.RawParent <- Some this)
@@ -55,8 +81,8 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type DsSystem internal(flows:DsFlow[], works:DsWork[], arrows:ArrowBetweenWorks[]) =
-        inherit DsUnique()
+    type RtSystem internal(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[]) =
+        inherit RtUnique()
 
         interface IParameterContainer
         member val Flows = flows |> toList
@@ -65,7 +91,7 @@ module rec DsObjectModule =
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
 
-        member x.Project = x.RawParent |-> (fun z -> z :?> DsProject) |?? (fun () -> getNull<DsProject>())
+        member x.Project = x.RawParent |-> (fun z -> z :?> RtProject) |?? (fun () -> getNull<RtProject>())
 
         member val Author        = Environment.UserName with get, set
         member val EngineVersion = Version()  with get, set
@@ -73,16 +99,16 @@ module rec DsObjectModule =
         member val Description   = nullString with get, set
 
 
-    type DsFlow() =
-        inherit DsUnique()
+    type RtFlow() =
+        inherit RtUnique()
 
         interface IDsFlow
-        member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
+        member x.System = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
         member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
     // see static member Create
-    type DsWork internal(calls:DsCall seq, arrows:ArrowBetweenCalls seq, optFlow:DsFlow option) as this =
-        inherit DsUnique()
+    type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) as this =
+        inherit RtUnique()
         do
             calls  |> iter (fun z -> z.RawParent <- Some this)
             arrows |> iter (fun z -> z.RawParent <- Some this)
@@ -91,20 +117,20 @@ module rec DsObjectModule =
         member val Calls = calls |> toList
         member val Arrows = arrows |> toList
         member x.OptFlow = optFlow
-        member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
+        member x.System = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
 
 
     // see static member Create
-    type DsCall(callType:DbCallType, apiCalls:DsApiCall seq) =
-        inherit DsUnique()
+    type RtCall(callType:DbCallType, apiCalls:RtApiCall seq) =
+        inherit RtUnique()
         interface IDsCall
-        member x.Work = x.RawParent |-> (fun z -> z :?> DsWork) |?? (fun () -> getNull<DsWork>())
+        member x.Work = x.RawParent |-> (fun z -> z :?> RtWork) |?? (fun () -> getNull<RtWork>())
         member val CallType = callType
         member val ApiCalls = apiCalls |> toList
 
 
-    type DsApiCall() =
-        inherit DsUnique()
+    type RtApiCall() =
+        inherit RtUnique()
         interface IDsApiCall
         member val InAddress  = nullString with get, set
         member val OutAddress = nullString with get, set

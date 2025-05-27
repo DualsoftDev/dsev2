@@ -24,25 +24,25 @@ module internal rec DsObjectCopyImpl =
         oldName
 #endif
 
-    type DsProject with
-        member x.replicate(bag:ReplicateBag, additionalActiveSystems:DsSystem[], additionalPassiveSystems:DsSystem[]) =
+    type RtProject with
+        member x.replicate(bag:ReplicateBag, additionalActiveSystems:RtSystem[], additionalPassiveSystems:RtSystem[]) =
             let guid = bag.Add(x)
             let activeSystems  = x.ActiveSystems  |-> _.replicate(bag)
             let passiveSystems = x.PassiveSystems |-> _.replicate(bag)
             let actives  = activeSystems  @ additionalActiveSystems  |> toArray
             let passives = passiveSystems @ additionalPassiveSystems |> toArray
-            DsProject(actives, passives) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtProject(actives, passives) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
-    type DsFlow with
+    type RtFlow with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            DsFlow() |> uniqNGD (nn x.Name) guid x.DateTime
+            RtFlow() |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type DsSystem with
+    type RtSystem with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
@@ -52,66 +52,66 @@ module internal rec DsObjectCopyImpl =
             let arrows = x.Arrows |-> _.replicate(bag)  |> toArray
 
             arrows
-            |> iter (fun (a:ArrowBetweenWorks) ->
+            |> iter (fun (a:RtArrowBetweenWorks) ->
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            DsSystem.Create(flows, works, arrows) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtSystem.Create(flows, works, arrows) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
             ) |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
-    type DsWork with
+    type RtWork with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let calls  = x.Calls  |-> _.replicate(bag)
-            let arrows:ArrowBetweenCalls list = x.Arrows |-> _.replicate(bag)
+            let arrows:RtArrowBetweenCalls list = x.Arrows |-> _.replicate(bag)
 
             arrows
-            |> iter (fun (a:ArrowBetweenCalls) ->
+            |> iter (fun (a:RtArrowBetweenCalls) ->
                 calls |> contains a.Source |> verify
                 calls |> contains a.Target |> verify)
 
-            let flow = x.OptFlow |-> (fun f -> bag.Newbies[f.Guid] :?> DsFlow)
-            DsWork.Create(calls, arrows, flow) |> uniqNGD (nn x.Name) guid x.DateTime
+            let flow = x.OptFlow |-> (fun f -> bag.Newbies[f.Guid] :?> RtFlow)
+            RtWork.Create(calls, arrows, flow) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type DsCall with
+    type RtCall with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let apiCalls = x.ApiCalls |-> _.replicate(bag)
-            DsCall(x.CallType, apiCalls) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtCall(x.CallType, apiCalls) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type DsApiCall with
+    type RtApiCall with
         member x.replicate(bag:ReplicateBag) =
             failwith "ERROR"
 
 
-    type ArrowBetweenWorks with
+    type RtArrowBetweenWorks with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            let source = bag.Newbies[x.Source.Guid] :?> DsWork
-            let target = bag.Newbies[x.Target.Guid] :?> DsWork
-            ArrowBetweenWorks(source, target) |> uniqGD guid x.DateTime
+            let source = bag.Newbies[x.Source.Guid] :?> RtWork
+            let target = bag.Newbies[x.Target.Guid] :?> RtWork
+            RtArrowBetweenWorks(source, target) |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
-    type ArrowBetweenCalls with
+    type RtArrowBetweenCalls with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            let source = bag.Newbies[x.Source.Guid] :?> DsCall
-            let target = bag.Newbies[x.Target.Guid] :?> DsCall
-            ArrowBetweenCalls(source, target) |> uniqGD guid x.DateTime
+            let source = bag.Newbies[x.Source.Guid] :?> RtCall
+            let target = bag.Newbies[x.Target.Guid] :?> RtCall
+            RtArrowBetweenCalls(source, target) |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]
 module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
 
-    type DsSystem with
+    type RtSystem with
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
@@ -138,20 +138,20 @@ module DsObjectCopyAPIModule =
             replica
 
 
-    type DsProject with
+    type RtProject with
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
-        member x.Replicate(?additionalActiveSystems:DsSystem seq, ?additionalPassiveSystems:DsSystem seq) =
+        member x.Replicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
             let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toArray
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toArray
             plusActiveSystems @ plusPassiveSystems |> iter (fun s -> s.RawParent <- Some x)
             x.replicate(ReplicateBag(), plusActiveSystems, plusPassiveSystems)
 
         /// Guid 및 DateTime 은 새로이 생성
-        member x.Duplicate(?additionalActiveSystems:DsSystem seq, ?additionalPassiveSystems:DsSystem seq) =
+        member x.Duplicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
             let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
             let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.Duplicate() |> toArray
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.Duplicate() |> toArray
-            DsProject(actives, passives) |> uniqName (nn x.Name)
+            RtProject(actives, passives) |> uniqName (nn x.Name)
             |> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
 

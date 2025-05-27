@@ -121,21 +121,21 @@ module rec EditableDsObjects =
 module Ed2DsModule =
 
     type EdFlow with
-        member x.ToDsFlow() = DsFlow() |> uniqReplicate x
+        member x.ToDsFlow() = RtFlow() |> uniqReplicate x
 
     type EdCall with
         member x.ToDsCall() =
-            let apiCalls = x.ApiCalls |-> (fun a -> DsApiCall() |> uniqINGD_fromObj a)
-            DsCall(x.CallType, apiCalls) |> uniqINGD_fromObj x
+            let apiCalls = x.ApiCalls |-> (fun a -> RtApiCall() |> uniqINGD_fromObj a)
+            RtCall(x.CallType, apiCalls) |> uniqINGD_fromObj x
 
     type EdWork with
-        member x.ToDsWork(flows:DsFlow[]) =
+        member x.ToDsWork(flows:RtFlow[]) =
             let callDic = x.Calls.ToDictionary(id, _.ToDsCall())
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenCalls(callDic[a.Source], callDic[a.Target]) |> uniqINGD_fromObj a )
+            let arrows = x.Arrows |-> (fun a -> RtArrowBetweenCalls(callDic[a.Source], callDic[a.Target]) |> uniqINGD_fromObj a )
             let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
             let calls = callDic.Values |> toArray
 
-            DsWork.Create(calls, arrows, optFlowGuid) |> uniqINGD_fromObj x
+            RtWork.Create(calls, arrows, optFlowGuid) |> uniqINGD_fromObj x
 
 
     type EdSystem with
@@ -143,8 +143,8 @@ module Ed2DsModule =
             let flows = x.Flows |-> _.ToDsFlow() |> toArray
             let workDic = x.Works.ToDictionary(id, _.ToDsWork(flows))
             let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun a -> ArrowBetweenWorks(workDic[a.Source], workDic[a.Target]) |> uniqINGD_fromObj a) |> toArray
-            let system = DsSystem.Create(flows, works, arrows) |> uniqINGD_fromObj x
+            let arrows = x.Arrows |-> (fun a -> RtArrowBetweenWorks(workDic[a.Source], workDic[a.Target]) |> uniqINGD_fromObj a) |> toArray
+            let system = RtSystem.Create(flows, works, arrows) |> uniqINGD_fromObj x
 
             // parent 객체 확인
             for w in works do
@@ -156,11 +156,11 @@ module Ed2DsModule =
         member x.ToDsProject() =
             let activeSystems  = x.ActiveSystems  |-> _.ToDsSystem() |> toArray
             let passiveSystems = x.PassiveSystems |-> _.ToDsSystem() |> toArray
-            let project = DsProject(activeSystems, passiveSystems) |> uniqINGD_fromObj x
+            let project = RtProject(activeSystems, passiveSystems) |> uniqINGD_fromObj x
             (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some project)
             project
 
-        static member FromDsProject(p:DsProject) =
+        static member FromDsProject(p:RtProject) =
             let activeSystems  = p.ActiveSystems  |-> (fun s -> EdSystem() |> uniqReplicate s)
             let passiveSystems = p.PassiveSystems |-> (fun s -> EdSystem() |> uniqReplicate s)
             EdProject() |> uniqReplicate p //  (p.Name, activeSystems, passiveSystems, guid=p.Guid, ?id=p.Id, dateTime=p.DateTime)

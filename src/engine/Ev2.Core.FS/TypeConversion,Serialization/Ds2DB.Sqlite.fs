@@ -23,11 +23,11 @@ module internal Ds2SqliteImpl =
         for t in targets do
             match t with
             | :? ORMArrowBase as a -> a.Id <- Nullable id
-            | :? ArrowBetweenCalls as a -> a.Id <- Some id
-            | :? ArrowBetweenWorks as a -> a.Id <- Some id
+            | :? RtArrowBetweenCalls as a -> a.Id <- Some id
+            | :? RtArrowBetweenWorks as a -> a.Id <- Some id
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
-    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUniq>) (s:DsSystem) (optProject:DsProject option)  =
+    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUniq>) (s:RtSystem) (optProject:RtProject option)  =
         let ormSystem = s.ToORM(dbApi, cache) :?> ORMSystem
         let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid)
                         VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid);""", ormSystem, tr)
@@ -98,9 +98,9 @@ module internal Ds2SqliteImpl =
 
 
     /// DsProject 을 sqlite database 에 저장
-    let project2Sqlite (proj:DsProject) (dbApi:DbApi) (removeExistingData:bool option) =
+    let project2Sqlite (proj:RtProject) (dbApi:DbApi) (removeExistingData:bool option) =
         let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
-        let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
+        let systems = grDic.[typeof<RtSystem>] |> Seq.cast<RtSystem> |> List.ofSeq
 
         let onError (ex:Exception) = logError $"project2Sqlite failed: {ex.Message}"; raise ex
         checkHandlers()
@@ -125,7 +125,7 @@ module internal Ds2SqliteImpl =
             proj.LastConnectionString <- dbApi.ConnectionString
         , onError)
 
-    let system2Sqlite (x:DsSystem) (dbApi:DbApi) (removeExistingData:bool option) =
+    let system2Sqlite (x:RtSystem) (dbApi:DbApi) (removeExistingData:bool option) =
         let onError (ex:Exception) = logError $"system2Sqlite failed: {ex.Message}"; raise ex
         checkHandlers()
         dbApi.With(fun (conn, tr) ->
@@ -265,10 +265,10 @@ module Ds2SqliteModule =
     open Ds2SqliteImpl
     open Sqlite2DsImpl
 
-    type DsProject with
+    type RtProject with
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = let dbApi = DbApi(connStr) in project2Sqlite x dbApi removeExistingData
         static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = let dbApi = DbApi(connStr) in fromSqlite3 identifier dbApi
 
-    type DsSystem with
+    type RtSystem with
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = let dbApi = DbApi(connStr) in system2Sqlite x dbApi removeExistingData
         static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = let dbApi = DbApi(connStr) in ()

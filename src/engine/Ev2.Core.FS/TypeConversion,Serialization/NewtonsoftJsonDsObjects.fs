@@ -56,28 +56,30 @@ module rec NewtonsoftJsonObjects =
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
 
-
+        /// 자신과 관련된 Runtime Object
         [<JsonIgnore>] member val DsObject:Unique = getNull<Unique>() with get, set
         [<JsonIgnore>] member x.DsRawParent:Unique option = x.DsObject.RawParent
         [<JsonIgnore>] member x.NjRawParent:NjUnique option = x.RawParent
-        member x.Import(src:Unique) =
-            match src with
-            | :? DsUnique -> x.DsObject <- src
-            | _ ->
-                failwith "ERROR"
 
-            x.Id        <- src.Id |> Option.toNullable
-            x.Name      <- src.Name
-            x.Guid      <- src.Guid
-            x.DateTime  <- src.DateTime
-            //x.RawParent <- src.RawParent
-            //base.Import src
-
-    let njUniqINGD_fromObj (src:#NjUnique) (dst:#Unique): #Unique =
+    /// NjUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
+    let fromNjUniqINGD (src:#NjUnique) (dst:#Unique): #Unique =
         dst.Id <- n2o src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
         dst.DateTime <- src.DateTime
+        dst
+
+    /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 NjUnique 객체에 저장
+    let toNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
+        dst.Id <- o2n src.Id
+        dst.Name <- src.Name
+        dst.Guid <- src.Guid
+        dst.DateTime <- src.DateTime
+        match box src with
+        | :? Unique as ds ->
+            dst.DsObject <- ds
+        | _ ->
+            ()
         dst
 
 
@@ -94,9 +96,12 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 101)>] member val ActiveSystemGuids    = [||]:Guid[]     with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystemGuids   = [||]:Guid[]     with get, set
 
-        static member FromDs(ds:DsProject) =
-            NjProject(LastConnectionString=ds.LastConnectionString, Author=ds.Author, Version=ds.Version, Description=ds.Description)
-            |> tee (fun z -> z.Import ds)
+        static member FromDs(ds:RtProject) =
+            NjProject(LastConnectionString=ds.LastConnectionString
+                , Author=ds.Author
+                , Version=ds.Version
+                , Description=ds.Description)
+            |> toNjUniqINGD ds
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  None x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized None x
@@ -119,11 +124,11 @@ module rec NewtonsoftJsonObjects =
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  (x.RawParent >>= tryCast<INjObject>) x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized (x.RawParent >>= tryCast<INjObject>) x
-        static member FromDs(ds:DsSystem) =
+        static member FromDs(ds:RtSystem) =
             let originGuid = ds.OriginGuid |> Option.toNullable
             NjSystem(OriginGuid=originGuid, Author=ds.Author, LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
+            |> toNjUniqINGD ds
             |> tee (fun z ->
-                z.Import ds
                 z.Flows  <- ds.Flows  |-> NjFlow.FromDs  |> toArray
                 z.Arrows <- ds.Arrows |-> NjArrow.FromDs |> toArray
                 z.Works  <- ds.Works  |-> NjWork.FromDs  |> toArray
@@ -133,8 +138,8 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         interface INjFlow
 
-        static member FromDs(ds:DsFlow) =
-            NjFlow() |> tee (fun z -> z.Import ds)
+        static member FromDs(ds:RtFlow) =
+            NjFlow() |> toNjUniqINGD ds
 
     type NjWork () =
         inherit NjUnique()
@@ -142,12 +147,11 @@ module rec NewtonsoftJsonObjects =
         member val FlowGuid = null:string with get, set
         member val Calls: NjCall[] = [||] with get, set
         member val Arrows:NjArrow[] = [||] with get, set
-        static member FromDs(ds:DsWork) =
-            NjWork()
+        static member FromDs(ds:RtWork) =
+            NjWork() |> toNjUniqINGD ds
             |> tee (fun z ->
-                z.Import ds
-                z.Calls <- ds.Calls |-> NjCall.FromDs |> toArray
-                z.Arrows <- ds.Arrows |-> NjArrow.FromDs |> toArray
+                z.Calls    <- ds.Calls   |-> NjCall.FromDs |> toArray
+                z.Arrows   <- ds.Arrows  |-> NjArrow.FromDs |> toArray
                 z.FlowGuid <- ds.OptFlow |-> (fun flow -> guid2str flow.Guid) |? null
             )
 
@@ -157,9 +161,10 @@ module rec NewtonsoftJsonObjects =
         member val Source = null:string with get, set
         member val Target = null:string with get, set
         static member FromDs(ds:IArrow) =
-            NjArrow()
+            assert(isItNotNull ds)
+            NjArrow() |> toNjUniqINGD (ds :?> Unique)
             |> tee (fun z ->
-                z.Import (ds :?> Unique)
+                //z.Import (ds :?> Unique)
                 z.Source <- guid2str (ds.GetSource().Guid)
                 z.Target <- guid2str (ds.GetTarget().Guid)
             )
@@ -170,8 +175,8 @@ module rec NewtonsoftJsonObjects =
         member val CallType = DbCallType.Normal.ToString() with get, set
         member val ApiCalls: NjApiCall[] = [||] with get, set
 
-        static member FromDs(ds:DsCall) =
-            NjCall() |> tee (fun z -> z.Import ds)
+        static member FromDs(ds:RtCall) =
+            NjCall() |> toNjUniqINGD ds
 
     type NjApiCall() =
         inherit NjUnique()
@@ -182,12 +187,13 @@ module rec NewtonsoftJsonObjects =
     let rec internal onNsJsonSerializing (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
         | :? NjUnique as uniq ->
-            uniq.Import uniq.DsObject
-        | _ -> ()
+            uniq |> toNjUniqINGD uniq.DsObject |> ignore
+        | _ ->
+            ()
 
         match njObj with
         | :? NjProject as nj ->
-            let ds = nj.DsObject :?> DsProject
+            let ds = nj.DsObject :?> RtProject
             nj.SystemPrototypes <-
                 let originals, copies = ds.ActiveSystems |> partition (fun s -> s.OriginGuid.IsNone)
                 let distinctCopies = copies |> distinctBy _.Guid
@@ -232,26 +238,26 @@ module rec NewtonsoftJsonObjects =
         | :? NjProject as proj ->
             proj.SystemPrototypes |> iter (onNsJsonDeserialized (Some proj))
             proj.DsObject <-
-                let systems = proj.SystemPrototypes |-> (fun z -> z.DsObject :?> DsSystem)
+                let systems = proj.SystemPrototypes |-> (fun z -> z.DsObject :?> RtSystem)
                 let actives = systems |> filter (fun s -> proj.ActiveSystemGuids |> contains (s.Guid))
                 let passives = systems |> filter (fun s -> proj.PassiveSystemGuids |> contains (s.Guid))
                 noop()
                 let id = n2o proj.Id
-                DsProject(actives, passives
+                RtProject(actives, passives
                     , Author=proj.Author
                     , Version=proj.Version
                     , Description=proj.Description
                     , LastConnectionString=proj.LastConnectionString )
-                |> njUniqINGD_fromObj proj
+                |> fromNjUniqINGD proj
                 |> tee(fun z -> systems |> iter (fun s -> s.RawParent <- Some z))
 
         | :? NjSystem as nj ->
             nj.Arrows
             |> iter (fun (a:NjArrow) ->
-                let works = nj.Works |-> (fun z -> z.DsObject :?> DsWork)
+                let works = nj.Works |-> (fun z -> z.DsObject :?> RtWork)
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- ArrowBetweenWorks(src, tgt) |> njUniqINGD_fromObj a
+                a.DsObject <- RtArrowBetweenWorks(src, tgt) |> fromNjUniqINGD a
                 ()
                 )
 
@@ -264,7 +270,7 @@ module rec NewtonsoftJsonObjects =
             nj.Flows |> iter (onNsJsonDeserialized (Some nj))
             nj.Works |> iter (onNsJsonDeserialized (Some nj))
 
-            let flows = nj.Flows |-> (fun z -> z.DsObject :?> DsFlow)
+            let flows = nj.Flows |-> (fun z -> z.DsObject :?> RtFlow)
 
             let works = [|
                 for w in nj.Works do
@@ -273,23 +279,23 @@ module rec NewtonsoftJsonObjects =
                             flows |> tryFind (fun f -> f.Guid = s2guid w.FlowGuid)
                         else
                             None
-                    let calls = w.Calls |-> (fun z -> z.DsObject :?> DsCall)
-                    let arrows = w.Arrows |-> (fun z -> z.DsObject :?> ArrowBetweenCalls)
-                    let dsWork = DsWork.Create(calls, arrows, optFlow) |> njUniqINGD_fromObj w
+                    let calls = w.Calls |-> (fun z -> z.DsObject :?> RtCall)
+                    let arrows = w.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenCalls)
+                    let dsWork = RtWork.Create(calls, arrows, optFlow) |> fromNjUniqINGD w
                     yield dsWork
                     w.DsObject <- dsWork
             |]
-            let arrows = nj.Arrows |-> (fun z -> z.DsObject :?> ArrowBetweenWorks)
+            let arrows = nj.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
             nj.DsObject <-
-                DsSystem.Create(flows, works, arrows
+                RtSystem.Create(flows, works, arrows
                                 , Author=nj.Author
                                 , LangVersion=nj.LangVersion
                                 , EngineVersion=nj.EngineVersion
                                 , Description=nj.Description)
-                |> njUniqINGD_fromObj nj
+                |> fromNjUniqINGD nj
 
         | :? NjFlow as nj ->
-            nj.DsObject <- DsFlow() |> njUniqINGD_fromObj nj
+            nj.DsObject <- RtFlow() |> fromNjUniqINGD nj
             ()
 
         | :? NjWork as work ->
@@ -298,10 +304,10 @@ module rec NewtonsoftJsonObjects =
             work.Arrows |> iter (fun z -> z.RawParent <- Some work)
             work.Arrows
             |> iter (fun (a:NjArrow) ->
-                let calls = work.Calls |-> (fun z -> z.DsObject :?> DsCall)
+                let calls = work.Calls |-> (fun z -> z.DsObject :?> RtCall)
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- ArrowBetweenCalls(src, tgt) |> njUniqINGD_fromObj a
+                a.DsObject <- RtArrowBetweenCalls(src, tgt) |> fromNjUniqINGD a
                 ()
                 )
 
@@ -316,10 +322,10 @@ module rec NewtonsoftJsonObjects =
             let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
             let apiCalls = [
                 for ac in call.ApiCalls do
-                    let dsac = DsApiCall() |> njUniqINGD_fromObj ac
+                    let dsac = RtApiCall() |> fromNjUniqINGD ac
                     ac.DsObject <- dsac
                     yield dsac ]
-            call.DsObject <- DsCall(callType, apiCalls) |> njUniqINGD_fromObj call
+            call.DsObject <- RtCall(callType, apiCalls) |> fromNjUniqINGD call
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
@@ -355,7 +361,7 @@ module Ds2JsonModule =
     //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
 
 
-    type DsProject with
+    type RtProject with
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string = EmJson.ToJson(x)
         member x.ToJson(jsonFilePath:string) =
@@ -364,4 +370,4 @@ module Ds2JsonModule =
             //|> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
         /// JSON 문자열을 DsProject 로 변환
-        static member FromJson(json:string): DsProject = json |> NjProject.FromJson |> _.DsObject :?> DsProject
+        static member FromJson(json:string): RtProject = json |> NjProject.FromJson |> _.DsObject :?> RtProject

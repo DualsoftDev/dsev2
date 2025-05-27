@@ -25,7 +25,7 @@ module ReadFromDBTestModule =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
 
-        let dsProject = DsProject.FromSqlite3(ById 1, connStr)
+        let dsProject = RtProject.FromSqlite3(ById 1, connStr)
         let xxx = dsProject
         use conn = dbApi.CreateConnection()
         ()

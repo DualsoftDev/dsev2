@@ -7,7 +7,7 @@ open System
 
 [<AutoOpen>]
 module Ds2AasModule =
-    type DsSystem with
+    type RtSystem with
         member x.ToAasJson():string =
             ""
 
