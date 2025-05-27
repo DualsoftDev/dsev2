@@ -1,0 +1,45 @@
+﻿{
+  "name": "doubleCylinder",
+  "apiDefs" : [{
+                    "name": "ADV",
+                    "system": "doubleCylinder"
+                  }, {
+                    "name": "RET",
+                    "system": "doubleCylinder"
+                  }],
+  "flows": [
+    {
+      "name": "Flow1",
+      "works": [
+        {
+          "name": "WorkA",
+          "calls": [
+            {
+              "name": "CallA",
+              "apiCalls": [
+                {
+                  "name": "ApiCallA",
+                  "targetApiDef": {
+                    "name": "ADV",
+                    "system": "sysChildX"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "CallB",
+              "apiCalls": []
+            }
+          ],
+          "callGraph": [["CallA", "CallB"]]
+        },
+        {
+          "name": "WorkB",
+          "calls": [],
+          "callGraph": []
+        }
+      ],
+      "workGraph": [["WorkA", "WorkB"]]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="UnitTest.Core.fs" />
+    <Compile Include="UnitTest.CoreExtention.fs" />
+    <Compile Include="UnitTest.JsonIO.fs" />
+    <Compile Include="UnitTest.AasxIO.fs" />
+    <Compile Include="UnitTest.RuntimeDB.fs" />
+    <Compile Include="UnitTest.Sample.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EV2\ev2.Spec.Obsolete.fsproj" />
+  </ItemGroup>
+
+</Project>
