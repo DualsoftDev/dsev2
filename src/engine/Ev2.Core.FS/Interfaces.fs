@@ -1,8 +1,6 @@
 namespace Ev2.Core.FS
 
 open System
-open System.Runtime.Serialization
-open Newtonsoft.Json
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
@@ -91,23 +89,13 @@ module rec DsObjectModule =
     type ArrowBetweenWorks(guid:Guid, source:DsWork, target:DsWork, dateTime:DateTime, ?id:Id) =
         inherit Arrow<DsWork>(source, target, dateTime, guid, ?id=id)
 
-    /// Arrow 를 JSON 으로 저장하기 위한 DTO
-    type DtoArrow(guid:Guid, id:Id option, source:Guid, target:Guid, dateTime:DateTime) =
-        interface IArrow
-        internal new () = DtoArrow(emptyGuid, None, emptyGuid, emptyGuid, minDate)
-        member val DbId     = id |> Option.toNullable with get, set
-        member val Guid     = guid     with get, set
-        member val Source   = source   with get, set
-        member val Target   = target   with get, set
-        member val DateTime = dateTime with get, set
 
     type DsProject(name, guid, activeSystems:DsSystem[], passiveSystems:DsSystem[], dateTime:DateTime, ?id, ?author, ?version, (*?langVersion, ?engineVersion,*) ?description) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         interface IParameterContainer
 
-        new() = DsProject(null, emptyGuid, [||], [||], minDate, ?id=None)
-
+        //new() = DsProject(null, emptyGuid, [||], [||], minDate, ?id=None)
         // { JSON 용
         /// 마지막 저장 db 에 대한 connection string
         member val LastConnectionString:string = null with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
@@ -130,7 +118,7 @@ module rec DsObjectModule =
     ) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
-        internal new() = DsSystem(nullString, emptyGuid, [||], [||], [||], minDate)
+        //internal new() = DsSystem(nullString, emptyGuid, [||], [||], [||], minDate)
         interface IParameterContainer
 
         member val Flows = flows |> toList
@@ -150,10 +138,9 @@ module rec DsObjectModule =
     type DsFlow(name, guid, dateTime:DateTime, ?id) =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
-        internal new() = DsFlow(null, emptyGuid, minDate, ?id=None)
+        //internal new() = DsFlow(null, emptyGuid, minDate, ?id=None)
         interface IDsFlow
         member x.System = x.RawParent |-> (fun z -> z :?> DsSystem) |?? (fun () -> getNull<DsSystem>())
-        member val internal DtoArrows:DtoArrow list = [] with get, set
         member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
     // see static member Create
@@ -161,7 +148,7 @@ module rec DsObjectModule =
         inherit DsUnique(name, guid, ?id=id, dateTime=dateTime)
 
         interface IDsWork
-        new() = DsWork(null, emptyGuid, Seq.empty, Seq.empty, None, minDate, ?id=None)
+        //new() = DsWork(null, emptyGuid, Seq.empty, Seq.empty, None, minDate, ?id=None)
         member val Calls = calls |> toList
         member val Arrows = arrows |> toList
         member x.OptFlow = optFlow
