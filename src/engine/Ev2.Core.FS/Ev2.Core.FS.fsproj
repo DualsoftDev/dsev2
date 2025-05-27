@@ -11,6 +11,7 @@
 	<ItemGroup>
 		<None Include="devdoc\ErrorMessages.md" />
 		<Compile Include="AppSettings.fs" />
+		<Compile Include="ConstEnums.fs" />
 		<Compile Include="Interfaces.fs" />
 		<Compile Include="DsObjectUtils.fs" />
 		<Compile Include="database\Database.Schema.fs" />

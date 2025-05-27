@@ -90,8 +90,8 @@ CREATE TABLE [flow](
 
 CREATE TABLE [enum](
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
-    , [name]          NVARCHAR(128) NOT NULL
     , [category]      NVARCHAR(128) NOT NULL
+    , [name]          NVARCHAR(128) NOT NULL
     , [value]         INT NOT NULL
     , CONSTRAINT enum_uniq UNIQUE (name, category)
 );
@@ -158,6 +158,7 @@ CREATE TABLE [apiCall](
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
+    , [callId]          INTEGER NOT NULL
     , [inAddress]       TEXT NOT NULL
     , [outAddress]      TEXT NOT NULL
     , [inSymbol]        TEXT NOT NULL
@@ -167,6 +168,7 @@ CREATE TABLE [apiCall](
     , [value]           TEXT NOT NULL   -- 값 범위 또는 단일 값 조건 정의 (선택 사항).  ValueParam type
     , [valueTypeId]     INTEGER NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
     , [apiDefId]        INTEGER NOT NULL
+    , FOREIGN KEY(callId)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
     , FOREIGN KEY(valueTypeId)   REFERENCES enum(id)
 );
 

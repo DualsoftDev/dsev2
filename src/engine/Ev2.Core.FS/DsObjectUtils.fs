@@ -26,6 +26,12 @@ module DsObjectUtilsModule =
                 arrows  |> iter (fun y -> y.RawParent <- Some z)
                 optFlow |> iter (fun y -> y.RawParent <- Some z) )
 
+    type DsCall with
+        static member Create(name, guid, callType:DbCallType, apiCalls:DsApiCall seq, dateTime:DateTime, ?id) =
+            let apiCalls = apiCalls |> toList
+            DsCall(name, guid, callType, apiCalls, dateTime, ?id=id)
+            |> tee (fun z ->
+                apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
 
 

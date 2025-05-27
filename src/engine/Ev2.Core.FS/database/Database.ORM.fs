@@ -21,11 +21,12 @@ module ORMTypesModule =
     type IORMApiDef     = inherit IORMRow
     type IORMParamWork  = inherit IORMRow
     type IORMParamCall  = inherit IORMRow
+    type IORMEnum       = inherit IORMRow
     type IORMMeta       = inherit IORMRow
     type IORMLog        = inherit IORMRow
 
     [<AbstractClass>]
-    type ORMUniq(name, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
+    type ORMUniq(name:string, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         interface IUnique
         interface IORMRow
 
@@ -104,15 +105,15 @@ module ORMTypesModule =
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.Pid and set v = x.Pid <- v
 
-    type ORMCall(name, guid, id:Id, workId:Id, dateTime) as this =
+    type ORMCall(name, guid, id:Id, workId:Id, dateTime, callTypeId:Nullable<int>) as this =
         inherit ORMUniq(name, guid, id, dateTime)
         do
             this.Pid <- workId
 
         interface IORMCall
-        new() = ORMCall(null, emptyGuid, -1, -1, minDate)
+        new() = ORMCall(null, emptyGuid, -1, -1, minDate, DbCallType.Normal |> int |> Nullable)
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
-        member val CallType = DbCallType.Normal with get, set
+        member val CallTypeId = callTypeId with get, set
 
 
 
@@ -123,14 +124,14 @@ module ORMTypesModule =
         member val SystemId = systemId with get, set
         member val IsActive = isActive with get, set
 
-    type ORMApiCall(name, guid, id:Id, workId:Id, dateTime) as this =
+    type ORMApiCall(name, guid, id:Id, callId:Id, dateTime) as this =
         inherit ORMUniq(name, guid, id, dateTime)
         do
-            this.Pid <- workId
+            this.Pid <- callId
 
         interface IORMApiCall
         new() = ORMApiCall(null, emptyGuid, -1, -1, minDate)
-        member x.WorkId with get() = x.Pid and set v = x.Pid <- v
+        member val CallId = callId with get, set
 
     type ORMApiDef(name, guid, id:Id, workId:Id, dateTime) as this =
         inherit ORMUniq(name, guid, id, dateTime)
@@ -142,61 +143,11 @@ module ORMTypesModule =
         member x.WorkId with get() = x.Pid and set v = x.Pid <- v
 
 
-[<AutoOpen>]
-module ORMTypeConversionModule =
-    let o2n = Option.toNullable
-    let private ds2Orm (guidDic:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
-            match x |> tryCast<Unique> with
-            | Some uniq ->
-                let id = uniq.Id |? -1
-                let pid = (uniq.RawParent >>= _.Id) |? -1
-                let guid, name = uniq.Guid, uniq.Name
-                let pGuid, dateTime = uniq.PGuid, uniq.DateTime
-
-                match uniq with
-                | :? DsProject as z ->
-                    ORMProject(name, guid, id, dateTime, z.Author, z.Version, z.Description) :> ORMUniq
-                | :? DsSystem as z ->
-                    let originGuid = z.OriginGuid |> Option.toNullable
-                    ORMSystem(name, guid, id, dateTime, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
-                | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
-                | :? DsWork   as z ->
-                    let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
-                    ORMWork  (name, guid, id, pid, dateTime, flowId)
-                | :? DsCall   as z -> ORMCall  (name, guid, id, pid, dateTime)
-
-                | :? ArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                    let parentId = (z.RawParent >>= _.Id).Value
-                    ORMArrowWork (src, tgt, parentId, z.Guid, id, z.DateTime)
-
-                | :? ArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                    let parentId = (z.RawParent >>= _.Id).Value
-                    ORMArrowCall (src, tgt, parentId, z.Guid, id, z.DateTime)
-
-                | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
-
-                |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )
-
-            | _ -> failwithf "Cannot convert to ORM. %A" x
-
-
-    type IDsObject with
-        /// DS object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g DsProject -> ORMProject
-        member x.ToORM(guidDic:Dictionary<Guid, ORMUniq>) = ds2Orm guidDic x
-
-    type DsProject with
-        /// DsProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
-        member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
-            let guidDic = Dictionary<Guid, ORMUniq>()
-            guidDic, ds2Orm guidDic x
-
-    type DsSystem with
-        /// DsSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
-        member x.ToORM(): Dictionary<Guid, ORMUniq> * ORMUniq =
-            let guidDic = Dictionary<Guid, ORMUniq>()
-            guidDic, ds2Orm guidDic x
-
-
+    type ORMEnum(name, category, value) =
+        interface IORMEnum
+        new() = ORMEnum(nullString, nullString, invalidInt)
+        member val Id = Nullable<Id>() with get, set
+        member val Name = name with get, set
+        member val Category = category with get, set
+        member val Value = value with get, set
 

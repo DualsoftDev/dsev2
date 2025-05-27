@@ -82,8 +82,13 @@ module internal rec DsObjectCopyImpl =
     type DsCall with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            DsCall(nn x.Name, guid, x.DateTime)
+            let apiCalls = x.ApiCalls |-> _.replicate(bag)
+            DsCall(nn x.Name, guid, x.CallType, apiCalls, x.DateTime)
             |> tee(fun z -> bag.Newbies[guid] <- z)
+
+    type DsApiCall with
+        member x.replicate(bag:ReplicateBag) =
+            failwith "ERROR"
 
 
     type ArrowBetweenWorks with

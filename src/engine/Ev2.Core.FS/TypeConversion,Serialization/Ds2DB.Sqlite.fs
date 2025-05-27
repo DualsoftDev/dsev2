@@ -24,8 +24,8 @@ module internal Ds2SqliteImpl =
             | :? ArrowBetweenWorks as a -> a.Id <- Some id
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
-    let system2SqliteHelper (s:DsSystem) (optProject:DsProject option) (cache:Dictionary<Guid, ORMUniq>) (conn:IDbConnection) (tr:IDbTransaction) =
-        let ormSystem = s.ToORM(cache) :?> ORMSystem
+    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUniq>) (s:DsSystem) (optProject:DsProject option)  =
+        let ormSystem = s.ToORM(dbApi, cache) :?> ORMSystem
         let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid)
                         VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid);""", ormSystem, tr)
         s.Id <- Some sysId
@@ -52,7 +52,7 @@ module internal Ds2SqliteImpl =
 
         // flows 삽입
         for f in s.Flows do
-            let ormFlow = f.ToORM(cache) :?> ORMFlow
+            let ormFlow = f.ToORM(dbApi, cache) :?> ORMFlow
             ormFlow.SystemId <- Nullable sysId
             let flowId = conn.Insert($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
             f.Id <- Some flowId
@@ -64,7 +64,7 @@ module internal Ds2SqliteImpl =
 
         // works, calls 삽입
         for w in s.Works do
-            let ormWork = w.ToORM(cache) :?> ORMWork
+            let ormWork = w.ToORM(dbApi, cache) :?> ORMWork
             ormWork.SystemId <- Nullable sysId
 
             let workId = conn.Insert($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
@@ -73,16 +73,16 @@ module internal Ds2SqliteImpl =
             assert(cache[w.Guid] = ormWork)
 
             for c in w.Calls do
-                let ormCall = c.ToORM(cache) :?> ORMCall
+                let ormCall = c.ToORM(dbApi, cache) :?> ORMCall
                 ormCall.WorkId <- Nullable workId
-                let callId = conn.Insert($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId) VALUES (@Guid, @DateTime, @Name, @WorkId);", ormCall, tr)
+                let callId = conn.Insert($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId, callTypeId) VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId);", ormCall, tr)
                 c.Id <- Some callId
                 ormCall.Id <- callId
                 assert(cache[c.Guid] = ormCall)
 
             // work 의 arrows 를 삽입 (calls 간 연결)
             for a in w.Arrows do
-                let ormArrow = a.ToORM(cache) :?> ORMArrowCall
+                let ormArrow = a.ToORM(dbApi, cache) :?> ORMArrowCall
                 ormArrow.WorkId <- Nullable workId
 
                 let r = conn.Upsert(Tn.ArrowCall, ormArrow, ["Source"; "Target"; "WorkId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
@@ -90,16 +90,15 @@ module internal Ds2SqliteImpl =
 
         // system 의 arrows 를 삽입 (works 간 연결)
         for a in s.Arrows do
-            let ormArrow = a.ToORM(cache) :?> ORMArrowWork
+            let ormArrow = a.ToORM(dbApi, cache) :?> ORMArrowWork
             ormArrow.SystemId <- Nullable sysId
 
 
     /// DsProject 을 sqlite database 에 저장
-    let project2Sqlite (proj:DsProject) (connStr:string) (removeExistingData:bool option) =
+    let project2Sqlite (proj:DsProject) (dbApi:DbApi) (removeExistingData:bool option) =
         let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
         let systems = grDic.[typeof<DsSystem>] |> Seq.cast<DsSystem> |> List.ofSeq
 
-        let dbApi = DbApi(connStr)
         let onError (ex:Exception) = logError $"project2Sqlite failed: {ex.Message}"; raise ex
         checkHandlers()
         dbApi.With(fun (conn, tr) ->
@@ -110,7 +109,7 @@ module internal Ds2SqliteImpl =
                 //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
             | _ -> ()
 
-            let guidDic, ormProject = proj.ToORM()
+            let guidDic, ormProject = proj.ToORM(dbApi)
             let projId =
                 conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
                     VALUES (@Guid, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
@@ -118,22 +117,21 @@ module internal Ds2SqliteImpl =
             ormProject.Id <- projId
 
             for s in systems do
-                system2SqliteHelper s (Some proj) guidDic conn tr
+                system2SqliteHelper dbApi conn tr guidDic s (Some proj)
 
-            proj.LastConnectionString <- connStr
+            proj.LastConnectionString <- dbApi.ConnectionString
         , onError)
 
-    let system2Sqlite (x:DsSystem) (connStr:string) (removeExistingData:bool option) =
-        let dbApi = DbApi(connStr)
+    let system2Sqlite (x:DsSystem) (dbApi:DbApi) (removeExistingData:bool option) =
         let onError (ex:Exception) = logError $"system2Sqlite failed: {ex.Message}"; raise ex
         checkHandlers()
         dbApi.With(fun (conn, tr) ->
-            let cache, ormSystem = x.ToORM()
+            let cache, ormSystem = x.ToORM(dbApi)
             if removeExistingData = Some true then
                 //conn.TruncateAllTables()
                 conn.Execute($"DELETE FROM {Tn.System} WHERE guid = @Guid", ormSystem, tr) |> ignore
 
-            system2SqliteHelper x None cache conn tr
+            system2SqliteHelper dbApi conn tr cache x None
         , onError)
 
 
@@ -148,104 +146,107 @@ module internal Sqlite2DsImpl =
             deleteFromDatabase identifier conn tr
         )
 
-    let fromSqlite3(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
-        let ormProject =
-            let sqlBase = $"SELECT * FROM {Tn.Project} WHERE "
-            let sqlTail, param =
-                match identifier with
-                | ByGuid guid -> "guid = @Guid", {| Guid = guid |} |> box
-                | ById   id   -> "id = @Id",     {| Id = id |}
-                | ByName name -> "name = @Name", {| Name = name |}
-            let sql = sqlBase + sqlTail
-            conn.QuerySingle<ORMProject>(sql, param, tr)
+    let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:DbApi) (tr:IDbTransaction) =
+        dbApi.With(fun (conn, tr) ->
+            let ormProject =
+                let sqlBase = $"SELECT * FROM {Tn.Project} WHERE "
+                let sqlTail, param =
+                    match identifier with
+                    | ByGuid guid -> "guid = @Guid", {| Guid = guid |} |> box
+                    | ById   id   -> "id = @Id",     {| Id = id |}
+                    | ByName name -> "name = @Name", {| Name = name |}
+                let sql = sqlBase + sqlTail
+                conn.QuerySingle<ORMProject>(sql, param, tr)
 
-        let projSysMaps =
-            conn.Query<ORMProjectSystemMap>(
-                $"SELECT * FROM {Tn.ProjectSystemMap} WHERE projectId = @ProjectId",
-                {| ProjectId = ormProject.Id |}, tr)
-            |> toArray
+            let projSysMaps =
+                conn.Query<ORMProjectSystemMap>(
+                    $"SELECT * FROM {Tn.ProjectSystemMap} WHERE projectId = @ProjectId",
+                    {| ProjectId = ormProject.Id |}, tr)
+                |> toArray
 
-        let ormSystems =
-            let systemIds = projSysMaps |-> _.SystemId
-            conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds", {| SystemIds = systemIds |}, tr) |> toArray
+            let ormSystems =
+                let systemIds = projSysMaps |-> _.SystemId
+                conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds", {| SystemIds = systemIds |}, tr) |> toArray
 
-        let edProj = EdProject.Create(ormProject.Name, id=ormProject.Id, guid=Guid.Parse(ormProject.Guid), dateTime=ormProject.DateTime)
-        let edSystems =
-            ormSystems
-            |-> fun s -> EdSystem.Create(s.Name, edProj, ?id=n2o s.Id, guid=s2guid s.Guid, dateTime=s.DateTime)
-        let actives, passives = edSystems |> partition (fun s -> projSysMaps |> tryFind(fun m -> m.SystemId = s.Id.Value) |-> _.IsActive |? false)
-        actives  |> iter edProj.AddActiveSystem
-        passives |> iter edProj.AddPassiveSystem
+            let edProj = EdProject.Create(ormProject.Name, id=ormProject.Id, guid=Guid.Parse(ormProject.Guid), dateTime=ormProject.DateTime)
+            let edSystems =
+                ormSystems
+                |-> fun s -> EdSystem.Create(s.Name, edProj, ?id=n2o s.Id, guid=s2guid s.Guid, dateTime=s.DateTime)
+            let actives, passives = edSystems |> partition (fun s -> projSysMaps |> tryFind(fun m -> m.SystemId = s.Id.Value) |-> _.IsActive |? false)
+            actives  |> iter edProj.AddActiveSystem
+            passives |> iter edProj.AddPassiveSystem
 
-        for s in edSystems do
-            let edFlows = [
-                for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                    EdFlow.Create(orm.Name, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime, ?system=Some s)
-            ]
-            // edFlows |> s.AddFlows      EdFlow 생성시  ?system 인자로 이미 추가되었음.
-
-            assert( setEqual s.Flows edFlows )
-
-            let edWorks = [
-                for orm in conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                    EdWork.Create(orm.Name, s, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
-                    |> tee(fun w ->
-                        if orm.FlowId.HasValue then
-                            let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
-                            w.OptOwnerFlow <- Some flow
-                        noop()
-                        )
-            ]
-            //edWorks |> s.AddWorks : 이미 위에서 active/passive 로 추가완료했음!
-            noop()
-            for w in edWorks do
-                let edCalls = [
-                    for orm in conn.Query<ORMCall>($"SELECT * FROM {Tn.Call} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
-                        EdCall.Create(orm.Name, w, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
+            for s in edSystems do
+                let edFlows = [
+                    for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                        EdFlow.Create(orm.Name, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime, ?system=Some s)
                 ]
-                //edCalls |> w.AddCalls : EdCall 생성시  w 인자로 이미 추가되었음.
-                assert(setEqual w.Calls edCalls)
+                // edFlows |> s.AddFlows      EdFlow 생성시  ?system 인자로 이미 추가되었음.
 
-                // work 내의 call 간 연결
+                assert( setEqual s.Flows edFlows )
+
+                let edWorks = [
+                    for orm in conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                        EdWork.Create(orm.Name, s, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
+                        |> tee(fun w ->
+                            if orm.FlowId.HasValue then
+                                let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
+                                w.OptOwnerFlow <- Some flow
+                            noop()
+                            )
+                ]
+                //edWorks |> s.AddWorks : 이미 위에서 active/passive 로 추가완료했음!
+                noop()
+                for w in edWorks do
+                    let edCalls = [
+                        for orm in conn.Query<ORMCall>($"SELECT * FROM {Tn.Call} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
+
+                            let apiCalls = [
+                                for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE callId = {orm.Id}", tr) do
+                                    EdApiCall.Create(orm.Name, s2guid orm.Guid, orm.DateTime)
+                            ]
+
+                            EdCall.Create(orm.Name, w, apiCalls, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
+                    ]
+                    //edCalls |> w.AddCalls : EdCall 생성시  w 인자로 이미 추가되었음.
+                    assert(setEqual w.Calls edCalls)
+
+
+                    // work 내의 call 간 연결
+                    let edArrows = [
+                        for orm in conn.Query<ORMArrowCall>($"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
+                            let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
+                            let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
+                            EdArrowBetweenCalls(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
+                    ]
+                    edArrows |> w.AddArrows
+                    assert(setEqual w.Arrows edArrows)
+
+                    // TODO: call 하부 구조
+                    for c in edCalls do
+                        //let edApiCalls = [
+                        //    for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE callId = @CallId", {| CallId = c.Id.Value |}, tr) do
+                        //        EdApiCall.Create(orm.Name, c, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
+                        //]
+                        ()
+
+
+                // system 내의 work 간 연결
                 let edArrows = [
-                    for orm in conn.Query<ORMArrowCall>($"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
-                        let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
-                        let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
-                        EdArrowBetweenCalls(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
+                    for orm in conn.Query<ORMArrowWork>($"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                        let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
+                        let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
+                        EdArrowBetweenWorks(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
                 ]
-                edArrows |> w.AddArrows
-                assert(setEqual w.Arrows edArrows)
+                edArrows |> s.AddArrows
+                assert(setEqual s.Arrows edArrows)
 
-                // TODO: call 하부 구조
-                for c in edCalls do
-                    //let edApiCalls = [
-                    //    for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE callId = @CallId", {| CallId = c.Id.Value |}, tr) do
-                    //        EdApiCall.Create(orm.Name, c, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
-                    //]
-                    ()
+                ()
 
 
-            // system 내의 work 간 연결
-            let edArrows = [
-                for orm in conn.Query<ORMArrowWork>($"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                    let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
-                    let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
-                    EdArrowBetweenWorks(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
-            ]
-            edArrows |> s.AddArrows
-            assert(setEqual s.Arrows edArrows)
-
-            ()
-
-
-        edProj
-        //|> _.ToDsProject
-
-    let fromSqlite3WithConnectionString(identifier:DbObjectIdentifier) (connStr:string):EdProject =
-        DbApi(connStr).With(fun (conn, tr) ->
-            fromSqlite3 identifier conn tr
+            edProj
+            //|> _.ToDsProject
         )
-
 
 [<AutoOpen>]
 module Ds2SqliteModule =
@@ -254,14 +255,9 @@ module Ds2SqliteModule =
     open Sqlite2DsImpl
 
     type DsProject with
-        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = project2Sqlite x connStr removeExistingData
-        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = fromSqlite3WithConnectionString identifier connStr
-        static member FromSqlite3(identifier:DbObjectIdentifier, conn:IDbConnection, tr:IDbTransaction) = fromSqlite3 identifier conn tr
+        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = let dbApi = DbApi(connStr) in project2Sqlite x dbApi removeExistingData
+        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = let dbApi = DbApi(connStr) in fromSqlite3 identifier dbApi
 
     type DsSystem with
-        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = system2Sqlite x connStr removeExistingData
-        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
-            ()
-
-        static member FromSqlite3(identifier:DbObjectIdentifier, conn:IDbConnection, tr:IDbTransaction) =
-            ()
+        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = let dbApi = DbApi(connStr) in system2Sqlite x dbApi removeExistingData
+        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = let dbApi = DbApi(connStr) in ()

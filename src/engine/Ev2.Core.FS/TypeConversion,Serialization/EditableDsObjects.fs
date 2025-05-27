@@ -154,15 +154,35 @@ module rec EditableDsObjects =
                 ownerFlow |> Option.iter(fun f -> f.AddWorks [w]))
 
 
-    type EdCall private(name:string, guid:Guid, dateTime:DateTime, work:EdWork, ?id) =
+    type EdCall private(name:string, guid:Guid, dateTime:DateTime, work:EdWork, apiCalls:EdApiCall seq, ?id) =
         inherit Unique(name, ?id=id, guid=guid, dateTime=dateTime, parent=work)
         interface IEdCall
+        member val ApiCalls = ResizeArray(apiCalls) with get, set
+        member val CallType = DbCallType.Normal with get, set
 
-        static member Create(name:string, work:EdWork, ?id, ?guid:Guid, ?dateTime:DateTime) =
+        static member Create(name:string, work:EdWork, ?apiCalls:EdApiCall seq, ?id, ?guid:Guid, ?dateTime:DateTime) =
             let guid = guid |? Guid.NewGuid()
             let dateTime = dateTime |?? now
-            EdCall(name, guid, dateTime, work, ?id=id)
-            |> tee(fun c -> work.AddCalls [c] )
+            let apiCalls = apiCalls |? Seq.empty
+            EdCall(name, guid, dateTime, work, apiCalls, ?id=id)
+            |> tee(fun c ->
+                apiCalls |> iter (fun a -> a.RawParent <- Some c)
+                work.AddCalls [c] )
+
+    type EdApiCall private(name:string, guid:Guid, dateTime:DateTime, ?call:EdCall, ?id) =
+        inherit Unique(name, ?id=id, guid=guid, dateTime=dateTime, ?parent=(call >>= tryCast<Unique>))
+        member x.Call = x.RawParent |-> (fun z -> z :?> EdCall) |?? (fun () -> getNull<EdCall>())
+        member val InAddress  = nullString with get, set
+        member val OutAddress = nullString with get, set
+        member val InSymbol   = nullString with get, set
+        member val OutSymbol  = nullString with get, set
+        member val ValueType  = DbDataType.None with get, set
+        member val Value = nullString with get, set
+        static member Create(name:string, ?guid:Guid, ?dateTime:DateTime, ?call:EdCall, ?id) =
+            let guid = guid |? Guid.NewGuid()
+            let dateTime = dateTime |?? now
+            EdApiCall(name, guid, dateTime, ?call=call, ?id=id)
+
 
 
     type EdArrowBetweenCalls(source:EdCall, target:EdCall, dateTime:DateTime, guid:Guid, ?id:Id) =
@@ -181,7 +201,9 @@ module Ed2DsModule =
             |> tee(fun z -> z.RawParent <- Some x.RawParent.Value )
 
     type EdCall with
-        member x.ToDsCall() = DsCall(x.Name, x.Guid, ?id=x.Id, dateTime=x.DateTime)
+        member x.ToDsCall() =
+            let apiCalls = x.ApiCalls |-> (fun a -> DsApiCall(a.Guid, a.DateTime, ?id=a.Id))
+            DsCall.Create(x.Name, x.Guid, x.CallType, apiCalls, ?id=x.Id, dateTime=x.DateTime)
 
     type EdWork with
         member x.ToDsWork(flows:DsFlow[]) =

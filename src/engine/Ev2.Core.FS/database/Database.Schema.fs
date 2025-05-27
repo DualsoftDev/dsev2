@@ -216,6 +216,7 @@ CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
 --
 
 CREATE TABLE [{Tn.ApiCall}]( {sqlUniq()}
+    , [callId]          {intKeyType} NOT NULL
     , [inAddress]       TEXT NOT NULL
     , [outAddress]      TEXT NOT NULL
     , [inSymbol]        TEXT NOT NULL
@@ -225,6 +226,7 @@ CREATE TABLE [{Tn.ApiCall}]( {sqlUniq()}
     , [value]           TEXT NOT NULL   -- 값 범위 또는 단일 값 조건 정의 (선택 사항).  ValueParam type
     , [valueTypeId]     {intKeyType} NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
     , [apiDefId]        {intKeyType} NOT NULL
+    , FOREIGN KEY(callId)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
     , FOREIGN KEY(valueTypeId)   REFERENCES {Tn.Enum}(id)
 );
 
@@ -275,7 +277,7 @@ COMMIT;
     open System.Data
     open Dapper
 
-    /// enum 의 값을 DB 에 넣는다.  enum 의 이름과 값은 DB 에서 유일해야 함.
+    /// enum 의 값을 DB 에 넣는다.  enum 의 이름과 값은 DB 에서 유일해야 함.  see tryFindEnumValueId also
     let insertEnumValues<'TEnum when 'TEnum : enum<int>> (conn: IDbConnection) =
         let enumType = typeof<'TEnum>
         let category = enumType.Name
@@ -294,6 +296,8 @@ COMMIT;
                 "Category", box category
                 "Value", box value
             ]) |> ignore
+
+
 
     /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
     let getSqlCreateSchema() = getSqlCreateSchemaHelper false

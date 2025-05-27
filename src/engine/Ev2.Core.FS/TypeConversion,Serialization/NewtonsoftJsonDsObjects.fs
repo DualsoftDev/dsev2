@@ -16,6 +16,8 @@ module NewtonsoftJsonForwardDecls =
     type INjFlow    = inherit INjObject inherit IDsFlow
     type INjWork    = inherit INjObject inherit IDsWork
     type INjCall    = inherit INjObject inherit IDsCall
+    type INjApiCall = inherit INjObject inherit IDsCall
+    type INjApiDef  = inherit INjObject inherit IDsCall
     type INjArrow   = inherit INjObject
 
 
@@ -157,9 +159,15 @@ module rec NewtonsoftJsonObjects =
     type NjCall() =
         inherit NjUnique()
         interface INjCall
+        member val CallType = DbCallType.Normal.ToString() with get, set
+        member val ApiCalls: NjApiCall[] = [||] with get, set
 
         static member FromDs(ds:DsCall) =
             NjCall() |> tee (fun z -> z.Import ds)
+
+    type NjApiCall() =
+        inherit NjUnique()
+        interface INjApiCall
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
@@ -287,7 +295,16 @@ module rec NewtonsoftJsonObjects =
             ()
 
         | :? NjCall as call ->
-            call.DsObject <- DsCall(call.Name, call.Guid, call.DateTime, ?id=call.OptId)
+            call.ApiCalls |> iter (fun z -> z.RawParent <- Some call)
+            call.ApiCalls |> iter (onNsJsonDeserialized (Some call))
+
+            let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
+            let apiCalls = [
+                for ac in call.ApiCalls do
+                    let dsac = DsApiCall(ac.Guid, ac.DateTime, ?id=ac.OptId)
+                    ac.DsObject <- dsac
+                    yield dsac ]
+            call.DsObject <- DsCall(call.Name, call.Guid, callType, apiCalls, call.DateTime, ?id=call.OptId)
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"

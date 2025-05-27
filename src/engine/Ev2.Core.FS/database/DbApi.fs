@@ -68,9 +68,13 @@ module DbApiModule =
         /// DB 의 ORMCall[] 에 대한 cache
         member val CallCache = createCache<ORMCall>(connStr, Tn.Call)
 
+        /// DB 의 ORMEnum[] 에 대한 cache
+        member val EnumCache = createCache<ORMEnum>(connStr, Tn.Enum)
+
         member x.ClearAllCaches() =
             x.WorkCache.Reset() |> ignore
             x.CallCache.Reset() |> ignore
+            x.EnumCache.Reset() |> ignore
 
         member x.CreateConnection() = conn()
 
@@ -110,3 +114,79 @@ module DbApiModule =
                     conn.Execute($"DELETE FROM {Tn.TableHistory}", tr) |> ignore
                     conn.Execute($"DELETE FROM sqlite_sequence WHERE name = '{Tn.TableHistory}'", tr) |> ignore     // auto increment id 초기화
             , optOnError = fun ex -> logError $"CheckDatabaseChange failed: {ex.Message}")
+
+
+
+[<AutoOpen>]
+module ORMTypeConversionModule =
+    // see insertEnumValues also.  e.g let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(DbCallType.Call)
+    type DbApi with
+        member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : int option =
+            let category = typeof<'TEnum>.Name
+            let name = enumValue.ToString()
+            dbApi.EnumCache.Value
+            |> tryFind(fun e -> e.Category = category && e.Name = name)
+            >>= (fun e -> e.Id |> Option.ofNullable)
+
+    type ORMCall with
+        static member Create(dbApi:DbApi, name, guid, id:Id, workId:Id, dateTime, ?dbCallType:DbCallType) =
+            let dbCallType = dbCallType |? DbCallType.Normal
+            let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
+            ORMCall(name, guid, id, workId, dateTime, callTypeId)
+
+
+    let o2n = Option.toNullable
+    let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
+            match x |> tryCast<Unique> with
+            | Some uniq ->
+                let id = uniq.Id |? -1
+                let pid = (uniq.RawParent >>= _.Id) |? -1
+                let guid, name = uniq.Guid, uniq.Name
+                let pGuid, dateTime = uniq.PGuid, uniq.DateTime
+
+                match uniq with
+                | :? DsProject as z ->
+                    ORMProject(name, guid, id, dateTime, z.Author, z.Version, z.Description) :> ORMUniq
+                | :? DsSystem as z ->
+                    let originGuid = z.OriginGuid |> Option.toNullable
+                    ORMSystem(name, guid, id, dateTime, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
+                | :? DsFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
+                | :? DsWork   as z ->
+                    let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
+                    ORMWork  (name, guid, id, pid, dateTime, flowId)
+                | :? DsCall   as z -> ORMCall.Create (dbApi, name, guid, id, pid, dateTime, z.CallType)
+
+                | :? ArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
+                    let parentId = (z.RawParent >>= _.Id).Value
+                    ORMArrowWork (src, tgt, parentId, z.Guid, id, z.DateTime)
+
+                | :? ArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
+                    let parentId = (z.RawParent >>= _.Id).Value
+                    ORMArrowCall (src, tgt, parentId, z.Guid, id, z.DateTime)
+
+                | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
+
+                |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )
+
+            | _ -> failwithf "Cannot convert to ORM. %A" x
+
+
+
+    type IDsObject with
+        /// DS object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g DsProject -> ORMProject
+        member x.ToORM(dbApi:DbApi, guidDic:Dictionary<Guid, ORMUniq>) = ds2Orm dbApi guidDic x
+
+    type DsProject with
+        /// DsProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
+        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUniq> * ORMUniq =
+            let guidDic = Dictionary<Guid, ORMUniq>()
+            guidDic, ds2Orm dbApi guidDic x
+
+    type DsSystem with
+        /// DsSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
+        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUniq> * ORMUniq =
+            let guidDic = Dictionary<Guid, ORMUniq>()
+            guidDic, ds2Orm dbApi guidDic x
+
