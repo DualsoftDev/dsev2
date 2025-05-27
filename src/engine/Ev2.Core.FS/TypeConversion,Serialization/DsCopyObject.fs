@@ -17,7 +17,9 @@ module internal rec DsObjectCopyImpl =
 
     let internal nn (oldName:string) =
 #if DEBUG
-        $"Copy of {oldName}"
+        match oldName with
+        | null | "" -> null
+        | _ -> $"Copy of {oldName}"
 #else
         oldName
 #endif

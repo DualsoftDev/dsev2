@@ -15,6 +15,9 @@ type DbObjectIdentifier =
     | ByName of string
 
 module internal Ds2SqliteImpl =
+    /// src ORM 객체의 unique 속성(Id, Name, Guid, DateTime) 들을 dst 에 복사
+    let fromOrmUniqINGD (src:#ORMUniq) (dst:#Unique) = dst |> uniqINGD (n2o src.Id) src.Name (s2guid src.Guid) src.DateTime
+
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
         for t in targets do
@@ -136,7 +139,7 @@ module internal Ds2SqliteImpl =
 
 
 module internal Sqlite2DsImpl =
-
+    open Ds2SqliteImpl
 
     let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
         ()
@@ -168,18 +171,19 @@ module internal Sqlite2DsImpl =
                 let systemIds = projSysMaps |-> _.SystemId
                 conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds", {| SystemIds = systemIds |}, tr) |> toArray
 
-            let edProj = EdProject.Create(ormProject.Name, id=ormProject.Id, guid=Guid.Parse(ormProject.Guid), dateTime=ormProject.DateTime)
+            let edProj = EdProject() |> fromOrmUniqINGD ormProject
             let edSystems =
                 ormSystems
-                |-> fun s -> EdSystem.Create(s.Name, edProj, ?id=n2o s.Id, guid=s2guid s.Guid, dateTime=s.DateTime)
+                |-> fun s -> EdSystem() |> fromOrmUniqINGD s |> uniqParent (Some edProj)
+
             let actives, passives = edSystems |> partition (fun s -> projSysMaps |> tryFind(fun m -> m.SystemId = s.Id.Value) |-> _.IsActive |? false)
-            actives  |> iter edProj.AddActiveSystem
-            passives |> iter edProj.AddPassiveSystem
+            actives  |> edProj.ActiveSystems.AddRange
+            passives |> edProj.PassiveSystems.AddRange
 
             for s in edSystems do
                 let edFlows = [
                     for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                        EdFlow.Create(orm.Name, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime, ?system=Some s)
+                        EdFlow() |> fromOrmUniqINGD orm |> uniqParent (Some s)
                 ]
                 // edFlows |> s.AddFlows      EdFlow 생성시  ?system 인자로 이미 추가되었음.
 
@@ -187,7 +191,7 @@ module internal Sqlite2DsImpl =
 
                 let edWorks = [
                     for orm in conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                        EdWork.Create(orm.Name, s, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
+                        EdWork() |> fromOrmUniqINGD orm |> uniqParent (Some s)
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
@@ -203,10 +207,11 @@ module internal Sqlite2DsImpl =
 
                             let apiCalls = [
                                 for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE callId = {orm.Id}", tr) do
-                                    EdApiCall.Create(orm.Name, s2guid orm.Guid, orm.DateTime)
+                                    EdApiCall() |> fromOrmUniqINGD orm //|> uniqParent (Some call)
                             ]
 
-                            EdCall.Create(orm.Name, w, apiCalls, ?id=n2o orm.Id, guid=s2guid orm.Guid, dateTime=orm.DateTime)
+                            EdCall() |> fromOrmUniqINGD orm |> uniqParent (Some w)
+                            |> tee(fun c -> apiCalls |> iter (fun apiCall -> apiCall |> uniqParent (Some c) |> ignore))
                     ]
                     //edCalls |> w.AddCalls : EdCall 생성시  w 인자로 이미 추가되었음.
                     assert(setEqual w.Calls edCalls)
@@ -219,7 +224,7 @@ module internal Sqlite2DsImpl =
                             let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
                             EdArrowBetweenCalls(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
                     ]
-                    edArrows |> w.AddArrows
+                    edArrows |> w.Arrows.AddRange
                     assert(setEqual w.Arrows edArrows)
 
                     // TODO: call 하부 구조
@@ -238,7 +243,7 @@ module internal Sqlite2DsImpl =
                         let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
                         EdArrowBetweenWorks(src, tgt, orm.DateTime, s2guid orm.Guid, ?id=n2o orm.Id)
                 ]
-                edArrows |> s.AddArrows
+                edArrows |> s.Arrows.AddRange
                 assert(setEqual s.Arrows edArrows)
 
                 ()

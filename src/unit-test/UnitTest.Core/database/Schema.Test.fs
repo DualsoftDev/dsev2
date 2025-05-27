@@ -180,30 +180,31 @@ module SchemaTestModule =
     [<Test>]
     let createEditableProject() =
         if isItNull edProject then
-            edProject <- EdProject.Create("MainProject")
-            edSystem  <- EdSystem .Create("MainSystem"  , edProject)
-            edFlow    <- EdFlow   .Create("MainFlow"    , system=edSystem)
-            edWork1   <- EdWork   .Create("BoundedWork1", edSystem)
-            edWork2   <- EdWork   .Create("BoundedWork2", edSystem, ownerFlow=edFlow)
-            edWork3   <- EdWork   .Create("FreeWork1"   , edSystem)
+            edProject <- EdProject(Name = "MainProject")
+            edSystem  <- EdSystem (Name = "MainSystem")
+            edFlow    <- EdFlow   (Name = "MainFlow")
+            edWork1   <- EdWork   (Name = "BoundedWork1")
+            edWork2   <- EdWork   (Name = "BoundedWork2", OptOwnerFlow=Some edFlow)
+            edWork3   <- EdWork   (Name = "FreeWork1")
+            edSystem.Works.AddRange([edWork1; edWork2; edWork3])
+            edSystem.Flows.Add(edFlow)
 
-            edApiCall1a <- EdApiCall.Create("ApiCall1a") |> tee (fun x -> x.InAddress <- "InAddressX0")
-            edCall1a  <- EdCall   .Create("Call1a"      , edWork1) |> tee (fun x -> x.CallType <- DbCallType.Parallel)
-            edCall1b  <- EdCall   .Create("Call1b"      , edWork1) |> tee (fun x -> x.CallType <- DbCallType.Repeat)
-            edCall2a  <- EdCall   .Create("Call2a"      , edWork2)
-            edCall2b  <- EdCall   .Create("Call2b"      , edWork2)
-            edProject.AddActiveSystem(edSystem)
-            //edWork1.AddCalls([edCall1])
+            edApiCall1a <- EdApiCall(Name = "ApiCall1a", InAddress="InAddressX0")
+            edCall1a  <- EdCall   (Name = "Call1a", CallType=DbCallType.Parallel)
+            edCall1b  <- EdCall   (Name = "Call1b", CallType=DbCallType.Repeat)
+            edWork1.Calls.AddRange([edCall1a; edCall1b])
+            edCall2a  <- EdCall   (Name = "Call2a")
+            edCall2b  <- EdCall   (Name = "Call2b")
+            edWork2.Calls.AddRange([edCall2a; edCall2b])
+            edProject.ActiveSystems.Add(edSystem)
             edFlow.AddWorks([edWork1])
 
             let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DateTime.Now, Guid.NewGuid())
-            edWork1.AddArrows([edArrow1])
+            edWork1.Arrows.Add(edArrow1)
             let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DateTime.Now, Guid.NewGuid())
-            edWork2.AddArrows([edArrow2])
+            edWork2.Arrows.Add(edArrow2)
 
-            //edWork2.AddCalls([edCall2])
-            //edSystem.AddFlows([edFlow])
-            //edSystem.AddWorks([edWork1; edWork2; edWork3])
+            edProject.Fix()
 
             edProject.EnumerateDsObjects()
             |> iter (fun dsobj ->
@@ -272,8 +273,8 @@ module SchemaTestModule =
         flowWors[1].Guid === edWork2.Guid
         dsFlow.Name === edFlow.Name
 
-        edWork1.Calls.Length === 2
-        edWork2.Calls.Length === 2
+        edWork1.Calls.Count === 2
+        edWork2.Calls.Count === 2
         let dsCall1 = dsWork1.Calls[0]
         let dsCall2 = dsWork2.Calls[0]
         dsCall1.Guid === edCall1a.Guid
