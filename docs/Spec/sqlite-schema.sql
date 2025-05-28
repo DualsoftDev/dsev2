@@ -30,7 +30,7 @@ CREATE TABLE [system](
 );
 
 
-CREATE TABLE [projectSystemMap]( 
+CREATE TABLE [mapProject2System]( 
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
@@ -39,8 +39,21 @@ CREATE TABLE [projectSystemMap](
     , [isActive]       TINYINT NOT NULL DEFAULT 0
     , FOREIGN KEY(projectId)   REFERENCES project(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES system(id) ON DELETE CASCADE
-    , CONSTRAINT projectSystemMap_uniq UNIQUE (projectId, systemId)
+    , CONSTRAINT mapProject2System_uniq UNIQUE (projectId, systemId)
 );
+
+-- Call 은 여러개의 Api 를 동시에 호출할 수 있다.
+CREATE TABLE [mapCall2ApiCall]( 
+    [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
+    , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+    , [dateTime]      DATETIME(7)
+    , [callId]     INTEGER NOT NULL
+    , [apiCallId]  INTEGER NOT NULL
+    , FOREIGN KEY(callId)     REFERENCES call(id) ON DELETE CASCADE
+    , FOREIGN KEY(apiCallId)  REFERENCES apiCall(id) -- DO *NOT* DELETE CASCADE
+    , CONSTRAINT mapCall2ApiCall_uniq UNIQUE (callId, apiCallId)
+);
+
 
 CREATE TABLE [flow]( 
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL

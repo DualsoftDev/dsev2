@@ -23,6 +23,7 @@ module DsRuntimeObjectInterfaceModule =
     type IRtWork    = inherit IDsWork
     type IRtCall    = inherit IDsCall
     type IRtApiCall = inherit IDsApiCall
+    type IRtApiDef  = inherit IDsApiDef
 
 
 
@@ -121,12 +122,15 @@ module rec DsObjectModule =
 
 
     // see static member Create
-    type RtCall(callType:DbCallType, apiCalls:RtApiCall seq) =
+    type RtCall(callType:DbCallType, apiCalls:RtApiCall seq, autoPre:string, safety:string) =
         inherit RtUnique()
         interface IDsCall
         member x.Work = x.RawParent |-> (fun z -> z :?> RtWork) |?? (fun () -> getNull<RtWork>())
         member val CallType = callType
         member val ApiCalls = apiCalls |> toList
+        member val AutoPre = autoPre
+        member val Safety = safety
+
 
 
     type RtApiCall() =

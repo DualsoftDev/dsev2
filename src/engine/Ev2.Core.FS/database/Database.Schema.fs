@@ -40,19 +40,26 @@ module DatabaseSchemaModule =
         let [<Literal>] Action       = "action"
         // } Flow 하부 정의 용
 
+        // { n : m 관계의 table mapping
+        let [<Literal>] MapProject2System = "mapProject2System"
+        let [<Literal>] MapCall2ApiCall   = "mapCall2ApiCall"
+        // } n : m 관계의 table mapping
+
+        // -- Work 가 가진 flowId 로 충분!!
+        //let [<Literal>] MapFlow2Work      = "mapFlow2Work"
+
         let [<Literal>] Enum         = "enum"
 
 
         let [<Literal>] Meta         = "meta"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
-        let [<Literal>] ProjectSystemMap      = "projectSystemMap"
         let [<Literal>] EOT          = "endOfTable"
 
         let AllTableNames = [
             Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall;
             Button; Lamp; Condition; Action; Enum;
-            Meta; TableHistory; ProjectSystemMap; ]        // Log;
+            Meta; TableHistory; MapProject2System; MapCall2ApiCall; ]        // Log;
 
     // database view names
     module Vn =
@@ -128,14 +135,24 @@ CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
 );
 
 
-CREATE TABLE [{Tn.ProjectSystemMap}]( {sqlUniq()}
+CREATE TABLE [{Tn.MapProject2System}]( {sqlUniq()}
     , [projectId]      {intKeyType} NOT NULL
     , [systemId]       {intKeyType} NOT NULL
     , [isActive]       TINYINT NOT NULL DEFAULT 0
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE
-    , CONSTRAINT {Tn.ProjectSystemMap}_uniq UNIQUE (projectId, systemId)
+    , CONSTRAINT {Tn.MapProject2System}_uniq UNIQUE (projectId, systemId)
 );
+
+-- Call 은 여러개의 Api 를 동시에 호출할 수 있다.
+CREATE TABLE [{Tn.MapCall2ApiCall}]( {sqlUniq()}
+    , [callId]     {intKeyType} NOT NULL
+    , [apiCallId]  {intKeyType} NOT NULL
+    , FOREIGN KEY(callId)     REFERENCES {Tn.Call}(id) ON DELETE CASCADE
+    , FOREIGN KEY(apiCallId)  REFERENCES {Tn.ApiCall}(id) -- DO *NOT* DELETE CASCADE
+    , CONSTRAINT {Tn.MapCall2ApiCall}_uniq UNIQUE (callId, apiCallId)
+);
+
 
 CREATE TABLE [{Tn.Flow}]( {sqlUniqWithName()}
     , [systemId]      {intKeyType} NOT NULL

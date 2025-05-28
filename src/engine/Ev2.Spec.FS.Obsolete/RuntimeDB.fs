@@ -1,4 +1,4 @@
-﻿namespace Dual.EV2.RuntimeDB
+namespace Dual.EV2.RuntimeDB
 
 open System
 open System.Collections.Generic
@@ -51,16 +51,16 @@ module RuntimeDB =
             cmd.ExecuteNonQuery() |> ignore
 
         [
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbProject} (id TEXT PRIMARY KEY, name TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbSystem} (id TEXT PRIMARY KEY, name TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbProject}          (id TEXT PRIMARY KEY, name TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbSystem}           (id TEXT PRIMARY KEY, name TEXT)";
             $"CREATE TABLE IF NOT EXISTS {TableNames.tbProjectSystemMap} (id TEXT PRIMARY KEY, projectId TEXT, systemId TEXT, active BOOLEAN)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbWork} (id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbCall} (id TEXT PRIMARY KEY, name TEXT, workId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCall} (id TEXT PRIMARY KEY, name TEXT, callId TEXT, apiDefId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCallMap} (id TEXT PRIMARY KEY, callId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiDef} (id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowCall} (id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowWork} (id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbWork}             (id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbCall}             (id TEXT PRIMARY KEY, name TEXT, workId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCall}          (id TEXT PRIMARY KEY, name TEXT, callId TEXT, apiDefId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCallMap}       (id TEXT PRIMARY KEY, callId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiDef}           (id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowCall}        (id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowWork}        (id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
         ] |> List.iter exec
 
         conn.Close()

@@ -18,6 +18,7 @@ module Interfaces =
     /// Guid, Name, DateTime
     type IUnique    = inherit IDsObject
 
+    (* Project > System > Work > Call > ApiCall > ApiDef *)
 
     type IDsProject = inherit IDsObject
     type IDsSystem  = inherit IDsObject
@@ -25,6 +26,7 @@ module Interfaces =
     type IDsWork    = inherit IDsObject
     type IDsCall    = inherit IDsObject
     type IDsApiCall = inherit IDsObject
+    type IDsApiDef  = inherit IDsObject
 
 
     let internal minDate      = DateTime.MinValue

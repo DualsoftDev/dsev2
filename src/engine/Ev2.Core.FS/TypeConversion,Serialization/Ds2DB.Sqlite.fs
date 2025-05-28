@@ -41,14 +41,14 @@ module internal Ds2SqliteImpl =
             let isPassive = proj.PassiveSystems |> Seq.contains s
             let projId = proj.Id.Value
             assert(isActive <> isPassive)   // XOR
-            match conn.TryQuerySingle<ORMProjectSystemMap>($"SELECT * FROM {Tn.ProjectSystemMap} WHERE projectId = {projId} AND systemId = {sysId}") with
+            match conn.TryQuerySingle<ORMProjectSystemMap>($"SELECT * FROM {Tn.MapProject2System} WHERE projectId = {projId} AND systemId = {sysId}") with
             | Some row when row.IsActive = isActive -> ()
             | Some row ->
-                conn.Execute($"UPDATE {Tn.ProjectSystemMap} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
+                conn.Execute($"UPDATE {Tn.MapProject2System} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
                             {| DateTime = now() |}) |> ignore
             | None ->
                 let affectedRows = conn.Execute(
-                        $"INSERT INTO {Tn.ProjectSystemMap} (projectId, systemId, isActive, guid, dateTime) VALUES (@ProjectId, @SystemId, @IsActive, @Guid, @DateTime)",
+                        $"INSERT INTO {Tn.MapProject2System} (projectId, systemId, isActive, guid, dateTime) VALUES (@ProjectId, @SystemId, @IsActive, @Guid, @DateTime)",
                         {| ProjectId = projId; SystemId = sysId; IsActive = isActive; Guid=Guid.NewGuid(); DateTime=now() |}, tr)
                 ()
         | None -> ()
@@ -163,7 +163,7 @@ module internal Sqlite2DsImpl =
 
             let projSysMaps =
                 conn.Query<ORMProjectSystemMap>(
-                    $"SELECT * FROM {Tn.ProjectSystemMap} WHERE projectId = @ProjectId",
+                    $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
                     {| ProjectId = ormProject.Id |}, tr)
                 |> toArray
 

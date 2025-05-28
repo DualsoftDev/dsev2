@@ -16,9 +16,9 @@ module NewtonsoftJsonForwardDecls =
     type INjFlow    = inherit INjObject inherit IDsFlow
     type INjWork    = inherit INjObject inherit IDsWork
     type INjCall    = inherit INjObject inherit IDsCall
-    type INjApiCall = inherit INjObject inherit IDsCall
-    type INjApiDef  = inherit INjObject inherit IDsCall
-    type INjArrow   = inherit INjObject
+    type INjApiCall = inherit INjObject inherit IDsApiCall
+    type INjApiDef  = inherit INjObject inherit IDsApiDef
+    type INjArrow   = inherit INjObject inherit IArrow
 
 
     let mutable fwdOnNsJsonSerializing:  INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
@@ -174,6 +174,8 @@ module rec NewtonsoftJsonObjects =
         interface INjCall
         member val CallType = DbCallType.Normal.ToString() with get, set
         member val ApiCalls: NjApiCall[] = [||] with get, set
+        member val AutoPre = nullString with get, set
+        member val Safety = nullString with get, set
 
         static member FromDs(ds:RtCall) =
             NjCall() |> toNjUniqINGD ds
@@ -325,7 +327,7 @@ module rec NewtonsoftJsonObjects =
                     let dsac = RtApiCall() |> fromNjUniqINGD ac
                     ac.DsObject <- dsac
                     yield dsac ]
-            call.DsObject <- RtCall(callType, apiCalls) |> fromNjUniqINGD call
+            call.DsObject <- RtCall(callType, apiCalls, call.AutoPre, call.Safety) |> fromNjUniqINGD call
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"

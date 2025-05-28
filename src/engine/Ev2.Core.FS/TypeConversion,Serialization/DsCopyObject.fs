@@ -82,7 +82,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let apiCalls = x.ApiCalls |-> _.replicate(bag)
-            RtCall(x.CallType, apiCalls) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type RtApiCall with

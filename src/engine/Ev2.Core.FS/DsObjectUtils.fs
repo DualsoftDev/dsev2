@@ -24,9 +24,9 @@ module DsObjectUtilsModule =
                 optFlow |> iter (fun y -> y.RawParent <- Some z) )
 
     type RtCall with
-        static member Create(callType:DbCallType, apiCalls:RtApiCall seq) =
+        static member Create(callType:DbCallType, apiCalls:RtApiCall seq, autoPre:string, safety:string) =
             let apiCalls = apiCalls |> toList
-            RtCall(callType, apiCalls)
+            RtCall(callType, apiCalls, autoPre, safety)
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 

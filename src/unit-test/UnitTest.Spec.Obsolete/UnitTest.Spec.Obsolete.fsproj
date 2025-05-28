@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EV2\ev2.Spec.Obsolete.fsproj" />
+    <ProjectReference Include="..\..\engine\Ev2.Spec.FS.Obsolete\Ev2.Spec.FS.Obsolete.fsproj" />
   </ItemGroup>
 
 </Project>

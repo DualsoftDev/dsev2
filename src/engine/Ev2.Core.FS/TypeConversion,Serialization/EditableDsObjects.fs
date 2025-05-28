@@ -14,6 +14,9 @@ module rec EditableDsObjects =
     type IEdFlow    = inherit IEdObject inherit IDsFlow
     type IEdWork    = inherit IEdObject inherit IDsWork
     type IEdCall    = inherit IEdObject inherit IDsCall
+    type IEdApiCall = inherit IEdObject inherit IDsApiCall
+    type IEdApiDef  = inherit IEdObject inherit IDsApiDef
+    type IEdArrow   = inherit IEdObject inherit IArrow
 
     type EdProject () =
         inherit Unique()
@@ -87,6 +90,8 @@ module rec EditableDsObjects =
         interface IEdCall
         member val ApiCalls = ResizeArray<EdApiCall>() with get, set
         member val CallType = DbCallType.Normal with get, set
+        member val AutoPre = nullString with get, set
+        member val Safety = nullString with get, set
         member x.Fix() =
             x.UpdateDateTime()
             x.ApiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
@@ -110,10 +115,12 @@ module rec EditableDsObjects =
 
     type EdArrowBetweenCalls(source:EdCall, target:EdCall) =
         inherit Arrow<EdCall>(source, target)
+        interface IEdArrow
         new (source, target) = EdArrowBetweenCalls(source, target)
 
     type EdArrowBetweenWorks(source:EdWork, target:EdWork) =
         inherit Arrow<EdWork>(source, target)
+        interface IEdArrow
         new (source, target) = EdArrowBetweenWorks(source, target)
 
 
@@ -126,7 +133,7 @@ module Ed2DsModule =
     type EdCall with
         member x.ToDsCall() =
             let apiCalls = x.ApiCalls |-> (fun a -> RtApiCall() |> uniqINGD_fromObj a)
-            RtCall(x.CallType, apiCalls) |> uniqINGD_fromObj x
+            RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety) |> uniqINGD_fromObj x
 
     type EdWork with
         member x.ToDsWork(flows:RtFlow[]) =

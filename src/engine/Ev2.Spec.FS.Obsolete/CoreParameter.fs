@@ -1,9 +1,9 @@
-﻿namespace Dual.EV2.CoreParameter
+namespace Dual.EV2.CoreParameter
 
 module Params =
 
     type CallParam = {
-        CallType: string 
+        CallType: string
         Timeout: int
         ActionType: string
         AutoPreConditions: ResizeArray<string>

@@ -31,6 +31,7 @@ module ORMTypesModule =
         interface IORMRow
 
         member val Id = id with get, set
+        /// Parent Id
         member val Pid = Nullable<Id>() with get, set
         member val Name = name with get, set
 
