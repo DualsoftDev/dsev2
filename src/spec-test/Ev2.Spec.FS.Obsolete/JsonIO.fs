@@ -1,4 +1,4 @@
-﻿namespace Dual.EV2.JsonIO
+namespace Dual.EV2.JsonIO
 
 open System
 open System.IO
@@ -244,61 +244,4 @@ module JsonIO =
         let json = File.ReadAllText(filePath)
         JsonConvert.DeserializeObject<RawSystem>(json, simpleSettings)
 
-    // JSON 데이터 검증 및 보완
-    let validateAndCompleteRawSystem (raw: RawSystem) : RawSystem =
-        let completedFlows = 
-            raw.flows 
-            |> Array.map (fun flow ->
-                // 각 Work에서 참조되는 모든 Call들 수집
-                let allReferencedCalls = 
-                    flow.works
-                    |> Array.collect (fun work -> 
-                        if isNull work.callGraph then [||]
-                        else work.callGraph |> Array.collect id)
-                    |> Set.ofArray
-
-                // 각 Work에서 참조되는 모든 Work들 수집
-                let allReferencedWorks = 
-                    if isNull flow.workGraph then Set.empty
-                    else flow.workGraph |> Array.collect id |> Set.ofArray
-
-                let completedWorks = 
-                    flow.works
-                    |> Array.map (fun work ->
-                        // 정의되지 않은 Call들을 빈 Call로 추가
-                        let existingCalls = 
-                            if isNull work.calls then Set.empty
-                            else work.calls |> Array.map (fun c -> c.name) |> Set.ofArray
-
-                        let workReferencedCalls = 
-                            if isNull work.callGraph then Set.empty
-                            else work.callGraph |> Array.collect id |> Set.ofArray
-
-                        let missingCalls = Set.difference workReferencedCalls existingCalls
-
-                        let allCalls = 
-                            let existing = if isNull work.calls then [||] else work.calls
-                            let missing = 
-                                missingCalls 
-                                |> Set.toArray 
-                                |> Array.map (fun name -> 
-                                    { name = name; apiCalls = [||] })
-                            Array.append existing missing
-
-                        { work with calls = allCalls })
-
-                // 정의되지 않은 Work들을 빈 Work로 추가
-                let existingWorks = flow.works |> Array.map (fun w -> w.name) |> Set.ofArray
-                let missingWorks = Set.difference allReferencedWorks existingWorks
-
-                let allWorks = 
-                    let missing = 
-                        missingWorks 
-                        |> Set.toArray 
-                        |> Array.map (fun name -> 
-                            { name = name; calls = [||]; callGraph = [||] })
-                    Array.append completedWorks missing
-
-                { flow with works = allWorks })
-
-        { raw with flows = completedFlows }
+    
