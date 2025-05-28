@@ -167,6 +167,9 @@ module ORMTypeConversionModule =
                 let parentId = (z.RawParent >>= _.Id).Value
                 ORMArrowCall (src, tgt, parentId) |> ormUniqINGDP z
 
+            | :? RtApiDef as z ->
+                ORMApiDef (pid) |> ormUniqINGDP z
+
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
             |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )

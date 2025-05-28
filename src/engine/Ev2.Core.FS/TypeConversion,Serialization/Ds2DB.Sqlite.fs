@@ -8,6 +8,7 @@ open Dapper
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
+open System.Diagnostics
 
 type DbObjectIdentifier =
     | ByGuid of Guid
@@ -22,9 +23,11 @@ module internal Ds2SqliteImpl =
     let idUpdator (targets:IUnique seq) (id:int)=
         for t in targets do
             match t with
-            | :? ORMArrowBase as a -> a.Id <- Nullable id
+            | :? ORMArrowBase        as a -> a.Id <- Nullable id
+            | :? ORMApiDef           as a -> a.Id <- Nullable id
             | :? RtArrowBetweenCalls as a -> a.Id <- Some id
             | :? RtArrowBetweenWorks as a -> a.Id <- Some id
+            | :? RtApiDef            as a -> a.Id <- Some id
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
     let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, IORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
@@ -97,6 +100,20 @@ module internal Ds2SqliteImpl =
             ormArrow.SystemId <- sysId
 
 
+        // system 의 apiDefs 를 삽입
+        for a in s.ApiDefs do
+            let ormApiDef = a.ToORM<ORMApiDef>(dbApi, cache)
+            ormApiDef.SystemId <- sysId
+            let r = conn.Upsert(Tn.ApiDef, ormApiDef, ["Id"; "Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"], onInserted=idUpdator [ormApiDef; a;])
+            match r with
+            | Some newId, affectedRows ->
+                tracefn $"Inserted API Def: {a.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
+            | None, 0 -> ()     // no change
+            | None, affectedRows -> // update
+                tracefn $"Updated API Def: {a.Name} with Id {ormApiDef.Id.Value}, systemId={ormApiDef.SystemId}"
+            ()
+
+
     /// DsProject 을 sqlite database 에 저장
     let project2Sqlite (proj:RtProject) (dbApi:DbApi) (removeExistingData:bool option) =
         let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
@@ -149,7 +166,9 @@ module internal Sqlite2DsImpl =
             deleteFromDatabase identifier conn tr
         )
 
-    let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:DbApi) (tr:IDbTransaction) =
+    let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:DbApi) =
+        Trace.WriteLine($"--------------------------------------- fromSqlite3: {identifier}")
+        noop()
         dbApi.With(fun (conn, tr) ->
             let ormProject =
                 let sqlBase = $"SELECT * FROM {Tn.Project} WHERE "
@@ -189,15 +208,13 @@ module internal Sqlite2DsImpl =
             for s in edSystems do
                 let edFlows = [
                     for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                        EdFlow() |> fromOrmUniqINGD orm |> uniqParent (Some s)
+                        EdFlow(RawParent = Some s) |> fromOrmUniqINGD orm
                 ]
-                // edFlows |> s.AddFlows      EdFlow 생성시  ?system 인자로 이미 추가되었음.
-
-                assert( setEqual s.Flows edFlows )
+                edFlows |> s.Flows.AddRange
 
                 let edWorks = [
                     for orm in conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
-                        EdWork() |> fromOrmUniqINGD orm |> uniqParent (Some s)
+                        EdWork(RawParent = Some s) |> fromOrmUniqINGD orm
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
@@ -205,7 +222,7 @@ module internal Sqlite2DsImpl =
                             noop()
                             )
                 ]
-                //edWorks |> s.AddWorks : 이미 위에서 active/passive 로 추가완료했음!
+                edWorks |> s.Works.AddRange
                 noop()
                 for w in edWorks do
                     let edCalls = [
@@ -213,14 +230,13 @@ module internal Sqlite2DsImpl =
 
                             let apiCalls = [
                                 for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE callId = {orm.Id}", tr) do
-                                    EdApiCall() |> fromOrmUniqINGD orm //|> uniqParent (Some call)
+                                    EdApiCall() |> fromOrmUniqINGD orm
                             ]
 
-                            EdCall() |> fromOrmUniqINGD orm |> uniqParent (Some w)
+                            EdCall(RawParent = Some w) |> fromOrmUniqINGD orm
                             |> tee(fun c -> apiCalls |> iter (fun apiCall -> apiCall |> uniqParent (Some c) |> ignore))
                     ]
-                    //edCalls |> w.AddCalls : EdCall 생성시  w 인자로 이미 추가되었음.
-                    assert(setEqual w.Calls edCalls)
+                    edCalls |> w.Calls.AddRange
 
 
                     // work 내의 call 간 연결
@@ -231,7 +247,6 @@ module internal Sqlite2DsImpl =
                             EdArrowBetweenCalls(src, tgt) |> fromOrmUniqINGD orm
                     ]
                     edArrows |> w.Arrows.AddRange
-                    assert(setEqual w.Arrows edArrows)
 
                     // TODO: call 하부 구조
                     for c in edCalls do
@@ -252,6 +267,12 @@ module internal Sqlite2DsImpl =
                 edArrows |> s.Arrows.AddRange
                 assert(setEqual s.Arrows edArrows)
 
+                let edApiDefs = [
+                    for orm in conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                        EdApiDef(RawParent = Some s) |> fromOrmUniqINGD orm
+                ]
+                s.ApiDefs.AddRange(edApiDefs)
+
                 ()
 
 
@@ -266,9 +287,19 @@ module Ds2SqliteModule =
     open Sqlite2DsImpl
 
     type RtProject with
-        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = let dbApi = DbApi(connStr) in project2Sqlite x dbApi removeExistingData
-        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = let dbApi = DbApi(connStr) in fromSqlite3 identifier dbApi
+        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
+            let dbApi = DbApi(connStr)
+            project2Sqlite x dbApi removeExistingData
+
+        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
+            let dbApi = DbApi(connStr)
+            fromSqlite3 identifier dbApi
 
     type RtSystem with
-        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) = let dbApi = DbApi(connStr) in system2Sqlite x dbApi removeExistingData
-        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) = let dbApi = DbApi(connStr) in ()
+        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
+            let dbApi = DbApi(connStr)
+            system2Sqlite x dbApi removeExistingData
+
+        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
+            let dbApi = DbApi(connStr)
+            ()

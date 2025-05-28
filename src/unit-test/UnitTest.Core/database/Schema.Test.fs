@@ -174,7 +174,8 @@ module SchemaTestModule =
     let mutable edCall2a  = getNull<EdCall>()
     let mutable edCall2b  = getNull<EdCall>()
 
-    let mutable edApiCall1a  = getNull<EdApiCall   >()
+    let mutable edApiCall1a  = getNull<EdApiCall>()
+    let mutable edApiDef1a  = getNull<EdApiDef>()
 
 
     [<Test>]
@@ -188,6 +189,9 @@ module SchemaTestModule =
             edWork3   <- EdWork   (Name = "FreeWork1")
             edSystem.Works.AddRange([edWork1; edWork2; edWork3])
             edSystem.Flows.Add(edFlow)
+
+            edApiDef1a <- EdApiDef(Name = "ApiDef1a")
+            edSystem.ApiDefs.Add(edApiDef1a)
 
             edApiCall1a <- EdApiCall(Name = "ApiCall1a", InAddress="InAddressX0")
             edCall1a  <- EdCall   (Name = "Call1a", CallType=DbCallType.Parallel)
@@ -225,6 +229,7 @@ module SchemaTestModule =
             |> path2ConnectionString
 
         let dsProject = edProject.ToDsProject()
+        //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
         dsProject.Validate()
         dsProject.EnumerateDsObjects()

@@ -153,6 +153,7 @@ module ORMTypesModule =
         new() = ORMApiDef(-1)
         interface IORMApiDef
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
+        member val IsPush = false with get, set
 
 
     type ORMEnum(name, category, value) =

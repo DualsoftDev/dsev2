@@ -21,6 +21,15 @@ open FsUnitTyped
 module ReadFromDBTestModule =
     [<Test>]
     let dbReadTest() =
+        Ev2.Core.FS.ModuleInitializer.Initialize(null)
+        DcLogger.EnableTrace <- true
+        //DapperTypeHandler.AddHandlers()
+        //checkHandlers()
+        AppSettings.TheAppSettings <- AppSettings(UseUtcTime = false)
+        Directory.CreateDirectory(testDataDir()) |> ignore
+
+
+
         let connStr =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString

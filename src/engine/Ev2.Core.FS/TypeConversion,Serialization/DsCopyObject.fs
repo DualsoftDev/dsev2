@@ -47,16 +47,17 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
-            let flows  = x.Flows  |-> _.replicate(bag)  |> toArray
-            let works  = x.Works  |-> _.replicate(bag)  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
-            let arrows = x.Arrows |-> _.replicate(bag)  |> toArray
+            let flows   = x.Flows   |-> _.replicate(bag)  |> toArray
+            let works   = x.Works   |-> _.replicate(bag)  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
+            let arrows  = x.Arrows  |-> _.replicate(bag)  |> toArray
+            let apiDefs = x.ApiDefs |-> _.replicate(bag)  |> toArray
 
             arrows
             |> iter (fun (a:RtArrowBetweenWorks) ->
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            RtSystem.Create(flows, works, arrows) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtSystem.Create(flows, works, arrows, apiDefs) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
@@ -89,6 +90,12 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             failwith "ERROR"
 
+    type RtApiDef with
+        member x.replicate(bag:ReplicateBag) =
+            let guid = bag.Add(x)
+            RtApiDef(x.IsPush) |> uniqINGD_fromObj x |> uniqGuid guid
+            |> tee(fun z -> bag.Newbies[guid] <- z)
+
 
     type RtArrowBetweenWorks with
         member x.replicate(bag:ReplicateBag) =
@@ -115,7 +122,7 @@ module DsObjectCopyAPIModule =
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
-        /// Guid 및 DateTime 은 새로이 생성
+        /// Id, Guid 및 DateTime 은 새로이 생성
         member x.Duplicate() =
             let replica = x.Replicate()
             let objs = replica.EnumerateDsObjects()
@@ -124,6 +131,7 @@ module DsObjectCopyAPIModule =
 
             replica.OriginGuid <- Some x.Guid
             objs |> iter (fun obj ->
+                obj.Id <- None
                 obj.Guid <- guidDic[obj.Guid]
                 obj.DateTime <- current)
 

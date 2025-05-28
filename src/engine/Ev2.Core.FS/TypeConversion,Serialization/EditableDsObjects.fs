@@ -43,12 +43,14 @@ module rec EditableDsObjects =
         member val Flows = ResizeArray<EdFlow>()
         member val Works = ResizeArray<EdWork>()
         member val Arrows = ResizeArray<EdArrowBetweenWorks>()
+        member val ApiDefs = ResizeArray<EdApiDef>()
 
         member x.Fix() =
             x.UpdateDateTime()
-            x.Flows |> iter (fun z -> z.RawParent <- Some x; z.Fix())
-            x.Works |> iter (fun z -> z.RawParent <- Some x; z.Fix())
-            x.Arrows |> iter (fun z -> z.RawParent <- Some x)
+            x.Flows   |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Works   |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Arrows  |> iter (fun z -> z.RawParent <- Some x)
+            x.ApiDefs |> iter (fun z -> z.RawParent <- Some x)
             ()
 
 
@@ -111,6 +113,13 @@ module rec EditableDsObjects =
             x.UpdateDateTime()
             ()
 
+    type EdApiDef() =
+        inherit Unique()
+        member val IsPush = false with get, set
+        member x.Fix() =
+            x.UpdateDateTime()
+            ()
+
 
 
     type EdArrowBetweenCalls(source:EdCall, target:EdCall) =
@@ -132,7 +141,7 @@ module Ed2DsModule =
 
     type EdCall with
         member x.ToDsCall() =
-            let apiCalls = x.ApiCalls |-> (fun a -> RtApiCall() |> uniqINGD_fromObj a)
+            let apiCalls = x.ApiCalls |-> (fun a -> RtApiCall(a.InAddress, a.OutAddress, a.InSymbol, a.OutSymbol, a.ValueType, a.Value) |> uniqINGD_fromObj a)
             RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety) |> uniqINGD_fromObj x
 
     type EdWork with
@@ -151,7 +160,8 @@ module Ed2DsModule =
             let workDic = x.Works.ToDictionary(id, _.ToDsWork(flows))
             let works = workDic.Values |> toArray
             let arrows = x.Arrows |-> (fun a -> RtArrowBetweenWorks(workDic[a.Source], workDic[a.Target]) |> uniqINGD_fromObj a) |> toArray
-            let system = RtSystem.Create(flows, works, arrows) |> uniqINGD_fromObj x
+            let apiDefs = x.ApiDefs |-> (fun a -> RtApiDef(a.IsPush) |> uniqINGD_fromObj a) |> toArray
+            let system = RtSystem.Create(flows, works, arrows, apiDefs) |> uniqINGD_fromObj x
 
             // parent 객체 확인
             for w in works do

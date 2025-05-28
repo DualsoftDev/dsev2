@@ -82,13 +82,14 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type RtSystem internal(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[]) =
+    type RtSystem internal(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[]) =
         inherit RtUnique()
 
         interface IParameterContainer
         member val Flows = flows |> toList
         member val Works = works |> toList
         member val Arrows = arrows |> toList
+        member val ApiDefs = apiDefs |> toList
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
 
@@ -133,14 +134,19 @@ module rec DsObjectModule =
 
 
 
-    type RtApiCall() =
+    type RtApiCall(inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
         inherit RtUnique()
         interface IDsApiCall
-        member val InAddress  = nullString with get, set
-        member val OutAddress = nullString with get, set
-        member val InSymbol   = nullString with get, set
-        member val OutSymbol  = nullString with get, set
-        member val ValueType  = DbDataType.None with get, set
-        member val Value = nullString with get, set
+        member val InAddress  = inAddress
+        member val OutAddress = outAddress
+        member val InSymbol   = inSymbol
+        member val OutSymbol  = outSymbol
+        member val ValueType  = valueType
+        member val Value = value
+
+    type RtApiDef(isPush:bool) =
+        inherit RtUnique()
+        interface IDsApiDef
+        member val IsPush = isPush
 
 

@@ -6,12 +6,13 @@ open System
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type RtSystem with
-        static member Create(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[]) =
-            RtSystem(flows, works, arrows)
+        static member Create(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[]) =
+            RtSystem(flows, works, arrows, apiDefs)
             |> tee (fun z ->
-                flows  |> iter (fun y -> y.RawParent <- Some z)
-                works  |> iter (fun y -> y.RawParent <- Some z)
-                arrows |> iter (fun y -> y.RawParent <- Some z) )
+                flows   |> iter (fun y -> y.RawParent <- Some z)
+                works   |> iter (fun y -> y.RawParent <- Some z)
+                arrows  |> iter (fun y -> y.RawParent <- Some z)
+                apiDefs |> iter (fun y -> y.RawParent <- Some z) )
 
     type RtWork with
         static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) =
@@ -76,10 +77,12 @@ module DsObjectUtilsModule =
                     yield! sys.Works   >>= _.EnumerateDsObjects()
                     yield! sys.Flows   >>= _.EnumerateDsObjects()
                     yield! sys.Arrows  >>= _.EnumerateDsObjects()
+                    yield! sys.ApiDefs >>= _.EnumerateDsObjects()
                 | :? RtWork as work ->
                     yield! work.Calls  >>= _.EnumerateDsObjects()
                     yield! work.Arrows >>= _.EnumerateDsObjects()
                 | :? RtCall as call ->
+                    yield! call.ApiCalls >>= _.EnumerateDsObjects()
                     ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
@@ -124,6 +127,10 @@ module DsObjectUtilsModule =
                     verify (a.RawParent.Value.Guid = sys.Guid)
                     sys.Works |> contains a.Source |> verify
                     sys.Works |> contains a.Target |> verify
+
+                sys.ApiDefs |> iter _.Validate()
+                for w in sys.ApiDefs  do
+                    verify (w.RawParent.Value.Guid = sys.Guid)
 
             | :? RtFlow as flow ->
                 let works = flow.Works

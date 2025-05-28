@@ -115,6 +115,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 101)>] member val Flows         = [||]:NjFlow[]     with get, set
         [<JsonProperty(Order = 102)>] member val Works         = [||]:NjWork[]     with get, set
         [<JsonProperty(Order = 103)>] member val Arrows        = [||]:NjArrow[]    with get, set
+        [<JsonProperty(Order = 104)>] member val ApiDefs       = [||]:NjApiDef[]   with get, set
         member val OriginGuid    = Nullable<Guid>() with get, set
 
         member val Author        = nullString        with get, set
@@ -129,9 +130,10 @@ module rec NewtonsoftJsonObjects =
             NjSystem(OriginGuid=originGuid, Author=ds.Author, LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
             |> toNjUniqINGD ds
             |> tee (fun z ->
-                z.Flows  <- ds.Flows  |-> NjFlow.FromDs  |> toArray
-                z.Arrows <- ds.Arrows |-> NjArrow.FromDs |> toArray
-                z.Works  <- ds.Works  |-> NjWork.FromDs  |> toArray
+                z.Flows   <- ds.Flows   |-> NjFlow.FromDs  |> toArray
+                z.Arrows  <- ds.Arrows  |-> NjArrow.FromDs |> toArray
+                z.Works   <- ds.Works   |-> NjWork.FromDs  |> toArray
+                z.ApiDefs <- ds.ApiDefs |-> NjApiDef.FromDs  |> toArray
             )
 
     type NjFlow () =
@@ -183,6 +185,20 @@ module rec NewtonsoftJsonObjects =
     type NjApiCall() =
         inherit NjUnique()
         interface INjApiCall
+        member val InAddress  = nullString with get, set
+        member val OutAddress = nullString with get, set
+        member val InSymbol   = nullString with get, set
+        member val OutSymbol  = nullString with get, set
+        member val ValueType  = DbDataType.None with get, set
+        member val Value = nullString with get, set
+
+    type NjApiDef() =
+        inherit NjUnique()
+        interface INjApiDef
+        member val IsPush = false with get, set
+        static member FromDs(ds:RtApiDef) =
+            assert(isItNotNull ds)
+            NjApiDef(IsPush=ds.IsPush) |> toNjUniqINGD ds
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
@@ -200,16 +216,19 @@ module rec NewtonsoftJsonObjects =
                 let originals, copies = ds.ActiveSystems |> partition (fun s -> s.OriginGuid.IsNone)
                 let distinctCopies = copies |> distinctBy _.Guid
                 originals @ distinctCopies |-> NjSystem.FromDs |> toArray
-            nj.ActiveSystemGuids  <- ds.ActiveSystems  |-> _.Guid |> toArray
-            nj.PassiveSystemGuids <- ds.PassiveSystems |-> _.Guid |> toArray
+            nj.ActiveSystemGuids    <- ds.ActiveSystems  |-> _.Guid |> toArray
+            nj.PassiveSystemGuids   <- ds.PassiveSystems |-> _.Guid |> toArray
             nj.LastConnectionString <- ds.LastConnectionString
 
             nj.SystemPrototypes |> iter (onNsJsonSerializing (Some nj))
 
         | :? NjSystem as sys ->
-            sys.Arrows |> iter (onNsJsonSerializing (Some sys))
-            sys.Flows  |> iter (onNsJsonSerializing (Some sys))
-            sys.Works  |> iter (onNsJsonSerializing (Some sys))
+            sys.Arrows  |> iter (onNsJsonSerializing (Some sys))
+            sys.Flows   |> iter (onNsJsonSerializing (Some sys))
+            sys.Works   |> iter (onNsJsonSerializing (Some sys))
+            sys.ApiDefs |> iter (onNsJsonSerializing (Some sys))
+            let xxx = sys.DsObject
+            ()
 
         | :? NjFlow as flow ->
             ()
@@ -219,9 +238,11 @@ module rec NewtonsoftJsonObjects =
             ()
             //work.Calls |> iter onSerializing
             //work.TryGetFlow() |> iter (fun f -> work.FlowGuid <- guid2str f.Guid)
-        | :? NjCall as call ->
+
+        | (:? NjCall) | (:? NjArrow) ->
             ()
-        | :? NjArrow as arrow ->
+
+        | :? NjApiDef as ad ->
             ()
         | _ -> failwith "ERROR.  확장 필요?"
 
@@ -267,10 +288,12 @@ module rec NewtonsoftJsonObjects =
             nj.Arrows |> iter (fun z -> z.RawParent <- Some nj)
             nj.Flows  |> iter (fun z -> z.RawParent <- Some nj)
             nj.Works  |> iter (fun z -> z.RawParent <- Some nj)
+            nj.ApiDefs|> iter (fun z -> z.RawParent <- Some nj)
 
             // 하부 구조에 대해서 재귀적으로 호출
-            nj.Flows |> iter (onNsJsonDeserialized (Some nj))
-            nj.Works |> iter (onNsJsonDeserialized (Some nj))
+            nj.Flows   |> iter (onNsJsonDeserialized (Some nj))
+            nj.Works   |> iter (onNsJsonDeserialized (Some nj))
+            nj.ApiDefs |> iter (onNsJsonDeserialized (Some nj))
 
             let flows = nj.Flows |-> (fun z -> z.DsObject :?> RtFlow)
 
@@ -287,9 +310,10 @@ module rec NewtonsoftJsonObjects =
                     yield dsWork
                     w.DsObject <- dsWork
             |]
-            let arrows = nj.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
+            let arrows  = nj.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
+            let apiDefs = nj.ApiDefs |-> (fun z -> z.DsObject :?> RtApiDef)
             nj.DsObject <-
-                RtSystem.Create(flows, works, arrows
+                RtSystem.Create(flows, works, arrows, apiDefs
                                 , Author=nj.Author
                                 , LangVersion=nj.LangVersion
                                 , EngineVersion=nj.EngineVersion
@@ -324,10 +348,16 @@ module rec NewtonsoftJsonObjects =
             let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
             let apiCalls = [
                 for ac in call.ApiCalls do
-                    let dsac = RtApiCall() |> fromNjUniqINGD ac
+                    let dsac = RtApiCall(ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, ac.ValueType, ac.Value) |> fromNjUniqINGD ac
                     ac.DsObject <- dsac
                     yield dsac ]
             call.DsObject <- RtCall(callType, apiCalls, call.AutoPre, call.Safety) |> fromNjUniqINGD call
+            ()
+
+        | :? NjApiCall as ac ->
+            failwith "ERROR.  확장 필요?"
+        | :? NjApiDef as ad ->
+            ad.DsObject <- RtApiDef(ad.IsPush) |> fromNjUniqINGD ad
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
