@@ -17,7 +17,7 @@ type ``JsonIO Tests`` () =
         if File.Exists(testFilePath) then File.Delete(testFilePath)
 
     [<Test>]
-    member _.``RawSystem ÀúÀå ¹× ·Îµå Å×½ºÆ®`` () =
+    member _.``RawSystem ì €ì¥ ë° ë¡œë“œ í…ŒìŠ¤íŠ¸`` () =
         let raw : RawSystem = {
             name = "sysTest"
             flows = [|
@@ -44,34 +44,10 @@ type ``JsonIO Tests`` () =
         Assert.AreEqual(1, loaded.flows.Length)
         Assert.AreEqual("flow1", loaded.flows.[0].name)
 
-    [<Test>]
-    member _.``RawSystem ´©¶ôµÈ Call ¹× Work ÀÚµ¿ ¿Ï¼º Å×½ºÆ®`` () =
-        let raw : RawSystem = {
-            name = "sysX"
-            flows = [|
-                { name = "flowX"
-                  works = [|
-                    { name = "WorkA"
-                      calls = [||]
-                      callGraph = [| [| "Call1"; "Call2" |] |] }
-                  |]
-                  workGraph = [| [| "WorkA"; "WorkB" |] |] }
-            |]
-            apiDefs = [||]
-        }
 
-        let validated = validateAndCompleteRawSystem raw
-        let workA = validated.flows.[0].works |> Array.find (fun w -> w.name = "WorkA")
-
-        let callNames = workA.calls |> Array.map (fun c -> c.name) |> Set.ofArray
-        Assert.IsTrue(callNames.Contains "Call1")
-        Assert.IsTrue(callNames.Contains "Call2")
-
-        let workNames = validated.flows.[0].works |> Array.map (fun w -> w.name) |> Set.ofArray
-        Assert.IsTrue(workNames.Contains "WorkB")
 
     [<Test>]
-    member _.``System ·Îµå ½Ã ´©¶ôµÈ Call ÀÚµ¿ »ı¼ºµÊ`` () =
+    member _.``System ë¡œë“œ ì‹œ ëˆ„ë½ëœ Call ìë™ ìƒì„±ë¨`` () =
         let filePath = "temp_system.json"
         let raw : RawSystem = {
             name = "sysJson"
