@@ -129,64 +129,65 @@ module ORMTypeConversionModule =
             >>= (fun e -> e.Id |> Option.ofNullable)
 
     type ORMCall with
-        static member Create(dbApi:DbApi, name, guid, id:Id, workId:Id, dateTime, ?dbCallType:DbCallType) =
-            let dbCallType = dbCallType |? DbCallType.Normal
+        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType): IORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
-            ORMCall(name, guid, id, workId, dateTime, callTypeId)
+            ORMCall(workId, callTypeId)
 
 
     let o2n = Option.toNullable
-    let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUniq>) (x:IDsObject) =
-            match x |> tryCast<Unique> with
-            | Some uniq ->
-                let id = uniq.Id |? -1
-                let pid = (uniq.RawParent >>= _.Id) |? -1
-                let guid, name = uniq.Guid, uniq.Name
-                let pGuid, dateTime = uniq.PGuid, uniq.DateTime
+    let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, IORMUnique>) (x:IDsObject) =
+        let ormUniqINGDP (src:#Unique) (dst:#IORMUnique): IORMUnique = toOrmUniqINGDP src dst :> IORMUnique
 
-                match uniq with
-                | :? RtProject as z ->
-                    ORMProject(name, guid, id, dateTime, z.Author, z.Version, z.Description) :> ORMUniq
-                | :? RtSystem as z ->
-                    let originGuid = z.OriginGuid |> Option.toNullable
-                    ORMSystem(name, guid, id, dateTime, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
-                | :? RtFlow   as z -> ORMFlow  (name, guid, id, pid, dateTime)
-                | :? RtWork   as z ->
-                    let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
-                    ORMWork  (name, guid, id, pid, dateTime, flowId)
-                | :? RtCall   as z -> ORMCall.Create (dbApi, name, guid, id, pid, dateTime, z.CallType)
+        match x |> tryCast<Unique> with
+        | Some uniq ->
+            let id = uniq.Id |? -1
+            let pid = (uniq.RawParent >>= _.Id) |? -1
+            let guid, name = uniq.Guid, uniq.Name
+            let pGuid, dateTime = uniq.PGuid, uniq.DateTime
 
-                | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                    let parentId = (z.RawParent >>= _.Id).Value
-                    ORMArrowWork (src, tgt, parentId, z.Guid, id, z.DateTime)
+            match uniq with
+            | :? RtProject as z ->
+                ORMProject(z.Author, z.Version, z.Description) |> ormUniqINGDP z
+            | :? RtSystem as z ->
+                let originGuid = z.OriginGuid |> Option.toNullable
+                ORMSystem(originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description) |> ormUniqINGDP z
+            | :? RtFlow   as z -> ORMFlow() |> ormUniqINGDP z
+            | :? RtWork   as z ->
+                let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
+                ORMWork  (pid, flowId) |> ormUniqINGDP z
+            | :? RtCall   as z -> ORMCall.Create (dbApi, pid, z.CallType) |> ormUniqINGDP z
 
-                | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                    let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                    let parentId = (z.RawParent >>= _.Id).Value
-                    ORMArrowCall (src, tgt, parentId, z.Guid, id, z.DateTime)
+            | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
+                let parentId = (z.RawParent >>= _.Id).Value
+                ORMArrowWork (src, tgt, parentId) |> ormUniqINGDP z
 
-                | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
+            | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
+                let parentId = (z.RawParent >>= _.Id).Value
+                ORMArrowCall (src, tgt, parentId) |> ormUniqINGDP z
 
-                |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )
+            | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
-            | _ -> failwithf "Cannot convert to ORM. %A" x
+            |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )
+
+        | _ -> failwithf "Cannot convert to ORM. %A" x
 
 
 
     type IDsObject with
         /// DS object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g DsProject -> ORMProject
-        member x.ToORM(dbApi:DbApi, guidDic:Dictionary<Guid, ORMUniq>) = ds2Orm dbApi guidDic x
+        member x.ToORM<'T when 'T :> IORMUnique>(dbApi:DbApi, guidDic:Dictionary<Guid, IORMUnique>) = ds2Orm dbApi guidDic x :?> 'T
 
     type RtProject with
         /// DsProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
-        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUniq> * ORMUniq =
-            let guidDic = Dictionary<Guid, ORMUniq>()
-            guidDic, ds2Orm dbApi guidDic x
+        member x.ToORM(dbApi:DbApi): Dictionary<Guid, IORMUnique> * ORMProject =
+            let guidDic = Dictionary<Guid, IORMUnique>()
+            guidDic, ds2Orm dbApi guidDic x :?> ORMProject
 
     type RtSystem with
         /// DsSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
-        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUniq> * ORMUniq =
-            let guidDic = Dictionary<Guid, ORMUniq>()
-            guidDic, ds2Orm dbApi guidDic x
+        member x.ToORM(dbApi:DbApi): Dictionary<Guid, IORMUnique> * ORMSystem =
+            let guidDic = Dictionary<Guid, IORMUnique>()
+            guidDic, ds2Orm dbApi guidDic x :?> ORMSystem
 

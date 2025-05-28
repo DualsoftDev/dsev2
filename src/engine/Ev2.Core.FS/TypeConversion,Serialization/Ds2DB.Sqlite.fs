@@ -16,7 +16,7 @@ type DbObjectIdentifier =
 
 module internal Ds2SqliteImpl =
     /// src ORM 객체의 unique 속성(Id, Name, Guid, DateTime) 들을 dst 에 복사
-    let fromOrmUniqINGD (src:#ORMUniq) (dst:#Unique) = dst |> uniqINGD (n2o src.Id) src.Name (s2guid src.Guid) src.DateTime
+    let fromOrmUniqINGD (src:#ORMUnique) (dst:#Unique) = dst |> uniqINGD (n2o src.Id) src.Name (s2guid src.Guid) src.DateTime
 
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
@@ -27,12 +27,12 @@ module internal Ds2SqliteImpl =
             | :? RtArrowBetweenWorks as a -> a.Id <- Some id
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
-    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUniq>) (s:RtSystem) (optProject:RtProject option)  =
-        let ormSystem = s.ToORM(dbApi, cache) :?> ORMSystem
+    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, IORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
+        let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
         let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid)
                         VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid);""", ormSystem, tr)
         s.Id <- Some sysId
-        cache[s.Guid].Id <- sysId
+        (cache[s.Guid] :?> ORMUnique).Id <- sysId
 
         match optProject with
         | Some proj ->
@@ -55,7 +55,7 @@ module internal Ds2SqliteImpl =
 
         // flows 삽입
         for f in s.Flows do
-            let ormFlow = f.ToORM(dbApi, cache) :?> ORMFlow
+            let ormFlow = f.ToORM<ORMFlow>(dbApi, cache)
             ormFlow.SystemId <- Nullable sysId
             let flowId = conn.Insert($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
             f.Id <- Some flowId
@@ -67,7 +67,7 @@ module internal Ds2SqliteImpl =
 
         // works, calls 삽입
         for w in s.Works do
-            let ormWork = w.ToORM(dbApi, cache) :?> ORMWork
+            let ormWork = w.ToORM<ORMWork>(dbApi, cache)
             ormWork.SystemId <- Nullable sysId
 
             let workId = conn.Insert($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
@@ -76,7 +76,7 @@ module internal Ds2SqliteImpl =
             assert(cache[w.Guid] = ormWork)
 
             for c in w.Calls do
-                let ormCall = c.ToORM(dbApi, cache) :?> ORMCall
+                let ormCall = c.ToORM<ORMCall>(dbApi, cache)
                 ormCall.WorkId <- Nullable workId
                 let callId = conn.Insert($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId, callTypeId) VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId);", ormCall, tr)
                 c.Id <- Some callId
@@ -85,16 +85,16 @@ module internal Ds2SqliteImpl =
 
             // work 의 arrows 를 삽입 (calls 간 연결)
             for a in w.Arrows do
-                let ormArrow = a.ToORM(dbApi, cache) :?> ORMArrowCall
-                ormArrow.WorkId <- Nullable workId
+                let ormArrow = a.ToORM<ORMArrowCall>(dbApi, cache)
+                ormArrow.WorkId <- workId
 
                 let r = conn.Upsert(Tn.ArrowCall, ormArrow, ["Source"; "Target"; "WorkId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
                 ()
 
         // system 의 arrows 를 삽입 (works 간 연결)
         for a in s.Arrows do
-            let ormArrow = a.ToORM(dbApi, cache) :?> ORMArrowWork
-            ormArrow.SystemId <- Nullable sysId
+            let ormArrow = a.ToORM<ORMArrowWork>(dbApi, cache)
+            ormArrow.SystemId <- sysId
 
 
     /// DsProject 을 sqlite database 에 저장
