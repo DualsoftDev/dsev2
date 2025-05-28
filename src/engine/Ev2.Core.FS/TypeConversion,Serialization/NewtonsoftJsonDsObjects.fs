@@ -117,6 +117,10 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows        = [||]:NjArrow[]    with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs       = [||]:NjApiDef[]   with get, set
         member val OriginGuid    = Nullable<Guid>() with get, set
+        member x.ShouldSerializeFlows  () = x.Flows  .NonNullAny()
+        member x.ShouldSerializeWorks  () = x.Works  .NonNullAny()
+        member x.ShouldSerializeArrows () = x.Arrows .NonNullAny()
+        member x.ShouldSerializeApiDefs() = x.ApiDefs.NonNullAny()
 
         member val Author        = nullString        with get, set
         member val EngineVersion = Version()         with get, set
@@ -149,6 +153,10 @@ module rec NewtonsoftJsonObjects =
         member val FlowGuid = null:string with get, set
         member val Calls: NjCall[] = [||] with get, set
         member val Arrows:NjArrow[] = [||] with get, set
+
+        member x.ShouldSerializeCalls() = x.Calls.NonNullAny()
+        member x.ShouldSerializeArrows() = x.Arrows.NonNullAny()
+
         static member FromDs(ds:RtWork) =
             NjWork() |> toNjUniqINGD ds
             |> tee (fun z ->
@@ -175,9 +183,10 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         interface INjCall
         member val CallType = DbCallType.Normal.ToString() with get, set
-        member val ApiCalls: NjApiCall[] = [||] with get, set
-        member val AutoPre = nullString with get, set
-        member val Safety = nullString with get, set
+        member val ApiCalls = [||]:NjApiCall[] with get, set
+        member val AutoPre  = nullString with get, set
+        member val Safety   = nullString with get, set
+        member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
 
         static member FromDs(ds:RtCall) =
             NjCall() |> toNjUniqINGD ds
@@ -189,8 +198,8 @@ module rec NewtonsoftJsonObjects =
         member val OutAddress = nullString with get, set
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
+        member val Value      = nullString with get, set
         member val ValueType  = DbDataType.None with get, set
-        member val Value = nullString with get, set
 
     type NjApiDef() =
         inherit NjUnique()
@@ -356,6 +365,7 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjApiCall as ac ->
             failwith "ERROR.  확장 필요?"
+
         | :? NjApiDef as ad ->
             ad.DsObject <- RtApiDef(ad.IsPush) |> fromNjUniqINGD ad
             ()
