@@ -66,22 +66,23 @@ module ORMTypesModule =
 
 
     [<AbstractClass>]
-    type ORMArrowBase(srcId:int, tgtId:int, parentId:Id) =
+    type ORMArrowBase(srcId:int, tgtId:int, parentId:Id, arrowTypeId:Id) =
         inherit ORMUnique(ParentId=parentId)
-        new() = ORMArrowBase(-1, -1, -1)
+        new() = ORMArrowBase(-1, -1, -1, -1)
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
+        member val TypeId = arrowTypeId with get, set
 
     /// Work 간 연결.  System 에 속함
-    type ORMArrowWork(srcId:int, tgtId:int, systemId:int) =
-        inherit ORMArrowBase(srcId, tgtId, systemId)
-        new() = ORMArrowWork(-1, -1, -1)
+    type ORMArrowWork(srcId:int, tgtId:int, systemId:int, arrowTypeId:Id) =
+        inherit ORMArrowBase(srcId, tgtId, systemId, arrowTypeId)
+        new() = ORMArrowWork(-1, -1, -1, -1)
         member val SystemId = systemId with get, set
 
     /// Call 간 연결.  Work 에 속함
-    type ORMArrowCall(srcId:int, tgtId:int, workId:int) =
-        inherit ORMArrowBase(srcId, tgtId, workId)
-        new() = ORMArrowCall(-1, -1, -1)
+    type ORMArrowCall(srcId:int, tgtId:int, workId:int, arrowTypeId:Id) =
+        inherit ORMArrowBase(srcId, tgtId, workId, arrowTypeId)
+        new() = ORMArrowCall(-1, -1, -1, -1)
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset

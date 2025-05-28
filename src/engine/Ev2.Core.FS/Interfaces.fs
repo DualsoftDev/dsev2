@@ -37,22 +37,23 @@ module rec DsObjectModule =
 
 
     [<AbstractClass>]
-    type Arrow<'T when 'T :> Unique>(source:'T, target:'T) =
+    type Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) =
         inherit Unique()
 
         interface IArrow
         member val Source = source with get, set
         member val Target = target with get, set
+        member val Type = typ with get, set
 
     /// Call 간 화살표 연결.  Work 내에 존재
-    type RtArrowBetweenCalls(source:RtCall, target:RtCall) =
-        inherit Arrow<RtCall>(source, target)
+    type RtArrowBetweenCalls(source:RtCall, target:RtCall, typ:DbArrowType) =
+        inherit Arrow<RtCall>(source, target, typ)
         interface IRtUnique
         interface IRtApiCall
 
     /// Work 간 화살표 연결.  System 이나 Flow 내에 존재
-    type RtArrowBetweenWorks(source:RtWork, target:RtWork) =
-        inherit Arrow<RtWork>(source, target)
+    type RtArrowBetweenWorks(source:RtWork, target:RtWork, typ:DbArrowType) =
+        inherit Arrow<RtWork>(source, target, typ)
         interface IRtUnique
         interface IRtApiCall
 

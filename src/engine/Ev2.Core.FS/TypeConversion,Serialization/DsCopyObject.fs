@@ -102,7 +102,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> RtWork
             let target = bag.Newbies[x.Target.Guid] :?> RtWork
-            RtArrowBetweenWorks(source, target) |> uniqGD guid x.DateTime
+            RtArrowBetweenWorks(source, target, x.Type) |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -111,7 +111,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> RtCall
             let target = bag.Newbies[x.Target.Guid] :?> RtCall
-            RtArrowBetweenCalls(source, target) |> uniqGD guid x.DateTime
+            RtArrowBetweenCalls(source, target, x.Type) |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]

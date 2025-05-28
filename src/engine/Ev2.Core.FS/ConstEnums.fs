@@ -24,3 +24,8 @@ module ConstEnums =
         | Single = 48
         | Double = 49
 
+    type DbArrowType =
+        | None = 0
+        | Start = 1
+        | Reset = 2
+

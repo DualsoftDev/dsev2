@@ -63,6 +63,11 @@ module DsObjectUtilsModule =
             | :? RtArrowBetweenCalls as a -> a.Target
             | :? RtArrowBetweenWorks as a -> a.Target
             | _ -> failwith "ERROR"
+        member x.GetArrowType(): DbArrowType =
+            match x with
+            | :? RtArrowBetweenCalls as a -> a.Type
+            | :? RtArrowBetweenWorks as a -> a.Type
+            | _ -> failwith "ERROR"
 
     type Unique with
         member x.EnumerateDsObjects(?includeMe): Unique list =

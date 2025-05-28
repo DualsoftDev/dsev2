@@ -170,6 +170,7 @@ module rec NewtonsoftJsonObjects =
         interface INjArrow
         member val Source = null:string with get, set
         member val Target = null:string with get, set
+        member val Type = DbArrowType.None.ToString() with get, set
         static member FromDs(ds:IArrow) =
             assert(isItNotNull ds)
             NjArrow() |> toNjUniqINGD (ds :?> Unique)
@@ -177,6 +178,7 @@ module rec NewtonsoftJsonObjects =
                 //z.Import (ds :?> Unique)
                 z.Source <- guid2str (ds.GetSource().Guid)
                 z.Target <- guid2str (ds.GetTarget().Guid)
+                z.Type <- ds.GetArrowType().ToString()
             )
 
     type NjCall() =
@@ -289,7 +291,8 @@ module rec NewtonsoftJsonObjects =
                 let works = nj.Works |-> (fun z -> z.DsObject :?> RtWork)
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- RtArrowBetweenWorks(src, tgt) |> fromNjUniqINGD a
+                let arrowType = a.Type |> Enum.TryParse<DbArrowType> |> tryParseToOption |? DbArrowType.None
+                a.DsObject <- RtArrowBetweenWorks(src, tgt, arrowType) |> fromNjUniqINGD a
                 ()
                 )
 
@@ -342,7 +345,8 @@ module rec NewtonsoftJsonObjects =
                 let calls = work.Calls |-> (fun z -> z.DsObject :?> RtCall)
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- RtArrowBetweenCalls(src, tgt) |> fromNjUniqINGD a
+                let arrowType = a.Type |> Enum.TryParse<DbArrowType> |> tryParseToOption |? DbArrowType.None
+                a.DsObject <- RtArrowBetweenCalls(src, tgt, arrowType) |> fromNjUniqINGD a
                 ()
                 )
 

@@ -122,15 +122,13 @@ module rec EditableDsObjects =
 
 
 
-    type EdArrowBetweenCalls(source:EdCall, target:EdCall) =
-        inherit Arrow<EdCall>(source, target)
+    type EdArrowBetweenCalls(source:EdCall, target:EdCall, typ:DbArrowType) =
+        inherit Arrow<EdCall>(source, target, typ)
         interface IEdArrow
-        new (source, target) = EdArrowBetweenCalls(source, target)
 
-    type EdArrowBetweenWorks(source:EdWork, target:EdWork) =
-        inherit Arrow<EdWork>(source, target)
+    type EdArrowBetweenWorks(source:EdWork, target:EdWork, typ:DbArrowType) =
+        inherit Arrow<EdWork>(source, target, typ)
         interface IEdArrow
-        new (source, target) = EdArrowBetweenWorks(source, target)
 
 
 [<AutoOpen>]
@@ -147,7 +145,7 @@ module Ed2DsModule =
     type EdWork with
         member x.ToDsWork(flows:RtFlow[]) =
             let callDic = x.Calls.ToDictionary(id, _.ToDsCall())
-            let arrows = x.Arrows |-> (fun a -> RtArrowBetweenCalls(callDic[a.Source], callDic[a.Target]) |> uniqINGD_fromObj a )
+            let arrows = x.Arrows |-> (fun a -> RtArrowBetweenCalls(callDic[a.Source], callDic[a.Target], a.Type) |> uniqINGD_fromObj a )
             let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
             let calls = callDic.Values |> toArray
 
@@ -159,7 +157,7 @@ module Ed2DsModule =
             let flows = x.Flows |-> _.ToDsFlow() |> toArray
             let workDic = x.Works.ToDictionary(id, _.ToDsWork(flows))
             let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun a -> RtArrowBetweenWorks(workDic[a.Source], workDic[a.Target]) |> uniqINGD_fromObj a) |> toArray
+            let arrows = x.Arrows |-> (fun a -> RtArrowBetweenWorks(workDic[a.Source], workDic[a.Target], a.Type) |> uniqINGD_fromObj a) |> toArray
             let apiDefs = x.ApiDefs |-> (fun a -> RtApiDef(a.IsPush) |> uniqINGD_fromObj a) |> toArray
             let system = RtSystem.Create(flows, works, arrows, apiDefs) |> uniqINGD_fromObj x
 

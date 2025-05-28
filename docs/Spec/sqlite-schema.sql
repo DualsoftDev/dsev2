@@ -144,9 +144,12 @@ CREATE TABLE [arrowWork](
     , [dateTime]      DATETIME(7)
     , [source]        INTEGER NOT NULL
     , [target]        INTEGER NOT NULL
+    , [typeId]        INTEGER NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [systemId]      INTEGER NOT NULL
     , FOREIGN KEY(source)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES enum(id)
     , FOREIGN KEY(systemId) REFERENCES system(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
@@ -157,9 +160,12 @@ CREATE TABLE [arrowCall](
     , [dateTime]      DATETIME(7)
     , [source]        INTEGER NOT NULL
     , [target]        INTEGER NOT NULL
+    , [typeId]        INTEGER NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [workId]        INTEGER NOT NULL
     , FOREIGN KEY(source)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES enum(id)
     , FOREIGN KEY(workId)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 

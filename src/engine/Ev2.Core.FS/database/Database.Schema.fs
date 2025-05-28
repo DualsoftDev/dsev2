@@ -212,9 +212,12 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
 CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
     , [source]        {intKeyType} NOT NULL
     , [target]        {intKeyType} NOT NULL
+    , [typeId]        {intKeyType} NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [systemId]      {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id)
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
@@ -222,9 +225,12 @@ CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
 CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
     , [source]        {intKeyType} NOT NULL
     , [target]        {intKeyType} NOT NULL
+    , [typeId]        {intKeyType} NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id)
     , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 

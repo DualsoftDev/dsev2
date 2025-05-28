@@ -203,9 +203,9 @@ module SchemaTestModule =
             edProject.ActiveSystems.Add(edSystem)
             edFlow.AddWorks([edWork1])
 
-            let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b)
+            let edArrow1 = EdArrowBetweenCalls(edCall1a, edCall1b, DbArrowType.Start)
             edWork1.Arrows.Add(edArrow1)
-            let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b)
+            let edArrow2 = EdArrowBetweenCalls(edCall2a, edCall2b, DbArrowType.Reset)
             edWork2.Arrows.Add(edArrow2)
 
             edProject.Fix()
