@@ -57,7 +57,7 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            RtSystem.Create(flows, works, arrows, apiDefs) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
@@ -83,7 +83,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let apiCalls = x.ApiCalls |-> _.replicate(bag)
-            RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety, x.Timeout) |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type RtApiCall with

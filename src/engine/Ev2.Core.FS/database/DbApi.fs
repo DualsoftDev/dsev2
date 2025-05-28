@@ -145,9 +145,9 @@ module ORMTypeConversionModule =
 
 
     type ORMCall with
-        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType): IORMUnique =
+        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType, autoPre:string, safety:string, timeout:Nullable<int>): IORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
-            ORMCall(workId, callTypeId)
+            ORMCall(workId, callTypeId, autoPre, safety, timeout)
 
 
     let o2n = Option.toNullable
@@ -166,12 +166,12 @@ module ORMTypeConversionModule =
                 ORMProject(z.Author, z.Version, z.Description) |> ormUniqINGDP z
             | :? RtSystem as z ->
                 let originGuid = z.OriginGuid |> Option.toNullable
-                ORMSystem(originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description) |> ormUniqINGDP z
+                ORMSystem(z.IsPrototype, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description) |> ormUniqINGDP z
             | :? RtFlow   as z -> ORMFlow() |> ormUniqINGDP z
             | :? RtWork   as z ->
                 let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
                 ORMWork  (pid, flowId) |> ormUniqINGDP z
-            | :? RtCall   as z -> ORMCall.Create (dbApi, pid, z.CallType) |> ormUniqINGDP z
+            | :? RtCall   as z -> ORMCall.Create (dbApi, pid, z.CallType, z.AutoPre, z.Safety, o2n z.Timeout) |> ormUniqINGDP z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value

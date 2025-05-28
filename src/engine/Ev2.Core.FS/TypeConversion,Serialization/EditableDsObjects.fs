@@ -44,6 +44,7 @@ module rec EditableDsObjects =
         member val Works = ResizeArray<EdWork>()
         member val Arrows = ResizeArray<EdArrowBetweenWorks>()
         member val ApiDefs = ResizeArray<EdApiDef>()
+        member val IsPrototype = false with get, set
 
         member x.Fix() =
             x.UpdateDateTime()
@@ -92,8 +93,9 @@ module rec EditableDsObjects =
         interface IEdCall
         member val ApiCalls = ResizeArray<EdApiCall>() with get, set
         member val CallType = DbCallType.Normal with get, set
-        member val AutoPre = nullString with get, set
-        member val Safety = nullString with get, set
+        member val AutoPre  = nullString with get, set
+        member val Safety   = nullString with get, set
+        member val Timeout  = Option<int>.None with get, set
         member x.Fix() =
             x.UpdateDateTime()
             x.ApiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
@@ -140,7 +142,7 @@ module Ed2DsModule =
     type EdCall with
         member x.ToDsCall() =
             let apiCalls = x.ApiCalls |-> (fun a -> RtApiCall(a.InAddress, a.OutAddress, a.InSymbol, a.OutSymbol, a.ValueType, a.Value) |> uniqINGD_fromObj a)
-            RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety) |> uniqINGD_fromObj x
+            RtCall(x.CallType, apiCalls, x.AutoPre, x.Safety, x.Timeout) |> uniqINGD_fromObj x
 
     type EdWork with
         member x.ToDsWork(flows:RtFlow[]) =
@@ -159,7 +161,7 @@ module Ed2DsModule =
             let works = workDic.Values |> toArray
             let arrows = x.Arrows |-> (fun a -> RtArrowBetweenWorks(workDic[a.Source], workDic[a.Target], a.Type) |> uniqINGD_fromObj a) |> toArray
             let apiDefs = x.ApiDefs |-> (fun a -> RtApiDef(a.IsPush) |> uniqINGD_fromObj a) |> toArray
-            let system = RtSystem.Create(flows, works, arrows, apiDefs) |> uniqINGD_fromObj x
+            let system = RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs) |> uniqINGD_fromObj x
 
             // parent 객체 확인
             for w in works do

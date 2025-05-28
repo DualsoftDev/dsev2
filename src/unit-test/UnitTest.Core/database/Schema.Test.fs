@@ -137,7 +137,7 @@ module SchemaTestModule =
 
         // call 삽입
         let callGuid = newGuid()
-        conn.Execute($"INSERT INTO {Tn.Call} (guid, name, workId) VALUES (@guid, @name, @workId)",
+        conn.Execute($"INSERT INTO {Tn.Call} (guid, name, workId, autoPre, safety) VALUES (@guid, @name, @workId, @AutoPre, @Safety)",
                      dict ["guid", box callGuid; "name", box "Call1"; "workId", box workId]) |> ignore
 
         // 확인: 총 system = 1, flow = 1, work = 2, call = 1
@@ -182,7 +182,7 @@ module SchemaTestModule =
     let createEditableProject() =
         if isItNull edProject then
             edProject <- EdProject(Name = "MainProject")
-            edSystem  <- EdSystem (Name = "MainSystem")
+            edSystem  <- EdSystem (Name = "MainSystem", IsPrototype=true)
             edFlow    <- EdFlow   (Name = "MainFlow")
             edWork1   <- EdWork   (Name = "BoundedWork1")
             edWork2   <- EdWork   (Name = "BoundedWork2", OptOwnerFlow=Some edFlow)
@@ -190,15 +190,18 @@ module SchemaTestModule =
             edSystem.Works.AddRange([edWork1; edWork2; edWork3])
             edSystem.Flows.Add(edFlow)
 
+            let edArrowW = EdArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
+            edSystem.Arrows.Add(edArrowW)
+
             edApiDef1a <- EdApiDef(Name = "ApiDef1a")
             edSystem.ApiDefs.Add(edApiDef1a)
 
             edApiCall1a <- EdApiCall(Name = "ApiCall1a", InAddress="InAddressX0")
-            edCall1a  <- EdCall   (Name = "Call1a", CallType=DbCallType.Parallel)
-            edCall1b  <- EdCall   (Name = "Call1b", CallType=DbCallType.Repeat)
+            edCall1a  <- EdCall (Name = "Call1a", CallType=DbCallType.Parallel, AutoPre="AutoPre 테스트 1", Safety="안전조건1", Timeout=Some 30)
+            edCall1b  <- EdCall (Name = "Call1b", CallType=DbCallType.Repeat)
             edWork1.Calls.AddRange([edCall1a; edCall1b])
-            edCall2a  <- EdCall   (Name = "Call2a")
-            edCall2b  <- EdCall   (Name = "Call2b")
+            edCall2a  <- EdCall (Name = "Call2a")
+            edCall2b  <- EdCall (Name = "Call2b")
             edWork2.Calls.AddRange([edCall2a; edCall2b])
             edProject.ActiveSystems.Add(edSystem)
             edFlow.AddWorks([edWork1])
@@ -313,6 +316,7 @@ module SchemaTestModule =
 
         let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
         dsProject4.Validate()
+        dsProject4.Systems[0].IsPrototype <- false
         dsProject4.ToSqlite3(connStr, removeExistingData)
 
         ()

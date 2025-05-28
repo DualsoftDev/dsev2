@@ -6,8 +6,8 @@ open System
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type RtSystem with
-        static member Create(flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[]) =
-            RtSystem(flows, works, arrows, apiDefs)
+        static member Create(isPrototype:bool, flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[]) =
+            RtSystem(isPrototype, flows, works, arrows, apiDefs)
             |> tee (fun z ->
                 flows   |> iter (fun y -> y.RawParent <- Some z)
                 works   |> iter (fun y -> y.RawParent <- Some z)
@@ -25,9 +25,9 @@ module DsObjectUtilsModule =
                 optFlow |> iter (fun y -> y.RawParent <- Some z) )
 
     type RtCall with
-        static member Create(callType:DbCallType, apiCalls:RtApiCall seq, autoPre:string, safety:string) =
+        static member Create(callType:DbCallType, apiCalls:RtApiCall seq, autoPre:string, safety:string, timeout:int option) =
             let apiCalls = apiCalls |> toList
-            RtCall(callType, apiCalls, autoPre, safety)
+            RtCall(callType, apiCalls, autoPre, safety, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
