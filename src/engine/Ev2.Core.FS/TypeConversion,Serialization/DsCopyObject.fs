@@ -129,11 +129,13 @@ module internal rec DsObjectCopyImpl =
 module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
 
+    /// Runtime 객체의 validation
     let validateRuntime (rtObj:#RtUnique): #RtUnique =
         let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
         rtObj.Validate(guidDic)
         rtObj
 
+    /// Editable 객체의 validation
     let validateEditable (edObj:#EdUnique): #EdUnique =
         let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
         edObj.Validate(guidDic)
@@ -144,14 +146,8 @@ module DsObjectCopyAPIModule =
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
-
-        // TODO:::
-        // 모든 replicate 를 Ed object 기반으로 변경 필요... replicate 된 객체의 Guid 새로 mapping 해서 assign 할 필요 있음.
-
         /// Id, Guid 및 DateTime 은 새로이 생성
         member x.Duplicate() =
-            let xxx = x
-            let oldGuidDic = x.EnumerateEdObjects().ToDictionary(_.Guid, id)
             let replica = x.Replicate() |> validateEditable
             let objs = replica.EnumerateEdObjects()
             let guidDic = objs.ToDictionary( (fun obj -> obj.Guid), (fun _ -> newGuid()))
@@ -167,16 +163,15 @@ module DsObjectCopyAPIModule =
             for ac in replica.ApiCalls do
                 let newGuid = guidDic[ac.ApiDefGuid]
                 ac.ApiDefGuid <- newGuid
-                ()
+
             for c in replica.Works >>= _.Calls do
                 noop()
                 // [Call 에서 APiCall Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
                 let newGuids = c.ApiCallGuids |-> (fun g -> guidDic[g]) |> toList
                 c.ApiCallGuids.Clear()
                 c.ApiCallGuids.AddRange newGuids
-                ()
 
-            noop()
+
             replica |> validateEditable |> ignore
 
             // 삭제 요망: debug only
@@ -184,8 +179,6 @@ module DsObjectCopyAPIModule =
             replica.Works
             |> filter _.OptOwnerFlow.IsSome
             |> iter (fun w -> replica.Flows |> exists (fun f -> f.Guid = w.OptOwnerFlow.Value.Guid) |> verify)
-
-
 
             replica
 
@@ -211,8 +204,8 @@ module DsObjectCopyAPIModule =
 
     type RtProject with
         member x.Replicate() =
-            x.ToEdProject() |> validateEditable
-            |> _.Replicate() |> validateEditable
+            x.ToEdProject()    |> validateEditable
+            |> _.Replicate()   |> validateEditable
             |> _.ToRtProject() |> validateRuntime
 
 
@@ -231,8 +224,7 @@ module DsObjectCopyAPIModule =
 
     type RtSystem with
         member x.Replicate() = x.ToEdSystem().Replicate().ToRtSystem(Ed2RtBag())
-        //member x.Duplicate() = x.ToEdSystem().Duplicate().ToRtSystem(Ed2RtBag())
         member x.Duplicate() =
-            x.ToEdSystem() |> validateEditable
+            x.ToEdSystem()   |> validateEditable
             |> _.Duplicate() |> validateEditable
-            |> _.ToRtSystem(Ed2RtBag())|> validateRuntime
+            |> _.ToRtSystem(Ed2RtBag()) |> validateRuntime

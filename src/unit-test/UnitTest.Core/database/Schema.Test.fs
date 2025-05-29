@@ -13,9 +13,6 @@ open Dual.Common.Db.FS
 open Dual.Common.Core.FS
 
 open Ev2.Core.FS
-open System.Collections
-open FsUnitTyped
-open System.Collections.Generic
 
 
 [<AutoOpen>]
@@ -338,7 +335,7 @@ module SchemaTestModule =
         let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
         let json = File.ReadAllText(jsonPath)
         let dsProject1 = NjProject.FromJson json
-        let dsProject2 = RtProject.FromJson json
+        let dsProject2 = RtProject.FromJson json |> _.Duplicate()
         let sys = dsProject2.ActiveSystems[0]
         sys.Flows.Length === 1
         let flow = sys.Flows[0]
