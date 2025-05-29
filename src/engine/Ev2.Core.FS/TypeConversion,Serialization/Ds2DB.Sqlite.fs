@@ -32,8 +32,8 @@ module internal Ds2SqliteImpl =
 
     let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, IORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
-        let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid)
-                        VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid);""", ormSystem, tr)
+        let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid, prototype)
+                        VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @Prototype);""", ormSystem, tr)
         s.Id <- Some sysId
         (cache[s.Guid] :?> ORMUnique).Id <- sysId
 
@@ -81,7 +81,9 @@ module internal Ds2SqliteImpl =
             for c in w.Calls do
                 let ormCall = c.ToORM<ORMCall>(dbApi, cache)
                 ormCall.WorkId <- Nullable workId
-                let callId = conn.Insert($"INSERT INTO {Tn.Call} (guid, dateTime, name, workId, callTypeId) VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId);", ormCall, tr)
+                let callId =
+                    conn.Insert($"""INSERT INTO {Tn.Call} (guid, dateTime, name, workId, callTypeId, autoPre, safety, timeout)
+                        VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId, @AutoPre, @Safety, @Timeout);""", ormCall, tr)
                 c.Id <- Some callId
                 ormCall.Id <- callId
                 assert(cache[c.Guid] = ormCall)
@@ -91,13 +93,15 @@ module internal Ds2SqliteImpl =
                 let ormArrow = a.ToORM<ORMArrowCall>(dbApi, cache)
                 ormArrow.WorkId <- workId
 
-                let r = conn.Upsert(Tn.ArrowCall, ormArrow, ["Source"; "Target"; "WorkId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
+                let r = conn.Upsert(Tn.ArrowCall, ormArrow, ["Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
                 ()
 
         // system 의 arrows 를 삽입 (works 간 연결)
         for a in s.Arrows do
             let ormArrow = a.ToORM<ORMArrowWork>(dbApi, cache)
             ormArrow.SystemId <- sysId
+            let r = conn.Upsert(Tn.ArrowWork, ormArrow, ["Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
+            ()
 
 
         // system 의 apiDefs 를 삽입
@@ -188,7 +192,8 @@ module internal Sqlite2DsImpl =
 
             let ormSystems =
                 let systemIds = projSysMaps |-> _.SystemId
-                conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds", {| SystemIds = systemIds |}, tr) |> toArray
+                conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
+                    {| SystemIds = systemIds |}, tr) |> toArray
 
             let edProj = EdProject() |> fromOrmUniqINGD ormProject
             let edSystems =
@@ -244,7 +249,8 @@ module internal Sqlite2DsImpl =
                         for orm in conn.Query<ORMArrowCall>($"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
                             let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
                             let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
-                            EdArrowBetweenCalls(src, tgt) |> fromOrmUniqINGD orm
+                            let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                            EdArrowBetweenCalls(src, tgt, arrowType) |> fromOrmUniqINGD orm
                     ]
                     edArrows |> w.Arrows.AddRange
 
@@ -262,7 +268,8 @@ module internal Sqlite2DsImpl =
                     for orm in conn.Query<ORMArrowWork>($"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
                         let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
                         let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
-                        EdArrowBetweenWorks(src, tgt) |> fromOrmUniqINGD orm
+                        let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                        EdArrowBetweenWorks(src, tgt, arrowType) |> fromOrmUniqINGD orm
                 ]
                 edArrows |> s.Arrows.AddRange
                 assert(setEqual s.Arrows edArrows)

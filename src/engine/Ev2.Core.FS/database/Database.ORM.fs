@@ -66,22 +66,23 @@ module ORMTypesModule =
 
 
     [<AbstractClass>]
-    type ORMArrowBase(srcId:int, tgtId:int, parentId:Id) =
+    type ORMArrowBase(srcId:int, tgtId:int, parentId:Id, arrowTypeId:Id) =
         inherit ORMUnique(ParentId=parentId)
-        new() = ORMArrowBase(-1, -1, -1)
+        new() = ORMArrowBase(-1, -1, -1, -1)
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
+        member val TypeId = arrowTypeId with get, set
 
     /// Work 간 연결.  System 에 속함
-    type ORMArrowWork(srcId:int, tgtId:int, systemId:int) =
-        inherit ORMArrowBase(srcId, tgtId, systemId)
-        new() = ORMArrowWork(-1, -1, -1)
+    type ORMArrowWork(srcId:int, tgtId:int, systemId:int, arrowTypeId:Id) =
+        inherit ORMArrowBase(srcId, tgtId, systemId, arrowTypeId)
+        new() = ORMArrowWork(-1, -1, -1, -1)
         member val SystemId = systemId with get, set
 
     /// Call 간 연결.  Work 에 속함
-    type ORMArrowCall(srcId:int, tgtId:int, workId:int) =
-        inherit ORMArrowBase(srcId, tgtId, workId)
-        new() = ORMArrowCall(-1, -1, -1)
+    type ORMArrowCall(srcId:int, tgtId:int, workId:int, arrowTypeId:Id) =
+        inherit ORMArrowBase(srcId, tgtId, workId, arrowTypeId)
+        new() = ORMArrowCall(-1, -1, -1, -1)
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
@@ -95,11 +96,12 @@ module ORMTypesModule =
         member val Description   = description with get, set
 
 
-    type ORMSystem(originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
+    type ORMSystem(isPrototype:bool, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
         inherit ORMUnique()
 
-        new() = ORMSystem(emptyGuid, nullString, nullVersion, nullVersion, nullString)
+        new() = ORMSystem(false, emptyGuid, nullString, nullVersion, nullVersion, nullString)
         interface IORMSystem
+        member val Prototype     = isPrototype   with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set
         member val LangVersion   = langVersion   with get, set
@@ -122,13 +124,16 @@ module ORMTypesModule =
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    type ORMCall(workId:Id, callTypeId:Nullable<int>) =
+    type ORMCall(workId:Id, callTypeId:Nullable<int>, autoPre:string, safety:string, timeout:Nullable<int>) =
         inherit ORMUnique(ParentId=workId)
 
-        new() = ORMCall(-1, DbCallType.Normal |> int |> Nullable)
+        new() = ORMCall(-1, DbCallType.Normal |> int |> Nullable, nullString, nullString, nullableInt)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val CallTypeId = callTypeId with get, set
+        member val AutoPre = autoPre with get, set
+        member val Safety = safety with get, set
+        member val Timeout = timeout with get, set
 
 
 

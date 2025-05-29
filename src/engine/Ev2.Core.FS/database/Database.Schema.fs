@@ -127,6 +127,7 @@ CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
+    , [prototype]     TINYINT NOT NULL DEFAULT 0  -- 프로토타입 시스템 여부.  0: 일반 시스템, 1: 프로토타입 시스템
     , [author]        TEXT NOT NULL
     , [langVersion]   TEXT NOT NULL
     , [engineVersion] TEXT NOT NULL
@@ -198,7 +199,7 @@ CREATE TABLE [{Tn.Work}]( {sqlUniqWithName()}
 
 CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [callTypeId]    {intKeyType} -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
-    , [timeOut]       INT   -- ms
+    , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
     , [workId]        {intKeyType} NOT NULL
@@ -212,9 +213,12 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
 CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
     , [source]        {intKeyType} NOT NULL
     , [target]        {intKeyType} NOT NULL
+    , [typeId]        {intKeyType} NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [systemId]      {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id)
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
@@ -222,9 +226,12 @@ CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
 CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
     , [source]        {intKeyType} NOT NULL
     , [target]        {intKeyType} NOT NULL
+    , [typeId]        {intKeyType} NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id)
     , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 

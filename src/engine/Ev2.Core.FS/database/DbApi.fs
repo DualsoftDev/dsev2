@@ -52,6 +52,7 @@ module DbApiModule =
                         conn.Execute(schema) |> ignore
                         insertEnumValues<DbCallType> conn
                         insertEnumValues<DbDataType> conn
+                        insertEnumValues<DbArrowType> conn
                     try
                         if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()
@@ -121,6 +122,7 @@ module DbApiModule =
 module ORMTypeConversionModule =
     // see insertEnumValues also.  e.g let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(DbCallType.Call)
     type DbApi with
+        /// DB 에서 enum value 의 id 를 찾는다.  e.g. DbCallType.Call -> 1
         member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : int option =
             let category = typeof<'TEnum>.Name
             let name = enumValue.ToString()
@@ -128,10 +130,24 @@ module ORMTypeConversionModule =
             |> tryFind(fun e -> e.Category = category && e.Name = name)
             >>= (fun e -> e.Id |> Option.ofNullable)
 
+        /// DB 의 enum id 에 해당하는 enum value 를 찾는다.  e.g. 1 -> DbCallType.Call
+        member dbApi.TryFindEnumValue<'TEnum
+                when 'TEnum : struct
+                and 'TEnum : enum<int>
+                and 'TEnum : (new : unit -> 'TEnum)
+                and 'TEnum :> ValueType>
+            (enumId: int) : 'TEnum option =
+
+            let category = typeof<'TEnum>.Name
+            dbApi.EnumCache.Value
+            |> tryFind(fun e -> e.Id = Nullable enumId)
+            >>= (fun z -> Enum.TryParse<'TEnum>(z.Name) |> tryParseToOption)
+
+
     type ORMCall with
-        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType): IORMUnique =
+        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType, autoPre:string, safety:string, timeout:Nullable<int>): IORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
-            ORMCall(workId, callTypeId)
+            ORMCall(workId, callTypeId, autoPre, safety, timeout)
 
 
     let o2n = Option.toNullable
@@ -150,22 +166,25 @@ module ORMTypeConversionModule =
                 ORMProject(z.Author, z.Version, z.Description) |> ormUniqINGDP z
             | :? RtSystem as z ->
                 let originGuid = z.OriginGuid |> Option.toNullable
-                ORMSystem(originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description) |> ormUniqINGDP z
+                ORMSystem(z.IsPrototype, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description) |> ormUniqINGDP z
             | :? RtFlow   as z -> ORMFlow() |> ormUniqINGDP z
             | :? RtWork   as z ->
                 let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
                 ORMWork  (pid, flowId) |> ormUniqINGDP z
-            | :? RtCall   as z -> ORMCall.Create (dbApi, pid, z.CallType) |> ormUniqINGDP z
+            | :? RtCall   as z -> ORMCall.Create (dbApi, pid, z.CallType, z.AutoPre, z.Safety, o2n z.Timeout) |> ormUniqINGDP z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
                 let parentId = (z.RawParent >>= _.Id).Value
-                ORMArrowWork (src, tgt, parentId) |> ormUniqINGDP z
+                let arrowTypeId = dbApi.TryFindEnumValueId<DbArrowType>(z.Type) |? int DbArrowType.None
+
+                ORMArrowWork (src, tgt, parentId, arrowTypeId) |> ormUniqINGDP z
 
             | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
                 let parentId = (z.RawParent >>= _.Id).Value
-                ORMArrowCall (src, tgt, parentId) |> ormUniqINGDP z
+                let arrowTypeId = dbApi.TryFindEnumValueId<DbArrowType>(z.Type) |? int DbArrowType.None
+                ORMArrowCall (src, tgt, parentId, arrowTypeId) |> ormUniqINGDP z
 
             | :? RtApiDef as z ->
                 ORMApiDef (pid) |> ormUniqINGDP z

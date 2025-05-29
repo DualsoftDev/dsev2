@@ -22,6 +22,7 @@ CREATE TABLE [system](
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
     , [name]          NVARCHAR(128) NOT NULL
+    , [prototype]     TINYINT NOT NULL DEFAULT 0  -- 프로토타입 시스템 여부.  0: 일반 시스템, 1: 프로토타입 시스템
     , [author]        TEXT NOT NULL
     , [langVersion]   TEXT NOT NULL
     , [engineVersion] TEXT NOT NULL
@@ -127,7 +128,7 @@ CREATE TABLE [call](
     , [dateTime]      DATETIME(7)
     , [name]          NVARCHAR(128) NOT NULL
     , [callTypeId]    INTEGER -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
-    , [timeOut]       INT   -- ms
+    , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
     , [workId]        INTEGER NOT NULL
@@ -144,9 +145,12 @@ CREATE TABLE [arrowWork](
     , [dateTime]      DATETIME(7)
     , [source]        INTEGER NOT NULL
     , [target]        INTEGER NOT NULL
+    , [typeId]        INTEGER NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [systemId]      INTEGER NOT NULL
     , FOREIGN KEY(source)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES enum(id)
     , FOREIGN KEY(systemId) REFERENCES system(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
@@ -157,9 +161,12 @@ CREATE TABLE [arrowCall](
     , [dateTime]      DATETIME(7)
     , [source]        INTEGER NOT NULL
     , [target]        INTEGER NOT NULL
+    , [typeId]        INTEGER NOT NULL         -- arrow type : "Start", "Reset", ??
+
     , [workId]        INTEGER NOT NULL
     , FOREIGN KEY(source)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
+    , FOREIGN KEY(typeId)   REFERENCES enum(id)
     , FOREIGN KEY(workId)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 

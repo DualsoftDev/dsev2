@@ -112,32 +112,36 @@ module rec NewtonsoftJsonObjects =
         interface INjSystem
 
 
-        [<JsonProperty(Order = 101)>] member val Flows         = [||]:NjFlow[]     with get, set
-        [<JsonProperty(Order = 102)>] member val Works         = [||]:NjWork[]     with get, set
-        [<JsonProperty(Order = 103)>] member val Arrows        = [||]:NjArrow[]    with get, set
-        [<JsonProperty(Order = 104)>] member val ApiDefs       = [||]:NjApiDef[]   with get, set
+        [<JsonProperty(Order = 101)>] member val Flows   = [||]:NjFlow[]   with get, set
+        [<JsonProperty(Order = 102)>] member val Works   = [||]:NjWork[]   with get, set
+        [<JsonProperty(Order = 103)>] member val Arrows  = [||]:NjArrow[]  with get, set
+        [<JsonProperty(Order = 104)>] member val ApiDefs = [||]:NjApiDef[] with get, set
         member val OriginGuid    = Nullable<Guid>() with get, set
         member x.ShouldSerializeFlows  () = x.Flows  .NonNullAny()
         member x.ShouldSerializeWorks  () = x.Works  .NonNullAny()
         member x.ShouldSerializeArrows () = x.Arrows .NonNullAny()
         member x.ShouldSerializeApiDefs() = x.ApiDefs.NonNullAny()
 
-        member val Author        = nullString        with get, set
-        member val EngineVersion = Version()         with get, set
-        member val LangVersion   = Version()         with get, set
-        member val Description   = nullString        with get, set
+        member val Prototype     = false      with get, set
+        member val Author        = nullString with get, set
+        member val EngineVersion = Version()  with get, set
+        member val LangVersion   = Version()  with get, set
+        member val Description   = nullString with get, set
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  (x.RawParent >>= tryCast<INjObject>) x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized (x.RawParent >>= tryCast<INjObject>) x
+
         static member FromDs(ds:RtSystem) =
             let originGuid = ds.OriginGuid |> Option.toNullable
-            NjSystem(OriginGuid=originGuid, Author=ds.Author, LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
+
+            NjSystem(Prototype=ds.IsPrototype, OriginGuid=originGuid, Author=ds.Author,
+                LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
             |> toNjUniqINGD ds
             |> tee (fun z ->
-                z.Flows   <- ds.Flows   |-> NjFlow.FromDs  |> toArray
-                z.Arrows  <- ds.Arrows  |-> NjArrow.FromDs |> toArray
-                z.Works   <- ds.Works   |-> NjWork.FromDs  |> toArray
-                z.ApiDefs <- ds.ApiDefs |-> NjApiDef.FromDs  |> toArray
+                z.Flows   <- ds.Flows   |-> NjFlow.FromDs   |> toArray
+                z.Arrows  <- ds.Arrows  |-> NjArrow.FromDs  |> toArray
+                z.Works   <- ds.Works   |-> NjWork.FromDs   |> toArray
+                z.ApiDefs <- ds.ApiDefs |-> NjApiDef.FromDs |> toArray
             )
 
     type NjFlow () =
@@ -160,7 +164,7 @@ module rec NewtonsoftJsonObjects =
         static member FromDs(ds:RtWork) =
             NjWork() |> toNjUniqINGD ds
             |> tee (fun z ->
-                z.Calls    <- ds.Calls   |-> NjCall.FromDs |> toArray
+                z.Calls    <- ds.Calls   |-> NjCall.FromDs  |> toArray
                 z.Arrows   <- ds.Arrows  |-> NjArrow.FromDs |> toArray
                 z.FlowGuid <- ds.OptFlow |-> (fun flow -> guid2str flow.Guid) |? null
             )
@@ -170,6 +174,7 @@ module rec NewtonsoftJsonObjects =
         interface INjArrow
         member val Source = null:string with get, set
         member val Target = null:string with get, set
+        member val Type = DbArrowType.None.ToString() with get, set
         static member FromDs(ds:IArrow) =
             assert(isItNotNull ds)
             NjArrow() |> toNjUniqINGD (ds :?> Unique)
@@ -177,6 +182,7 @@ module rec NewtonsoftJsonObjects =
                 //z.Import (ds :?> Unique)
                 z.Source <- guid2str (ds.GetSource().Guid)
                 z.Target <- guid2str (ds.GetTarget().Guid)
+                z.Type <- ds.GetArrowType().ToString()
             )
 
     type NjCall() =
@@ -186,10 +192,16 @@ module rec NewtonsoftJsonObjects =
         member val ApiCalls = [||]:NjApiCall[] with get, set
         member val AutoPre  = nullString with get, set
         member val Safety   = nullString with get, set
+        member val Timeout  = Nullable<int>() with get, set
         member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
 
         static member FromDs(ds:RtCall) =
-            NjCall() |> toNjUniqINGD ds
+            NjCall(CallType = ds.CallType.ToString(), AutoPre=ds.AutoPre, Safety=ds.Safety, Timeout=o2n ds.Timeout)
+            |> toNjUniqINGD ds
+            |> tee (fun z ->
+                z.ApiCalls <- ds.ApiCalls   |-> NjApiCall.FromDs |> toArray
+            )
+
 
     type NjApiCall() =
         inherit NjUnique()
@@ -199,7 +211,12 @@ module rec NewtonsoftJsonObjects =
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
         member val Value      = nullString with get, set
-        member val ValueType  = DbDataType.None with get, set
+        member val ValueType  = DbDataType.None.ToString() with get, set
+        static member FromDs(ds:RtApiCall) =
+            NjApiCall(InAddress=ds.InAddress, OutAddress=ds.OutAddress,
+                InSymbol=ds.InSymbol, OutSymbol=ds.OutSymbol,
+                Value=ds.Value, ValueType=ds.ValueType.ToString() )
+            |> toNjUniqINGD ds
 
     type NjApiDef() =
         inherit NjUnique()
@@ -236,7 +253,6 @@ module rec NewtonsoftJsonObjects =
             sys.Flows   |> iter (onNsJsonSerializing (Some sys))
             sys.Works   |> iter (onNsJsonSerializing (Some sys))
             sys.ApiDefs |> iter (onNsJsonSerializing (Some sys))
-            let xxx = sys.DsObject
             ()
 
         | :? NjFlow as flow ->
@@ -284,15 +300,6 @@ module rec NewtonsoftJsonObjects =
                 |> tee(fun z -> systems |> iter (fun s -> s.RawParent <- Some z))
 
         | :? NjSystem as nj ->
-            nj.Arrows
-            |> iter (fun (a:NjArrow) ->
-                let works = nj.Works |-> (fun z -> z.DsObject :?> RtWork)
-                let src = works |> find(fun w -> w.Guid = s2guid a.Source)
-                let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- RtArrowBetweenWorks(src, tgt) |> fromNjUniqINGD a
-                ()
-                )
-
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정
             nj.Arrows |> iter (fun z -> z.RawParent <- Some nj)
             nj.Flows  |> iter (fun z -> z.RawParent <- Some nj)
@@ -319,10 +326,21 @@ module rec NewtonsoftJsonObjects =
                     yield dsWork
                     w.DsObject <- dsWork
             |]
+
+            nj.Arrows
+            |> iter (fun (a:NjArrow) ->
+                let works = nj.Works |-> (fun z -> z.DsObject :?> RtWork)
+                let src = works |> find(fun w -> w.Guid = s2guid a.Source)
+                let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
+                let arrowType = a.Type |> Enum.TryParse<DbArrowType> |> tryParseToOption |? DbArrowType.None
+                a.DsObject <- RtArrowBetweenWorks(src, tgt, arrowType) |> fromNjUniqINGD a
+                ()
+                )
             let arrows  = nj.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
             let apiDefs = nj.ApiDefs |-> (fun z -> z.DsObject :?> RtApiDef)
             nj.DsObject <-
-                RtSystem.Create(flows, works, arrows, apiDefs
+                noop()
+                RtSystem.Create(nj.Prototype, flows, works, arrows, apiDefs
                                 , Author=nj.Author
                                 , LangVersion=nj.LangVersion
                                 , EngineVersion=nj.EngineVersion
@@ -342,7 +360,8 @@ module rec NewtonsoftJsonObjects =
                 let calls = work.Calls |-> (fun z -> z.DsObject :?> RtCall)
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
-                a.DsObject <- RtArrowBetweenCalls(src, tgt) |> fromNjUniqINGD a
+                let arrowType = a.Type |> Enum.TryParse<DbArrowType> |> tryParseToOption |? DbArrowType.None
+                a.DsObject <- RtArrowBetweenCalls(src, tgt, arrowType) |> fromNjUniqINGD a
                 ()
                 )
 
@@ -357,10 +376,11 @@ module rec NewtonsoftJsonObjects =
             let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
             let apiCalls = [
                 for ac in call.ApiCalls do
-                    let dsac = RtApiCall(ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, ac.ValueType, ac.Value) |> fromNjUniqINGD ac
+                    let valueType = ac.ValueType |> Enum.TryParse<DbDataType> |> tryParseToOption |? DbDataType.None
+                    let dsac = RtApiCall(ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, valueType, ac.Value) |> fromNjUniqINGD ac
                     ac.DsObject <- dsac
                     yield dsac ]
-            call.DsObject <- RtCall(callType, apiCalls, call.AutoPre, call.Safety) |> fromNjUniqINGD call
+            call.DsObject <- RtCall(callType, apiCalls, call.AutoPre, call.Safety, n2o call.Timeout) |> fromNjUniqINGD call
             ()
 
         | :? NjApiCall as ac ->
