@@ -10,17 +10,28 @@ open System.Collections.Generic
 module rec EditableDsObjects =
 
     type IEdObject  = interface end
-    type IEdProject = inherit IEdObject inherit IDsProject
-    type IEdSystem  = inherit IEdObject inherit IDsSystem
-    type IEdFlow    = inherit IEdObject inherit IDsFlow
-    type IEdWork    = inherit IEdObject inherit IDsWork
-    type IEdCall    = inherit IEdObject inherit IDsCall
-    type IEdApiCall = inherit IEdObject inherit IDsApiCall
-    type IEdApiDef  = inherit IEdObject inherit IDsApiDef
-    type IEdArrow   = inherit IEdObject inherit IArrow
+    type IEdUnique  = inherit IEdObject inherit IUnique
+    type IEdProject = inherit IEdUnique inherit IDsProject
+    type IEdSystem  = inherit IEdUnique inherit IDsSystem
+    type IEdFlow    = inherit IEdUnique inherit IDsFlow
+    type IEdWork    = inherit IEdUnique inherit IDsWork
+    type IEdCall    = inherit IEdUnique inherit IDsCall
+    type IEdApiCall = inherit IEdUnique inherit IDsApiCall
+    type IEdApiDef  = inherit IEdUnique inherit IDsApiDef
+    type IEdArrow   = inherit IEdUnique inherit IArrow
+
+    type IEdUnique with
+        member x.GetGuid() = (x :?> Unique).Guid
+
+
+    type EdUnique() =
+        inherit Unique()
+        interface IEdUnique
+        // 임시 저장 구조
+        member val internal RtUnique = getNull<RtUnique>() with get, set
 
     type EdProject () =
-        inherit Unique()
+        inherit EdUnique()
         interface IEdProject
 
         member val Author        = System.Environment.UserName with get, set
@@ -38,7 +49,7 @@ module rec EditableDsObjects =
 
 
     type EdSystem () =
-        inherit Unique()
+        inherit EdUnique()
         interface IEdSystem
 
         member val Flows = ResizeArray<EdFlow>()
@@ -59,7 +70,7 @@ module rec EditableDsObjects =
 
 
     type EdFlow () =
-        inherit Unique()
+        inherit EdUnique()
         interface IEdFlow
         member x.Works = //x.OptParent |> map _.Works //|> choose id
             match x.RawParent with
@@ -77,7 +88,7 @@ module rec EditableDsObjects =
 
 
     type EdWork () =
-        inherit Unique()
+        inherit EdUnique()
         interface IEdWork
         member val OptOwnerFlow = Option<EdFlow>.None with get, set
         member val Calls = ResizeArray<EdCall>()
@@ -92,7 +103,7 @@ module rec EditableDsObjects =
 
 
     type EdCall() =
-        inherit Unique()
+        inherit EdUnique()
         interface IEdCall
         member val ApiCalls = ResizeArray<EdApiCall>() with get, set
         member val CallType = DbCallType.Normal with get, set
@@ -106,7 +117,7 @@ module rec EditableDsObjects =
 
 
     type EdApiCall(apiDef:EdApiDef) =
-        inherit Unique()
+        inherit EdUnique()
         member x.Call = x.RawParent |-> (fun z -> z :?> EdCall) |?? (fun () -> getNull<EdCall>())
         member val ApiDef     = apiDef with get, set
         member val InAddress  = nullString with get, set
@@ -120,7 +131,7 @@ module rec EditableDsObjects =
             ()
 
     type EdApiDef() =
-        inherit Unique()
+        inherit EdUnique()
         member val IsPush = false with get, set
         member x.Fix() =
             x.UpdateDateTime()
@@ -140,70 +151,88 @@ module rec EditableDsObjects =
 [<AutoOpen>]
 module Ed2DsModule =
     type Ed2RtBag() =
-        member val EdDic = Dictionary<Guid, Unique>()
-        member val RtDic = Dictionary<Guid, Unique>()
+        member val EdDic = Dictionary<Guid, IEdUnique>()
+        member val RtDic = Dictionary<Guid, IRtUnique>()
+        member x.Add(u:IEdUnique) = x.EdDic.Add(u.GetGuid(), u)
+        member x.Add(u:IRtUnique) = x.RtDic.Add(u.GetGuid(), u)
+        member x.Add2 (ed:IEdUnique) (rt:IRtUnique) =
+            x.RtDic.TryAdd(rt.GetGuid(), rt) |> ignore
+            x.EdDic.TryAdd(ed.GetGuid(), ed) |> ignore
 
     type EdFlow with
         member x.ToDsFlow(bag:Ed2RtBag) =
-            bag.EdDic.Add(x.Guid, x)
-            RtFlow() |> uniqReplicate x |> tee (fun z -> bag.RtDic.Add(z.Guid, z))
+            RtFlow() |> uniqReplicate x |> tee (bag.Add2 x)
 
     type EdCall with
         member x.ToDsCall(bag:Ed2RtBag) =
-            bag.EdDic.Add(x.Guid, x)
             let rtApiCalls =
+                noop()
                 x.ApiCalls
                 |-> (fun (a:EdApiCall) ->
                         let rtApiDef = bag.RtDic[a.ApiDef.Guid] :?> RtApiDef
                         RtApiCall(rtApiDef, a.InAddress, a.OutAddress, a.InSymbol, a.OutSymbol, a.ValueType, a.Value)
                         |> uniqINGD_fromObj a
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z)))
+                        |> tee (bag.Add2 a) )
 
             RtCall(x.CallType, rtApiCalls, x.AutoPre, x.Safety, x.Timeout)
             |> uniqINGD_fromObj x
-            |> tee (fun z -> bag.RtDic.Add(z.Guid, z))
+            |> tee (bag.Add2 x)
 
     type EdWork with
         member x.ToDsWork(bag:Ed2RtBag, flows:RtFlow[]) =
-            bag.EdDic.Add(x.Guid, x)
+            x.Calls |> iter bag.Add
+            x.Arrows |> iter bag.Add
+
             let callDic = x.Calls.ToDictionary(id, _.ToDsCall(bag))
             let arrows =
                 x.Arrows
                 |-> fun a -> RtArrowBetweenCalls(callDic[a.Source], callDic[a.Target], a.Type)
                             |> uniqINGD_fromObj a
-                            |> tee (fun z -> bag.RtDic.Add(z.Guid, z))
+                            |> tee (bag.Add2 a)
 
             let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
             let calls = callDic.Values |> toArray
 
             RtWork.Create(calls, arrows, optFlowGuid)
             |> uniqINGD_fromObj x
-            |> tee (fun z -> bag.RtDic.Add(z.Guid, z))
+            |> tee (bag.Add2 x)
 
 
     type EdSystem with
         member x.ToDsSystem(bag:Ed2RtBag) =
-            bag.EdDic.Add(x.Guid, x)
-            x.Flows |> iter (fun z -> bag.EdDic.Add(z.Guid, z))
-            x.Works |> iter (fun z -> bag.EdDic.Add(z.Guid, z))
-            x.Arrows |> iter (fun z -> bag.EdDic.Add(z.Guid, z))
-            x.ApiDefs |> iter (fun z -> bag.EdDic.Add(z.Guid, z))
-            x.ApiCalls |> iter (fun z -> bag.EdDic.Add(z.Guid, z))
+            bag.Add x
+            x.Flows |> iter bag.Add
+            x.Works |> iter bag.Add
+            x.Arrows |> iter bag.Add
+            x.ApiDefs |> iter bag.Add
+            x.ApiCalls |> iter bag.Add
 
-            let flows = x.Flows |-> _.ToDsFlow(bag) |> toArray
-            let workDic = x.Works.ToDictionary(id, _.ToDsWork(bag, flows))
-            let works = workDic.Values |> toArray
-            let arrows = x.Arrows |-> (fun z -> RtArrowBetweenWorks(workDic[z.Source], workDic[z.Target], z.Type) |> uniqINGD_fromObj z |> tee (fun z -> bag.RtDic.Add(z.Guid, z))) |> toArray
-            let apiDefs = x.ApiDefs |-> (fun z -> RtApiDef(z.IsPush) |> uniqINGD_fromObj z |> tee (fun z -> bag.RtDic.Add(z.Guid, z))) |> toArray
+            let apiDefs =
+                x.ApiDefs |-> (fun z ->
+                    RtApiDef(z.IsPush)
+                    |> uniqINGD_fromObj z |> tee (bag.Add2 z))
+                |> toArray
+
             let apiCalls =
                 x.ApiCalls
                 |-> (fun z ->
                         let rtApiDef = bag.RtDic[z.ApiDef.Guid] :?> RtApiDef
                         RtApiCall(rtApiDef, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, z.ValueType, z.Value)
-                        |> uniqINGD_fromObj z
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z)))
+                        |> uniqINGD_fromObj z |> tee (bag.Add2 z))
                 |> toArray
-            let system = RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls) |> uniqINGD_fromObj x |> tee (fun z -> bag.RtDic.Add(z.Guid, z))
+
+            let flows = x.Flows |-> _.ToDsFlow(bag) |> toArray
+            let workDic = x.Works.ToDictionary(id, _.ToDsWork(bag, flows))
+            let works = workDic.Values |> toArray
+            let arrows =
+                x.Arrows |-> (fun z ->
+                    RtArrowBetweenWorks(workDic[z.Source], workDic[z.Target], z.Type)
+                    |> uniqINGD_fromObj z |> tee (bag.Add2 z))
+                |> toArray
+
+            let system =
+                RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls)
+                |> uniqINGD_fromObj x |> tee (bag.Add2 x)
 
             // parent 객체 확인
             for w in works do

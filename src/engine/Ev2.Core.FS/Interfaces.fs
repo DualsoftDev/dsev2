@@ -14,18 +14,16 @@ module DsRuntimeObjectInterfaceModule =
     type IRtArrow     = inherit IArrow
 
     /// Guid, Name, DateTime
-    type IRtUnique    = inherit IUnique
+    type IRtUnique    = inherit IRtObject inherit IUnique
 
 
-    type IRtProject = inherit IDsProject
-    type IRtSystem  = inherit IDsSystem
-    type IRtFlow    = inherit IDsFlow
-    type IRtWork    = inherit IDsWork
-    type IRtCall    = inherit IDsCall
-    type IRtApiCall = inherit IDsApiCall
-    type IRtApiDef  = inherit IDsApiDef
-
-
+    type IRtProject = inherit IRtObject inherit IDsProject
+    type IRtSystem  = inherit IRtObject inherit IDsSystem
+    type IRtFlow    = inherit IRtObject inherit IDsFlow
+    type IRtWork    = inherit IRtObject inherit IDsWork
+    type IRtCall    = inherit IRtObject inherit IDsCall
+    type IRtApiCall = inherit IRtObject inherit IDsApiCall
+    type IRtApiDef  = inherit IRtObject inherit IDsApiDef
 
 
 [<AutoOpen>]
@@ -34,6 +32,9 @@ module rec DsObjectModule =
     type RtUnique() =
         inherit Unique()
         interface IRtUnique
+
+    type IRtUnique with
+        member x.GetGuid() = (x :?> RtUnique).Guid
 
 
     [<AbstractClass>]
