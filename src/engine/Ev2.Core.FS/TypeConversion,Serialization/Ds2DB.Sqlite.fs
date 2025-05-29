@@ -161,7 +161,7 @@ module internal Ds2SqliteImpl =
     /// DsProject 을 sqlite database 에 저장
     let project2Sqlite (proj:RtProject) (dbApi:DbApi) (removeExistingData:bool option) =
         let bag = dbApi.DDic.Get<Db2RtBag>()
-        let rtObjs = proj.EnumerateDsObjects() |> List.cast<RtUnique> |> tee(fun zs -> zs |> iter bag.Add)
+        let rtObjs = proj.EnumerateRtObjects() |> List.cast<RtUnique> |> tee(fun zs -> zs |> iter bag.Add)
         let grDic = rtObjs |> groupByToDictionary _.GetType()
         let systems = grDic.[typeof<RtSystem>] |> Seq.cast<RtSystem> |> List.ofSeq
 
@@ -287,8 +287,7 @@ module internal Sqlite2DsImpl =
                             |> find(fun z -> z.Id = Nullable orm.ApiDefId)
                             |> _.Guid
 
-                        let edApiDef = bag.EdDic[s2guid apiDefGuid] :?> EdApiDef
-                        EdApiCall(edApiDef) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        EdApiCall(s2guid apiDefGuid) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 edApiCalls |> s.ApiCalls.AddRange
 

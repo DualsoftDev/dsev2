@@ -23,7 +23,6 @@ module DuplicateTestModule =
     [<Test>]
     let ``duplicate test`` () =
         let dsProject = edProject.ToRtProject()
-        let sys0 = dsProject.Systems[0].Duplicate()
-        validate sys0
+        let sys0 = dsProject.Systems[0].Duplicate() |> validateRuntime
         ()
 

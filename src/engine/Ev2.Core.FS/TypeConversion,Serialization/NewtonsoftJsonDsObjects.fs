@@ -62,9 +62,7 @@ module NewtonsoftJsonForwardDecls =
         member val NjDic = Dictionary<Guid, NjUnique>()
         member x.Add(u:RtUnique) = x.RtDic.TryAdd(u.Guid, u) |> ignore
         member x.Add(u:NjUnique) = x.NjDic.TryAdd(u.Guid, u) |> ignore
-        member x.Add2 (ed:RtUnique) (rt:NjUnique) =
-            x.NjDic.TryAdd(rt.Guid, rt) |> ignore
-            x.RtDic.TryAdd(ed.Guid, ed) |> ignore
+        member x.Add2 (ed:RtUnique) (nj:NjUnique) = x.Add ed; x.Add nj
 
     let mutable fwdOnNsJsonSerializing:  Nj2RtBag->INjObject option->INjObject->unit = let dummy (bag:Nj2RtBag) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
     let mutable fwdOnNsJsonDeserialized: Nj2RtBag->INjObject option->INjObject->unit = let dummy (bag:Nj2RtBag) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
@@ -238,7 +236,7 @@ module rec NewtonsoftJsonObjects =
         member val Value      = nullString with get, set
         member val ValueType  = DbDataType.None.ToString() with get, set
         static member FromDs(ds:RtApiCall) =
-            NjApiCall(ApiDef=ds.ApiDef.Guid, InAddress=ds.InAddress, OutAddress=ds.OutAddress,
+            NjApiCall(ApiDef=ds.ApiDefGuid, InAddress=ds.InAddress, OutAddress=ds.OutAddress,
                 InSymbol=ds.InSymbol, OutSymbol=ds.OutSymbol,
                 Value=ds.Value, ValueType=ds.ValueType.ToString() )
             |> toNjUniqINGD ds
@@ -404,18 +402,15 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjCall as call ->
             let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
-            let apiCalls = call.ApiCalls |-> (fun z -> bag.RtDic[z] :?> RtApiCall)
-
             call.DsObject <-
-                RtCall(callType, apiCalls, call.AutoPre, call.Safety, n2o call.Timeout)
+                RtCall(callType, call.ApiCalls, call.AutoPre, call.Safety, n2o call.Timeout)
                 |> fromNjUniqINGD call |> tee (fun z -> bag.Add2 z call)
             ()
 
         | :? NjApiCall as ac ->
-            let rtApiDef = bag.RtDic[ac.ApiDef] :?> RtApiDef
             let valueType = ac.ValueType |> Enum.TryParse<DbDataType> |> tryParseToOption |? DbDataType.None
             ac.DsObject <-
-                RtApiCall(rtApiDef, ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, valueType, ac.Value)
+                RtApiCall(ac.ApiDef, ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, valueType, ac.Value)
                 |> fromNjUniqINGD ac |> tee (fun z -> bag.Add2 z ac)
 
         | :? NjApiDef as ad ->

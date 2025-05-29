@@ -28,8 +28,8 @@ module DsObjectUtilsModule =
 
     type RtCall with
         static member Create(callType:DbCallType, apiCalls:RtApiCall seq, autoPre:string, safety:string, timeout:int option) =
-            let apiCalls = apiCalls |> toList
-            RtCall(callType, apiCalls, autoPre, safety, timeout)
+            let apiCallGuids = apiCalls |-> _.Guid
+            RtCall(callType, apiCallGuids, autoPre, safety, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
@@ -72,31 +72,6 @@ module DsObjectUtilsModule =
             | _ -> failwith "ERROR"
 
     type Unique with
-        member x.EnumerateDsObjects(?includeMe): Unique list =
-            seq {
-                let includeMe = includeMe |? true
-                if includeMe then
-                    yield x
-                match x with
-                | :? RtProject as prj ->
-                    yield! prj.Systems   >>= _.EnumerateDsObjects()
-                | :? RtSystem as sys ->
-                    yield! sys.Works     >>= _.EnumerateDsObjects()
-                    yield! sys.Flows     >>= _.EnumerateDsObjects()
-                    yield! sys.Arrows    >>= _.EnumerateDsObjects()
-                    yield! sys.ApiDefs   >>= _.EnumerateDsObjects()
-                    yield! sys.ApiCalls  >>= _.EnumerateDsObjects()
-                | :? RtWork as work ->
-                    yield! work.Calls    >>= _.EnumerateDsObjects()
-                    yield! work.Arrows   >>= _.EnumerateDsObjects()
-                | :? RtCall as call ->
-                    //yield! call.ApiCalls >>= _.EnumerateDsObjects()
-                    ()
-                | _ ->
-                    tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
-                    ()
-            } |> List.ofSeq
-
         member x.EnumerateAncestors(?includeMe): Unique list = [
             let includeMe = includeMe |? true
             if includeMe then
@@ -107,13 +82,40 @@ module DsObjectUtilsModule =
             | None -> ()
         ]
 
+
+    type RtUnique with
         /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
         member x.UpdateDateTime(?dateTime:DateTime) =
             let dateTime = dateTime |?? now
-            x.EnumerateDsObjects() |> iter (fun z -> z.DateTime <- dateTime)
+            x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
 
-        member x.Validate(guidDic:Dictionary<Guid, Unique>) =
+        member x.EnumerateRtObjects(?includeMe): RtUnique list =
+            seq {
+                let includeMe = includeMe |? true
+                if includeMe then
+                    yield x
+                match x with
+                | :? RtProject as prj ->
+                    yield! prj.Systems   >>= _.EnumerateRtObjects()
+                | :? RtSystem as sys ->
+                    yield! sys.Works     >>= _.EnumerateRtObjects()
+                    yield! sys.Flows     >>= _.EnumerateRtObjects()
+                    yield! sys.Arrows    >>= _.EnumerateRtObjects()
+                    yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
+                    yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
+                | :? RtWork as work ->
+                    yield! work.Calls    >>= _.EnumerateRtObjects()
+                    yield! work.Arrows   >>= _.EnumerateRtObjects()
+                | :? RtCall as call ->
+                    //yield! call.ApiCalls >>= _.EnumerateRtObjects()
+                    ()
+                | _ ->
+                    tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
+                    ()
+            } |> List.ofSeq
+
+        member x.Validate(guidDic:Dictionary<Guid, RtUnique>) =
             verify (x.Guid <> emptyGuid)
             verify (x.DateTime <> minDate)
             match x with
@@ -131,6 +133,8 @@ module DsObjectUtilsModule =
                     verify (w.RawParent.Value.Guid = sys.Guid)
                     for c in w.Calls do
                         c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
+                        for ac in c.ApiCalls do
+                            ac.ApiDef.Guid = ac.ApiDefGuid |> verify
 
                 sys.Arrows |> iter _.Validate(guidDic)
                 for a in sys.Arrows do

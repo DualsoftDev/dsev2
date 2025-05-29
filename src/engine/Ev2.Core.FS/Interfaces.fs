@@ -95,6 +95,7 @@ module rec DsObjectModule =
         inherit RtUnique()
 
         interface IParameterContainer
+        interface IRtSystem
         member val Flows = flows |> toList
         member val Works = works |> toList
         member val Arrows = arrows |> toList
@@ -115,7 +116,7 @@ module rec DsObjectModule =
     type RtFlow() =
         inherit RtUnique()
 
-        interface IDsFlow
+        interface IRtFlow
         member x.System = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
         member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
@@ -126,7 +127,7 @@ module rec DsObjectModule =
             calls  |> iter (fun z -> z.RawParent <- Some this)
             arrows |> iter (fun z -> z.RawParent <- Some this)
 
-        interface IDsWork
+        interface IRtWork
         member val Calls = calls |> toList
         member val Arrows = arrows |> toList
         member x.OptFlow = optFlow
@@ -134,32 +135,39 @@ module rec DsObjectModule =
 
 
     // see static member Create
-    type RtCall(callType:DbCallType, apiCalls:RtApiCall seq, autoPre:string, safety:string, timeout:int option) =
+    type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, timeout:int option) =
         inherit RtUnique()
-        interface IDsCall
+        interface IRtCall
         member x.Work = x.RawParent |-> (fun z -> z :?> RtWork) |?? (fun () -> getNull<RtWork>())
         member val CallType = callType
-        member val ApiCalls = apiCalls |> toList    // DB 저장시에는 callId 로 저장
+        member val ApiCallGuids = apiCallGuids |> toList    // DB 저장시에는 callId 로 저장
         member val AutoPre = autoPre
         member val Safety = safety
         member val Timeout = timeout with get, set
+        member x.ApiCalls =
+            let sys = (x.RawParent >>= _.RawParent).Value :?> RtSystem
+            sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
 
 
 
-    type RtApiCall(apiDef:RtApiDef, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
+
+    type RtApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
         inherit RtUnique()
-        interface IDsApiCall
-        member val ApiDef     = apiDef
+        interface IRtApiCall
+        member val ApiDefGuid = apiDefGuid
         member val InAddress  = inAddress
         member val OutAddress = outAddress
         member val InSymbol   = inSymbol
         member val OutSymbol  = outSymbol
         member val ValueType  = valueType
         member val Value      = value
+        member x.ApiDef =
+            let sys = x.RawParent.Value :?> RtSystem
+            sys.ApiDefs |> find (fun ad -> ad.Guid = x.ApiDefGuid )
 
     type RtApiDef(isPush:bool) =
         inherit RtUnique()
-        interface IDsApiDef
+        interface IRtApiDef
         member val IsPush = isPush
 
 

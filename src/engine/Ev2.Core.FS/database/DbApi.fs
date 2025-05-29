@@ -17,11 +17,9 @@ module DbApiModule =
     type Db2RtBag() =
         member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
         member val RtDic = Dictionary<Guid, RtUnique>()
-        member x.Add(u:ORMUnique) = x.DbDic.Add(u.Guid, u)
-        member x.Add(u:RtUnique) = x.RtDic.Add(u.Guid, u)
-        member x.Add2 (db:ORMUnique) (rt:RtUnique) =
-            x.RtDic.TryAdd(rt.Guid, rt) |> ignore
-            x.DbDic.TryAdd(db.Guid, db) |> ignore
+        member x.Add(u:ORMUnique) = x.DbDic.TryAdd(u.Guid, u) |> ignore
+        member x.Add(u:RtUnique)  = x.RtDic.TryAdd(u.Guid, u) |> ignore
+        member x.Add2 (db:ORMUnique) (rt:RtUnique) = x.Add db; x.Add rt
 
 
     /// 공용 캐시 초기화 함수
@@ -206,7 +204,7 @@ module ORMTypeConversionModule =
         //type RtApiCall(inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
 
                 let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType) |? int DbDataType.None
-                let apiDefId = z.ApiDef.Id |? -1
+                let apiDefId = guidDic[z.ApiDefGuid].Id.Value
                 ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, z.Value) |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

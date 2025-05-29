@@ -38,6 +38,7 @@ module rec EditableDsObjects =
 
         member val ActiveSystems = ResizeArray<EdSystem>()
         member val PassiveSystems = ResizeArray<EdSystem>()
+        member x.Systems = (x.ActiveSystems @ x.PassiveSystems) |> toList
 
         member x.Fix() =
             x.ActiveSystems @ x.PassiveSystems |> iter (fun sys -> sys.RawParent <- Some x; sys.Fix())
@@ -102,27 +103,42 @@ module rec EditableDsObjects =
     type EdCall() =
         inherit EdUnique()
         interface IEdCall
-        member val ApiCalls = ResizeArray<EdApiCall>()
+        member val ApiCallGuids = ResizeArray<Guid>()
         member val CallType = DbCallType.Normal with get, set
         member val AutoPre  = nullString with get, set
         member val Safety   = nullString with get, set
         member val Timeout  = Option<int>.None with get, set
+        member x.ApiCalls =
+            let sys = (x.RawParent >>= _.RawParent).Value :?> EdSystem
+            sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
+
+        member x.AddApiCalls(apiCalls:EdApiCall seq) =
+            x.UpdateDateTime()
+            apiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
+
         member x.Fix() =
             x.UpdateDateTime()
             x.ApiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
             ()
 
 
-    type EdApiCall(apiDef:EdApiDef) =
+    type EdApiCall(apiDefGuid:Guid) =
         inherit EdUnique()
         member x.Call = x.RawParent |-> (fun z -> z :?> EdCall) |?? (fun () -> getNull<EdCall>())
-        member val ApiDef     = apiDef with get, set
+        member val ApiDefGuid = apiDefGuid with get, set
         member val InAddress  = nullString with get, set
         member val OutAddress = nullString with get, set
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
         member val ValueType  = DbDataType.None with get, set
         member val Value = nullString with get, set
+        member x.ApiDef
+            with get() =
+                let sys = x.RawParent.Value :?> EdSystem
+                sys.ApiDefs |> find (fun ad -> ad.Guid = x.ApiDefGuid )
+            and set (v:EdApiDef) = x.ApiDefGuid <- v.Guid
+
         member x.Fix() =
             x.UpdateDateTime()
             ()
@@ -158,16 +174,105 @@ module rec EditableDsObjects =
         member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 
-[<AutoOpen>]
-module Ed2DsModule =
+//[<AutoOpen>]
+//module Ed2DsModule =
+    type EdUnique with
+        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        member x.UpdateDateTime(?dateTime:DateTime) =
+            let dateTime = dateTime |?? now
+            x.EnumerateEdObjects() |> iter (fun z -> z.DateTime <- dateTime)
+
+        member x.EnumerateEdObjects(?includeMe): EdUnique list =
+            seq {
+                let includeMe = includeMe |? true
+                if includeMe then
+                    yield x
+                match x with
+                | :? EdProject as prj ->
+                    yield! (prj.ActiveSystems @ prj.PassiveSystems)   >>= _.EnumerateEdObjects()
+                | :? EdSystem as sys ->
+                    yield! sys.Works     >>= _.EnumerateEdObjects()
+                    yield! sys.Flows     >>= _.EnumerateEdObjects()
+                    yield! sys.Arrows    >>= _.EnumerateEdObjects()
+                    yield! sys.ApiDefs   >>= _.EnumerateEdObjects()
+                    yield! sys.ApiCalls  >>= _.EnumerateEdObjects()
+                | :? EdWork as work ->
+                    yield! work.Calls    >>= _.EnumerateEdObjects()
+                    yield! work.Arrows   >>= _.EnumerateEdObjects()
+                | :? EdCall as call ->
+                    //yield! call.ApiCalls >>= _.EnumerateEdObjects()
+                    ()
+                | _ ->
+                    tracefn $"Skipping {(x.GetType())} in EnumerateEdObjects"
+                    ()
+            } |> List.ofSeq
+        member x.Validate(guidDic:Dictionary<Guid, EdUnique>) =
+            verify (x.Guid <> emptyGuid)
+            verify (x.DateTime <> minDate)
+            match x with
+            | :? EdProject | :? EdSystem | :? EdFlow  | :? EdWork  | :? EdCall -> verify (x.Name.NonNullAny())
+            | _ -> ()
+
+            match x with
+            | :? EdProject as prj ->
+                prj.Systems |> iter _.Validate(guidDic)
+                for s in prj.Systems do
+                    verify (s.RawParent.Value.Guid = prj.Guid)
+            | :? EdSystem as sys ->
+                sys.Works |> iter _.Validate(guidDic)
+                for w in sys.Works  do
+                    verify (w.RawParent.Value.Guid = sys.Guid)
+                    for c in w.Calls do
+                        c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
+                        for ac in c.ApiCalls do
+                            ac.ApiDef.Guid = ac.ApiDefGuid |> verify
+
+                sys.Arrows |> iter _.Validate(guidDic)
+                for a in sys.Arrows do
+                    verify (a.RawParent.Value.Guid = sys.Guid)
+                    sys.Works |> contains a.Source |> verify
+                    sys.Works |> contains a.Target |> verify
+
+                sys.ApiDefs |> iter _.Validate(guidDic)
+                for w in sys.ApiDefs  do
+                    verify (w.RawParent.Value.Guid = sys.Guid)
+
+                sys.ApiCalls |> iter _.Validate(guidDic)
+                for ac in sys.ApiCalls  do
+                    verify (ac.RawParent.Value.Guid = sys.Guid)
+
+            | :? EdFlow as flow ->
+                let works = flow.Works
+                works |> iter _.Validate(guidDic)
+                for w in works  do
+                    verify (w.OptOwnerFlow = Some flow)
+
+
+            | :? EdWork as work ->
+                work.Calls |> iter _.Validate(guidDic)
+                for c in work.Calls do
+                    verify (c.RawParent.Value.Guid = work.Guid)
+
+                work.Arrows |> iter _.Validate(guidDic)
+                for a in work.Arrows do
+                    verify (a.RawParent.Value.Guid = work.Guid)
+                    work.Calls |> contains a.Source |> verify
+                    work.Calls |> contains a.Target |> verify
+
+
+            | :? EdCall as call ->
+                ()
+            | _ ->
+                tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
+                ()
+
+
     type Ed2RtBag() =
         member val EdDic = Dictionary<Guid, EdUnique>()
         member val RtDic = Dictionary<Guid, RtUnique>()
-        member x.Add(u:EdUnique) = x.EdDic.Add(u.Guid, u)
-        member x.Add(u:RtUnique) = x.RtDic.Add(u.Guid, u)
-        member x.Add2 (ed:EdUnique) (rt:RtUnique) =
-            x.RtDic.TryAdd(rt.Guid, rt) |> ignore
-            x.EdDic.TryAdd(ed.Guid, ed) |> ignore
+        member x.Add(u:EdUnique) = x.EdDic.TryAdd(u.Guid, u) |> ignore
+        member x.Add(u:RtUnique) = x.RtDic.TryAdd(u.Guid, u) |> ignore
+        member x.Add2 (ed:EdUnique) (rt:RtUnique) = x.Add ed; x.Add rt
         member x.AddRE (rt:RtUnique) (ed:EdUnique) = x.Add2 ed rt
 
     type EdFlow with
@@ -181,24 +286,15 @@ module Ed2DsModule =
 
     type EdCall with
         member x.ToRtCall(bag:Ed2RtBag) =
-            let rtApiCalls =
-                noop()
-                x.ApiCalls
-                |-> (fun (a:EdApiCall) -> bag.RtDic[a.Guid] :?> RtApiCall)
-
-            RtCall(x.CallType, rtApiCalls, x.AutoPre, x.Safety, x.Timeout)
+            RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.Timeout)
             |> uniqINGD_fromObj x
             |> tee (bag.Add2 x)
 
     type RtCall with
         member x.ToEdCall(bag:Ed2RtBag) =
-            let edApiCalls =
-                noop()
-                x.ApiCalls
-                |-> (fun (a:RtApiCall) -> bag.EdDic[a.Guid] :?> EdApiCall)
-
+            let apiCallGuids = x.ApiCalls |-> _.Guid
             EdCall(CallType=x.CallType, AutoPre=x.AutoPre, Safety=x.Safety, Timeout=x.Timeout)
-            |> tee(fun z -> edApiCalls |> z.ApiCalls.AddRange)
+            |> tee(fun z -> apiCallGuids |> z.ApiCallGuids.AddRange)
             |> uniqINGD_fromObj x
             |> tee (bag.AddRE x)
 
@@ -272,8 +368,7 @@ module Ed2DsModule =
             let apiCalls =
                 x.ApiCalls
                 |-> (fun z ->
-                        let rtApiDef = bag.RtDic[z.ApiDef.Guid] :?> RtApiDef
-                        RtApiCall(rtApiDef, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, z.ValueType, z.Value)
+                        RtApiCall(z.ApiDefGuid, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, z.ValueType, z.Value)
                         |> uniqINGD_fromObj z |> tee (bag.Add2 z))
                 |> toArray
 
@@ -328,8 +423,7 @@ module Ed2DsModule =
             let apiCalls =
                 x.ApiCalls
                 |-> (fun z ->
-                        let edApiDef = bag.EdDic[z.ApiDef.Guid] :?> EdApiDef
-                        EdApiCall(edApiDef, InAddress=z.InAddress, OutAddress=z.OutAddress, InSymbol=z.InSymbol, OutSymbol=z.OutSymbol, ValueType=z.ValueType, Value=z.Value)
+                        EdApiCall(z.ApiDefGuid, InAddress=z.InAddress, OutAddress=z.OutAddress, InSymbol=z.InSymbol, OutSymbol=z.OutSymbol, ValueType=z.ValueType, Value=z.Value)
                         |> uniqINGD_fromObj z |> tee (bag.AddRE z))
                 |> toArray
 

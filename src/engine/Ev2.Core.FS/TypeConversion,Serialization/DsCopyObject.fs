@@ -90,21 +90,16 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             EdCall(CallType=x.CallType, AutoPre=x.AutoPre, Safety=x.Safety, Timeout=x.Timeout)
-            //|> tee(fun z -> x.ApiCalls |> z.ApiCalls.AddRange )
             |> tee(fun z ->
-                let newApiCalls = x.ApiCalls |> toArray |-> _.Guid |-> (fun y -> bag.Newbies[y] :?> EdApiCall) |> toList
-                z.ApiCalls.Clear()
-                newApiCalls |> z.ApiCalls.AddRange )
-
-
+                z.ApiCallGuids.Clear()
+                x.ApiCallGuids |> z.ApiCallGuids.AddRange )
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type EdApiCall with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            //EdApiCall(x.ApiDef, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueType, x.Value) |> uniqNGD (nn x.Name) guid x.DateTime
-            EdApiCall(x.ApiDef, InAddress=x.InAddress, OutAddress=x.OutAddress, InSymbol=x.InSymbol, OutSymbol=x.OutSymbol, ValueType=x.ValueType, Value=x.Value)
+            EdApiCall(x.ApiDefGuid, InAddress=x.InAddress, OutAddress=x.OutAddress, InSymbol=x.InSymbol, OutSymbol=x.OutSymbol, ValueType=x.ValueType, Value=x.Value)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -146,9 +141,10 @@ module DsObjectCopyAPIModule =
 
         /// Id, Guid 및 DateTime 은 새로이 생성
         member x.Duplicate() =
-            let oldGuidDic = x.EnumerateDsObjects().ToDictionary(_.Guid, id)
+            let xxx = x
+            let oldGuidDic = x.EnumerateEdObjects().ToDictionary(_.Guid, id)
             let replica = x.Replicate()
-            let objs = replica.EnumerateDsObjects()
+            let objs = replica.EnumerateEdObjects()
             let guidDic = objs.ToDictionary( (fun obj -> obj.Guid), (fun _ -> newGuid()))
             let current = now()
 
@@ -159,10 +155,10 @@ module DsObjectCopyAPIModule =
                 obj.DateTime <- current)
 
             for c in replica.Works >>= _.Calls do
-                let newGuids = c.ApiCalls |-> _.Guid |-> (fun g -> guidDic[g]) |> toList
-                let newApiCalls = newGuids |-> (fun g -> objs |> find(fun z -> z.Guid = g) :?> EdApiCall)
-                c.ApiCalls.Clear()
-                c.ApiCalls.AddRange newApiCalls
+                noop()
+                let newGuids = c.ApiCallGuids |-> (fun g -> guidDic[g]) |> toList
+                c.ApiCallGuids.Clear()
+                c.ApiCallGuids.AddRange newGuids
                 ()
 
             // 삭제 요망: debug only
@@ -197,6 +193,17 @@ module DsObjectCopyAPIModule =
             |> uniqName (nn x.Name)
             |> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
 
+    let validateRuntime (rtObj:#RtUnique): #RtUnique =
+        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
+        rtObj.Validate(guidDic)
+        rtObj
+
+    let validateEditable (edObj:#EdUnique): #EdUnique =
+        let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
+        edObj.Validate(guidDic)
+        edObj
+
+
     type RtProject with
         member x.Replicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
             let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
@@ -204,7 +211,12 @@ module DsObjectCopyAPIModule =
             let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.ToEdSystem().Replicate() |> toArray
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.ToEdSystem().Replicate() |> toArray
 
-            x.ToEdProject().Replicate(actives, passives).ToRtProject()
+            x.ToEdProject() |> validateEditable
+            |> tee(fun ep ->
+                (actives @ passives) |> iter (fun s -> s.RawParent <- Some ep)
+                )
+            |> _.Replicate(actives, passives) |> validateEditable
+            |> _.ToRtProject() |> validateRuntime
 
 
         member x.Duplicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
@@ -213,17 +225,16 @@ module DsObjectCopyAPIModule =
             let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.ToEdSystem().Duplicate() |> toArray
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.ToEdSystem().Duplicate() |> toArray
 
-            x.ToEdProject().Duplicate(actives, passives).ToRtProject()
+            x.ToEdProject() |> validateEditable
+            |> _.Duplicate(actives, passives)  |> validateEditable
+            |> _.ToRtProject() |> validateRuntime
 
 
-    let validate (rtObj:#Unique) =
-        let guidDic = rtObj.EnumerateDsObjects().ToDictionary(_.Guid, id)
-        rtObj.Validate(guidDic)
 
     type RtSystem with
         member x.Replicate() = x.ToEdSystem().Replicate().ToRtSystem(Ed2RtBag())
         //member x.Duplicate() = x.ToEdSystem().Duplicate().ToRtSystem(Ed2RtBag())
         member x.Duplicate() =
-            x.ToEdSystem() |> tee validate
-            |> _.Duplicate() |> tee validate
-            |> _.ToRtSystem(Ed2RtBag())|> tee validate
+            x.ToEdSystem() |> validateEditable
+            |> _.Duplicate() |> validateEditable
+            |> _.ToRtSystem(Ed2RtBag())|> validateRuntime
