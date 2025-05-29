@@ -78,17 +78,18 @@ module DsObjectUtilsModule =
                     yield x
                 match x with
                 | :? RtProject as prj ->
-                    yield! prj.Systems >>= _.EnumerateDsObjects()
+                    yield! prj.Systems   >>= _.EnumerateDsObjects()
                 | :? RtSystem as sys ->
-                    yield! sys.Works   >>= _.EnumerateDsObjects()
-                    yield! sys.Flows   >>= _.EnumerateDsObjects()
-                    yield! sys.Arrows  >>= _.EnumerateDsObjects()
-                    yield! sys.ApiDefs >>= _.EnumerateDsObjects()
+                    yield! sys.Works     >>= _.EnumerateDsObjects()
+                    yield! sys.Flows     >>= _.EnumerateDsObjects()
+                    yield! sys.Arrows    >>= _.EnumerateDsObjects()
+                    yield! sys.ApiDefs   >>= _.EnumerateDsObjects()
+                    yield! sys.ApiCalls  >>= _.EnumerateDsObjects()
                 | :? RtWork as work ->
-                    yield! work.Calls  >>= _.EnumerateDsObjects()
-                    yield! work.Arrows >>= _.EnumerateDsObjects()
+                    yield! work.Calls    >>= _.EnumerateDsObjects()
+                    yield! work.Arrows   >>= _.EnumerateDsObjects()
                 | :? RtCall as call ->
-                    yield! call.ApiCalls >>= _.EnumerateDsObjects()
+                    //yield! call.ApiCalls >>= _.EnumerateDsObjects()
                     ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"

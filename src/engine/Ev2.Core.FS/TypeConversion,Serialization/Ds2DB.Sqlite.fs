@@ -23,19 +23,17 @@ module internal Ds2SqliteImpl =
     let idUpdator (targets:IUnique seq) (id:int)=
         for t in targets do
             match t with
-            | :? ORMArrowBase        as a -> a.Id <- Nullable id
-            | :? ORMApiDef           as a -> a.Id <- Nullable id
-            | :? RtArrowBetweenCalls as a -> a.Id <- Some id
-            | :? RtArrowBetweenWorks as a -> a.Id <- Some id
-            | :? RtApiDef            as a -> a.Id <- Some id
+            | :? ORMUnique as a -> a.Id <- Nullable id
+            | :? RtUnique  as a -> a.Id <- Some id
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
-    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, IORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
+    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
-        let sysId = conn.Insert($"""INSERT INTO {Tn.System} (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid, prototype)
+        let sysId = conn.Insert($"""INSERT INTO {Tn.System}
+                        (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid, prototype)
                         VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @Prototype);""", ormSystem, tr)
         s.Id <- Some sysId
-        (cache[s.Guid] :?> ORMUnique).Id <- sysId
+        cache[s.Guid].Id <- sysId
 
         match optProject with
         | Some proj ->
@@ -120,8 +118,12 @@ module internal Ds2SqliteImpl =
         for a in s.ApiCalls do
             let ormApiCall = a.ToORM<ORMApiCall>(dbApi, cache)
             ormApiCall.SystemId <- sysId
-            let r = conn.Upsert(Tn.ApiCall, ormApiCall, ["Id"; "Guid"; "DateTime"; "Name"; "SystemId"; "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol"; "ValueTypeId"; "Value"], onInserted=idUpdator [ormApiCall; a;])
-            ()
+            let r = conn.Upsert(Tn.ApiCall, ormApiCall,
+                        [   "Id"; "Guid"; "DateTime"; "Name"
+                            "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
+                            "InSymbol"; "OutSymbol"; "ValueTypeId"; "Value"], onInserted=idUpdator [ormApiCall; a;])
+            let xxx = r
+            noop()
 
 
     /// DsProject 을 sqlite database 에 저장

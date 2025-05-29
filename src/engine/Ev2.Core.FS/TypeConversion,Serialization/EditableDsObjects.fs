@@ -140,22 +140,35 @@ module rec EditableDsObjects =
 
 
     type EdArrowBetweenCalls(source:EdCall, target:EdCall, typ:DbArrowType) =
-        inherit Arrow<EdCall>(source, target, typ)
+        inherit EdUnique()
+        let arrow = Arrow<EdCall>(source, target, typ)
+
+        interface IEdUnique
         interface IEdArrow
+        member x.Source with get() = arrow.Source and set v = arrow.Source <- v
+        member x.Target with get() = arrow.Target and set v = arrow.Target <- v
+        member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
+
 
     type EdArrowBetweenWorks(source:EdWork, target:EdWork, typ:DbArrowType) =
-        inherit Arrow<EdWork>(source, target, typ)
+        inherit EdUnique()
+        let arrow = Arrow<EdWork>(source, target, typ)
+
+        interface IEdUnique
         interface IEdArrow
+        member x.Source with get() = arrow.Source and set v = arrow.Source <- v
+        member x.Target with get() = arrow.Target and set v = arrow.Target <- v
+        member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 
 [<AutoOpen>]
 module Ed2DsModule =
     type Ed2RtBag() =
-        member val EdDic = Dictionary<Guid, IEdUnique>()
-        member val RtDic = Dictionary<Guid, IRtUnique>()
-        member x.Add(u:IEdUnique) = x.EdDic.Add(u.GetGuid(), u)
-        member x.Add(u:IRtUnique) = x.RtDic.Add(u.GetGuid(), u)
-        member x.Add2 (ed:IEdUnique) (rt:IRtUnique) =
+        member val EdDic = Dictionary<Guid, EdUnique>()
+        member val RtDic = Dictionary<Guid, RtUnique>()
+        member x.Add(u:EdUnique) = x.EdDic.Add(u.GetGuid(), u)
+        member x.Add(u:RtUnique) = x.RtDic.Add(u.GetGuid(), u)
+        member x.Add2 (ed:EdUnique) (rt:RtUnique) =
             x.RtDic.TryAdd(rt.GetGuid(), rt) |> ignore
             x.EdDic.TryAdd(ed.GetGuid(), ed) |> ignore
 

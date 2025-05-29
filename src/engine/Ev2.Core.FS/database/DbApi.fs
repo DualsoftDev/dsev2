@@ -145,14 +145,14 @@ module ORMTypeConversionModule =
 
 
     type ORMCall with
-        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType, autoPre:string, safety:string, timeout:Nullable<int>): IORMUnique =
+        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType, autoPre:string, safety:string, timeout:Nullable<int>): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
             ORMCall(workId, callTypeId, autoPre, safety, timeout)
 
 
     let o2n = Option.toNullable
-    let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, IORMUnique>) (x:IDsObject) =
-        let ormUniqINGDP (src:#Unique) (dst:#IORMUnique): IORMUnique = toOrmUniqINGDP src dst :> IORMUnique
+    let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
+        let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
 
         match x |> tryCast<Unique> with
         | Some uniq ->
@@ -193,7 +193,8 @@ module ORMTypeConversionModule =
         //type RtApiCall(inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
 
                 let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType) |? int DbDataType.None
-                ORMApiCall (pid, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, z.Value) |> ormUniqINGDP z
+                let apiDefId = z.ApiDef.Id |? -1
+                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, z.Value) |> ormUniqINGDP z
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
@@ -205,17 +206,17 @@ module ORMTypeConversionModule =
 
     type IDsObject with
         /// DS object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g DsProject -> ORMProject
-        member x.ToORM<'T when 'T :> IORMUnique>(dbApi:DbApi, guidDic:Dictionary<Guid, IORMUnique>) = ds2Orm dbApi guidDic x :?> 'T
+        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:DbApi, guidDic:Dictionary<Guid, ORMUnique>) = ds2Orm dbApi guidDic x :?> 'T
 
     type RtProject with
         /// DsProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
-        member x.ToORM(dbApi:DbApi): Dictionary<Guid, IORMUnique> * ORMProject =
-            let guidDic = Dictionary<Guid, IORMUnique>()
+        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUnique> * ORMProject =
+            let guidDic = Dictionary<Guid, ORMUnique>()
             guidDic, ds2Orm dbApi guidDic x :?> ORMProject
 
     type RtSystem with
         /// DsSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
-        member x.ToORM(dbApi:DbApi): Dictionary<Guid, IORMUnique> * ORMSystem =
-            let guidDic = Dictionary<Guid, IORMUnique>()
+        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUnique> * ORMSystem =
+            let guidDic = Dictionary<Guid, ORMUnique>()
             guidDic, ds2Orm dbApi guidDic x :?> ORMSystem
 

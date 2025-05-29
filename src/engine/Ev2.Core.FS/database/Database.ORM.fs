@@ -50,18 +50,14 @@ module ORMTypesModule =
         dst
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
-    let toOrmUniqINGDP (src:#Unique) (dst:#IORMUnique): #IORMUnique =
-        match box dst with
-        | :? ORMUnique as d ->
-            d.Id <- o2n src.Id
-            d.Name <- src.Name
-            d.Guid <- guid2str src.Guid
-            d.DateTime <- src.DateTime
-            let pid = src.RawParent >>= _.Id
-            d.ParentId <- o2n pid
-            dst
-        | _ ->
-            failwithf "Check me!!: %A is not ORMUnique" (dst.GetType())
+    let toOrmUniqINGDP (src:#Unique) (dst:#ORMUnique): #ORMUnique =
+        dst.Id <- o2n src.Id
+        dst.Name <- src.Name
+        dst.Guid <- guid2str src.Guid
+        dst.DateTime <- src.DateTime
+        let pid = src.RawParent >>= _.Id
+        dst.ParentId <- o2n pid
+        dst
 
 
 
@@ -146,12 +142,13 @@ module ORMTypesModule =
         member val IsActive = isActive with get, set
 
     //type ORMApiCall(systemId:Id) =
-    type ORMApiCall(systemId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueTypeId:Id, value:string) =
+    type ORMApiCall(systemId:Id, apiDefId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueTypeId:Id, value:string) =
         inherit ORMUnique(ParentId=systemId)
 
-        new() = ORMApiCall(-1, nullString, nullString, nullString, nullString, -1, nullString)
+        new() = ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, -1, nullString)
         interface IORMApiCall
         member val SystemId = systemId with get, set
+        member val ApiDefId = apiDefId with get, set
 
         member val InAddress  = inAddress   with get, set
         member val OutAddress = outAddress  with get, set

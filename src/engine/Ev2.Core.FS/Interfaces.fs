@@ -9,21 +9,22 @@ open Dual.Common.Core.FS
 module DsRuntimeObjectInterfaceModule =
     /// Runtime 객체 인터페이스
     type IRtObject  = interface end
-    type IRtParameter = inherit IParameter
-    type IRtParameterContainer = inherit IParameterContainer
-    type IRtArrow     = inherit IArrow
-
     /// Guid, Name, DateTime
     type IRtUnique    = inherit IRtObject inherit IUnique
 
+    type IRtParameter = inherit IRtUnique inherit IParameter
+    type IRtParameterContainer = inherit IRtUnique inherit IParameterContainer
 
-    type IRtProject = inherit IRtObject inherit IDsProject
-    type IRtSystem  = inherit IRtObject inherit IDsSystem
-    type IRtFlow    = inherit IRtObject inherit IDsFlow
-    type IRtWork    = inherit IRtObject inherit IDsWork
-    type IRtCall    = inherit IRtObject inherit IDsCall
-    type IRtApiCall = inherit IRtObject inherit IDsApiCall
-    type IRtApiDef  = inherit IRtObject inherit IDsApiDef
+    type IRtArrow     = inherit IRtUnique inherit IArrow
+
+
+    type IRtProject = inherit IRtUnique inherit IDsProject
+    type IRtSystem  = inherit IRtUnique inherit IDsSystem
+    type IRtFlow    = inherit IRtUnique inherit IDsFlow
+    type IRtWork    = inherit IRtUnique inherit IDsWork
+    type IRtCall    = inherit IRtUnique inherit IDsCall
+    type IRtApiCall = inherit IRtUnique inherit IDsApiCall
+    type IRtApiDef  = inherit IRtUnique inherit IDsApiDef
 
 
 [<AutoOpen>]
@@ -37,26 +38,32 @@ module rec DsObjectModule =
         member x.GetGuid() = (x :?> RtUnique).Guid
 
 
-    [<AbstractClass>]
-    type Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) =
-        inherit Unique()
-
-        interface IArrow
+    type internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) =
         member val Source = source with get, set
         member val Target = target with get, set
         member val Type = typ with get, set
 
     /// Call 간 화살표 연결.  Work 내에 존재
     type RtArrowBetweenCalls(source:RtCall, target:RtCall, typ:DbArrowType) =
-        inherit Arrow<RtCall>(source, target, typ)
+        inherit RtUnique()
+        let arrow = Arrow<RtCall>(source, target, typ)
+
         interface IRtUnique
-        interface IRtApiCall
+        interface IRtArrow
+        member x.Source with get() = arrow.Source and set v = arrow.Source <- v
+        member x.Target with get() = arrow.Target and set v = arrow.Target <- v
+        member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
     /// Work 간 화살표 연결.  System 이나 Flow 내에 존재
     type RtArrowBetweenWorks(source:RtWork, target:RtWork, typ:DbArrowType) =
-        inherit Arrow<RtWork>(source, target, typ)
+        inherit RtUnique()
+        let arrow = Arrow<RtWork>(source, target, typ)
+
         interface IRtUnique
-        interface IRtApiCall
+        interface IRtArrow
+        member x.Source with get() = arrow.Source and set v = arrow.Source <- v
+        member x.Target with get() = arrow.Target and set v = arrow.Target <- v
+        member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 
     type RtProject(activeSystems:RtSystem[], passiveSystems:RtSystem[]) as this =
