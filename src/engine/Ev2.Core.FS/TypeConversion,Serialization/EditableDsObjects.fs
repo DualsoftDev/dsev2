@@ -20,10 +20,6 @@ module rec EditableDsObjects =
     type IEdApiDef  = inherit IEdUnique inherit IDsApiDef
     type IEdArrow   = inherit IEdUnique inherit IArrow
 
-    type IEdUnique with
-        member x.GetGuid() = (x :?> Unique).Guid
-
-
     type EdUnique() =
         inherit Unique()
         interface IEdUnique
@@ -166,11 +162,11 @@ module Ed2DsModule =
     type Ed2RtBag() =
         member val EdDic = Dictionary<Guid, EdUnique>()
         member val RtDic = Dictionary<Guid, RtUnique>()
-        member x.Add(u:EdUnique) = x.EdDic.Add(u.GetGuid(), u)
-        member x.Add(u:RtUnique) = x.RtDic.Add(u.GetGuid(), u)
+        member x.Add(u:EdUnique) = x.EdDic.Add(u.Guid, u)
+        member x.Add(u:RtUnique) = x.RtDic.Add(u.Guid, u)
         member x.Add2 (ed:EdUnique) (rt:RtUnique) =
-            x.RtDic.TryAdd(rt.GetGuid(), rt) |> ignore
-            x.EdDic.TryAdd(ed.GetGuid(), ed) |> ignore
+            x.RtDic.TryAdd(rt.Guid, rt) |> ignore
+            x.EdDic.TryAdd(ed.Guid, ed) |> ignore
 
     type EdFlow with
         member x.ToDsFlow(bag:Ed2RtBag) =

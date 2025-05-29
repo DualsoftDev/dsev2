@@ -137,8 +137,8 @@ module SchemaTestModule =
 
         // call 삽입
         let callGuid = newGuid()
-        conn.Execute($"INSERT INTO {Tn.Call} (guid, name, workId, autoPre, safety) VALUES (@guid, @name, @workId, @AutoPre, @Safety)",
-                     dict ["guid", box callGuid; "name", box "Call1"; "workId", box workId]) |> ignore
+        conn.Execute($"INSERT INTO {Tn.Call} (guid, name, workId, autoPre, safety) VALUES (@Guid, @Name, @WorkId, @AutoPre, @Safety)",
+                    {| Guid=callGuid; Name="call1"; WorkId=workId; AutoPre="AutoPre"; Safety="Safety"|}) |> ignore
 
         // 확인: 총 system = 1, flow = 1, work = 2, call = 1
         let countSystem = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")

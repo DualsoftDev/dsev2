@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 open System.Data
+open System.Linq
 open System.Collections.Generic
 open Dapper
 
@@ -230,31 +231,38 @@ module internal Sqlite2DsImpl =
 
             for s in edSystems do
                 let edFlows = [
-                    for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                    for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr) do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
                         EdFlow(RawParent = Some s) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 edFlows |> s.Flows.AddRange
 
-                let edApiCalls = [
-                    for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id}", tr) do
-                        bag.DbDic.Add(orm.Guid, orm) |> ignore
-                        let edApiDef = bag.EdDic[s2guid orm.Guid] :?> EdApiDef
-                        EdApiCall(edApiDef) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
-                ]
-                edApiCalls |> s.ApiCalls.AddRange
-
                 let edApiDefs = [
-                    for orm in conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                    for orm in conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr) do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
                         EdApiDef(RawParent = Some s) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 s.ApiDefs.AddRange(edApiDefs)
 
+                let edApiCalls = [
+                    for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr) do
+                        bag.DbDic.Add(orm.Guid, orm) |> ignore
+
+                        (* orm.ApiDefId -> EdApiDef : DB 에 저장된 key 로 bag 을 뒤져서 EdApiDef 객체를 찾는다. *)
+                        let apiDefGuid =
+                            bag.DbDic.Values.OfType<ORMApiDef>()
+                            |> find(fun z -> z.Id = Nullable orm.ApiDefId)
+                            |> _.Guid
+
+                        let edApiDef = bag.EdDic[s2guid apiDefGuid] :?> EdApiDef
+                        EdApiCall(edApiDef) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                ]
+                edApiCalls |> s.ApiCalls.AddRange
+
 
 
                 let edWorks = [
-                    for orm in conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                    for orm in conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr) do
                         EdWork(RawParent = Some s) |> fromOrmUniqINGD orm
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
@@ -269,11 +277,6 @@ module internal Sqlite2DsImpl =
                         for orm in conn.Query<ORMCall>($"SELECT * FROM {Tn.Call} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
 
                             bag.DbDic.Add(orm.Guid, orm) |> ignore
-
-                            //let apiCalls = [
-                            //    for orm in conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE callId = {orm.Id}", tr) do
-                            //        EdApiCall() |> fromOrmUniqINGD orm
-                            //]
 
                             EdCall(RawParent = Some w) |> fromOrmUniqINGD orm
                             |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
