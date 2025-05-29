@@ -25,15 +25,13 @@ module internal rec DsObjectCopyImpl =
 #endif
 
     type EdProject with
-        member x.replicate(bag:ReplicateBag, additionalActiveSystems:EdSystem[], additionalPassiveSystems:EdSystem[]) =
+        member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            let activeSystems  = x.ActiveSystems  |-> _.replicate(bag)
-            let passiveSystems = x.PassiveSystems |-> _.replicate(bag)
-            let actives  = activeSystems  @ additionalActiveSystems  |> toArray
-            let passives = passiveSystems @ additionalPassiveSystems |> toArray
-            //EdProject(actives, passives) |> uniqNGD (nn x.Name) guid x.DateTime
+            let actives  = x.ActiveSystems  |-> _.replicate(bag) |> toArray
+            let passives = x.PassiveSystems |-> _.replicate(bag) |> toArray
             EdProject()
             |> tee(fun z ->
+                (actives @ passives) |> iter (fun (s:EdSystem) -> s.RawParent <- Some z)
                 actives  |> z.ActiveSystems.AddRange
                 passives |> z.PassiveSystems.AddRange )
             |> uniqNGD (nn x.Name) guid x.DateTime
@@ -131,6 +129,17 @@ module internal rec DsObjectCopyImpl =
 module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
 
+    let validateRuntime (rtObj:#RtUnique): #RtUnique =
+        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
+        rtObj.Validate(guidDic)
+        rtObj
+
+    let validateEditable (edObj:#EdUnique): #EdUnique =
+        let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
+        edObj.Validate(guidDic)
+        edObj
+
+
     type EdSystem with
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
@@ -143,7 +152,7 @@ module DsObjectCopyAPIModule =
         member x.Duplicate() =
             let xxx = x
             let oldGuidDic = x.EnumerateEdObjects().ToDictionary(_.Guid, id)
-            let replica = x.Replicate()
+            let replica = x.Replicate() |> validateEditable
             let objs = replica.EnumerateEdObjects()
             let guidDic = objs.ToDictionary( (fun obj -> obj.Guid), (fun _ -> newGuid()))
             let current = now()
@@ -154,12 +163,21 @@ module DsObjectCopyAPIModule =
                 obj.Guid <- guidDic[obj.Guid]
                 obj.DateTime <- current)
 
+            // [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
+            for ac in replica.ApiCalls do
+                let newGuid = guidDic[ac.ApiDefGuid]
+                ac.ApiDefGuid <- newGuid
+                ()
             for c in replica.Works >>= _.Calls do
                 noop()
+                // [Call 에서 APiCall Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
                 let newGuids = c.ApiCallGuids |-> (fun g -> guidDic[g]) |> toList
                 c.ApiCallGuids.Clear()
                 c.ApiCallGuids.AddRange newGuids
                 ()
+
+            noop()
+            replica |> validateEditable |> ignore
 
             // 삭제 요망: debug only
             // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
@@ -174,11 +192,7 @@ module DsObjectCopyAPIModule =
 
     type EdProject with
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
-        member x.Replicate(?additionalActiveSystems:EdSystem seq, ?additionalPassiveSystems:EdSystem seq) =
-            let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toArray
-            let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toArray
-            plusActiveSystems @ plusPassiveSystems |> iter (fun s -> s.RawParent <- Some x)
-            x.replicate(ReplicateBag(), plusActiveSystems, plusPassiveSystems)
+        member x.Replicate() = x.replicate(ReplicateBag())
 
         /// Guid 및 DateTime 은 새로이 생성
         member x.Duplicate(?additionalActiveSystems:EdSystem seq, ?additionalPassiveSystems:EdSystem seq) =
@@ -188,34 +202,17 @@ module DsObjectCopyAPIModule =
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.Duplicate() |> toArray
             EdProject()
             |> tee(fun z ->
+                (actives @ passives) |> iter (fun s -> s.RawParent <- Some z)
                 actives  |> z.ActiveSystems.AddRange
                 passives |> z.PassiveSystems.AddRange )
             |> uniqName (nn x.Name)
             |> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
 
-    let validateRuntime (rtObj:#RtUnique): #RtUnique =
-        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
-        rtObj.Validate(guidDic)
-        rtObj
-
-    let validateEditable (edObj:#EdUnique): #EdUnique =
-        let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
-        edObj.Validate(guidDic)
-        edObj
-
 
     type RtProject with
-        member x.Replicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
-            let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
-            let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
-            let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.ToEdSystem().Replicate() |> toArray
-            let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.ToEdSystem().Replicate() |> toArray
-
+        member x.Replicate() =
             x.ToEdProject() |> validateEditable
-            |> tee(fun ep ->
-                (actives @ passives) |> iter (fun s -> s.RawParent <- Some ep)
-                )
-            |> _.Replicate(actives, passives) |> validateEditable
+            |> _.Replicate() |> validateEditable
             |> _.ToRtProject() |> validateRuntime
 
 
@@ -226,6 +223,7 @@ module DsObjectCopyAPIModule =
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.ToEdSystem().Duplicate() |> toArray
 
             x.ToEdProject() |> validateEditable
+            |> tee (fun ep -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some ep))
             |> _.Duplicate(actives, passives)  |> validateEditable
             |> _.ToRtProject() |> validateRuntime
 
