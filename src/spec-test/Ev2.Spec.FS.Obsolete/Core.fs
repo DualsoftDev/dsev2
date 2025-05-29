@@ -1,4 +1,4 @@
-﻿namespace Dual.EV2.Core
+namespace Dual.EV2.Core
 
 open System
 open Dual.EV2.CoreParameter.Params
@@ -64,9 +64,10 @@ and ApiCall(name: string, parent: Call, target: ApiDef) =
     member val TargetApiDef = target with get, set
     member val Param: ApiCallParam = defaultApiCallParam with get, set
 
-and ApiCallUsage(name: string, parent: Call) =
+and ApiCallUsage(name: string, parent: Call, apiCall: ApiCall) =
     inherit Unique("ApiCallUsage", Guid.NewGuid(), DateTime.Now, parent = Some parent)
     member val Parent = parent with get, set
+    member val ApiCall = apiCall with get, set
 
 and Flow(name: string, parent: System) =
     inherit Unique(name, Guid.NewGuid(), DateTime.Now, parent = Some parent)

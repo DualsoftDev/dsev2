@@ -23,8 +23,8 @@ type ``RuntimeDB Tests`` () =
 
 
     [<Test>]
-    member _.``ÇÁ·ÎÁ§Æ®¸¦ SQLite DB·Î ÀúÀåÇÏ°í °ËÁõ`` () =
-        // »ùÇÃ ÇÁ·ÎÁ§Æ® ±¸¼º
+    member _.``í”„ë¡œì íŠ¸ë¥¼ SQLite DBë¡œ ì €ì¥í•˜ê³  ê²€ì¦`` () =
+        // ìƒ˜í”Œ í”„ë¡œì íŠ¸ êµ¬ì„±
         let project = Project("projSample")
         let system = System("sysSample", project)
         let flow = Flow("flow1", system)
@@ -57,7 +57,7 @@ type ``RuntimeDB Tests`` () =
 
         Assert.AreEqual(1, count "project")
         Assert.AreEqual(1, count "system")
-        Assert.AreEqual(1, count "projectSystemMap")
+        Assert.AreEqual(1, count "mapProject2System")
         Assert.AreEqual(1, count "work")
         Assert.AreEqual(1, count "call")
         Assert.AreEqual(1, count "apiCall")
