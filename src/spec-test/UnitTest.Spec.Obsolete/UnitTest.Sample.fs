@@ -19,24 +19,24 @@ type ``Sample Mapping Tests`` () =
         //cleanup [ "projB.json"; "projB_runtime.db"; "./aasx_projB/sys-003.aasx" ]
 
     [<Test>]
-    member _.``«¡∑Œ¡ß∆Æ∞° 2∞≥ ª˝º∫µ `` () =
+    member _.``ÌîÑÎ°úÏ†ùÌä∏Í∞Ä 2Í∞ú ÏÉùÏÑ±Îê®`` () =
         let projects = createProjectsFromMapping ()
         Assert.AreEqual(2, projects.Length)
 
     [<Test>]
-    member _.``projA¥¬ sys-001∞˙ sys-002∏¶ ∆˜«‘«‘`` () =
+    member _.``projAÎäî sys-001Í≥º sys-002Î•º Ìè¨Ìï®Ìï®`` () =
         let projA = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projA")
         let names = projA.Systems |> Seq.map (fun s -> s.Name) |> Set.ofSeq
         Assert.IsTrue(names.Contains("sysA"))
         Assert.IsTrue(names.Contains("sysB"))
 
     [<Test>]
-    member _.``projB¥¬ sys-003¿ª ∆˜«‘«œ∞Ì »∞º∫»≠µ `` () =
+    member _.``projBÎäî sys-003ÏùÑ Ìè¨Ìï®ÌïòÍ≥† ÌôúÏÑ±ÌôîÎê®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         Assert.Contains("sys-003", projB.TargetSystemIds)
 
     [<Test>]
-    member _.``sys-003 ≥ªø° WorkA, WorkB ¡∏¿Á`` () =
+    member _.``sys-003 ÎÇ¥Ïóê WorkA, WorkB Ï°¥Ïû¨`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let sys3 = projB.Systems |> Seq.find (fun s -> s.Name = "sys-003")
         let works = sys3.Works |> Seq.map (fun w -> w.Name) |> Set.ofSeq
@@ -44,7 +44,7 @@ type ``Sample Mapping Tests`` () =
         Assert.IsTrue(works.Contains("WorkB"))
 
     [<Test>]
-    member _.``WorkA¥¬ CallAøÕ CallB∏¶ ∆˜«‘«‘`` () =
+    member _.``WorkAÎäî CallAÏôÄ CallBÎ•º Ìè¨Ìï®Ìï®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let workA =
             projB.Systems
@@ -54,7 +54,7 @@ type ``Sample Mapping Tests`` () =
         Assert.AreEqual(Set.ofList ["CallA"; "CallB"], callNames)
 
     [<Test>]
-    member _.``CallA¥¬ ApiCallA∏¶ ∆˜«‘«‘`` () =
+    member _.``CallAÎäî ApiCallAÎ•º Ìè¨Ìï®Ìï®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let callA =
             projB.Systems
@@ -65,7 +65,7 @@ type ``Sample Mapping Tests`` () =
         Assert.AreEqual("ApiCallA", callA.ApiCalls.[0].Name)
 
     [<Test>]
-    member _.``CallB¥¬ ApiCallB∏¶ ∆˜«‘«‘`` () =
+    member _.``CallBÎäî ApiCallBÎ•º Ìè¨Ìï®Ìï®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let callB =
             projB.Systems
@@ -76,7 +76,7 @@ type ``Sample Mapping Tests`` () =
         Assert.AreEqual("ApiCallB", callB.ApiCalls.[0].Name)
 
     [<Test>]
-    member _.``WorkA¥¬ CallA°ÊCallB øß¡ˆ∏¶ ∞°¡¯¥Ÿ`` () =
+    member _.``WorkAÎäî CallA‚ÜíCallB Ïó£ÏßÄÎ•º Í∞ÄÏßÑÎã§`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let workA =
             projB.Systems
@@ -86,14 +86,14 @@ type ``Sample Mapping Tests`` () =
         Assert.Contains(("CallA", "CallB"), edgeNames)
 
     [<Test>]
-    member _.``WorkA°ÊWorkB WorkGraph ¡∏¿Á«‘`` () =
+    member _.``WorkA‚ÜíWorkB WorkGraph Ï°¥Ïû¨Ìï®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let sys3 = projB.Systems |> Seq.find (fun s -> s.Name = "sys-003")
         let edge = sys3.WorkArrows |> Seq.map (fun (s, t) -> s.Name, t.Name) |> Seq.toArray 
         Assert.Contains(("WorkA", "WorkB"), edge)
 
     [<Test>]
-    member _.``saveToFile∑Œ JSON ∆ƒ¿œ ¿˙¿Âµ `` () =
+    member _.``saveToFileÎ°ú JSON ÌååÏùº Ï†ÄÏû•Îê®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let root = { Projects = [|projB|] }
         let path = exportPath projB.Name "json"
@@ -101,27 +101,23 @@ type ``Sample Mapping Tests`` () =
         Assert.IsTrue(File.Exists(path))
 
     [<Test>]
-    member _.``AASX ∆ƒ¿œ¿Ã Ω√Ω∫≈€ ¥‹¿ß∑Œ ¿˙¿Âµ `` () =
+    member _.``AASX ÌååÏùºÏù¥ ÏãúÏä§ÌÖú Îã®ÏúÑÎ°ú Ï†ÄÏû•Îê®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let outDir = "./aasx_projB"
         AASX.exportAllAASX projB outDir
         let path = Path.Combine(outDir, "sys-003.aasx")
         Assert.IsTrue(File.Exists(path))
 
-    [<Test>]
-    member _.``initializeSchema∑Œ SQLite ∆ƒ¿œ ª˝º∫µ `` () =
-        let path = exportPath "projB_runtime" "db"
-        initializeSchema path
-        Assert.IsTrue(File.Exists(path))
+
 
     [<Test>]
-    member _.``fromProject ∫Ø»Ø »ƒ ≈◊¿Ã∫Ì ºˆ ∞À¡ı`` () =
+    member _.``fromProject Î≥ÄÌôò ÌõÑ ÌÖåÏù¥Î∏î Ïàò Í≤ÄÏ¶ù`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let db = fromProject projB
         Assert.AreEqual(projB.Systems.Count, db.Systems.Count)
 
     [<Test>]
-    member _.``saveToSqlite∑Œ DB ¿˙¿Âµ `` () =
+    member _.``saveToSqliteÎ°ú DB Ï†ÄÏû•Îê®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let dbPath = exportPath "projB_runtime" "db"
         initializeSchema dbPath
@@ -130,13 +126,13 @@ type ``Sample Mapping Tests`` () =
         Assert.IsTrue(File.Exists(dbPath))
 
     [<Test>]
-    member _.``sys-004 (sysD)¥¬ ApiDef∏¶ ∆˜«‘«‘`` () =
+    member _.``sys-004 (sysD)Îäî ApiDefÎ•º Ìè¨Ìï®Ìï®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let sysD = projB.Systems |> Seq.find (fun s -> s.Name = "sysD")
         Assert.GreaterOrEqual(sysD.ApiDefs.Count, 2)
 
     [<Test>]
-    member _.``ApiCallA¿« Target¿∫ sysDø° ∆˜«‘µ `` () =
+    member _.``ApiCallAÏùò TargetÏùÄ sysDÏóê Ìè¨Ìï®Îê®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let callA =
             projB.Systems
@@ -147,14 +143,14 @@ type ``Sample Mapping Tests`` () =
         Assert.AreEqual("sysD", targetSys.Name)
 
     [<Test>]
-    member _.``sys-003¥¬ flow-001¿ª ∆˜«‘«‘`` () =
+    member _.``sys-003Îäî flow-001ÏùÑ Ìè¨Ìï®Ìï®`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let sys3 = projB.Systems |> Seq.find (fun s -> s.Name = "sys-003")
         Assert.AreEqual(1, sys3.Flows.Count)
         Assert.AreEqual("flow-001", sys3.Flows.[0].Name)
 
     [<Test>]
-    member _.``sysD¥¬ projectø° ø¨∞·µ«æÓ ¿÷¿Ω`` () =
+    member _.``sysDÎäî projectÏóê Ïó∞Í≤∞ÎêòÏñ¥ ÏûàÏùå`` () =
         let projB = createProjectsFromMapping () |> Array.find (fun p -> p.Name = "projB")
         let sysD = projB.Systems |> Seq.find (fun s -> s.Name = "sysD")
         Assert.AreSame(projB, sysD.Project)

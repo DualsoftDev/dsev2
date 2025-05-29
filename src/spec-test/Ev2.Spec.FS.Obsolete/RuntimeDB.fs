@@ -6,12 +6,14 @@ open Microsoft.Data.Sqlite
 open Dual.EV2.Core
 
 module TableNames =
-    [<Literal>] 
+    [<Literal>]
     let tbProject = "project"
     [<Literal>]
     let tbSystem = "system"
     [<Literal>]
-    let tbProjectSystemMap = "projectSystemMap"
+    let tbProjectSystemMap = "mapProject2System"
+    [<Literal>]
+    let tbFlow = "flow"
     [<Literal>]
     let tbWork = "work"
     [<Literal>]
@@ -19,13 +21,13 @@ module TableNames =
     [<Literal>]
     let tbApiCall = "apiCall"
     [<Literal>]
-    let tbApiCallMap = "apiCallMap"
+    let tbApiCallMap = "mapCall2ApiCall"
     [<Literal>]
     let tbApiDef = "apiDef"
     [<Literal>]
-    let tbArrowCall = "arrowCall"
-    [<Literal>]
     let tbArrowWork = "arrowWork"
+    [<Literal>]
+    let tbArrowCall = "arrowCall"
 
 module RuntimeDB =
 
@@ -33,6 +35,7 @@ module RuntimeDB =
         Projects: ResizeArray<Project>
         ProjectSystemMap: ResizeArray<ProjectSystemUsage>
         Systems: ResizeArray<System>
+        Flows: ResizeArray<Flow>
         Works: ResizeArray<Work>
         Calls: ResizeArray<Call>
         ApiCallMap: ResizeArray<ApiCallUsage>
@@ -43,6 +46,7 @@ module RuntimeDB =
     }
 
     let initializeSchema (dbPath: string) =
+        System.IO.File.Delete(dbPath)
         use conn = new SqliteConnection($"Data Source={dbPath}")
         conn.Open()
 
@@ -51,23 +55,24 @@ module RuntimeDB =
             cmd.ExecuteNonQuery() |> ignore
 
         [
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbProject}          (id TEXT PRIMARY KEY, name TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbSystem}           (id TEXT PRIMARY KEY, name TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbProjectSystemMap} (id TEXT PRIMARY KEY, projectId TEXT, systemId TEXT, active BOOLEAN)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbWork}             (id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbCall}             (id TEXT PRIMARY KEY, name TEXT, workId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCall}          (id TEXT PRIMARY KEY, name TEXT, callId TEXT, apiDefId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCallMap}       (id TEXT PRIMARY KEY, callId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiDef}           (id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowCall}        (id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
-            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowWork}        (id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbProject}(id TEXT PRIMARY KEY, name TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbSystem}(id TEXT PRIMARY KEY, name TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbProjectSystemMap}(id TEXT PRIMARY KEY, projectId TEXT, systemId TEXT, active BOOLEAN)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbFlow}(id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbWork}(id TEXT PRIMARY KEY, name TEXT, systemId TEXT, flowId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbCall}(id TEXT PRIMARY KEY, name TEXT, workId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCall}(id TEXT PRIMARY KEY, name TEXT, apiDefId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiCallMap}(id TEXT PRIMARY KEY, callId TEXT, apiCallId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbApiDef}(id TEXT PRIMARY KEY, name TEXT, systemId TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowWork}(id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
+            $"CREATE TABLE IF NOT EXISTS {TableNames.tbArrowCall}(id TEXT PRIMARY KEY, type TEXT, source TEXT, target TEXT)";
         ] |> List.iter exec
 
         conn.Close()
 
     let fromProject (proj: Project) : RuntimeDb =
         let pTable, psMapTable = ResizeArray(), ResizeArray()
-        let sTable, wTable, cTable = ResizeArray(), ResizeArray(), ResizeArray()
+        let sTable, fTable, wTable, cTable = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
         let acTable, adSet = ResizeArray(), HashSet<Guid>()
         let adTable, acMap = ResizeArray(), ResizeArray()
         let wcTable, ccTable = ResizeArray(), ResizeArray()
@@ -79,23 +84,26 @@ module RuntimeDB =
             let sys = su.TargetSystem
             sTable.Add(sys)
 
+            for f in sys.Flows do
+                fTable.Add(f)
+
             for w in sys.Works do
                 wTable.Add(w)
                 for c in w.Calls do
                     cTable.Add(c)
                     for ac in c.ApiCalls do
                         acTable.Add(ac)
-                        acMap.Add(ApiCallUsage($"{ac.Name}.Map", c)) // 매핑 엔트리 생성
+                        acMap.Add(ApiCallUsage($"{ac.Name}.Map", c, ac))
                         if adSet.Add(ac.TargetApiDef.Guid) then
                             adTable.Add(ac.TargetApiDef)
-                for s, t in w.CallGraph do ccTable.Add((s, t))
-
+                    for s, t in w.CallGraph do ccTable.Add((s, t))
             for s, t in sys.WorkArrows do wcTable.Add((s, t))
 
         {
             Projects = pTable
             ProjectSystemMap = psMapTable
             Systems = sTable
+            Flows = fTable
             Works = wTable
             Calls = cTable
             ApiCallMap = acMap
@@ -129,21 +137,25 @@ module RuntimeDB =
         for s in db.Systems do
             insertRow TableNames.tbSystem [|"id"; "name"|] [|s.Guid.ToString(); s.Name|]
 
+        for f in db.Flows do
+            insertRow TableNames.tbFlow [|"id"; "name"; "systemId"|]
+                [|f.Guid.ToString(); f.Name; f.System.Guid.ToString()|]
+
         for w in db.Works do
-            insertRow TableNames.tbWork [|"id"; "name"; "systemId"|]
-                [|w.Guid.ToString(); w.Name; w.System.Guid.ToString()|]
+            insertRow TableNames.tbWork [|"id"; "name"; "systemId"; "flowId"|]
+                [|w.Guid.ToString(); w.Name; w.System.Guid.ToString(); w.Flow.Guid.ToString()|]
 
         for c in db.Calls do
             insertRow TableNames.tbCall [|"id"; "name"; "workId"|]
                 [|c.Guid.ToString(); c.Name; c.Work.Guid.ToString()|]
 
         for ac in db.ApiCalls do
-            insertRow TableNames.tbApiCall [|"id"; "name"; "callId"; "apiDefId"|]
-                [|ac.Guid.ToString(); ac.Name; ac.Call.Guid.ToString(); ac.TargetApiDef.Guid.ToString()|]
+            insertRow TableNames.tbApiCall [|"id"; "name"; "apiDefId"|]
+                [|ac.Guid.ToString(); ac.Name; ac.TargetApiDef.Guid.ToString()|]
 
         for map in db.ApiCallMap do
-            insertRow TableNames.tbApiCallMap [|"id"; "callId"|]
-                [|map.Guid.ToString(); map.Parent.Guid.ToString()|]
+            insertRow TableNames.tbApiCallMap [|"id"; "callId"; "apiCallId"|]
+                [|map.Guid.ToString(); map.Parent.Guid.ToString(); map.ApiCall.Guid.ToString()|]
 
         for ad in db.ApiDefs do
             insertRow TableNames.tbApiDef [|"id"; "name"; "systemId"|]
