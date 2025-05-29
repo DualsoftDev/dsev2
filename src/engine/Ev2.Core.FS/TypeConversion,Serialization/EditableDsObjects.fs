@@ -48,11 +48,11 @@ module rec EditableDsObjects =
         inherit EdUnique()
         interface IEdSystem
 
-        member val Flows = ResizeArray<EdFlow>()
-        member val Works = ResizeArray<EdWork>()
-        member val Arrows = ResizeArray<EdArrowBetweenWorks>()
-        member val ApiDefs = ResizeArray<EdApiDef>()
-        member val ApiCalls = ResizeArray<EdApiCall>()
+        member val Flows = ResizeArray<EdFlow>() with get, set
+        member val Works = ResizeArray<EdWork>() with get, set
+        member val Arrows = ResizeArray<EdArrowBetweenWorks>()  with get, set
+        member val ApiDefs = ResizeArray<EdApiDef>()  with get, set
+        member val ApiCalls = ResizeArray<EdApiCall>() with get, set
         member val IsPrototype = false with get, set
 
         member x.Fix() =
@@ -87,8 +87,8 @@ module rec EditableDsObjects =
         inherit EdUnique()
         interface IEdWork
         member val OptOwnerFlow = Option<EdFlow>.None with get, set
-        member val Calls = ResizeArray<EdCall>()
-        member val Arrows = ResizeArray<EdArrowBetweenCalls>()
+        member val Calls = ResizeArray<EdCall>() with get, set
+        member val Arrows = ResizeArray<EdArrowBetweenCalls>() with get, set
 
         member x.Fix() =
             x.UpdateDateTime()
@@ -167,25 +167,38 @@ module Ed2DsModule =
         member x.Add2 (ed:EdUnique) (rt:RtUnique) =
             x.RtDic.TryAdd(rt.Guid, rt) |> ignore
             x.EdDic.TryAdd(ed.Guid, ed) |> ignore
+        member x.AddRE (rt:RtUnique) (ed:EdUnique) = x.Add2 ed rt
 
     type EdFlow with
         member x.ToDsFlow(bag:Ed2RtBag) =
             RtFlow() |> uniqReplicate x |> tee (bag.Add2 x)
+
+    type RtFlow with
+        member x.ToEdFlow(bag:Ed2RtBag) =
+            EdFlow() |> uniqReplicate x |> tee (bag.AddRE x)
+
 
     type EdCall with
         member x.ToDsCall(bag:Ed2RtBag) =
             let rtApiCalls =
                 noop()
                 x.ApiCalls
-                |-> (fun (a:EdApiCall) ->
-                        let rtApiDef = bag.RtDic[a.ApiDef.Guid] :?> RtApiDef
-                        RtApiCall(rtApiDef, a.InAddress, a.OutAddress, a.InSymbol, a.OutSymbol, a.ValueType, a.Value)
-                        |> uniqINGD_fromObj a
-                        |> tee (bag.Add2 a) )
+                |-> (fun (a:EdApiCall) -> bag.RtDic[a.Guid] :?> RtApiCall)
 
             RtCall(x.CallType, rtApiCalls, x.AutoPre, x.Safety, x.Timeout)
             |> uniqINGD_fromObj x
             |> tee (bag.Add2 x)
+
+    type RtCall with
+        member x.ToEdCall(bag:Ed2RtBag) =
+            let edApiCalls =
+                noop()
+                x.ApiCalls
+                |-> (fun (a:RtApiCall) -> bag.EdDic[a.Guid] :?> EdApiCall)
+
+            EdCall(CallType=x.CallType, ApiCalls=ResizeArray(edApiCalls), AutoPre=x.AutoPre, Safety=x.Safety, Timeout=x.Timeout)
+            |> uniqINGD_fromObj x
+            |> tee (bag.AddRE x)
 
     type EdWork with
         member x.ToDsWork(bag:Ed2RtBag, flows:RtFlow[]) =
@@ -205,6 +218,35 @@ module Ed2DsModule =
             RtWork.Create(calls, arrows, optFlowGuid)
             |> uniqINGD_fromObj x
             |> tee (bag.Add2 x)
+
+        static member Create(calls:EdCall seq, arrows:EdArrowBetweenCalls seq, optFlow:EdFlow option) =
+            let calls = calls |> ResizeArray
+            let arrows = arrows |> ResizeArray
+            EdWork(Calls=calls, Arrows=arrows, OptOwnerFlow=optFlow)
+            |> tee (fun z ->
+                calls   |> iter (fun y -> y.RawParent <- Some z)
+                arrows  |> iter (fun y -> y.RawParent <- Some z)
+                optFlow |> iter (fun y -> y.RawParent <- Some z) )
+
+
+    type RtWork with
+        member x.ToEdWork(bag:Ed2RtBag, flows:EdFlow[]) =
+            x.Calls |> iter bag.Add
+            x.Arrows |> iter bag.Add
+
+            let callDic = x.Calls.ToDictionary(id, _.ToEdCall(bag))
+            let arrows =
+                x.Arrows
+                |-> fun a -> EdArrowBetweenCalls(callDic[a.Source], callDic[a.Target], a.Type)
+                            |> uniqINGD_fromObj a
+                            |> tee (bag.AddRE a)
+
+            let optFlowGuid = x.OptFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
+            let calls = callDic.Values |> toArray
+
+            EdWork.Create(calls, arrows, optFlowGuid)
+            |> uniqINGD_fromObj x
+            |> tee (bag.AddRE x)
 
 
     type EdSystem with
@@ -249,8 +291,61 @@ module Ed2DsModule =
 
             system
 
+
+        static member Create(isPrototype:bool, flows:EdFlow[], works:EdWork[], arrows:EdArrowBetweenWorks[], apiDefs:EdApiDef[], apiCalls:EdApiCall[]) =
+            EdSystem(IsPrototype=isPrototype, Flows=ResizeArray(flows), Works=ResizeArray(works), Arrows=ResizeArray(arrows), ApiDefs=ResizeArray(apiDefs), ApiCalls=ResizeArray(apiCalls))
+            |> tee (fun z ->
+                flows    |> iter (fun y -> y.RawParent <- Some z)
+                works    |> iter (fun y -> y.RawParent <- Some z)
+                arrows   |> iter (fun y -> y.RawParent <- Some z)
+                apiDefs  |> iter (fun y -> y.RawParent <- Some z)
+                apiCalls |> iter (fun y -> y.RawParent <- Some z) )
+
+        static member FromRt(x:RtSystem, bag:Ed2RtBag):EdSystem =
+            bag.Add x
+            x.Flows |> iter bag.Add
+            x.Works |> iter bag.Add
+            x.Arrows |> iter bag.Add
+            x.ApiDefs |> iter bag.Add
+            x.ApiCalls |> iter bag.Add
+
+            let apiDefs =
+                x.ApiDefs |-> (fun z ->
+                    EdApiDef(IsPush = z.IsPush)
+                    |> uniqINGD_fromObj z |> tee (bag.AddRE z))
+                |> toArray
+
+            let apiCalls =
+                x.ApiCalls
+                |-> (fun z ->
+                        let edApiDef = bag.EdDic[z.ApiDef.Guid] :?> EdApiDef
+                        EdApiCall(edApiDef, InAddress=z.InAddress, OutAddress=z.OutAddress, InSymbol=z.InSymbol, OutSymbol=z.OutSymbol, ValueType=z.ValueType, Value=z.Value)
+                        |> uniqINGD_fromObj z |> tee (bag.AddRE z))
+                |> toArray
+
+            let flows = x.Flows |-> _.ToEdFlow(bag) |> toArray
+            let workDic = x.Works.ToDictionary(id, _.ToEdWork(bag, flows))
+            let works = workDic.Values |> toArray
+            let arrows =
+                x.Arrows |-> (fun z ->
+                    EdArrowBetweenWorks(workDic[z.Source], workDic[z.Target], z.Type)
+                    |> uniqINGD_fromObj z |> tee (bag.AddRE z))
+                |> toArray
+
+            let system =
+                EdSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls)
+                |> uniqINGD_fromObj x |> tee (bag.AddRE x)
+
+            // parent 객체 확인
+            for w in works do
+                w.Calls |> iter (fun c -> assert (c.RawParent = Some w))
+
+            system
+
+
+
     type EdProject with
-        member x.ToDsProject() =
+        member x.ToRtProject() =
             let bag = Ed2RtBag()
             bag.EdDic.Add(x.Guid, x)
             let activeSystems  = x.ActiveSystems  |-> _.ToDsSystem(bag) |> toArray
@@ -259,8 +354,9 @@ module Ed2DsModule =
             (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some project)
             project
 
-        static member FromDsProject(p:RtProject) =
-            let activeSystems  = p.ActiveSystems  |-> (fun s -> EdSystem() |> uniqReplicate s)
+        static member FromRt(p:RtProject) =
+            let bag = Ed2RtBag()
+            let activeSystems  = p.ActiveSystems  |-> (fun s -> EdSystem.FromRt(s, bag) |> uniqReplicate s)
             let passiveSystems = p.PassiveSystems |-> (fun s -> EdSystem() |> uniqReplicate s)
             EdProject() |> uniqReplicate p //  (p.Name, activeSystems, passiveSystems, guid=p.Guid, ?id=p.Id, dateTime=p.DateTime)
             |> tee (fun z ->

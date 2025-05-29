@@ -236,8 +236,10 @@ module SchemaTestModule =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
 
-        let dsProject = edProject.ToDsProject()
+        let dsProject = edProject.ToRtProject()
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
+
+        let edProjectBack = EdProject.FromRt dsProject
 
         let rtObjDic = dsProject.EnumerateDsObjects().ToDictionary(_.Guid, id)
         dsProject.Validate(rtObjDic)
