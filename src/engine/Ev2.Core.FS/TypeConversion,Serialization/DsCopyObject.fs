@@ -47,17 +47,19 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
-            let flows   = x.Flows   |-> _.replicate(bag)  |> toArray
-            let works   = x.Works   |-> _.replicate(bag)  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
-            let arrows  = x.Arrows  |-> _.replicate(bag)  |> toArray
-            let apiDefs = x.ApiDefs |-> _.replicate(bag)  |> toArray
+            let flows    = x.Flows    |-> _.replicate(bag)  |> toArray
+            let works    = x.Works    |-> _.replicate(bag)  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
+            let arrows   = x.Arrows   |-> _.replicate(bag)  |> toArray
+            let apiDefs  = x.ApiDefs  |-> _.replicate(bag)  |> toArray
+            let apiCalls = x.ApiCalls |-> _.replicate(bag)  |> toArray
 
             arrows
             |> iter (fun (a:RtArrowBetweenWorks) ->
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs) |> uniqNGD (nn x.Name) guid x.DateTime
+            RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls)
+            |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼

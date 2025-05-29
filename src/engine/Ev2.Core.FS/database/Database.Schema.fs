@@ -239,8 +239,8 @@ CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
 -- Work > Call > ApiCall > ApiDef
 --
 
-CREATE TABLE [{Tn.ApiCall}]( {sqlUniq()}
-    , [callId]          {intKeyType} NOT NULL
+CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
+    , [systemId]        {intKeyType} NOT NULL
     , [inAddress]       TEXT NOT NULL
     , [outAddress]      TEXT NOT NULL
     , [inSymbol]        TEXT NOT NULL
@@ -250,7 +250,7 @@ CREATE TABLE [{Tn.ApiCall}]( {sqlUniq()}
     , [value]           TEXT NOT NULL   -- 값 범위 또는 단일 값 조건 정의 (선택 사항).  ValueParam type
     , [valueTypeId]     {intKeyType} NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
     , [apiDefId]        {intKeyType} NOT NULL
-    , FOREIGN KEY(callId)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
+    , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
     , FOREIGN KEY(valueTypeId)   REFERENCES {Tn.Enum}(id)
 );
 

@@ -7,6 +7,8 @@ open Newtonsoft.Json
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open System.IO
+open System.Linq
+open System.Collections.Generic
 
 [<AutoOpen>]
 module NewtonsoftJsonForwardDecls =
@@ -21,8 +23,8 @@ module NewtonsoftJsonForwardDecls =
     type INjArrow   = inherit INjObject inherit IArrow
 
 
-    let mutable fwdOnNsJsonSerializing:  INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
-    let mutable fwdOnNsJsonDeserialized: INjObject option->INjObject->unit = let dummy (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnNsJsonSerializing:  DynamicDictionary->INjObject option->INjObject->unit = let dummy (ddic:DynamicDictionary) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdOnNsJsonDeserialized: DynamicDictionary->INjObject option->INjObject->unit = let dummy (ddic:DynamicDictionary) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
 
 /// Newtonsoft Json 호환 버젼
 [<AutoOpen>]
@@ -103,8 +105,8 @@ module rec NewtonsoftJsonObjects =
                 , Description=ds.Description)
             |> toNjUniqINGD ds
 
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  None x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized None x
+        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  ctx.DDic None x
+        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized ctx.DDic None x
 
 
     type NjSystem() =
@@ -112,15 +114,17 @@ module rec NewtonsoftJsonObjects =
         interface INjSystem
 
 
-        [<JsonProperty(Order = 101)>] member val Flows   = [||]:NjFlow[]   with get, set
-        [<JsonProperty(Order = 102)>] member val Works   = [||]:NjWork[]   with get, set
-        [<JsonProperty(Order = 103)>] member val Arrows  = [||]:NjArrow[]  with get, set
-        [<JsonProperty(Order = 104)>] member val ApiDefs = [||]:NjApiDef[] with get, set
+        [<JsonProperty(Order = 101)>] member val Flows    = [||]:NjFlow[]    with get, set
+        [<JsonProperty(Order = 102)>] member val Works    = [||]:NjWork[]    with get, set
+        [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
+        [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
+        [<JsonProperty(Order = 104)>] member val ApiCalls = [||]:NjApiCall[] with get, set
         member val OriginGuid    = Nullable<Guid>() with get, set
-        member x.ShouldSerializeFlows  () = x.Flows  .NonNullAny()
-        member x.ShouldSerializeWorks  () = x.Works  .NonNullAny()
-        member x.ShouldSerializeArrows () = x.Arrows .NonNullAny()
-        member x.ShouldSerializeApiDefs() = x.ApiDefs.NonNullAny()
+        member x.ShouldSerializeFlows   () = x.Flows   .NonNullAny()
+        member x.ShouldSerializeWorks   () = x.Works   .NonNullAny()
+        member x.ShouldSerializeArrows  () = x.Arrows  .NonNullAny()
+        member x.ShouldSerializeApiDefs () = x.ApiDefs .NonNullAny()
+        member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
 
         member val Prototype     = false      with get, set
         member val Author        = nullString with get, set
@@ -128,8 +132,12 @@ module rec NewtonsoftJsonObjects =
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
 
-        [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  (x.RawParent >>= tryCast<INjObject>) x
-        [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized (x.RawParent >>= tryCast<INjObject>) x
+        [<OnSerializing>]
+        member x.OnSerializingMethod (ctx: StreamingContext) =
+            fwdOnNsJsonSerializing ctx.DDic (x.RawParent >>= tryCast<INjObject>) x
+        [<OnDeserialized>]
+        member x.OnDeserializedMethod(ctx: StreamingContext) =
+            fwdOnNsJsonDeserialized ctx.DDic (x.RawParent >>= tryCast<INjObject>) x
 
         static member FromDs(ds:RtSystem) =
             let originGuid = ds.OriginGuid |> Option.toNullable
@@ -189,7 +197,8 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         interface INjCall
         member val CallType = DbCallType.Normal.ToString() with get, set
-        member val ApiCalls = [||]:NjApiCall[] with get, set
+        /// Json serialize 용 API call 에 대한 Guid
+        member val ApiCalls = [||]:Guid[] with get, set
         member val AutoPre  = nullString with get, set
         member val Safety   = nullString with get, set
         member val Timeout  = Nullable<int>() with get, set
@@ -199,7 +208,7 @@ module rec NewtonsoftJsonObjects =
             NjCall(CallType = ds.CallType.ToString(), AutoPre=ds.AutoPre, Safety=ds.Safety, Timeout=o2n ds.Timeout)
             |> toNjUniqINGD ds
             |> tee (fun z ->
-                z.ApiCalls <- ds.ApiCalls   |-> NjApiCall.FromDs |> toArray
+                z.ApiCalls <- ds.ApiCalls |-> _.Guid |> toArray
             )
 
 
@@ -228,10 +237,12 @@ module rec NewtonsoftJsonObjects =
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
-    let rec internal onNsJsonSerializing (njParent:INjObject option) (njObj:INjObject) =
+    let rec internal onNsJsonSerializing (ddic:DynamicDictionary) (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
         | :? NjUnique as uniq ->
             uniq |> toNjUniqINGD uniq.DsObject |> ignore
+            if not <| ddic.Get<Dictionary<Guid, NjUnique>>("njGuids").TryAdd(uniq.Guid, uniq) then
+                logWarn $"WARN: NjUnique Guid {uniq.Guid} already exists in the dictionary."
         | _ ->
             ()
 
@@ -246,20 +257,20 @@ module rec NewtonsoftJsonObjects =
             nj.PassiveSystemGuids   <- ds.PassiveSystems |-> _.Guid |> toArray
             nj.LastConnectionString <- ds.LastConnectionString
 
-            nj.SystemPrototypes |> iter (onNsJsonSerializing (Some nj))
+            nj.SystemPrototypes |> iter (onNsJsonSerializing ddic (Some nj))
 
         | :? NjSystem as sys ->
-            sys.Arrows  |> iter (onNsJsonSerializing (Some sys))
-            sys.Flows   |> iter (onNsJsonSerializing (Some sys))
-            sys.Works   |> iter (onNsJsonSerializing (Some sys))
-            sys.ApiDefs |> iter (onNsJsonSerializing (Some sys))
+            sys.Arrows  |> iter (onNsJsonSerializing ddic (Some sys))
+            sys.Flows   |> iter (onNsJsonSerializing ddic (Some sys))
+            sys.Works   |> iter (onNsJsonSerializing ddic (Some sys))
+            sys.ApiDefs |> iter (onNsJsonSerializing ddic (Some sys))
             ()
 
         | :? NjFlow as flow ->
             ()
 
         | :? NjWork as work ->
-            work.Arrows |> iter (onNsJsonSerializing (Some work))
+            work.Arrows |> iter (onNsJsonSerializing ddic (Some work))
             ()
             //work.Calls |> iter onSerializing
             //work.TryGetFlow() |> iter (fun f -> work.FlowGuid <- guid2str f.Guid)
@@ -275,16 +286,20 @@ module rec NewtonsoftJsonObjects =
 
 
     /// JSON 읽고 나서 메모리 구조에 후처리 작업
-    let rec internal onNsJsonDeserialized (njParent:INjObject option) (njObj:INjObject) =
+    let rec internal onNsJsonDeserialized (ddic:DynamicDictionary) (njParent:INjObject option) (njObj:INjObject) =
+        let njGuidDic = ddic.Get<Dictionary<Guid, NjUnique>>("njGuids")
+        let rtGuidDic = ddic.Get<Dictionary<Guid, Unique>>("rtGuids")
         match njObj with
         | :? NjUnique as uniq ->
+            if not <| njGuidDic.TryAdd(uniq.Guid, uniq) then
+                logWarn $"WARN: NjUnique Guid {uniq.Guid} already exists in the dictionary."
             ()
         | _ ->
             ()
 
         match njObj with
         | :? NjProject as proj ->
-            proj.SystemPrototypes |> iter (onNsJsonDeserialized (Some proj))
+            proj.SystemPrototypes |> iter (onNsJsonDeserialized ddic (Some proj))
             proj.DsObject <-
                 let systems = proj.SystemPrototypes |-> (fun z -> z.DsObject :?> RtSystem)
                 let actives = systems |> filter (fun s -> proj.ActiveSystemGuids |> contains (s.Guid))
@@ -297,19 +312,22 @@ module rec NewtonsoftJsonObjects =
                     , Description=proj.Description
                     , LastConnectionString=proj.LastConnectionString )
                 |> fromNjUniqINGD proj
+                |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
                 |> tee(fun z -> systems |> iter (fun s -> s.RawParent <- Some z))
 
         | :? NjSystem as nj ->
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정
-            nj.Arrows |> iter (fun z -> z.RawParent <- Some nj)
-            nj.Flows  |> iter (fun z -> z.RawParent <- Some nj)
-            nj.Works  |> iter (fun z -> z.RawParent <- Some nj)
-            nj.ApiDefs|> iter (fun z -> z.RawParent <- Some nj)
+            nj.Arrows   |> iter (fun z -> z.RawParent <- Some nj)
+            nj.Flows    |> iter (fun z -> z.RawParent <- Some nj)
+            nj.Works    |> iter (fun z -> z.RawParent <- Some nj)
+            nj.ApiDefs  |> iter (fun z -> z.RawParent <- Some nj)
+            nj.ApiCalls |> iter (fun z -> z.RawParent <- Some nj)
 
-            // 하부 구조에 대해서 재귀적으로 호출
-            nj.Flows   |> iter (onNsJsonDeserialized (Some nj))
-            nj.Works   |> iter (onNsJsonDeserialized (Some nj))
-            nj.ApiDefs |> iter (onNsJsonDeserialized (Some nj))
+            // 하부 구조에 대해서 재귀적으로 호출 : dependancy 가 적은 것부터 먼저 생성할 것.
+            nj.ApiDefs  |> iter (onNsJsonDeserialized ddic (Some nj))
+            nj.ApiCalls |> iter (onNsJsonDeserialized ddic (Some nj))
+            nj.Flows    |> iter (onNsJsonDeserialized ddic (Some nj))
+            nj.Works    |> iter (onNsJsonDeserialized ddic (Some nj))
 
             let flows = nj.Flows |-> (fun z -> z.DsObject :?> RtFlow)
 
@@ -322,7 +340,8 @@ module rec NewtonsoftJsonObjects =
                             None
                     let calls = w.Calls |-> (fun z -> z.DsObject :?> RtCall)
                     let arrows = w.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenCalls)
-                    let dsWork = RtWork.Create(calls, arrows, optFlow) |> fromNjUniqINGD w
+                    let dsWork = RtWork.Create(calls, arrows, optFlow) |> fromNjUniqINGD w |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
+
                     yield dsWork
                     w.DsObject <- dsWork
             |]
@@ -333,27 +352,30 @@ module rec NewtonsoftJsonObjects =
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
                 let arrowType = a.Type |> Enum.TryParse<DbArrowType> |> tryParseToOption |? DbArrowType.None
-                a.DsObject <- RtArrowBetweenWorks(src, tgt, arrowType) |> fromNjUniqINGD a
+                a.DsObject <- RtArrowBetweenWorks(src, tgt, arrowType) |> fromNjUniqINGD a |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
                 ()
                 )
-            let arrows  = nj.Arrows |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
-            let apiDefs = nj.ApiDefs |-> (fun z -> z.DsObject :?> RtApiDef)
+            let arrows   = nj.Arrows   |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
+            let apiDefs  = nj.ApiDefs  |-> (fun z -> z.DsObject :?> RtApiDef)
+            let apiCalls = nj.ApiCalls |-> (fun z -> z.DsObject :?> RtApiCall)
+
             nj.DsObject <-
                 noop()
-                RtSystem.Create(nj.Prototype, flows, works, arrows, apiDefs
+                RtSystem.Create(nj.Prototype, flows, works, arrows, apiDefs, apiCalls
                                 , Author=nj.Author
                                 , LangVersion=nj.LangVersion
                                 , EngineVersion=nj.EngineVersion
                                 , Description=nj.Description)
                 |> fromNjUniqINGD nj
+                |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
 
         | :? NjFlow as nj ->
-            nj.DsObject <- RtFlow() |> fromNjUniqINGD nj
+            nj.DsObject <- RtFlow() |> fromNjUniqINGD nj |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
             ()
 
         | :? NjWork as work ->
             work.Calls  |> iter (fun z -> z.RawParent <- Some work)
-            work.Calls  |> iter (onNsJsonDeserialized (Some work))
+            work.Calls  |> iter (onNsJsonDeserialized ddic (Some work))
             work.Arrows |> iter (fun z -> z.RawParent <- Some work)
             work.Arrows
             |> iter (fun (a:NjArrow) ->
@@ -361,7 +383,7 @@ module rec NewtonsoftJsonObjects =
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
                 let arrowType = a.Type |> Enum.TryParse<DbArrowType> |> tryParseToOption |? DbArrowType.None
-                a.DsObject <- RtArrowBetweenCalls(src, tgt, arrowType) |> fromNjUniqINGD a
+                a.DsObject <- RtArrowBetweenCalls(src, tgt, arrowType) |> fromNjUniqINGD a |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
                 ()
                 )
 
@@ -370,38 +392,66 @@ module rec NewtonsoftJsonObjects =
             ()
 
         | :? NjCall as call ->
-            call.ApiCalls |> iter (fun z -> z.RawParent <- Some call)
-            call.ApiCalls |> iter (onNsJsonDeserialized (Some call))
+            //let njSys = call.EnumerateAncestors().OfType<NjSystem>().First()
+            //let dsSys = njSys.DsObject :?> RtSystem
+            //let guidDic = dsSys.ApiCalls.ToDictionary(_.Guid, id)
+            //let apiCalls = call.ApiCalls |-> (fun guid -> guidDic.[guid])
 
             let callType = call.CallType |> Enum.TryParse<DbCallType> |> tryParseToOption |? DbCallType.Normal
-            let apiCalls = [
-                for ac in call.ApiCalls do
-                    let valueType = ac.ValueType |> Enum.TryParse<DbDataType> |> tryParseToOption |? DbDataType.None
-                    let dsac = RtApiCall(ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, valueType, ac.Value) |> fromNjUniqINGD ac
-                    ac.DsObject <- dsac
-                    yield dsac ]
-            call.DsObject <- RtCall(callType, apiCalls, call.AutoPre, call.Safety, n2o call.Timeout) |> fromNjUniqINGD call
+
+            let apiCalls = call.ApiCalls |-> (fun z -> rtGuidDic[z] :?> RtApiCall)
+
+
+            //let apiCalls = [
+            //    for ac in call.ApiCalls do
+            //        let valueType = ac.ValueType |> Enum.TryParse<DbDataType> |> tryParseToOption |? DbDataType.None
+            //        let dsac = RtApiCall(ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, valueType, ac.Value) |> fromNjUniqINGD ac
+            //        ac.DsObject <- dsac
+            //        yield dsac ]
+
+            call.DsObject <- RtCall(callType, apiCalls, call.AutoPre, call.Safety, n2o call.Timeout) |> fromNjUniqINGD call |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
             ()
 
         | :? NjApiCall as ac ->
             failwith "ERROR.  확장 필요?"
 
         | :? NjApiDef as ad ->
-            ad.DsObject <- RtApiDef(ad.IsPush) |> fromNjUniqINGD ad
+            ad.DsObject <- RtApiDef(ad.IsPush) |> fromNjUniqINGD ad |> tee (fun z -> rtGuidDic.TryAdd(z.Guid, z))
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
 
-
+    type NjUnique with
+        member x.EnumerateAncestors(?includeMe): NjUnique list = [
+            let includeMe = includeMe |? true
+            if includeMe then
+                yield x
+            match x.RawParent with
+            | Some parent ->
+                yield! parent.EnumerateAncestors()
+            | None -> ()
+        ]
 
 /// Ds Object 를 JSON 으로 변환하기 위한 모듈
 [<AutoOpen>]
 module Ds2JsonModule =
+    let private createDynamicDictionary() =
+        DynamicDictionary()
+        |> tee(fun dic ->
+            dic.Set("njGuids", Dictionary<Guid, NjUnique>())
+            dic.Set("rtGuids", Dictionary<Guid, Unique>()) )
+
+
     type NjProject with
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string = EmJson.ToJson(x)
         member x.ToJson(jsonFilePath:string) =
-            EmJson.ToJson(x)
+            (* Withh context version *)
+            let settings = EmJson.CreateDefaultSettings()
+            // Json deserialize 중에 필요한 담을 그릇 준비
+            settings.Context <- new StreamingContext(StreamingContextStates.All, createDynamicDictionary())
+
+            EmJson.ToJson(x, settings)
             |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
         /// JSON 문자열을 DsProject 로 변환
@@ -412,8 +462,7 @@ module Ds2JsonModule =
             (* Withh context version *)
             let settings = EmJson.CreateDefaultSettings()
             // Json deserialize 중에 필요한 담을 그릇 준비
-            let ddic = DynamicDictionary() |> tee(fun dic -> ())
-            settings.Context <- new StreamingContext(StreamingContextStates.All, ddic)
+            settings.Context <- new StreamingContext(StreamingContextStates.All, createDynamicDictionary())
 
             EmJson.FromJson<NjProject>(json, settings)
 

@@ -6,13 +6,14 @@ open System
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type RtSystem with
-        static member Create(isPrototype:bool, flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[]) =
-            RtSystem(isPrototype, flows, works, arrows, apiDefs)
+        static member Create(isPrototype:bool, flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]) =
+            RtSystem(isPrototype, flows, works, arrows, apiDefs, apiCalls)
             |> tee (fun z ->
-                flows   |> iter (fun y -> y.RawParent <- Some z)
-                works   |> iter (fun y -> y.RawParent <- Some z)
-                arrows  |> iter (fun y -> y.RawParent <- Some z)
-                apiDefs |> iter (fun y -> y.RawParent <- Some z) )
+                flows    |> iter (fun y -> y.RawParent <- Some z)
+                works    |> iter (fun y -> y.RawParent <- Some z)
+                arrows   |> iter (fun y -> y.RawParent <- Some z)
+                apiDefs  |> iter (fun y -> y.RawParent <- Some z)
+                apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
     type RtWork with
         static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) =

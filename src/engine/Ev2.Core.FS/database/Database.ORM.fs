@@ -145,12 +145,21 @@ module ORMTypesModule =
         member val SystemId = systemId with get, set
         member val IsActive = isActive with get, set
 
-    type ORMApiCall(callId:Id) =
-        inherit ORMUnique(ParentId=callId)
+    //type ORMApiCall(systemId:Id) =
+    type ORMApiCall(systemId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueTypeId:Id, value:string) =
+        inherit ORMUnique(ParentId=systemId)
 
-        new() = ORMApiCall(-1)
+        new() = ORMApiCall(-1, nullString, nullString, nullString, nullString, -1, nullString)
         interface IORMApiCall
-        member val CallId = callId with get, set
+        member val SystemId = systemId with get, set
+
+        member val InAddress  = inAddress   with get, set
+        member val OutAddress = outAddress  with get, set
+        member val InSymbol   = inSymbol    with get, set
+        member val OutSymbol  = outSymbol   with get, set
+        member val ValueTypeId= valueTypeId with get, set
+        member val Value      = value       with get, set
+
 
     type ORMApiDef(systemId:Id) =
         inherit ORMUnique(ParentId=systemId)

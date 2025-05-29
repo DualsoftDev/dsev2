@@ -189,6 +189,12 @@ module ORMTypeConversionModule =
             | :? RtApiDef as z ->
                 ORMApiDef (pid) |> ormUniqINGDP z
 
+            | :? RtApiCall as z ->
+        //type RtApiCall(inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
+
+                let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType) |? int DbDataType.None
+                ORMApiCall (pid, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, z.Value) |> ormUniqINGDP z
+
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
             |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )

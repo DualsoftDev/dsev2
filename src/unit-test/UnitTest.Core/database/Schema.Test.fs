@@ -163,25 +163,28 @@ module SchemaTestModule =
         ()
 
 
-    let mutable edProject = getNull<EdProject>()
-    let mutable edSystem  = getNull<EdSystem>()
-    let mutable edFlow    = getNull<EdFlow>()
-    let mutable edWork1   = getNull<EdWork>()
-    let mutable edWork2   = getNull<EdWork>()
-    let mutable edWork3   = getNull<EdWork>()
-    let mutable edCall1a  = getNull<EdCall>()
-    let mutable edCall1b  = getNull<EdCall>()
-    let mutable edCall2a  = getNull<EdCall>()
-    let mutable edCall2b  = getNull<EdCall>()
-
-    let mutable edApiCall1a  = getNull<EdApiCall>()
+    let mutable edProject  = getNull<EdProject>()
+    let mutable edSystem   = getNull<EdSystem>()
+    let mutable edApiCall1a = getNull<EdApiCall>()
     let mutable edApiDef1a  = getNull<EdApiDef>()
+
+    let mutable edFlow     = getNull<EdFlow>()
+    let mutable edWork1    = getNull<EdWork>()
+    let mutable edWork2    = getNull<EdWork>()
+    let mutable edWork3    = getNull<EdWork>()
+    let mutable edCall1a   = getNull<EdCall>()
+    let mutable edCall1b   = getNull<EdCall>()
+    let mutable edCall2a   = getNull<EdCall>()
+    let mutable edCall2b   = getNull<EdCall>()
+
 
 
     [<Test>]
     let createEditableProject() =
         if isItNull edProject then
             edProject <- EdProject(Name = "MainProject")
+            edApiDef1a <- EdApiDef(Name = "ApiDef1a")
+            edApiCall1a <- EdApiCall(edApiDef1a, Name = "ApiCall1a", InAddress="InAddressX0", OutAddress="OutAddress1", InSymbol="XTag1", OutSymbol="YTag2", ValueType=DbDataType.Bool, Value="false")
             edSystem  <- EdSystem (Name = "MainSystem", IsPrototype=true)
             edFlow    <- EdFlow   (Name = "MainFlow")
             edWork1   <- EdWork   (Name = "BoundedWork1")
@@ -189,6 +192,8 @@ module SchemaTestModule =
             edWork3   <- EdWork   (Name = "FreeWork1")
             edSystem.Works.AddRange([edWork1; edWork2; edWork3])
             edSystem.Flows.Add(edFlow)
+            edSystem.ApiDefs.Add(edApiDef1a)
+            edSystem.ApiCalls.Add(edApiCall1a)
 
             let edArrowW = EdArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
             edSystem.Arrows.Add(edArrowW)
@@ -196,8 +201,7 @@ module SchemaTestModule =
             edApiDef1a <- EdApiDef(Name = "ApiDef1a")
             edSystem.ApiDefs.Add(edApiDef1a)
 
-            edApiCall1a <- EdApiCall(Name = "ApiCall1a", InAddress="InAddressX0")
-            edCall1a  <- EdCall (Name = "Call1a", CallType=DbCallType.Parallel, AutoPre="AutoPre 테스트 1", Safety="안전조건1", Timeout=Some 30)
+            edCall1a  <- EdCall (Name = "Call1a", CallType=DbCallType.Parallel, AutoPre="AutoPre 테스트 1", Safety="안전조건1", Timeout=Some 30, ApiCalls=ResizeArray [edApiCall1a])
             edCall1b  <- EdCall (Name = "Call1b", CallType=DbCallType.Repeat)
             edWork1.Calls.AddRange([edCall1a; edCall1b])
             edCall2a  <- EdCall (Name = "Call2a")
@@ -245,6 +249,8 @@ module SchemaTestModule =
 
         dsProject.EnumerateDsObjects()
         |> iter (fun dsobj ->
+            if dsobj.Id.IsNone then
+                noop()
             // DB 삽입 후이므로 Id 가 Some 이어야 함
             dsobj.Id.IsSome === true
         )
