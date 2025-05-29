@@ -47,11 +47,11 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
+            let apiDefs  = x.ApiDefs  |-> _.replicate(bag)  |> toArray
+            let apiCalls = x.ApiCalls |-> _.replicate(bag)  |> toArray
             let flows    = x.Flows    |-> _.replicate(bag)  |> toArray
             let works    = x.Works    |-> _.replicate(bag)  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
             let arrows   = x.Arrows   |-> _.replicate(bag)  |> toArray
-            let apiDefs  = x.ApiDefs  |-> _.replicate(bag)  |> toArray
-            let apiCalls = x.ApiCalls |-> _.replicate(bag)  |> toArray
 
             arrows
             |> iter (fun (a:RtArrowBetweenWorks) ->
@@ -125,6 +125,10 @@ module DsObjectCopyAPIModule =
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
+
+        // TODO:::
+        // 모든 replicate 를 Ed object 기반으로 변경 필요... replicate 된 객체의 Guid 새로 mapping 해서 assign 할 필요 있음.
+
         /// Id, Guid 및 DateTime 은 새로이 생성
         member x.Duplicate() =
             let replica = x.Replicate()
@@ -137,6 +141,12 @@ module DsObjectCopyAPIModule =
                 obj.Id <- None
                 obj.Guid <- guidDic[obj.Guid]
                 obj.DateTime <- current)
+
+            //for c in replica.Works >>= _.Calls do
+            //    let newGuids = c.ApiCalls |-> _.Guid |-> (fun g -> guidDic[g])
+            //    let newApiCalls = newGuids |-> (fun g -> objs[g] :?> RtApiCall)
+            //    c.ApiCalls <- newApiCalls |> toList
+            //    ()
 
             // 삭제 요망: debug only
             // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인

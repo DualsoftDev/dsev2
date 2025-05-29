@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open Dual.Common.Core.FS
 open System
+open System.Collections.Generic
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
@@ -112,7 +113,7 @@ module DsObjectUtilsModule =
             x.EnumerateDsObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
 
-        member x.Validate() =
+        member x.Validate(guidDic:Dictionary<Guid, Unique>) =
             verify (x.Guid <> emptyGuid)
             verify (x.DateTime <> minDate)
             match x with
@@ -121,37 +122,43 @@ module DsObjectUtilsModule =
 
             match x with
             | :? RtProject as prj ->
-                prj.Systems |> iter _.Validate()
+                prj.Systems |> iter _.Validate(guidDic)
                 for s in prj.Systems do
                     verify (s.RawParent.Value.Guid = prj.Guid)
             | :? RtSystem as sys ->
-                sys.Works |> iter _.Validate()
+                sys.Works |> iter _.Validate(guidDic)
                 for w in sys.Works  do
                     verify (w.RawParent.Value.Guid = sys.Guid)
+                    for c in w.Calls do
+                        c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
 
-                sys.Arrows |> iter _.Validate()
+                sys.Arrows |> iter _.Validate(guidDic)
                 for a in sys.Arrows do
                     verify (a.RawParent.Value.Guid = sys.Guid)
                     sys.Works |> contains a.Source |> verify
                     sys.Works |> contains a.Target |> verify
 
-                sys.ApiDefs |> iter _.Validate()
+                sys.ApiDefs |> iter _.Validate(guidDic)
                 for w in sys.ApiDefs  do
                     verify (w.RawParent.Value.Guid = sys.Guid)
 
+                sys.ApiCalls |> iter _.Validate(guidDic)
+                for ac in sys.ApiCalls  do
+                    verify (ac.RawParent.Value.Guid = sys.Guid)
+
             | :? RtFlow as flow ->
                 let works = flow.Works
-                works |> iter _.Validate()
+                works |> iter _.Validate(guidDic)
                 for w in works  do
                     verify (w.OptFlow = Some flow)
 
 
             | :? RtWork as work ->
-                work.Calls |> iter _.Validate()
+                work.Calls |> iter _.Validate(guidDic)
                 for c in work.Calls do
                     verify (c.RawParent.Value.Guid = work.Guid)
 
-                work.Arrows |> iter _.Validate()
+                work.Arrows |> iter _.Validate(guidDic)
                 for a in work.Arrows do
                     verify (a.RawParent.Value.Guid = work.Guid)
                     work.Calls |> contains a.Source |> verify

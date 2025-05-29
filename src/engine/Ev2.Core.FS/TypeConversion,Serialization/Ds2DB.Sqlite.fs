@@ -29,6 +29,7 @@ module internal Ds2SqliteImpl =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
     let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
+        let bag = dbApi.DDic.Get<Db2RtBag>()
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
                         (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid, prototype)
@@ -43,7 +44,7 @@ module internal Ds2SqliteImpl =
             let isPassive = proj.PassiveSystems |> Seq.contains s
             let projId = proj.Id.Value
             assert(isActive <> isPassive)   // XOR
-            match conn.TryQuerySingle<ORMProjectSystemMap>($"SELECT * FROM {Tn.MapProject2System} WHERE projectId = {projId} AND systemId = {sysId}") with
+            match conn.TryQuerySingle<ORMMapProjectSystem>($"SELECT * FROM {Tn.MapProject2System} WHERE projectId = {projId} AND systemId = {sysId}") with
             | Some row when row.IsActive = isActive -> ()
             | Some row ->
                 conn.Execute($"UPDATE {Tn.MapProject2System} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
@@ -67,6 +68,29 @@ module internal Ds2SqliteImpl =
             // TODO : arrow 처리.  System, flow, work 공히...
             //f.Arrows
 
+        // system 의 apiDefs 를 삽입
+        for rtAd in s.ApiDefs do
+            let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi, cache)
+            ormApiDef.SystemId <- sysId
+            let r = conn.Upsert(Tn.ApiDef, ormApiDef, ["Id"; "Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"], onInserted=idUpdator [ormApiDef; rtAd;])
+            match r with
+            | Some newId, affectedRows ->
+                tracefn $"Inserted API Def: {rtAd.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
+            | None, 0 -> ()     // no change
+            | None, affectedRows -> // update
+                tracefn $"Updated API Def: {rtAd.Name} with Id {ormApiDef.Id.Value}, systemId={ormApiDef.SystemId}"
+            ()
+        // system 의 apiCalls 를 삽입
+        for rtAc in s.ApiCalls do
+            let ormApiCall = rtAc.ToORM<ORMApiCall>(dbApi, cache)
+            ormApiCall.SystemId <- sysId
+            let r = conn.Upsert(Tn.ApiCall, ormApiCall,
+                        [   "Id"; "Guid"; "DateTime"; "Name"
+                            "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
+                            "InSymbol"; "OutSymbol"; "ValueTypeId"; "Value"], onInserted=idUpdator [ormApiCall; rtAc;])
+            let xxx = r
+            noop()
+
         // works, calls 삽입
         for w in s.Works do
             let ormWork = w.ToORM<ORMWork>(dbApi, cache)
@@ -87,6 +111,35 @@ module internal Ds2SqliteImpl =
                 ormCall.Id <- callId
                 assert(cache[c.Guid] = ormCall)
 
+                // call - apiCall 에 대한 mapping 정보 삽입
+                for apiCall in c.ApiCalls do
+                    let apiCallId = cache[apiCall.Guid].Id.Value
+                    //let ormMapping = ORMMapCall2ApiCall(callId, apiCallId)
+                    //let r = conn.Upsert(Tn.MapCall2ApiCall, ormMapping, [ "CallId"; "ApiCallId"; ])
+
+                    match conn.TryQuerySingle<ORMMapCall2ApiCall>($"SELECT * FROM {Tn.MapCall2ApiCall} WHERE callId = {c.Id.Value} AND apiCallId = {apiCallId}") with
+                    | Some row ->
+                        noop()
+                        //conn.Execute($"UPDATE {Tn.MapCall2ApiCall} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
+                        //            {| DateTime = now() |}) |> ignore
+                    | None ->
+                        let guid = newGuid()
+                        let affectedRows = conn.Execute(
+                                $"INSERT INTO {Tn.MapCall2ApiCall} (callId, apiCallId, guid, dateTime) VALUES (@CallId, @ApiCallId, @Guid, @DateTime)",
+                                {| CallId = c.Id.Value; ApiCallId = apiCallId ; Guid=guid; DateTime=now() |}, tr)
+
+                        noop()
+                    ()
+
+
+
+
+
+
+
+
+
+
             // work 의 arrows 를 삽입 (calls 간 연결)
             for a in w.Arrows do
                 let ormArrow = a.ToORM<ORMArrowCall>(dbApi, cache)
@@ -103,33 +156,13 @@ module internal Ds2SqliteImpl =
             ()
 
 
-        // system 의 apiDefs 를 삽입
-        for a in s.ApiDefs do
-            let ormApiDef = a.ToORM<ORMApiDef>(dbApi, cache)
-            ormApiDef.SystemId <- sysId
-            let r = conn.Upsert(Tn.ApiDef, ormApiDef, ["Id"; "Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"], onInserted=idUpdator [ormApiDef; a;])
-            match r with
-            | Some newId, affectedRows ->
-                tracefn $"Inserted API Def: {a.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
-            | None, 0 -> ()     // no change
-            | None, affectedRows -> // update
-                tracefn $"Updated API Def: {a.Name} with Id {ormApiDef.Id.Value}, systemId={ormApiDef.SystemId}"
-            ()
-        // system 의 apiCalls 를 삽입
-        for a in s.ApiCalls do
-            let ormApiCall = a.ToORM<ORMApiCall>(dbApi, cache)
-            ormApiCall.SystemId <- sysId
-            let r = conn.Upsert(Tn.ApiCall, ormApiCall,
-                        [   "Id"; "Guid"; "DateTime"; "Name"
-                            "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
-                            "InSymbol"; "OutSymbol"; "ValueTypeId"; "Value"], onInserted=idUpdator [ormApiCall; a;])
-            let xxx = r
-            noop()
 
 
     /// DsProject 을 sqlite database 에 저장
     let project2Sqlite (proj:RtProject) (dbApi:DbApi) (removeExistingData:bool option) =
-        let grDic = proj.EnumerateDsObjects() |> groupByToDictionary _.GetType()
+        let bag = dbApi.DDic.Get<Db2RtBag>()
+        let rtObjs = proj.EnumerateDsObjects() |> List.cast<RtUnique> |> tee(fun zs -> zs |> iter bag.Add)
+        let grDic = rtObjs |> groupByToDictionary _.GetType()
         let systems = grDic.[typeof<RtSystem>] |> Seq.cast<RtSystem> |> List.ofSeq
 
         let onError (ex:Exception) = logError $"project2Sqlite failed: {ex.Message}"; raise ex
@@ -201,7 +234,7 @@ module internal Sqlite2DsImpl =
                 |> tee (fun z -> bag.DbDic.Add(z.Guid, z) )
 
             let projSysMaps =
-                conn.Query<ORMProjectSystemMap>(
+                conn.Query<ORMMapProjectSystem>(
                     $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
                     {| ProjectId = ormProject.Id |}, tr)
                 |> tee (fun zs -> zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
@@ -330,20 +363,25 @@ module Ds2SqliteModule =
     open Ds2SqliteImpl
     open Sqlite2DsImpl
 
+    let private createDbApi (connStr:string) =
+        let ddic = DynamicDictionary()
+        ddic.Set<Db2RtBag>(Db2RtBag())
+        DbApi(connStr, DDic=ddic)
+
     type RtProject with
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
-            let dbApi = DbApi(connStr)
+            let dbApi = createDbApi connStr
             project2Sqlite x dbApi removeExistingData
 
         static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
-            let dbApi = DbApi(connStr)
+            let dbApi = createDbApi connStr
             fromSqlite3 identifier dbApi
 
     type RtSystem with
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
-            let dbApi = DbApi(connStr)
+            let dbApi = createDbApi connStr
             system2Sqlite x dbApi removeExistingData
 
         static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
-            let dbApi = DbApi(connStr)
+            let dbApi = createDbApi connStr
             ()

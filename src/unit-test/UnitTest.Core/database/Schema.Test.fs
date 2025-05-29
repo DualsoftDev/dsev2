@@ -15,6 +15,7 @@ open Dual.Common.Core.FS
 open Ev2.Core.FS
 open System.Collections
 open FsUnitTyped
+open System.Collections.Generic
 
 
 [<AutoOpen>]
@@ -238,7 +239,8 @@ module SchemaTestModule =
         let dsProject = edProject.ToDsProject()
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
-        dsProject.Validate()
+        let rtObjDic = dsProject.EnumerateDsObjects().ToDictionary(_.Guid, id)
+        dsProject.Validate(rtObjDic)
         dsProject.EnumerateDsObjects()
         |> iter (fun dsobj ->
             // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
@@ -288,11 +290,14 @@ module SchemaTestModule =
         dsCall1.Name === edCall1a.Name
         dsCall2.Name === edCall2a.Name
 
+        let validate (rtObj:#Unique) =
+            let guidDic = rtObj.EnumerateDsObjects().ToDictionary(_.Guid, id)
+            rtObj.Validate(guidDic)
 
         let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
         tracefn $"---------------------- json:\r\n{json}"
         let dsProject2 = RtProject.FromJson json
-        dsProject2.Validate()
+        validate dsProject2
         let json2 = dsProject2.ToJson(Path.Combine(testDataDir(), "json-deserialized-dssystem.json"))
 
         json === json2
@@ -303,25 +308,26 @@ module SchemaTestModule =
 
 
         dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
+        validate dsProject2
 
         let dsProject3 = dsProject2.Replicate()
-        dsProject3.Validate()
+        validate dsProject3
 
         dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
         //(fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
         do
             let dsProj = dsProject2.Duplicate()
             dsProj.Name <- $"Replica of {dsProj.Name}"
-            dsProj.Validate()
+            validate dsProj
             dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
             dsProj.ToSqlite3(connStr, removeExistingData)
 
         let dsSystem4 = dsProject3.Systems[0].Duplicate()
-        dsSystem4.Validate()
+        validate dsSystem4
         dsSystem4.Name <- "DuplicatedSystem"
 
         let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
-        dsProject4.Validate()
+        validate dsProject4
         dsProject4.Systems[0].IsPrototype <- false
         dsProject4.ToSqlite3(connStr, removeExistingData)
 
