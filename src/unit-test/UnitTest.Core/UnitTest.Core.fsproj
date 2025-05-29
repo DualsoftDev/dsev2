@@ -19,6 +19,7 @@
 		<Compile Include="newtonsoft.json\FSharpOption.Test.fs" />
 		<Compile Include="database\Schema.Test.fs" />
 		<Compile Include="database\ReadFromDB.Test.fs" />
+		<Compile Include="Duplicate.Test.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 

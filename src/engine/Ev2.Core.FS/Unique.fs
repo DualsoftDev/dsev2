@@ -42,7 +42,10 @@ module Interfaces =
     let internal s2guid (s:string) = Guid.Parse s
     let internal guid2str (g:Guid) = g.ToString("D")
 
-    let internal now() = if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
+    let internal now() =
+        let x = AppSettings.TheAppSettings
+        let y = x.UseUtcTime
+        if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
     [<AbstractClass>]
     type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) =
