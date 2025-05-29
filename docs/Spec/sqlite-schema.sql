@@ -236,6 +236,51 @@ CREATE TABLE [tableHistory] (
 
 
 
+CREATE VIEW [vwArrowCall] AS
+    SELECT
+        ac.[id] AS id
+        , ac.[guid]
+        , ac.[dateTime]
+        , ac.[source]
+        , src.[name] AS sourceName
+        , ac.[target]
+        , tgt.[name] AS targetName
+        , ac.[typeId]
+        , enum.[category] AS category
+        , enum.[name] AS enumName
+        , ac.[workId]
+        , wrk.[name] AS workName
+        , sys.[name] AS systemName
+    FROM [arrowCall] ac
+    JOIN [call] src ON src.Id = ac.source
+    JOIN [call] tgt ON tgt.Id = ac.target
+    JOIN [work] wrk ON wrk.Id = ac.workId
+    JOIN [system] sys ON sys.Id = wrk.systemId
+    LEFT JOIN [enum] enum ON ac.typeId = enum.id
+    ;
+
+
+CREATE VIEW [vwArrowWork] AS
+    SELECT
+        aw.[id] AS id
+        , aw.[guid]
+        , aw.[dateTime]
+        , aw.[source]
+        , src.[name] AS sourceName
+        , aw.[target]
+        , tgt.[name] AS targetName
+        , aw.[typeId]
+        , enum.[category] AS category
+        , enum.[name] AS enumName
+        , aw.[systemId]
+        , sys.[name] AS systemName
+    FROM [arrowWork] aw
+    JOIN [work] src ON src.Id = aw.source
+    JOIN [work] tgt ON tgt.Id = aw.target
+    JOIN [system] sys ON sys.Id = src.systemId
+    LEFT JOIN [enum] enum ON aw.typeId = enum.id
+    ;
+
 
 INSERT INTO [meta] (key, val) VALUES ('Version', '1.0.0.0');
 DELETE FROM tableHistory;
