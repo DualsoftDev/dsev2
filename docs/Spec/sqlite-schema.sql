@@ -131,6 +131,7 @@ CREATE TABLE [call](
     , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
+    , [disabled]      TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        INTEGER NOT NULL
     -- , [apiCallId]     INTEGER NOT NULL
     , FOREIGN KEY(workId)    REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
@@ -327,6 +328,7 @@ CREATE VIEW [vwCall] AS
         , c.[timeout]
         , c.[autoPre]
         , c.[safety]
+        , c.[disabled]
         , p.[id]      AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId

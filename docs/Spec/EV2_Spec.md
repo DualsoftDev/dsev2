@@ -85,13 +85,13 @@
 ### 2.1 구성 요소 계층 구조
 
 EV2 실행 모델은 다음과 같은 계층 구조를 가집니다:
-- **Project**:   다수의 System을 포함하는 최상위 단위. TargetSystems 필드를 통해 제어코드 생성 대상 명시 가능
+- **Project**:   다수의 System을 포함하는 최상위 단위.  자신이 포함한 각각의 시스템에 대해서  제어코드 생성 대상 명시.  (Active/Passive)
 - **System**:  Work 간 전역 흐름 그래프(`WorkGraph`, Start, Reset 가능) 포함
-- **Work**: 작업 단위. 내부적으로 Call을 포함하며, `CallGraph`로 Call 간 흐름(Reset 금지, DAG만 가능) 구성. `Vertex`를 상속함
+- **Work**: 작업 단위. 내부적으로 복수개의 Call을 포함하며, 이들간 연결 관계를 포함하는 arrow 를 가짐.  (Reset 금지, DAG만 가능)
 - **Flow**: 논리 단위로서 여러 Work를 포함하는 그룹
 - **Call**: 특정 API(동시 호출 가능)를 호출하는 노드. `Vertex`를 상속함
-- **ApiCall**: 실제 API 호출을 수행. 디바이스 연계 IO 정의 (입출력 주소)
-- **ApiDef**: Child System의 Interface 정의 부분
+- **ApiCall**: ApiDef 에 정의된 API 로 I/O 값을 이용해서 호출을 수행. 디바이스 연계 IO 정의 (입출력 주소)
+- **ApiDef**: 호출대상 System에 정의된 API Interface 정의 부분
 
 ```plaintext
 Project
@@ -101,45 +101,44 @@ Project
      │    ├── Call[]           // Work 내 호출 노드
      │    │    └── ApiCall[]   // 실제 API 호출 (디바이스 연동)
      │    │         └── ApiDef // 다른 System의 디바이스 정의 참조
-     │    └── CallGraph        // Call 간 흐름 (Directed Acyclic Graph)
-     └── WorkGraph             // Work 간 흐름 (Cyclic Directed Graph, Start/Reset 포함)
+     │    └── Arrows           // Call 간 흐름 (Directed Acyclic Graph)
+     └── Arrows                // Work 간 흐름 (Cyclic Directed Graph, Start/Reset 포함)
 ```
-  - x:y 는 `부모` 대 `나` 와의 관계
 
 ### 2.2 공통 베이스 클래스
 
-#### SystemUsage
-```fsharp
-type SystemUsage =
-  | Target   // 프로젝트에 정의되어 있고, 직접 제어 대상
-  | Linked   // 외부 프로젝트에서 정의된 간접 제어 대상
-  | Device   // 이 프로젝트에서 정의되었으나 간접 제어 대상
-  // | Unused   // 이 프로젝트에서 사용되지 않음 (정의 및 참조 없음)  ===> 삭제 대상
-```
+>   
+>    #### SystemUsage
+>   ```fsharp
+>   type SystemUsage =
+>     | Target   // 프로젝트에 정의되어 있고, 직접 제어 대상
+>     | Linked   // 외부 프로젝트에서 정의된 간접 제어 대상
+>     | Device   // 이 프로젝트에서 정의되었으나 간접 제어 대상
+>     // | Unused   // 이 프로젝트에서 사용되지 않음 (정의 및 참조 없음)  ===> 삭제 대상
+>   ```
 
-#### 고유 id
+#### 고유 id (IUnique)
   - guid: 객체가 생성되는 시점에 생성되어 항상 따라 다님.  항상 Non-null 값
   - id: int 값을 갖는 database 의 primary key.  databse 에 한번이라도 저장되지 않으면 null 값을 가지고 db 에 insert 되는 순간 그 db 에서 고유한 key 값을 할당받아 계속 들고 다닌다.
   - name: 그냥 식별자 일뿐 중복이 허용된다.  단 project 이름은 항상 uniq 해야 한다.
   - dateTime: 객체 생성 시점에 그 시점의 시간이 할당되며, update 될 때마다 수정되는 값 (미정)
 
-```fsharp
-type IUnique =
-  abstract Id: int option
-  abstract Guid: Guid
-  abstract Name: string
-  abstract DateTime: DateTime
-
+```fs
 type IParameter = interface end
 
 type IArrow = IUnique * IUnique
 ```
-모든 요소는 고유 ID와 이름(Name)을 가짐
+모든 요소는 고유 식별자를 가짐.  (적어도 Guid 는 가짐)
 
 ### 2.3 주요 클래스 및 속성
   - [📁 현재 소스 보기](../../src/engine/Ev2.Core.FS/Interfaces.fs)
 
 #### Project
+- Project 내의 system
+  - 자신이 포함하는 system 에 대해서 각기 Active 인지 Passive 인지 관리
+    - 특정 시스템이 A project 에서는 active 로, B project 에서는 passive 로 동작할 수 있으므로 active/passive 속성은 project 가 관리한다.
+
+
 ```fsharp
 type Project(..) =
     ```
@@ -149,54 +148,26 @@ type Project(..) =
 ```
 
 #### System
-```fsharp
-type DsSystem(..) =
-    ```
-    member _.Jobs = jobs
-    member _.Param = param
-```
 - Flows: 여러 Flow 그룹
 - WorkGraph: 전역 작업 흐름 정의 (Work 간 연결)
 
 #### Flow
-```fsharp
-type Flow(...) =
-    ```
-    member _.Param = param
-```
 
 #### Work
-```fsharp
-type Work(...) =
-    ```
-    member _.Param = param
-```
 - 순환 구조 허용 (Cyclic Directed Graph)
-- 내부 Call 흐름 정의 가능
+- `Arrows`를 이용해서 내부 Call 흐름 정의 가능
 
 #### Call
-```fsharp
-type Call(..., apiCalls: ApiCall[], param: IParameter) =
-    ```
-    member _.Param = param
-    member _.ApiCalls = apiCalls
-```
-- `CallGraph`에 따라 연결됨
+- ApiCall 을 이용해서 타 system 호출
 
-#### ApiCall
+#### ApiCall  QQQ deviceName??
 ```fsharp
 type ApiCall(deviceName: string, apiDef: ApiDef, param: IParameter) =
     member this.DeviceName = deviceName
-    member _.Param = param
 ```
 
 #### ApiDef
-```fsharp
-type ApiDef(idOpt: Guid option, name: string, param: IParameter) =
-    let id = defaultArg idOpt (Guid.NewGuid())
-    interface IUnique with ...
-    member _.Param = param
-```
+
 ### 2.4 파라미터 모델
 
 모든 주요 객체는 공통적으로 `Param` 속성을 갖고 있음. 각 객체에 대한 파라미터 정의는 다음 별도 문서로 분리됨:
@@ -290,24 +261,9 @@ EV2 시스템은 다양한 실행 단위(`System`, `Flow`, `Work`, `Call`, `ApiC
 ▶ 테스트 완료
 ```
 
-### 3.5 테이블 생성 예시 (SQL)
+### 3.5 테이블 생성 예시 (SQL) : 미처리, 확인 필요한 부분만 남김
 
 ```sql
-
-CREATE TABLE call (
-    id int PRIMARY KEY,
-    workId int REFERENCES work(id),
-    jobId int REFERENCES job(id),
-    callTimeout INT,
-    isDisabled BOOLEAN,
-    autoPre BOOLEAN DEFAULT FALSE
-);
-
-CREATE TABLE job (
-    id int PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT
-);
 
 CREATE TABLE taskDev (
     id int PRIMARY KEY,
@@ -315,11 +271,6 @@ CREATE TABLE taskDev (
     deviceSystemId int REFERENCES system(id),
     deviceName TEXT,
     apiItemId int REFERENCES apiItem(id)
-);
-
-CREATE TABLE apiItem (
-    id int PRIMARY KEY,
-    Name TEXT NOT NULL
 );
 
 CREATE TABLE apiStatistic (
@@ -338,15 +289,6 @@ CREATE TABLE param (
     ownerId int,
     paramKey TEXT,
     paramValue TEXT
-);
-
-
--- 모든 객체의 UUID 정보 저장 table
-CREATE TABLE guidMap (
-    id int PRIMARY KEY,
-    tableName:Text, -- e.g 'someTable'
-    tableId:int, -- 의미적으로 REFERENCES someTable(id)
-    guid:UUID
 );
 
 ```
@@ -368,34 +310,6 @@ let private serializeCallParam (p: CallParam) =
 
 ### 3.7 실전 SQL 연산 예시 : 위 수정 사항 fix 후 update 필요!!
 
-#### 1. 특정 Job의 Device API 추적
-```sql
-SELECT td.DeviceName, ai.Name AS ApiName
-FROM TaskDevs td
-JOIN ApiItems ai ON td.ApiItemId = ai.ApiItemId
-JOIN Jobs j ON td.JobId = j.JobId
-WHERE j.Name = 'SampleJob';
-```
-
-#### 2. AutoPre 조건이 활성화된 Call 목록
-```sql
-SELECT c.CallId, w.Name AS WorkName, j.Name AS JobName
-FROM Calls c
-JOIN Works w ON c.WorkId = w.WorkId
-JOIN Jobs j ON c.JobId = j.JobId
-WHERE c.AutoPre = TRUE;
-```
-
-#### 3. 시스템 내 전체 트랜잭션 흐름 조회
-```sql
-SELECT s.Name AS SystemName, f.Name AS FlowName, w.Name AS WorkName, j.Name AS JobName
-FROM Systems s
-JOIN Flows f ON s.SystemId = f.SystemId
-JOIN Works w ON f.FlowId = w.FlowId
-JOIN Calls c ON w.WorkId = c.WorkId
-JOIN Jobs j ON c.JobId = j.JobId
-WHERE s.Name = 'MainSystem';
-```
 
 #### 4. API 실행 통계 조회
 ```sql
@@ -419,45 +333,47 @@ WHERE s.Name = 'Device_1';
 
 ### 4.1 EV1 -> EV2: 구조적 변화 개요
 
-EV1은 구조적인 `.ds` 도메인 언어 기반 정의를 사용했지만, EV2에서는 모든 시스템 정의가 **표준 JSON 포맷**으로 저장되며, **런타임 시점에 관계형 DB**로 실시간 변환되어 동작됩니다. 각 시스템, 작업 흐름, 장치 구성, API, 조건, 버튼 및 램프가 JSON 기반으로 명확히 정의되며, 이후 AASX 메타 정의에도 확장 가능하도록 설계됩니다.
+EV1은 자체 정의 언어인 `.ds` 도메인 언어 기반 정의를 사용했지만, EV2에서는 모든 시스템 정의가 **표준 JSON 포맷**으로 저장되며,  동일 내용이  **관계형 DB** 로 read/write 가능합니다. 각 시스템, 작업 흐름, 장치 구성, API, 조건, 버튼 및 램프가 JSON 기반으로 명확히 정의되며, 이후 AASX 메타 정의에도 확장 가능하도록 설계됩니다.
 
 ---
 
 ### 4.2 JSON 예제: 시스템 HelloDS
+- "guid-XX" 는 실제의 guid 로 교체되어야 함.
+- jobs 는 삭제 대상 : apiCall 및 apiDef 로 대체
 
 ```json
 {
   "System": {
-    "Id": "ec5d7a91-1bc2-47cd-a8a6-fc5f9b9de111",
+    "Id": "guid-sys1",
     "Name": "HelloDS",
     "LangVersion": "1.0.0.1",
     "EngineVersion": "0.9.10.17",
     "Flows": [
       {
-        "Id": "b20f5f11-72b7-4e9e-94c7-abc104a1ef01",
+        "Id": "guid-flow1",
         "Name": "STN1",
         "WorkGraph": [
-          { "SourceId": "d3f6a9de-21eb-4861-aaa9-cf25d7348d20", "TargetId": "f39dd69f-8869-4655-9b10-006e4cf443d0" },
-          { "SourceId": "f39dd69f-8869-4655-9b10-006e4cf443d0", "TargetId": "d3f6a9de-21eb-4861-aaa9-cf25d7348d20" }
+          { "SourceId": "guid-work1", "TargetId": "f39dd69f-8869-4655-9b10-006e4cf443d0" },
+          { "SourceId": "f39dd69f-8869-4655-9b10-006e4cf443d0", "TargetId": "guid-work1" }
         ],
         "Works": [
           {
-            "Id": "d3f6a9de-21eb-4861-aaa9-cf25d7348d20",
+            "Id": "guid-work1",
             "Name": "Work1",
             "Calls": [
-              { "Id": "b2d3ae21-a3e4-11ee-b9d1-0242ac120002", "Job": "Device1.ADV" },
-              { "Id": "b2d3b002-a3e4-11ee-b9d1-0242ac120002", "Job": "Device2.ADV" },
-              { "Id": "b2d3b0f3-a3e4-11ee-b9d1-0242ac120002", "Job": "Device3.ADV" },
-              { "Id": "b2d3b1e4-a3e4-11ee-b9d1-0242ac120002", "Job": "Device4.ADV" },
-              { "Id": "b2d3b2d5-a3e4-11ee-b9d1-0242ac120002", "Job": "Device1.RET" },
-              { "Id": "b2d3b3c6-a3e4-11ee-b9d1-0242ac120002", "Job": "Device2.RET" },
-              { "Id": "b2d3b4b7-a3e4-11ee-b9d1-0242ac120002", "Job": "Device3.RET" },
-              { "Id": "b2d3b5a8-a3e4-11ee-b9d1-0242ac120002", "Job": "Device4.RET" }
+              { "Id": "guid-call1", "Job": "Device1.ADV" },
+              { "Id": "guid-call2", "Job": "Device2.ADV" },
+              { "Id": "guid-call3", "Job": "Device3.ADV" },
+              { "Id": "guid-call4", "Job": "Device4.ADV" },
+              { "Id": "guid-call5", "Job": "Device1.RET" },
+              { "Id": "guid-call6", "Job": "Device2.RET" },
+              { "Id": "guid-call7", "Job": "Device3.RET" },
+              { "Id": "guid-call8", "Job": "Device4.RET" }
             ],
             "CallGraph": [
-              { "SourceId": "b2d3ae21-a3e4-11ee-b9d1-0242ac120002", "TargetId": "b2d3b002-a3e4-11ee-b9d1-0242ac120002" },
-              { "SourceId": "b2d3b002-a3e4-11ee-b9d1-0242ac120002", "TargetId": "b2d3b0f3-a3e4-11ee-b9d1-0242ac120002" },
-              { "SourceId": "b2d3b0f3-a3e4-11ee-b9d1-0242ac120002", "TargetId": "b2d3b1e4-a3e4-11ee-b9d1-0242ac120002" }
+              { "SourceId": "guid-call1", "TargetId": "guid-call2" },
+              { "SourceId": "guid-call2", "TargetId": "guid-call3" },
+              { "SourceId": "guid-call3", "TargetId": "guid-call4" }
             ]
           }
         ]
@@ -513,7 +429,7 @@ EV1은 구조적인 `.ds` 도메인 언어 기반 정의를 사용했지만, EV2
 {
   "assetAdministrationShells": [
     {
-      "id": "ec5d7a91-1bc2-47cd-a8a6-fc5f9b9de111",
+      "id": "guid-sys1",
       "idShort": "HelloDS",
       "asset": {
         "type": "Instance",
@@ -532,7 +448,7 @@ EV1은 구조적인 `.ds` 도메인 언어 기반 정의를 사용했지만, EV2
               "value": [
                 {
                   "idShort": "WorkGraph",
-                  "first": "d3f6a9de-21eb-4861-aaa9-cf25d7348d20",
+                  "first": "guid-work1",
                   "second": "f39dd69f-8869-4655-9b10-006e4cf443d0"
                 }
               ]
