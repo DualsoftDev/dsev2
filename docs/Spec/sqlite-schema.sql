@@ -235,49 +235,161 @@ CREATE TABLE [tableHistory] (
 
 
 
+CREATE VIEW [vwMapProject2System] AS
+    SELECT
+        m.[id]
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+    FROM [mapProject2System] m
+    JOIN [project] p ON p.id = m.projectId
+    JOIN [system]  s ON s.id = m.systemId
+    ;
+
+
+CREATE VIEW [vwMapCall2ApiCall] AS
+    SELECT
+        m.[id]
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , w.[id]    AS workId
+        , w.[name]  AS workName
+        , c.[id]    AS callId
+        , c.[name]  AS callName
+        , ac.[id]   AS apiCallId
+        , ac.[name] AS apiCallName
+        , ad.[id]   AS apiDefId
+        , ad.[name] AS apiDefName
+    FROM [mapCall2ApiCall] m
+    JOIN [call] c                ON c.Id         = m.callId
+    JOIN [apiCall] ac            ON ac.Id        = m.apiCallId
+    JOIN [apiDef] ad             ON ad.Id        = ac.apiDefId
+    JOIN [work] w                ON w.Id         = c.workId
+    JOIN [system] s              ON s.id         = w.systemId
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p             ON p.id         = psm.projectId
+    ;
+
+CREATE VIEW [vwSystem] AS
+    SELECT
+        s.[id]
+        , s.[name]  AS systemName
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+    FROM [system] s
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p             ON p.id         = psm.projectId
+    ;
+
+
+CREATE VIEW [vwFlow] AS
+    SELECT
+        f.[id]
+        , f.[name]  AS flowName
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , w.[id]    AS workId
+        , w.[name]  AS workName
+    FROM [work] w
+    LEFT JOIN [flow] f           ON f.id         = w.flowId
+    JOIN [system] s              ON s.id         = w.systemId
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p             ON p.id         = psm.projectId
+    ;
+
+
+CREATE VIEW [vwWork] AS
+    SELECT
+        w.[id]
+        , w.[name]  AS workName
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , f.[id]    AS flowId
+        , f.[name]  AS flowName
+    FROM [work] w
+    LEFT JOIN [flow] f ON f.id = w.flowId
+    JOIN [system] s              ON s.id         = w.systemId
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p             ON p.id         = psm.projectId
+    ;
+
+CREATE VIEW [vwCall] AS
+    SELECT
+        c.[id]
+        , c.[name]  AS callName
+        , c.[timeout]
+        , c.[autoPre]
+        , c.[safety]
+        , p.[id]      AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , w.[id]    AS workId
+        , w.[name]  AS workName
+    FROM [call] c
+    JOIN [work] w                ON w.Id         = c.workId
+    JOIN [system] s              ON s.id         = w.systemId
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p             ON p.id         = psm.projectId
+    ;
+
+
 
 CREATE VIEW [vwArrowCall] AS
     SELECT
-        ac.[id] AS id
-        , ac.[guid]
-        , ac.[dateTime]
+        ac.[id]
         , ac.[source]
         , src.[name] AS sourceName
         , ac.[target]
         , tgt.[name] AS targetName
         , ac.[typeId]
-        , enum.[category] AS category
+        , enum.[category]
         , enum.[name] AS enumName
         , ac.[workId]
         , wrk.[name] AS workName
-        , sys.[name] AS systemName
+        , p.[id]      AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
     FROM [arrowCall] ac
     JOIN [call] src ON src.Id = ac.source
     JOIN [call] tgt ON tgt.Id = ac.target
     JOIN [work] wrk ON wrk.Id = ac.workId
-    JOIN [system] sys ON sys.Id = wrk.systemId
+    JOIN [system] s ON s.id = wrk.systemId
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p             ON p.id         = psm.projectId
     LEFT JOIN [enum] enum ON ac.typeId = enum.id
     ;
 
 
 CREATE VIEW [vwArrowWork] AS
     SELECT
-        aw.[id] AS id
-        , aw.[guid]
-        , aw.[dateTime]
+        aw.[id]
         , aw.[source]
-        , src.[name] AS sourceName
+        , src.[name]      AS sourceName
         , aw.[target]
-        , tgt.[name] AS targetName
+        , tgt.[name]      AS targetName
         , aw.[typeId]
         , enum.[category] AS category
-        , enum.[name] AS enumName
+        , enum.[name]     AS enumName
         , aw.[systemId]
-        , sys.[name] AS systemName
+        , p.[id]          AS projectId
+        , p.[name]        AS projectName
+        , s.[id]          AS systemId
+        , s.[name]        AS systemName
     FROM [arrowWork] aw
     JOIN [work] src ON src.Id = aw.source
     JOIN [work] tgt ON tgt.Id = aw.target
-    JOIN [system] sys ON sys.Id = src.systemId
+    JOIN [system] s ON s.id = src.systemId
+    JOIN [mapProject2System] psm ON psm.systemId = s.id
+    JOIN [project] p  ON p.id = psm.projectId
     LEFT JOIN [enum] enum ON aw.typeId = enum.id
     ;
 

@@ -304,8 +304,8 @@ module SchemaTestModule =
         Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem.json")
         |> dsProject.ToJson |> ignore
 
-        let connStr =
-            Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem.sqlite3")
-            |> path2ConnectionString
+        let dbPath = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem.sqlite3")
+        File.Delete(dbPath) |> ignore
+        let connStr = dbPath |> path2ConnectionString
         dsProject.ToSqlite3(connStr, true)
 

@@ -3,7 +3,7 @@
 #### 링크
   - [📁 클래스 현재 소스 보기](../../src/engine/Ev2.Core.FS/Interfaces.fs)
   - [📁 DB schema 보기](./sqlite-schema.sql)
-    - [📁 Sqlite DB 보기](./dssystem.sqlite3)
+    - [📁 Sqlite DB 보기](./dssystem-250530.sqlite3)
   - [📁 객체 생성 샘플 소스 보기](../../src/unit-test/UnitTest.Core/database/CreateSample.fs)
   - [📁 JSON 저장 샘플 보기](./dssystem.json)
 

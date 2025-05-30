@@ -63,10 +63,15 @@ module DatabaseSchemaModule =
 
     // database view names
     module Vn =
-        let Log     = "vwLog"
-        let Storage = "vwStorage"
-        let ArrowCall = "vwArrowCall"
-        let ArrowWork = "vwArrowWork"
+        let [<Literal>] MapProject2System = "vwMapProject2System"
+        let [<Literal>] MapCall2ApiCall   = "vwMapCall2ApiCall"
+        let [<Literal>] System     = "vwSystem"
+        let [<Literal>] Flow       = "vwFlow"
+        let [<Literal>] Work       = "vwWork"
+        let [<Literal>] Call       = "vwCall"
+        let [<Literal>] ArrowCall  = "vwArrowCall"
+        let [<Literal>] ArrowWork  = "vwArrowWork"
+        let AllViewTableNames = [ MapProject2System; MapCall2ApiCall; System; Flow; Work; Call; ArrowCall; ArrowWork; ]
 
     let triggerSql() =
         // op : {INSERT, UPDATE, DELETE}
@@ -288,49 +293,161 @@ CREATE TABLE [{Tn.TableHistory}] (
 
 
 { if withTrigger then triggerSql() else "" }
+CREATE VIEW [{Vn.MapProject2System}] AS
+    SELECT
+        m.[id]
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+    FROM [{Tn.MapProject2System}] m
+    JOIN [{Tn.Project}] p ON p.id = m.projectId
+    JOIN [{Tn.System}]  s ON s.id = m.systemId
+    ;
+
+
+CREATE VIEW [{Vn.MapCall2ApiCall}] AS
+    SELECT
+        m.[id]
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , w.[id]    AS workId
+        , w.[name]  AS workName
+        , c.[id]    AS callId
+        , c.[name]  AS callName
+        , ac.[id]   AS apiCallId
+        , ac.[name] AS apiCallName
+        , ad.[id]   AS apiDefId
+        , ad.[name] AS apiDefName
+    FROM [{Tn.MapCall2ApiCall}] m
+    JOIN [{Tn.Call}] c                ON c.Id         = m.callId
+    JOIN [{Tn.ApiCall}] ac            ON ac.Id        = m.apiCallId
+    JOIN [{Tn.ApiDef}] ad             ON ad.Id        = ac.apiDefId
+    JOIN [{Tn.Work}] w                ON w.Id         = c.workId
+    JOIN [{Tn.System}] s              ON s.id         = w.systemId
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    ;
+
+CREATE VIEW [{Vn.System}] AS
+    SELECT
+        s.[id]
+        , s.[name]  AS systemName
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+    FROM [{Tn.System}] s
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    ;
+
+
+CREATE VIEW [{Vn.Flow}] AS
+    SELECT
+        f.[id]
+        , f.[name]  AS flowName
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , w.[id]    AS workId
+        , w.[name]  AS workName
+    FROM [{Tn.Work}] w
+    LEFT JOIN [{Tn.Flow}] f           ON f.id         = w.flowId
+    JOIN [{Tn.System}] s              ON s.id         = w.systemId
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    ;
+
+
+CREATE VIEW [{Vn.Work}] AS
+    SELECT
+        w.[id]
+        , w.[name]  AS workName
+        , p.[id]    AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , f.[id]    AS flowId
+        , f.[name]  AS flowName
+    FROM [{Tn.Work}] w
+    LEFT JOIN [{Tn.Flow}] f ON f.id = w.flowId
+    JOIN [{Tn.System}] s              ON s.id         = w.systemId
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    ;
+
+CREATE VIEW [{Vn.Call}] AS
+    SELECT
+        c.[id]
+        , c.[name]  AS callName
+        , c.[timeout]
+        , c.[autoPre]
+        , c.[safety]
+        , p.[id]      AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+        , w.[id]    AS workId
+        , w.[name]  AS workName
+    FROM [{Tn.Call}] c
+    JOIN [{Tn.Work}] w                ON w.Id         = c.workId
+    JOIN [{Tn.System}] s              ON s.id         = w.systemId
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    ;
+
+
 
 CREATE VIEW [{Vn.ArrowCall}] AS
     SELECT
-        ac.[id] AS id
-        , ac.[guid]
-        , ac.[dateTime]
+        ac.[id]
         , ac.[source]
         , src.[name] AS sourceName
         , ac.[target]
         , tgt.[name] AS targetName
         , ac.[typeId]
-        , enum.[category] AS category
+        , enum.[category]
         , enum.[name] AS enumName
         , ac.[workId]
         , wrk.[name] AS workName
-        , sys.[name] AS systemName
+        , p.[id]      AS projectId
+        , p.[name]  AS projectName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
     FROM [{Tn.ArrowCall}] ac
     JOIN [{Tn.Call}] src ON src.Id = ac.source
     JOIN [{Tn.Call}] tgt ON tgt.Id = ac.target
     JOIN [{Tn.Work}] wrk ON wrk.Id = ac.workId
-    JOIN [{Tn.System}] sys ON sys.Id = wrk.systemId
+    JOIN [{Tn.System}] s ON s.id = wrk.systemId
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
     LEFT JOIN [{Tn.Enum}] enum ON ac.typeId = enum.id
     ;
 
 
 CREATE VIEW [{Vn.ArrowWork}] AS
     SELECT
-        aw.[id] AS id
-        , aw.[guid]
-        , aw.[dateTime]
+        aw.[id]
         , aw.[source]
-        , src.[name] AS sourceName
+        , src.[name]      AS sourceName
         , aw.[target]
-        , tgt.[name] AS targetName
+        , tgt.[name]      AS targetName
         , aw.[typeId]
         , enum.[category] AS category
-        , enum.[name] AS enumName
+        , enum.[name]     AS enumName
         , aw.[systemId]
-        , sys.[name] AS systemName
+        , p.[id]          AS projectId
+        , p.[name]        AS projectName
+        , s.[id]          AS systemId
+        , s.[name]        AS systemName
     FROM [{Tn.ArrowWork}] aw
     JOIN [{Tn.Work}] src ON src.Id = aw.source
     JOIN [{Tn.Work}] tgt ON tgt.Id = aw.target
-    JOIN [{Tn.System}] sys ON sys.Id = src.systemId
+    JOIN [{Tn.System}] s ON s.id = src.systemId
+    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p  ON p.id = psm.projectId
     LEFT JOIN [{Tn.Enum}] enum ON aw.typeId = enum.id
     ;
 
