@@ -158,10 +158,10 @@ module ORMTypeConversionModule =
 
     type ORMCall with
         static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType,
-            autoPre:string, safety:string, timeout:Nullable<int>
+            autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>
         ): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
-            ORMCall(workId, callTypeId, autoPre, safety, timeout)
+            ORMCall(workId, callTypeId, autoPre, safety, isDisabled, timeout)
 
 
     let o2n = Option.toNullable
@@ -196,7 +196,7 @@ module ORMTypeConversionModule =
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtCall as z ->
-                ORMCall.Create(dbApi, pid, z.CallType, z.AutoPre, z.Safety, o2n z.Timeout)
+                ORMCall.Create(dbApi, pid, z.CallType, z.AutoPre, z.Safety, z.IsDisabled, o2n z.Timeout)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.

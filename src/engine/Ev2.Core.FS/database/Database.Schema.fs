@@ -209,6 +209,7 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
+    , [disabled]      TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        {intKeyType} NOT NULL
     -- , [apiCallId]     {intKeyType} NOT NULL
     , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
@@ -385,6 +386,7 @@ CREATE VIEW [{Vn.Call}] AS
         , c.[timeout]
         , c.[autoPre]
         , c.[safety]
+        , c.[disabled]
         , p.[id]      AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId

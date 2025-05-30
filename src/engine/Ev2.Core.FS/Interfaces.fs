@@ -136,13 +136,14 @@ module rec DsObjectModule =
 
 
     // see static member Create
-    type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, timeout:int option) =
+    type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, isDisabled:bool, timeout:int option) =
         inherit RtUnique()
         interface IRtCall
         member x.Work = x.RawParent |-> (fun z -> z :?> RtWork) |?? (fun () -> getNull<RtWork>())
         member val CallType = callType
         member val AutoPre  = autoPre
         member val Safety   = safety
+        member val IsDisabled = isDisabled
         member val Timeout  = timeout with get, set
         member val ApiCallGuids = apiCallGuids |> toList    // DB 저장시에는 callId 로 저장
         member x.ApiCalls =

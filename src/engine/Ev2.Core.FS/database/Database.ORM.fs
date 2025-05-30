@@ -126,15 +126,16 @@ module ORMTypesModule =
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    type ORMCall(workId:Id, callTypeId:Nullable<int>, autoPre:string, safety:string, timeout:Nullable<int>) =
+    type ORMCall(workId:Id, callTypeId:Nullable<int>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
         inherit ORMUnique(ParentId=workId)
 
-        new() = ORMCall(-1, DbCallType.Normal |> int |> Nullable, nullString, nullString, nullableInt)
+        new() = ORMCall(-1, DbCallType.Normal |> int |> Nullable, nullString, nullString, false, nullableInt)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val CallTypeId = callTypeId with get, set
         member val AutoPre = autoPre with get, set
         member val Safety = safety with get, set
+        member val Disabled = isDisabled with get, set
         member val Timeout = timeout with get, set
 
 

@@ -113,6 +113,7 @@ module rec EditableDsObjects =
         member val CallType = DbCallType.Normal with get, set
         member val AutoPre  = nullString with get, set
         member val Safety   = nullString with get, set
+        member val IsDisabled = false with get, set
         member val Timeout  = Option<int>.None with get, set
 
         member x.ApiCalls =
@@ -310,7 +311,7 @@ module rec EditableDsObjects =
 
     type EdCall with
         member x.ToRuntimeCall(bag:Ed2RtBag) =
-            RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.Timeout)
+            RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.IsDisabled, x.Timeout)
             |> uniqINGD_fromObj x
             |> tee (bag.Add2 x)
 

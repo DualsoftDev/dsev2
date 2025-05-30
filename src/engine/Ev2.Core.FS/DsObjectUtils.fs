@@ -30,10 +30,10 @@ module DsObjectUtilsModule =
 
     type RtCall with
         static member Create(callType:DbCallType, apiCalls:RtApiCall seq,
-            autoPre:string, safety:string, timeout:int option
+            autoPre:string, safety:string, isDisabled:bool, timeout:int option
         ) =
             let apiCallGuids = apiCalls |-> _.Guid
-            RtCall(callType, apiCallGuids, autoPre, safety, timeout)
+            RtCall(callType, apiCallGuids, autoPre, safety, isDisabled, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 

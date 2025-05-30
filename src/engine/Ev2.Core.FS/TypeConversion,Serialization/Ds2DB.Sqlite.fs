@@ -139,8 +139,8 @@ module internal Ds2SqliteImpl =
 
                 let callId =
                     conn.Insert($"""INSERT INTO {Tn.Call}
-                                (guid, dateTime,   name, workId,   callTypeId,  autoPre, safety, timeout)
-                         VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId, @AutoPre, @Safety, @Timeout);""", ormCall, tr)
+                                (guid, dateTime,   name, workId,   callTypeId,  autoPre, safety, disabled, timeout)
+                         VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId, @AutoPre, @Safety, @Disabled, @Timeout);""", ormCall, tr)
 
                 c.Id <- Some callId
                 ormCall.Id <- callId

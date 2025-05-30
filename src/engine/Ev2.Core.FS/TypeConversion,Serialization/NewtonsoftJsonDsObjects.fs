@@ -215,12 +215,16 @@ module rec NewtonsoftJsonObjects =
         interface INjCall
         member val CallType = DbCallType.Normal.ToString() with get, set
         /// Json serialize 용 API call 에 대한 Guid
-        member val ApiCalls = [||]:Guid[] with get, set
-        member val AutoPre  = nullString with get, set
-        member val Safety   = nullString with get, set
-        member val Timeout  = Nullable<int>() with get, set
+        member val ApiCalls   = [||]:Guid[]     with get, set
+        member val AutoPre    = nullString      with get, set
+        member val Safety     = nullString      with get, set
+        member val IsDisabled = false           with get, set
+        member val Timeout    = Nullable<int>() with get, set
 
-        member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
+        (* 특별한 조건일 때에만 json 표출 *)
+        member x.ShouldSerializeApiCalls()   = x.ApiCalls.NonNullAny()
+        member x.ShouldSerializeIsDisabled() = x.IsDisabled
+        member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
 
         static member FromRuntime(rt:RtCall) =
             NjCall(CallType = rt.CallType.ToString(), AutoPre=rt.AutoPre, Safety=rt.Safety, Timeout=o2n rt.Timeout)
@@ -440,7 +444,7 @@ module rec NewtonsoftJsonObjects =
                 |? DbCallType.Normal
 
             call.DsObject <-
-                RtCall(callType, call.ApiCalls, call.AutoPre, call.Safety, n2o call.Timeout)
+                RtCall(callType, call.ApiCalls, call.AutoPre, call.Safety, call.IsDisabled, n2o call.Timeout)
                 |> fromNjUniqINGD call |> tee (fun z -> bag.Add2 z call)
             ()
 
