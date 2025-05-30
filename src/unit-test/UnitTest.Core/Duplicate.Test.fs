@@ -22,7 +22,7 @@ open System.Collections.Generic
 module DuplicateTestModule =
     [<Test>]
     let ``duplicate test`` () =
-        let dsProject = edProject.ToRtProject()
+        let dsProject = edProject.ToRuntimeProject()
         let sys0 = dsProject.Systems[0].Duplicate() |> validateRuntime
         ()
 

@@ -379,7 +379,7 @@ module internal Sqlite2DsImpl =
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
-                                w.OptOwnerFlow <- Some flow )
+                                w.OptFlow <- Some flow )
                         |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 edWorks |> s.Works.AddRange

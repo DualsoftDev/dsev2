@@ -172,10 +172,10 @@ module SchemaTestModule =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
 
-        let dsProject = edProject.ToRtProject() |> validateRuntime
+        let dsProject = edProject.ToRuntimeProject() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
-        let edProjectBack = EdProject.FromRt dsProject
+        let edProjectBack = EdProject.FromRuntime dsProject
 
         let rtObjs = dsProject.EnumerateRtObjects()
         for rtObj in rtObjs do
@@ -304,7 +304,7 @@ module SchemaTestModule =
 
     [<Test>]
     let ``설계 문서 위치에 샘플 생성`` () =
-        let dsProject = edProject.ToRtProject() |> validateRuntime
+        let dsProject = edProject.ToRuntimeProject() |> validateRuntime
         // 설계 문서 위치에 drop
         Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem.json")
         |> dsProject.ToJson |> ignore

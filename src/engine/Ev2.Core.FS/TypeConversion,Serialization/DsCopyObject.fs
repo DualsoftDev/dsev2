@@ -89,7 +89,7 @@ module internal rec DsObjectCopyImpl =
                 calls |> contains a.Target |> verify)
 
             let flow =
-                x.OptOwnerFlow
+                x.OptFlow
                 |-> (fun f -> bag.Newbies[f.Guid] :?> EdFlow)
 
             EdWork.Create(calls, arrows, flow)
@@ -198,10 +198,10 @@ module DsObjectCopyAPIModule =
             // 삭제 요망: debug only
             // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
             replica.Works
-            |> filter _.OptOwnerFlow.IsSome
+            |> filter _.OptFlow.IsSome
             |> iter (fun w ->
                 replica.Flows
-                |> exists (fun f -> f.Guid = w.OptOwnerFlow.Value.Guid)
+                |> exists (fun f -> f.Guid = w.OptFlow.Value.Guid)
                 |> verify)
 
             replica
@@ -229,31 +229,31 @@ module DsObjectCopyAPIModule =
 
     type RtProject with
         member x.Replicate() =
-            x.ToEdProject()    |> validateEditable
-            |> _.Replicate()   |> validateEditable
-            |> _.ToRtProject() |> validateRuntime
+            x.ToEditableProject()   |> validateEditable
+            |> _.Replicate()        |> validateEditable
+            |> _.ToRuntimeProject() |> validateRuntime
 
 
         member x.Duplicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
             let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
-            let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.ToEdSystem().Duplicate() |> toArray
-            let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.ToEdSystem().Duplicate() |> toArray
+            let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.ToEditableSystem().Duplicate() |> toArray
+            let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.ToEditableSystem().Duplicate() |> toArray
 
-            x.ToEdProject() |> validateEditable
+            x.ToEditableProject() |> validateEditable
             |> tee (fun ep -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some ep))
             |> _.Duplicate(actives, passives)  |> validateEditable
-            |> _.ToRtProject() |> validateRuntime
+            |> _.ToRuntimeProject() |> validateRuntime
 
 
 
     type RtSystem with
         member x.Replicate() =
-            x.ToEdSystem()              |> validateEditable
-            |> _.Replicate()            |> validateEditable
-            |> _.ToRtSystem(Ed2RtBag()) |> validateRuntime
+            x.ToEditableSystem() |> validateEditable
+            |> _.Replicate()     |> validateEditable
+            |> _.ToRuntimeSystem(Ed2RtBag()) |> validateRuntime
 
         member x.Duplicate() =
-            x.ToEdSystem()              |> validateEditable
-            |> _.Duplicate()            |> validateEditable
-            |> _.ToRtSystem(Ed2RtBag()) |> validateRuntime
+            x.ToEditableSystem() |> validateEditable
+            |> _.Duplicate()     |> validateEditable
+            |> _.ToRuntimeSystem(Ed2RtBag()) |> validateRuntime

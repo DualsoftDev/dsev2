@@ -31,7 +31,7 @@ module CreateSampleModule =
             edSystem  <- EdSystem (Name = "MainSystem"(*, IsPrototype=true*))
             edFlow    <- EdFlow   (Name = "MainFlow")
             edWork1   <- EdWork   (Name = "BoundedWork1")
-            edWork2   <- EdWork   (Name = "BoundedWork2", OptOwnerFlow=Some edFlow)
+            edWork2   <- EdWork   (Name = "BoundedWork2", OptFlow=Some edFlow)
             edWork3   <- EdWork   (Name = "FreeWork1")
             edSystem.Works.AddRange([edWork1; edWork2; edWork3])
             edSystem.Flows.Add(edFlow)

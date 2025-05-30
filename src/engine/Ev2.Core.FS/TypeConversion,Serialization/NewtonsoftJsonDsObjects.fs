@@ -12,7 +12,7 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 
 [<AutoOpen>]
-module NewtonsoftJsonForwardDecls =
+module NewtonsoftJsonModules =
     type INjObject  = interface end
     type INjProject = inherit INjObject inherit IDsProject
     type INjSystem  = inherit INjObject inherit IDsSystem
@@ -204,7 +204,6 @@ module rec NewtonsoftJsonObjects =
             assert(isItNotNull rt)
             NjArrow() |> toNjUniqINGD (rt :?> Unique)
             |> tee (fun z ->
-                //z.Import (ds :?> Unique)
                 z.Source <- guid2str (rt.GetSource().Guid)
                 z.Target <- guid2str (rt.GetTarget().Guid)
                 z.Type <- rt.GetArrowType().ToString()
@@ -313,12 +312,14 @@ module rec NewtonsoftJsonObjects =
 
     /// JSON 읽고 나서 메모리 구조에 후처리 작업
     let rec internal onNsJsonDeserialized (bag:Nj2RtBag) (njParent:INjObject option) (njObj:INjObject) =
+        // 공통 처리
         match njObj with
         | :? NjUnique as uniq ->
             bag.Add uniq
         | _ ->
-            ()
+            failwith "ERROR"
 
+        // 개별 처리
         match njObj with
         | :? NjProject as proj ->
             proj.SystemPrototypes |> iter (onNsJsonDeserialized bag (Some proj))

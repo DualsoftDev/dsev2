@@ -74,7 +74,7 @@ module rec EditableDsObjects =
             match x.RawParent with
             | Some (:? EdSystem as p) ->
                 p.Works
-                |> filter (fun w -> w.OptOwnerFlow = Some x)
+                |> filter (fun w -> w.OptFlow = Some x)
                 |> toArray
 
             | _ -> failwith "Parent is not set. Cannot get works from flow."
@@ -82,18 +82,18 @@ module rec EditableDsObjects =
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
         member x.AddWorks(ws:EdWork seq) =
             x.UpdateDateTime()
-            ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
+            ws |> iter (fun w -> w.OptFlow <- Some x)
 
         member x.RemoveWorks(ws:EdWork seq) =
             x.UpdateDateTime()
-            ws |> iter (fun w -> w.OptOwnerFlow <- None)
+            ws |> iter (fun w -> w.OptFlow <- None)
         member x.Fix() = ()
 
 
     type EdWork () =
         inherit EdUnique()
         interface IEdWork
-        member val OptOwnerFlow = Option<EdFlow>.None with get, set
+        member val OptFlow = Option<EdFlow>.None with get, set
         member val Calls = ResizeArray<EdCall>()
         member val Arrows = ResizeArray<EdArrowBetweenCalls>()
 
@@ -268,7 +268,7 @@ module rec EditableDsObjects =
                 let works = flow.Works
                 works |> iter _.Validate(guidDic)
                 for w in works  do
-                    verify (w.OptOwnerFlow = Some flow)
+                    verify (w.OptFlow = Some flow)
 
 
             | :? EdWork as work ->
@@ -300,22 +300,22 @@ module rec EditableDsObjects =
         member x.AddRE (rt:RtUnique) (ed:EdUnique) = x.Add2 ed rt
 
     type EdFlow with
-        member x.ToRtFlow(bag:Ed2RtBag) =
+        member x.ToRuntimeFlow(bag:Ed2RtBag) =
             RtFlow() |> uniqReplicate x |> tee (bag.Add2 x)
 
     type RtFlow with
-        member x.ToEdFlow(bag:Ed2RtBag) =
+        member x.ToEditableFlow(bag:Ed2RtBag) =
             EdFlow() |> uniqReplicate x |> tee (bag.AddRE x)
 
 
     type EdCall with
-        member x.ToRtCall(bag:Ed2RtBag) =
+        member x.ToRuntimeCall(bag:Ed2RtBag) =
             RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.Timeout)
             |> uniqINGD_fromObj x
             |> tee (bag.Add2 x)
 
     type RtCall with
-        member x.ToEdCall(bag:Ed2RtBag) =
+        member x.ToEditableCall(bag:Ed2RtBag) =
             let apiCallGuids = x.ApiCalls |-> _.Guid
             EdCall(CallType=x.CallType, AutoPre=x.AutoPre, Safety=x.Safety, Timeout=x.Timeout)
             |> tee(fun z -> apiCallGuids |> z.ApiCallGuids.AddRange)
@@ -323,11 +323,11 @@ module rec EditableDsObjects =
             |> tee (bag.AddRE x)
 
     type EdWork with
-        member x.ToRtWork(bag:Ed2RtBag, flows:RtFlow[]) =
+        member x.ToRuntimeWork(bag:Ed2RtBag, flows:RtFlow[]) =
             x.Calls |> iter bag.Add
             x.Arrows |> iter bag.Add
 
-            let callDic = x.Calls.ToDictionary(id, _.ToRtCall(bag))
+            let callDic = x.Calls.ToDictionary(id, _.ToRuntimeCall(bag))
             let arrows =
                 x.Arrows
                 |-> fun a -> RtArrowBetweenCalls(callDic[a.Source], callDic[a.Target], a.Type)
@@ -335,7 +335,7 @@ module rec EditableDsObjects =
                             |> tee (bag.Add2 a)
 
             let optFlowGuid =
-                x.OptOwnerFlow
+                x.OptFlow
                 >>= (fun ownerFlow ->
                         flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
 
@@ -348,7 +348,7 @@ module rec EditableDsObjects =
         static member Create(calls:EdCall seq, arrows:EdArrowBetweenCalls seq, optFlow:EdFlow option) =
             let calls = calls |> ResizeArray
             let arrows = arrows |> ResizeArray
-            EdWork(OptOwnerFlow=optFlow)
+            EdWork(OptFlow=optFlow)
             |> tee (fun (z:EdWork) ->
                 arrows  |> z.Arrows.AddRange
                 calls   |> z.Calls.AddRange
@@ -359,11 +359,11 @@ module rec EditableDsObjects =
 
 
     type RtWork with
-        member x.ToEdWork(bag:Ed2RtBag, flows:EdFlow[]) =
+        member x.ToEditableWork(bag:Ed2RtBag, flows:EdFlow[]) =
             x.Calls |> iter bag.Add
             x.Arrows |> iter bag.Add
 
-            let callDic = x.Calls.ToDictionary(id, _.ToEdCall(bag))
+            let callDic = x.Calls.ToDictionary(id, _.ToEditableCall(bag))
             let arrows =
                 x.Arrows
                 |-> fun a -> EdArrowBetweenCalls(callDic[a.Source], callDic[a.Target], a.Type)
@@ -383,7 +383,7 @@ module rec EditableDsObjects =
 
 
     type EdSystem with
-        member x.ToRtSystem(bag:Ed2RtBag) =
+        member x.ToRuntimeSystem(bag:Ed2RtBag) =
             bag.Add x
             x.Flows    |> iter bag.Add
             x.Works    |> iter bag.Add
@@ -404,8 +404,8 @@ module rec EditableDsObjects =
                         |> uniqINGD_fromObj z |> tee (bag.Add2 z))
                 |> toArray
 
-            let flows = x.Flows |-> _.ToRtFlow(bag) |> toArray
-            let workDic = x.Works.ToDictionary(id, _.ToRtWork(bag, flows))
+            let flows = x.Flows |-> _.ToRuntimeFlow(bag) |> toArray
+            let workDic = x.Works.ToDictionary(id, _.ToRuntimeWork(bag, flows))
             let works = workDic.Values |> toArray
             let arrows =
                 x.Arrows |-> (fun z ->
@@ -441,7 +441,7 @@ module rec EditableDsObjects =
                 apiDefs  |> iter (fun y -> y.RawParent <- Some z)
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
-        static member FromRt(x:RtSystem, bag:Ed2RtBag):EdSystem =
+        static member FromRuntime(x:RtSystem, bag:Ed2RtBag):EdSystem =
             bag.Add x
 
             x.Flows    |> iter bag.Add
@@ -464,8 +464,8 @@ module rec EditableDsObjects =
                         |> uniqINGD_fromObj z |> tee (bag.AddRE z))
                 |> toArray
 
-            let flows = x.Flows |-> _.ToEdFlow(bag) |> toArray
-            let workDic = x.Works.ToDictionary(id, _.ToEdWork(bag, flows))
+            let flows = x.Flows |-> _.ToEditableFlow(bag) |> toArray
+            let workDic = x.Works.ToDictionary(id, _.ToEditableWork(bag, flows))
             let works = workDic.Values |> toArray
             let arrows =
                 x.Arrows |-> (fun z ->
@@ -486,11 +486,11 @@ module rec EditableDsObjects =
 
 
     type EdProject with
-        member x.ToRtProject() =
+        member x.ToRuntimeProject() =
             let bag = Ed2RtBag()
             bag.EdDic.Add(x.Guid, x)
-            let activeSystems  = x.ActiveSystems  |-> _.ToRtSystem(bag) |> toArray
-            let passiveSystems = x.PassiveSystems |-> _.ToRtSystem(bag) |> toArray
+            let activeSystems  = x.ActiveSystems  |-> _.ToRuntimeSystem(bag) |> toArray
+            let passiveSystems = x.PassiveSystems |-> _.ToRuntimeSystem(bag) |> toArray
 
             let project =
                 RtProject(activeSystems, passiveSystems)
@@ -501,9 +501,9 @@ module rec EditableDsObjects =
 
             project
 
-        static member FromRt(p:RtProject) =
+        static member FromRuntime(p:RtProject) =
             let bag = Ed2RtBag()
-            let activeSystems  = p.ActiveSystems  |-> (fun s -> EdSystem.FromRt(s, bag) |> uniqReplicate s)
+            let activeSystems  = p.ActiveSystems  |-> (fun s -> EdSystem.FromRuntime(s, bag) |> uniqReplicate s)
             let passiveSystems = p.PassiveSystems |-> (fun s -> EdSystem() |> uniqReplicate s)
             EdProject() |> uniqReplicate p //  (p.Name, activeSystems, passiveSystems, guid=p.Guid, ?id=p.Id, dateTime=p.DateTime)
             |> tee (fun z ->
@@ -512,9 +512,9 @@ module rec EditableDsObjects =
             )
 
     type RtProject with
-        member x.ToEdProject() = EdProject.FromRt x
-        static member FromEd(p:EdProject) = p.ToRtProject()
+        member x.ToEditableProject() = EdProject.FromRuntime x
+        static member FromEditable(p:EdProject) = p.ToRuntimeProject()
 
     type RtSystem with
-        member x.ToEdSystem() = EdSystem.FromRt(x, Ed2RtBag())
-        static member FromEd(p:EdSystem) = p.ToRtSystem(Ed2RtBag())
+        member x.ToEditableSystem() = EdSystem.FromRuntime(x, Ed2RtBag())
+        static member FromEditable(p:EdSystem) = p.ToRuntimeSystem(Ed2RtBag())
