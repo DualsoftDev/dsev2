@@ -16,6 +16,9 @@ module ORMTypesModule =
     type IORMFlow       = inherit IORMUnique
     type IORMWork       = inherit IORMUnique
     type IORMCall       = inherit IORMUnique
+    type IORMArrow      = inherit IORMUnique
+    type IORMArrowWork  = inherit IORMArrow
+    type IORMArrowCall  = inherit IORMArrow
 
     type IORMApiCall    = inherit IORMUnique
     type IORMApiDef     = inherit IORMUnique
@@ -65,6 +68,7 @@ module ORMTypesModule =
     type ORMArrowBase(srcId:int, tgtId:int, parentId:Id, arrowTypeId:Id) =
         inherit ORMUnique(ParentId=parentId)
         new() = ORMArrowBase(-1, -1, -1, -1)
+        interface IORMArrow
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
         member val TypeId = arrowTypeId with get, set
@@ -73,12 +77,14 @@ module ORMTypesModule =
     type ORMArrowWork(srcId:int, tgtId:int, systemId:int, arrowTypeId:Id) =
         inherit ORMArrowBase(srcId, tgtId, systemId, arrowTypeId)
         new() = ORMArrowWork(-1, -1, -1, -1)
+        interface IORMArrowWork
         member val SystemId = systemId with get, set
 
     /// Call 간 연결.  Work 에 속함
     type ORMArrowCall(srcId:int, tgtId:int, workId:int, arrowTypeId:Id) =
         inherit ORMArrowBase(srcId, tgtId, workId, arrowTypeId)
         new() = ORMArrowCall(-1, -1, -1, -1)
+        interface IORMArrowCall
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
@@ -137,6 +143,7 @@ module ORMTypesModule =
         inherit ORMUnique()
 
         new() = ORMMapProjectSystem(-1, -1, false)
+        interface IORMRow
         member val ProjectId = projectId with get, set
         member val SystemId = systemId with get, set
         member val IsActive = isActive with get, set
@@ -145,6 +152,7 @@ module ORMTypesModule =
         inherit ORMUnique()
 
         new() = ORMMapCall2ApiCall(-1, -1)
+        interface IORMRow
         member val CallId = callId with get, set
         member val ApiCallId = apiCallId with get, set
 
@@ -176,7 +184,9 @@ module ORMTypesModule =
 
     type ORMEnum(name, category, value) =
         interface IORMEnum
+
         new() = ORMEnum(nullString, nullString, invalidInt)
+        interface IORMRow
         member val Id = Nullable<Id>() with get, set
         member val Name = name with get, set
         member val Category = category with get, set

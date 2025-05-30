@@ -13,6 +13,7 @@ open Dual.Common.Db.FS
 open Dual.Common.Core.FS
 
 open Ev2.Core.FS
+open Newtonsoft.Json
 
 
 [<AutoOpen>]
@@ -309,3 +310,14 @@ module SchemaTestModule =
         let connStr = dbPath |> path2ConnectionString
         dsProject.ToSqlite3(connStr, true)
 
+        let rawJsonPath = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem-raw.json")
+        let json =
+            let settings = JsonSerializerSettings(
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                NullValueHandling = NullValueHandling.Ignore,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+            )
+            JsonConvert.SerializeObject(dsProject, Formatting.Indented, settings)
+
+        File.WriteAllText(rawJsonPath, json)

@@ -48,7 +48,6 @@ module rec DsObjectModule =
         inherit RtUnique()
         let arrow = Arrow<RtCall>(source, target, typ)
 
-        interface IRtUnique
         interface IRtArrow
         member x.Source with get() = arrow.Source and set v = arrow.Source <- v
         member x.Target with get() = arrow.Target and set v = arrow.Target <- v
@@ -59,7 +58,6 @@ module rec DsObjectModule =
         inherit RtUnique()
         let arrow = Arrow<RtWork>(source, target, typ)
 
-        interface IRtUnique
         interface IRtArrow
         member x.Source with get() = arrow.Source and set v = arrow.Source <- v
         member x.Target with get() = arrow.Target and set v = arrow.Target <- v
@@ -72,6 +70,7 @@ module rec DsObjectModule =
             activeSystems  |> iter (fun z -> z.RawParent <- Some this)
             passiveSystems |> iter (fun z -> z.RawParent <- Some this)
 
+        interface IRtProject
         interface IParameterContainer
 
         // { JSON 용

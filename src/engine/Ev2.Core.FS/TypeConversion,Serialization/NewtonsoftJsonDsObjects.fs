@@ -107,12 +107,12 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 101)>] member val ActiveSystemGuids    = [||]:Guid[]     with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystemGuids   = [||]:Guid[]     with get, set
 
-        static member FromDs(ds:RtProject) =
-            NjProject(LastConnectionString=ds.LastConnectionString
-                , Author=ds.Author
-                , Version=ds.Version
-                , Description=ds.Description)
-            |> toNjUniqINGD ds
+        static member FromRuntime(rt:RtProject) =
+            NjProject(LastConnectionString=rt.LastConnectionString
+                , Author=rt.Author
+                , Version=rt.Version
+                , Description=rt.Description)
+            |> toNjUniqINGD rt
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  (Nj2RtBag()) None x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized (Nj2RtBag()) None x
@@ -150,26 +150,26 @@ module rec NewtonsoftJsonObjects =
             let bag = ctx.Context |> cast<Nj2RtBag>
             fwdOnNsJsonDeserialized bag (x.RawParent >>= tryCast<INjObject>) x
 
-        static member FromDs(ds:RtSystem) =
-            let originGuid = ds.OriginGuid |> Option.toNullable
+        static member FromRuntime(rt:RtSystem) =
+            let originGuid = rt.OriginGuid |> Option.toNullable
 
-            NjSystem(Prototype=ds.IsPrototype, OriginGuid=originGuid, Author=ds.Author,
-                LangVersion=ds.LangVersion, EngineVersion=ds.EngineVersion, Description=ds.Description)
-            |> toNjUniqINGD ds
+            NjSystem(Prototype=rt.IsPrototype, OriginGuid=originGuid, Author=rt.Author,
+                LangVersion=rt.LangVersion, EngineVersion=rt.EngineVersion, Description=rt.Description)
+            |> toNjUniqINGD rt
             |> tee (fun z ->
-                z.Flows    <- ds.Flows    |-> NjFlow.FromDs    |> toArray
-                z.Arrows   <- ds.Arrows   |-> NjArrow.FromDs   |> toArray
-                z.Works    <- ds.Works    |-> NjWork.FromDs    |> toArray
-                z.ApiDefs  <- ds.ApiDefs  |-> NjApiDef.FromDs  |> toArray
-                z.ApiCalls <- ds.ApiCalls |-> NjApiCall.FromDs |> toArray
+                z.Flows    <- rt.Flows    |-> NjFlow.FromRuntime    |> toArray
+                z.Arrows   <- rt.Arrows   |-> NjArrow.FromRuntime   |> toArray
+                z.Works    <- rt.Works    |-> NjWork.FromRuntime    |> toArray
+                z.ApiDefs  <- rt.ApiDefs  |-> NjApiDef.FromRuntime  |> toArray
+                z.ApiCalls <- rt.ApiCalls |-> NjApiCall.FromRuntime |> toArray
             )
 
     type NjFlow () =
         inherit NjUnique()
         interface INjFlow
 
-        static member FromDs(ds:RtFlow) =
-            NjFlow() |> toNjUniqINGD ds
+        static member FromRuntime(rt:RtFlow) =
+            NjFlow() |> toNjUniqINGD rt
 
     type NjWork () =
         inherit NjUnique()
@@ -181,12 +181,12 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeCalls() = x.Calls.NonNullAny()
         member x.ShouldSerializeArrows() = x.Arrows.NonNullAny()
 
-        static member FromDs(ds:RtWork) =
-            NjWork() |> toNjUniqINGD ds
+        static member FromRuntime(rt:RtWork) =
+            NjWork() |> toNjUniqINGD rt
             |> tee (fun z ->
-                z.Calls    <- ds.Calls   |-> NjCall.FromDs  |> toArray
-                z.Arrows   <- ds.Arrows  |-> NjArrow.FromDs |> toArray
-                z.FlowGuid <- ds.OptFlow |-> (fun flow -> guid2str flow.Guid) |? null
+                z.Calls    <- rt.Calls   |-> NjCall.FromRuntime  |> toArray
+                z.Arrows   <- rt.Arrows  |-> NjArrow.FromRuntime |> toArray
+                z.FlowGuid <- rt.OptFlow |-> (fun flow -> guid2str flow.Guid) |? null
             )
 
     type NjArrow() =
@@ -195,14 +195,14 @@ module rec NewtonsoftJsonObjects =
         member val Source = null:string with get, set
         member val Target = null:string with get, set
         member val Type = DbArrowType.None.ToString() with get, set
-        static member FromDs(ds:IArrow) =
-            assert(isItNotNull ds)
-            NjArrow() |> toNjUniqINGD (ds :?> Unique)
+        static member FromRuntime(rt:IArrow) =
+            assert(isItNotNull rt)
+            NjArrow() |> toNjUniqINGD (rt :?> Unique)
             |> tee (fun z ->
                 //z.Import (ds :?> Unique)
-                z.Source <- guid2str (ds.GetSource().Guid)
-                z.Target <- guid2str (ds.GetTarget().Guid)
-                z.Type <- ds.GetArrowType().ToString()
+                z.Source <- guid2str (rt.GetSource().Guid)
+                z.Target <- guid2str (rt.GetTarget().Guid)
+                z.Type <- rt.GetArrowType().ToString()
             )
 
     type NjCall() =
@@ -217,11 +217,11 @@ module rec NewtonsoftJsonObjects =
 
         member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
 
-        static member FromDs(ds:RtCall) =
-            NjCall(CallType = ds.CallType.ToString(), AutoPre=ds.AutoPre, Safety=ds.Safety, Timeout=o2n ds.Timeout)
-            |> toNjUniqINGD ds
+        static member FromRuntime(rt:RtCall) =
+            NjCall(CallType = rt.CallType.ToString(), AutoPre=rt.AutoPre, Safety=rt.Safety, Timeout=o2n rt.Timeout)
+            |> toNjUniqINGD rt
             |> tee (fun z ->
-                z.ApiCalls <- ds.ApiCalls |-> _.Guid |> toArray
+                z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
             )
 
 
@@ -235,19 +235,19 @@ module rec NewtonsoftJsonObjects =
         member val OutSymbol  = nullString with get, set
         member val Value      = nullString with get, set
         member val ValueType  = DbDataType.None.ToString() with get, set
-        static member FromDs(ds:RtApiCall) =
-            NjApiCall(ApiDef=ds.ApiDefGuid, InAddress=ds.InAddress, OutAddress=ds.OutAddress,
-                InSymbol=ds.InSymbol, OutSymbol=ds.OutSymbol,
-                Value=ds.Value, ValueType=ds.ValueType.ToString() )
-            |> toNjUniqINGD ds
+        static member FromRuntime(rt:RtApiCall) =
+            NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
+                InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
+                Value=rt.Value, ValueType=rt.ValueType.ToString() )
+            |> toNjUniqINGD rt
 
     type NjApiDef() =
         inherit NjUnique()
         interface INjApiDef
         member val IsPush = false with get, set
-        static member FromDs(ds:RtApiDef) =
-            assert(isItNotNull ds)
-            NjApiDef(IsPush=ds.IsPush) |> toNjUniqINGD ds
+        static member FromRuntime(rt:RtApiDef) =
+            assert(isItNotNull rt)
+            NjApiDef(IsPush=rt.IsPush) |> toNjUniqINGD rt
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
@@ -261,14 +261,14 @@ module rec NewtonsoftJsonObjects =
 
         match njObj with
         | :? NjProject as nj ->
-            let ds = nj.DsObject :?> RtProject
+            let rt = nj.DsObject :?> RtProject
             nj.SystemPrototypes <-
-                let originals, copies = ds.ActiveSystems |> partition (fun s -> s.OriginGuid.IsNone)
+                let originals, copies = rt.ActiveSystems |> partition (fun s -> s.OriginGuid.IsNone)
                 let distinctCopies = copies |> distinctBy _.Guid
-                originals @ distinctCopies |-> NjSystem.FromDs |> toArray
-            nj.ActiveSystemGuids    <- ds.ActiveSystems  |-> _.Guid |> toArray
-            nj.PassiveSystemGuids   <- ds.PassiveSystems |-> _.Guid |> toArray
-            nj.LastConnectionString <- ds.LastConnectionString
+                originals @ distinctCopies |-> NjSystem.FromRuntime |> toArray
+            nj.ActiveSystemGuids    <- rt.ActiveSystems  |-> _.Guid |> toArray
+            nj.PassiveSystemGuids   <- rt.PassiveSystems |-> _.Guid |> toArray
+            nj.LastConnectionString <- rt.LastConnectionString
 
             nj.SystemPrototypes |> iter (onNsJsonSerializing bag (Some nj))
 
@@ -457,7 +457,7 @@ module Ds2JsonModule =
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string = EmJson.ToJson(x)
         member x.ToJson(jsonFilePath:string) =
-            NjProject.FromDs(x).ToJson(jsonFilePath)
+            NjProject.FromRuntime(x).ToJson(jsonFilePath)
             //EmJson.ToJson(x)
             //|> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
