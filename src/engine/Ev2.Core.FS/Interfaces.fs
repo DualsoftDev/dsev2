@@ -90,15 +90,17 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type RtSystem internal(isPrototype:bool, flows:RtFlow[], works:RtWork[], arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]) =
+    type RtSystem internal(isPrototype:bool, flows:RtFlow[], works:RtWork[],
+            arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
+    ) =
         inherit RtUnique()
 
         interface IParameterContainer
         interface IRtSystem
-        member val Flows = flows |> toList
-        member val Works = works |> toList
-        member val Arrows = arrows |> toList
-        member val ApiDefs = apiDefs |> toList
+        member val Flows    = flows    |> toList
+        member val Works    = works    |> toList
+        member val Arrows   = arrows   |> toList
+        member val ApiDefs  = apiDefs  |> toList
         member val ApiCalls = apiCalls |> toList
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
@@ -127,10 +129,10 @@ module rec DsObjectModule =
             arrows |> iter (fun z -> z.RawParent <- Some this)
 
         interface IRtWork
-        member val Calls = calls |> toList
+        member val Calls  = calls  |> toList
         member val Arrows = arrows |> toList
-        member x.OptFlow = optFlow
-        member x.System = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
+        member x.OptFlow  = optFlow
+        member x.System   = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
 
 
     // see static member Create
@@ -139,10 +141,10 @@ module rec DsObjectModule =
         interface IRtCall
         member x.Work = x.RawParent |-> (fun z -> z :?> RtWork) |?? (fun () -> getNull<RtWork>())
         member val CallType = callType
+        member val AutoPre  = autoPre
+        member val Safety   = safety
+        member val Timeout  = timeout with get, set
         member val ApiCallGuids = apiCallGuids |> toList    // DB 저장시에는 callId 로 저장
-        member val AutoPre = autoPre
-        member val Safety = safety
-        member val Timeout = timeout with get, set
         member x.ApiCalls =
             let sys = (x.RawParent >>= _.RawParent).Value :?> RtSystem
             sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
@@ -150,7 +152,9 @@ module rec DsObjectModule =
 
 
 
-    type RtApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueType:DbDataType, value:string) =
+    type RtApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
+                   inSymbol:string, outSymbol:string, valueType:DbDataType, value:string
+    ) =
         inherit RtUnique()
         interface IRtApiCall
         member val ApiDefGuid = apiDefGuid

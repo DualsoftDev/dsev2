@@ -185,7 +185,7 @@ module ORMTypesModule =
     type ORMEnum(name, category, value) =
         interface IORMEnum
 
-        new() = ORMEnum(nullString, nullString, invalidInt)
+        new() = ORMEnum(nullString, nullString, -1)
         interface IORMRow
         member val Id = Nullable<Id>() with get, set
         member val Name = name with get, set

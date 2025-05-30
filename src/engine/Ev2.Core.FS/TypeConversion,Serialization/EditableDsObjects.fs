@@ -72,13 +72,18 @@ module rec EditableDsObjects =
         interface IEdFlow
         member x.Works = //x.OptParent |> map _.Works //|> choose id
             match x.RawParent with
-            | Some (:? EdSystem as p) -> p.Works |> filter (fun w -> w.OptOwnerFlow = Some x) |> toArray
+            | Some (:? EdSystem as p) ->
+                p.Works
+                |> filter (fun w -> w.OptOwnerFlow = Some x)
+                |> toArray
+
             | _ -> failwith "Parent is not set. Cannot get works from flow."
 
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
         member x.AddWorks(ws:EdWork seq) =
             x.UpdateDateTime()
             ws |> iter (fun w -> w.OptOwnerFlow <- Some x)
+
         member x.RemoveWorks(ws:EdWork seq) =
             x.UpdateDateTime()
             ws |> iter (fun w -> w.OptOwnerFlow <- None)
@@ -94,7 +99,7 @@ module rec EditableDsObjects =
 
         member x.Fix() =
             x.UpdateDateTime()
-            x.Calls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Calls  |> iter (fun z -> z.RawParent <- Some x; z.Fix())
             x.Arrows |> iter (fun z -> z.RawParent <- Some x)
             ()
 
@@ -102,15 +107,20 @@ module rec EditableDsObjects =
 
     type EdCall() =
         inherit EdUnique()
+
         interface IEdCall
         member val ApiCallGuids = ResizeArray<Guid>()
         member val CallType = DbCallType.Normal with get, set
         member val AutoPre  = nullString with get, set
         member val Safety   = nullString with get, set
         member val Timeout  = Option<int>.None with get, set
+
         member x.ApiCalls =
             let sys = (x.RawParent >>= _.RawParent).Value :?> EdSystem
-            sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
+            sys.ApiCalls
+            |> filter(fun ac ->
+                x.ApiCallGuids
+                |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
 
         member x.AddApiCalls(apiCalls:EdApiCall seq) =
             x.UpdateDateTime()
@@ -125,14 +135,18 @@ module rec EditableDsObjects =
 
     type EdApiCall(apiDefGuid:Guid) =
         inherit EdUnique()
-        member x.Call = x.RawParent |-> (fun z -> z :?> EdCall) |?? (fun () -> getNull<EdCall>())
+
+        member x.Call =
+            x.RawParent |-> (fun z -> z :?> EdCall) |?? (fun () -> getNull<EdCall>())
+
         member val ApiDefGuid = apiDefGuid with get, set
         member val InAddress  = nullString with get, set
         member val OutAddress = nullString with get, set
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
+        member val Value      = nullString with get, set
         member val ValueType  = DbDataType.None with get, set
-        member val Value = nullString with get, set
+
         member x.ApiDef
             with get() =
                 let sys = x.RawParent.Value :?> EdSystem
@@ -187,30 +201,38 @@ module rec EditableDsObjects =
                 let includeMe = includeMe |? true
                 if includeMe then
                     yield x
+
                 match x with
                 | :? EdProject as prj ->
-                    yield! (prj.ActiveSystems @ prj.PassiveSystems)   >>= _.EnumerateEdObjects()
+                    yield! (prj.ActiveSystems @ prj.PassiveSystems) >>= _.EnumerateEdObjects()
+
                 | :? EdSystem as sys ->
                     yield! sys.Works     >>= _.EnumerateEdObjects()
                     yield! sys.Flows     >>= _.EnumerateEdObjects()
                     yield! sys.Arrows    >>= _.EnumerateEdObjects()
                     yield! sys.ApiDefs   >>= _.EnumerateEdObjects()
                     yield! sys.ApiCalls  >>= _.EnumerateEdObjects()
+
                 | :? EdWork as work ->
                     yield! work.Calls    >>= _.EnumerateEdObjects()
                     yield! work.Arrows   >>= _.EnumerateEdObjects()
+
                 | :? EdCall as call ->
                     //yield! call.ApiCalls >>= _.EnumerateEdObjects()
                     ()
+
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateEdObjects"
                     ()
             } |> List.ofSeq
+
+
         member x.Validate(guidDic:Dictionary<Guid, EdUnique>) =
             verify (x.Guid <> emptyGuid)
             verify (x.DateTime <> minDate)
             match x with
-            | :? EdProject | :? EdSystem | :? EdFlow  | :? EdWork  | :? EdCall -> verify (x.Name.NonNullAny())
+            | (:? EdProject | :? EdSystem | :? EdFlow  | :? EdWork  | :? EdCall) ->
+                verify (x.Name.NonNullAny())
             | _ -> ()
 
             match x with
@@ -218,6 +240,7 @@ module rec EditableDsObjects =
                 prj.Systems |> iter _.Validate(guidDic)
                 for s in prj.Systems do
                     verify (s.RawParent.Value.Guid = prj.Guid)
+
             | :? EdSystem as sys ->
                 sys.Works |> iter _.Validate(guidDic)
                 for w in sys.Works  do
@@ -262,6 +285,7 @@ module rec EditableDsObjects =
 
             | :? EdCall as call ->
                 ()
+
             | _ ->
                 tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
                 ()
@@ -310,7 +334,11 @@ module rec EditableDsObjects =
                             |> uniqINGD_fromObj a
                             |> tee (bag.Add2 a)
 
-            let optFlowGuid = x.OptOwnerFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
+            let optFlowGuid =
+                x.OptOwnerFlow
+                >>= (fun ownerFlow ->
+                        flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
+
             let calls = callDic.Values |> toArray
 
             RtWork.Create(calls, arrows, optFlowGuid)
@@ -342,7 +370,11 @@ module rec EditableDsObjects =
                             |> uniqINGD_fromObj a
                             |> tee (bag.AddRE a)
 
-            let optFlowGuid = x.OptFlow >>= (fun ownerFlow -> flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
+            let optFlowGuid =
+                x.OptFlow
+                >>= (fun ownerFlow ->
+                        flows |> tryFind(fun f -> f.Guid = ownerFlow.Guid))
+
             let calls = callDic.Values |> toArray
 
             EdWork.Create(calls, arrows, optFlowGuid)
@@ -353,10 +385,10 @@ module rec EditableDsObjects =
     type EdSystem with
         member x.ToRtSystem(bag:Ed2RtBag) =
             bag.Add x
-            x.Flows |> iter bag.Add
-            x.Works |> iter bag.Add
-            x.Arrows |> iter bag.Add
-            x.ApiDefs |> iter bag.Add
+            x.Flows    |> iter bag.Add
+            x.Works    |> iter bag.Add
+            x.Arrows   |> iter bag.Add
+            x.ApiDefs  |> iter bag.Add
             x.ApiCalls |> iter bag.Add
 
             let apiDefs =
@@ -392,7 +424,9 @@ module rec EditableDsObjects =
             system
 
 
-        static member Create(isPrototype:bool, flows:EdFlow[], works:EdWork[], arrows:EdArrowBetweenWorks[], apiDefs:EdApiDef[], apiCalls:EdApiCall[]) =
+        static member Create(isPrototype:bool, flows:EdFlow[], works:EdWork[],
+            arrows:EdArrowBetweenWorks[], apiDefs:EdApiDef[], apiCalls:EdApiCall[]
+        ) =
             EdSystem(IsPrototype=isPrototype)
             |> tee (fun z ->
                 flows    |> z.Flows   .AddRange
@@ -400,6 +434,7 @@ module rec EditableDsObjects =
                 arrows   |> z.Arrows  .AddRange
                 apiDefs  |> z.ApiDefs .AddRange
                 apiCalls |> z.ApiCalls.AddRange
+
                 flows    |> iter (fun y -> y.RawParent <- Some z)
                 works    |> iter (fun y -> y.RawParent <- Some z)
                 arrows   |> iter (fun y -> y.RawParent <- Some z)
@@ -408,10 +443,11 @@ module rec EditableDsObjects =
 
         static member FromRt(x:RtSystem, bag:Ed2RtBag):EdSystem =
             bag.Add x
-            x.Flows |> iter bag.Add
-            x.Works |> iter bag.Add
-            x.Arrows |> iter bag.Add
-            x.ApiDefs |> iter bag.Add
+
+            x.Flows    |> iter bag.Add
+            x.Works    |> iter bag.Add
+            x.Arrows   |> iter bag.Add
+            x.ApiDefs  |> iter bag.Add
             x.ApiCalls |> iter bag.Add
 
             let apiDefs =
@@ -423,7 +459,8 @@ module rec EditableDsObjects =
             let apiCalls =
                 x.ApiCalls
                 |-> (fun z ->
-                        EdApiCall(z.ApiDefGuid, InAddress=z.InAddress, OutAddress=z.OutAddress, InSymbol=z.InSymbol, OutSymbol=z.OutSymbol, ValueType=z.ValueType, Value=z.Value)
+                        EdApiCall(z.ApiDefGuid, InAddress=z.InAddress, OutAddress=z.OutAddress,
+                            InSymbol=z.InSymbol, OutSymbol=z.OutSymbol, ValueType=z.ValueType, Value=z.Value)
                         |> uniqINGD_fromObj z |> tee (bag.AddRE z))
                 |> toArray
 
@@ -454,8 +491,14 @@ module rec EditableDsObjects =
             bag.EdDic.Add(x.Guid, x)
             let activeSystems  = x.ActiveSystems  |-> _.ToRtSystem(bag) |> toArray
             let passiveSystems = x.PassiveSystems |-> _.ToRtSystem(bag) |> toArray
-            let project = RtProject(activeSystems, passiveSystems) |> uniqINGD_fromObj x
-            (activeSystems @ passiveSystems) |> iter (fun z -> z.RawParent <- Some project)
+
+            let project =
+                RtProject(activeSystems, passiveSystems)
+                |> uniqINGD_fromObj x
+
+            (activeSystems @ passiveSystems)
+            |> iter (fun z -> z.RawParent <- Some project)
+
             project
 
         static member FromRt(p:RtProject) =

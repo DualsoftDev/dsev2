@@ -34,7 +34,6 @@ module Interfaces =
     let internal nullVersion  = null:Version
     let internal nullString   = null:string
     let internal nullableInt  = Nullable<int>()
-    let internal invalidInt   = -1
     let internal nullableGuid = Nullable<Guid>()
     let internal noneGuid     = Option<Guid>.None
     let internal emptyGuid    = Guid.Empty
@@ -73,7 +72,7 @@ module Interfaces =
 
 
 [<AutoOpen>]
-module UniqueHelpers =
+module internal UniqueHelpers =
     let uniqReplicate (src:#Unique) (dst:#Unique) : #Unique =
         dst.Id <- src.Id
         dst.Name <- src.Name
@@ -97,12 +96,12 @@ module UniqueHelpers =
     let uniqDateTime dateTime (dst:#Unique) = dst.DateTime  <- dateTime; dst
     let uniqParent   (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
 
-    let uniqGD       guid dateTime (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
-    let uniqNGD              name guid dateTime           (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime
+    let uniqGD       guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
+    let uniqNGD      name guid dateTime           (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime
     /// src unique 속성 (Id, Name, Guid, DateTime) 들을 dst 에 복사
-    let uniqINGD             id name guid dateTime        (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime
+    let uniqINGD     id name guid dateTime        (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime
     /// src unique 속성 (Id, Name, Guid, DateTime, RawParent) 들을 dst 에 복사
-    let uniqINGDP            id name guid dateTime parent (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime |> uniqParent parent
+    let uniqINGDP    id name guid dateTime parent (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime |> uniqParent parent
     let uniqAll = uniqINGDP
 
     let uniqINGD_fromObj (src:#Unique) (dst:#Unique): #Unique =

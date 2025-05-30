@@ -13,7 +13,8 @@ module internal rec DsObjectCopyImpl =
         /// NewGuid -> New object
         member val Newbies = Dictionary<Guid, Unique>()
     with
-        member x.Add(old:Unique) = old.Guid |> tee (fun guid -> x.Oldies.Add(guid, old))
+        member x.Add(old:Unique) =
+            old.Guid |> tee (fun guid -> x.Oldies.Add(guid, old))
 
     let internal nn (oldName:string) =
 #if DEBUG
@@ -29,6 +30,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let actives  = x.ActiveSystems  |-> _.replicate(bag) |> toArray
             let passives = x.PassiveSystems |-> _.replicate(bag) |> toArray
+
             EdProject()
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:EdSystem) -> s.RawParent <- Some z)
@@ -42,7 +44,9 @@ module internal rec DsObjectCopyImpl =
     type EdFlow with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            EdFlow() |> uniqNGD (nn x.Name) guid x.DateTime
+
+            EdFlow()
+            |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type EdSystem with
@@ -72,21 +76,30 @@ module internal rec DsObjectCopyImpl =
     type EdWork with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            let calls  = x.Calls |> Seq.map(fun z -> z.replicate bag) |> List.ofSeq
-            let arrows:EdArrowBetweenCalls list = x.Arrows |> List.ofSeq |-> _.replicate(bag)
+
+            let calls =
+                x.Calls |> Seq.map(fun z -> z.replicate bag) |> List.ofSeq
+
+            let arrows:EdArrowBetweenCalls list =
+                x.Arrows |> List.ofSeq |-> _.replicate(bag)
 
             arrows
             |> iter (fun (a:EdArrowBetweenCalls) ->
                 calls |> contains a.Source |> verify
                 calls |> contains a.Target |> verify)
 
-            let flow = x.OptOwnerFlow |-> (fun f -> bag.Newbies[f.Guid] :?> EdFlow)
-            EdWork.Create(calls, arrows, flow) |> uniqNGD (nn x.Name) guid x.DateTime
+            let flow =
+                x.OptOwnerFlow
+                |-> (fun f -> bag.Newbies[f.Guid] :?> EdFlow)
+
+            EdWork.Create(calls, arrows, flow)
+            |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type EdCall with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
+
             EdCall(CallType=x.CallType, AutoPre=x.AutoPre, Safety=x.Safety, Timeout=x.Timeout)
             |> tee(fun z ->
                 z.ApiCallGuids.Clear()
@@ -97,14 +110,16 @@ module internal rec DsObjectCopyImpl =
     type EdApiCall with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            EdApiCall(x.ApiDefGuid, InAddress=x.InAddress, OutAddress=x.OutAddress, InSymbol=x.InSymbol, OutSymbol=x.OutSymbol, ValueType=x.ValueType, Value=x.Value)
+            EdApiCall(x.ApiDefGuid, InAddress=x.InAddress, OutAddress=x.OutAddress,
+                InSymbol=x.InSymbol, OutSymbol=x.OutSymbol, ValueType=x.ValueType, Value=x.Value)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type EdApiDef with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            EdApiDef(IsPush=x.IsPush) |> uniqINGD_fromObj x |> uniqGuid guid
+            EdApiDef(IsPush=x.IsPush)
+            |> uniqINGD_fromObj x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -113,7 +128,8 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> EdWork
             let target = bag.Newbies[x.Target.Guid] :?> EdWork
-            EdArrowBetweenWorks(source, target, x.Type) |> uniqGD guid x.DateTime
+            EdArrowBetweenWorks(source, target, x.Type)
+            |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -122,7 +138,8 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> EdCall
             let target = bag.Newbies[x.Target.Guid] :?> EdCall
-            EdArrowBetweenCalls(source, target, x.Type) |> uniqGD guid x.DateTime
+            EdArrowBetweenCalls(source, target, x.Type)
+            |> uniqGD guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]
@@ -150,7 +167,7 @@ module DsObjectCopyAPIModule =
         member x.Duplicate() =
             let replica = x.Replicate() |> validateEditable
             let objs = replica.EnumerateEdObjects()
-            let guidDic = objs.ToDictionary( (fun obj -> obj.Guid), (fun _ -> newGuid()))
+            let guidDic = objs.ToDictionary( _.Guid, (fun _ -> newGuid()))
             let current = now()
 
             replica.OriginGuid <- Some x.Guid
@@ -165,9 +182,13 @@ module DsObjectCopyAPIModule =
                 ac.ApiDefGuid <- newGuid
 
             for c in replica.Works >>= _.Calls do
-                noop()
+
                 // [Call 에서 APiCall Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
-                let newGuids = c.ApiCallGuids |-> (fun g -> guidDic[g]) |> toList
+                let newGuids =
+                    c.ApiCallGuids
+                    |-> (fun g -> guidDic[g])
+                    |> toList
+
                 c.ApiCallGuids.Clear()
                 c.ApiCallGuids.AddRange newGuids
 
@@ -178,7 +199,10 @@ module DsObjectCopyAPIModule =
             // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
             replica.Works
             |> filter _.OptOwnerFlow.IsSome
-            |> iter (fun w -> replica.Flows |> exists (fun f -> f.Guid = w.OptOwnerFlow.Value.Guid) |> verify)
+            |> iter (fun w ->
+                replica.Flows
+                |> exists (fun f -> f.Guid = w.OptOwnerFlow.Value.Guid)
+                |> verify)
 
             replica
 
@@ -193,6 +217,7 @@ module DsObjectCopyAPIModule =
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
             let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.Duplicate() |> toArray
             let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.Duplicate() |> toArray
+
             EdProject()
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun s -> s.RawParent <- Some z)
@@ -223,8 +248,12 @@ module DsObjectCopyAPIModule =
 
 
     type RtSystem with
-        member x.Replicate() = x.ToEdSystem().Replicate().ToRtSystem(Ed2RtBag())
+        member x.Replicate() =
+            x.ToEdSystem()              |> validateEditable
+            |> _.Replicate()            |> validateEditable
+            |> _.ToRtSystem(Ed2RtBag()) |> validateRuntime
+
         member x.Duplicate() =
-            x.ToEdSystem()   |> validateEditable
-            |> _.Duplicate() |> validateEditable
+            x.ToEdSystem()              |> validateEditable
+            |> _.Duplicate()            |> validateEditable
             |> _.ToRtSystem(Ed2RtBag()) |> validateRuntime
