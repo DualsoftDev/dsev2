@@ -1,16 +1,16 @@
 {
   "RuntimeType": "Project",
   "Name": "MainProject",
-  "Guid": "44387d94-6372-471f-bbcc-c0108a07e643",
-  "DateTime": "2025-05-30T11:26:45.6381468+09:00",
-  "Author": "dualk",
+  "Guid": "9d87e89f-405d-4bdb-9b57-87418450b41d",
+  "DateTime": "2025-05-30T12:29:33.3463472+09:00",
+  "Author": "dualk@KWAKPC",
   "Version": "0.0",
   "SystemPrototypes": [
     {
       "RuntimeType": "System",
       "Name": "MainSystem",
-      "Guid": "0374f59a-e584-49fd-8b69-88d6acef8ea8",
-      "DateTime": "2025-05-30T11:26:45.6433465+09:00",
+      "Guid": "952fb398-9647-4cf1-aea1-95db819864a0",
+      "DateTime": "2025-05-30T12:29:33.3513889+09:00",
       "Prototype": true,
       "Author": "dualk",
       "EngineVersion": "0.0",
@@ -19,26 +19,26 @@
         {
           "RuntimeType": "Flow",
           "Name": "MainFlow",
-          "Guid": "03557892-cfc8-4445-93ec-abcff209c0a2",
-          "DateTime": "2025-05-30T11:26:45.6433465+09:00"
+          "Guid": "898e981d-0d83-48a9-a59e-9d566aee3556",
+          "DateTime": "2025-05-30T12:29:33.3513889+09:00"
         }
       ],
       "Works": [
         {
           "RuntimeType": "Work",
           "Name": "BoundedWork1",
-          "Guid": "a8232638-9a41-4386-8278-5697b5bc0440",
-          "DateTime": "2025-05-30T11:26:45.6455156+09:00",
-          "FlowGuid": "03557892-cfc8-4445-93ec-abcff209c0a2",
+          "Guid": "8c42f98e-8be4-4b66-86c4-ca2a934df1a4",
+          "DateTime": "2025-05-30T12:29:33.3535951+09:00",
+          "FlowGuid": "898e981d-0d83-48a9-a59e-9d566aee3556",
           "Calls": [
             {
               "RuntimeType": "Call",
               "Name": "Call1a",
-              "Guid": "ae020d72-4184-473f-9c0d-d5216e9221c5",
-              "DateTime": "2025-05-30T11:26:45.6455952+09:00",
+              "Guid": "2cbffba8-51a4-4c23-af4d-165927ac3fad",
+              "DateTime": "2025-05-30T12:29:33.3536725+09:00",
               "CallType": "Parallel",
               "ApiCalls": [
-                "77e318cd-cb28-4a28-8431-f7778956fae4"
+                "db6dcee4-755f-45c0-9432-e9099d824aa3"
               ],
               "AutoPre": "AutoPre 테스트 1",
               "Safety": "안전조건1",
@@ -47,18 +47,18 @@
             {
               "RuntimeType": "Call",
               "Name": "Call1b",
-              "Guid": "1f889904-1fd7-42a6-94b0-ac41c7a5b52f",
-              "DateTime": "2025-05-30T11:26:45.6473405+09:00",
+              "Guid": "87b62469-d6a5-4bdd-9fc4-d1b116c09ba1",
+              "DateTime": "2025-05-30T12:29:33.3554294+09:00",
               "CallType": "Repeat"
             }
           ],
           "Arrows": [
             {
               "RuntimeType": "Arrow",
-              "Guid": "f2977f91-7f0d-4d26-8a1a-677a164add9a",
-              "DateTime": "2025-05-30T11:26:45.6455156+09:00",
-              "Source": "ae020d72-4184-473f-9c0d-d5216e9221c5",
-              "Target": "1f889904-1fd7-42a6-94b0-ac41c7a5b52f",
+              "Guid": "d1b40c41-4cbf-4a91-be24-337fb86f1c00",
+              "DateTime": "2025-05-30T12:29:33.3535951+09:00",
+              "Source": "2cbffba8-51a4-4c23-af4d-165927ac3fad",
+              "Target": "87b62469-d6a5-4bdd-9fc4-d1b116c09ba1",
               "Type": "Start"
             }
           ]
@@ -66,32 +66,32 @@
         {
           "RuntimeType": "Work",
           "Name": "BoundedWork2",
-          "Guid": "482fadf2-b47e-4fdd-9f74-5ece1f8e455f",
-          "DateTime": "2025-05-30T11:26:45.6473942+09:00",
-          "FlowGuid": "03557892-cfc8-4445-93ec-abcff209c0a2",
+          "Guid": "cdef195a-f243-409a-9856-2d5e4cf3aaaa",
+          "DateTime": "2025-05-30T12:29:33.3554826+09:00",
+          "FlowGuid": "898e981d-0d83-48a9-a59e-9d566aee3556",
           "Calls": [
             {
               "RuntimeType": "Call",
               "Name": "Call2a",
-              "Guid": "829d1c0e-8c90-4fce-acb8-505509a61d7f",
-              "DateTime": "2025-05-30T11:26:45.6474044+09:00",
+              "Guid": "6b3b1aa6-bd12-4cc2-a937-45b3fb890bdd",
+              "DateTime": "2025-05-30T12:29:33.3554938+09:00",
               "CallType": "Normal"
             },
             {
               "RuntimeType": "Call",
               "Name": "Call2b",
-              "Guid": "52651921-7291-47f9-805d-219ff24f9ccd",
-              "DateTime": "2025-05-30T11:26:45.6474088+09:00",
+              "Guid": "d6c404cc-05cf-4441-b12f-22d638288f80",
+              "DateTime": "2025-05-30T12:29:33.355498+09:00",
               "CallType": "Normal"
             }
           ],
           "Arrows": [
             {
               "RuntimeType": "Arrow",
-              "Guid": "613fc4c7-1baa-4a9e-9f60-e8243f8863f1",
-              "DateTime": "2025-05-30T11:26:45.6473942+09:00",
-              "Source": "829d1c0e-8c90-4fce-acb8-505509a61d7f",
-              "Target": "52651921-7291-47f9-805d-219ff24f9ccd",
+              "Guid": "91c68d0b-2c25-4498-a20f-8be88573d6c4",
+              "DateTime": "2025-05-30T12:29:33.3554826+09:00",
+              "Source": "6b3b1aa6-bd12-4cc2-a937-45b3fb890bdd",
+              "Target": "d6c404cc-05cf-4441-b12f-22d638288f80",
               "Type": "Reset"
             }
           ]
@@ -99,18 +99,18 @@
         {
           "RuntimeType": "Work",
           "Name": "FreeWork1",
-          "Guid": "8ada9721-f0f5-4ce9-85ea-d40ce0a1715f",
-          "DateTime": "2025-05-30T11:26:45.6474096+09:00"
+          "Guid": "bf04f931-9aac-4a7c-8fc0-ea407fed87f7",
+          "DateTime": "2025-05-30T12:29:33.3554988+09:00"
         }
       ],
       "Arrows": [
         {
           "RuntimeType": "Arrow",
           "Name": "Work 간 연결 arrow",
-          "Guid": "c4eb961b-d1e1-49db-b281-d938b9a7c284",
-          "DateTime": "2025-05-30T11:26:45.6433465+09:00",
-          "Source": "a8232638-9a41-4386-8278-5697b5bc0440",
-          "Target": "8ada9721-f0f5-4ce9-85ea-d40ce0a1715f",
+          "Guid": "5b82e379-842f-4a72-9c2f-6271a993c4cc",
+          "DateTime": "2025-05-30T12:29:33.3513889+09:00",
+          "Source": "8c42f98e-8be4-4b66-86c4-ca2a934df1a4",
+          "Target": "bf04f931-9aac-4a7c-8fc0-ea407fed87f7",
           "Type": "Start"
         }
       ],
@@ -118,15 +118,15 @@
         {
           "RuntimeType": "ApiDef",
           "Name": "ApiDef1a",
-          "Guid": "5701d211-c59c-4c9b-8dd6-131bd4a48f75",
-          "DateTime": "2025-05-30T11:26:45.6433465+09:00",
+          "Guid": "0a660968-c375-4cac-a342-6b6a0b778155",
+          "DateTime": "2025-05-30T12:29:33.3513889+09:00",
           "IsPush": false
         },
         {
           "RuntimeType": "ApiDef",
           "Name": "ApiDef1a",
-          "Guid": "aa65584b-e02b-4464-85f8-fb11053554a7",
-          "DateTime": "2025-05-30T11:26:45.6433465+09:00",
+          "Guid": "08e40023-8d6d-40dc-b550-109832374555",
+          "DateTime": "2025-05-30T12:29:33.3513889+09:00",
           "IsPush": false
         }
       ],
@@ -134,9 +134,9 @@
         {
           "RuntimeType": "ApiCall",
           "Name": "ApiCall1a",
-          "Guid": "77e318cd-cb28-4a28-8431-f7778956fae4",
-          "DateTime": "2025-05-30T11:26:45.6473239+09:00",
-          "ApiDef": "5701d211-c59c-4c9b-8dd6-131bd4a48f75",
+          "Guid": "db6dcee4-755f-45c0-9432-e9099d824aa3",
+          "DateTime": "2025-05-30T12:29:33.355413+09:00",
+          "ApiDef": "0a660968-c375-4cac-a342-6b6a0b778155",
           "InAddress": "InAddressX0",
           "OutAddress": "OutAddress1",
           "InSymbol": "XTag1",
@@ -148,7 +148,7 @@
     }
   ],
   "ActiveSystemGuids": [
-    "0374f59a-e584-49fd-8b69-88d6acef8ea8"
+    "952fb398-9647-4cf1-aea1-95db819864a0"
   ],
   "PassiveSystemGuids": []
 }

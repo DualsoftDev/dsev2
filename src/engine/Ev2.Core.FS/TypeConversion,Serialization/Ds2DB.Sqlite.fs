@@ -32,26 +32,36 @@ module internal Ds2SqliteImpl =
         let bag = dbApi.DDic.Get<Db2RtBag>()
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                        (guid, dateTime, name, author, langVersion, engineVersion, description, originGuid, prototype)
+                                (guid, dateTime, name, author,     langVersion, engineVersion, description, originGuid, prototype)
                         VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @Prototype);""", ormSystem, tr)
         s.Id <- Some sysId
         cache[s.Guid].Id <- sysId
 
         match optProject with
         | Some proj ->
+            //assert(not s.IsPrototype)  // TODO: 코멘트 제거
+
             // update projectSystemMap table
             let isActive = proj.ActiveSystems |> Seq.contains s
             let isPassive = proj.PassiveSystems |> Seq.contains s
             let projId = proj.Id.Value
             assert(isActive <> isPassive)   // XOR
-            match conn.TryQuerySingle<ORMMapProjectSystem>($"SELECT * FROM {Tn.MapProject2System} WHERE projectId = {projId} AND systemId = {sysId}") with
-            | Some row when row.IsActive = isActive -> ()
+            match conn.TryQuerySingle<ORMMapProjectSystem>(
+                            $"""SELECT * FROM {Tn.MapProject2System}
+                                WHERE projectId = {projId} AND systemId = {sysId}""") with
             | Some row ->
-                conn.Execute($"UPDATE {Tn.MapProject2System} SET active = {isActive}, dateTime = @DateTime WHERE id = {row.Id}",
-                            {| DateTime = now() |}) |> ignore
+                if row.IsActive = isActive then
+                    ()
+                else
+                    conn.Execute($"""UPDATE {Tn.MapProject2System}
+                                     SET active = {isActive}, dateTime = @DateTime
+                                     WHERE id = {row.Id}""",
+                                {| DateTime = now() |}) |> ignore
             | None ->
                 let affectedRows = conn.Execute(
-                        $"INSERT INTO {Tn.MapProject2System} (projectId, systemId, isActive, guid, dateTime) VALUES (@ProjectId, @SystemId, @IsActive, @Guid, @DateTime)",
+                        $"""INSERT INTO {Tn.MapProject2System}
+                                    (projectId, systemId, isActive, guid, dateTime)
+                             VALUES (@ProjectId, @SystemId, @IsActive, @Guid, @DateTime)""",
                         {| ProjectId = projId; SystemId = sysId; IsActive = isActive; Guid=Guid.NewGuid(); DateTime=now() |}, tr)
                 ()
         | None -> ()
@@ -60,7 +70,9 @@ module internal Ds2SqliteImpl =
         for f in s.Flows do
             let ormFlow = f.ToORM<ORMFlow>(dbApi, cache)
             ormFlow.SystemId <- Nullable sysId
-            let flowId = conn.Insert($"INSERT INTO {Tn.Flow} (guid, dateTime, name, systemId) VALUES (@Guid, @DateTime, @Name, @SystemId);", ormFlow, tr)
+            let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
+                                    (guid, dateTime, name, systemId)
+                             VALUES (@Guid, @DateTime, @Name, @SystemId);""", ormFlow, tr)
             f.Id <- Some flowId
             ormFlow.Id <- flowId
             assert (cache[f.Guid] = ormFlow)
@@ -72,7 +84,9 @@ module internal Ds2SqliteImpl =
         for rtAd in s.ApiDefs do
             let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi, cache)
             ormApiDef.SystemId <- sysId
-            let r = conn.Upsert(Tn.ApiDef, ormApiDef, ["Id"; "Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"], onInserted=idUpdator [ormApiDef; rtAd;])
+            let r = conn.Upsert(Tn.ApiDef, ormApiDef,
+                    ["Id"; "Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"],
+                    onInserted=idUpdator [ormApiDef; rtAd;])
             match r with
             | Some newId, affectedRows ->
                 tracefn $"Inserted API Def: {rtAd.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
@@ -96,7 +110,9 @@ module internal Ds2SqliteImpl =
             let ormWork = w.ToORM<ORMWork>(dbApi, cache)
             ormWork.SystemId <- Nullable sysId
 
-            let workId = conn.Insert($"INSERT INTO {Tn.Work} (guid, dateTime, name, systemId, flowId) VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);", ormWork, tr)
+            let workId = conn.Insert($"""INSERT INTO {Tn.Work}
+                                (guid, dateTime,   name, systemId, flowId)
+                         VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);""", ormWork, tr)
             w.Id <- Some workId
             ormWork.Id <- workId
             assert(cache[w.Guid] = ormWork)
@@ -105,8 +121,9 @@ module internal Ds2SqliteImpl =
                 let ormCall = c.ToORM<ORMCall>(dbApi, cache)
                 ormCall.WorkId <- Nullable workId
                 let callId =
-                    conn.Insert($"""INSERT INTO {Tn.Call} (guid, dateTime, name, workId, callTypeId, autoPre, safety, timeout)
-                        VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId, @AutoPre, @Safety, @Timeout);""", ormCall, tr)
+                    conn.Insert($"""INSERT INTO {Tn.Call}
+                                (guid, dateTime,   name, workId,   callTypeId,  autoPre, safety, timeout)
+                         VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId, @AutoPre, @Safety, @Timeout);""", ormCall, tr)
                 c.Id <- Some callId
                 ormCall.Id <- callId
                 assert(cache[c.Guid] = ormCall)
@@ -125,7 +142,8 @@ module internal Ds2SqliteImpl =
                     | None ->
                         let guid = newGuid()
                         let affectedRows = conn.Execute(
-                                $"INSERT INTO {Tn.MapCall2ApiCall} (callId, apiCallId, guid, dateTime) VALUES (@CallId, @ApiCallId, @Guid, @DateTime)",
+                                $"INSERT INTO {Tn.MapCall2ApiCall} (callId, apiCallId,   guid, dateTime)
+                                                            VALUES (@CallId, @ApiCallId, @Guid, @DateTime)",
                                 {| CallId = c.Id.Value; ApiCallId = apiCallId ; Guid=guid; DateTime=now() |}, tr)
 
                         noop()
@@ -145,14 +163,18 @@ module internal Ds2SqliteImpl =
                 let ormArrow = a.ToORM<ORMArrowCall>(dbApi, cache)
                 ormArrow.WorkId <- workId
 
-                let r = conn.Upsert(Tn.ArrowCall, ormArrow, ["Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
+                let r = conn.Upsert(Tn.ArrowCall, ormArrow,
+                    ["Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "DateTime"],
+                    onInserted=idUpdator [ormArrow; a;])
                 ()
 
         // system 의 arrows 를 삽입 (works 간 연결)
         for a in s.Arrows do
             let ormArrow = a.ToORM<ORMArrowWork>(dbApi, cache)
             ormArrow.SystemId <- sysId
-            let r = conn.Upsert(Tn.ArrowWork, ormArrow, ["Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "DateTime"], onInserted=idUpdator [ormArrow; a;])
+            let r = conn.Upsert(Tn.ArrowWork, ormArrow,
+                    ["Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "DateTime"],
+                    onInserted=idUpdator [ormArrow; a;])
             ()
 
 
@@ -177,7 +199,8 @@ module internal Ds2SqliteImpl =
 
             let guidDic, ormProject = proj.ToORM(dbApi)
             let projId =
-                conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                conn.Insert($"""INSERT INTO {Tn.Project}
+                           (guid, dateTime, name, author, version, description)
                     VALUES (@Guid, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
             proj.Id <- Some projId
             ormProject.Id <- projId
@@ -237,20 +260,30 @@ module internal Sqlite2DsImpl =
                 conn.Query<ORMMapProjectSystem>(
                     $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
                     {| ProjectId = ormProject.Id |}, tr)
-                |> tee (fun zs -> zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
+                |> tee (fun zs ->
+                    zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
                 |> toArray
 
             let ormSystems =
                 let systemIds = projSysMaps |-> _.SystemId
                 conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
                     {| SystemIds = systemIds |}, tr)
-                |> tee (fun zs -> zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
+                |> tee (fun zs ->
+                    zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
                 |> toArray
 
-            let edProj = EdProject() |> fromOrmUniqINGD ormProject |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+            let edProj =
+                EdProject()
+                |> fromOrmUniqINGD ormProject
+                |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+
             let edSystems =
                 ormSystems
-                |-> fun s -> EdSystem() |> fromOrmUniqINGD s |> uniqParent (Some edProj) |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                    |-> fun s ->
+                        EdSystem()
+                        |> fromOrmUniqINGD s
+                        |> uniqParent (Some edProj)
+                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
 
             let actives, passives =
                 edSystems
@@ -266,14 +299,20 @@ module internal Sqlite2DsImpl =
                 let edFlows = [
                     for orm in conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr) do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
-                        EdFlow(RawParent = Some s) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+
+                        EdFlow(RawParent = Some s)
+                        |> fromOrmUniqINGD orm
+                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 edFlows |> s.Flows.AddRange
 
                 let edApiDefs = [
                     for orm in conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr) do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
-                        EdApiDef(RawParent = Some s) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+
+                        EdApiDef(RawParent = Some s)
+                        |> fromOrmUniqINGD orm
+                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 s.ApiDefs.AddRange(edApiDefs)
 
@@ -303,28 +342,42 @@ module internal Sqlite2DsImpl =
                         |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 edWorks |> s.Works.AddRange
-                noop()
+
                 for w in edWorks do
                     let edCalls = [
-                        for orm in conn.Query<ORMCall>($"SELECT * FROM {Tn.Call} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
+                        let orms = conn.Query<ORMCall>(
+                                $"SELECT * FROM {Tn.Call} WHERE workId = @WorkId",
+                                {| WorkId = w.Id.Value |}, tr)
 
+                        for orm in orms do
                             bag.DbDic.Add(orm.Guid, orm) |> ignore
 
                             EdCall(RawParent = Some w) |> fromOrmUniqINGD orm
                             |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
-                            |> tee(fun c -> edApiCalls |> iter (fun apiCall -> apiCall |> uniqParent (Some c) |> ignore))
+                            |> tee(fun c ->
+                                edApiCalls
+                                |> iter (fun apiCall ->
+                                    apiCall
+                                    |> uniqParent (Some c)
+                                    |> ignore))
                     ]
                     edCalls |> w.Calls.AddRange
 
 
                     // work 내의 call 간 연결
                     let edArrows = [
-                        for orm in conn.Query<ORMArrowCall>($"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId", {| WorkId = w.Id.Value |}, tr) do
+                        let orms = conn.Query<ORMArrowCall>(
+                                $"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId",
+                                {| WorkId = w.Id.Value |}, tr)
+
+                        for orm in orms do
                             bag.DbDic.Add(orm.Guid, orm) |> ignore
                             let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
                             let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
                             let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
-                            EdArrowBetweenCalls(src, tgt, arrowType) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                            EdArrowBetweenCalls(src, tgt, arrowType)
+                            |> fromOrmUniqINGD orm
+                            |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                     ]
                     edArrows |> w.Arrows.AddRange
 
@@ -339,12 +392,17 @@ module internal Sqlite2DsImpl =
 
                 // system 내의 work 간 연결
                 let edArrows = [
-                    for orm in conn.Query<ORMArrowWork>($"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId", {| SystemId = s.Id.Value |}, tr) do
+                    let orms = conn.Query<ORMArrowWork>(
+                            $"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId",
+                            {| SystemId = s.Id.Value |}, tr)
+                    for orm in orms do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
                         let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
                         let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
-                        EdArrowBetweenWorks(src, tgt, arrowType) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        EdArrowBetweenWorks(src, tgt, arrowType)
+                        |> fromOrmUniqINGD orm
+                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
                 ]
                 edArrows |> s.Arrows.AddRange
                 assert(setEqual s.Arrows edArrows)
