@@ -39,7 +39,7 @@ module internal Ds2SqliteImpl =
 
         match optProject with
         | Some proj ->
-            //assert(not s.IsPrototype)  // TODO: 코멘트 제거
+            assert(not s.IsPrototype)
 
             // update projectSystemMap table
             let isActive = proj.ActiveSystems |> Seq.contains s

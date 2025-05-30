@@ -177,7 +177,11 @@ module SchemaTestModule =
 
         let edProjectBack = EdProject.FromRt dsProject
 
-        let rtObjDic = dsProject.EnumerateRtObjects().ToDictionary(_.Guid, id)
+        let rtObjs = dsProject.EnumerateRtObjects()
+        for rtObj in rtObjs do
+            tracefn $"{rtObj.GetType().Name}: {rtObj.GetFQDN()}"
+
+        let rtObjDic = rtObjs.ToDictionary(_.Guid, id)
         dsProject.Validate(rtObjDic)
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->

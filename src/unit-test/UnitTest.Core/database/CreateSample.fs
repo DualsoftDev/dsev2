@@ -28,7 +28,7 @@ module CreateSampleModule =
             edProject <- EdProject(Name = "MainProject")
             edApiDef1a <- EdApiDef(Name = "ApiDef1a")
             edApiCall1a <- EdApiCall(edApiDef1a.Guid, Name = "ApiCall1a", InAddress="InAddressX0", OutAddress="OutAddress1", InSymbol="XTag1", OutSymbol="YTag2", ValueType=DbDataType.Bool, Value="false")
-            edSystem  <- EdSystem (Name = "MainSystem", IsPrototype=true)
+            edSystem  <- EdSystem (Name = "MainSystem"(*, IsPrototype=true*))
             edFlow    <- EdFlow   (Name = "MainFlow")
             edWork1   <- EdWork   (Name = "BoundedWork1")
             edWork2   <- EdWork   (Name = "BoundedWork2", OptOwnerFlow=Some edFlow)

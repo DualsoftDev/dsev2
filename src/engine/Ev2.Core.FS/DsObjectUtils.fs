@@ -82,6 +82,12 @@ module DsObjectUtilsModule =
             | None -> ()
         ]
 
+        member x.GetFQDN(): string =
+            x.EnumerateAncestors()
+            |> reverse
+            |-> fun z -> if z.Name.IsNullOrEmpty() then $"[{z.GetType().Name}]" else z.Name
+            |> String.concat "/"
+
 
     type RtUnique with
         /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
