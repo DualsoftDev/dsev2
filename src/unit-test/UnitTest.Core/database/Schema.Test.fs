@@ -338,9 +338,9 @@ module SchemaTestModule =
         let edProject = edProject.Replicate() |> validateEditable
         let protoGuid = edSystemCyl.Guid
         edProject.PrototypeSystems.Add edSystemCyl
-        let edSysCyl1 = edProject.Instantiate(protoGuid, asActive=false)
-        let edSysCyl2 = edProject.Instantiate(protoGuid, asActive=false)
-        let edSysCyl3 = edProject.Instantiate(protoGuid, asActive=true)
+        let edSysCyl1 = edProject.Instantiate(protoGuid, Name="실린더 instance1", asActive=false)
+        let edSysCyl2 = edProject.Instantiate(protoGuid, Name="실린더 instance2", asActive=false)
+        let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=true)
 
         let curernt = now()
         let rtProject = edProject.ToRuntimeProject()

@@ -37,8 +37,8 @@ module internal Ds2SqliteImpl =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                (guid, dateTime, name, author,     langVersion, engineVersion, description, originGuid, prototype)
-                        VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @Prototype);""", ormSystem, tr)
+                                (guid, dateTime, name, author,     langVersion, engineVersion, description, originGuid, prototypeId)
+                        VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""", ormSystem, tr)
 
         s.Id <- Some sysId
         cache[s.Guid].Id <- sysId
@@ -70,7 +70,7 @@ module internal Ds2SqliteImpl =
                                      WHERE id = {row.Id}""",
                                 {| DateTime = now() |}) |> ignore
             | None ->
-                let loadedName = s.Name     // RtSystem.Name 은 loaded name 을 의미한다.
+                let loadedName = s.PrototypeSystemGuid |-> (fun _ -> s.Name) |? null     // RtSystem.Name 은 loaded name 을 의미한다.
                 let affectedRows = conn.Execute(
                         $"""INSERT INTO {Tn.MapProject2System}
                                     (projectId, systemId, loadedName, isActive, guid, dateTime)

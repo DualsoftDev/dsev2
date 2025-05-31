@@ -4,6 +4,7 @@ open System
 open System.Data
 open System.IO
 open System.Data.SQLite
+open System.Linq
 open Dapper
 
 open Dual.Common.Db.FS
@@ -163,7 +164,6 @@ module ORMTypeConversionModule =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
             ORMCall(workId, callTypeId, autoPre, safety, isDisabled, timeout)
 
-
     let o2n = Option.toNullable
     let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
         let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
@@ -183,7 +183,21 @@ module ORMTypeConversionModule =
 
             | :? RtSystem as z ->
                 let originGuid = z.OriginGuid |> Option.toNullable
-                ORMSystem(o2n z.PrototypeSystemGuid, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
+
+                // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
+                let prototypeId:Nullable<Id> =
+                    z.PrototypeSystemGuid
+                    |-> (fun protoGuid ->
+                            bag.RtDic.Values
+                                .OfType<RtSystem>()
+                                .First(fun s -> s.Guid = protoGuid))        // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
+                    >>= (fun (s:RtSystem) ->                // s : prototype 에 해당하는 RtSystem
+                            s.DDic.TryGet("ORMObject")      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
+                            >>= tryCast<ORMSystem>
+                            >>= fun s -> n2o s.Id)
+                    |> o2n
+
+                ORMSystem(prototypeId, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtFlow as z ->

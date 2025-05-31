@@ -108,13 +108,15 @@ module rec DsObjectModule =
         member val OriginGuid = noneGuid with get, set
         member val PrototypeSystemGuid = protoGuid with get, set
 
-        member x.Project = x.RawParent |-> (fun z -> z :?> RtProject) |?? (fun () -> getNull<RtProject>())
-
-
         member val Author        = Environment.UserName with get, set
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
+
+    type RtSystem with
+        member x.TryGetProject() = x.RawParent |-> (fun z -> z :?> RtProject)
+        member x.Project = x.TryGetProject() |?? (fun () -> getNull<RtProject>())
+
 
 
     type RtFlow() =

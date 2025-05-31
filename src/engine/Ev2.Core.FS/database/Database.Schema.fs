@@ -134,12 +134,13 @@ CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
-    , [prototype]     TEXT                          -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
+    , [prototypeId]   {intKeyType}                  -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , [author]        TEXT NOT NULL
     , [langVersion]   TEXT NOT NULL
     , [engineVersion] TEXT NOT NULL
     , [originGuid]    TEXT      -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , [description]   TEXT
+    , FOREIGN KEY(prototypeId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
 );
 
 

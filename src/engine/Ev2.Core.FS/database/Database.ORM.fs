@@ -32,6 +32,8 @@ module ORMTypesModule =
     type ORMUnique(name:string, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
         interface IORMUnique
 
+        new() = ORMUnique(nullString, emptyGuid, nullableId, minDate)
+
         member val Id = id with get, set
         /// Parent Id
         member val ParentId = Nullable<Id>() with get, set
@@ -42,7 +44,8 @@ module ORMTypesModule =
         member val DateTime = dateTime with get, set
         member val RawParent = Option<ORMUnique>.None with get, set
 
-        new() = ORMUnique(nullString, emptyGuid, nullableId, minDate)
+        /// 내부 구현 전용.  serialize 대상에서 제외됨
+        member val internal DDic = DynamicDictionary()
 
     /// ORMUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
     let fromOrmUniqINGD (src:#ORMUnique) (dst:#Unique): #Unique =
@@ -60,6 +63,8 @@ module ORMTypesModule =
         dst.DateTime <- src.DateTime
         let pid = src.RawParent >>= _.Id
         dst.ParentId <- o2n pid
+        dst.DDic.Set("RtObject", src)
+        src.DDic.Set("ORMObject", dst)
         dst
 
 
@@ -98,12 +103,12 @@ module ORMTypesModule =
         member val Description   = description with get, set
 
 
-    type ORMSystem(protoGuid:Nullable<Guid>, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
+    type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
         inherit ORMUnique()
 
-        new() = ORMSystem(nullableGuid, emptyGuid, nullString, nullVersion, nullVersion, nullString)
+        new() = ORMSystem(nullableId, emptyGuid, nullString, nullVersion, nullVersion, nullString)
         interface IORMSystem
-        member val Prototype     = protoGuid     with get, set
+        member val PrototypeId   = prototypeId with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set
         member val LangVersion   = langVersion   with get, set
