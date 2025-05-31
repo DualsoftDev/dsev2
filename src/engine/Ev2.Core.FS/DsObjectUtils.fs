@@ -99,7 +99,7 @@ module DsObjectUtilsModule =
             let dateTime = dateTime |?? now
             x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
-
+        (* see also EdUnique.EnumerateRtObjects *)
         member x.EnumerateRtObjects(?includeMe): RtUnique list =
             seq {
                 let includeMe = includeMe |? true
@@ -107,6 +107,7 @@ module DsObjectUtilsModule =
                     yield x
                 match x with
                 | :? RtProject as prj ->
+                    yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
                     yield! prj.Systems   >>= _.EnumerateRtObjects()
                 | :? RtSystem as sys ->
                     yield! sys.Works     >>= _.EnumerateRtObjects()

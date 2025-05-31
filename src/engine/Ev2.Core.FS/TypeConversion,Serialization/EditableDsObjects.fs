@@ -209,6 +209,7 @@ module rec EditableDsObjects =
             let dateTime = dateTime |?? now
             x.EnumerateEdObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
+        (* see also RtUnique.EnumerateRtObjects *)
         member x.EnumerateEdObjects(?includeMe): EdUnique list =
             seq {
                 let includeMe = includeMe |? true
@@ -217,6 +218,7 @@ module rec EditableDsObjects =
 
                 match x with
                 | :? EdProject as prj ->
+                    yield! prj.PrototypeSystems >>= _.EnumerateEdObjects()
                     yield! (prj.ActiveSystems @ prj.PassiveSystems) >>= _.EnumerateEdObjects()
 
                 | :? EdSystem as sys ->

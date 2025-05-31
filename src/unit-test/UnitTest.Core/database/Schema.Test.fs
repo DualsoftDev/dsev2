@@ -358,5 +358,11 @@ module SchemaTestModule =
             |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder-2.json"))
 
         json === json2
+
+        let connStr =
+            Path.Combine(testDataDir(), "dssystem-with-cylinder.sqlite3")
+            |> path2ConnectionString
+        rtProject.ToSqlite3(connStr)
+
         ()
 

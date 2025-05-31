@@ -54,7 +54,9 @@ module internal Ds2SqliteImpl =
             let isActive = rtp.ActiveSystems |> Seq.contains s
             let isPassive = rtp.PassiveSystems |> Seq.contains s
             let projId = rtp.Id.Value
-            assert(isActive <> isPassive)   // XOR
+
+            // prototype 이 아니라면, active 나 passive 중 하나만 true 여야 한다.
+            assert(isActive <> isPassive || s.PrototypeSystemGuid.IsNone)   // XOR
 
             match conn.TryQuerySingle<ORMMapProjectSystem>(
                             $"""SELECT * FROM {Tn.MapProject2System}

@@ -22,7 +22,7 @@ CREATE TABLE [system](
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
     , [name]          NVARCHAR(128) NOT NULL
-    , [prototype]     TINYINT NOT NULL DEFAULT 0  -- 프로토타입 시스템 여부.  0: 일반 시스템, 1: 프로토타입 시스템
+    , [prototype]     TEXT                          -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , [author]        TEXT NOT NULL
     , [langVersion]   TEXT NOT NULL
     , [engineVersion] TEXT NOT NULL
@@ -240,11 +240,11 @@ CREATE TABLE [tableHistory] (
 CREATE VIEW [vwMapProject2System] AS
     SELECT
         m.[id]
-        , m.[loadedName]
         , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
+        , m.[loadedName]
     FROM [mapProject2System] m
     JOIN [project] p ON p.id = m.projectId
     JOIN [system]  s ON s.id = m.systemId

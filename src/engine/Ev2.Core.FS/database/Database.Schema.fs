@@ -134,7 +134,7 @@ CREATE TABLE [{Tn.Project}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
-    , [prototype]     TINYINT NOT NULL DEFAULT 0  -- 프로토타입 시스템 여부.  0: 일반 시스템, 1: 프로토타입 시스템
+    , [prototype]     TEXT                          -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , [author]        TEXT NOT NULL
     , [langVersion]   TEXT NOT NULL
     , [engineVersion] TEXT NOT NULL
