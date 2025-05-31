@@ -44,14 +44,16 @@ module internal Ds2SqliteImpl =
         cache[s.Guid].Id <- sysId
 
         match optProject with
-        | Some proj ->
+        | Some rtp ->
             // project 하부에 연결된 system 을 DB 에 저장
-            assert(not s.IsPrototype)
+
+            // s.PrototypeSystemGuid 에 따라 다른 처리???
+            //assert(not s.PrototypeSystemGuid.Is)
 
             // update projectSystemMap table
-            let isActive = proj.ActiveSystems |> Seq.contains s
-            let isPassive = proj.PassiveSystems |> Seq.contains s
-            let projId = proj.Id.Value
+            let isActive = rtp.ActiveSystems |> Seq.contains s
+            let isPassive = rtp.PassiveSystems |> Seq.contains s
+            let projId = rtp.Id.Value
             assert(isActive <> isPassive)   // XOR
 
             match conn.TryQuerySingle<ORMMapProjectSystem>(

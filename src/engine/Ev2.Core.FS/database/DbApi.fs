@@ -183,7 +183,7 @@ module ORMTypeConversionModule =
 
             | :? RtSystem as z ->
                 let originGuid = z.OriginGuid |> Option.toNullable
-                ORMSystem(z.IsPrototype, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
+                ORMSystem(o2n z.PrototypeSystemGuid, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtFlow as z ->

@@ -98,12 +98,12 @@ module ORMTypesModule =
         member val Description   = description with get, set
 
 
-    type ORMSystem(isPrototype:bool, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
+    type ORMSystem(protoGuid:Nullable<Guid>, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
         inherit ORMUnique()
 
-        new() = ORMSystem(false, emptyGuid, nullString, nullVersion, nullVersion, nullString)
+        new() = ORMSystem(nullableGuid, emptyGuid, nullString, nullVersion, nullVersion, nullString)
         interface IORMSystem
-        member val Prototype     = isPrototype   with get, set
+        member val Prototype     = protoGuid     with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set
         member val LangVersion   = langVersion   with get, set

@@ -38,6 +38,7 @@ module internal rec DsObjectCopyImpl =
                 passives |> z.PassiveSystems.AddRange )
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> validateEditable
 
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
@@ -65,7 +66,7 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            EdSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls)
+            EdSystem.Create(x.PrototypeSystemGuid, flows, works, arrows, apiDefs, apiCalls)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
@@ -145,19 +146,6 @@ module internal rec DsObjectCopyImpl =
 [<AutoOpen>]
 module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
-
-    /// Runtime 객체의 validation
-    let validateRuntime (rtObj:#RtUnique): #RtUnique =
-        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
-        rtObj.Validate(guidDic)
-        rtObj
-
-    /// Editable 객체의 validation
-    let validateEditable (edObj:#EdUnique): #EdUnique =
-        let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
-        edObj.Validate(guidDic)
-        edObj
-
 
     type EdSystem with
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제

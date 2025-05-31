@@ -90,7 +90,7 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type RtSystem internal(isPrototype:bool, flows:RtFlow[], works:RtWork[],
+    type RtSystem internal(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
             arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
     ) =
         inherit RtUnique()
@@ -105,11 +105,10 @@ module rec DsObjectModule =
         member val ApiCalls = apiCalls |> toList
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
+        member val PrototypeSystemGuid = protoGuid with get, set
 
         member x.Project = x.RawParent |-> (fun z -> z :?> RtProject) |?? (fun () -> getNull<RtProject>())
 
-        member val IsPrototype   = isPrototype with get, set
-        member val IsSaveAsReference = false with get, set
 
         member val Author        = Environment.UserName with get, set
         member val EngineVersion = Version()  with get, set

@@ -99,11 +99,17 @@ module rec NewtonsoftJsonObjects =
         dst
 
 
+    type ReferenceInstance = {
+        InstanceName: string
+        PrototypeGuid: Guid
+        InstanceGuid: Guid
+    }
     /// project 를 Json serialize 시, system 저장 방식
     type NjSystemLoadType = // do not inherit NjUnique
         | LocalDefinition of NjSystem
         /// LoadedName * LoadedSystem
-        | FromPrototype of Name * Guid
+        //| FromPrototype of Name * Guid
+        | Reference of ReferenceInstance
 
 
     type NjProject() =
@@ -148,7 +154,7 @@ module rec NewtonsoftJsonObjects =
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
-        [<JsonIgnore>] member val IsSaveAsReference = false with get, set
+        //[<JsonIgnore>] member val IsSaveAsReference = false with get, set
 
         member x.ShouldSerializeFlows   () = x.Flows   .NonNullAny()
         member x.ShouldSerializeWorks   () = x.Works   .NonNullAny()
@@ -169,7 +175,7 @@ module rec NewtonsoftJsonObjects =
         static member FromRuntime(rt:RtSystem) =
             let originGuid = rt.OriginGuid |> Option.toNullable
 
-            NjSystem(Prototype=rt.IsPrototype, OriginGuid=originGuid, Author=rt.Author,
+            NjSystem(OriginGuid=originGuid, Author=rt.Author,
                 LangVersion=rt.LangVersion, EngineVersion=rt.EngineVersion, Description=rt.Description)
             |> toNjUniqINGD rt
             |> tee (fun z ->
@@ -178,7 +184,7 @@ module rec NewtonsoftJsonObjects =
                 z.Works    <- rt.Works    |-> NjWork.FromRuntime    |> toArray
                 z.ApiDefs  <- rt.ApiDefs  |-> NjApiDef.FromRuntime  |> toArray
                 z.ApiCalls <- rt.ApiCalls |-> NjApiCall.FromRuntime |> toArray
-                z.IsSaveAsReference <- rt.IsSaveAsReference
+                //z.IsSaveAsReference <- rt.PrototypeSystemGuid
             )
 
     type NjFlow () =
@@ -297,7 +303,7 @@ module rec NewtonsoftJsonObjects =
             let protos =
                 rtp.ActiveSystems @ rtp.PassiveSystems
                 |> distinct
-                |> filter _.IsSaveAsReference
+                |> filter _.PrototypeSystemGuid.IsSome
                 |-> NjSystem.FromRuntime
 
             njp.SystemPrototypes <-
@@ -307,17 +313,19 @@ module rec NewtonsoftJsonObjects =
 
             njp.ActiveSystems <- [|
                 for rt in rtp.ActiveSystems do
-                    if rt.IsSaveAsReference then
-                        NjSystemLoadType.FromPrototype(rt.Name, rt.Guid)
-                    else
+                    match rt.PrototypeSystemGuid with
+                    | Some guid ->
+                        NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
+                    | None ->
                         let nj = rt |> NjSystem.FromRuntime
                         NjSystemLoadType.LocalDefinition nj
             |]
             njp.PassiveSystems <- [|
                 for rt in rtp.PassiveSystems do
-                    if rt.IsSaveAsReference then
-                        NjSystemLoadType.FromPrototype(rt.Name, rt.Guid)
-                    else
+                    match rt.PrototypeSystemGuid with
+                    | Some guid ->
+                        NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
+                    | None ->
                         let nj = rt |> NjSystem.FromRuntime
                         NjSystemLoadType.LocalDefinition nj
             |]
@@ -358,57 +366,55 @@ module rec NewtonsoftJsonObjects =
 
         // 개별 처리
         match njObj with
-        | :? NjProject as proj ->
-            proj.SystemPrototypes |> iter (onNsJsonDeserialized bag (Some proj))
-            proj.DsObject <-
-                let protos = proj.SystemPrototypes |-> (fun z -> z.DsObject :?> RtSystem)
-                let actives = [|
-                    for loadType in proj.ActiveSystems do
-                        match loadType with
-                        | NjSystemLoadType.LocalDefinition sys ->
-                            sys.DsObject :?> RtSystem
-                        | NjSystemLoadType.FromPrototype(name, guid) ->
-                            protos |> find (fun p -> p.Guid = guid) |> tee(fun s -> s.Name <- name)
-                |]
-                let passives = [|
-                    for loadType in proj.PassiveSystems do
-                        match loadType with
-                        | NjSystemLoadType.LocalDefinition sys ->
-                            sys.DsObject :?> RtSystem
-                        | NjSystemLoadType.FromPrototype(name, guid) ->
-                            protos |> find (fun p -> p.Guid = guid) |> tee(fun s -> s.Name <- name)
-                |]
+        | :? NjProject as njp ->
+            let protos = njp.SystemPrototypes |-> (fun z -> z.DsObject :?> RtSystem)
+            let load (loadType:NjSystemLoadType):RtSystem =
+                match loadType with
+                | NjSystemLoadType.LocalDefinition sys ->
+                    sys.DsObject :?> RtSystem
+                | NjSystemLoadType.Reference { InstanceName=name; PrototypeGuid=protoGuid; InstanceGuid=instanceGuid } ->
+                    protos
+                    |> find (fun p -> p.Guid = protoGuid)
+                    |> tee(fun s ->
+                        s.Name <- name
+                        s.Guid <- instanceGuid
+                        )
+
+            njp.SystemPrototypes |> iter (onNsJsonDeserialized bag (Some njp))
+            njp.DsObject <-
+                let actives  = njp.ActiveSystems  |-> load
+                let passives = njp.PassiveSystems |-> load
 
                 actives @ passives
                 |> iter (fun s -> s.RawParent <- Some s)
 
 
                 RtProject(actives, passives
-                    , Author=proj.Author
-                    , Version=proj.Version
-                    , Description=proj.Description
-                    , LastConnectionString=proj.LastConnectionString )
-                |> fromNjUniqINGD proj
-                |> tee (fun z -> bag.Add2 z proj)
+                    , Author=njp.Author
+                    , Version=njp.Version
+                    , Description=njp.Description
+                    , LastConnectionString=njp.LastConnectionString )
+                |> fromNjUniqINGD njp
+                |> tee (fun z -> bag.Add2 z njp)
 
-        | :? NjSystem as nj ->
+        | :? NjSystem as njs ->
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정
-            nj.Arrows   |> iter (fun z -> z.RawParent <- Some nj; bag.Add z)
-            nj.Flows    |> iter (fun z -> z.RawParent <- Some nj; bag.Add z)
-            nj.Works    |> iter (fun z -> z.RawParent <- Some nj; bag.Add z)
-            nj.ApiDefs  |> iter (fun z -> z.RawParent <- Some nj; bag.Add z)
-            nj.ApiCalls |> iter (fun z -> z.RawParent <- Some nj; bag.Add z)
+            njs.Arrows   |> iter (fun z -> z.RawParent <- Some njs; bag.Add z)
+            njs.Flows    |> iter (fun z -> z.RawParent <- Some njs; bag.Add z)
+            njs.Works    |> iter (fun z -> z.RawParent <- Some njs; bag.Add z)
+            njs.ApiDefs  |> iter (fun z -> z.RawParent <- Some njs; bag.Add z)
+            njs.ApiCalls |> iter (fun z -> z.RawParent <- Some njs; bag.Add z)
 
             // 하부 구조에 대해서 재귀적으로 호출 : dependancy 가 적은 것부터 먼저 생성할 것.
-            nj.ApiDefs  |> iter (fun z -> onNsJsonDeserialized bag (Some nj) z)
-            nj.ApiCalls |> iter (fun z -> onNsJsonDeserialized bag (Some nj) z)
-            nj.Flows    |> iter (fun z -> onNsJsonDeserialized bag (Some nj) z)
-            nj.Works    |> iter (fun z -> onNsJsonDeserialized bag (Some nj) z)
+            njs.ApiDefs  |> iter (fun z -> onNsJsonDeserialized bag (Some njs) z)
+            njs.ApiCalls |> iter (fun z -> onNsJsonDeserialized bag (Some njs) z)
+            njs.Flows    |> iter (fun z -> onNsJsonDeserialized bag (Some njs) z)
+            njs.Works    |> iter (fun z -> onNsJsonDeserialized bag (Some njs) z)
 
-            let flows = nj.Flows |-> (fun z -> z.DsObject :?> RtFlow)
+            let flows = njs.Flows |-> (fun z -> z.DsObject :?> RtFlow)
 
             let works = [|
-                for w in nj.Works do
+                for w in njs.Works do
                     let optFlow =
                         if w.FlowGuid.NonNullAny() then
                             flows |> tryFind (fun f -> f.Guid = s2guid w.FlowGuid)
@@ -425,9 +431,9 @@ module rec NewtonsoftJsonObjects =
                     w.DsObject <- dsWork
             |]
 
-            nj.Arrows
+            njs.Arrows
             |> iter (fun (a:NjArrow) ->
-                let works = nj.Works |-> (fun z -> z.DsObject :?> RtWork)
+                let works = njs.Works |-> (fun z -> z.DsObject :?> RtWork)
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
 
@@ -441,34 +447,44 @@ module rec NewtonsoftJsonObjects =
                     RtArrowBetweenWorks(src, tgt, arrowType)
                     |> fromNjUniqINGD a |> tee (fun z -> bag.Add2 z a) )
 
-            let arrows   = nj.Arrows   |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
-            let apiDefs  = nj.ApiDefs  |-> (fun z -> z.DsObject :?> RtApiDef)
-            let apiCalls = nj.ApiCalls |-> (fun z -> z.DsObject :?> RtApiCall)
+            let arrows   = njs.Arrows   |-> (fun z -> z.DsObject :?> RtArrowBetweenWorks)
+            let apiDefs  = njs.ApiDefs  |-> (fun z -> z.DsObject :?> RtApiDef)
+            let apiCalls = njs.ApiCalls |-> (fun z -> z.DsObject :?> RtApiCall)
 
-            nj.DsObject <-
+            njs.DsObject <-
                 noop()
-                RtSystem.Create(nj.Prototype, flows, works, arrows, apiDefs, apiCalls
-                                , Author=nj.Author
-                                , LangVersion=nj.LangVersion
-                                , EngineVersion=nj.EngineVersion
-                                , Description=nj.Description)
-                |> fromNjUniqINGD nj
-                |> tee (fun z -> bag.Add2 z nj)
+                let protoGuid:Guid option =
+                    match njs.RawParent >>= tryCast<NjProject> with
+                    | Some njp -> [
+                        let loadTypes = njp.ActiveSystems @ njp.PassiveSystems
+                        for loadType in loadTypes do
+                            match loadType with
+                            | NjSystemLoadType.Reference r -> Some r.PrototypeGuid
+                            | _ -> None ] |> choose id |> tryHead
+                    | None -> None
 
-        | :? NjFlow as nj ->
-            nj.DsObject <-
+                RtSystem.Create(protoGuid, flows, works, arrows, apiDefs, apiCalls
+                                , Author=njs.Author
+                                , LangVersion=njs.LangVersion
+                                , EngineVersion=njs.EngineVersion
+                                , Description=njs.Description)
+                |> fromNjUniqINGD njs
+                |> tee (fun z -> bag.Add2 z njs)
+
+        | :? NjFlow as njf ->
+            njf.DsObject <-
                 RtFlow()
-                |> fromNjUniqINGD nj |> tee (fun z -> bag.Add2 z nj)
+                |> fromNjUniqINGD njf |> tee (fun z -> bag.Add2 z njf)
             ()
 
-        | :? NjWork as work ->
-            work.Calls  |> iter (fun z -> z.RawParent <- Some work)
-            work.Calls  |> iter (onNsJsonDeserialized bag (Some work))
-            work.Arrows |> iter (fun z -> z.RawParent <- Some work)
+        | :? NjWork as njw ->
+            njw.Calls  |> iter (fun z -> z.RawParent <- Some njw)
+            njw.Calls  |> iter (onNsJsonDeserialized bag (Some njw))
+            njw.Arrows |> iter (fun z -> z.RawParent <- Some njw)
 
-            work.Arrows
+            njw.Arrows
             |> iter (fun (a:NjArrow) ->
-                let calls = work.Calls |-> (fun z -> z.DsObject :?> RtCall)
+                let calls = njw.Calls |-> (fun z -> z.DsObject :?> RtCall)
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
                 let arrowType =
@@ -485,33 +501,33 @@ module rec NewtonsoftJsonObjects =
 
             ()
 
-        | :? NjCall as call ->
+        | :? NjCall as njc ->
             let callType =
-                call.CallType
+                njc.CallType
                 |> Enum.TryParse<DbCallType>
                 |> tryParseToOption
                 |? DbCallType.Normal
 
-            call.DsObject <-
-                RtCall(callType, call.ApiCalls, call.AutoPre, call.Safety, call.IsDisabled, n2o call.Timeout)
-                |> fromNjUniqINGD call |> tee (fun z -> bag.Add2 z call)
+            njc.DsObject <-
+                RtCall(callType, njc.ApiCalls, njc.AutoPre, njc.Safety, njc.IsDisabled, n2o njc.Timeout)
+                |> fromNjUniqINGD njc |> tee (fun z -> bag.Add2 z njc)
             ()
 
-        | :? NjApiCall as ac ->
+        | :? NjApiCall as njac ->
             let valueType =
-                ac.ValueType
+                njac.ValueType
                 |> Enum.TryParse<DbDataType>
                 |> tryParseToOption
                 |? DbDataType.None
 
-            ac.DsObject <-
-                RtApiCall(ac.ApiDef, ac.InAddress, ac.OutAddress, ac.InSymbol, ac.OutSymbol, valueType, ac.Value)
-                |> fromNjUniqINGD ac |> tee (fun z -> bag.Add2 z ac)
+            njac.DsObject <-
+                RtApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol, valueType, njac.Value)
+                |> fromNjUniqINGD njac |> tee (fun z -> bag.Add2 z njac)
 
-        | :? NjApiDef as ad ->
-            ad.DsObject <-
-                RtApiDef(ad.IsPush)
-                |> fromNjUniqINGD ad |> tee (fun z -> bag.Add2 z ad)
+        | :? NjApiDef as njad ->
+            njad.DsObject <-
+                RtApiDef(njad.IsPush)
+                |> fromNjUniqINGD njad |> tee (fun z -> bag.Add2 z njad)
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
@@ -551,6 +567,18 @@ module Ds2JsonModule =
     //    member x.ToJson():string = EmJson.ToJson(x)
     //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
 
+    /// Runtime 객체의 validation
+    let internal validateRuntime (rtObj:#RtUnique): #RtUnique =
+        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
+        rtObj.Validate(guidDic)
+        rtObj
+
+    /// Editable 객체의 validation
+    let internal validateEditable (edObj:#EdUnique): #EdUnique =
+        let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
+        edObj.Validate(guidDic)
+        edObj
+
 
     type RtProject with
         /// DsProject 를 JSON 문자열로 변환
@@ -562,4 +590,4 @@ module Ds2JsonModule =
 
         /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): RtProject =
-            json |> NjProject.FromJson |> _.DsObject :?> RtProject
+            json |> NjProject.FromJson |> _.DsObject :?> RtProject |> validateRuntime

@@ -7,10 +7,10 @@ open System.Collections.Generic
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type RtSystem with
-        static member Create(isPrototype:bool, flows:RtFlow[], works:RtWork[],
+        static member Create(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
             arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
         ) =
-            RtSystem(isPrototype, flows, works, arrows, apiDefs, apiCalls)
+            RtSystem(protoGuid, flows, works, arrows, apiDefs, apiCalls)
             |> tee (fun z ->
                 flows    |> iter (fun y -> y.RawParent <- Some z)
                 works    |> iter (fun y -> y.RawParent <- Some z)

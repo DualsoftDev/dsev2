@@ -266,7 +266,7 @@ module SchemaTestModule =
 
         let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
         validateRuntime dsProject4 |> ignore
-        dsProject4.Systems[0].IsPrototype <- false
+        dsProject4.Systems[0].PrototypeSystemGuid <- None
         dsProject4.ToSqlite3(connStr, removeExistingData)
 
         ()
@@ -335,17 +335,21 @@ module SchemaTestModule =
         createEditableProject()
         createEditableSystemCylinder()
         let edProject = edProject.Replicate() |> validateEditable
-        let edSysCylProto1 = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true)
-        let edSysCylProto2 = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true; z.Name <- "Cylinder2")
-        let edSysCylProto3 = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true; z.Name <- "ActiveCylinder2")
-        edProject.PassiveSystems.AddRange([edSysCylProto1; edSysCylProto2; ])
-        edProject.ActiveSystems.Add(edSysCylProto3)
+        let protoGuid = edSystemCyl.Guid
+        //edProject.Prototypes.Add edSystemCyl
+        let edSysCyl1 = edSystemCyl.Duplicate() |> tee(fun z -> z.PrototypeSystemGuid <- Some protoGuid)
+        let edSysCyl2 = edSystemCyl.Duplicate() |> tee(fun z -> z.PrototypeSystemGuid <- Some protoGuid; z.Name <- "Cylinder2")
+        let edSysCyl3 = edSystemCyl.Duplicate() |> tee(fun z -> z.PrototypeSystemGuid <- Some protoGuid; z.Name <- "ActiveCylinder2")
+        edProject.PassiveSystems.AddRange([edSysCyl1; edSysCyl2; ])
+        edProject.ActiveSystems.Add(edSysCyl3)
         let xxx = edProject
         let yyy = edSystemCyl
         let zzz = xxx, yyy
+        let rtProject = edProject.ToRuntimeProject()
         let json=
-            edProject.ToRuntimeProject()
+            rtProject
             |> validateRuntime
             |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
+        let dsProject = RtProject.FromJson json
         ()
 
