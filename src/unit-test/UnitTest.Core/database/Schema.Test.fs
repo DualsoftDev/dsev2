@@ -325,3 +325,21 @@ module SchemaTestModule =
             JsonConvert.SerializeObject(dsProject, Formatting.Indented, settings)
 
         File.WriteAllText(rawJsonPath, json)
+
+
+    [<Test>]
+    let ``Cylinder 추가 test`` () =
+        createEditableProject()
+        createEditableSystemCylinder()
+        let edProject = edProject.Replicate() |> validateEditable
+        let edSysCylProto = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true)
+        edProject.PassiveSystems.Add(edSysCylProto)
+        let xxx = edProject
+        let yyy = edSystemCyl
+        let zzz = xxx, yyy
+        let json=
+            edProject.ToRuntimeProject()
+            |> validateRuntime
+            |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
+        ()
+

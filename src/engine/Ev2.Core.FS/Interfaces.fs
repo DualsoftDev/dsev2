@@ -109,6 +109,8 @@ module rec DsObjectModule =
         member x.Project = x.RawParent |-> (fun z -> z :?> RtProject) |?? (fun () -> getNull<RtProject>())
 
         member val IsPrototype   = isPrototype with get, set
+        member val IsSaveAsReference = false with get, set
+
         member val Author        = Environment.UserName with get, set
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set

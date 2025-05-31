@@ -54,8 +54,12 @@ module rec EditableDsObjects =
         member val Arrows      = ResizeArray<EdArrowBetweenWorks>()
         member val ApiDefs     = ResizeArray<EdApiDef>()
         member val ApiCalls    = ResizeArray<EdApiCall>()
+
+        [<Obsolete("IsSaveAsReference 로 대체되지 않을까??")>]
         member val IsPrototype = false with get, set
+        member val IsSaveAsReference = false with get, set
         member val OriginGuid  = noneGuid with get, set
+
 
         member x.Fix() =
             x.UpdateDateTime()
@@ -415,7 +419,7 @@ module rec EditableDsObjects =
                 |> toArray
 
             let system =
-                RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls)
+                RtSystem.Create(x.IsPrototype, flows, works, arrows, apiDefs, apiCalls, IsSaveAsReference=x.IsSaveAsReference)
                 |> uniqINGD_fromObj x |> tee (bag.Add2 x)
 
             // parent 객체 확인

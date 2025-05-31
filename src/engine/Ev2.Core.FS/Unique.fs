@@ -69,6 +69,9 @@ module Interfaces =
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         member x.PGuid = x.RawParent |-> _.Guid
 
+        /// 내부 구현 전용.  serialize 대상에서 제외됨
+        member val internal DDic = DynamicDictionary()
+
 
 
 [<AutoOpen>]
