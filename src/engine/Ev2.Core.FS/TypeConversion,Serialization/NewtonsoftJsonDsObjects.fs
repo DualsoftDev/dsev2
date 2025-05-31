@@ -64,16 +64,15 @@ module NewtonsoftJsonModules =
         member x.Add(u:NjUnique) = x.NjDic.TryAdd(u.Guid, u) |> ignore
         member x.Add2 (ed:RtUnique) (nj:NjUnique) = x.Add ed; x.Add nj
 
-    let mutable fwdOnNsJsonSerializing:  Nj2RtBag->INjObject option->INjObject->unit = let dummy (bag:Nj2RtBag) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
-    let mutable fwdOnNsJsonDeserialized: Nj2RtBag->INjObject option->INjObject->unit = let dummy (bag:Nj2RtBag) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable internal fwdOnNsJsonSerializing:  Nj2RtBag->INjObject option->INjObject->unit = let dummy (bag:Nj2RtBag) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
+    let mutable internal fwdOnNsJsonDeserialized: Nj2RtBag->INjObject option->INjObject->unit = let dummy (bag:Nj2RtBag) (parent:INjObject option) (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
 
 /// Newtonsoft Json 호환 버젼
 [<AutoOpen>]
 module rec NewtonsoftJsonObjects =
 
-
     /// NjUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
-    let fromNjUniqINGD (src:#NjUnique) (dst:#Unique): #Unique =
+    let internal fromNjUniqINGD (src:#NjUnique) (dst:#Unique): #Unique =
         dst.Id <- n2o src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
@@ -81,7 +80,7 @@ module rec NewtonsoftJsonObjects =
         dst
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 NjUnique 객체에 저장
-    let toNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
+    let internal toNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
         dst.Id <- o2n src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
@@ -92,6 +91,7 @@ module rec NewtonsoftJsonObjects =
         | _ ->
             ()
         dst
+
 
 
     type NjProject() =

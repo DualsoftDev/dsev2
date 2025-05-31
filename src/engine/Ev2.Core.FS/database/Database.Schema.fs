@@ -147,6 +147,7 @@ CREATE TABLE [{Tn.MapProject2System}]( {sqlUniq()}
     , [projectId]      {intKeyType} NOT NULL
     , [systemId]       {intKeyType} NOT NULL
     , [isActive]       TINYINT NOT NULL DEFAULT 0
+    , [loadedName]     TEXT
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.MapProject2System}_uniq UNIQUE (projectId, systemId)
@@ -211,9 +212,9 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [safety]        TEXT
     , [disabled]      TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        {intKeyType} NOT NULL
-    -- , [apiCallId]     {intKeyType} NOT NULL
     , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
     , FOREIGN KEY(callTypeId)   REFERENCES {Tn.Enum}(id)
+    -- , [apiCallId]     {intKeyType} NOT NULL  -- call 이 복수개의 apiCall 을 가지므로, {Tn.MapCall2ApiCall} 에 저장
     -- , FOREIGN KEY(apiCallId) REFERENCES {Tn.ApiCall}(id)
 );
 
@@ -301,6 +302,7 @@ CREATE VIEW [{Vn.MapProject2System}] AS
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
+        , m.[loadedName]
     FROM [{Tn.MapProject2System}] m
     JOIN [{Tn.Project}] p ON p.id = m.projectId
     JOIN [{Tn.System}]  s ON s.id = m.systemId
@@ -314,6 +316,7 @@ CREATE VIEW [{Vn.MapCall2ApiCall}] AS
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
+        , psm.[loadedName]
         , w.[id]    AS workId
         , w.[name]  AS workName
         , c.[id]    AS callId
@@ -336,11 +339,12 @@ CREATE VIEW [{Vn.System}] AS
     SELECT
         s.[id]
         , s.[name]  AS systemName
+        , psm.[loadedName]
         , p.[id]    AS projectId
         , p.[name]  AS projectName
-    FROM [{Tn.System}] s
-    JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
-    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    FROM [{Tn.MapProject2System}] psm
+    JOIN [{Tn.System}] s ON psm.systemId = s.id
+    JOIN [{Tn.Project}] p ON p.id = psm.projectId
     ;
 
 
@@ -413,18 +417,18 @@ CREATE VIEW [{Vn.ArrowCall}] AS
         , enum.[category]
         , enum.[name] AS enumName
         , ac.[workId]
-        , wrk.[name] AS workName
-        , p.[id]      AS projectId
+        , w.[name] AS workName
+        , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
     FROM [{Tn.ArrowCall}] ac
     JOIN [{Tn.Call}] src ON src.Id = ac.source
     JOIN [{Tn.Call}] tgt ON tgt.Id = ac.target
-    JOIN [{Tn.Work}] wrk ON wrk.Id = ac.workId
-    JOIN [{Tn.System}] s ON s.id = wrk.systemId
+    JOIN [{Tn.Work}] w ON w.Id = ac.workId
+    JOIN [{Tn.System}] s ON s.id = w.systemId
     JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
-    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    JOIN [{Tn.Project}] p ON p.id = psm.projectId
     LEFT JOIN [{Tn.Enum}] enum ON ac.typeId = enum.id
     ;
 

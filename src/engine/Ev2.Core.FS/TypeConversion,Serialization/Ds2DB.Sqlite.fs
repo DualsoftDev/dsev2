@@ -45,6 +45,7 @@ module internal Ds2SqliteImpl =
 
         match optProject with
         | Some proj ->
+            // project 하부에 연결된 system 을 DB 에 저장
             assert(not s.IsPrototype)
 
             // update projectSystemMap table
@@ -65,14 +66,18 @@ module internal Ds2SqliteImpl =
                                      WHERE id = {row.Id}""",
                                 {| DateTime = now() |}) |> ignore
             | None ->
+                let loadedName = s.Name     // RtSystem.Name 은 loaded name 을 의미한다.
                 let affectedRows = conn.Execute(
                         $"""INSERT INTO {Tn.MapProject2System}
-                                    (projectId, systemId, isActive, guid, dateTime)
-                             VALUES (@ProjectId, @SystemId, @IsActive, @Guid, @DateTime)""",
-                        {|  ProjectId = projId; SystemId = sysId; IsActive = isActive;
+                                    (projectId, systemId, loadedName, isActive, guid, dateTime)
+                             VALUES (@ProjectId, @SystemId, @LoadedName, @IsActive, @Guid, @DateTime)""",
+                        {|  ProjectId = projId; SystemId = sysId; LoadedName=loadedName; IsActive = isActive;
                             Guid=Guid.NewGuid(); DateTime=now() |}, tr)
                 ()
-        | None -> ()
+        | None ->
+            // project 와 무관한 system 을 DB 에 저장
+            failwith "Not yet implemented: system2SqliteHelper without project context"
+            ()
 
         // flows 삽입
         for f in s.Flows do

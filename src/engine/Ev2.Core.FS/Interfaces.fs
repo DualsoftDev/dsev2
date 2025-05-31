@@ -95,6 +95,7 @@ module rec DsObjectModule =
     ) =
         inherit RtUnique()
 
+        (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
         interface IRtSystem
         member val Flows    = flows    |> toList
