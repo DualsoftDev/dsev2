@@ -31,6 +31,7 @@ module DbApiModule =
             conn.Query<'T>($"SELECT * FROM {tableName}") |> toArray)
 
 
+    let specDir = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec")
 
     let checkedConnections = HashSet<string>()
     /// Database API
@@ -50,7 +51,7 @@ module DbApiModule =
                         logInfo $"Creating database schema on {connStr}..."
                         logInfo $"CreateSchema:\r\n{schema}"
 #if DEBUG
-                        let sqlSpecFile = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\sqlite-schema.sql")
+                        let sqlSpecFile = Path.Combine(specDir, "sqlite-schema.sql")
                         let header = $"""
 --
 -- Auto-generated DS schema.  Do *NOT* Edit.

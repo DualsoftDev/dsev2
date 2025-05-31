@@ -18,6 +18,7 @@
 	<ItemGroup>
 		<Compile Include="newtonsoft.json\FSharpOption.Test.fs" />
 		<Compile Include="database\CreateSample.fs" />
+		<Compile Include="database\CreateSample.WithCylinders.fs" />
 		<Compile Include="database\Schema.Test.fs" />
 		<Compile Include="database\ReadFromDB.Test.fs" />
 		<Compile Include="Duplicate.Test.fs" />

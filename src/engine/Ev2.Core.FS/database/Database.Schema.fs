@@ -140,7 +140,7 @@ CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
     , [engineVersion] TEXT NOT NULL
     , [originGuid]    TEXT      -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , [description]   TEXT
-    , FOREIGN KEY(prototypeId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
 );
 
 
@@ -150,16 +150,68 @@ CREATE TABLE [{Tn.MapProject2System}]( {sqlUniq()}
     , [isActive]       TINYINT NOT NULL DEFAULT 0
     , [loadedName]     TEXT
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
-    , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- NO ACTION       -- ON DELETE RESTRICT    -- RESTRICT: 부모 레코드가 삭제되기 전에 참조되고 있는 자식 레코드가 있는지 즉시 검사하고, 있으면 삭제를 막음.
     , CONSTRAINT {Tn.MapProject2System}_uniq UNIQUE (projectId, systemId)
 );
+
+-- TODO: MapProject2System row 하나 삭제시,
+--    다른 project 에서 참조되고 있지 않은 systemId 에 해당하는 system 들을 삭제할 수 있도록 trigger 설정 필요
+
+CREATE TRIGGER IF NOT EXISTS trigger_{Tn.Project}_beforeDelete_recordSystemIds
+BEFORE DELETE ON {Tn.Project}
+BEGIN
+    DELETE FROM {Tn.Meta} WHERE key = 'trigger_temp_systemId';
+
+    INSERT INTO {Tn.Meta} (key, val)
+    SELECT 'trigger_temp_systemId', systemId
+    FROM {Tn.MapProject2System}
+    WHERE projectId = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trigger_{Tn.Project}_afterDelete_dropSystems
+AFTER DELETE ON {Tn.Project}
+BEGIN
+    DELETE FROM {Tn.System}
+    WHERE id IN (
+        SELECT CAST(val AS INTEGER) FROM {Tn.Meta} WHERE key = 'trigger_temp_systemId'
+    )
+    AND NOT EXISTS (
+        SELECT 1 FROM {Tn.MapProject2System}
+        WHERE systemId = {Tn.System}.id
+    );
+
+    DELETE FROM meta WHERE key = 'trigger_temp_systemId';
+END;
+
+
+
+--CREATE TRIGGER IF NOT EXISTS trigger_{Tn.MapProject2System}_afterDelete_dropSystems
+--AFTER DELETE ON {Tn.MapProject2System}
+--BEGIN
+--    -- 디버깅용 로그 삽입
+--    INSERT INTO {Tn.Meta}(key, val)
+--    VALUES (
+--        'trigger_{Tn.MapProject2System}_afterDelete_dropSystems',
+--        '삭제된 systemId=' || OLD.systemId
+--    );
+--
+--    -- system 삭제 시도
+--    DELETE FROM {Tn.System}
+--    WHERE id = OLD.systemId
+--      AND NOT EXISTS (
+--          SELECT 1 FROM {Tn.MapProject2System}
+--          WHERE systemId = OLD.systemId
+--      );
+--END;
+
+
 
 -- Call 은 여러개의 Api 를 동시에 호출할 수 있다.
 CREATE TABLE [{Tn.MapCall2ApiCall}]( {sqlUniq()}
     , [callId]     {intKeyType} NOT NULL
     , [apiCallId]  {intKeyType} NOT NULL
     , FOREIGN KEY(callId)     REFERENCES {Tn.Call}(id) ON DELETE CASCADE
-    , FOREIGN KEY(apiCallId)  REFERENCES {Tn.ApiCall}(id) -- DO *NOT* DELETE CASCADE
+    , FOREIGN KEY(apiCallId)  REFERENCES {Tn.ApiCall}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.MapCall2ApiCall}_uniq UNIQUE (callId, apiCallId)
 );
 
@@ -214,7 +266,7 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [disabled]      TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
-    , FOREIGN KEY(callTypeId)   REFERENCES {Tn.Enum}(id)
+    , FOREIGN KEY(callTypeId)   REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
     -- , [apiCallId]     {intKeyType} NOT NULL  -- call 이 복수개의 apiCall 을 가지므로, {Tn.MapCall2ApiCall} 에 저장
     -- , FOREIGN KEY(apiCallId) REFERENCES {Tn.ApiCall}(id)
 );
@@ -228,7 +280,7 @@ CREATE TABLE [{Tn.ArrowWork}]( {sqlUniq()}
     , [systemId]      {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
-    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id)
+    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
@@ -241,7 +293,7 @@ CREATE TABLE [{Tn.ArrowCall}]( {sqlUniq()}
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(source)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES {Tn.Call}(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
-    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id)
+    , FOREIGN KEY(typeId)   REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
     , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 
@@ -267,6 +319,7 @@ CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
 CREATE TABLE [{Tn.ApiDef}]( {sqlUniqWithName()}
     , [isPush]          TINYINT NOT NULL DEFAULT 0
     , [systemId]        {intKeyType} NOT NULL       -- API 가 정의된 target system
+    , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
 );
 
 CREATE TABLE [{Tn.ParamWork}] (  {sqlUniq()}
@@ -294,8 +347,9 @@ CREATE TABLE [{Tn.TableHistory}] (
 );
 
 
-
 { if withTrigger then triggerSql() else "" }
+
+
 CREATE VIEW [{Vn.MapProject2System}] AS
     SELECT
         m.[id]
@@ -303,10 +357,14 @@ CREATE VIEW [{Vn.MapProject2System}] AS
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
+        , s2.[id]   AS prototypeId
+        , s2.[name] AS prototypeName
         , m.[loadedName]
+        , m.[isActive]
     FROM [{Tn.MapProject2System}] m
     JOIN [{Tn.Project}] p ON p.id = m.projectId
     JOIN [{Tn.System}]  s ON s.id = m.systemId
+    LEFT JOIN [{Tn.System}]  s2 ON s2.id = s.prototypeId
     ;
 
 

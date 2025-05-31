@@ -307,15 +307,15 @@ module SchemaTestModule =
     let ``설계 문서 위치에 샘플 생성`` () =
         let dsProject = edProject.ToRuntimeProject() |> validateRuntime
         // 설계 문서 위치에 drop
-        Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem.json")
+        Path.Combine(specDir, "dssystem.json")
         |> dsProject.ToJson |> ignore
 
-        let dbPath = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem.sqlite3")
+        let dbPath = Path.Combine(specDir, "dssystem.sqlite3")
         File.Delete(dbPath) |> ignore
         let connStr = dbPath |> path2ConnectionString
         dsProject.ToSqlite3(connStr, true)
 
-        let rawJsonPath = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec\dssystem-raw.json")
+        let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
         let json =
             let settings = JsonSerializerSettings(
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -352,17 +352,72 @@ module SchemaTestModule =
 
         let rtProject2 = RtProject.FromJson json
         rtProject2 |> _.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- curernt)
+        // 설계 문서 위치에 drop
         let json2 =
             rtProject2
             |> validateRuntime
-            |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder-2.json"))
+            |> _.ToJson(Path.Combine(specDir, "dssystem-with-cylinder.json"))
 
         json === json2
 
-        let connStr =
-            Path.Combine(testDataDir(), "dssystem-with-cylinder.sqlite3")
-            |> path2ConnectionString
+        let dbPath = Path.Combine(testDataDir(), "dssystem-with-cylinder.sqlite3")
+        let connStr = dbPath |> path2ConnectionString
         rtProject.ToSqlite3(connStr)
+
+        File.Copy(dbPath, Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
+
+        (* FK test *)
+        let dbApi = DbApi connStr
+        let mutable countAfterDelete = -1
+        (fun () ->
+            dbApi.With(fun (conn, tr) ->
+                conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1") |> ignore
+                let numRows = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")
+                // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
+                countAfterDelete <- numRows
+                numRows === 0
+                // transaction 강제 rollback 유도
+                failwith "Aborting")
+        ) |> ShouldFailWithSubstringT "Aborting"
+        countAfterDelete === 0
+
+        (* FK test *)
+        // project id = 1 을 복사해서 project id = 2 로 만듦
+        // mapping id = 1 을 복사해서 mapping id = 2 로 만듦 (systemId 는 1 에 대해서 두 project 가 참조 중)
+        // project id = 1 을 삭제했을 때, project id = 2 에 대한 모든 것과 mapping id = 2 은 남아 있어야 함
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"""   INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                                SELECT
+                                    guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
+                                    dateTime,
+                                    name || ' 복사본',
+                                    author,
+                                    version,
+                                    description
+                                FROM project
+                                WHERE id = 1
+                                ;""") |> ignore
+
+            conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, dateTime, projectId, systemId, isActive, loadedName)
+                                SELECT
+                                    guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
+                                    datetime('now'),          -- 복사 시간 갱신
+                                    2,                        -- 새로 만든 project id
+                                    systemId,
+                                    isActive,
+                                    loadedName
+                                FROM mapProject2System
+                                WHERE id = 1
+                                ;
+                                """) |> ignore
+
+            conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1") |> ignore
+            let numRows = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")
+            // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
+            countAfterDelete <- numRows
+        )
+        countAfterDelete =!= 0
+
 
         ()
 

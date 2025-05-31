@@ -11,6 +11,7 @@ open System.Linq
 open System.Collections.Generic
 open System.Text.RegularExpressions
 
+/// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
 module NewtonsoftJsonModules =
     type INjObject  = interface end
@@ -107,8 +108,6 @@ module rec NewtonsoftJsonObjects =
     /// project 를 Json serialize 시, system 저장 방식
     type NjSystemLoadType = // do not inherit NjUnique
         | LocalDefinition of NjSystem
-        /// LoadedName * LoadedSystem
-        //| FromPrototype of Name * Guid
         | Reference of ReferenceInstance
 
 
@@ -184,7 +183,6 @@ module rec NewtonsoftJsonObjects =
                 z.Works    <- rt.Works    |-> NjWork.FromRuntime    |> toArray
                 z.ApiDefs  <- rt.ApiDefs  |-> NjApiDef.FromRuntime  |> toArray
                 z.ApiCalls <- rt.ApiCalls |-> NjApiCall.FromRuntime |> toArray
-                //z.IsSaveAsReference <- rt.PrototypeSystemGuid
             )
 
     type NjFlow () =
