@@ -36,9 +36,19 @@ module rec EditableDsObjects =
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = nullString with get, set
 
+        member val PrototypeSystems = ResizeArray<EdSystem>()
         member val ActiveSystems = ResizeArray<EdSystem>()
         member val PassiveSystems = ResizeArray<EdSystem>()
         member x.Systems = (x.ActiveSystems @ x.PassiveSystems) |> toList
+
+        member x.Instantiate(prototypeGuid:Guid, asActive:bool):EdSystem =
+            x.PrototypeSystems
+            |> find(fun s -> s.Guid = prototypeGuid )
+            |> (fun z -> fwdDuplicate z :?> EdSystem)
+            |> tee (fun z ->
+                z.PrototypeSystemGuid <- Some prototypeGuid
+                if asActive then x.ActiveSystems.Add z
+                else x.PassiveSystems.Add z)
 
         member x.Fix() =
             x.ActiveSystems @ x.PassiveSystems |> iter (fun sys -> sys.RawParent <- Some x; sys.Fix())
@@ -494,9 +504,10 @@ module rec EditableDsObjects =
             bag.EdDic.Add(x.Guid, x)
             let activeSystems  = x.ActiveSystems  |-> _.ToRuntimeSystem(bag) |> toArray
             let passiveSystems = x.PassiveSystems |-> _.ToRuntimeSystem(bag) |> toArray
+            let prototypeSystems = x.PrototypeSystems |-> _.ToRuntimeSystem(bag) |> toArray
 
             let project =
-                RtProject(activeSystems, passiveSystems)
+                RtProject(prototypeSystems, activeSystems, passiveSystems)
                 |> uniqINGD_fromObj x
 
             (activeSystems @ passiveSystems)

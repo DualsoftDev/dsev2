@@ -151,7 +151,7 @@ module DsObjectCopyAPIModule =
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
-        /// Id, Guid 및 DateTime 은 새로이 생성
+        /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate() =
             let replica = x.Replicate() |> validateEditable
             let objs = replica.EnumerateEdObjects()
@@ -199,7 +199,7 @@ module DsObjectCopyAPIModule =
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
-        /// Guid 및 DateTime 은 새로이 생성
+        /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate(?additionalActiveSystems:EdSystem seq, ?additionalPassiveSystems:EdSystem seq) =
             let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
@@ -216,12 +216,14 @@ module DsObjectCopyAPIModule =
 
 
     type RtProject with
+        /// RtProject 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
         member x.Replicate() =
             x.ToEditableProject()   |> validateEditable
             |> _.Replicate()        |> validateEditable
             |> _.ToRuntimeProject() |> validateRuntime
 
 
+        /// RtSystem 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
             let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
             let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
@@ -236,12 +238,22 @@ module DsObjectCopyAPIModule =
 
 
     type RtSystem with
+        /// RtSystem 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
         member x.Replicate() =
             x.ToEditableSystem() |> validateEditable
             |> _.Replicate()     |> validateEditable
             |> _.ToRuntimeSystem(Ed2RtBag()) |> validateRuntime
 
+        /// RtSystem 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate() =
             x.ToEditableSystem() |> validateEditable
             |> _.Duplicate()     |> validateEditable
             |> _.ToRuntimeSystem(Ed2RtBag()) |> validateRuntime
+
+    let duplicateUnique (source:IUnique): IUnique =
+        match source with
+        | :? EdSystem  as es -> es.Duplicate()
+        | :? EdProject as ep -> ep.Duplicate()
+        | :? RtSystem  as rs -> rs.Duplicate()
+        | :? RtProject as rp -> rp.Duplicate()
+        | _ -> failwithf "Unsupported type for duplication: %A" (source.GetType())

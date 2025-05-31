@@ -64,7 +64,7 @@ module rec DsObjectModule =
         member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 
-    type RtProject(activeSystems:RtSystem[], passiveSystems:RtSystem[]) as this =
+    type RtProject(prototypeSystems:RtSystem[], activeSystems:RtSystem[], passiveSystems:RtSystem[]) as this =
         inherit RtUnique()
         do
             activeSystems  |> iter (fun z -> z.RawParent <- Some this)
@@ -83,6 +83,7 @@ module rec DsObjectModule =
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = nullString with get, set
 
+        member val PrototypeSystems = prototypeSystems |> toList
         // { Runtime/DB 용
         member val ActiveSystems = activeSystems |> toList
         member val PassiveSystems = passiveSystems |> toList

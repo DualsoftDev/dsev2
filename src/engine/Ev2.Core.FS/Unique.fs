@@ -46,6 +46,9 @@ module Interfaces =
         let y = x.UseUtcTime
         if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
+
+    let mutable internal fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
+
     [<AbstractClass>]
     type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) =
         interface IUnique

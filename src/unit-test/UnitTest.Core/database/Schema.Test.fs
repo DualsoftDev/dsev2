@@ -14,6 +14,7 @@ open Dual.Common.Core.FS
 
 open Ev2.Core.FS
 open Newtonsoft.Json
+open System.Reactive.Concurrency
 
 
 [<AutoOpen>]
@@ -336,20 +337,26 @@ module SchemaTestModule =
         createEditableSystemCylinder()
         let edProject = edProject.Replicate() |> validateEditable
         let protoGuid = edSystemCyl.Guid
-        //edProject.Prototypes.Add edSystemCyl
-        let edSysCyl1 = edSystemCyl.Duplicate() |> tee(fun z -> z.PrototypeSystemGuid <- Some protoGuid)
-        let edSysCyl2 = edSystemCyl.Duplicate() |> tee(fun z -> z.PrototypeSystemGuid <- Some protoGuid; z.Name <- "Cylinder2")
-        let edSysCyl3 = edSystemCyl.Duplicate() |> tee(fun z -> z.PrototypeSystemGuid <- Some protoGuid; z.Name <- "ActiveCylinder2")
-        edProject.PassiveSystems.AddRange([edSysCyl1; edSysCyl2; ])
-        edProject.ActiveSystems.Add(edSysCyl3)
-        let xxx = edProject
-        let yyy = edSystemCyl
-        let zzz = xxx, yyy
+        edProject.PrototypeSystems.Add edSystemCyl
+        let edSysCyl1 = edProject.Instantiate(protoGuid, asActive=false)
+        let edSysCyl2 = edProject.Instantiate(protoGuid, asActive=false)
+        let edSysCyl3 = edProject.Instantiate(protoGuid, asActive=true)
+
+        let curernt = now()
         let rtProject = edProject.ToRuntimeProject()
-        let json=
+        rtProject |> _.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- curernt)
+        let json =
             rtProject
             |> validateRuntime
             |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
-        let dsProject = RtProject.FromJson json
+
+        let rtProject2 = RtProject.FromJson json
+        rtProject2 |> _.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- curernt)
+        let json2 =
+            rtProject2
+            |> validateRuntime
+            |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder-2.json"))
+
+        json === json2
         ()
 

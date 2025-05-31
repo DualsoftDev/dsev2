@@ -287,6 +287,18 @@ module rec NewtonsoftJsonObjects =
             |> toNjUniqINGD rt
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
     let rec internal onNsJsonSerializing (bag:Nj2RtBag) (njParent:INjObject option) (njObj:INjObject) =
         match njObj with
@@ -300,49 +312,36 @@ module rec NewtonsoftJsonObjects =
         | :? NjProject as njp ->
             let rtp = njp.DsObject :?> RtProject
 
-            let protos =
-                rtp.ActiveSystems @ rtp.PassiveSystems
-                |> distinct
-                |> filter _.PrototypeSystemGuid.IsSome
-                |-> NjSystem.FromRuntime
-
             njp.SystemPrototypes <-
-                protos
+                rtp.PrototypeSystems
                 |> distinct
+                |-> NjSystem.FromRuntime
                 |> toArray
 
-            njp.ActiveSystems <- [|
-                for rt in rtp.ActiveSystems do
-                    match rt.PrototypeSystemGuid with
-                    | Some guid ->
-                        NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
-                    | None ->
-                        let nj = rt |> NjSystem.FromRuntime
-                        NjSystemLoadType.LocalDefinition nj
-            |]
-            njp.PassiveSystems <- [|
-                for rt in rtp.PassiveSystems do
-                    match rt.PrototypeSystemGuid with
-                    | Some guid ->
-                        NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
-                    | None ->
-                        let nj = rt |> NjSystem.FromRuntime
-                        NjSystemLoadType.LocalDefinition nj
-            |]
+            let rtToSystemLoadType (rt:RtSystem) =
+                match rt.PrototypeSystemGuid with
+                | Some guid ->
+                    NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
+                | None ->
+                    let nj = rt |> NjSystem.FromRuntime
+                    NjSystemLoadType.LocalDefinition nj
+
+            njp.ActiveSystems  <- rtp.ActiveSystems  |-> rtToSystemLoadType |> toArray
+            njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
 
             njp.LastConnectionString <- rtp.LastConnectionString
             njp.SystemPrototypes |> iter (onNsJsonSerializing bag (Some njp))
 
-        | :? NjSystem as sys ->
-            sys.Arrows   |> iter (onNsJsonSerializing bag (Some sys))
-            sys.Flows    |> iter (onNsJsonSerializing bag (Some sys))
-            sys.Works    |> iter (onNsJsonSerializing bag (Some sys))
-            sys.ApiDefs  |> iter (onNsJsonSerializing bag (Some sys))
-            sys.ApiCalls |> iter (onNsJsonSerializing bag (Some sys))
+        | :? NjSystem as njs ->
+            njs.Arrows   |> iter (onNsJsonSerializing bag (Some njs))
+            njs.Flows    |> iter (onNsJsonSerializing bag (Some njs))
+            njs.Works    |> iter (onNsJsonSerializing bag (Some njs))
+            njs.ApiDefs  |> iter (onNsJsonSerializing bag (Some njs))
+            njs.ApiCalls |> iter (onNsJsonSerializing bag (Some njs))
 
-        | :? NjWork as work ->
-            work.Arrows |> iter (onNsJsonSerializing bag (Some work))
-            work.Calls  |> iter (onNsJsonSerializing bag (Some work))
+        | :? NjWork as njw ->
+            njw.Arrows |> iter (onNsJsonSerializing bag (Some njw))
+            njw.Calls  |> iter (onNsJsonSerializing bag (Some njw))
 
 
         | (:? NjFlow) | (:? NjCall) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
@@ -375,21 +374,25 @@ module rec NewtonsoftJsonObjects =
                 | NjSystemLoadType.Reference { InstanceName=name; PrototypeGuid=protoGuid; InstanceGuid=instanceGuid } ->
                     protos
                     |> find (fun p -> p.Guid = protoGuid)
+                    |> (fun z -> fwdDuplicate z :?> RtSystem)
                     |> tee(fun s ->
                         s.Name <- name
                         s.Guid <- instanceGuid
+                        s.PrototypeSystemGuid <- Some protoGuid
                         )
 
             njp.SystemPrototypes |> iter (onNsJsonDeserialized bag (Some njp))
             njp.DsObject <-
+                noop()
                 let actives  = njp.ActiveSystems  |-> load
                 let passives = njp.PassiveSystems |-> load
+                let prototypeSystems = njp.SystemPrototypes |-> (fun s -> s.DsObject :?> RtSystem )
 
                 actives @ passives
                 |> iter (fun s -> s.RawParent <- Some s)
 
 
-                RtProject(actives, passives
+                RtProject(prototypeSystems, actives, passives
                     , Author=njp.Author
                     , Version=njp.Version
                     , Description=njp.Description
@@ -540,14 +543,16 @@ module Ds2JsonModule =
 
     type NjProject with
         /// DsProject 를 JSON 문자열로 변환
-        member x.ToJson():string = EmJson.ToJson(x)
-        member x.ToJson(jsonFilePath:string) =
+        member x.ToJson():string =
             (* Withh context version *)
             let settings = EmJson.CreateDefaultSettings()
             // Json deserialize 중에 필요한 담을 그릇 준비
             settings.Context <- new StreamingContext(StreamingContextStates.All, Nj2RtBag())
 
             EmJson.ToJson(x, settings)
+
+        member x.ToJsonFile(jsonFilePath:string) =
+            x.ToJson()
             |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
         /// JSON 문자열을 DsProject 로 변환
@@ -582,9 +587,9 @@ module Ds2JsonModule =
 
     type RtProject with
         /// DsProject 를 JSON 문자열로 변환
-        member x.ToJson():string = EmJson.ToJson(x)
+        member x.ToJson():string = NjProject.FromRuntime(x).ToJson()
         member x.ToJson(jsonFilePath:string) =
-            NjProject.FromRuntime(x).ToJson(jsonFilePath)
+            NjProject.FromRuntime(x).ToJsonFile(jsonFilePath)
             //EmJson.ToJson(x)
             //|> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
