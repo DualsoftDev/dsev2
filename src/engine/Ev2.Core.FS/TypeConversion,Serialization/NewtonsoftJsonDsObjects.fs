@@ -51,14 +51,16 @@ module NewtonsoftJsonModules =
         /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
         [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
 
-
-        /// 자신과 관련된 Runtime Object
-        [<JsonIgnore>] member val DsObject:Unique = getNull<Unique>() with get, set
-        [<JsonIgnore>] member x.DsRawParent:Unique option = x.DsObject.RawParent
-        [<JsonIgnore>] member x.NjRawParent:NjUnique option = x.RawParent
-
         /// 내부 구현 전용.  serialize 대상에서 제외됨
         [<JsonIgnore>] member val internal DDic = DynamicDictionary()
+        [<JsonIgnore>]
+        member internal x.DsObject
+            //with get():Unique = x.DDic.TryGet("RtObject") |> tryCast<Unique> |?? (fun _ -> failwithlog "RtObject not found in DynamicDictionary.  This is a bug.")
+            with get():Unique =
+                match x.DDic.TryGet("RtObject") |-> box with
+                | Some (:? Unique as rt) -> rt
+                | _ -> failwith "RtObject not found in DynamicDictionary.  This is a bug."
+            and set (v:Unique) = x.DDic.Set("RtObject", v)
 
 
     type Nj2RtBag() =
@@ -91,7 +93,6 @@ module rec NewtonsoftJsonObjects =
         dst.DateTime <- src.DateTime
         match box src with
         | :? Unique as ds ->
-            dst.DsObject <- ds
             dst.DDic.Set("RtObject", ds)
         | _ ->
             ()
@@ -124,7 +125,6 @@ module rec NewtonsoftJsonObjects =
                 , Author=rt.Author
                 , Version=rt.Version
                 , Description=rt.Description)
-            //|> tee (fun z -> z.DDic.Set<RtProject> rt)
             |> toNjUniqINGD rt
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  (Nj2RtBag()) None x
@@ -173,7 +173,6 @@ module rec NewtonsoftJsonObjects =
                 LangVersion=rt.LangVersion, EngineVersion=rt.EngineVersion, Description=rt.Description)
             |> toNjUniqINGD rt
             |> tee (fun z ->
-                //z.DDic.Set<RtSystem> rt
                 z.Flows    <- rt.Flows    |-> NjFlow.FromRuntime    |> toArray
                 z.Arrows   <- rt.Arrows   |-> NjArrow.FromRuntime   |> toArray
                 z.Works    <- rt.Works    |-> NjWork.FromRuntime    |> toArray
@@ -188,7 +187,6 @@ module rec NewtonsoftJsonObjects =
 
         static member FromRuntime(rt:RtFlow) =
             NjFlow()
-            //|> tee (fun z -> z.DDic.Set<RtFlow> rt)
             |> toNjUniqINGD rt
 
     type NjWork () =
@@ -203,7 +201,6 @@ module rec NewtonsoftJsonObjects =
 
         static member FromRuntime(rt:RtWork) =
             NjWork()
-            //|> tee (fun z -> z.DDic.Set<RtWork> rt)
             |> toNjUniqINGD rt
             |> tee (fun z ->
                 z.Calls    <- rt.Calls   |-> NjCall.FromRuntime  |> toArray
@@ -222,7 +219,6 @@ module rec NewtonsoftJsonObjects =
         static member FromRuntime(rt:IArrow) =
             assert(isItNotNull rt)
             NjArrow()
-            //|> tee (fun z -> z.DDic.Set<IArrow> rt)
             |> toNjUniqINGD (rt :?> Unique)
             |> tee (fun z ->
                 z.Source <- guid2str (rt.GetSource().Guid)
@@ -249,7 +245,6 @@ module rec NewtonsoftJsonObjects =
 
         static member FromRuntime(rt:RtCall) =
             NjCall(CallType = rt.CallType.ToString(), AutoPre=rt.AutoPre, Safety=rt.Safety, Timeout=o2n rt.Timeout)
-            //|> tee (fun z -> z.DDic.Set<RtCall> rt)
             |> toNjUniqINGD rt
             |> tee (fun z ->
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
@@ -272,7 +267,6 @@ module rec NewtonsoftJsonObjects =
             NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
                 InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
                 Value=rt.Value, ValueType=rt.ValueType.ToString() )
-            //|> tee (fun z -> z.DDic.Set<RtApiCall> rt)
             |> toNjUniqINGD rt
 
     type NjApiDef() =
@@ -284,7 +278,6 @@ module rec NewtonsoftJsonObjects =
         static member FromRuntime(rt:RtApiDef) =
             assert(isItNotNull rt)
             NjApiDef(IsPush=rt.IsPush)
-            //|> tee (fun z -> z.DDic.Set<RtApiDef> rt)
             |> toNjUniqINGD rt
 
 
@@ -298,50 +291,39 @@ module rec NewtonsoftJsonObjects =
             ()
 
         match njObj with
-        | :? NjProject as nj ->
-            let rt = nj.DsObject :?> RtProject
+        | :? NjProject as njp ->
+            let rtp = njp.DsObject :?> RtProject
 
-            let protos = ResizeArray<NjSystem>()
-            let actives = ResizeArray<NjSystem>()
-            let passives = ResizeArray<NjSystem>()
+            let protos =
+                rtp.ActiveSystems @ rtp.PassiveSystems
+                |> distinct
+                |> filter _.IsSaveAsReference
+                |-> NjSystem.FromRuntime
 
-            (* Runtime project 의 Active/Passive 에서 proto, active, passive 로 분리 *)
-            rt.ActiveSystems
-            |> distinct
-            |-> NjSystem.FromRuntime
-            |> iter (fun s ->
-                s.IsSaveAsReference ?= (protos, actives) |> (fun z -> z.Add s))
-
-            rt.PassiveSystems
-            |> distinct
-            |-> NjSystem.FromRuntime
-            |> iter (fun s ->
-                s.IsSaveAsReference ?= (protos, passives) |> (fun z -> z.Add s))
-
-
-            nj.SystemPrototypes <-
+            njp.SystemPrototypes <-
                 protos
                 |> distinct
                 |> toArray
 
-            nj.ActiveSystems <- [|
-                for s in actives do
-                    if s.IsSaveAsReference then
-                        NjSystemLoadType.FromPrototype(s.Name, s.Guid)
+            njp.ActiveSystems <- [|
+                for rt in rtp.ActiveSystems do
+                    if rt.IsSaveAsReference then
+                        NjSystemLoadType.FromPrototype(rt.Name, rt.Guid)
                     else
-                        NjSystemLoadType.LocalDefinition s
+                        let nj = rt |> NjSystem.FromRuntime
+                        NjSystemLoadType.LocalDefinition nj
             |]
-            nj.PassiveSystems <- [|
-                for s in passives do
-                    if s.IsSaveAsReference then
-                        NjSystemLoadType.FromPrototype(s.Name, s.Guid)
+            njp.PassiveSystems <- [|
+                for rt in rtp.PassiveSystems do
+                    if rt.IsSaveAsReference then
+                        NjSystemLoadType.FromPrototype(rt.Name, rt.Guid)
                     else
-                        NjSystemLoadType.LocalDefinition s
+                        let nj = rt |> NjSystem.FromRuntime
+                        NjSystemLoadType.LocalDefinition nj
             |]
 
-            nj.LastConnectionString <- rt.LastConnectionString
-
-            nj.SystemPrototypes |> iter (onNsJsonSerializing bag (Some nj))
+            njp.LastConnectionString <- rtp.LastConnectionString
+            njp.SystemPrototypes |> iter (onNsJsonSerializing bag (Some njp))
 
         | :? NjSystem as sys ->
             sys.Arrows   |> iter (onNsJsonSerializing bag (Some sys))
@@ -349,14 +331,10 @@ module rec NewtonsoftJsonObjects =
             sys.Works    |> iter (onNsJsonSerializing bag (Some sys))
             sys.ApiDefs  |> iter (onNsJsonSerializing bag (Some sys))
             sys.ApiCalls |> iter (onNsJsonSerializing bag (Some sys))
-            ()
 
         | :? NjWork as work ->
             work.Arrows |> iter (onNsJsonSerializing bag (Some work))
             work.Calls  |> iter (onNsJsonSerializing bag (Some work))
-            ()
-            //work.Calls |> iter onSerializing
-            //work.TryGetFlow() |> iter (fun f -> work.FlowGuid <- guid2str f.Guid)
 
 
         | (:? NjFlow) | (:? NjCall) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->

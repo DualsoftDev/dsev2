@@ -327,13 +327,19 @@ module SchemaTestModule =
         File.WriteAllText(rawJsonPath, json)
 
 
+    (*
+        Project 에 cylinder subsystem 을 reference (loaded system) 으로 추가하는 예제
+    *)
     [<Test>]
     let ``Cylinder 추가 test`` () =
         createEditableProject()
         createEditableSystemCylinder()
         let edProject = edProject.Replicate() |> validateEditable
-        let edSysCylProto = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true)
-        edProject.PassiveSystems.Add(edSysCylProto)
+        let edSysCylProto1 = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true)
+        let edSysCylProto2 = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true; z.Name <- "Cylinder2")
+        let edSysCylProto3 = edSystemCyl.Replicate() |> tee(fun z -> z.IsSaveAsReference <- true; z.Name <- "ActiveCylinder2")
+        edProject.PassiveSystems.AddRange([edSysCylProto1; edSysCylProto2; ])
+        edProject.ActiveSystems.Add(edSysCylProto3)
         let xxx = edProject
         let yyy = edSystemCyl
         let zzz = xxx, yyy
