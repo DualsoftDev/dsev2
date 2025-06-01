@@ -56,7 +56,6 @@ module NewtonsoftJsonModules =
         [<JsonIgnore>] member val internal DDic = DynamicDictionary()
         [<JsonIgnore>]
         member internal x.DsObject
-            //with get():Unique = x.DDic.TryGet("RtObject") |> tryCast<Unique> |?? (fun _ -> failwithlog "RtObject not found in DynamicDictionary.  This is a bug.")
             with get():Unique =
                 match x.DDic.TryGet("RtObject") |-> box with
                 | Some (:? Unique as rt) -> rt

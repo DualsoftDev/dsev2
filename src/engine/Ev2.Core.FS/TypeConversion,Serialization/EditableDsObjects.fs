@@ -149,9 +149,7 @@ module rec EditableDsObjects =
     type EdApiCall(apiDefGuid:Guid) =
         inherit EdUnique()
 
-        member x.Call =
-            x.RawParent |-> (fun z -> z :?> EdCall) |?? (fun () -> getNull<EdCall>())
-
+        member x.Call = x.RawParent >>= tryCast<EdCall> |? getNull<EdCall>()
         member val ApiDefGuid = apiDefGuid with get, set
         member val InAddress  = nullString with get, set
         member val OutAddress = nullString with get, set

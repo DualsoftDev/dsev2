@@ -115,7 +115,7 @@ module rec DsObjectModule =
 
     type RtSystem with
         member x.TryGetProject() = x.RawParent |-> (fun z -> z :?> RtProject)
-        member x.Project = x.TryGetProject() |?? (fun () -> getNull<RtProject>())
+        member x.Project = x.TryGetProject() |? getNull<RtProject>()
 
 
 
@@ -123,7 +123,7 @@ module rec DsObjectModule =
         inherit RtUnique()
 
         interface IRtFlow
-        member x.System = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
+        member x.System = x.RawParent >>= tryCast<RtSystem> |? getNull<RtSystem>()
         member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
 
     // see static member Create
@@ -137,14 +137,14 @@ module rec DsObjectModule =
         member val Calls  = calls  |> toList
         member val Arrows = arrows |> toList
         member x.OptFlow  = optFlow
-        member x.System   = x.RawParent |-> (fun z -> z :?> RtSystem) |?? (fun () -> getNull<RtSystem>())
+        member x.System   = x.RawParent >>= tryCast<RtSystem> |? getNull<RtSystem>()
 
 
     // see static member Create
     type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, isDisabled:bool, timeout:int option) =
         inherit RtUnique()
         interface IRtCall
-        member x.Work = x.RawParent |-> (fun z -> z :?> RtWork) |?? (fun () -> getNull<RtWork>())
+        member x.Work = x.RawParent >>= tryCast<RtWork> |? getNull<RtWork>()
         member val CallType = callType
         member val AutoPre  = autoPre
         member val Safety   = safety
