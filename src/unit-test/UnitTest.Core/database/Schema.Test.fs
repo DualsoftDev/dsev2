@@ -172,6 +172,7 @@ module SchemaTestModule =
         let connStr =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
+        let dbApi = DbApi connStr
 
         let dsProject = edProject.ToRuntimeProject() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
@@ -190,6 +191,7 @@ module SchemaTestModule =
             dsobj.Id.IsNone === true
         )
 
+        dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
         dsProject.ToSqlite3(connStr, removeExistingData)
 
         dsProject.EnumerateRtObjects()
@@ -362,61 +364,95 @@ module SchemaTestModule =
 
         let dbPath = Path.Combine(testDataDir(), "dssystem-with-cylinder.sqlite3")
         let connStr = dbPath |> path2ConnectionString
+        let dbApi = DbApi connStr
+        dbApi.With(fun (conn, tr) -> conn.Execute("DELETE FROM project") |> ignore) |> ignore
+
         rtProject.ToSqlite3(connStr)
 
         File.Copy(dbPath, Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
 
+
+        let emptyCheckTables = [ Tn.Project; Tn.MapProject2System; Tn.System;
+                            Tn.Flow; Tn.Work; Tn.Call; Tn.ApiCall; Tn.ApiDef ]
+
         (* FK test *)
-        let dbApi = DbApi connStr
-        let mutable countAfterDelete = -1
+        let mutable checkDone = false
         (fun () ->
             dbApi.With(fun (conn, tr) ->
-                conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1") |> ignore
-                let numRows = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")
+                let affected = conn.Execute($"DELETE FROM {Tn.Project}")
+
                 // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
-                countAfterDelete <- numRows
-                numRows === 0
+                for t in emptyCheckTables do
+                    tracefn $"Checking table {t} for empty"
+                    let count = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}")
+                    if count <> 0 then
+                        tracefn $"What's up with {t}??"
+
+                    count === 0
+
+
+                checkDone <- true
                 // transaction 강제 rollback 유도
                 failwith "Aborting")
         ) |> ShouldFailWithSubstringT "Aborting"
-        countAfterDelete === 0
+        checkDone === true
 
+
+        checkDone <- false
         (* FK test *)
         // project id = 1 을 복사해서 project id = 2 로 만듦
         // mapping id = 1 을 복사해서 mapping id = 2 로 만듦 (systemId 는 1 에 대해서 두 project 가 참조 중)
         // project id = 1 을 삭제했을 때, project id = 2 에 대한 모든 것과 mapping id = 2 은 남아 있어야 함
-        dbApi.With(fun (conn, tr) ->
-            conn.Execute($"""   INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
-                                SELECT
-                                    guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
-                                    dateTime,
-                                    name || ' 복사본',
-                                    author,
-                                    version,
-                                    description
-                                FROM project
-                                WHERE id = 1
-                                ;""") |> ignore
+        (fun () ->
+            dbApi.With(fun (conn, tr) ->
+                let projId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
+                let newProjId =
+                    conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                                    SELECT
+                                        guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
+                                        dateTime,
+                                        name || ' 복사본',
+                                        author,
+                                        version,
+                                        description
+                                    FROM project
+                                    WHERE id = {projId}
+                                    ;""", null, tr)
+                //let newProjId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
 
-            conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, dateTime, projectId, systemId, isActive, loadedName)
-                                SELECT
-                                    guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
-                                    datetime('now'),          -- 복사 시간 갱신
-                                    2,                        -- 새로 만든 project id
-                                    systemId,
-                                    isActive,
-                                    loadedName
-                                FROM mapProject2System
-                                WHERE id = 1
-                                ;
-                                """) |> ignore
+                let mapId =
+                    conn.ExecuteScalar<int>(
+                        $"""SELECT id FROM {Tn.MapProject2System}
+                            WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
 
-            conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1") |> ignore
-            let numRows = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")
-            // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
-            countAfterDelete <- numRows
-        )
-        countAfterDelete =!= 0
+                conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, dateTime, projectId, systemId, isActive, loadedName)
+                                    SELECT
+                                        guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
+                                        datetime('now'),          -- 복사 시간 갱신
+                                        {newProjId},              -- 새로 만든 project id
+                                        systemId,
+                                        isActive,
+                                        loadedName
+                                    FROM mapProject2System
+                                    WHERE id = {mapId}
+                                    ;
+                                    """, transaction=tr) |> ignore
+
+                conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", transaction=tr) |> ignore
+
+                // 현재 transaction 내에서는 임의 추가한 porject 와 System 이 하나씩 남아 있어야 한다.
+                for t in emptyCheckTables do
+                    tracefn $"Checking table {t} for empty"
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", transaction=tr) =!= 0
+
+                checkDone <- true
+                // transaction 강제 rollback 유도
+                failwith "Aborting"
+            )
+        ) |> ShouldFailWithSubstringT "Aborting"
+
+        checkDone === true
+
 
 
         ()

@@ -140,7 +140,7 @@ module ORMTypesModule =
         member val CallTypeId = callTypeId with get, set
         member val AutoPre = autoPre with get, set
         member val Safety = safety with get, set
-        member val Disabled = isDisabled with get, set
+        member val IsDisabled = isDisabled with get, set
         member val Timeout = timeout with get, set
 
 

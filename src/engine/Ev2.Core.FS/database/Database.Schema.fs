@@ -52,6 +52,7 @@ module DatabaseSchemaModule =
 
 
         let [<Literal>] Meta         = "meta"
+        let [<Literal>] Temp         = "temp"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
         let [<Literal>] EOT          = "endOfTable"
@@ -59,7 +60,7 @@ module DatabaseSchemaModule =
         let AllTableNames = [
             Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall;
             Button; Lamp; Condition; Action; Enum;
-            Meta; TableHistory; MapProject2System; MapCall2ApiCall; ]        // Log;
+            Meta; Temp; TableHistory; MapProject2System; MapCall2ApiCall; ]        // Log;
 
     // database view names
     module Vn =
@@ -71,7 +72,12 @@ module DatabaseSchemaModule =
         let [<Literal>] Call       = "vwCall"
         let [<Literal>] ArrowCall  = "vwArrowCall"
         let [<Literal>] ArrowWork  = "vwArrowWork"
-        let AllViewTableNames = [ MapProject2System; MapCall2ApiCall; System; Flow; Work; Call; ArrowCall; ArrowWork; ]
+        let [<Literal>] ApiDef     = "vwApiDef"
+        let [<Literal>] ApiCall    = "vwApiCall"
+        let AllViewTableNames = [
+                MapProject2System; MapCall2ApiCall
+                System; Flow; Work; Call; ApiDef; ApiCall
+                ArrowCall; ArrowWork; ]
 
     let triggerSql() =
         // op : {INSERT, UPDATE, DELETE}
@@ -160,9 +166,9 @@ CREATE TABLE [{Tn.MapProject2System}]( {sqlUniq()}
 CREATE TRIGGER IF NOT EXISTS trigger_{Tn.Project}_beforeDelete_recordSystemIds
 BEFORE DELETE ON {Tn.Project}
 BEGIN
-    DELETE FROM {Tn.Meta} WHERE key = 'trigger_temp_systemId';
+    DELETE FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId';
 
-    INSERT INTO {Tn.Meta} (key, val)
+    INSERT INTO {Tn.Temp} (key, val)
     SELECT 'trigger_temp_systemId', systemId
     FROM {Tn.MapProject2System}
     WHERE projectId = OLD.id;
@@ -173,7 +179,7 @@ AFTER DELETE ON {Tn.Project}
 BEGIN
     DELETE FROM {Tn.System}
     WHERE id IN (
-        SELECT CAST(val AS INTEGER) FROM {Tn.Meta} WHERE key = 'trigger_temp_systemId'
+        SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId'
     )
     AND NOT EXISTS (
         SELECT 1 FROM {Tn.MapProject2System}
@@ -189,7 +195,7 @@ END;
 --AFTER DELETE ON {Tn.MapProject2System}
 --BEGIN
 --    -- 디버깅용 로그 삽입
---    INSERT INTO {Tn.Meta}(key, val)
+--    INSERT INTO {Tn.Temp}(key, val)
 --    VALUES (
 --        'trigger_{Tn.MapProject2System}_afterDelete_dropSystems',
 --        '삭제된 systemId=' || OLD.systemId
@@ -263,7 +269,7 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
-    , [disabled]      TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
+    , [isDisabled]    TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
     , FOREIGN KEY(callTypeId)   REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
@@ -322,14 +328,23 @@ CREATE TABLE [{Tn.ApiDef}]( {sqlUniqWithName()}
     , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
 );
 
+
+-- 삭제 ??
 CREATE TABLE [{Tn.ParamWork}] (  {sqlUniq()}
 );
 
+-- 삭제 ??
 CREATE TABLE [{Tn.ParamCall}] (  {sqlUniq()}
 );
 
 
 CREATE TABLE [{Tn.Meta}] (
+    id {intKeyType} PRIMARY KEY NOT NULL,
+    key TEXT NOT NULL,
+    val TEXT NOT NULL
+);
+
+CREATE TABLE [{Tn.Temp}] (
     id {intKeyType} PRIMARY KEY NOT NULL,
     key TEXT NOT NULL,
     val TEXT NOT NULL
@@ -406,11 +421,42 @@ CREATE VIEW [{Vn.System}] AS
     JOIN [{Tn.Project}] p ON p.id = psm.projectId
     ;
 
+CREATE VIEW [{Vn.ApiDef}] AS
+    SELECT
+        x.[id]
+        , x.[name]
+        , x.[isPush]
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+    FROM [{Tn.ApiDef}] x
+    JOIN [{Tn.System}] s  ON s.id = x.systemId
+    ;
+
+CREATE VIEW [{Vn.ApiCall}] AS
+    SELECT
+        x.[id]
+        , x.[name]
+        , x.[inAddress]
+        , x.[outAddress]
+        , x.[inSymbol]
+        , x.[outSymbol]
+        , x.[value]
+        , enum.[name] AS valueType
+        , ad.[id]   AS apiDefId
+        , ad.[name] AS apiDefName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+    FROM [{Tn.ApiCall}] x
+    JOIN [{Tn.ApiDef}] ad ON ad.id = x.apiDefId
+    JOIN [{Tn.System}] s  ON s.id = ad.systemId
+    JOIN [{Tn.Enum}] enum ON enum.id = x.valueTypeId
+    ;
+
 
 CREATE VIEW [{Vn.Flow}] AS
     SELECT
-        f.[id]
-        , f.[name]  AS flowName
+        x.[id]
+        , x.[name]  AS flowName
         , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
@@ -418,7 +464,7 @@ CREATE VIEW [{Vn.Flow}] AS
         , w.[id]    AS workId
         , w.[name]  AS workName
     FROM [{Tn.Work}] w
-    LEFT JOIN [{Tn.Flow}] f           ON f.id         = w.flowId
+    LEFT JOIN [{Tn.Flow}] x           ON x.id         = w.flowId
     JOIN [{Tn.System}] s              ON s.id         = w.systemId
     JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
     JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
@@ -427,17 +473,17 @@ CREATE VIEW [{Vn.Flow}] AS
 
 CREATE VIEW [{Vn.Work}] AS
     SELECT
-        w.[id]
-        , w.[name]  AS workName
+        x.[id]
+        , x.[name]  AS workName
         , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
         , f.[id]    AS flowId
         , f.[name]  AS flowName
-    FROM [{Tn.Work}] w
-    LEFT JOIN [{Tn.Flow}] f ON f.id = w.flowId
-    JOIN [{Tn.System}] s              ON s.id         = w.systemId
+    FROM [{Tn.Work}] x
+    LEFT JOIN [{Tn.Flow}] f ON f.id = x.flowId
+    JOIN [{Tn.System}] s              ON s.id         = x.systemId
     JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
     JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
     ;
@@ -449,7 +495,7 @@ CREATE VIEW [{Vn.Call}] AS
         , c.[timeout]
         , c.[autoPre]
         , c.[safety]
-        , c.[disabled]
+        , c.[isDisabled]
         , p.[id]      AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
@@ -473,7 +519,6 @@ CREATE VIEW [{Vn.ArrowCall}] AS
         , ac.[target]
         , tgt.[name] AS targetName
         , ac.[typeId]
-        , enum.[category]
         , enum.[name] AS enumName
         , ac.[workId]
         , w.[name] AS workName
@@ -500,7 +545,6 @@ CREATE VIEW [{Vn.ArrowWork}] AS
         , aw.[target]
         , tgt.[name]      AS targetName
         , aw.[typeId]
-        , enum.[category] AS category
         , enum.[name]     AS enumName
         , aw.[systemId]
         , p.[id]          AS projectId
