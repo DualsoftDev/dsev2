@@ -61,11 +61,19 @@ module rec DsCompareObjects =
         member val EngineVersion = true with get, set
         member val LangVersion   = true with get, set
 
+    /// 추후 확장용....
+    type UniqueCompareResult =
+        | Equal
+        | LeftOnly of IUnique
+        | RightOnly of IUnique
+        /// (diff property name) * left * right
+        | Diff of Name * IUnique * IUnique
+
     /// abberviation
     type internal Ucc = UniqueCompareCriteria
 
-    type IUnique with
-        member internal x.IsEqualIUnique(y:IUnique, criteria:Ucc) =
+    type IRtUnique with
+        member internal x.IsEqualUnique(y:IUnique, criteria:Ucc) =
             let c = criteria
 
             let e1 = x.GetName() =y.GetName()
@@ -75,17 +83,9 @@ module rec DsCompareObjects =
             let e2 = c.ParentGuid && ( (x.TryGetRawParent() |-> _.GetGuid()) =(y.TryGetRawParent() |-> _.GetGuid()) )
             e1 && e2 && e3 && e4 && e5
 
-    let private sortByGuid (xs:#IUnique list): #IUnique list = xs |> List.sortBy (fun x -> x.GetGuid())
+    let private sortByGuid (xs:#IRtUnique list): #IRtUnique list = xs |> List.sortBy (fun x -> x.GetGuid())
 
-
-    //let private isEqualSystems (xs:RtSystem list) (ys:RtSystem list) (criteria:Ucc) =
-    //    if xs.Length <> ys.Length then
-    //        false
-    //    else
-    //        let xs = xs |> sortByGuid
-    //        let ys = ys |> sortByGuid
-    //        xs |> zip ys |> forall (fun (x, y) -> x.IsEqual(y, criteria=criteria))
-
+    /// xs 와 ys 의 collection 간 비교
     let private isEqualList
         (xs: 'T list)
         (ys: 'T list)
@@ -94,22 +94,14 @@ module rec DsCompareObjects =
         let xs = xs |> sortByGuid
         let ys = ys |> sortByGuid
 
-        //xs.Length = ys.Length &&
-        //(List.zip xs ys |> List.forall (fun (a, b) -> a.IsEqual(b, ?criteria=criteria)))
-
-        let r =
-            xs.Length = ys.Length &&
-            (List.zip xs ys |> List.forall (fun (a, b) -> a.IsEqual(b, ?criteria=criteria)))
-        if not r then
-            noop()
-        r
-
+        xs.Length = ys.Length &&
+        (List.zip xs ys |> List.forall (fun (a, b) -> a.IsEqual(b, ?criteria=criteria)))
 
 
     type RtProject with
         member x.IsEqual(y:RtProject, ?criteria:Ucc) =
             let c = criteria |? Ucc()
-            if not <| x.IsEqualIUnique(y, criteria=c) then
+            if not <| x.IsEqualUnique(y, criteria=c) then
                 false
             else
                 (* System 들 비교*)
@@ -195,10 +187,10 @@ module rec DsCompareObjects =
             let e3 = x.Type = y.Type
             e1 && e2 && e3
 
-    type IUnique with
-        member internal x.IsEqual(y:IUnique, ?criteria:Ucc) =
+    type IRtUnique with
+        member internal x.IsEqual(y:IRtUnique, ?criteria:Ucc) =
             let c = criteria |? Ucc()
-            if not <| x.IsEqualIUnique(y, criteria=c) then
+            if not <| x.IsEqualUnique(y, criteria=c) then
                 false
             else
                 match x, y with
@@ -211,25 +203,6 @@ module rec DsCompareObjects =
                 | (:? RtApiCall as u), (:? RtApiCall as v)  -> u.IsEqual(v, criteria=c)
                 | (:? RtArrowBetweenWorks as u), (:? RtArrowBetweenWorks as v)  -> u.IsEqual(v, criteria=c)
                 | (:? RtArrowBetweenCalls as u), (:? RtArrowBetweenCalls as v)  -> u.IsEqual(v, criteria=c)
-
-                (* Ed/Nj/ORM 은 불필요 할 듯.. *)
-
-                //| (:? EdProject as u), (:? EdProject as v) -> u.IsEqual(v, criteria=c)
-                //| (:? EdSystem as u),  (:? EdSystem as v)  -> u.IsEqual(v, criteria=c)
-                //| (:? EdFlow as u),    (:? EdFlow as v)    -> u.IsEqual(v, criteria=c)
-                //| (:? EdWork as u),    (:? EdWork as v)    -> u.IsEqual(v, criteria=c)
-                //| (:? EdCall as u),    (:? EdCall as v)    -> u.IsEqual(v, criteria=c)
-                //| (:? EdApiDef as u),  (:? EdApiDef as v)  -> u.IsEqual(v, criteria=c)
-                //| (:? EdApiCall as u), (:? EdApiCall as v) -> u.IsEqual(v, criteria=c)
-
-
-                //| (:? NjProject as u), (:? NjProject as v) -> u.IsEqual(v, criteria=c)
-                //| (:? NjSystem as u),  (:? NjSystem as v)  -> u.IsEqual(v, criteria=c)
-                //| (:? NjFlow as u),    (:? NjFlow as v)    -> u.IsEqual(v, criteria=c)
-                //| (:? NjWork as u),    (:? NjWork as v)    -> u.IsEqual(v, criteria=c)
-                //| (:? NjCall as u),    (:? NjCall as v)    -> u.IsEqual(v, criteria=c)
-                //| (:? NjApiDef as u),  (:? NjApiDef as v)  -> u.IsEqual(v, criteria=c)
-                //| (:? NjApiCall as u), (:? NjApiCall as v) -> u.IsEqual(v, criteria=c)
 
                 | _ -> failwith "ERROR"
 
