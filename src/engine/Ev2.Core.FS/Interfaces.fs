@@ -34,8 +34,8 @@ module rec DsObjectModule =
         inherit Unique()
         interface IRtUnique
 
-    type IRtUnique with
-        member x.GetGuid() = (x :?> RtUnique).Guid
+    //type IRtUnique with
+    //    member x.GetGuid() = (x :?> RtUnique).Guid
 
 
     type internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) =

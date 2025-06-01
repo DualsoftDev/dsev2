@@ -17,13 +17,13 @@ module internal rec DsObjectCopyImpl =
             old.Guid |> tee (fun guid -> x.Oldies.Add(guid, old))
 
     let internal nn (oldName:string) =
-#if DEBUG
-        match oldName with
-        | null | "" -> null
-        | _ -> $"Copy of {oldName}"
-#else
+//#if DEBUG
+//        match oldName with
+//        | null | "" -> null
+//        | _ -> $"Copy of {oldName}"
+//#else
         oldName
-#endif
+//#endif
 
     type EdProject with
         member x.replicate(bag:ReplicateBag) =
@@ -130,7 +130,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> EdWork
             let target = bag.Newbies[x.Target.Guid] :?> EdWork
             EdArrowBetweenWorks(source, target, x.Type)
-            |> uniqGD guid x.DateTime
+            |> uniqINGD x.Id x.Name guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -140,7 +140,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> EdCall
             let target = bag.Newbies[x.Target.Guid] :?> EdCall
             EdArrowBetweenCalls(source, target, x.Type)
-            |> uniqGD guid x.DateTime
+            |> uniqINGD x.Id x.Name guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]

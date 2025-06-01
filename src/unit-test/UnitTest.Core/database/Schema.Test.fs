@@ -457,3 +457,8 @@ module SchemaTestModule =
 
         ()
 
+    [<Test>]
+    let ``비교`` () =
+        let dsProject = edProject.ToRuntimeProject() |> validateRuntime
+        let dsProject2 = dsProject.Replicate() |> validateRuntime
+        dsProject.IsEqual dsProject2 === true
