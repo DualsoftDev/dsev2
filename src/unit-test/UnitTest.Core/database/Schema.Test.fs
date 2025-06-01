@@ -452,13 +452,20 @@ module SchemaTestModule =
         ) |> ShouldFailWithSubstringT "Aborting"
 
         checkDone === true
-
-
-
-        ()
+        noop()
 
     [<Test>]
     let ``비교`` () =
         let dsProject = edProject.ToRuntimeProject() |> validateRuntime
         let dsProject2 = dsProject.Replicate() |> validateRuntime
         dsProject.IsEqual dsProject2 === true
+
+        // dsProject2 의 work 이름을 변경하고 비교
+        let w = dsProject.Systems[0].Works[0]
+        let w2 = dsProject2.Systems[0].Works[0]
+        w2.Name <- "ChangedWorkName"
+        let diff = dsProject.ComputeDiff(dsProject2) |> toList
+        diff.Length === 1
+        diff[0] === Diff("Name", w, w2)
+        noop()
+

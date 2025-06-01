@@ -61,148 +61,180 @@ module rec DsCompareObjects =
         member val EngineVersion = true with get, set
         member val LangVersion   = true with get, set
 
-    /// 추후 확장용....
+    /// 객체 비교 결과 반환용....
     type UniqueCompareResult =
         | Equal
-        | LeftOnly of IUnique
-        | RightOnly of IUnique
+        | LeftOnly of IRtUnique
+        | RightOnly of IRtUnique
         /// (diff property name) * left * right
-        | Diff of Name * IUnique * IUnique
+        | Diff of Name * IRtUnique * IRtUnique
 
     /// abberviation
     type internal Ucc = UniqueCompareCriteria
+    type internal Ucr = UniqueCompareResult
 
     type IRtUnique with
-        member internal x.IsEqualUnique(y:IUnique, criteria:Ucc) =
+        member internal x.ComputeDiffUnique(y:IRtUnique, criteria:Ucc): Ucr seq =
             let c = criteria
+            seq {
+                if x.GetName() <> y.GetName() then yield Diff("Name", x, y)
+                if c.Id       && x.TryGetId()    <> y.TryGetId()    then yield Diff("Id", x, y)
+                if c.Guid     && x.GetGuid()     <> y.GetGuid()     then yield Diff("Guid", x, y)
+                if c.DateTime && x.GetDateTime() <> y.GetDateTime() then yield Diff("DateTime", x, y)
 
-            let e1 = x.GetName() =y.GetName()
-            let e3 = c.Id       && x.TryGetId()    =y.TryGetId()
-            let e4 = c.Guid     && x.GetGuid()     =y.GetGuid()
-            let e5 = c.DateTime && x.GetDateTime() =y.GetDateTime()
-            let e2 = c.ParentGuid && ( (x.TryGetRawParent() |-> _.GetGuid()) =(y.TryGetRawParent() |-> _.GetGuid()) )
-            e1 && e2 && e3 && e4 && e5
+                let xp = x.TryGetRawParent() |-> _.GetGuid()
+                let yp = y.TryGetRawParent() |-> _.GetGuid()
+                if c.ParentGuid && ( xp <> yp ) then yield Diff("Parent", x, y)
+            }
 
     let private sortByGuid (xs:#IRtUnique list): #IRtUnique list = xs |> List.sortBy (fun x -> x.GetGuid())
 
     /// xs 와 ys 의 collection 간 비교
-    let private isEqualList
+    let private computeDiffList<'T when 'T :> IRtUnique>
         (xs: 'T list)
         (ys: 'T list)
-        (criteria: Ucc option) =
+        (criteria: Ucc option): Ucr seq =
 
-        let xs = xs |> sortByGuid
-        let ys = ys |> sortByGuid
+        let xs = xs.ToDictionary(_.GetGuid(), id)
+        let ys = ys.ToDictionary(_.GetGuid(), id)
 
-        xs.Length = ys.Length &&
-        (List.zip xs ys |> List.forall (fun (a, b) -> a.IsEqual(b, ?criteria=criteria)))
+        let allGuids = xs.Keys @ ys.Keys |> Set.ofSeq
+
+        seq {
+            for guid in allGuids do
+                match xs.TryGet(guid), ys.TryGet(guid) with
+                | Some x, Some y ->
+                    let diffs = x.ComputeDiff(y, ?criteria=criteria)
+                    yield! diffs
+                | Some x, None ->
+                    yield LeftOnly x
+                | None, Some y ->
+                    yield RightOnly y
+                | _ -> ()
+        }
 
 
     type RtProject with
-        member x.IsEqual(y:RtProject, ?criteria:Ucc) =
+        member x.ComputeDiff(y:RtProject, ?criteria:Ucc): Ucr seq =
             let c = criteria |? Ucc()
-            if not <| x.IsEqualUnique(y, criteria=c) then
-                false
-            else
+            seq {
+                yield! x.ComputeDiffUnique(y, criteria=c)
+
                 (* System 들 비교*)
-                let e1 = (x.PrototypeSystems, y.PrototypeSystems,  Some c) |||> isEqualList
-                let e2 = (x.ActiveSystems,    y.ActiveSystems,     Some c) |||> isEqualList
-                let e3 = (x.PassiveSystems,   y.PassiveSystems,    Some c) |||> isEqualList
+                yield! (x.PrototypeSystems, y.PrototypeSystems,  Some c) |||> computeDiffList
+                yield! (x.ActiveSystems,    y.ActiveSystems,     Some c) |||> computeDiffList
+                yield! (x.PassiveSystems,   y.PassiveSystems,    Some c) |||> computeDiffList
 
                 (* 기타 속성 비교 *)
-                let e4 = c.Author && x.Author = y.Author
-
-                e1 && e2 && e3 && e4
+                if c.Author && x.Author <> y.Author then yield Diff("Author", x, y)
+            }
 
     type RtSystem with
-        member x.IsEqual(y:RtSystem, ?criteria:Ucc) =
-            let e1 = (x.Flows, y.Flows, criteria) |||> isEqualList
-            let e2 = (x.Works, y.Works, criteria) |||> isEqualList
-            let e3 = (x.Arrows, y.Arrows, criteria) |||> isEqualList
-            let e4 = (x.ApiDefs, y.ApiDefs, criteria) |||> isEqualList
-            let e5 = (x.ApiCalls, y.ApiCalls, criteria) |||> isEqualList
+        member x.ComputeDiff(y:RtSystem, ?criteria:Ucc): Ucr seq =
+            seq {
+                yield! (x.Flows   , y.Flows   , criteria) |||> computeDiffList
+                yield! (x.Works   , y.Works   , criteria) |||> computeDiffList
+                yield! (x.Arrows  , y.Arrows  , criteria) |||> computeDiffList
+                yield! (x.ApiDefs , y.ApiDefs , criteria) |||> computeDiffList
+                yield! (x.ApiCalls, y.ApiCalls, criteria) |||> computeDiffList
 
-            let e10 = x.PrototypeSystemGuid = y.PrototypeSystemGuid
-            let e11 = x.Author        = y.Author
-            let e12 = x.EngineVersion = y.EngineVersion
-            let e13 = x.LangVersion   = y.LangVersion
-            let e14 = x.Description   = y.Description
-
-            e1 && e2 && e3 && e4 && e5
-               && e10 && e11 && e12 && e13 && e14
+                if x.PrototypeSystemGuid <> y.PrototypeSystemGuid then yield Diff("PrototypeSystemGuid", x, y)
+                if x.Author        <> y.Author        then yield Diff("Author", x, y)
+                if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)
+                if x.LangVersion   <> y.LangVersion   then yield Diff("LangVersion", x, y)
+                if x.Description   <> y.Description   then yield Diff("Description", x, y)
+            }
 
 
     type RtFlow with
-        member x.IsEqual(y:RtFlow, ?criteria:Ucc) =
-            let e1 = x.System.Guid = y.System.Guid
-            let e2 = (x.Works, y.Works, criteria) |||> isEqualList
-            e1 && e2
+        member x.ComputeDiff(y:RtFlow, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.System.Guid <> y.System.Guid   then yield Diff("OwnerSystem", x, y)
+
+                // System 의 works 에서 비교할 것이기 때문에 여기서 비교하면 중복 비교가 됨.
+                //yield! (x.Works, y.Works, criteria) |||> computeDiffList
+            }
 
     type RtWork with
-        member x.IsEqual(y:RtWork, ?criteria:Ucc) =
-            let e1 = x.System.Guid = y.System.Guid
-            let e2 = (x.OptFlow |-> _.Guid) = (y.OptFlow |-> _.Guid)
-            let e3 = (x.Calls, y.Calls, criteria) |||> isEqualList
-            let e4 = (x.Arrows, y.Arrows, criteria) |||> isEqualList
-            e1 && e2 && e3 && e4
+        member x.ComputeDiff(y:RtWork, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.System.Guid <> y.System.Guid then yield Diff("OwnerSystem", x, y)
+
+                let xp = x.OptFlow |-> _.Guid
+                let yp = y.OptFlow |-> _.Guid
+                if xp <> yp then yield Diff("OwnerFlow", x, y)
+
+                yield! (x.Calls, y.Calls, criteria) |||> computeDiffList
+                yield! (x.Arrows, y.Arrows, criteria) |||> computeDiffList
+            }
 
     type RtCall with
-        member x.IsEqual(y:RtCall, ?criteria:Ucc) =
-            let e1 = x.Work.Guid  = y.Work.Guid
-            let e2 = x.CallType   = y.CallType
-            let e3 = x.AutoPre    = y.AutoPre
-            let e4 = x.Safety     = y.Safety
-            let e5 = x.IsDisabled = y.IsDisabled
-            let e6 = x.Timeout    = y.Timeout
-            let e7 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual
-            e1 && e2 && e3 && e4 && e5 && e6 && e7
+        member x.ComputeDiff(y:RtCall, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.Work.Guid  <> y.Work.Guid  then yield Diff("Work", x, y)
+                if x.CallType   <> y.CallType   then yield Diff("CallType", x, y)
+                if x.AutoPre    <> y.AutoPre    then yield Diff("AutoPre", x, y)
+                if x.Safety     <> y.Safety     then yield Diff("Safety", x, y)
+                if x.IsDisabled <> y.IsDisabled then yield Diff("IsDisabled", x, y)
+                if x.Timeout    <> y.Timeout    then yield Diff("Timeout", x, y)
+
+                let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
+                if d1 then yield Diff("ApiCalls", x, y)
+            }
 
     type RtApiDef with
-        member x.IsEqual(y:RtApiDef, ?criteria:Ucc) =
-            let e1 = x.IsPush  = y.IsPush
-            e1
+        member x.ComputeDiff(y:RtApiDef, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.IsPush <> y.IsPush   then yield Diff("IsPush", x, y)
+            }
 
     type RtApiCall with
-        member x.IsEqual(y:RtApiCall, ?criteria:Ucc) =
-            let e1 = x.ApiDefGuid = y.ApiDefGuid
-            let e2 = x.InAddress  = y.InAddress
-            let e3 = x.OutAddress = y.OutAddress
-            let e4 = x.InSymbol   = y.InSymbol
-            let e5 = x.OutSymbol  = y.OutSymbol
-            let e6 = x.ValueType  = y.ValueType
-            let e7 = x.Value      = y.Value
-            e1 && e2 && e3 && e4 && e5 && e6 && e7
+        member x.ComputeDiff(y:RtApiCall, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.ApiDefGuid <> y.ApiDefGuid then yield Diff("ApiDefGuid", x, y)
+                if x.InAddress  <> y.InAddress  then yield Diff("InAddress", x, y)
+                if x.OutAddress <> y.OutAddress then yield Diff("OutAddress", x, y)
+                if x.InSymbol   <> y.InSymbol   then yield Diff("InSymbol", x, y)
+                if x.OutSymbol  <> y.OutSymbol  then yield Diff("OutSymbol", x, y)
+                if x.ValueType  <> y.ValueType  then yield Diff("ValueType", x, y)
+                if x.Value      <> y.Value      then yield Diff("Value", x, y)
+            }
 
     type RtArrowBetweenWorks with
-        member x.IsEqual(y:RtArrowBetweenWorks, ?criteria:Ucc) =
-            let e1 = x.Source.Guid = y.Source.Guid
-            let e2 = x.Target.Guid = y.Target.Guid
-            let e3 = x.Type = y.Type
-            e1 && e2 && e3
+        member x.ComputeDiff(y:RtArrowBetweenWorks, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
+                if x.Target.Guid <> y.Target.Guid then yield Diff("Target", x, y)
+                if x.Type <> y.Type then yield Diff("Type", x, y)
+            }
 
     type RtArrowBetweenCalls with
-        member x.IsEqual(y:RtArrowBetweenCalls, ?criteria:Ucc) =
-            let e1 = x.Source.Guid = y.Source.Guid
-            let e2 = x.Target.Guid = y.Target.Guid
-            let e3 = x.Type = y.Type
-            e1 && e2 && e3
+        member x.ComputeDiff(y:RtArrowBetweenCalls, ?criteria:Ucc): Ucr seq =
+            seq {
+                if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
+                if x.Target.Guid <> y.Target.Guid then yield Diff("Target", x, y)
+                if x.Type <> y.Type then yield Diff("Type", x, y)
+            }
 
     type IRtUnique with
-        member internal x.IsEqual(y:IRtUnique, ?criteria:Ucc) =
-            let c = criteria |? Ucc()
-            if not <| x.IsEqualUnique(y, criteria=c) then
-                false
-            else
+        member internal x.ComputeDiff(y:IRtUnique, ?criteria:Ucc): Ucr seq =
+            seq {
+                let c = criteria |? Ucc()
+                yield! x.ComputeDiffUnique(y, criteria=c)
+
                 match x, y with
-                | (:? RtProject as u), (:? RtProject as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtSystem  as u), (:? RtSystem  as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtFlow    as u), (:? RtFlow    as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtWork    as u), (:? RtWork    as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtCall    as u), (:? RtCall    as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtApiDef  as u), (:? RtApiDef  as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtApiCall as u), (:? RtApiCall as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtArrowBetweenWorks as u), (:? RtArrowBetweenWorks as v)  -> u.IsEqual(v, criteria=c)
-                | (:? RtArrowBetweenCalls as u), (:? RtArrowBetweenCalls as v)  -> u.IsEqual(v, criteria=c)
+                | (:? RtProject as u), (:? RtProject as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtSystem  as u), (:? RtSystem  as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtFlow    as u), (:? RtFlow    as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtWork    as u), (:? RtWork    as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtCall    as u), (:? RtCall    as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtApiDef  as u), (:? RtApiDef  as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtApiCall as u), (:? RtApiCall as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtArrowBetweenWorks as u), (:? RtArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria=c)
+                | (:? RtArrowBetweenCalls as u), (:? RtArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria=c)
 
                 | _ -> failwith "ERROR"
-
+            }
+        member x.IsEqual(y:RtProject, ?criteria:Ucc) =
+            x.ComputeDiff(y, ?criteria=criteria)
+            |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working

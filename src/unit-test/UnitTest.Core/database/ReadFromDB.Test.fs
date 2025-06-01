@@ -19,6 +19,8 @@ open FsUnitTyped
 
 [<AutoOpen>]
 module ReadFromDBTestModule =
+
+    // DB 가 생성되어 있고, "MainProject" 가 저장되어 있어야 함.   다른 test 수행 이후에 실행되면 OK
     [<Test>]
     let dbReadTest() =
         Ev2.Core.FS.ModuleInitializer.Initialize(null)
@@ -34,7 +36,7 @@ module ReadFromDBTestModule =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
 
-        let dsProject = RtProject.FromSqlite3(ById 1, connStr)
+        let dsProject = RtProject.FromSqlite3(ByName "MainProject", connStr)
         let xxx = dsProject
         use conn = dbApi.CreateConnection()
         ()
