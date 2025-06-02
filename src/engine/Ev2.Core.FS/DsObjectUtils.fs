@@ -135,14 +135,14 @@ module DsObjectUtilsModule =
         static member Create() = RtSystem(None, [||], [||], [||], [||], [||])
 
     type RtWork with
-        static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) =
+        static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) =
             let calls = calls |> toList
             let arrows = arrows |> toList
-            RtWork(calls, arrows, optFlow)
+            RtWork(calls, arrows, flow)
             |> tee (fun z ->
-                calls   |> iter (fun y -> y.RawParent <- Some z)
-                arrows  |> iter (fun y -> y.RawParent <- Some z)
-                optFlow |> iter (fun y -> y.RawParent <- Some z) )
+                calls  |> iter (fun y -> y.RawParent <- Some z)
+                arrows |> iter (fun y -> y.RawParent <- Some z)
+                flow   |> iter (fun y -> y.RawParent <- Some z) )
         static member Create() = RtWork([], [], None)
 
     type RtCall with

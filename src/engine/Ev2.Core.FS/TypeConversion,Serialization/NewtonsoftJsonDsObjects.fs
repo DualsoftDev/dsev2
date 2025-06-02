@@ -14,7 +14,7 @@ open System.Text.RegularExpressions
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
 module NewtonsoftJsonModules =
-    type INjObject  = interface end
+    type INjObject  = inherit IDsObject
     type INjProject = inherit INjObject inherit IDsProject
     type INjSystem  = inherit INjObject inherit IDsSystem
     type INjFlow    = inherit INjObject inherit IDsFlow

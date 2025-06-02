@@ -9,7 +9,7 @@ open System.Collections.Generic
 [<AutoOpen>]
 module DsRuntimeObjectInterfaceModule =
     /// Runtime 객체 인터페이스
-    type IRtObject  = interface end
+    type IRtObject  = inherit IDsObject
     /// Guid, Name, DateTime
     type IRtUnique    = inherit IRtObject inherit IUnique
 
@@ -17,7 +17,6 @@ module DsRuntimeObjectInterfaceModule =
     type IRtParameterContainer = inherit IRtUnique inherit IParameterContainer
 
     type IRtArrow     = inherit IRtUnique inherit IArrow
-
 
     type IRtProject = inherit IRtUnique inherit IDsProject
     type IRtSystem  = inherit IRtUnique inherit IDsSystem
@@ -128,7 +127,7 @@ module rec DsObjectModule =
         member x.Works = x.System.Value.Works |> filter (fun w -> w.Flow = Some x) |> toArray
 
     // see static member Create
-    type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) as this =
+    type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) as this =
         inherit RtUnique()
         do
             calls  |> iter (fun z -> z.RawParent <- Some this)
@@ -137,7 +136,7 @@ module rec DsObjectModule =
         interface IRtWork
         member val Calls  = ResizeArray calls
         member val Arrows = ResizeArray arrows
-        member val Flow   = optFlow with get, set
+        member val Flow   = flow with get, set
         member x.System   = x.RawParent >>= tryCast<RtSystem>
 
 

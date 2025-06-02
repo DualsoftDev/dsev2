@@ -165,7 +165,6 @@ module ORMTypeConversionModule =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
             ORMCall(workId, callTypeId, autoPre, safety, isDisabled, timeout)
 
-    let o2n = Option.toNullable
     let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
         let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
         let bag = dbApi.DDic.Get<Db2RtBag>()
