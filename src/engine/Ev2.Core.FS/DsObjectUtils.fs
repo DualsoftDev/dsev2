@@ -147,8 +147,10 @@ module DsObjectUtilsModule =
                     verify (w.RawParent.Value.Guid = sys.Guid)
                     for c in w.Calls do
                         c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
+                        c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
                         for ac in c.ApiCalls do
                             ac.ApiDef.Guid = ac.ApiDefGuid |> verify
+                            sys.ApiDefs.Contains ac.ApiDef |> verify
 
                 sys.Arrows |> iter _.Validate(guidDic)
                 for a in sys.Arrows do
@@ -168,7 +170,7 @@ module DsObjectUtilsModule =
                 let works = flow.Works
                 works |> iter _.Validate(guidDic)
                 for w in works  do
-                    verify (w.OptFlow = Some flow)
+                    verify (w.Flow = Some flow)
 
 
             | :? RtWork as work ->

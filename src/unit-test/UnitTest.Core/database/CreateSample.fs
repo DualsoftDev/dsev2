@@ -41,7 +41,7 @@ module CreateSampleModule =
             edSystem  <- RtSystem.Create() |> tee (fun z -> z.Name <- "MainSystem"(*, IsPrototype=true*))
             edFlow    <- RtFlow   (Name = "MainFlow")
             edWork1   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
-            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.OptFlow <- Some edFlow)
+            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlow)
             edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1")
             edSystem.Works.AddRange([edWork1; edWork2; edWork3])
             edSystem.Flows.Add(edFlow)

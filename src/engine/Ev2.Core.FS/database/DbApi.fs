@@ -205,7 +205,7 @@ module ORMTypeConversionModule =
                 |> ormUniqINGDP z |> tee (fun y -> bag.Add2 y z)
 
             | :? RtWork as z ->
-                let flowId = (z.OptFlow >>= _.Id) |> Option.toNullable
+                let flowId = (z.Flow >>= _.Id) |> Option.toNullable
                 ORMWork  (pid, flowId)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 

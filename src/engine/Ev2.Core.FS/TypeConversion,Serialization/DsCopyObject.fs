@@ -92,7 +92,7 @@ module internal rec DsObjectCopyImpl =
                 calls |> contains a.Target |> verify)
 
             let flow =
-                x.OptFlow
+                x.Flow
                 |-> (fun f -> bag.Newbies[f.Guid] :?> RtFlow)
 
             RtWork.Create(calls, arrows, flow)
@@ -186,10 +186,10 @@ module DsObjectCopyAPIModule =
             // 삭제 요망: debug only
             // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
             replica.Works
-            |> filter _.OptFlow.IsSome
+            |> filter _.Flow.IsSome
             |> iter (fun w ->
                 replica.Flows
-                |> exists (fun f -> f.Guid = w.OptFlow.Value.Guid)
+                |> exists (fun f -> f.Guid = w.Flow.Value.Guid)
                 |> verify)
 
             replica
@@ -203,23 +203,45 @@ module DsObjectCopyAPIModule =
             x.replicate(ReplicateBag())
             |> validateRuntime
 
+
+
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate() =
-            let current = now()
-            x.Replicate()
-            |> uniqRenew
+            RtProject.Create()
             |> tee(fun z ->
-                z.ActiveSystems @ z.PassiveSystems
-                |> tee (fun ss ->
-                    ss |> iter (fun s -> s.RawParent <- Some z) )
-                >>= _.EnumerateRtObjects()
-                |> iter (fun obj ->
-                    obj.Id <- None
-                    obj.Guid <- newGuid()
-                    obj.DateTime <- current))
+                let actives  = x.ActiveSystems |-> _.Duplicate()
+                let passives = x.PassiveSystems |-> _.Duplicate()
+                let protos = x.PrototypeSystems |-> _.Duplicate()
+                (actives @ passives) |> iter (fun s -> s.RawParent <- Some z)
+                actives |> z.RawActiveSystems.AddRange
+                passives |> z.RawPassiveSystems.AddRange
+                protos |> z.RawPrototypeSystems.AddRange
+
+                z.Name <- x.Name
+                z.Version <- x.Version
+                z.Author <- x.Author
+                z.Description <- x.Description
+                z.LastConnectionString <- x.LastConnectionString )
             |> uniqName (nn x.Name)
-            //|> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
-            |> validateRuntime
+
+        /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
+        //member x.Duplicate() =
+        //    let current = now()
+        //    x.Replicate()
+        //    |> uniqRenew
+        //    |> tee(fun z ->
+        //        z.ActiveSystems @ z.PassiveSystems
+        //        |> tee (fun ss ->
+        //            ss |> iter (fun s ->
+        //                s.RawParent <- Some z) )
+        //        >>= _.EnumerateRtObjects()
+        //        |> iter (fun obj ->
+        //            obj.Id <- None
+        //            obj.Guid <- newGuid()
+        //            obj.DateTime <- current))
+        //    |> uniqName (nn x.Name)
+        //    //|> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
+        //    |> validateRuntime
 
 
     //type RtProject with

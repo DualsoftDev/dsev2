@@ -205,7 +205,7 @@ module rec NewtonsoftJsonObjects =
             |> tee (fun z ->
                 z.Calls    <- rt.Calls   |-> NjCall.FromRuntime  |> toArray
                 z.Arrows   <- rt.Arrows  |-> NjArrow.FromRuntime |> toArray
-                z.FlowGuid <- rt.OptFlow |-> (fun flow -> guid2str flow.Guid) |? null
+                z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
             )
 
     type NjArrow() =
@@ -464,7 +464,8 @@ module rec NewtonsoftJsonObjects =
                                 , Author=njs.Author
                                 , LangVersion=njs.LangVersion
                                 , EngineVersion=njs.EngineVersion
-                                , Description=njs.Description)
+                                , Description=njs.Description
+                                , OriginGuid=n2o njs.OriginGuid)
                 |> fromNjUniqINGD njs
                 |> tee (fun z -> bag.Add2 z njs)
 

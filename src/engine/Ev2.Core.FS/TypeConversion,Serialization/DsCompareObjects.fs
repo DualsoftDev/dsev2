@@ -149,7 +149,7 @@ module rec DsCompareObjects =
     type RtFlow with
         member x.ComputeDiff(y:RtFlow, ?criteria:Ucc): Ucr seq =
             seq {
-                if x.System.Guid <> y.System.Guid   then yield Diff("OwnerSystem", x, y)
+                if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y)
 
                 // System 의 works 에서 비교할 것이기 때문에 여기서 비교하면 중복 비교가 됨.
                 //yield! (x.Works, y.Works, criteria) |||> computeDiffList
@@ -158,10 +158,10 @@ module rec DsCompareObjects =
     type RtWork with
         member x.ComputeDiff(y:RtWork, ?criteria:Ucc): Ucr seq =
             seq {
-                if x.System.Guid <> y.System.Guid then yield Diff("OwnerSystem", x, y)
+                if (x.System |-> _.Guid) <> (y.System |-> _.Guid) then yield Diff("OwnerSystem", x, y)
 
-                let xp = x.OptFlow |-> _.Guid
-                let yp = y.OptFlow |-> _.Guid
+                let xp = x.Flow |-> _.Guid
+                let yp = y.Flow |-> _.Guid
                 if xp <> yp then yield Diff("OwnerFlow", x, y)
 
                 yield! (x.Calls, y.Calls, criteria) |||> computeDiffList
@@ -171,7 +171,7 @@ module rec DsCompareObjects =
     type RtCall with
         member x.ComputeDiff(y:RtCall, ?criteria:Ucc): Ucr seq =
             seq {
-                if x.Work.Guid  <> y.Work.Guid  then yield Diff("Work", x, y)
+                if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff("Work", x, y)
                 if x.CallType   <> y.CallType   then yield Diff("CallType", x, y)
                 if x.AutoPre    <> y.AutoPre    then yield Diff("AutoPre", x, y)
                 if x.Safety     <> y.Safety     then yield Diff("Safety", x, y)

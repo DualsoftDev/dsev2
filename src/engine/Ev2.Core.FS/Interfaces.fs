@@ -128,8 +128,8 @@ module rec DsObjectModule =
         inherit RtUnique()
 
         interface IRtFlow
-        member x.System = x.RawParent >>= tryCast<RtSystem> |? getNull<RtSystem>()
-        member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x) |> toArray
+        member x.System = x.RawParent >>= tryCast<RtSystem>
+        member x.Works = x.System.Value.Works |> filter (fun w -> w.Flow = Some x) |> toArray
 
     // see static member Create
     type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) as this =
@@ -141,15 +141,15 @@ module rec DsObjectModule =
         interface IRtWork
         member val Calls  = ResizeArray calls
         member val Arrows = ResizeArray arrows
-        member val OptFlow  = optFlow with get, set
-        member x.System   = x.RawParent >>= tryCast<RtSystem> |? getNull<RtSystem>()
+        member val Flow   = optFlow with get, set
+        member x.System   = x.RawParent >>= tryCast<RtSystem>
 
 
     // see static member Create
     type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, isDisabled:bool, timeout:int option) =
         inherit RtUnique()
         interface IRtCall
-        member x.Work = x.RawParent >>= tryCast<RtWork> |? getNull<RtWork>()
+        member x.Work = x.RawParent >>= tryCast<RtWork>
         member val CallType   = callType   with get, set
         member val AutoPre    = autoPre    with get, set
         member val Safety     = safety     with get, set
@@ -266,7 +266,7 @@ module rec TmpCompatibility =
                 let works = flow.Works
                 works |> iter _.Validate(guidDic)
                 for w in works  do
-                    verify (w.OptFlow = Some flow)
+                    verify (w.Flow = Some flow)
 
 
             | :? RtWork as work ->
@@ -331,11 +331,11 @@ module rec TmpCompatibility =
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
         member x.AddWorks(ws:RtWork seq) =
             x.UpdateDateTime()
-            ws |> iter (fun w -> w.OptFlow <- Some x)
+            ws |> iter (fun w -> w.Flow <- Some x)
 
         member x.RemoveWorks(ws:RtWork seq) =
             x.UpdateDateTime()
-            ws |> iter (fun w -> w.OptFlow <- None)
+            ws |> iter (fun w -> w.Flow <- None)
 
         member x.Fix() = ()
 

@@ -267,7 +267,10 @@ module SchemaTestModule =
             let dsSystem4 = dsProject3.Systems[0].Duplicate()
             validateRuntime dsSystem4 |> ignore
             dsSystem4.Name <- "DuplicatedSystem"
-            dsProject3.Duplicate() |> tee(fun z -> z.AddPassiveSystem dsSystem4)
+            dsProject3.Duplicate()
+            |> tee(fun z ->
+                z.Name <- $"{z.Name}4"
+                z.AddPassiveSystem dsSystem4)
 
         validateRuntime dsProject4 |> ignore
         dsProject4.Systems[0].PrototypeSystemGuid <- None
@@ -281,8 +284,12 @@ module SchemaTestModule =
         //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
         let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
         let json = File.ReadAllText(jsonPath)
-        let dsProject1 = NjProject.FromJson json
-        let dsProject2 = RtProject.FromJson json |> _.Duplicate()
+        let dsProject0 = NjProject.FromJson json
+
+
+        let dsProject1 = RtProject.FromJson json |> validateRuntime
+        noop()
+        let dsProject2 = dsProject1 |> _.Duplicate()
         let sys = dsProject2.ActiveSystems[0]
         sys.Flows.Count === 1
         let flow = sys.Flows[0]
@@ -291,6 +298,12 @@ module SchemaTestModule =
         let connStr =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
             |> path2ConnectionString
+
+        let dbApi = DbApi connStr
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}))
+        |> ignore
+
         dsProject2.ToSqlite3(connStr, removeExistingData)
 
 
@@ -318,17 +331,17 @@ module SchemaTestModule =
         let connStr = dbPath |> path2ConnectionString
         dsProject.ToSqlite3(connStr, true)
 
-        let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
-        let json =
-            let settings = JsonSerializerSettings(
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.Auto,
-                NullValueHandling = NullValueHandling.Ignore,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
-            )
-            JsonConvert.SerializeObject(dsProject, Formatting.Indented, settings)
+        //let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
+        //let json =
+        //    let settings = JsonSerializerSettings(
+        //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+        //        TypeNameHandling = TypeNameHandling.Auto,
+        //        NullValueHandling = NullValueHandling.Ignore,
+        //        ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+        //    )
+        //    JsonConvert.SerializeObject(dsProject, Formatting.Indented, settings)
 
-        File.WriteAllText(rawJsonPath, json)
+        //File.WriteAllText(rawJsonPath, json)
 
 
     (*
@@ -359,7 +372,7 @@ module SchemaTestModule =
         let json2 =
             rtProject2
             |> validateRuntime
-            |> _.ToJson(Path.Combine(specDir, "dssystem-with-cylinder.json"))
+            |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder2.json"))
 
         json === json2
 
