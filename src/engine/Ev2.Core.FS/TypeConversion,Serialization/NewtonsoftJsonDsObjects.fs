@@ -49,9 +49,6 @@ module NewtonsoftJsonModules =
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = Option<NjUnique>.None with get, set
 
-        /// Parent Guid : Json 저장시에는 container 의 parent 를 추적하면 되므로 json 에는 저장하지 않음
-        [<JsonIgnore>] member x.PGuid = x.RawParent |-> _.Guid
-
         /// 내부 구현 전용.  serialize 대상에서 제외됨
         [<JsonIgnore>] member val internal DDic = DynamicDictionary()
         [<JsonIgnore>]

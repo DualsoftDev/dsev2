@@ -23,8 +23,6 @@ module rec EditableDsObjects =
     type EdUnique() =
         inherit Unique()
         interface IEdUnique
-        // 임시 저장 구조
-        member val internal RtUnique = getNull<RtUnique>() with get, set
 
     type EdProject () =
         inherit EdUnique()

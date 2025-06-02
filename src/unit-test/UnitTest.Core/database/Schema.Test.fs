@@ -229,8 +229,8 @@ module SchemaTestModule =
         let dsCall2 = dsWork2.Calls[0]
         dsCall1.Guid === edCall1a.Guid
         dsCall2.Guid === edCall2a.Guid
-        dsCall1.PGuid.Value === dsWork1.Guid
-        dsCall2.PGuid.Value === dsWork2.Guid
+        dsCall1.RawParent |->_.Guid === Some dsWork1.Guid
+        dsCall2.RawParent |->_.Guid === Some dsWork2.Guid
 
         dsCall1.Name === edCall1a.Name
         dsCall2.Name === edCall2a.Name

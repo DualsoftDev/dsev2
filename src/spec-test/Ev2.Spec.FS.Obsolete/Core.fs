@@ -25,7 +25,7 @@ type Unique(name: string, guid: Guid, dateTime: DateTime, ?id: int option, ?pare
     member val RawParent: Unique option = defaultArg parent None with get, set
 
     /// Parent Guid (RawParent의 Guid)
-    member this.PGuid: Guid option = 
+    member this.PGuid: Guid option =
         match this.RawParent with
         | Some p -> Some p.Guid
         | None -> None

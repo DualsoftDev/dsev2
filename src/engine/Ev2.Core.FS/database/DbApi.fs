@@ -174,8 +174,7 @@ module ORMTypeConversionModule =
         | Some uniq ->
             let id = uniq.Id |? -1
             let pid = (uniq.RawParent >>= _.Id) |? -1
-            let guid, name = uniq.Guid, uniq.Name
-            let pGuid, dateTime = uniq.PGuid, uniq.DateTime
+            let guid = uniq.Guid
 
             match uniq with
             | :? RtProject as z ->
