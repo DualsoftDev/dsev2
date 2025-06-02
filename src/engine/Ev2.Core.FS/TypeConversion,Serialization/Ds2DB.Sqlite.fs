@@ -343,7 +343,7 @@ module internal Sqlite2DsImpl =
                         |> fromOrmUniqINGD orm
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
-                edFlows |> s.Flows.AddRange
+                edFlows |> s.AddFlows
 
                 let edApiDefs = [
                     let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
@@ -355,7 +355,7 @@ module internal Sqlite2DsImpl =
                         |> fromOrmUniqINGD orm
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
-                s.ApiDefs.AddRange(edApiDefs)
+                edApiDefs |> s.AddApiDefs
 
                 let edApiCalls = [
                     let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
@@ -374,7 +374,7 @@ module internal Sqlite2DsImpl =
                                     orm.InSymbol, orm.OutSymbol, valueType, orm.Value)
                         |> fromOrmUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
-                edApiCalls |> s.ApiCalls.AddRange
+                edApiCalls |> s.AddApiCalls
 
 
 
@@ -383,7 +383,7 @@ module internal Sqlite2DsImpl =
 
                     for orm in orms do
                         RtWork.Create()
-                        |> tee (fun z -> z.RawParent <- Some s)
+                        |> setParent s
                         |> fromOrmUniqINGD orm
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
@@ -391,7 +391,7 @@ module internal Sqlite2DsImpl =
                                 w.Flow <- Some flow )
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
-                edWorks |> s.Works.AddRange
+                edWorks |> s.AddWorks
 
                 for w in edWorks do
                     let edCalls = [
@@ -412,7 +412,7 @@ module internal Sqlite2DsImpl =
                                 {| CallId = orm.Id.Value |}, tr)
 
                             RtCall(callType, apiCallGuids, orm.AutoPre, orm.Safety, orm.IsDisabled, n2o orm.Timeout)
-                            |> tee(fun c -> c.RawParent <- Some w)
+                            |> setParent w
                             |> fromOrmUniqINGD orm
                             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                             |> tee(fun c ->
@@ -422,7 +422,7 @@ module internal Sqlite2DsImpl =
                                     |> uniqParent (Some c)
                                     |> ignore))
                     ]
-                    edCalls |> w.Calls.AddRange
+                    w.AddCalls edCalls
 
 
                     // work 내의 call 간 연결
@@ -441,7 +441,7 @@ module internal Sqlite2DsImpl =
                             |> fromOrmUniqINGD orm
                             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                     ]
-                    edArrows |> w.Arrows.AddRange
+                    w.AddArrows edArrows
 
                     // call 이하는 더 이상 읽어 들일 구조가 없다.
                     for c in edCalls do
@@ -464,7 +464,7 @@ module internal Sqlite2DsImpl =
                         |> fromOrmUniqINGD orm
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
-                edArrows |> s.Arrows.AddRange
+                edArrows |> s.AddArrows
                 assert(setEqual s.Arrows edArrows)
 
                 ()

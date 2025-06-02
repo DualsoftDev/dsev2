@@ -204,7 +204,7 @@ module SchemaTestModule =
         let dsFlow = dsSystem.Flows[0]
         dsFlow.Guid === edFlow.Guid
         dsFlow.Works.Length === 2
-        dsSystem.Works.Count === 3
+        dsSystem.Works.Length === 3
         let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
         let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
         let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
@@ -221,8 +221,8 @@ module SchemaTestModule =
         flowWors[1].Guid === edWork2.Guid
         dsFlow.Name === edFlow.Name
 
-        edWork1.Calls.Count === 2
-        edWork2.Calls.Count === 2
+        edWork1.Calls.Length === 2
+        edWork2.Calls.Length === 2
         let dsCall1 = dsWork1.Calls[0]
         let dsCall2 = dsWork2.Calls[0]
         dsCall1.Guid === edCall1a.Guid
@@ -290,7 +290,7 @@ module SchemaTestModule =
         noop()
         let dsProject2 = dsProject1 |> _.Duplicate()
         let sys = dsProject2.ActiveSystems[0]
-        sys.Flows.Count === 1
+        sys.Flows.Length === 1
         let flow = sys.Flows[0]
         dsProject2.Name <- "UpdatedProject"
         let removeExistingData = true

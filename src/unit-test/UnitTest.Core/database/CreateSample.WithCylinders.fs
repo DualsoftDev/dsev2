@@ -42,16 +42,16 @@ module CreateSampleWithCylinderModule =
             edWork1Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
             edWork2Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlowCyl)
 
-            edSystemCyl.Works.AddRange([edWork1Cyl; edWork2Cyl;])
-            edSystemCyl.Flows.Add(edFlowCyl)
-            edSystemCyl.ApiDefs.Add(edApiDef1Cyl)
-            edSystemCyl.ApiCalls.Add(edApiCall1aCyl)
+            edSystemCyl.AddWorks [edWork1Cyl; edWork2Cyl;]
+            edSystemCyl.AddFlows [edFlowCyl]
+            edSystemCyl.AddApiDefs [edApiDef1Cyl]
+            edSystemCyl.AddApiCalls [edApiCall1aCyl]
 
             let edArrowW = RtArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
-            edSystemCyl.Arrows.Add(edArrowW)
+            edSystemCyl.AddArrows [edArrowW]
 
             edApiDef1Cyl <- RtApiDef.Create(Name = "ApiDef1Cyl")
-            edSystemCyl.ApiDefs.Add(edApiDef1Cyl)
+            edSystemCyl.AddApiDefs [edApiDef1Cyl]
 
             edCall1aCyl  <-
                 RtCall.Create()
@@ -70,13 +70,11 @@ module CreateSampleWithCylinderModule =
                     z.Name <- "Call1bCyl"
                     z.CallType <- DbCallType.Repeat)
 
-            edWork1Cyl.Calls.AddRange([edCall1aCyl; edCall1bCyl])
+            edWork1Cyl.AddCalls [edCall1aCyl; edCall1bCyl]
             edFlowCyl.AddWorks([edWork1Cyl])
 
             let edArrow1 = RtArrowBetweenCalls(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
-            edWork1Cyl.Arrows.Add(edArrow1)
-
-            edSystemCyl.Fix()
+            edWork1Cyl.AddArrows [edArrow1]
 
             edSystemCyl.EnumerateRtObjects()
             |> iter (fun edObj ->

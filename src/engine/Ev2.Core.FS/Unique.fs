@@ -76,6 +76,13 @@ module Interfaces =
 
 [<AutoOpen>]
 module internal UniqueHelpers =
+    let setParent (parent:Unique) (x:#Unique) : #Unique =
+        x.RawParent <- Some parent
+        x
+
+    let setParentI (parent:Unique) (x:#Unique): unit = x.RawParent <- Some parent
+    let clearParentI (x:#Unique): unit = x.RawParent <- None
+
     let uniqReplicate (src:#Unique) (dst:#Unique) : #Unique =
         dst.Id <- src.Id
         dst.Name <- src.Name

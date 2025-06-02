@@ -31,7 +31,7 @@ module CreateSampleModule =
 
             edApiDef1 <- RtApiDef.Create(Name = "ApiDef1a")
             edApiDef2 <- RtApiDef.Create() |> tee (fun z -> z.Name <- "UnusedApi")
-            [edApiDef1; edApiDef2;] |> verifyAddRangeAsSet edSystem.ApiDefs
+            [edApiDef1; edApiDef2;] |> edSystem.AddApiDefs
 
             edApiCall1a <-
                 RtApiCall.Create()
@@ -44,17 +44,17 @@ module CreateSampleModule =
                     z.OutSymbol <- "YTag2"
                     z.ValueType <- DbDataType.Bool
                     z.Value     <- "false")
-            edApiCall1a |> verifyAddAsSet edSystem.ApiCalls
+            [edApiCall1a] |> edSystem.AddApiCalls
 
             edFlow    <- RtFlow   (Name = "MainFlow")
             edWork1   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
             edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlow)
             edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1")
-            [edWork1; edWork2; edWork3] |> verifyAddRangeAsSet edSystem.Works
-            edFlow |> verifyAddAsSet edSystem.Flows
+            [edWork1; edWork2; edWork3] |> edSystem.AddWorks
+            [edFlow] |> edSystem.AddFlows
 
             let edArrowW = RtArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
-            edArrowW |> verifyAddAsSet edSystem.Arrows
+            [edArrowW] |> edSystem.AddArrows
 
 
             edCall1a  <-
@@ -73,19 +73,17 @@ module CreateSampleModule =
                     z.Name <- "Call1b"
                     z.CallType <- DbCallType.Repeat)
 
-            [edCall1a; edCall1b] |> verifyAddRangeAsSet edWork1.Calls
+            edWork1.AddCalls [edCall1a; edCall1b]
             edCall2a  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2a")
             edCall2b  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2b")
-            [edCall2a; edCall2b] |> verifyAddRangeAsSet edWork2.Calls
+            edWork2.AddCalls [edCall2a; edCall2b]
             edProject.AddActiveSystem edSystem
             edFlow.AddWorks([edWork1])
 
             let edArrow1 = RtArrowBetweenCalls(edCall1a, edCall1b, DbArrowType.Start)
-            edWork1.Arrows.Add(edArrow1)
+            edWork1.AddArrows [edArrow1]
             let edArrow2 = RtArrowBetweenCalls(edCall2a, edCall2b, DbArrowType.Reset)
-            edWork2.Arrows.Add(edArrow2)
-
-            edProject.Fix()
+            edWork2.AddArrows [edArrow2]
 
             edProject.EnumerateRtObjects()
             |> iter (fun edObj ->

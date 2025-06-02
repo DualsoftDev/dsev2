@@ -34,7 +34,7 @@ module internal rec DsObjectCopyImpl =
 
             RtProject.Create()
             |> tee(fun z ->
-                (actives @ passives) |> iter (fun (s:RtSystem) -> s.RawParent <- Some z)
+                (actives @ passives) |> iter (fun (s:RtSystem) -> setParentI z s)
                 prototypes |> z.RawPrototypeSystems.AddRange
                 actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange )
@@ -212,7 +212,7 @@ module DsObjectCopyAPIModule =
                 let actives  = x.ActiveSystems |-> _.Duplicate()
                 let passives = x.PassiveSystems |-> _.Duplicate()
                 let protos = x.PrototypeSystems |-> _.Duplicate()
-                (actives @ passives) |> iter (fun s -> s.RawParent <- Some z)
+                (actives @ passives) |> iter (setParentI z)
                 actives |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange
                 protos |> z.RawPrototypeSystems.AddRange

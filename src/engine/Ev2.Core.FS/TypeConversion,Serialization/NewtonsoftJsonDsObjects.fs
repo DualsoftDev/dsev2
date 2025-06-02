@@ -73,6 +73,7 @@ module NewtonsoftJsonModules =
 /// Newtonsoft Json 호환 버젼
 [<AutoOpen>]
 module rec NewtonsoftJsonObjects =
+    //let njSetParentI (parent:NjUnique) (x:#NjUnique): unit = x.RawParent <- Some parent
 
     /// NjUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
     let internal fromNjUniqINGD (src:#NjUnique) (dst:#Unique): #Unique =
@@ -390,7 +391,7 @@ module rec NewtonsoftJsonObjects =
                 |> fromNjUniqINGD njp
                 |> tee (fun z ->
                     actives @ passives
-                    |> iter (fun s -> s.RawParent <- Some z)
+                    |> iter (setParentI z)
 
                     bag.Add2 z njp)
 

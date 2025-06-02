@@ -64,8 +64,8 @@ module rec DsObjectModule =
     type RtProject(prototypeSystems:RtSystem[], activeSystems:RtSystem[], passiveSystems:RtSystem[]) as this =
         inherit RtUnique()
         do
-            activeSystems  |> iter (fun z -> z.RawParent <- Some this)
-            passiveSystems |> iter (fun z -> z.RawParent <- Some this)
+            activeSystems  |> iter (setParentI this)
+            passiveSystems |> iter (setParentI this)
 
         interface IRtProject
         interface IParameterContainer
@@ -100,11 +100,11 @@ module rec DsObjectModule =
         (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
         interface IRtSystem
-        member val Flows    = ResizeArray flows
-        member val Works    = ResizeArray works
-        member val Arrows   = ResizeArray arrows
-        member val ApiDefs  = ResizeArray apiDefs
-        member val ApiCalls = ResizeArray apiCalls
+        member val internal RawFlows    = ResizeArray flows
+        member val internal RawWorks    = ResizeArray works
+        member val internal RawArrows   = ResizeArray arrows
+        member val internal RawApiDefs  = ResizeArray apiDefs
+        member val internal RawApiCalls = ResizeArray apiCalls
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
         member val PrototypeSystemGuid = protoGuid with get, set
@@ -116,6 +116,12 @@ module rec DsObjectModule =
 
         // serialize 대상 아님
         member x.Project = x.RawParent >>= tryCast<RtProject>
+
+        member x.Flows    = x.RawFlows    |> toList
+        member x.Works    = x.RawWorks    |> toList
+        member x.Arrows   = x.RawArrows   |> toList
+        member x.ApiDefs  = x.RawApiDefs  |> toList
+        member x.ApiCalls = x.RawApiCalls |> toList
 
 
 
@@ -138,14 +144,17 @@ module rec DsObjectModule =
     type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) as this =
         inherit RtUnique()
         do
-            calls  |> iter (fun z -> z.RawParent <- Some this)
-            arrows |> iter (fun z -> z.RawParent <- Some this)
+            calls  |> iter (setParentI this)
+            arrows |> iter (setParentI this)
 
         interface IRtWork
-        member val Calls  = ResizeArray calls
-        member val Arrows = ResizeArray arrows
+        member val internal RawCalls  = ResizeArray calls
+        member val internal RawArrows = ResizeArray arrows
         member val Flow   = flow with get, set
-        member x.System   = x.RawParent >>= tryCast<RtSystem>
+
+        member x.Calls  = x.RawCalls  |> toList
+        member x.Arrows = x.RawArrows |> toList
+        member x.System = x.RawParent >>= tryCast<RtSystem>
 
 
     // see static member Create
