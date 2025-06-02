@@ -91,8 +91,8 @@ module rec DsCompareObjects =
 
     /// xs 와 ys 의 collection 간 비교
     let private computeDiffList<'T when 'T :> IRtUnique>
-        (xs: 'T list)
-        (ys: 'T list)
+        (xs: 'T seq)
+        (ys: 'T seq)
         (criteria: Ucc option): Ucr seq =
 
         let xs = xs.ToDictionary(_.GetGuid(), id)

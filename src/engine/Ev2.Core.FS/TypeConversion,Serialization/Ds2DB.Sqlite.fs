@@ -263,9 +263,9 @@ module internal Ds2SqliteImpl =
 module internal Sqlite2DsImpl =
     open Ds2SqliteImpl
 
-    type Db2EdBag() =
-        member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
-        member val EdDic = Dictionary<Guid, Unique>()
+    //type Db2EdBag() =
+    //    member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
+    //    member val EdDic = Dictionary<Guid, Unique>()
 
 
     let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
@@ -277,7 +277,7 @@ module internal Sqlite2DsImpl =
         )
 
     let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:DbApi) =
-        let bag = Db2EdBag()
+        let bag = Db2RtBag()
         Trace.WriteLine($"--------------------------------------- fromSqlite3: {identifier}")
         noop()
         dbApi.With(fun (conn, tr) ->
@@ -315,17 +315,17 @@ module internal Sqlite2DsImpl =
                 |> toArray
 
             let edProj =
-                EdProject()
+                RtProject.Create()
                 |> fromOrmUniqINGD ormProject
-                |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
 
             let edSystems =
                 ormSystems
                     |-> fun s ->
-                        EdSystem()
+                        RtSystem.Create()
                         |> fromOrmUniqINGD s
                         |> uniqParent (Some edProj)
-                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
 
             let actives, passives =
                 edSystems
@@ -344,9 +344,9 @@ module internal Sqlite2DsImpl =
                     for orm in orms do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
 
-                        EdFlow(RawParent = Some s)
+                        RtFlow(RawParent = Some s)
                         |> fromOrmUniqINGD orm
-                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edFlows |> s.Flows.AddRange
 
@@ -356,9 +356,9 @@ module internal Sqlite2DsImpl =
                     for orm in orms do
                         bag.DbDic.Add(orm.Guid, orm) |> ignore
 
-                        EdApiDef(RawParent = Some s)
+                        RtApiDef(orm.IsPush, RawParent = Some s)
                         |> fromOrmUniqINGD orm
-                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 s.ApiDefs.AddRange(edApiDefs)
 
@@ -374,7 +374,10 @@ module internal Sqlite2DsImpl =
                             |> find(fun z -> z.Id = Nullable orm.ApiDefId)
                             |> _.Guid
 
-                        EdApiCall(s2guid apiDefGuid) |> fromOrmUniqINGD orm |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        let valueType = dbApi.TryFindEnumValue<DbDataType> orm.ValueTypeId |> Option.get
+                        RtApiCall(s2guid apiDefGuid, orm.InAddress, orm.OutAddress,
+                                    orm.InSymbol, orm.OutSymbol, valueType, orm.Value)
+                        |> fromOrmUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edApiCalls |> s.ApiCalls.AddRange
 
@@ -384,12 +387,14 @@ module internal Sqlite2DsImpl =
                     let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr)
 
                     for orm in orms do
-                        EdWork(RawParent = Some s) |> fromOrmUniqINGD orm
+                        RtWork.Create()
+                        |> tee (fun z -> z.RawParent <- Some s)
+                        |> fromOrmUniqINGD orm
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
                                 w.OptFlow <- Some flow )
-                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edWorks |> s.Works.AddRange
 
@@ -402,8 +407,19 @@ module internal Sqlite2DsImpl =
                         for orm in orms do
                             bag.DbDic.Add(orm.Guid, orm) |> ignore
 
-                            EdCall(RawParent = Some w) |> fromOrmUniqINGD orm
-                            |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                            //type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, isDisabled:bool, timeout:int option) =
+                            let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
+                            let apiCallGuids =
+                                conn.Query<Guid>($"""SELECT ac.guid
+                                                        FROM {Tn.MapCall2ApiCall} m
+                                                        JOIN {Tn.ApiCall} ac ON ac.id = m.apiCallId
+                                                        WHERE m.callId = @CallId""",
+                                {| CallId = orm.Id.Value |}, tr)
+
+                            RtCall(callType, apiCallGuids, orm.AutoPre, orm.Safety, orm.IsDisabled, n2o orm.Timeout)
+                            |> tee(fun c -> c.RawParent <- Some w)
+                            |> fromOrmUniqINGD orm
+                            |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                             |> tee(fun c ->
                                 edApiCalls
                                 |> iter (fun apiCall ->
@@ -426,9 +442,9 @@ module internal Sqlite2DsImpl =
                             let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
                             let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                            EdArrowBetweenCalls(src, tgt, arrowType)
+                            RtArrowBetweenCalls(src, tgt, arrowType)
                             |> fromOrmUniqINGD orm
-                            |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                            |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                     ]
                     edArrows |> w.Arrows.AddRange
 
@@ -449,9 +465,9 @@ module internal Sqlite2DsImpl =
                         let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                        EdArrowBetweenWorks(src, tgt, arrowType)
+                        RtArrowBetweenWorks(src, tgt, arrowType)
                         |> fromOrmUniqINGD orm
-                        |> tee (fun z -> bag.EdDic.Add(z.Guid, z) )
+                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edArrows |> s.Arrows.AddRange
                 assert(setEqual s.Arrows edArrows)

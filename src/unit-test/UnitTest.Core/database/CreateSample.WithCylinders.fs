@@ -10,53 +10,75 @@ open Ev2.Core.FS
 
 module CreateSampleWithCylinderModule =
     (* Cylinder *)
-    let mutable edSystemCyl = getNull<EdSystem>()
-    let mutable edApiCall1aCyl = getNull<EdApiCall>()
-    let mutable edApiCall1bCyl = getNull<EdApiCall>()
-    let mutable edApiCall2aCyl = getNull<EdApiCall>()
-    let mutable edApiCall2bCyl = getNull<EdApiCall>()
-    let mutable edApiDef1Cyl  = getNull<EdApiDef>()
+    let mutable edSystemCyl = getNull<RtSystem>()
+    let mutable edApiCall1aCyl = getNull<RtApiCall>()
+    let mutable edApiCall1bCyl = getNull<RtApiCall>()
+    let mutable edApiCall2aCyl = getNull<RtApiCall>()
+    let mutable edApiCall2bCyl = getNull<RtApiCall>()
+    let mutable edApiDef1Cyl  = getNull<RtApiDef>()
 
-    let mutable edFlowCyl     = getNull<EdFlow>()
-    let mutable edWork1Cyl    = getNull<EdWork>()
-    let mutable edWork2Cyl    = getNull<EdWork>()
-    let mutable edCall1aCyl   = getNull<EdCall>()
-    let mutable edCall1bCyl   = getNull<EdCall>()
+    let mutable edFlowCyl     = getNull<RtFlow>()
+    let mutable edWork1Cyl    = getNull<RtWork>()
+    let mutable edWork2Cyl    = getNull<RtWork>()
+    let mutable edCall1aCyl   = getNull<RtCall>()
+    let mutable edCall1bCyl   = getNull<RtCall>()
 
     let createEditableSystemCylinder() =
         if isItNull edSystemCyl then
-            edApiDef1Cyl <- EdApiDef(Name = "ApiDef1Cyl")
-            edApiCall1aCyl <- EdApiCall(edApiDef1Cyl.Guid, Name = "ApiCall1aCyl", InAddress="InAddressX0", OutAddress="OutAddress1", InSymbol="XTag1", OutSymbol="YTag2", ValueType=DbDataType.Bool, Value="false")
-            edSystemCyl  <- EdSystem (Name = "Cylinder"(*, IsSaveAsReference=true*)  (*, IsPrototype=true*))
-            edFlowCyl    <- EdFlow   (Name = "CylFlow")
-            edWork1Cyl   <- EdWork   (Name = "BoundedWork1")
-            edWork2Cyl   <- EdWork   (Name = "BoundedWork2", OptFlow=Some edFlowCyl)
+            edApiDef1Cyl <- RtApiDef.Create(Name = "ApiDef1Cyl")
+            edApiCall1aCyl <-
+                RtApiCall.Create()
+                |> tee (fun z ->
+                    z.ApiDefGuid <- edApiDef1Cyl.Guid
+                    z.Name       <- "ApiCall1aCyl"
+                    z.InAddress  <- "InAddressX0"
+                    z.OutAddress <- "OutAddress1"
+                    z.InSymbol   <- "XTag1"
+                    z.OutSymbol  <- "YTag2"
+                    z.ValueType  <- DbDataType.Bool
+                    z.Value      <- "false")
+            edSystemCyl  <- RtSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
+            edFlowCyl    <- RtFlow   (Name = "CylFlow")
+            edWork1Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
+            edWork2Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.OptFlow <- Some edFlowCyl)
 
             edSystemCyl.Works.AddRange([edWork1Cyl; edWork2Cyl;])
             edSystemCyl.Flows.Add(edFlowCyl)
             edSystemCyl.ApiDefs.Add(edApiDef1Cyl)
             edSystemCyl.ApiCalls.Add(edApiCall1aCyl)
 
-            let edArrowW = EdArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+            let edArrowW = RtArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
             edSystemCyl.Arrows.Add(edArrowW)
 
-            edApiDef1Cyl <- EdApiDef(Name = "ApiDef1Cyl")
+            edApiDef1Cyl <- RtApiDef.Create(Name = "ApiDef1Cyl")
             edSystemCyl.ApiDefs.Add(edApiDef1Cyl)
 
             edCall1aCyl  <-
-                EdCall (Name = "Call1a", CallType=DbCallType.Parallel, AutoPre="AutoPre 테스트 1", Safety="안전조건1", Timeout=Some 30)
-                |> tee(fun z -> z.AddApiCalls [edApiCall1aCyl])
+                RtCall.Create()
+                |> tee(fun z ->
+                    z.Name     <- "Call1a"
+                    z.CallType <- DbCallType.Parallel
+                    z.AutoPre  <- "AutoPre 테스트 1"
+                    z.Safety   <- "안전조건1"
+                    z.Timeout  <- Some 30
+                    z.ApiCallGuids.AddRange [edApiCall1aCyl.Guid] )
 
-            edCall1bCyl  <- EdCall (Name = "Call1bCyl", CallType=DbCallType.Repeat)
+
+            edCall1bCyl <-
+                RtCall.Create()
+                |> tee (fun z ->
+                    z.Name <- "Call1bCyl"
+                    z.CallType <- DbCallType.Repeat)
+
             edWork1Cyl.Calls.AddRange([edCall1aCyl; edCall1bCyl])
             edFlowCyl.AddWorks([edWork1Cyl])
 
-            let edArrow1 = EdArrowBetweenCalls(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
+            let edArrow1 = RtArrowBetweenCalls(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
             edWork1Cyl.Arrows.Add(edArrow1)
 
             edSystemCyl.Fix()
 
-            edSystemCyl.EnumerateEdObjects()
+            edSystemCyl.EnumerateRtObjects()
             |> iter (fun edObj ->
                 // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
                 edObj.Id.IsNone === true

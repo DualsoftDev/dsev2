@@ -17,6 +17,7 @@ module DsObjectUtilsModule =
                 arrows   |> iter (fun y -> y.RawParent <- Some z)
                 apiDefs  |> iter (fun y -> y.RawParent <- Some z)
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
+        static member Create() = RtSystem(None, [||], [||], [||], [||], [||])
 
     type RtWork with
         static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) =
@@ -27,6 +28,7 @@ module DsObjectUtilsModule =
                 calls   |> iter (fun y -> y.RawParent <- Some z)
                 arrows  |> iter (fun y -> y.RawParent <- Some z)
                 optFlow |> iter (fun y -> y.RawParent <- Some z) )
+        static member Create() = RtWork([], [], None)
 
     type RtCall with
         static member Create(callType:DbCallType, apiCalls:RtApiCall seq,
@@ -37,6 +39,7 @@ module DsObjectUtilsModule =
             |> tee (fun z ->
                 apiCalls |> iter (fun y -> y.RawParent <- Some z) )
 
+        static member Create() = RtCall(DbCallType.Normal, [], nullString, nullString, false, None)
 
 
     [<AbstractClass>]
@@ -94,37 +97,37 @@ module DsObjectUtilsModule =
 
 
     type RtUnique with
-        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
-        member x.UpdateDateTime(?dateTime:DateTime) =
-            let dateTime = dateTime |?? now
-            x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
+        ///// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        //member x.UpdateDateTime(?dateTime:DateTime) =
+        //    let dateTime = dateTime |?? now
+        //    x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
-        (* see also EdUnique.EnumerateRtObjects *)
-        member x.EnumerateRtObjects(?includeMe): RtUnique list =
-            seq {
-                let includeMe = includeMe |? true
-                if includeMe then
-                    yield x
-                match x with
-                | :? RtProject as prj ->
-                    yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
-                    yield! prj.Systems   >>= _.EnumerateRtObjects()
-                | :? RtSystem as sys ->
-                    yield! sys.Works     >>= _.EnumerateRtObjects()
-                    yield! sys.Flows     >>= _.EnumerateRtObjects()
-                    yield! sys.Arrows    >>= _.EnumerateRtObjects()
-                    yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
-                    yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
-                | :? RtWork as work ->
-                    yield! work.Calls    >>= _.EnumerateRtObjects()
-                    yield! work.Arrows   >>= _.EnumerateRtObjects()
-                | :? RtCall as call ->
-                    //yield! call.ApiCalls >>= _.EnumerateRtObjects()
-                    ()
-                | _ ->
-                    tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
-                    ()
-            } |> List.ofSeq
+        //(* see also EdUnique.EnumerateRtObjects *)
+        //member x.EnumerateRtObjects(?includeMe): RtUnique list =
+        //    seq {
+        //        let includeMe = includeMe |? true
+        //        if includeMe then
+        //            yield x
+        //        match x with
+        //        | :? RtProject as prj ->
+        //            yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
+        //            yield! prj.Systems   >>= _.EnumerateRtObjects()
+        //        | :? RtSystem as sys ->
+        //            yield! sys.Works     >>= _.EnumerateRtObjects()
+        //            yield! sys.Flows     >>= _.EnumerateRtObjects()
+        //            yield! sys.Arrows    >>= _.EnumerateRtObjects()
+        //            yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
+        //            yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
+        //        | :? RtWork as work ->
+        //            yield! work.Calls    >>= _.EnumerateRtObjects()
+        //            yield! work.Arrows   >>= _.EnumerateRtObjects()
+        //        | :? RtCall as call ->
+        //            //yield! call.ApiCalls >>= _.EnumerateRtObjects()
+        //            ()
+        //        | _ ->
+        //            tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
+        //            ()
+        //    } |> List.ofSeq
 
         member x.Validate(guidDic:Dictionary<Guid, RtUnique>) =
             verify (x.Guid <> emptyGuid)

@@ -174,10 +174,8 @@ module SchemaTestModule =
             |> path2ConnectionString
         let dbApi = DbApi connStr
 
-        let dsProject = edProject.ToRuntimeProject() |> validateRuntime
+        let dsProject = edProject |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
-
-        let edProjectBack = EdProject.FromRuntime dsProject
 
         let rtObjs = dsProject.EnumerateRtObjects()
         for rtObj in rtObjs do
@@ -206,7 +204,7 @@ module SchemaTestModule =
         let dsFlow = dsSystem.Flows[0]
         dsFlow.Guid === edFlow.Guid
         dsFlow.Works.Length === 2
-        dsSystem.Works.Length === 3
+        dsSystem.Works.Count === 3
         let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
         let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
         let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
@@ -283,7 +281,7 @@ module SchemaTestModule =
         let dsProject1 = NjProject.FromJson json
         let dsProject2 = RtProject.FromJson json |> _.Duplicate()
         let sys = dsProject2.ActiveSystems[0]
-        sys.Flows.Length === 1
+        sys.Flows.Count === 1
         let flow = sys.Flows[0]
         dsProject2.Name <- "UpdatedProject"
         let removeExistingData = true
@@ -307,7 +305,7 @@ module SchemaTestModule =
 
     [<Test>]
     let ``설계 문서 위치에 샘플 생성`` () =
-        let dsProject = edProject.ToRuntimeProject() |> validateRuntime
+        let dsProject = edProject |> validateRuntime
         // 설계 문서 위치에 drop
         Path.Combine(specDir, "dssystem.json")
         |> dsProject.ToJson |> ignore
@@ -337,7 +335,7 @@ module SchemaTestModule =
     let ``Cylinder 추가 test`` () =
         createEditableProject()
         createEditableSystemCylinder()
-        let edProject = edProject.Replicate() |> validateEditable
+        let edProject = edProject.Replicate() |> validateRuntime
         let protoGuid = edSystemCyl.Guid
         edProject.PrototypeSystems.Add edSystemCyl
         let edSysCyl1 = edProject.Instantiate(protoGuid, Name="실린더 instance1", asActive=false)
@@ -345,7 +343,7 @@ module SchemaTestModule =
         let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=true)
 
         let curernt = now()
-        let rtProject = edProject.ToRuntimeProject()
+        let rtProject = edProject.Replicate()
         rtProject |> _.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- curernt)
         let json =
             rtProject
@@ -456,7 +454,7 @@ module SchemaTestModule =
 
     [<Test>]
     let ``비교`` () =
-        let dsProject = edProject.ToRuntimeProject() |> validateRuntime
+        let dsProject = edProject |> validateRuntime
         let dsProject2 = dsProject.Replicate() |> validateRuntime
         dsProject.IsEqual dsProject2 === true
 

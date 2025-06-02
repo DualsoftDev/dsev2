@@ -568,15 +568,16 @@ module Ds2JsonModule =
 
     /// Runtime 객체의 validation
     let internal validateRuntime (rtObj:#RtUnique): #RtUnique =
+        let xxx = rtObj.EnumerateRtObjects() |> toArray
         let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
         rtObj.Validate(guidDic)
         rtObj
 
-    /// Editable 객체의 validation
-    let internal validateEditable (edObj:#EdUnique): #EdUnique =
-        let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
-        edObj.Validate(guidDic)
-        edObj
+    ///// Editable 객체의 validation
+    //let internal validateEditable (edObj:#EdUnique): #EdUnique =
+    //    let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
+    //    edObj.Validate(guidDic)
+    //    edObj
 
 
     type RtProject with

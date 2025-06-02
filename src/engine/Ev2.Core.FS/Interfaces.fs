@@ -4,6 +4,7 @@ open System
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
+open System.Collections.Generic
 
 [<AutoOpen>]
 module DsRuntimeObjectInterfaceModule =
@@ -83,11 +84,11 @@ module rec DsObjectModule =
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = nullString with get, set
 
-        member val PrototypeSystems = prototypeSystems |> toList
+        member val PrototypeSystems = ResizeArray(prototypeSystems)
         // { Runtime/DB 용
-        member val ActiveSystems = activeSystems |> toList
-        member val PassiveSystems = passiveSystems |> toList
-        member val Systems = (activeSystems @ passiveSystems) |> toList
+        member val ActiveSystems = ResizeArray activeSystems
+        member val PassiveSystems = ResizeArray passiveSystems
+        member x.Systems = (x.ActiveSystems @ x.PassiveSystems) |> toList
         // } Runtime/DB 용
 
 
@@ -99,11 +100,11 @@ module rec DsObjectModule =
         (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
         interface IRtSystem
-        member val Flows    = flows    |> toList
-        member val Works    = works    |> toList
-        member val Arrows   = arrows   |> toList
-        member val ApiDefs  = apiDefs  |> toList
-        member val ApiCalls = apiCalls |> toList
+        member val Flows    = ResizeArray flows
+        member val Works    = ResizeArray works
+        member val Arrows   = ResizeArray arrows
+        member val ApiDefs  = ResizeArray apiDefs
+        member val ApiCalls = ResizeArray apiCalls
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
         member val PrototypeSystemGuid = protoGuid with get, set
@@ -124,7 +125,7 @@ module rec DsObjectModule =
 
         interface IRtFlow
         member x.System = x.RawParent >>= tryCast<RtSystem> |? getNull<RtSystem>()
-        member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x)
+        member x.Works = x.System.Works |> filter (fun w -> w.OptFlow = Some x) |> toArray
 
     // see static member Create
     type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, optFlow:RtFlow option) as this =
@@ -134,9 +135,9 @@ module rec DsObjectModule =
             arrows |> iter (fun z -> z.RawParent <- Some this)
 
         interface IRtWork
-        member val Calls  = calls  |> toList
-        member val Arrows = arrows |> toList
-        member x.OptFlow  = optFlow
+        member val Calls  = ResizeArray calls
+        member val Arrows = ResizeArray arrows
+        member val OptFlow  = optFlow with get, set
         member x.System   = x.RawParent >>= tryCast<RtSystem> |? getNull<RtSystem>()
 
 
@@ -145,12 +146,12 @@ module rec DsObjectModule =
         inherit RtUnique()
         interface IRtCall
         member x.Work = x.RawParent >>= tryCast<RtWork> |? getNull<RtWork>()
-        member val CallType = callType
-        member val AutoPre  = autoPre
-        member val Safety   = safety
-        member val IsDisabled = isDisabled
-        member val Timeout  = timeout with get, set
-        member val ApiCallGuids = apiCallGuids |> toList    // DB 저장시에는 callId 로 저장
+        member val CallType   = callType   with get, set
+        member val AutoPre    = autoPre    with get, set
+        member val Safety     = safety     with get, set
+        member val IsDisabled = isDisabled with get, set
+        member val Timeout    = timeout    with get, set
+        member val ApiCallGuids = ResizeArray apiCallGuids    // DB 저장시에는 callId 로 저장
         member x.ApiCalls =
             let sys = (x.RawParent >>= _.RawParent).Value :?> RtSystem
             sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
@@ -163,20 +164,189 @@ module rec DsObjectModule =
     ) =
         inherit RtUnique()
         interface IRtApiCall
-        member val ApiDefGuid = apiDefGuid
-        member val InAddress  = inAddress
-        member val OutAddress = outAddress
-        member val InSymbol   = inSymbol
-        member val OutSymbol  = outSymbol
-        member val ValueType  = valueType
-        member val Value      = value
-        member x.ApiDef =
-            let sys = x.RawParent.Value :?> RtSystem
-            sys.ApiDefs |> find (fun ad -> ad.Guid = x.ApiDefGuid )
+        member val ApiDefGuid = apiDefGuid  with get, set
+        member val InAddress  = inAddress   with get, set
+        member val OutAddress = outAddress  with get, set
+        member val InSymbol   = inSymbol    with get, set
+        member val OutSymbol  = outSymbol   with get, set
+        member val ValueType  = valueType   with get, set
+        member val Value      = value       with get, set
+
+
+        member x.Call = x.RawParent >>= tryCast<RtCall> |? getNull<RtCall>()
+        member x.ApiDef
+            with get() =
+                let sys = x.RawParent.Value :?> RtSystem
+                sys.ApiDefs |> find (fun ad -> ad.Guid = x.ApiDefGuid )
+            and set (v:RtApiDef) = x.ApiDefGuid <- v.Guid
+
 
     type RtApiDef(isPush:bool) =
         inherit RtUnique()
         interface IRtApiDef
         member val IsPush = isPush
 
+[<AutoOpen>]
+module rec TmpCompatibility =
+    type RtUnique with
+        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        member x.UpdateDateTime(?dateTime:DateTime) =
+            let dateTime = dateTime |?? now
+            x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
 
+        (* see also EdUnique.EnumerateRtObjects *)
+        member x.EnumerateRtObjects(?includeMe): RtUnique list =
+            seq {
+                let includeMe = includeMe |? true
+                if includeMe then
+                    yield x
+                match x with
+                | :? RtProject as prj ->
+                    yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
+                    yield! prj.Systems   >>= _.EnumerateRtObjects()
+                | :? RtSystem as sys ->
+                    yield! sys.Works     >>= _.EnumerateRtObjects()
+                    yield! sys.Flows     >>= _.EnumerateRtObjects()
+                    yield! sys.Arrows    >>= _.EnumerateRtObjects()
+                    yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
+                    yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
+                | :? RtWork as work ->
+                    yield! work.Calls    >>= _.EnumerateRtObjects()
+                    yield! work.Arrows   >>= _.EnumerateRtObjects()
+                | :? RtCall as call ->
+                    //yield! call.ApiCalls >>= _.EnumerateRtObjects()
+                    ()
+                | _ ->
+                    tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
+                    ()
+            } |> List.ofSeq
+
+        member x.Validate(guidDic:Dictionary<Guid, RtUnique>) =
+            verify (x.Guid <> emptyGuid)
+            verify (x.DateTime <> minDate)
+            match x with
+            | (:? RtProject | :? RtSystem | :? RtFlow  | :? RtWork  | :? RtCall) ->
+                verify (x.Name.NonNullAny())
+            | _ -> ()
+
+            match x with
+            | :? RtProject as prj ->
+                prj.Systems |> iter _.Validate(guidDic)
+                for s in prj.Systems do
+                    verify (s.RawParent |-> _.Guid = Some prj.Guid)
+
+            | :? RtSystem as sys ->
+                sys.Works |> iter _.Validate(guidDic)
+                for w in sys.Works  do
+                    verify (w.RawParent |-> _.Guid = Some sys.Guid)
+                    for c in w.Calls do
+                        c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
+                        for ac in c.ApiCalls do
+                            ac.ApiDef.Guid = ac.ApiDefGuid |> verify
+
+                sys.Arrows |> iter _.Validate(guidDic)
+                for a in sys.Arrows do
+                    verify (a.RawParent |-> _.Guid = Some sys.Guid)
+                    sys.Works |> contains a.Source |> verify
+                    sys.Works |> contains a.Target |> verify
+
+                sys.ApiDefs |> iter _.Validate(guidDic)
+                for w in sys.ApiDefs  do
+                    verify (w.RawParent |-> _.Guid = Some sys.Guid)
+
+                sys.ApiCalls |> iter _.Validate(guidDic)
+                for ac in sys.ApiCalls  do
+                    verify (ac.RawParent |-> _.Guid = Some sys.Guid)
+
+            | :? RtFlow as flow ->
+                let works = flow.Works
+                works |> iter _.Validate(guidDic)
+                for w in works  do
+                    verify (w.OptFlow = Some flow)
+
+
+            | :? RtWork as work ->
+                work.Calls |> iter _.Validate(guidDic)
+                for c in work.Calls do
+                    verify (c.RawParent |-> _.Guid = Some work.Guid)
+
+                work.Arrows |> iter _.Validate(guidDic)
+                for a in work.Arrows do
+                    verify (a.RawParent |-> _.Guid = Some work.Guid)
+                    work.Calls |> contains a.Source |> verify
+                    work.Calls |> contains a.Target |> verify
+
+
+            | :? RtCall as call ->
+                ()
+
+            | _ ->
+                tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
+                ()
+
+
+
+
+    type RtProject with
+        static member Create() = RtProject([||], [||], [||])
+        member x.Instantiate(prototypeGuid:Guid, asActive:bool):RtSystem =
+            x.PrototypeSystems
+            |> find(fun s -> s.Guid = prototypeGuid )
+            |> (fun z -> fwdDuplicate z :?> RtSystem)
+            |> tee (fun z ->
+                z.PrototypeSystemGuid <- Some prototypeGuid
+                if asActive then x.ActiveSystems.Add z
+                else x.PassiveSystems.Add z)
+
+        member x.Fix() =
+            x.ActiveSystems @ x.PassiveSystems |> iter (fun sys -> sys.RawParent <- Some x; sys.Fix())
+            //x.UpdateDateTime()
+
+    type RtSystem with
+        member x.Fix() =
+            x.UpdateDateTime()
+            x.Flows    |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Works    |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Arrows   |> iter (fun z -> z.RawParent <- Some x)
+            x.ApiDefs  |> iter (fun z -> z.RawParent <- Some x)
+            x.ApiCalls |> iter (fun z -> z.RawParent <- Some x)
+            ()
+    type RtFlow with
+        // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
+        member x.AddWorks(ws:RtWork seq) =
+            x.UpdateDateTime()
+            ws |> iter (fun w -> w.OptFlow <- Some x)
+
+        member x.RemoveWorks(ws:RtWork seq) =
+            x.UpdateDateTime()
+            ws |> iter (fun w -> w.OptFlow <- None)
+
+        member x.Fix() = ()
+
+    type RtWork with
+        member x.Fix() =
+            x.UpdateDateTime()
+            x.Calls  |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Arrows |> iter (fun z -> z.RawParent <- Some x)
+            ()
+
+    type RtCall with
+        member x.AddApiCalls(apiCalls:RtApiCall seq) =
+            x.UpdateDateTime()
+            apiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
+
+        member x.Fix() =
+            x.UpdateDateTime()
+            x.ApiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            ()
+    type RtApiDef with
+        static member Create() = RtApiDef(true)
+        member x.Fix() =
+            x.UpdateDateTime()
+            ()
+    type RtApiCall with
+        static member Create() = RtApiCall(emptyGuid, nullString, nullString, nullString, nullString, DbDataType.None, nullString)
+        member x.Fix() =
+            x.UpdateDateTime()
+            ()
