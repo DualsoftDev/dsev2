@@ -74,7 +74,7 @@ module CreateSampleModule =
             edCall2a  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2a")
             edCall2b  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2b")
             edWork2.Calls.AddRange([edCall2a; edCall2b])
-            edProject.ActiveSystems.Add(edSystem)
+            edProject.AddActiveSystem edSystem
             edFlow.AddWorks([edWork1])
 
             let edArrow1 = RtArrowBetweenCalls(edCall1a, edCall1b, DbArrowType.Start)

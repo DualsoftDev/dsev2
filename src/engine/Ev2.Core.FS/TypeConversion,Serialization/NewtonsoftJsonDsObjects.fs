@@ -382,17 +382,17 @@ module rec NewtonsoftJsonObjects =
                 let passives = njp.PassiveSystems |-> load
                 let prototypeSystems = njp.SystemPrototypes |-> (fun s -> s.DsObject :?> RtSystem )
 
-                actives @ passives
-                |> iter (fun s -> s.RawParent <- Some s)
-
-
                 RtProject(prototypeSystems, actives, passives
                     , Author=njp.Author
                     , Version=njp.Version
                     , Description=njp.Description
                     , LastConnectionString=njp.LastConnectionString )
                 |> fromNjUniqINGD njp
-                |> tee (fun z -> bag.Add2 z njp)
+                |> tee (fun z ->
+                    actives @ passives
+                    |> iter (fun s -> s.RawParent <- Some z)
+
+                    bag.Add2 z njp)
 
         | :? NjSystem as njs ->
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정

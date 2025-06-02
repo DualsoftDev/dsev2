@@ -28,14 +28,16 @@ module internal rec DsObjectCopyImpl =
     type RtProject with
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
+            let prototypes = x.PrototypeSystems |-> _.replicate(bag) |> toArray
             let actives  = x.ActiveSystems  |-> _.replicate(bag) |> toArray
             let passives = x.PassiveSystems |-> _.replicate(bag) |> toArray
 
             RtProject.Create()
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:RtSystem) -> s.RawParent <- Some z)
-                actives  |> z.ActiveSystems.AddRange
-                passives |> z.PassiveSystems.AddRange )
+                prototypes |> z.RawPrototypeSystems.AddRange
+                actives  |> z.RawActiveSystems.AddRange
+                passives |> z.RawPassiveSystems.AddRange )
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> validateRuntime
@@ -195,22 +197,28 @@ module DsObjectCopyAPIModule =
 
     type RtProject with
         /// RtProject 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
-        member x.Replicate() = x.replicate(ReplicateBag()) |> validateRuntime
+        member x.Replicate() =
+            x.EnumerateRtObjects() |> iter (fun z -> z.DDic.Clear())
+
+            x.replicate(ReplicateBag())
+            |> validateRuntime
 
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        member x.Duplicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
-            let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
-            let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
-            let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.Duplicate() |> toArray
-            let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.Duplicate() |> toArray
-
-            RtProject.Create()
+        member x.Duplicate() =
+            let current = now()
+            x.Replicate()
+            |> uniqRenew
             |> tee(fun z ->
-                (actives @ passives) |> iter (fun s -> s.RawParent <- Some z)
-                actives  |> z.ActiveSystems.AddRange
-                passives |> z.PassiveSystems.AddRange )
+                z.ActiveSystems @ z.PassiveSystems
+                |> tee (fun ss ->
+                    ss |> iter (fun s -> s.RawParent <- Some z) )
+                >>= _.EnumerateRtObjects()
+                |> iter (fun obj ->
+                    obj.Id <- None
+                    obj.Guid <- newGuid()
+                    obj.DateTime <- current))
             |> uniqName (nn x.Name)
-            |> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
+            //|> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
             |> validateRuntime
 
 

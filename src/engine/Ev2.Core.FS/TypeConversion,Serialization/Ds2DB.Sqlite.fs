@@ -334,8 +334,8 @@ module internal Sqlite2DsImpl =
                     |> tryFind(fun m -> m.SystemId = s.Id.Value)
                     |-> _.IsActive |? false)
 
-            actives  |> edProj.ActiveSystems.AddRange
-            passives |> edProj.PassiveSystems.AddRange
+            actives  |> edProj.RawActiveSystems.AddRange
+            passives |> edProj.RawPassiveSystems.AddRange
 
             for s in edSystems do
                 let edFlows = [

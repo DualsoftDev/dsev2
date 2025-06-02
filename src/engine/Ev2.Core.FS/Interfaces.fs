@@ -84,10 +84,14 @@ module rec DsObjectModule =
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = nullString with get, set
 
-        member val PrototypeSystems = ResizeArray(prototypeSystems)
+        member val internal RawActiveSystems    = ResizeArray activeSystems
+        member val internal RawPassiveSystems   = ResizeArray passiveSystems
+        member val internal RawPrototypeSystems = ResizeArray prototypeSystems
+
+        member x.PrototypeSystems = x.RawPrototypeSystems |> toList
         // { Runtime/DB 용
-        member val ActiveSystems = ResizeArray activeSystems
-        member val PassiveSystems = ResizeArray passiveSystems
+        member x.ActiveSystems = x.RawActiveSystems |> toList
+        member x.PassiveSystems = x.RawPassiveSystems |> toList
         member x.Systems = (x.ActiveSystems @ x.PassiveSystems) |> toList
         // } Runtime/DB 용
 
@@ -281,7 +285,7 @@ module rec TmpCompatibility =
                 ()
 
             | _ ->
-                tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
+                tracefn $"Skipping {(x.GetType())} in Validate"
                 ()
 
 
@@ -289,14 +293,26 @@ module rec TmpCompatibility =
 
     type RtProject with
         static member Create() = RtProject([||], [||], [||])
+
+        member x.AddPrototypeSystem(system:RtSystem) =
+            x.RawPrototypeSystems.Add system
+
+        member x.AddActiveSystem(system:RtSystem) =
+            system.RawParent <- Some x
+            x.RawActiveSystems.Add system
+
+        member x.AddPassiveSystem(system:RtSystem) =
+            system.RawParent <- Some x
+            x.RawPassiveSystems.Add system
+
         member x.Instantiate(prototypeGuid:Guid, asActive:bool):RtSystem =
             x.PrototypeSystems
-            |> find(fun s -> s.Guid = prototypeGuid )
+            |> tryFind(fun s -> s.Guid = prototypeGuid ) |?? (fun () -> failwith "Prototype system not found")
             |> (fun z -> fwdDuplicate z :?> RtSystem)
             |> tee (fun z ->
                 z.PrototypeSystemGuid <- Some prototypeGuid
-                if asActive then x.ActiveSystems.Add z
-                else x.PassiveSystems.Add z)
+                if asActive then x.AddActiveSystem z
+                else x.AddPassiveSystem z)
 
         member x.Fix() =
             x.ActiveSystems @ x.PassiveSystems |> iter (fun sys -> sys.RawParent <- Some x; sys.Fix())

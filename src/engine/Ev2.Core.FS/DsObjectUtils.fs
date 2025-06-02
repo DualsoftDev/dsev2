@@ -157,12 +157,12 @@ module DsObjectUtilsModule =
                     sys.Works |> contains a.Target |> verify
 
                 sys.ApiDefs |> iter _.Validate(guidDic)
-                for w in sys.ApiDefs  do
-                    verify (w.RawParent.Value.Guid = sys.Guid)
+                for w in sys.ApiDefs do
+                    verify (w.RawParent |-> _.Guid = Some sys.Guid)
 
                 sys.ApiCalls |> iter _.Validate(guidDic)
                 for ac in sys.ApiCalls  do
-                    verify (ac.RawParent.Value.Guid = sys.Guid)
+                    verify (ac.RawParent |-> _.Guid = Some sys.Guid)
 
             | :? RtFlow as flow ->
                 let works = flow.Works
@@ -186,7 +186,7 @@ module DsObjectUtilsModule =
             | :? RtCall as call ->
                 ()
             | _ ->
-                tracefn $"Skipping {(x.GetType())} in EnumerateDsObjects"
+                //tracefn $"Skipping {(x.GetType())} in Validate"
                 ()
 
 

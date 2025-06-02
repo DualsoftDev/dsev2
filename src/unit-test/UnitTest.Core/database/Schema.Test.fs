@@ -256,16 +256,19 @@ module SchemaTestModule =
         //(fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
         do
             let dsProj = dsProject2.Duplicate()
-            dsProj.Name <- $"Replica of {dsProj.Name}"
+            dsProj.Name <- $"Duplicate of {dsProj.Name}"
             validateRuntime dsProj |> ignore
             dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
             dsProj.ToSqlite3(connStr, removeExistingData)
 
-        let dsSystem4 = dsProject3.Systems[0].Duplicate()
-        validateRuntime dsSystem4 |> ignore
-        dsSystem4.Name <- "DuplicatedSystem"
 
-        let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
+        //let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
+        let dsProject4 =
+            let dsSystem4 = dsProject3.Systems[0].Duplicate()
+            validateRuntime dsSystem4 |> ignore
+            dsSystem4.Name <- "DuplicatedSystem"
+            dsProject3.Duplicate() |> tee(fun z -> z.AddPassiveSystem dsSystem4)
+
         validateRuntime dsProject4 |> ignore
         dsProject4.Systems[0].PrototypeSystemGuid <- None
         dsProject4.ToSqlite3(connStr, removeExistingData)
@@ -337,7 +340,7 @@ module SchemaTestModule =
         createEditableSystemCylinder()
         let edProject = edProject.Replicate() |> validateRuntime
         let protoGuid = edSystemCyl.Guid
-        edProject.PrototypeSystems.Add edSystemCyl
+        edProject.AddPrototypeSystem edSystemCyl
         let edSysCyl1 = edProject.Instantiate(protoGuid, Name="실린더 instance1", asActive=false)
         let edSysCyl2 = edProject.Instantiate(protoGuid, Name="실린더 instance2", asActive=false)
         let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=true)
