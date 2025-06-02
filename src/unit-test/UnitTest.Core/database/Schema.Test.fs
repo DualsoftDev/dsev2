@@ -282,6 +282,9 @@ module SchemaTestModule =
     let ``JSON -> DsObject -> DB update test`` () =
         //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
         let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
+        if not (File.Exists jsonPath) then
+            edProject.ToJson(jsonPath) |> ignore
+
         let json = File.ReadAllText(jsonPath)
         let dsProject0 = NjProject.FromJson json
 
