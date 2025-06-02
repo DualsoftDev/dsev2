@@ -190,7 +190,7 @@ module SchemaTestModule =
         )
 
         dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
-        dsProject.ToSqlite3(connStr, removeExistingData)
+        dsProject.CommitToSqlite3(connStr, removeExistingData)
 
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->
@@ -259,7 +259,7 @@ module SchemaTestModule =
             dsProj.Name <- $"Duplicate of {dsProj.Name}"
             validateRuntime dsProj |> ignore
             dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
-            dsProj.ToSqlite3(connStr, removeExistingData)
+            dsProj.CommitToSqlite3(connStr, removeExistingData)
 
 
         let dsProject4 =
@@ -273,7 +273,7 @@ module SchemaTestModule =
 
         validateRuntime dsProject4 |> ignore
         dsProject4.Systems[0].PrototypeSystemGuid <- None
-        dsProject4.ToSqlite3(connStr, removeExistingData)
+        dsProject4.CommitToSqlite3(connStr, removeExistingData)
 
         ()
 
@@ -306,7 +306,7 @@ module SchemaTestModule =
             conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}))
         |> ignore
 
-        dsProject2.ToSqlite3(connStr, removeExistingData)
+        dsProject2.CommitToSqlite3(connStr, removeExistingData)
 
 
     [<Test>]
@@ -331,7 +331,7 @@ module SchemaTestModule =
         let dbPath = Path.Combine(specDir, "dssystem.sqlite3")
         File.Delete(dbPath) |> ignore
         let connStr = dbPath |> path2ConnectionString
-        dsProject.ToSqlite3(connStr, true)
+        dsProject.CommitToSqlite3(connStr, true)
 
         //let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
         //let json =
@@ -383,7 +383,7 @@ module SchemaTestModule =
         let dbApi = DbApi connStr
         dbApi.With(fun (conn, tr) -> conn.Execute("DELETE FROM project") |> ignore) |> ignore
 
-        rtProject.ToSqlite3(connStr)
+        rtProject.CommitToSqlite3(connStr)
 
         File.Copy(dbPath, Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
 

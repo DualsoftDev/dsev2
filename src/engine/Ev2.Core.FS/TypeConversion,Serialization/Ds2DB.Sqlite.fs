@@ -486,19 +486,19 @@ module Ds2SqliteModule =
         DbApi(connStr, DDic=ddic)
 
     type RtProject with // ToSqlite3, FromSqlite3
-        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
+        member x.CommitToSqlite3(connStr:string, ?removeExistingData:bool) =
             let dbApi = createDbApi connStr
             project2Sqlite x dbApi removeExistingData
 
-        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
+        static member CheckoutFromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
             let dbApi = createDbApi connStr
             fromSqlite3 identifier dbApi
 
     type RtSystem with  // ToSqlite3, FromSqlite3
-        member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
+        member x.CommitToSqlite3(connStr:string, ?removeExistingData:bool) =
             let dbApi = createDbApi connStr
             system2Sqlite x dbApi removeExistingData
 
-        static member FromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
+        static member CheckoutFromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
             let dbApi = createDbApi connStr
             ()
