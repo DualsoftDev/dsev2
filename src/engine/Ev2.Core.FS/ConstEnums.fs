@@ -29,3 +29,11 @@ module ConstEnums =
         | Start = 1
         | Reset = 2
 
+[<AutoOpen>]
+module Ev2PreludeModule =
+    open Dual.Common.Core.FS
+
+    let addAsSet            (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item)
+    let addRangeAsSet       (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items)
+    let verifyAddAsSet      (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item, fun x -> failwith $"ERROR: {x} duplicated.")
+    let verifyAddRangeAsSet (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items, fun x -> failwith $"ERROR: {x} duplicated.")

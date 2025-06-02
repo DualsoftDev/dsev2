@@ -31,8 +31,7 @@ module rec TmpCompatibility =
                 | :? RtWork as work ->
                     yield! work.Calls    >>= _.EnumerateRtObjects()
                     yield! work.Arrows   >>= _.EnumerateRtObjects()
-                | :? RtCall as call ->
-                    //yield! call.ApiCalls >>= _.EnumerateRtObjects()
+                | (:? RtCall) | (:? RtApiCall) | (:? RtApiDef) | (:? RtArrowBetweenWorks) | (:? RtArrowBetweenCalls)  ->
                     ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"

@@ -12,7 +12,8 @@ module CreateSampleModule =
     let mutable edProject  = getNull<RtProject>()
     let mutable edSystem   = getNull<RtSystem>()
     let mutable edApiCall1a = getNull<RtApiCall>()
-    let mutable edApiDef1a  = getNull<RtApiDef>()
+    let mutable edApiDef1  = getNull<RtApiDef>()
+    let mutable edApiDef2  = getNull<RtApiDef>()
 
     let mutable edFlow     = getNull<RtFlow>()
     let mutable edWork1    = getNull<RtWork>()
@@ -26,11 +27,16 @@ module CreateSampleModule =
     let createEditableProject() =
         if isItNull edProject then
             edProject <- RtProject.Create(Name = "MainProject")
-            edApiDef1a <- RtApiDef.Create(Name = "ApiDef1a")
+            edSystem  <- RtSystem.Create() |> tee (fun z -> z.Name <- "MainSystem"(*, IsPrototype=true*))
+
+            edApiDef1 <- RtApiDef.Create(Name = "ApiDef1a")
+            edApiDef2 <- RtApiDef.Create() |> tee (fun z -> z.Name <- "UnusedApi")
+            [edApiDef1; edApiDef2;] |> verifyAddRangeAsSet edSystem.ApiDefs
+
             edApiCall1a <-
                 RtApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- edApiDef1a.Guid
+                    z.ApiDefGuid <- edApiDef1.Guid
                     z.Name      <- "ApiCall1a"
                     z.InAddress <- "InAddressX0"
                     z.OutAddress<- "OutAddress1"
@@ -38,21 +44,18 @@ module CreateSampleModule =
                     z.OutSymbol <- "YTag2"
                     z.ValueType <- DbDataType.Bool
                     z.Value     <- "false")
-            edSystem  <- RtSystem.Create() |> tee (fun z -> z.Name <- "MainSystem"(*, IsPrototype=true*))
+            edApiCall1a |> verifyAddAsSet edSystem.ApiCalls
+
             edFlow    <- RtFlow   (Name = "MainFlow")
             edWork1   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
             edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlow)
             edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1")
-            edSystem.Works.AddRange([edWork1; edWork2; edWork3])
-            edSystem.Flows.Add(edFlow)
-            edSystem.ApiDefs.Add(edApiDef1a)
-            edSystem.ApiCalls.Add(edApiCall1a)
+            [edWork1; edWork2; edWork3] |> verifyAddRangeAsSet edSystem.Works
+            edFlow |> verifyAddAsSet edSystem.Flows
 
             let edArrowW = RtArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
-            edSystem.Arrows.Add(edArrowW)
+            edArrowW |> verifyAddAsSet edSystem.Arrows
 
-            edApiDef1a <- RtApiDef.Create() |> tee (fun z -> z.Name <- "ApiDef1a")
-            edSystem.ApiDefs.Add(edApiDef1a)
 
             edCall1a  <-
                 RtCall.Create()
@@ -70,10 +73,10 @@ module CreateSampleModule =
                     z.Name <- "Call1b"
                     z.CallType <- DbCallType.Repeat)
 
-            edWork1.Calls.AddRange([edCall1a; edCall1b])
+            [edCall1a; edCall1b] |> verifyAddRangeAsSet edWork1.Calls
             edCall2a  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2a")
             edCall2b  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2b")
-            edWork2.Calls.AddRange([edCall2a; edCall2b])
+            [edCall2a; edCall2b] |> verifyAddRangeAsSet edWork2.Calls
             edProject.AddActiveSystem edSystem
             edFlow.AddWorks([edWork1])
 

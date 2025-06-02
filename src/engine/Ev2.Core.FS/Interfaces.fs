@@ -1,6 +1,7 @@
 namespace Ev2.Core.FS
 
 open System
+open System.Linq
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
@@ -113,9 +114,8 @@ module rec DsObjectModule =
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
 
-    type RtSystem with
-        member x.TryGetProject() = x.RawParent |-> (fun z -> z :?> RtProject)
-        member x.Project = x.TryGetProject() |? getNull<RtProject>()
+        // serialize 대상 아님
+        member x.Project = x.RawParent >>= tryCast<RtProject>
 
 
 
@@ -123,8 +123,16 @@ module rec DsObjectModule =
         inherit RtUnique()
 
         interface IRtFlow
+
         member x.System = x.RawParent >>= tryCast<RtSystem>
-        member x.Works = x.System.Value.Works |> filter (fun w -> w.Flow = Some x) |> toArray
+
+        member x.Works:RtWork[] =
+            x.System
+            |-> (fun s ->
+                s.Works
+                |> filter (fun w -> w.Flow = Some x)
+                |> toArray)
+            |? [||]
 
     // see static member Create
     type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) as this =
@@ -144,13 +152,14 @@ module rec DsObjectModule =
     type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, isDisabled:bool, timeout:int option) =
         inherit RtUnique()
         interface IRtCall
-        member x.Work = x.RawParent >>= tryCast<RtWork>
         member val CallType   = callType   with get, set
         member val AutoPre    = autoPre    with get, set
         member val Safety     = safety     with get, set
         member val IsDisabled = isDisabled with get, set
         member val Timeout    = timeout    with get, set
         member val ApiCallGuids = ResizeArray apiCallGuids    // DB 저장시에는 callId 로 저장
+
+        member x.Work = x.RawParent >>= tryCast<RtWork>
         member x.ApiCalls =
             let sys = (x.RawParent >>= _.RawParent).Value :?> RtSystem
             sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
@@ -172,7 +181,17 @@ module rec DsObjectModule =
         member val Value      = value       with get, set
 
 
-        member x.Call = x.RawParent >>= tryCast<RtCall> |? getNull<RtCall>()
+        member x.System   = x.RawParent >>= tryCast<RtSystem>
+        /// system 에서 현재 ApiCall 을 호출하는 Call 들
+        member x.Callers:RtCall[] =
+            x.System
+            |-> (fun s ->
+                s.Works >>= _.Calls
+                |> filter (fun c -> c.ApiCalls.Contains x)
+                |> toArray)
+            |? [||]
+
+
         member x.ApiDef
             with get() =
                 let sys = x.RawParent.Value :?> RtSystem
@@ -183,5 +202,16 @@ module rec DsObjectModule =
     type RtApiDef(isPush:bool) =
         inherit RtUnique()
         interface IRtApiDef
+
         member val IsPush = isPush
+        member x.System   = x.RawParent >>= tryCast<RtSystem>
+
+        // system 에서 현재 ApiDef 을 사용하는 ApiCall 들
+        member x.ApiUsers:RtApiCall[] =
+            x.System
+            |-> (fun s ->
+                s.ApiCalls
+                |> filter (fun c -> c.ApiDef = x)
+                |> toArray)
+            |? [||]
 
