@@ -22,12 +22,13 @@ CREATE TABLE [system](
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
     , [name]          NVARCHAR(128) NOT NULL
-    , [prototype]     TEXT                          -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
+    , [prototypeId]   INTEGER                  -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , [author]        TEXT NOT NULL
     , [langVersion]   TEXT NOT NULL
     , [engineVersion] TEXT NOT NULL
     , [originGuid]    TEXT      -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , [description]   TEXT
+    , FOREIGN KEY(prototypeId) REFERENCES system(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
 );
 
 
@@ -40,9 +41,61 @@ CREATE TABLE [mapProject2System](
     , [isActive]       TINYINT NOT NULL DEFAULT 0
     , [loadedName]     TEXT
     , FOREIGN KEY(projectId)   REFERENCES project(id) ON DELETE CASCADE
-    , FOREIGN KEY(systemId)    REFERENCES system(id) ON DELETE CASCADE
+    , FOREIGN KEY(systemId)    REFERENCES system(id) ON DELETE CASCADE     -- NO ACTION       -- ON DELETE RESTRICT    -- RESTRICT: 부모 레코드가 삭제되기 전에 참조되고 있는 자식 레코드가 있는지 즉시 검사하고, 있으면 삭제를 막음.
     , CONSTRAINT mapProject2System_uniq UNIQUE (projectId, systemId)
 );
+
+-- TODO: MapProject2System row 하나 삭제시,
+--    다른 project 에서 참조되고 있지 않은 systemId 에 해당하는 system 들을 삭제할 수 있도록 trigger 설정 필요
+
+CREATE TRIGGER IF NOT EXISTS trigger_project_beforeDelete_recordSystemIds
+BEFORE DELETE ON project
+BEGIN
+    DELETE FROM temp WHERE key = 'trigger_temp_systemId';
+
+    INSERT INTO temp (key, val)
+    SELECT 'trigger_temp_systemId', systemId
+    FROM mapProject2System
+    WHERE projectId = OLD.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trigger_project_afterDelete_dropSystems
+AFTER DELETE ON project
+BEGIN
+    DELETE FROM system
+    WHERE id IN (
+        SELECT CAST(val AS INTEGER) FROM temp WHERE key = 'trigger_temp_systemId'
+    )
+    AND NOT EXISTS (
+        SELECT 1 FROM mapProject2System
+        WHERE systemId = system.id
+    );
+
+    DELETE FROM meta WHERE key = 'trigger_temp_systemId';
+END;
+
+
+
+--CREATE TRIGGER IF NOT EXISTS trigger_mapProject2System_afterDelete_dropSystems
+--AFTER DELETE ON mapProject2System
+--BEGIN
+--    -- 디버깅용 로그 삽입
+--    INSERT INTO temp(key, val)
+--    VALUES (
+--        'trigger_mapProject2System_afterDelete_dropSystems',
+--        '삭제된 systemId=' || OLD.systemId
+--    );
+--
+--    -- system 삭제 시도
+--    DELETE FROM system
+--    WHERE id = OLD.systemId
+--      AND NOT EXISTS (
+--          SELECT 1 FROM mapProject2System
+--          WHERE systemId = OLD.systemId
+--      );
+--END;
+
+
 
 -- Call 은 여러개의 Api 를 동시에 호출할 수 있다.
 CREATE TABLE [mapCall2ApiCall]( 
@@ -52,7 +105,7 @@ CREATE TABLE [mapCall2ApiCall](
     , [callId]     INTEGER NOT NULL
     , [apiCallId]  INTEGER NOT NULL
     , FOREIGN KEY(callId)     REFERENCES call(id) ON DELETE CASCADE
-    , FOREIGN KEY(apiCallId)  REFERENCES apiCall(id) -- DO *NOT* DELETE CASCADE
+    , FOREIGN KEY(apiCallId)  REFERENCES apiCall(id) ON DELETE CASCADE
     , CONSTRAINT mapCall2ApiCall_uniq UNIQUE (callId, apiCallId)
 );
 
@@ -132,10 +185,10 @@ CREATE TABLE [call](
     , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
-    , [disabled]      TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
+    , [isDisabled]    TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        INTEGER NOT NULL
     , FOREIGN KEY(workId)    REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
-    , FOREIGN KEY(callTypeId)   REFERENCES enum(id)
+    , FOREIGN KEY(callTypeId)   REFERENCES enum(id) ON DELETE RESTRICT
     -- , [apiCallId]     INTEGER NOT NULL  -- call 이 복수개의 apiCall 을 가지므로, mapCall2ApiCall 에 저장
     -- , FOREIGN KEY(apiCallId) REFERENCES apiCall(id)
 );
@@ -152,7 +205,7 @@ CREATE TABLE [arrowWork](
     , [systemId]      INTEGER NOT NULL
     , FOREIGN KEY(source)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
-    , FOREIGN KEY(typeId)   REFERENCES enum(id)
+    , FOREIGN KEY(typeId)   REFERENCES enum(id) ON DELETE RESTRICT
     , FOREIGN KEY(systemId) REFERENCES system(id) ON DELETE CASCADE    -- System 삭제시 Arrow 도 삭제
 );
 
@@ -168,7 +221,7 @@ CREATE TABLE [arrowCall](
     , [workId]        INTEGER NOT NULL
     , FOREIGN KEY(source)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
     , FOREIGN KEY(target)   REFERENCES call(id) ON DELETE CASCADE      -- Call 삭제시 Arrow 도 삭제
-    , FOREIGN KEY(typeId)   REFERENCES enum(id)
+    , FOREIGN KEY(typeId)   REFERENCES enum(id) ON DELETE RESTRICT
     , FOREIGN KEY(workId)   REFERENCES work(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 
@@ -202,14 +255,18 @@ CREATE TABLE [apiDef](
     , [name]          NVARCHAR(128) NOT NULL
     , [isPush]          TINYINT NOT NULL DEFAULT 0
     , [systemId]        INTEGER NOT NULL       -- API 가 정의된 target system
+    , FOREIGN KEY(systemId)   REFERENCES system(id) ON DELETE CASCADE
 );
 
+
+-- 삭제 ??
 CREATE TABLE [paramWork] (  
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
     , [dateTime]      DATETIME(7)
 );
 
+-- 삭제 ??
 CREATE TABLE [paramCall] (  
     [id]              INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL
     , [guid]          TEXT NOT NULL UNIQUE   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
@@ -218,6 +275,12 @@ CREATE TABLE [paramCall] (
 
 
 CREATE TABLE [meta] (
+    id INTEGER PRIMARY KEY NOT NULL,
+    key TEXT NOT NULL,
+    val TEXT NOT NULL
+);
+
+CREATE TABLE [temp] (
     id INTEGER PRIMARY KEY NOT NULL,
     key TEXT NOT NULL,
     val TEXT NOT NULL
@@ -237,6 +300,7 @@ CREATE TABLE [tableHistory] (
 
 
 
+
 CREATE VIEW [vwMapProject2System] AS
     SELECT
         m.[id]
@@ -244,10 +308,14 @@ CREATE VIEW [vwMapProject2System] AS
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
+        , s2.[id]   AS prototypeId
+        , s2.[name] AS prototypeName
         , m.[loadedName]
+        , m.[isActive]
     FROM [mapProject2System] m
     JOIN [project] p ON p.id = m.projectId
     JOIN [system]  s ON s.id = m.systemId
+    LEFT JOIN [system]  s2 ON s2.id = s.prototypeId
     ;
 
 
@@ -289,11 +357,42 @@ CREATE VIEW [vwSystem] AS
     JOIN [project] p ON p.id = psm.projectId
     ;
 
+CREATE VIEW [vwApiDef] AS
+    SELECT
+        x.[id]
+        , x.[name]
+        , x.[isPush]
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+    FROM [apiDef] x
+    JOIN [system] s  ON s.id = x.systemId
+    ;
+
+CREATE VIEW [vwApiCall] AS
+    SELECT
+        x.[id]
+        , x.[name]
+        , x.[inAddress]
+        , x.[outAddress]
+        , x.[inSymbol]
+        , x.[outSymbol]
+        , x.[value]
+        , enum.[name] AS valueType
+        , ad.[id]   AS apiDefId
+        , ad.[name] AS apiDefName
+        , s.[id]    AS systemId
+        , s.[name]  AS systemName
+    FROM [apiCall] x
+    JOIN [apiDef] ad ON ad.id = x.apiDefId
+    JOIN [system] s  ON s.id = ad.systemId
+    JOIN [enum] enum ON enum.id = x.valueTypeId
+    ;
+
 
 CREATE VIEW [vwFlow] AS
     SELECT
-        f.[id]
-        , f.[name]  AS flowName
+        x.[id]
+        , x.[name]  AS flowName
         , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
@@ -301,7 +400,7 @@ CREATE VIEW [vwFlow] AS
         , w.[id]    AS workId
         , w.[name]  AS workName
     FROM [work] w
-    LEFT JOIN [flow] f           ON f.id         = w.flowId
+    LEFT JOIN [flow] x           ON x.id         = w.flowId
     JOIN [system] s              ON s.id         = w.systemId
     JOIN [mapProject2System] psm ON psm.systemId = s.id
     JOIN [project] p             ON p.id         = psm.projectId
@@ -310,17 +409,17 @@ CREATE VIEW [vwFlow] AS
 
 CREATE VIEW [vwWork] AS
     SELECT
-        w.[id]
-        , w.[name]  AS workName
+        x.[id]
+        , x.[name]  AS workName
         , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
         , s.[name]  AS systemName
         , f.[id]    AS flowId
         , f.[name]  AS flowName
-    FROM [work] w
-    LEFT JOIN [flow] f ON f.id = w.flowId
-    JOIN [system] s              ON s.id         = w.systemId
+    FROM [work] x
+    LEFT JOIN [flow] f ON f.id = x.flowId
+    JOIN [system] s              ON s.id         = x.systemId
     JOIN [mapProject2System] psm ON psm.systemId = s.id
     JOIN [project] p             ON p.id         = psm.projectId
     ;
@@ -332,7 +431,7 @@ CREATE VIEW [vwCall] AS
         , c.[timeout]
         , c.[autoPre]
         , c.[safety]
-        , c.[disabled]
+        , c.[isDisabled]
         , p.[id]      AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
@@ -356,7 +455,6 @@ CREATE VIEW [vwArrowCall] AS
         , ac.[target]
         , tgt.[name] AS targetName
         , ac.[typeId]
-        , enum.[category]
         , enum.[name] AS enumName
         , ac.[workId]
         , w.[name] AS workName
@@ -383,7 +481,6 @@ CREATE VIEW [vwArrowWork] AS
         , aw.[target]
         , tgt.[name]      AS targetName
         , aw.[typeId]
-        , enum.[category] AS category
         , enum.[name]     AS enumName
         , aw.[systemId]
         , p.[id]          AS projectId
