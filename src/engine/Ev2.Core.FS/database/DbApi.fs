@@ -158,7 +158,7 @@ module ORMTypeConversionModule =
             >>= (fun z -> Enum.TryParse<'TEnum>(z.Name) |> tryParseToOption)
 
 
-    type ORMCall with
+    type ORMCall with   // Create
         static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType,
             autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>
         ): ORMUnique =
@@ -252,18 +252,18 @@ module ORMTypeConversionModule =
 
 
 
-    type IDsObject with
+    type IDsObject with // ToORM
         /// Rt object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g RtProject -> ORMProject
         member x.ToORM<'T when 'T :> ORMUnique>(dbApi:DbApi, guidDic:Dictionary<Guid, ORMUnique>) =
             ds2Orm dbApi guidDic x :?> 'T
 
-    type RtProject with
+    type RtProject with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
         member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUnique> * ORMProject =
             let guidDic = Dictionary<Guid, ORMUnique>()
             guidDic, ds2Orm dbApi guidDic x :?> ORMProject
 
-    type RtSystem with
+    type RtSystem with // ToORM
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
         member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUnique> * ORMSystem =
             let guidDic = Dictionary<Guid, ORMUnique>()

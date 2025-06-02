@@ -5,7 +5,122 @@ open System
 open System.Collections.Generic
 
 [<AutoOpen>]
+module rec TmpCompatibility =
+    type RtUnique with  // UpdateDateTime, EnumerateRtObjects
+        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        member x.UpdateDateTime(?dateTime:DateTime) =
+            let dateTime = dateTime |?? now
+            x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
+
+        (* see also EdUnique.EnumerateRtObjects *)
+        member x.EnumerateRtObjects(?includeMe): RtUnique list =
+            seq {
+                let includeMe = includeMe |? true
+                if includeMe then
+                    yield x
+                match x with
+                | :? RtProject as prj ->
+                    yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
+                    yield! prj.Systems   >>= _.EnumerateRtObjects()
+                | :? RtSystem as sys ->
+                    yield! sys.Works     >>= _.EnumerateRtObjects()
+                    yield! sys.Flows     >>= _.EnumerateRtObjects()
+                    yield! sys.Arrows    >>= _.EnumerateRtObjects()
+                    yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
+                    yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
+                | :? RtWork as work ->
+                    yield! work.Calls    >>= _.EnumerateRtObjects()
+                    yield! work.Arrows   >>= _.EnumerateRtObjects()
+                | :? RtCall as call ->
+                    //yield! call.ApiCalls >>= _.EnumerateRtObjects()
+                    ()
+                | _ ->
+                    tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
+                    ()
+            } |> List.ofSeq
+
+
+
+    type RtProject with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate, Fix
+        member x.AddPrototypeSystem(system:RtSystem) =
+            x.RawPrototypeSystems.Add system
+
+        member x.AddActiveSystem(system:RtSystem) =
+            system.RawParent <- Some x
+            x.RawActiveSystems.Add system
+
+        member x.AddPassiveSystem(system:RtSystem) =
+            system.RawParent <- Some x
+            x.RawPassiveSystems.Add system
+
+        member x.Instantiate(prototypeGuid:Guid, asActive:bool):RtSystem =
+            x.PrototypeSystems
+            |> tryFind(fun s -> s.Guid = prototypeGuid ) |?? (fun () -> failwith "Prototype system not found")
+            |> (fun z -> fwdDuplicate z :?> RtSystem)
+            |> tee (fun z ->
+                z.PrototypeSystemGuid <- Some prototypeGuid
+                if asActive then x.AddActiveSystem z
+                else x.AddPassiveSystem z)
+
+        member x.Fix() =
+            x.ActiveSystems @ x.PassiveSystems |> iter (fun sys -> sys.RawParent <- Some x; sys.Fix())
+            //x.UpdateDateTime()
+
+    type RtSystem with  // Fix
+        member x.Fix() =
+            x.UpdateDateTime()
+            x.Flows    |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Works    |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Arrows   |> iter (fun z -> z.RawParent <- Some x)
+            x.ApiDefs  |> iter (fun z -> z.RawParent <- Some x)
+            x.ApiCalls |> iter (fun z -> z.RawParent <- Some x)
+
+
+    type RtFlow with    // AddWorks, RemoveWorks, Fix
+        // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
+        member x.AddWorks(ws:RtWork seq) =
+            x.UpdateDateTime()
+            ws |> iter (fun w -> w.Flow <- Some x)
+
+        member x.RemoveWorks(ws:RtWork seq) =
+            x.UpdateDateTime()
+            ws |> iter (fun w -> w.Flow <- None)
+
+        member x.Fix() = ()
+
+    type RtWork with    // Fix
+        member x.Fix() =
+            x.UpdateDateTime()
+            x.Calls  |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            x.Arrows |> iter (fun z -> z.RawParent <- Some x)
+            ()
+
+    type RtCall with    // AddApiCalls, Fix
+        member x.AddApiCalls(apiCalls:RtApiCall seq) =
+            x.UpdateDateTime()
+            apiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
+
+        member x.Fix() =
+            x.UpdateDateTime()
+            x.ApiCalls |> iter (fun z -> z.RawParent <- Some x; z.Fix())
+            ()
+    type RtApiDef with  // Fix
+        member x.Fix() =
+            x.UpdateDateTime()
+
+    type RtApiCall with // Fix
+        member x.Fix() =
+            x.UpdateDateTime()
+
+
+
+
+[<AutoOpen>]
 module DsObjectUtilsModule =
+    type RtProject with
+        static member Create() = RtProject([||], [||], [||])
+
     type RtSystem with
         static member Create(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
             arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
@@ -41,6 +156,11 @@ module DsObjectUtilsModule =
 
         static member Create() = RtCall(DbCallType.Normal, [], nullString, nullString, false, None)
 
+    type RtApiDef with
+        static member Create() = RtApiDef(true)
+    type RtApiCall with
+        static member Create() = RtApiCall(emptyGuid, nullString, nullString, nullString, nullString, DbDataType.None, nullString)
+
 
     [<AbstractClass>]
     type ParameterBase() =
@@ -67,11 +187,13 @@ module DsObjectUtilsModule =
             | :? RtArrowBetweenCalls as a -> a.Source
             | :? RtArrowBetweenWorks as a -> a.Source
             | _ -> failwith "ERROR"
+
         member x.GetTarget(): Unique =
             match x with
             | :? RtArrowBetweenCalls as a -> a.Target
             | :? RtArrowBetweenWorks as a -> a.Target
             | _ -> failwith "ERROR"
+
         member x.GetArrowType(): DbArrowType =
             match x with
             | :? RtArrowBetweenCalls as a -> a.Type
@@ -97,38 +219,6 @@ module DsObjectUtilsModule =
 
 
     type RtUnique with
-        ///// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
-        //member x.UpdateDateTime(?dateTime:DateTime) =
-        //    let dateTime = dateTime |?? now
-        //    x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
-
-        //(* see also EdUnique.EnumerateRtObjects *)
-        //member x.EnumerateRtObjects(?includeMe): RtUnique list =
-        //    seq {
-        //        let includeMe = includeMe |? true
-        //        if includeMe then
-        //            yield x
-        //        match x with
-        //        | :? RtProject as prj ->
-        //            yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
-        //            yield! prj.Systems   >>= _.EnumerateRtObjects()
-        //        | :? RtSystem as sys ->
-        //            yield! sys.Works     >>= _.EnumerateRtObjects()
-        //            yield! sys.Flows     >>= _.EnumerateRtObjects()
-        //            yield! sys.Arrows    >>= _.EnumerateRtObjects()
-        //            yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
-        //            yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
-        //        | :? RtWork as work ->
-        //            yield! work.Calls    >>= _.EnumerateRtObjects()
-        //            yield! work.Arrows   >>= _.EnumerateRtObjects()
-        //        | :? RtCall as call ->
-        //            //yield! call.ApiCalls >>= _.EnumerateRtObjects()
-        //            ()
-        //        | _ ->
-        //            tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
-        //            ()
-        //    } |> List.ofSeq
-
         member x.Validate(guidDic:Dictionary<Guid, RtUnique>) =
             verify (x.Guid <> emptyGuid)
             verify (x.DateTime <> minDate)
@@ -143,6 +233,8 @@ module DsObjectUtilsModule =
                     verify (s.RawParent.Value.Guid = prj.Guid)
             | :? RtSystem as sys ->
                 sys.Works |> iter _.Validate(guidDic)
+
+
                 for w in sys.Works  do
                     verify (w.RawParent.Value.Guid = sys.Guid)
                     for c in w.Calls do

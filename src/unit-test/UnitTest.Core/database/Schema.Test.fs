@@ -262,7 +262,6 @@ module SchemaTestModule =
             dsProj.ToSqlite3(connStr, removeExistingData)
 
 
-        //let dsProject4 = dsProject3.Duplicate(additionalPassiveSystems=[dsSystem4]) |> tee (fun z -> z.Name <- "CopiedProject")
         let dsProject4 =
             let dsSystem4 = dsProject3.Systems[0].Duplicate()
             validateRuntime dsSystem4 |> ignore

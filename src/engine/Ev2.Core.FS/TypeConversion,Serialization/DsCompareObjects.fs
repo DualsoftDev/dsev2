@@ -7,7 +7,7 @@ open System.ComponentModel
 
 [<AutoOpen>]
 module rec DsCompareObjects =
-    type IUnique with
+    type IUnique with   // GetGuid, GetName, TryGetId, GetDateTime, TryGetRawParent
         member x.GetGuid():Guid =
             match x with
             | :? Unique as u    -> u.Guid
@@ -73,7 +73,7 @@ module rec DsCompareObjects =
     type internal Ucc = UniqueCompareCriteria
     type internal Ucr = UniqueCompareResult
 
-    type IRtUnique with
+    type IRtUnique with // ComputeDiffUnique
         member internal x.ComputeDiffUnique(y:IRtUnique, criteria:Ucc): Ucr seq =
             let c = criteria
             seq {
@@ -114,7 +114,7 @@ module rec DsCompareObjects =
         }
 
 
-    type RtProject with
+    type RtProject with // ComputeDiff
         member x.ComputeDiff(y:RtProject, ?criteria:Ucc): Ucr seq =
             let c = criteria |? Ucc()
             seq {
@@ -129,7 +129,7 @@ module rec DsCompareObjects =
                 if c.Author && x.Author <> y.Author then yield Diff("Author", x, y)
             }
 
-    type RtSystem with
+    type RtSystem with // ComputeDiff
         member x.ComputeDiff(y:RtSystem, ?criteria:Ucc): Ucr seq =
             seq {
                 yield! (x.Flows   , y.Flows   , criteria) |||> computeDiffList
@@ -146,7 +146,7 @@ module rec DsCompareObjects =
             }
 
 
-    type RtFlow with
+    type RtFlow with // ComputeDiff
         member x.ComputeDiff(y:RtFlow, ?criteria:Ucc): Ucr seq =
             seq {
                 if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y)
@@ -155,7 +155,7 @@ module rec DsCompareObjects =
                 //yield! (x.Works, y.Works, criteria) |||> computeDiffList
             }
 
-    type RtWork with
+    type RtWork with // ComputeDiff
         member x.ComputeDiff(y:RtWork, ?criteria:Ucc): Ucr seq =
             seq {
                 if (x.System |-> _.Guid) <> (y.System |-> _.Guid) then yield Diff("OwnerSystem", x, y)
@@ -168,7 +168,7 @@ module rec DsCompareObjects =
                 yield! (x.Arrows, y.Arrows, criteria) |||> computeDiffList
             }
 
-    type RtCall with
+    type RtCall with // ComputeDiff
         member x.ComputeDiff(y:RtCall, ?criteria:Ucc): Ucr seq =
             seq {
                 if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff("Work", x, y)
@@ -182,13 +182,13 @@ module rec DsCompareObjects =
                 if d1 then yield Diff("ApiCalls", x, y)
             }
 
-    type RtApiDef with
+    type RtApiDef with // ComputeDiff
         member x.ComputeDiff(y:RtApiDef, ?criteria:Ucc): Ucr seq =
             seq {
                 if x.IsPush <> y.IsPush   then yield Diff("IsPush", x, y)
             }
 
-    type RtApiCall with
+    type RtApiCall with // ComputeDiff
         member x.ComputeDiff(y:RtApiCall, ?criteria:Ucc): Ucr seq =
             seq {
                 if x.ApiDefGuid <> y.ApiDefGuid then yield Diff("ApiDefGuid", x, y)
@@ -200,7 +200,7 @@ module rec DsCompareObjects =
                 if x.Value      <> y.Value      then yield Diff("Value", x, y)
             }
 
-    type RtArrowBetweenWorks with
+    type RtArrowBetweenWorks with // ComputeDiff
         member x.ComputeDiff(y:RtArrowBetweenWorks, ?criteria:Ucc): Ucr seq =
             seq {
                 if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
@@ -208,7 +208,7 @@ module rec DsCompareObjects =
                 if x.Type <> y.Type then yield Diff("Type", x, y)
             }
 
-    type RtArrowBetweenCalls with
+    type RtArrowBetweenCalls with // ComputeDiff
         member x.ComputeDiff(y:RtArrowBetweenCalls, ?criteria:Ucc): Ucr seq =
             seq {
                 if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
@@ -216,7 +216,7 @@ module rec DsCompareObjects =
                 if x.Type <> y.Type then yield Diff("Type", x, y)
             }
 
-    type IRtUnique with
+    type IRtUnique with // ComputeDiff, IsEqual
         member internal x.ComputeDiff(y:IRtUnique, ?criteria:Ucc): Ucr seq =
             seq {
                 let c = criteria |? Ucc()

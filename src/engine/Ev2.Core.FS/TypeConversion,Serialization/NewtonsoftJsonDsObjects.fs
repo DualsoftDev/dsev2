@@ -563,10 +563,6 @@ module Ds2JsonModule =
             EmJson.FromJson<NjProject>(json, settings)
 
 
-    //type DsSystem with
-    //    member x.ToJson():string = EmJson.ToJson(x)
-    //    static member FromJson(json:string): DsSystem = EmJson.FromJson<DsSystem>(json)
-
     /// Runtime 객체의 validation
     let internal validateRuntime (rtObj:#RtUnique): #RtUnique =
         let xxx = rtObj.EnumerateRtObjects() |> toArray
@@ -574,20 +570,12 @@ module Ds2JsonModule =
         rtObj.Validate(guidDic)
         rtObj
 
-    ///// Editable 객체의 validation
-    //let internal validateEditable (edObj:#EdUnique): #EdUnique =
-    //    let guidDic = edObj.EnumerateEdObjects().ToDictionary(_.Guid, id)
-    //    edObj.Validate(guidDic)
-    //    edObj
 
 
-    type RtProject with
+    type RtProject with // // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string = NjProject.FromRuntime(x).ToJson()
-        member x.ToJson(jsonFilePath:string) =
-            NjProject.FromRuntime(x).ToJsonFile(jsonFilePath)
-            //EmJson.ToJson(x)
-            //|> tee(fun json -> File.WriteAllText(jsonFilePath, json))
+        member x.ToJson(jsonFilePath:string) = NjProject.FromRuntime(x).ToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): RtProject =

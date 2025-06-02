@@ -263,11 +263,6 @@ module internal Ds2SqliteImpl =
 module internal Sqlite2DsImpl =
     open Ds2SqliteImpl
 
-    //type Db2EdBag() =
-    //    member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
-    //    member val EdDic = Dictionary<Guid, Unique>()
-
-
     let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
         ()
 
@@ -490,7 +485,7 @@ module Ds2SqliteModule =
         ddic.Set<Db2RtBag>(Db2RtBag())
         DbApi(connStr, DDic=ddic)
 
-    type RtProject with
+    type RtProject with // ToSqlite3, FromSqlite3
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
             let dbApi = createDbApi connStr
             project2Sqlite x dbApi removeExistingData
@@ -499,7 +494,7 @@ module Ds2SqliteModule =
             let dbApi = createDbApi connStr
             fromSqlite3 identifier dbApi
 
-    type RtSystem with
+    type RtSystem with  // ToSqlite3, FromSqlite3
         member x.ToSqlite3(connStr:string, ?removeExistingData:bool) =
             let dbApi = createDbApi connStr
             system2Sqlite x dbApi removeExistingData

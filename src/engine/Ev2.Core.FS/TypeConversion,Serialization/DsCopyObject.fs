@@ -25,7 +25,7 @@ module internal rec DsObjectCopyImpl =
         oldName
 //#endif
 
-    type RtProject with
+    type RtProject with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let prototypes = x.PrototypeSystems |-> _.replicate(bag) |> toArray
@@ -44,7 +44,7 @@ module internal rec DsObjectCopyImpl =
 
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
-    type RtFlow with
+    type RtFlow with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
@@ -52,7 +52,7 @@ module internal rec DsObjectCopyImpl =
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type RtSystem with
+    type RtSystem with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
@@ -76,7 +76,7 @@ module internal rec DsObjectCopyImpl =
             ) |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
-    type RtWork with
+    type RtWork with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
@@ -99,7 +99,7 @@ module internal rec DsObjectCopyImpl =
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type RtCall with
+    type RtCall with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
@@ -107,7 +107,7 @@ module internal rec DsObjectCopyImpl =
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type RtApiCall with
+    type RtApiCall with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
@@ -116,7 +116,7 @@ module internal rec DsObjectCopyImpl =
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
-    type RtApiDef with
+    type RtApiDef with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtApiDef(x.IsPush)
@@ -124,7 +124,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
-    type RtArrowBetweenWorks with
+    type RtArrowBetweenWorks with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> RtWork
@@ -134,7 +134,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
-    type RtArrowBetweenCalls with
+    type RtArrowBetweenCalls with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> RtCall
@@ -147,7 +147,7 @@ module internal rec DsObjectCopyImpl =
 module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
 
-    type RtSystem with
+    type RtSystem with // Replicate, Duplicate
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
@@ -195,9 +195,9 @@ module DsObjectCopyAPIModule =
             replica
 
 
-    type RtProject with
+    type RtProject with // Replicate, Duplicate
         /// RtProject 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
-        member x.Replicate() =
+        member x.Replicate() =  // RtProject
             x.EnumerateRtObjects() |> iter (fun z -> z.DDic.Clear())
 
             x.replicate(ReplicateBag())
@@ -206,7 +206,7 @@ module DsObjectCopyAPIModule =
 
 
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        member x.Duplicate() =
+        member x.Duplicate() =  // RtProject
             RtProject.Create()
             |> tee(fun z ->
                 let actives  = x.ActiveSystems |-> _.Duplicate()
@@ -224,54 +224,10 @@ module DsObjectCopyAPIModule =
                 z.LastConnectionString <- x.LastConnectionString )
             |> uniqName (nn x.Name)
 
-        /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        //member x.Duplicate() =
-        //    let current = now()
-        //    x.Replicate()
-        //    |> uniqRenew
-        //    |> tee(fun z ->
-        //        z.ActiveSystems @ z.PassiveSystems
-        //        |> tee (fun ss ->
-        //            ss |> iter (fun s ->
-        //                s.RawParent <- Some z) )
-        //        >>= _.EnumerateRtObjects()
-        //        |> iter (fun obj ->
-        //            obj.Id <- None
-        //            obj.Guid <- newGuid()
-        //            obj.DateTime <- current))
-        //    |> uniqName (nn x.Name)
-        //    //|> tee(fun p -> (actives @ passives) |> iter (fun s -> s.RawParent <- Some p))
-        //    |> validateRuntime
 
-
-    //type RtProject with
-
-
-    //    /// RtSystem 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-    //    member x.Duplicate(?additionalActiveSystems:RtSystem seq, ?additionalPassiveSystems:RtSystem seq) =
-    //        let plusActiveSystems  = additionalActiveSystems  |? Seq.empty |> toList
-    //        let plusPassiveSystems = additionalPassiveSystems |? Seq.empty |> toList
-    //        let actives  = (x.ActiveSystems  @ plusActiveSystems)  |-> _.Duplicate() |> toArray
-    //        let passives = (x.PassiveSystems @ plusPassiveSystems) |-> _.Duplicate() |> toArray
-
-    //        (actives @ passives) |> iter (fun s -> s.RawParent <- Some x)
-    //        x |> _.Duplicate(actives, passives)  |> validateRuntime
-
-
-
-    //type RtSystem with
-    //    /// RtSystem 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
-    //    member x.Replicate() = x.replicate(ReplicateBag()) |> validateRuntime
-
-    //    /// RtSystem 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-    //    member x.Duplicate() = x.duplicate(ReplicateBag()) |> validateRuntime
-    //        //x.Duplicate()     |> validateEditable
-    //        //|> _.ToRuntimeSystem(Ed2RtBag()) |> validateRuntime
-
-    let duplicateUnique (source:IUnique): IUnique =
+    /// fwdDuplicate <- duplicateUnique
+    let internal duplicateUnique (source:IUnique): IUnique =
         match source with
-        //| :? EdSystem  as es -> es.Duplicate()
-        //| :? EdProject as ep -> ep.Duplicate()
         | :? RtSystem  as rs -> rs.Duplicate()
         | :? RtProject as rp -> rp.Duplicate()
         | _ -> failwithf "Unsupported type for duplication: %A" (source.GetType())

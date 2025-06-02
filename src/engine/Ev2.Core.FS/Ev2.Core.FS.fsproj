@@ -18,7 +18,6 @@
 		<Compile Include="database\Database.Schema.fs" />
 		<Compile Include="database\Database.ORM.fs" />
 		<Compile Include="database\DbApi.fs" />
-		<Compile Include="TypeConversion,Serialization\EditableDsObjects.fs" />
 		<Compile Include="TypeConversion,Serialization\NewtonsoftJsonDsObjects.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopyObject.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCompareObjects.fs" />
