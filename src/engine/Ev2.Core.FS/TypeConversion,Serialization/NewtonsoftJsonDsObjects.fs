@@ -10,6 +10,7 @@ open System.IO
 open System.Linq
 open System.Collections.Generic
 open System.Text.RegularExpressions
+open Newtonsoft.Json.Linq
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -570,3 +571,45 @@ module Ds2JsonModule =
             |> NjProject.FromJson
             |> _.RuntimeObject :?> RtProject        // de-serialization 연결 고리
             |> validateRuntime
+
+
+
+
+
+    type NjSystem with
+        /// DsSystem 를 JSON 문자열로 변환
+        member x.ExportToJson():string = EmJson.ToJson(x)
+        member x.ExportToJsonFile(jsonFilePath:string) =
+            x.ExportToJson()
+            |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
+
+        /// JSON 문자열을 DsSystem 로 변환
+        static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
+
+        static member FromRuntime(rt:RtSystem) =
+            NjSystem(Author=rt.Author
+                , LangVersion=rt.LangVersion
+                , EngineVersion=rt.EngineVersion
+                , Description=rt.Description)
+            |> toNjUniqINGD rt
+            |> tee(fun nj -> verify (nj.RuntimeObject = rt)) // serialization 연결 고리
+
+    type RtSystem with // // ToJson, FromJson
+        /// DsSystem 를 JSON 문자열로 변환
+        member x.ExportToJson():string = NjSystem.FromRuntime(x).ExportToJson()
+        member x.ExportToJson(jsonFilePath:string) = NjSystem.FromRuntime(x).ExportToJsonFile(jsonFilePath)
+
+        /// JSON 문자열을 DsSystem 로 변환
+        static member ImportFromJson(json:string): RtSystem =
+            let jObject = JObject.Parse(json)
+            match jObject.TryGet("RuntimeType") with
+            | Some jValue when jValue.ToString() = "System" ->
+                json
+                |> NjSystem.ImportFromJson
+                |> _.RuntimeObject :?> RtSystem        // de-serialization 연결 고리
+                |> validateRuntime
+            | _ -> // RuntimeType 이 없거나, 잘못된 경우
+                failwith "Invalid system JSON file.  'RuntimeType' not found or mismatch."
+
+
+
