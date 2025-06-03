@@ -76,12 +76,19 @@ module Interfaces =
 
 [<AutoOpen>]
 module internal UniqueHelpers =
+    /// Unique 객체의 RawParent 설정.  pipe 지원
     let setParent (parent:Unique) (x:#Unique) : #Unique =
         x.RawParent <- Some parent
         x
 
+    /// Unique 객체의 RawParent 설정.  pipe 미지원. (unit 반환)
     let setParentI (parent:Unique) (x:#Unique): unit = x.RawParent <- Some parent
+
+    /// Unique 객체의 RawParent 제거
     let clearParentI (x:#Unique): unit = x.RawParent <- None
+
+    /// Unique 객체의 parent guid 부합 체크
+    let isParentGuid (x:#Unique) (maybeParentGuid:Guid) = x.RawParent |-> _.Guid = Some maybeParentGuid
 
     let uniqReplicate (src:#Unique) (dst:#Unique) : #Unique =
         dst.Id <- src.Id

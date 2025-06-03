@@ -25,6 +25,8 @@ module ConstEnums =
         | Single = 48
         | Double = 49
 
+        | String = 60
+
     type DbRangeType =
         | None = 0
         /// 단일 값 지정

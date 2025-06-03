@@ -8,6 +8,8 @@ open System.Collections.Generic
 module rec TmpCompatibility =
     type RtUnique with  // UpdateDateTime, EnumerateRtObjects
         /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        ///
+        /// project, system 만 date time 가지는 걸로 변경 고려 중..
         member x.UpdateDateTime(?dateTime:DateTime) =
             let dateTime = dateTime |?? now
             x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
@@ -164,17 +166,20 @@ module DsObjectUtilsModule =
                 arrows   |> iter (setParentI z)
                 apiDefs  |> iter (setParentI z)
                 apiCalls |> iter (setParentI z) )
+
         static member Create() = RtSystem(None, [||], [||], [||], [||], [||])
 
     type RtWork with
         static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) =
             let calls = calls |> toList
             let arrows = arrows |> toList
+
             RtWork(calls, arrows, flow)
             |> tee (fun z ->
                 calls  |> iter (setParentI z)
                 arrows |> iter (setParentI z)
                 flow   |> iter (setParentI z) )
+
         static member Create() = RtWork([], [], None)
 
     type RtCall with
@@ -182,6 +187,7 @@ module DsObjectUtilsModule =
             autoPre:string, safety:string, isDisabled:bool, timeout:int option
         ) =
             let apiCallGuids = apiCalls |-> _.Guid
+
             RtCall(callType, apiCallGuids, autoPre, safety, isDisabled, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (setParentI z) )
@@ -190,27 +196,30 @@ module DsObjectUtilsModule =
 
     type RtApiDef with
         static member Create() = RtApiDef(true)
+
     type RtApiCall with
-        static member Create() = RtApiCall(emptyGuid, nullString, nullString, nullString, nullString, DbDataType.None, DbRangeType.Single, nullString, nullString)
+        static member Create() =
+            RtApiCall(emptyGuid, nullString, nullString, nullString, nullString,
+                      DbDataType.None, DbRangeType.Single, nullString, nullString)
 
+        member private x.tryGetValue(value:string) =
+            match x.ValueType with
+            | DbDataType.Int8   -> value |> SByte  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)     // 단순 |-> box 사용시 반환값이 objnull option 이 됨.. 명시적으로 boxing
+            | DbDataType.Int16  -> value |> Int16  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Int32  -> value |> Int32  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Int64  -> value |> Int64  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Uint8  -> value |> Byte   .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Uint16 -> value |> UInt16 .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Uint32 -> value |> UInt32 .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Uint64 -> value |> UInt64 .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Single -> value |> Single .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Double -> value |> Double .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.Bool   -> value |> Boolean.TryParse |> tryParseToOption |-> (fun z -> z :> obj)
+            | DbDataType.String -> Some value
+            | _ -> failwith $"Unsupported ValueType: {x.ValueType}"
 
-    [<AbstractClass>]
-    type ParameterBase() =
-        interface IParameter
-
-    type ProjectParameter() =
-        // name, langVersion, engineVersion, description, author, dateTime, activeSystems, passiveSystems
-        inherit ParameterBase()
-
-    type SystemParameter() =
-        inherit ParameterBase()
-
-    type IParameterContainer with
-        member x.GetParameter(): IParameter =
-            match x with
-            | :? RtProject as prj -> ProjectParameter() :> IParameter
-            | :? RtSystem as sys -> SystemParameter()
-            | _ -> failwith $"GetParameter not implemented for {x.GetType()}"
+        member x.TryGetValue1() = x.tryGetValue(x.Value1)
+        member x.TryGetValue2() = x.tryGetValue(x.Value2)
 
 
     type IArrow with
@@ -262,13 +271,13 @@ module DsObjectUtilsModule =
             | :? RtProject as prj ->
                 prj.Systems |> iter _.Validate(guidDic)
                 for s in prj.Systems do
-                    verify (s.RawParent.Value.Guid = prj.Guid)
+                    verify (prj.Guid |> isParentGuid s)
             | :? RtSystem as sys ->
                 sys.Works |> iter _.Validate(guidDic)
 
 
                 for w in sys.Works  do
-                    verify (w.RawParent.Value.Guid = sys.Guid)
+                    verify (sys.Guid |> isParentGuid w)
                     for c in w.Calls do
                         c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
                         c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
@@ -278,17 +287,17 @@ module DsObjectUtilsModule =
 
                 sys.Arrows |> iter _.Validate(guidDic)
                 for a in sys.Arrows do
-                    verify (a.RawParent.Value.Guid = sys.Guid)
+                    verify (sys.Guid |> isParentGuid a)
                     sys.Works |> contains a.Source |> verify
                     sys.Works |> contains a.Target |> verify
 
                 sys.ApiDefs |> iter _.Validate(guidDic)
                 for w in sys.ApiDefs do
-                    verify (w.RawParent |-> _.Guid = Some sys.Guid)
+                    verify (sys.Guid |> isParentGuid w)
 
                 sys.ApiCalls |> iter _.Validate(guidDic)
                 for ac in sys.ApiCalls  do
-                    verify (ac.RawParent |-> _.Guid = Some sys.Guid)
+                    verify (sys.Guid |> isParentGuid ac)
 
             | :? RtFlow as flow ->
                 let works = flow.Works
@@ -300,17 +309,35 @@ module DsObjectUtilsModule =
             | :? RtWork as work ->
                 work.Calls |> iter _.Validate(guidDic)
                 for c in work.Calls do
-                    verify (c.RawParent.Value.Guid = work.Guid)
+                    verify (work.Guid |> isParentGuid c)
 
                 work.Arrows |> iter _.Validate(guidDic)
                 for a in work.Arrows do
-                    verify (a.RawParent.Value.Guid = work.Guid)
+                    verify (work.Guid |> isParentGuid a)
                     work.Calls |> contains a.Source |> verify
                     work.Calls |> contains a.Target |> verify
 
 
             | :? RtCall as call ->
                 ()
+
+            | :? RtApiCall as ac ->
+                verify (ac.ValueType <> DbDataType.None)
+                match ac.RangeType with
+                | DbRangeType.None -> verify (false)
+                | DbRangeType.Single ->
+                    verify (ac.Value1.NonNullAny())
+                    ac.TryGetValue1().IsSome |> verify
+                | _ ->
+                    verify (ac.Value1.NonNullAny() && ac.Value2.NonNullAny())
+                    ac.TryGetValue1().IsSome |> verify
+                    ac.TryGetValue2().IsSome |> verify
+                ()
+
+            | :? RtApiDef as ad ->
+                ()
+
+
             | _ ->
                 //tracefn $"Skipping {(x.GetType())} in Validate"
                 ()
