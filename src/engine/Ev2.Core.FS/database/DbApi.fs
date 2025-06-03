@@ -60,10 +60,11 @@ module DbApiModule =
                         File.WriteAllText(sqlSpecFile, header + schema)
 #endif
                         conn.Execute(schema) |> ignore
-                        insertEnumValues<DbCallType> conn
-                        insertEnumValues<DbDataType> conn
-                        insertEnumValues<DbArrowType> conn
                         insertEnumValues<DbStatus4> conn
+                        insertEnumValues<DbCallType> conn
+                        insertEnumValues<DbArrowType> conn
+                        insertEnumValues<DbDataType> conn
+                        insertEnumValues<DbRangeType> conn
                     try
                         if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()
@@ -240,9 +241,10 @@ module ORMTypeConversionModule =
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtApiCall as z ->
-                let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType) |? int DbDataType.None
+                let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType).Value
+                let rangeTypeId = dbApi.TryFindEnumValueId<DbRangeType>(z.RangeType).Value
                 let apiDefId = guidDic[z.ApiDefGuid].Id.Value
-                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, z.Value)
+                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, rangeTypeId, z.Value1, z.Value2)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

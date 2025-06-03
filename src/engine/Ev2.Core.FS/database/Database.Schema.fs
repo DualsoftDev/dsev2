@@ -319,11 +319,14 @@ CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
     , [outSymbol]       TEXT NOT NULL
 
     -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
-    , [value]           TEXT NOT NULL   -- 값 범위 또는 단일 값 조건 정의 (선택 사항).  ValueParam type
+    , [value1]          TEXT -- 값
+    , [value2]          TEXT -- 값
     , [valueTypeId]     {intKeyType} NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
+    , [rangeTypeId]     {intKeyType} NOT NULL         -- (e.g. "Single", "min_max", ...
     , [apiDefId]        {intKeyType} NOT NULL
-    , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
-    , FOREIGN KEY(valueTypeId)   REFERENCES {Tn.Enum}(id)
+    , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
+    , FOREIGN KEY(valueTypeId) REFERENCES {Tn.Enum}(id)
+    , FOREIGN KEY(rangeTypeId) REFERENCES {Tn.Enum}(id)
 );
 
 CREATE TABLE [{Tn.ApiDef}]( {sqlUniqWithName()}
@@ -444,8 +447,10 @@ CREATE VIEW [{Vn.ApiCall}] AS
         , x.[outAddress]
         , x.[inSymbol]
         , x.[outSymbol]
-        , x.[value]
-        , enum.[name] AS valueType
+        , x.[value1]
+        , x.[value2]
+        , enumV.[name] AS valueType
+        , enumR.[name] AS rangeType
         , ad.[id]   AS apiDefId
         , ad.[name] AS apiDefName
         , s.[id]    AS systemId
@@ -453,7 +458,8 @@ CREATE VIEW [{Vn.ApiCall}] AS
     FROM [{Tn.ApiCall}] x
     JOIN [{Tn.ApiDef}] ad ON ad.id = x.apiDefId
     JOIN [{Tn.System}] s  ON s.id = ad.systemId
-    JOIN [{Tn.Enum}] enum ON enum.id = x.valueTypeId
+    JOIN [{Tn.Enum}] enumV ON enumV.id = x.valueTypeId
+    JOIN [{Tn.Enum}] enumR ON enumR.id = x.rangeTypeId
     ;
 
 

@@ -256,13 +256,16 @@ module rec NewtonsoftJsonObjects =
         member val OutAddress = nullString with get, set
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
-        member val Value      = nullString with get, set
-        member val ValueType  = DbDataType.None.ToString() with get, set
+        member val ValueType  = nullString with get, set
+        member val RangeType  = nullString with get, set
+        member val Value1     = nullString with get, set
+        member val Value2     = nullString with get, set
 
         static member FromRuntime(rt:RtApiCall) =
             NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
                 InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
-                Value=rt.Value, ValueType=rt.ValueType.ToString() )
+                ValueType=rt.ValueType.ToString(), RangeType=rt.RangeType.ToString(),
+                Value1=rt.Value1, Value2=rt.Value2 )
             |> toNjUniqINGD rt
 
     type NjApiDef() =
@@ -510,8 +513,15 @@ module rec NewtonsoftJsonObjects =
                 |> tryParseToOption
                 |? DbDataType.None
 
+            let rangeType =
+                njac.RangeType
+                |> Enum.TryParse<DbRangeType>
+                |> tryParseToOption
+                |? DbRangeType.None
+
             njac.RuntimeObject <-
-                RtApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol, valueType, njac.Value)
+                RtApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
+                    valueType, rangeType, njac.Value1, njac.Value2)
                 |> fromNjUniqINGD njac
 
         | :? NjApiDef as njad ->

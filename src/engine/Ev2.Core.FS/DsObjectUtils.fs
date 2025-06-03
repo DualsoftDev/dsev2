@@ -191,7 +191,7 @@ module DsObjectUtilsModule =
     type RtApiDef with
         static member Create() = RtApiDef(true)
     type RtApiCall with
-        static member Create() = RtApiCall(emptyGuid, nullString, nullString, nullString, nullString, DbDataType.None, nullString)
+        static member Create() = RtApiCall(emptyGuid, nullString, nullString, nullString, nullString, DbDataType.None, DbRangeType.Single, nullString, nullString)
 
 
     [<AbstractClass>]

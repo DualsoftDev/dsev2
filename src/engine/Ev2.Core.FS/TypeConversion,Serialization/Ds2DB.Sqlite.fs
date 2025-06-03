@@ -124,7 +124,7 @@ module internal Ds2SqliteImpl =
             let r = conn.Upsert(Tn.ApiCall, ormApiCall,
                         [   "Id"; "Guid"; "DateTime"; "Name"
                             "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
-                            "InSymbol"; "OutSymbol"; "ValueTypeId"; "Value"],
+                            "InSymbol"; "OutSymbol"; "ValueTypeId"; "RangeTypeId"; "Value1"; "Value2"],
                         onInserted=idUpdator [ormApiCall; rtAc;])
             let xxx = r
             noop()
@@ -370,8 +370,9 @@ module internal Sqlite2DsImpl =
                             |> _.Guid
 
                         let valueType = dbApi.TryFindEnumValue<DbDataType> orm.ValueTypeId |> Option.get
+                        let rangeType = dbApi.TryFindEnumValue<DbRangeType> orm.RangeTypeId |> Option.get
                         RtApiCall(s2guid apiDefGuid, orm.InAddress, orm.OutAddress,
-                                    orm.InSymbol, orm.OutSymbol, valueType, orm.Value)
+                                    orm.InSymbol, orm.OutSymbol, valueType, rangeType, orm.Value1, orm.Value2)
                         |> fromOrmUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edApiCalls |> s.AddApiCalls

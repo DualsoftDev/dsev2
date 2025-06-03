@@ -42,8 +42,11 @@ module CreateSampleModule =
                     z.OutAddress<- "OutAddress1"
                     z.InSymbol  <- "XTag1"
                     z.OutSymbol <- "YTag2"
-                    z.ValueType <- DbDataType.Bool
-                    z.Value     <- "false")
+                    z.ValueType <- DbDataType.Double
+                    z.RangeType <- DbRangeType.MIN_MAX
+                    z.Value1    <- "3.14"
+                    z.Value2    <- "9.99"
+                    )
             [edApiCall1a] |> edSystem.AddApiCalls
 
             edFlow    <- RtFlow   (Name = "MainFlow")

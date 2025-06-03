@@ -118,7 +118,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             RtApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress,
-                      x.InSymbol, x.OutSymbol, x.ValueType, x.Value)
+                      x.InSymbol, x.OutSymbol, x.ValueType, x.RangeType, x.Value1, x.Value2)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
