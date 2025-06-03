@@ -151,6 +151,7 @@ module rec DsObjectModule =
         member val internal RawCalls  = ResizeArray calls
         member val internal RawArrows = ResizeArray arrows
         member val Flow   = flow with get, set
+        member val Status4 = Option<DbStatus4>.None with get, set
 
         member x.Calls  = x.RawCalls  |> toList
         member x.Arrows = x.RawArrows |> toList
@@ -166,6 +167,7 @@ module rec DsObjectModule =
         member val Safety     = safety     with get, set
         member val IsDisabled = isDisabled with get, set
         member val Timeout    = timeout    with get, set
+        member val Status4 = Option<DbStatus4>.None with get, set
         member val ApiCallGuids = ResizeArray apiCallGuids    // DB 저장시에는 callId 로 저장
 
         member x.Work = x.RawParent >>= tryCast<RtWork>

@@ -63,6 +63,7 @@ module DbApiModule =
                         insertEnumValues<DbCallType> conn
                         insertEnumValues<DbDataType> conn
                         insertEnumValues<DbArrowType> conn
+                        insertEnumValues<DbStatus4> conn
                     try
                         if not <| conn.IsTableExists(Tn.EOT) then
                             createDb()
@@ -140,9 +141,11 @@ module ORMTypeConversionModule =
         member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : int option =
             let category = typeof<'TEnum>.Name
             let name = enumValue.ToString()
-            dbApi.EnumCache.Value
-            |> tryFind(fun e -> e.Category = category && e.Name = name)
-            >>= (fun e -> e.Id |> Option.ofNullable)
+            use conn = dbApi.CreateConnection()
+            conn.TryQuerySingle<ORMEnum>(
+                $"SELECT * FROM {Tn.Enum} WHERE Category = @Category AND Name = @Name",
+                {| Category = category; Name = name |}
+            ) >>= (fun z -> n2o z.Id)
 
         /// DB 의 enum id 에 해당하는 enum value 를 찾는다.  e.g. 1 -> DbCallType.Call
         member dbApi.TryFindEnumValue<'TEnum
@@ -152,18 +155,17 @@ module ORMTypeConversionModule =
                 and 'TEnum :> ValueType>
             (enumId: int) : 'TEnum option =
 
-            let category = typeof<'TEnum>.Name
-            dbApi.EnumCache.Value
-            |> tryFind(fun e -> e.Id = Nullable enumId)
+            use conn = dbApi.CreateConnection()
+            conn.TryQuerySingle<ORMEnum>($"SELECT * FROM {Tn.Enum} WHERE id = {enumId}")
             >>= (fun z -> Enum.TryParse<'TEnum>(z.Name) |> tryParseToOption)
 
-
     type ORMCall with   // Create
-        static member Create(dbApi:DbApi, workId:Id, dbCallType:DbCallType,
+        static member Create(dbApi:DbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
             autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>
         ): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
-            ORMCall(workId, callTypeId, autoPre, safety, isDisabled, timeout)
+            let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
+            ORMCall(workId, status4Id, callTypeId, autoPre, safety, isDisabled, timeout)
 
     let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
         let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
@@ -205,11 +207,12 @@ module ORMTypeConversionModule =
 
             | :? RtWork as z ->
                 let flowId = (z.Flow >>= _.Id) |> Option.toNullable
-                ORMWork  (pid, flowId)
+                let status4Id = z.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
+                ORMWork  (pid, status4Id, flowId)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtCall as z ->
-                ORMCall.Create(dbApi, pid, z.CallType, z.AutoPre, z.Safety, z.IsDisabled, o2n z.Timeout)
+                ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoPre, z.Safety, z.IsDisabled, o2n z.Timeout)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.

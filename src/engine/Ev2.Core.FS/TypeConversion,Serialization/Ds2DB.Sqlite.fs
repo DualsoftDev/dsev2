@@ -135,8 +135,8 @@ module internal Ds2SqliteImpl =
             ormWork.SystemId <- Nullable sysId
 
             let workId = conn.Insert($"""INSERT INTO {Tn.Work}
-                                (guid, dateTime,   name, systemId, flowId)
-                         VALUES (@Guid, @DateTime, @Name, @SystemId, @FlowId);""", ormWork, tr)
+                                (guid, dateTime,   name, systemId, status4Id, flowId)
+                         VALUES (@Guid, @DateTime, @Name, @SystemId, @Status4Id, @FlowId);""", ormWork, tr)
 
             w.Id <- Some workId
             ormWork.Id <- workId
@@ -148,8 +148,8 @@ module internal Ds2SqliteImpl =
 
                 let callId =
                     conn.Insert($"""INSERT INTO {Tn.Call}
-                                (guid, dateTime,   name, workId,   callTypeId,  autoPre, safety, isDisabled, timeout)
-                         VALUES (@Guid, @DateTime, @Name, @WorkId, @CallTypeId, @AutoPre, @Safety, @IsDisabled, @Timeout);""", ormCall, tr)
+                                (guid, dateTime,   name, workId,   status4Id,  callTypeId,  autoPre, safety, isDisabled, timeout)
+                         VALUES (@Guid, @DateTime, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoPre, @Safety, @IsDisabled, @Timeout);""", ormCall, tr)
 
                 c.Id <- Some callId
                 ormCall.Id <- callId
@@ -388,6 +388,8 @@ module internal Sqlite2DsImpl =
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
+                                //w.Status4 <- orm.Status4Id
+                                w.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
                                 w.Flow <- Some flow )
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
@@ -402,7 +404,6 @@ module internal Sqlite2DsImpl =
                         for orm in orms do
                             bag.DbDic.Add(orm.Guid, orm) |> ignore
 
-                            //type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoPre:string, safety:string, isDisabled:bool, timeout:int option) =
                             let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
                             let apiCallGuids =
                                 conn.Query<Guid>($"""SELECT ac.guid
@@ -416,6 +417,7 @@ module internal Sqlite2DsImpl =
                             |> fromOrmUniqINGD orm
                             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                             |> tee(fun c ->
+                                c.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
                                 edApiCalls
                                 |> iter (fun apiCall ->
                                     apiCall

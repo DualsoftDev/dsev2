@@ -47,9 +47,9 @@ module CreateSampleModule =
             [edApiCall1a] |> edSystem.AddApiCalls
 
             edFlow    <- RtFlow   (Name = "MainFlow")
-            edWork1   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
-            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlow)
-            edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1")
+            edWork1   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1"; z.Status4 <- Some DbStatus4.Ready)
+            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Status4 <- Some DbStatus4.Going; z.Flow <- Some edFlow)
+            edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1";    z.Status4 <- Some DbStatus4.Finished)
             [edWork1; edWork2; edWork3] |> edSystem.AddWorks
             [edFlow] |> edSystem.AddFlows
 
@@ -61,6 +61,7 @@ module CreateSampleModule =
                 RtCall.Create()
                 |> tee(fun z ->
                     z.Name     <- "Call1a"
+                    z.Status4  <- Some DbStatus4.Ready
                     z.CallType <- DbCallType.Parallel
                     z.AutoPre  <- "AutoPre 테스트 1"
                     z.Safety   <- "안전조건1"
@@ -71,11 +72,12 @@ module CreateSampleModule =
                 RtCall.Create()
                 |> tee (fun z ->
                     z.Name <- "Call1b"
+                    z.Status4 <- Some DbStatus4.Finished
                     z.CallType <- DbCallType.Repeat)
 
             edWork1.AddCalls [edCall1a; edCall1b]
-            edCall2a  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2a")
-            edCall2b  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2b")
+            edCall2a  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
+            edCall2b  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished)
             edWork2.AddCalls [edCall2a; edCall2b]
             edProject.AddActiveSystem edSystem
             edFlow.AddWorks([edWork1])

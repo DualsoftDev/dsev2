@@ -183,6 +183,9 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         interface INjWork
         member val FlowGuid = null:string with get, set
+
+        // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
+
         member val Calls: NjCall[] = [||] with get, set
         member val Arrows:NjArrow[] = [||] with get, set
 
@@ -223,6 +226,9 @@ module rec NewtonsoftJsonObjects =
         member val CallType = DbCallType.Normal.ToString() with get, set
         /// Json serialize 용 API call 에 대한 Guid
         member val ApiCalls   = [||]:Guid[]     with get, set
+
+        // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
+
         member val AutoPre    = nullString      with get, set
         member val Safety     = nullString      with get, set
         member val IsDisabled = false           with get, set
@@ -323,11 +329,15 @@ module rec NewtonsoftJsonObjects =
             njs.ApiCalls |> iter onNsJsonSerializing
 
         | :? NjWork as njw ->
+            let rtw = njw.RuntimeObject :?> RtWork
             njw.Arrows |> iter onNsJsonSerializing
             njw.Calls  |> iter onNsJsonSerializing
 
+        | :? NjCall as njc ->
+            let rtc = njc.RuntimeObject :?> RtCall
+            ()
 
-        | (:? NjFlow) | (:? NjCall) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
+        | (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
             (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
             ()
 
@@ -396,21 +406,21 @@ module rec NewtonsoftJsonObjects =
             let flows = njs.Flows |-> (fun z -> z.RuntimeObject :?> RtFlow)
 
             let works = [|
-                for w in njs.Works do
+                for njw in njs.Works do
                     let optFlow =
-                        if w.FlowGuid.NonNullAny() then
-                            flows |> tryFind (fun f -> f.Guid = s2guid w.FlowGuid)
+                        if njw.FlowGuid.NonNullAny() then
+                            flows |> tryFind (fun f -> f.Guid = s2guid njw.FlowGuid)
                         else
                             None
-                    let calls  = w.Calls  |-> (fun z -> z.RuntimeObject :?> RtCall)
-                    let arrows = w.Arrows |-> (fun z -> z.RuntimeObject :?> RtArrowBetweenCalls)
+                    let calls  = njw.Calls  |-> (fun z -> z.RuntimeObject :?> RtCall)
+                    let arrows = njw.Arrows |-> (fun z -> z.RuntimeObject :?> RtArrowBetweenCalls)
 
                     let dsWork =
                         RtWork.Create(calls, arrows, optFlow)
-                        |> fromNjUniqINGD w
+                        |> fromNjUniqINGD njw
 
                     yield dsWork
-                    w.RuntimeObject <- dsWork
+                    njw.RuntimeObject <- dsWork
             |]
 
             njs.Arrows

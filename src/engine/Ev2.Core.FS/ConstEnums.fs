@@ -29,6 +29,12 @@ module ConstEnums =
         | Start = 1
         | Reset = 2
 
+    type DbStatus4 =
+        | Ready = 1
+        | Going = 2
+        | Finished = 3
+        | Homing = 4
+
 [<AutoOpen>]
 module Ev2PreludeModule =
     open Dual.Common.Core.FS

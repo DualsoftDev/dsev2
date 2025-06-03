@@ -73,6 +73,10 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
+                s.Author <- x.Author
+                s.EngineVersion <- x.EngineVersion
+                s.LangVersion <- x.LangVersion
+                s.Description <- x.Description
             ) |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -98,6 +102,7 @@ module internal rec DsObjectCopyImpl =
             RtWork.Create(calls, arrows, flow)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> tee(fun w -> w.Status4 <- x.Status4 )
 
     type RtCall with // replicate
         member x.replicate(bag:ReplicateBag) =
@@ -106,6 +111,7 @@ module internal rec DsObjectCopyImpl =
             RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.IsDisabled, x.Timeout)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> tee(fun c -> c.Status4 <- x.Status4 )
 
     type RtApiCall with // replicate
         member x.replicate(bag:ReplicateBag) =

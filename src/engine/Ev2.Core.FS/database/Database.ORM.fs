@@ -123,20 +123,22 @@ module ORMTypesModule =
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    type ORMWork(systemId:Id, flowId:Nullable<Id>) =
+    type ORMWork(systemId:Id, status4Id:Nullable<Id>, flowId:Nullable<Id>) =
         inherit ORMUnique(ParentId=systemId)
 
-        new() = ORMWork(-1, nullableId)
+        new() = ORMWork(-1, nullableId, nullableId)
         interface IORMWork
+        member val Status4Id = status4Id with get, set
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    type ORMCall(workId:Id, callTypeId:Nullable<int>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
+    type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<int>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
         inherit ORMUnique(ParentId=workId)
 
-        new() = ORMCall(-1, DbCallType.Normal |> int |> Nullable, nullString, nullString, false, nullableInt)
+        new() = ORMCall(-1, nullableId, DbCallType.Normal |> int |> Nullable, nullString, nullString, false, nullableInt)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
+        member val Status4Id = status4Id with get, set
         member val CallTypeId = callTypeId with get, set
         member val AutoPre = autoPre with get, set
         member val Safety = safety with get, set

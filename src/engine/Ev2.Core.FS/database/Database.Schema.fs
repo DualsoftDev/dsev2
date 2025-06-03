@@ -258,21 +258,25 @@ CREATE TABLE [{Tn.Enum}](
 
 
 CREATE TABLE [{Tn.Work}]( {sqlUniqWithName()}
-    , [systemId]      {intKeyType} NOT NULL
+    , [systemId]    {intKeyType} NOT NULL
     , [flowId]      {intKeyType} DEFAULT NULL    -- NULL 허용 (work가 flow에 속하지 않을 수도 있음)
-    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
+    , [status4Id]   {intKeyType} DEFAULT NULL
+    , FOREIGN KEY(systemId)  REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(flowId)    REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
+    , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
 );
 
 CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [callTypeId]    {intKeyType} -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
+    , [status4Id]     {intKeyType} DEFAULT NULL
     , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
     , [isDisabled]    TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        {intKeyType} NOT NULL
-    , FOREIGN KEY(workId)    REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
-    , FOREIGN KEY(callTypeId)   REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
+    , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
+    , FOREIGN KEY(callTypeId) REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
+    , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
     -- , [apiCallId]     {intKeyType} NOT NULL  -- call 이 복수개의 apiCall 을 가지므로, {Tn.MapCall2ApiCall} 에 저장
     -- , FOREIGN KEY(apiCallId) REFERENCES {Tn.ApiCall}(id)
 );
@@ -475,6 +479,7 @@ CREATE VIEW [{Vn.Work}] AS
     SELECT
         x.[id]
         , x.[name]  AS workName
+        , e.[name]  AS status4
         , p.[id]    AS projectId
         , p.[name]  AS projectName
         , s.[id]    AS systemId
@@ -482,16 +487,18 @@ CREATE VIEW [{Vn.Work}] AS
         , f.[id]    AS flowId
         , f.[name]  AS flowName
     FROM [{Tn.Work}] x
-    LEFT JOIN [{Tn.Flow}] f ON f.id = x.flowId
-    JOIN [{Tn.System}] s              ON s.id         = x.systemId
+    JOIN [{Tn.System}] s ON s.id = x.systemId
     JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
-    JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    JOIN [{Tn.Project}] p ON p.id = psm.projectId
+    LEFT JOIN [{Tn.Flow}] f ON f.id = x.flowId
+    LEFT JOIN [{Tn.Enum}] e ON e.id = x.status4Id
     ;
 
 CREATE VIEW [{Vn.Call}] AS
     SELECT
         c.[id]
         , c.[name]  AS callName
+        , e.[name]  AS status4
         , c.[timeout]
         , c.[autoPre]
         , c.[safety]
@@ -507,6 +514,7 @@ CREATE VIEW [{Vn.Call}] AS
     JOIN [{Tn.System}] s              ON s.id         = w.systemId
     JOIN [{Tn.MapProject2System}] psm ON psm.systemId = s.id
     JOIN [{Tn.Project}] p             ON p.id         = psm.projectId
+    LEFT JOIN [{Tn.Enum}] e           ON e.id         = c.status4Id
     ;
 
 
