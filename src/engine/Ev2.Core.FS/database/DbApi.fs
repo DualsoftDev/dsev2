@@ -70,6 +70,7 @@ module DbApiModule =
                             createDb()
                     with exn ->
                         createDb() )
+            :?> SQLiteConnection
         do
             // 강제 초기화 실행
             conn() |> dispose
