@@ -7,9 +7,15 @@ open System.Text.Json
 open System
 open Dual.Common.Base
 
-type JObj = System.Text.Json.Nodes.JsonObject
-type JArr = System.Text.Json.Nodes.JsonArray
+/// System.Text.Json.Nodes.JsonNode 의 축약
 type JNode = System.Text.Json.Nodes.JsonNode
+
+/// System.Text.Json.Nodes.JsonObject 의 축약.  JsonNode(=>JNode) 를 상속 받음
+type JObj = System.Text.Json.Nodes.JsonObject
+
+/// System.Text.Json.Nodes.JsonArray 의 축약.  JsonNode(=>JNode) 를 상속 받음
+type JArr = System.Text.Json.Nodes.JsonArray
+
 
 
 module Aas =
@@ -24,6 +30,8 @@ module Aas =
     type SubmodelElementList = AasCore.Aas3_0.SubmodelElementList
     type IClass = AasCore.Aas3_0.IClass
 
+
+/// AAS extension module
 module A =
     /// ModelType.SubmodelElementCollection.   heterogeneous.  struct
     let internal smc = ModelType.SubmodelElementCollection
@@ -122,8 +130,6 @@ module JsonExtensionModule =
             let s = sprintf "%A" x
             s[0..0].ToLower() + s[1..]  // 첫 글자만 소문자로 변환
 
-
-    let wrapWith(nodeType:N) (child:JNode): JObj = JObj().Set(nodeType, child)
 
     type AasCore.Aas3_0.IClass with
         member x.ToJson(): string =
@@ -460,4 +466,12 @@ module JsonExtensionModule =
             | "ValueReferencePair"                  -> Aas.Xmlization.Deserialize.ValueReferencePairFrom                 (xmlReader)
 
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
+
+[<AutoOpen>]
+module JsonObjectHelper =
+    let wrapWith(nodeType:N) (child:JNode): JObj = JObj().Set(nodeType, child)
+
+    let setGuid (guid:Guid) (jo:JObj): JObj =
+        jo["guid"] <- guid
+        jo
 
