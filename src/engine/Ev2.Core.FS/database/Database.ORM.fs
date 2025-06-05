@@ -39,7 +39,8 @@ module ORMTypesModule =
         member val ParentId = Nullable<Id>() with get, set
         member val Name = name with get, set
 
-        member val Guid = guid2str guid with get, set
+        //member val Guid = guid2str guid with get, set
+        member val Guid = guid with get, set
 
         member val DateTime = dateTime with get, set
         member val RawParent = Option<ORMUnique>.None with get, set
@@ -51,7 +52,7 @@ module ORMTypesModule =
     let fromOrmUniqINGD (src:#ORMUnique) (dst:#Unique): #Unique =
         dst.Id <- n2o src.Id
         dst.Name <- src.Name
-        dst.Guid <- s2guid src.Guid
+        dst.Guid <- src.Guid
         dst.DateTime <- src.DateTime
         dst
 
@@ -59,7 +60,7 @@ module ORMTypesModule =
     let toOrmUniqINGDP (src:#Unique) (dst:#ORMUnique): #ORMUnique =
         dst.Id <- o2n src.Id
         dst.Name <- src.Name
-        dst.Guid <- guid2str src.Guid
+        dst.Guid <- src.Guid
         dst.DateTime <- src.DateTime
         let pid = src.RawParent >>= _.Id
         dst.ParentId <- o2n pid

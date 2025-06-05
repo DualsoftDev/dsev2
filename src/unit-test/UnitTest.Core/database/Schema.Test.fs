@@ -70,7 +70,7 @@ module SchemaTestModule =
         tracefn $"SQL version: {conn.GetVersionString()}"
         let r1 = conn.Upsert(
             "flow",
-            [| "id", box 1
+            [|
                "name", box "Alice"
                "systemId", 1
                "guid", "b544dcdc-ca2f-43db-9d90-93843269bd3f"
@@ -81,13 +81,13 @@ module SchemaTestModule =
 
         let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f"; DateTime = DateTime.Now |}
         let r2 = conn.Upsert(
-            "flow", row, [ "id"; "name"; "systemId"; "guid" ],
+            "flow", row, [ "name"; "systemId"; "guid" ],
             [|"id"|]
         )
 
         let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid(); DateTime = DateTime.Now }
         let r3 = conn.Upsert(
-            "flow", row, [ "Id"; "Name"; "SystemId"; "Guid" ],
+            "flow", row, [ "Name"; "SystemId"; "Guid" ],
             [|"id"|],
             onInserted = fun id -> row.Id <- Nullable id
         )
@@ -98,7 +98,7 @@ module SchemaTestModule =
     [<Test>]
     let ``insert test`` () =
         use conn = dbApi.CreateConnection()
-        conn.TruncateAllTables()
+        dbApi.DbProvider.TruncateAllTables(conn)
         let newGuid() = Guid.NewGuid().ToString()
 
         let ver = Version().ToString()
@@ -163,14 +163,10 @@ module SchemaTestModule =
         ()
 
 
-    [<Test>]
-    let ``EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
+    let ``basic_test`` (dbApi:DbApi) =
         createEditableProject()
 
         let removeExistingData = true
-        let dbApi =
-            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> createSqliteDbApi
 
         let dsProject = edProject |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
@@ -274,6 +270,21 @@ module SchemaTestModule =
         dsProject4.CommitToDB(dbApi, removeExistingData)
 
         ()
+
+    [<Test>]
+    let ``SQLite: EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
+        let dbApi =
+            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
+            |> createSqliteDbApi
+        basic_test dbApi
+
+    [<Test>]
+    let ``PGSql: EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
+        let dbApi =
+            "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
+            |> DbProvider.Postgres
+            |> DbApi
+        basic_test dbApi
 
 
     [<Test>]

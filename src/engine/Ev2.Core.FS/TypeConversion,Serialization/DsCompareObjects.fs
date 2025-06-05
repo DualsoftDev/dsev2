@@ -12,7 +12,7 @@ module rec DsCompareObjects =
             match x with
             | :? Unique as u    -> u.Guid
             | :? NjUnique as u  -> u.Guid
-            | :? ORMUnique as u -> s2guid u.Guid
+            | :? ORMUnique as u -> u.Guid
             | _ -> failwith "ERROR"
 
         member x.GetName() =

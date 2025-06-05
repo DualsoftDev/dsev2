@@ -18,7 +18,7 @@ module DbApiModule =
     type Db2RtBag() =
         member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
         member val RtDic = Dictionary<Guid, RtUnique>()
-        member x.Add(u:ORMUnique) = x.DbDic.TryAdd(u.Guid, u) |> ignore
+        member x.Add(u:ORMUnique) = x.DbDic.TryAdd(guid2str u.Guid, u) |> ignore
         member x.Add(u:RtUnique)  = x.RtDic.TryAdd(u.Guid, u) |> ignore
         member x.Add2 (db:ORMUnique) (rt:RtUnique) = x.Add db; x.Add rt
 
@@ -68,18 +68,27 @@ module DbApiModule =
 """
                         File.WriteAllText(sqlSpecFile, header + schema)
 #endif
-                        conn.Execute(schema) |> ignore
-                        insertEnumValues<DbStatus4> conn
-                        insertEnumValues<DbCallType> conn
-                        insertEnumValues<DbArrowType> conn
-                        insertEnumValues<DbDataType> conn
-                        insertEnumValues<DbRangeType> conn
+                        use tr = conn.BeginTransaction()
+                        try
+                            conn.Execute(schema, transaction=tr) |> ignore
+                            insertEnumValues<DbStatus4>   conn tr
+                            insertEnumValues<DbCallType>  conn tr
+                            insertEnumValues<DbArrowType> conn tr
+                            insertEnumValues<DbDataType>  conn tr
+                            insertEnumValues<DbRangeType> conn tr
+                            tr.Commit()
+                        with ex ->
+                            logError $"Failed to create database schema: {ex.Message}"
+                            tr.Rollback()
+                            raise ex
                     try
-                        if not <| conn.IsTableExists(Tn.EOT) then
+                        let dic = conn.ParseConnectionString()
+                        let schemaName = dic.TryGet("Search Path")// |? "tia"
+                        if not <| conn.IsTableExists(Tn.EOT, ?schemaName=schemaName) then
                             createDb()
                     with exn ->
                         createDb() )
-            :?> SQLiteConnection
+            //:?> SQLiteConnection
         do
             // 강제 초기화 실행
             conn() |> dispose
@@ -96,6 +105,8 @@ module DbApiModule =
 
         /// DB 의 ORMEnum[] 에 대한 cache
         member val EnumCache = createCache<ORMEnum>(venderDb, Tn.Enum)
+
+        member x.DbProvider = venderDb
 
         member x.ClearAllCaches() =
             x.WorkCache.Reset() |> ignore

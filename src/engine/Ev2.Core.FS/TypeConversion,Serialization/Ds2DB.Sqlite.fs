@@ -20,7 +20,7 @@ module internal Ds2SqliteImpl =
     /// src ORM 객체의 unique 속성(Id, Name, Guid, DateTime) 들을 dst 에 복사
     let fromOrmUniqINGD (src:#ORMUnique) (dst:#Unique) =
         dst
-        |> uniqINGD (n2o src.Id) src.Name (s2guid src.Guid) src.DateTime
+        |> uniqINGD (n2o src.Id) src.Name src.Guid src.DateTime
 
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
@@ -105,7 +105,7 @@ module internal Ds2SqliteImpl =
             ormApiDef.SystemId <- sysId
 
             let r = conn.Upsert(Tn.ApiDef, ormApiDef,
-                    ["Id"; "Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"],
+                    ["Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"],     // PK 는 자동으로 채우져야 해서 "Id" 는 생략해야 함
                     onInserted=idUpdator [ormApiDef; rtAd;])
 
             match r with
@@ -122,7 +122,7 @@ module internal Ds2SqliteImpl =
             ormApiCall.SystemId <- sysId
 
             let r = conn.Upsert(Tn.ApiCall, ormApiCall,
-                        [   "Id"; "Guid"; "DateTime"; "Name"
+                        [   "Guid"; "DateTime"; "Name"
                             "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
                             "InSymbol"; "OutSymbol"; "ValueTypeId"; "RangeTypeId"; "Value1"; "Value2"],
                         onInserted=idUpdator [ormApiCall; rtAc;])
@@ -223,7 +223,7 @@ module internal Ds2SqliteImpl =
         dbApi.With(fun (conn, tr) ->
             match removeExistingData, proj.Id with
             | Some true, Some id ->
-                //conn.TruncateAllTables()
+                //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
                 conn.Execute($"DELETE FROM {Tn.Project} WHERE id = {id}", tr) |> ignore
                 //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
             | _ -> ()
@@ -253,7 +253,7 @@ module internal Ds2SqliteImpl =
         dbApi.With(fun (conn, tr) ->
             let cache, ormSystem = x.ToORM(dbApi)
             if removeExistingData = Some true then
-                //conn.TruncateAllTables()
+                //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
                 conn.Execute($"DELETE FROM {Tn.System} WHERE guid = @Guid", ormSystem, tr) |> ignore
 
             system2SqliteHelper dbApi conn tr cache x None
@@ -290,14 +290,14 @@ module internal Sqlite2DsImpl =
                 let sql = sqlBase + sqlTail
 
                 conn.QuerySingle<ORMProject>(sql, param, tr)
-                |> tee (fun z -> bag.DbDic.Add(z.Guid, z) )
+                |> tee (fun z -> bag.DbDic.Add(guid2str z.Guid, z) )
 
             let projSysMaps =
                 conn.Query<ORMMapProjectSystem>(
                     $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
                     {| ProjectId = ormProject.Id |}, tr)
                 |> tee (fun zs ->
-                    zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
+                    zs |> iter (fun z -> bag.DbDic.Add(guid2str z.Guid, z)) )
                 |> toArray
 
             let ormSystems =
@@ -306,7 +306,7 @@ module internal Sqlite2DsImpl =
                 conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
                     {| SystemIds = systemIds |}, tr)
                 |> tee (fun zs ->
-                    zs |> iter (fun z -> bag.DbDic.Add(z.Guid, z)) )
+                    zs |> iter (fun z -> bag.DbDic.Add(guid2str z.Guid, z)) )
                 |> toArray
 
             let edProj =
@@ -337,7 +337,7 @@ module internal Sqlite2DsImpl =
                     let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
 
                     for orm in orms do
-                        bag.DbDic.Add(orm.Guid, orm) |> ignore
+                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                         RtFlow(RawParent = Some s)
                         |> fromOrmUniqINGD orm
@@ -349,7 +349,7 @@ module internal Sqlite2DsImpl =
                     let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
 
                     for orm in orms do
-                        bag.DbDic.Add(orm.Guid, orm) |> ignore
+                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                         RtApiDef(orm.IsPush, RawParent = Some s)
                         |> fromOrmUniqINGD orm
@@ -361,7 +361,7 @@ module internal Sqlite2DsImpl =
                     let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
 
                     for orm in orms do
-                        bag.DbDic.Add(orm.Guid, orm) |> ignore
+                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                         (* orm.ApiDefId -> EdApiDef : DB 에 저장된 key 로 bag 을 뒤져서 EdApiDef 객체를 찾는다. *)
                         let apiDefGuid =
@@ -371,7 +371,7 @@ module internal Sqlite2DsImpl =
 
                         let valueType = dbApi.TryFindEnumValue<DbDataType> orm.ValueTypeId |> Option.get
                         let rangeType = dbApi.TryFindEnumValue<DbRangeType> orm.RangeTypeId |> Option.get
-                        RtApiCall(s2guid apiDefGuid, orm.InAddress, orm.OutAddress,
+                        RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                                     orm.InSymbol, orm.OutSymbol, valueType, rangeType, orm.Value1, orm.Value2)
                         |> fromOrmUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
@@ -403,7 +403,7 @@ module internal Sqlite2DsImpl =
                                 {| WorkId = w.Id.Value |}, tr)
 
                         for orm in orms do
-                            bag.DbDic.Add(orm.Guid, orm) |> ignore
+                            bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                             let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
                             let apiCallGuids =
@@ -435,7 +435,7 @@ module internal Sqlite2DsImpl =
                                 {| WorkId = w.Id.Value |}, tr)
 
                         for orm in orms do
-                            bag.DbDic.Add(orm.Guid, orm) |> ignore
+                            bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
                             let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
                             let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
                             let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
@@ -458,7 +458,7 @@ module internal Sqlite2DsImpl =
                             {| SystemId = s.Id.Value |}, tr)
 
                     for orm in orms do
-                        bag.DbDic.Add(orm.Guid, orm) |> ignore
+                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
                         let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
                         let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
