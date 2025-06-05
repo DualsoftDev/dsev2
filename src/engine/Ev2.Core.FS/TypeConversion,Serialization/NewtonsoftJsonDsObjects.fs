@@ -11,6 +11,7 @@ open System.Linq
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
+open Dual.Common.Db.FS
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -106,10 +107,10 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         interface INjProject
 
-        member val LastConnectionString = null:string     with get, set
-        member val Description          = null:string     with get, set
-        member val Author               = null:string     with get, set
-        member val Version              = Version()       with get, set
+        member val Database    = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
+        member val Description = null:string     with get, set
+        member val Author      = null:string     with get, set
+        member val Version     = Version()       with get, set
 
         /// serialize 직전에 Runtime 으로부터 채워지고,
         /// deserialize 직후에 Runtime 으로 변환시켜 채워 줌.
@@ -321,7 +322,7 @@ module rec NewtonsoftJsonObjects =
             njp.ActiveSystems  <- rtp.ActiveSystems  |-> rtToSystemLoadType |> toArray
             njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
 
-            njp.LastConnectionString <- rtp.LastConnectionString
+            njp.Database <- rtp.Database
             njp.SystemPrototypes |> iter onNsJsonSerializing
 
         | :? NjSystem as njs ->
@@ -386,7 +387,7 @@ module rec NewtonsoftJsonObjects =
                     , Author=njp.Author
                     , Version=njp.Version
                     , Description=njp.Description
-                    , LastConnectionString=njp.LastConnectionString )
+                    , Database=njp.Database )
                 |> fromNjUniqINGD njp
                 |> tee (fun z ->
                     actives @ passives
@@ -572,7 +573,7 @@ module Ds2JsonModule =
             EmJson.FromJson<NjProject>(json, settings)
 
         static member FromRuntime(rt:RtProject) =
-            NjProject(LastConnectionString=rt.LastConnectionString
+            NjProject(Database=rt.Database
                 , Author=rt.Author
                 , Version=rt.Version
                 , Description=rt.Description)

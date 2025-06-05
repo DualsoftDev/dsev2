@@ -240,7 +240,7 @@ module internal Ds2SqliteImpl =
             for s in systems do
                 system2SqliteHelper dbApi conn tr guidDic s (Some proj)
 
-            proj.LastConnectionString <- dbApi.ConnectionString
+            proj.Database <- dbApi.DbProvider
         , onError)
 
 

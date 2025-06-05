@@ -227,7 +227,7 @@ module DsObjectCopyAPIModule =
                 z.Version <- x.Version
                 z.Author <- x.Author
                 z.Description <- x.Description
-                z.LastConnectionString <- x.LastConnectionString )
+                z.Database <- x.Database )
             |> uniqName (nn x.Name)
 
 

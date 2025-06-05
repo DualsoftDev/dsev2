@@ -98,7 +98,7 @@ module SchemaTestModule =
     [<Test>]
     let ``insert test`` () =
         use conn = dbApi.CreateConnection()
-        dbApi.DbProvider.TruncateAllTables(conn)
+        dbApi.VendorDB.TruncateAllTables(conn)
         let newGuid() = Guid.NewGuid().ToString()
 
         let ver = Version().ToString()

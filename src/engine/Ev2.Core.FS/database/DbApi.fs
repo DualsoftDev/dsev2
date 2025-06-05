@@ -106,7 +106,8 @@ module DbApiModule =
         /// DB 의 ORMEnum[] 에 대한 cache
         member val EnumCache = createCache<ORMEnum>(venderDb, Tn.Enum)
 
-        member x.DbProvider = venderDb
+        member x.VendorDB = venderDb
+        member x.DbProvider = dbProvider
 
         member x.ClearAllCaches() =
             x.WorkCache.Reset() |> ignore
