@@ -324,7 +324,7 @@ module SchemaTestModule =
 
         dbApi.With(fun (conn, tr) ->
             let result =
-                conn.CalculateCascadeDeleteAffected(Tn.System, 1)
+                conn.GuessCascadeDeleteAffected(Tn.System, 1)
             noop()
         )
 

@@ -104,12 +104,12 @@ module DatabaseSchemaModule =
         //    | Postgres _ -> $"DROP TRIGGER IF EXISTS {triggerName} ON {tableName};";
 
         let triggerSql (dbProvider: DbProvider) =
-            Tn.AllTableNames
-            |> List.except [Tn.TableHistory]
-            |> List.collect (fun t ->
-                ["INSERT"; "UPDATE"; "DELETE"] |-> (fun op -> dbProvider.SqlCreateTrigger(t, op)))
-            |> String.concat "\n"
+            let allTables = Tn.AllTableNames |> except [Tn.TableHistory]
 
+            [ for t in allTables do
+                for op in ["INSERT"; "UPDATE"; "DELETE"] do
+                    dbProvider.SqlCreateTrigger(t, op) ]
+            |> String.concat "\n"
 
 
         let projectTriggerBeforeDelete =
@@ -161,9 +161,6 @@ module DatabaseSchemaModule =
 
 
         $"""
--- BEGIN TRANSACTION;
-
-
 CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
     , {k "author"}       TEXT NOT NULL
     , {k "version"}      TEXT NOT NULL
@@ -599,8 +596,7 @@ DELETE FROM {k Tn.TableHistory};
 CREATE TABLE {k Tn.EOT} (
     {k "id"}  {autoincPrimaryKey}
 );
-
--- COMMIT; """
+"""
 
 
 
