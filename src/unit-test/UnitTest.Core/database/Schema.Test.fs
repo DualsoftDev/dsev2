@@ -41,14 +41,14 @@ module SchemaTestModule =
             //File.Delete(dbFilePath)
             ()
 
-    let createMemoryConnection () =
-        let conn = new SQLiteConnection("Data Source=:memory:")
-        conn.Open()
-        conn.Execute("PRAGMA foreign_keys = ON;") |> ignore
-        conn.Execute(getSqlCreateSchema()) |> ignore
-        conn
+    let createSqliteDbApi (path:string) =
+        path
+        |> path2ConnectionString
+        |> DbProvider.Sqlite
+        |> DbApi
 
-    let dbApi = path2ConnectionString dbFilePath |> DbApi
+
+    let dbApi = createSqliteDbApi dbFilePath
 
     [<Test>]
     let dbCreateTest() =
@@ -99,7 +99,6 @@ module SchemaTestModule =
     let ``insert test`` () =
         use conn = dbApi.CreateConnection()
         conn.TruncateAllTables()
-        //use conn = createMemoryConnection()
         let newGuid() = Guid.NewGuid().ToString()
 
         let ver = Version().ToString()
@@ -169,10 +168,9 @@ module SchemaTestModule =
         createEditableProject()
 
         let removeExistingData = true
-        let connStr =
+        let dbApi =
             Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> path2ConnectionString
-        let dbApi = DbApi connStr
+            |> createSqliteDbApi
 
         let dsProject = edProject |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
@@ -190,7 +188,7 @@ module SchemaTestModule =
         )
 
         dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
-        dsProject.CommitToSqlite3(connStr, removeExistingData)
+        dsProject.CommitToDB(dbApi, removeExistingData)
 
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->
@@ -259,7 +257,7 @@ module SchemaTestModule =
             dsProj.Name <- $"Duplicate of {dsProj.Name}"
             validateRuntime dsProj |> ignore
             dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
-            dsProj.CommitToSqlite3(connStr, removeExistingData)
+            dsProj.CommitToDB(dbApi, removeExistingData)
 
 
         let dsProject4 =
@@ -273,7 +271,7 @@ module SchemaTestModule =
 
         validateRuntime dsProject4 |> ignore
         dsProject4.Systems[0].PrototypeSystemGuid <- None
-        dsProject4.CommitToSqlite3(connStr, removeExistingData)
+        dsProject4.CommitToDB(dbApi, removeExistingData)
 
         ()
 
@@ -297,22 +295,20 @@ module SchemaTestModule =
         let flow = sys.Flows[0]
         dsProject2.Name <- "UpdatedProject"
         let removeExistingData = true
-        let connStr =
-            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> path2ConnectionString
 
-        let dbApi = DbApi connStr
+        let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
+
         dbApi.With(fun (conn, tr) ->
             conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}))
         |> ignore
 
-        dsProject2.CommitToSqlite3(connStr, removeExistingData)
+        dsProject2.CommitToDB(dbApi, removeExistingData)
 
 
     [<Test>]
     let ``DB Delete preview test`` () =
         let projectId = 1
-        let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> path2ConnectionString |> DbApi
+        let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
 
         dbApi.With(fun (conn, tr) ->
             let result =
@@ -330,8 +326,9 @@ module SchemaTestModule =
 
         let dbPath = Path.Combine(specDir, "dssystem.sqlite3")
         File.Delete(dbPath) |> ignore
-        let connStr = dbPath |> path2ConnectionString
-        dsProject.CommitToSqlite3(connStr, true)
+        let dbApi = createSqliteDbApi dbPath
+
+        dsProject.CommitToDB(dbApi, removeExistingData=true)
 
         //let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
         //let json =
@@ -379,11 +376,10 @@ module SchemaTestModule =
         json === json2
 
         let dbPath = Path.Combine(testDataDir(), "dssystem-with-cylinder.sqlite3")
-        let connStr = dbPath |> path2ConnectionString
-        let dbApi = DbApi connStr
+        let dbApi = dbPath |> createSqliteDbApi
         dbApi.With(fun (conn, tr) -> conn.Execute("DELETE FROM project") |> ignore) |> ignore
 
-        rtProject.CommitToSqlite3(connStr)
+        rtProject.CommitToDB(dbApi)
 
         File.Copy(dbPath, Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
 

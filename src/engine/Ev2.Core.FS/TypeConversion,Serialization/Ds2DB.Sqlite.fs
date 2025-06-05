@@ -263,13 +263,13 @@ module internal Ds2SqliteImpl =
 module internal Sqlite2DsImpl =
     open Ds2SqliteImpl
 
-    let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
-        ()
+    //let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
+    //    ()
 
-    let deleteFromDatabaseWithConnectionString(identifier:DbObjectIdentifier) (connStr:string) =
-        DbApi(connStr).With(fun (conn, tr) ->
-            deleteFromDatabase identifier conn tr
-        )
+    //let deleteFromDatabaseWithConnectionString(identifier:DbObjectIdentifier) (connStr:string) =
+    //    DbApi(connStr).With(fun (conn, tr) ->
+    //        deleteFromDatabase identifier conn tr
+    //    )
 
     let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:DbApi) =
         let bag = Db2RtBag()
@@ -483,25 +483,26 @@ module Ds2SqliteModule =
     open Ds2SqliteImpl
     open Sqlite2DsImpl
 
-    let private createDbApi (connStr:string) =
+    let private initializeDDic (dbApi:DbApi) =
         let ddic = DynamicDictionary()
         ddic.Set<Db2RtBag>(Db2RtBag())
-        DbApi(connStr, DDic=ddic)
+        dbApi.DDic <- ddic
+
 
     type RtProject with // ToSqlite3, FromSqlite3
-        member x.CommitToSqlite3(connStr:string, ?removeExistingData:bool) =
-            let dbApi = createDbApi connStr
+        member x.CommitToDB(dbApi:DbApi, ?removeExistingData:bool) =
+            initializeDDic dbApi
             project2Sqlite x dbApi removeExistingData
 
-        static member CheckoutFromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
-            let dbApi = createDbApi connStr
+        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:DbApi) =
+            initializeDDic dbApi
             fromSqlite3 identifier dbApi
 
     type RtSystem with  // ToSqlite3, FromSqlite3
-        member x.CommitToSqlite3(connStr:string, ?removeExistingData:bool) =
-            let dbApi = createDbApi connStr
+        member x.CommitToDB(dbApi:DbApi, ?removeExistingData:bool) =
+            initializeDDic dbApi
             system2Sqlite x dbApi removeExistingData
 
-        static member CheckoutFromSqlite3(identifier:DbObjectIdentifier, connStr:string) =
-            let dbApi = createDbApi connStr
+        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:DbApi) =
+            initializeDDic dbApi
             ()

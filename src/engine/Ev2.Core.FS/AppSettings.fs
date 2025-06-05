@@ -1,6 +1,7 @@
 namespace Ev2.Core.FS
 
 open Dual.Common.Base
+open Dual.Common.Db.FS
 
 [<AutoOpen>]
 module AppSettingsModule =
@@ -9,7 +10,7 @@ module AppSettingsModule =
             AppSettings.TheAppSettings <- this
 
         static member val TheAppSettings = getNull<AppSettings>() with get, set
-        member val ConnectionString:string = null with get, set
+        member val DbProvider = getNull<DbProvider>() with get, set
         member val DatabaseWatchdogIntervalSec = 5 with get, set
         member val UseUtcTime = false with get, set
 

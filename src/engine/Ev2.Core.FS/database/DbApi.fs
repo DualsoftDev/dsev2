@@ -24,30 +24,39 @@ module DbApiModule =
 
 
     /// 공용 캐시 초기화 함수
-    let private createCache<'T> (connectionString: string, tableName: string) =
+    let private createCache<'T> (venderDb:DcDbBase, tableName: string) =
         ResettableLazy<'T[]>(fun () ->
-            use conn = new SQLiteConnection(connectionString)
-            conn.Open()
+            use conn = venderDb.CreateConnection()
             conn.Query<'T>($"SELECT * FROM {tableName}") |> toArray)
 
 
     let specDir = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec")
 
     let checkedConnections = HashSet<string>()
+
+
     /// Database API
-    type DbApi(connStr:string) =
-        //let mutable initialized = false
-        let sqlite = DcSqlite(connStr, enableWAL=true, enableForeignKey=true)
+    type DbApi(dbProvider:DbProvider) =
+        let venderDb:DcDbBase =
+            match dbProvider with
+            | Sqlite   connStr -> DcSqlite(connStr, enableWAL=true, enableForeignKey=true)
+            | Postgres connStr -> DcPgSql(connStr)
+
         let conn() =
-            sqlite.CreateConnection()
+            venderDb.CreateConnection()
             |> tee (fun conn ->
-                noop()
+                if conn.State <> ConnectionState.Open then
+                    conn.Open()
+
+                let connStr = conn.ConnectionString
                 if not <| checkedConnections.Contains(connStr) then
+                    logInfo $"Database Version: {dbProvider.VendorName} {conn.GetVersion()}..."
                     checkedConnections.Add connStr |> ignore
                     //initialized <- true
                     DcLogger.EnableTrace <- true        // TODO: 삭제 필요
                     let createDb() =
-                        let schema = getSqlCreateSchema()
+                        let withTrigger = false
+                        let schema = getSqlCreateSchema dbProvider withTrigger
                         logInfo $"Creating database schema on {connStr}..."
                         logInfo $"CreateSchema:\r\n{schema}"
 #if DEBUG
@@ -77,16 +86,16 @@ module DbApiModule =
 
         member val DDic = DynamicDictionary() with get, set
 
-        member val ConnectionString = connStr
+        member val ConnectionString = venderDb.ConnectionString
 
         /// DB 의 ORMWork[] 에 대한 cache
-        member val WorkCache = createCache<ORMWork>(connStr, Tn.Work)
+        member val WorkCache = createCache<ORMWork>(venderDb, Tn.Work)
 
         /// DB 의 ORMCall[] 에 대한 cache
-        member val CallCache = createCache<ORMCall>(connStr, Tn.Call)
+        member val CallCache = createCache<ORMCall>(venderDb, Tn.Call)
 
         /// DB 의 ORMEnum[] 에 대한 cache
-        member val EnumCache = createCache<ORMEnum>(connStr, Tn.Enum)
+        member val EnumCache = createCache<ORMEnum>(venderDb, Tn.Enum)
 
         member x.ClearAllCaches() =
             x.WorkCache.Reset() |> ignore
@@ -110,7 +119,7 @@ module DbApiModule =
 
         /// DB connection 및 transaction wrapper 생성 및 관리하에서 주어진 action 수행.
         member x.With<'T>(action:IDbConnection * IDbTransaction -> 'T, ?optOnError:Exception->unit) =
-            sqlite.With(action, ?optOnError=optOnError)
+            venderDb.With(action, ?optOnError=optOnError)
 
 
 

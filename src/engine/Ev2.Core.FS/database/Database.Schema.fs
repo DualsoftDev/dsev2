@@ -3,20 +3,21 @@ namespace Ev2.Core.FS
 open System
 
 open Dual.Common.Core.FS
+open Dual.Common.Db.FS
 
 [<AutoOpen>]
 module DatabaseSchemaModule =
 
-    /// NVARCHAR({NameLength}) 는 TEXT 와 완전 동일하며, 혹시 다른 DBMS 를 사용할 경우의 호환성을 위한 것.
+    /// {varchar NameLength} 는 TEXT 와 완전 동일하며, 혹시 다른 DBMS 를 사용할 경우의 호환성을 위한 것.
     let [<Literal>] NameLength = 128
 
-    #if DEBUG   // TODO : 제거 요망
-    /// UNIQUE indexing 여부 성능 고려해서 판단 필요
-    let [<Literal>] guidUniqSpec = "UNIQUE"
-    let [<Literal>] intKeyType = "INTEGER"      // or "INTEGER"
-    #else
-    let [<Literal>] guidUniqSpec = ""
-    #endif
+    //#if DEBUG   // TODO : 제거 요망
+    ///// UNIQUE indexing 여부 성능 고려해서 판단 필요
+    //let [<Literal>] guidUniqSpec = "UNIQUE"
+    //let [<Literal>] intKeyType = "INTEGER"      // or "INTEGER"
+    //#else
+    //let [<Literal>] guidUniqSpec = ""
+    //#endif
 
 
     module Tn =
@@ -79,55 +80,85 @@ module DatabaseSchemaModule =
                 System; Flow; Work; Call; ApiDef; ApiCall
                 ArrowCall; ArrowWork; ]
 
-    let triggerSql() =
-        // op : {INSERT, UPDATE, DELETE}
-        let createTrigger (op:string) (tableName:string) =
-            let update =
-                match op with
-                | "INSERT" ->
+    /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
+    let getSqlCreateSchema (dbProvider: DbProvider) (withTrigger: bool) =
+
+        let intKeyType = dbProvider.SqlIntKeyType
+
+        let guidUniqSpec = "UNIQUE"
+
+        let boolean = dbProvider.SqlBoolean
+
+        let varchar (n: int) = $"{dbProvider.SqlVarChar}({n})"
+        let autoincPrimaryKey = dbProvider.SqlAutoincPrimaryKey
+
+        let datetime = $"{dbProvider.SqlDateTime}(7)"
+
+        let triggerSql (dbProvider: DbProvider) =
+            let createTrigger (op: string) (tableName: string) =
+                let updateSql =
+                    match op with
+                    | "INSERT" ->
+                        $"""
+                        INSERT INTO {Tn.TableHistory} (name, operation, oldId, newId)
+                        SELECT '{tableName}', '{op}', NULL, NEW.id
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM {Tn.TableHistory} WHERE newId = NEW.id AND name = '{tableName}' AND operation = '{op}'
+                        );
+                        """
+                    | "UPDATE" ->
+                        $"""
+                        INSERT INTO {Tn.TableHistory} (name, operation, oldId, newId)
+                        SELECT '{tableName}', '{op}', OLD.id, NEW.id
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM {Tn.TableHistory} WHERE name = '{tableName}' AND operation = '{op}' AND oldId = OLD.id AND newId = NEW.id
+                        );
+                        """
+                    | "DELETE" ->
+                        $"""
+                        INSERT INTO {Tn.TableHistory} (name, operation, oldId, newId)
+                        VALUES ('{tableName}', '{op}', OLD.id, NULL);
+                        """
+                    | _ -> failwith $"Invalid op: {op}"
+
+                match dbProvider with
+                | Sqlite _ ->
                     $"""
-                    INSERT INTO {Tn.TableHistory} (name, operation, oldId, newId)
-                    SELECT '{tableName}', '{op}', NULL, NEW.id
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM tableHistory WHERE newId = NEW.id AND name = '{tableName}' AND operation = '{op}'
-                    );
+                    DROP TRIGGER IF EXISTS trigger_{tableName}_{op};
+                    CREATE TRIGGER trigger_{tableName}_{op} AFTER {op} ON {tableName}
+                    BEGIN
+                        {updateSql}
+                    END;
                     """
-                | "UPDATE" ->
+                | Postgres _ ->
                     $"""
-                    INSERT INTO {Tn.TableHistory} (name, operation, oldId, newId)
-                    SELECT '{tableName}', '{op}', OLD.id, NEW.id
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM tableHistory WHERE name = '{tableName}' AND operation = '{op}' AND oldId = OLD.id AND newId = NEW.id
-                    );
+                    DROP TRIGGER IF EXISTS trigger_{tableName}_{op} ON "{tableName}";
+                    CREATE OR REPLACE FUNCTION trigger_fn_{tableName}_{op}() RETURNS trigger AS $$
+                    BEGIN
+                        {updateSql}
+                        RETURN NEW;
+                    END;
+                    $$ LANGUAGE plpgsql;
+
+                    CREATE TRIGGER trigger_{tableName}_{op}
+                    AFTER {op} ON "{tableName}"
+                    FOR EACH ROW EXECUTE FUNCTION trigger_fn_{tableName}_{op}();
                     """
-                | "DELETE" ->
-                    $"""
-                    INSERT INTO {Tn.TableHistory} (name, operation, oldId, newId)
-                    VALUES ('{tableName}', '{op}', OLD.id, NULL);
-                    """
-                | _ -> failwith "invalid op"
-            $"""
-            DROP TRIGGER IF EXISTS trigger_{tableName}_{op};
-            CREATE TRIGGER trigger_{tableName}_{op} AFTER {op} ON {tableName}
-            BEGIN {update} END;
-            """
-        let historyTargetTables = Tn.AllTableNames |> except [Tn.TableHistory]
 
-        [ for t in historyTargetTables do
-            for op in ["INSERT"; "UPDATE"; "DELETE"] do
-                createTrigger op t ]
-        |> String.concat ""
+            let historyTargetTables = Tn.AllTableNames |> except [Tn.TableHistory]
+            [ for t in historyTargetTables do
+                for op in ["INSERT"; "UPDATE"; "DELETE"] do
+                    createTrigger op t ]
+            |> String.concat "\n"
 
+        let sqlUniq () = $"""
+        [id]              {autoincPrimaryKey}
+        , [guid]          TEXT NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+        , [dateTime]      {datetime}"""
 
-    let sqlUniq() = $"""
-    [id]              {intKeyType} PRIMARY KEY AUTOINCREMENT NOT NULL
-    , [guid]          TEXT NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
-    , [dateTime]      DATETIME(7)"""
+        let sqlUniqWithName () = sqlUniq() + $"""
+        , [name]          {varchar NameLength} NOT NULL"""
 
-    let sqlUniqWithName() = sqlUniq() + $"""
-    , [name]          NVARCHAR({NameLength}) NOT NULL"""
-
-    let private getSqlCreateSchemaHelper(withTrigger:bool) =
         $"""
 BEGIN TRANSACTION;
 
@@ -153,7 +184,7 @@ CREATE TABLE [{Tn.System}]( {sqlUniqWithName()}
 CREATE TABLE [{Tn.MapProject2System}]( {sqlUniq()}
     , [projectId]      {intKeyType} NOT NULL
     , [systemId]       {intKeyType} NOT NULL
-    , [isActive]       TINYINT NOT NULL DEFAULT 0
+    , [isActive]       {boolean} NOT NULL DEFAULT 0
     , [loadedName]     TEXT
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- NO ACTION       -- ON DELETE RESTRICT    -- RESTRICT: 부모 레코드가 삭제되기 전에 참조되고 있는 자식 레코드가 있는지 즉시 검사하고, 있으면 삭제를 막음.
@@ -249,9 +280,9 @@ CREATE TABLE [{Tn.Flow}]( {sqlUniqWithName()}
     );
 
 CREATE TABLE [{Tn.Enum}](
-    [id]              {intKeyType} PRIMARY KEY AUTOINCREMENT NOT NULL
-    , [category]      NVARCHAR({NameLength}) NOT NULL
-    , [name]          NVARCHAR({NameLength}) NOT NULL
+    [id]              {autoincPrimaryKey}
+    , [category]      {varchar NameLength} NOT NULL
+    , [name]          {varchar NameLength} NOT NULL
     , [value]         INT NOT NULL
     , CONSTRAINT {Tn.Enum}_uniq UNIQUE (name, category)
 );
@@ -272,7 +303,7 @@ CREATE TABLE [{Tn.Call}]( {sqlUniqWithName()}
     , [timeout]       INT   -- ms
     , [autoPre]       TEXT
     , [safety]        TEXT
-    , [isDisabled]    TINYINT NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
+    , [isDisabled]    {boolean} NOT NULL DEFAULT 0   -- 0: 활성화, 1: 비활성화
     , [workId]        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
     , FOREIGN KEY(callTypeId) REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
@@ -330,7 +361,7 @@ CREATE TABLE [{Tn.ApiCall}]( {sqlUniqWithName()}
 );
 
 CREATE TABLE [{Tn.ApiDef}]( {sqlUniqWithName()}
-    , [isPush]          TINYINT NOT NULL DEFAULT 0
+    , [isPush]          {boolean} NOT NULL DEFAULT 0
     , [systemId]        {intKeyType} NOT NULL       -- API 가 정의된 target system
     , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
 );
@@ -367,9 +398,6 @@ CREATE TABLE [{Tn.TableHistory}] (
     newId {intKeyType},
     CONSTRAINT {Tn.TableHistory}_uniq UNIQUE (name, operation, oldId, newId)
 );
-
-
-{ if withTrigger then triggerSql() else "" }
 
 
 CREATE VIEW [{Vn.MapProject2System}] AS
@@ -575,15 +603,18 @@ CREATE VIEW [{Vn.ArrowWork}] AS
     ;
 
 
-INSERT INTO [{Tn.Meta}] (key, val) VALUES ('Version', '1.0.0.0');
-DELETE FROM {Tn.TableHistory};
 
-CREATE TABLE [{Tn.EOT}](
+INSERT INTO [Meta] (key, val) VALUES ('Version', '1.0.0.0');
+DELETE FROM TableHistory;
+{ if withTrigger then triggerSql dbProvider else "" }
+
+CREATE TABLE [{Tn.EOT}] (
     id {intKeyType} PRIMARY KEY NOT NULL
 );
 
-COMMIT;
-"""
+COMMIT; """
+
+
 
     open System.Data
     open Dapper
@@ -610,8 +641,5 @@ COMMIT;
 
 
 
-    /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
-    let getSqlCreateSchema() = getSqlCreateSchemaHelper false
-    let getSqlCreateSchemaWithTrigger() = getSqlCreateSchemaHelper true
 
 
