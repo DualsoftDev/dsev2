@@ -45,7 +45,7 @@ module SchemaTestModule =
         path
         |> path2ConnectionString
         |> DbProvider.Sqlite
-        |> DbApi
+        |> AppDbApi
 
 
     let dbApi = createSqliteDbApi dbFilePath
@@ -163,7 +163,7 @@ module SchemaTestModule =
         ()
 
 
-    let ``basic_test`` (dbApi:DbApi) =
+    let ``basic_test`` (dbApi:AppDbApi) =
         createEditableProject()
 
         let removeExistingData = true
@@ -283,7 +283,7 @@ module SchemaTestModule =
         let dbApi =
             "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
             |> DbProvider.Postgres
-            |> DbApi
+            |> AppDbApi
 
         basic_test dbApi
 

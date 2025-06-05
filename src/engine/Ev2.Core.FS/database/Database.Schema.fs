@@ -135,19 +135,6 @@ module DatabaseSchemaModule =
         """
             dbProvider.SqlCreateCustomTrigger(name, "AFTER", "DELETE", Tn.Project, body)
 
-        let triggerBlock =
-            if withTrigger then
-                [ triggerSql dbProvider
-                  projectTriggerBeforeDelete
-                  projectTriggerAfterDelete ]
-                |> String.concat "\n"
-            else ""
-
-
-
-
-
-
 
         let sqlUniq () = $"""
     {k "id"}              {autoincPrimaryKey}
@@ -196,7 +183,7 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 
 {projectTriggerAfterDelete}
 
-{triggerBlock}
+{if withTrigger then triggerSql dbProvider else ""}
 
 
 
@@ -596,30 +583,12 @@ DELETE FROM {k Tn.TableHistory};
 CREATE TABLE {k Tn.EOT} (
     {k "id"}  {autoincPrimaryKey}
 );
+
+--
+-- End of database schema
+--
 """
 
-
-
-    open System.Data
-    open Dapper
-
-    /// enum 의 값을 DB 에 넣는다.  enum 의 이름과 값은 DB 에서 유일해야 함.  see tryFindEnumValueId also
-    let insertEnumValues<'TEnum when 'TEnum : enum<int>> (conn: IDbConnection) (tr:IDbTransaction) =
-        let enumType = typeof<'TEnum>
-        let category = enumType.Name
-        let names = Enum.GetNames(enumType)
-        let values = Enum.GetValues(enumType) :?> 'TEnum[]
-
-        for i in 0 .. names.Length - 1 do
-            let name = names.[i]
-            let value = Convert.ToInt32(values.[i])
-            let sql =
-                if conn.IsSqlite()  then "INSERT OR IGNORE INTO enum (name, category, value) VALUES (@Name, @Category, @Value)"
-                elif conn.IsPgSql() then "INSERT INTO enum (name, category, value) VALUES (@Name, @Category, @Value) ON CONFLICT (name, category) DO NOTHING"
-                else failwith "ERROR"
-
-            conn.Execute(sql, {| Name=name; Category=category; Value=value|}, tr)
-            |> ignore
 
 
 

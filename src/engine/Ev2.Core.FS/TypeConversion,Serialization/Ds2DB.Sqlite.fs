@@ -31,9 +31,7 @@ module internal Ds2SqliteImpl =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
-    let system2SqliteHelper (dbApi:DbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
-
-        let bag = dbApi.DDic.Get<Db2RtBag>()
+    let system2SqliteHelper (dbApi:AppDbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
@@ -200,7 +198,7 @@ module internal Ds2SqliteImpl =
 
 
     /// DsProject 을 sqlite database 에 저장
-    let project2Sqlite (proj:RtProject) (dbApi:DbApi) (removeExistingData:bool option) =
+    let project2Sqlite (proj:RtProject) (dbApi:AppDbApi) (removeExistingData:bool option) =
         let bag = dbApi.DDic.Get<Db2RtBag>()
 
         let rtObjs =
@@ -244,7 +242,7 @@ module internal Ds2SqliteImpl =
         , onError)
 
 
-    let system2Sqlite (x:RtSystem) (dbApi:DbApi) (removeExistingData:bool option) =
+    let system2Sqlite (x:RtSystem) (dbApi:AppDbApi) (removeExistingData:bool option) =
         let onError (ex:Exception) = logError $"system2Sqlite failed: {ex.Message}"; raise ex
 
         checkHandlers()
@@ -270,7 +268,7 @@ module internal Sqlite2DsImpl =
     //        deleteFromDatabase identifier conn tr
     //    )
 
-    let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:DbApi) =
+    let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:AppDbApi) =
         let bag = Db2RtBag()
         Trace.WriteLine($"--------------------------------------- fromSqlite3: {identifier}")
         noop()
@@ -482,26 +480,26 @@ module Ds2SqliteModule =
     open Ds2SqliteImpl
     open Sqlite2DsImpl
 
-    let private initializeDDic (dbApi:DbApi) =
+    let private initializeDDic (dbApi:AppDbApi) =
         let ddic = DynamicDictionary()
         ddic.Set<Db2RtBag>(Db2RtBag())
         dbApi.DDic <- ddic
 
 
     type RtProject with // ToSqlite3, FromSqlite3
-        member x.CommitToDB(dbApi:DbApi, ?removeExistingData:bool) =
+        member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool) =
             initializeDDic dbApi
             project2Sqlite x dbApi removeExistingData
 
-        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:DbApi) =
+        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi) =
             initializeDDic dbApi
             fromSqlite3 identifier dbApi
 
     type RtSystem with  // ToSqlite3, FromSqlite3
-        member x.CommitToDB(dbApi:DbApi, ?removeExistingData:bool) =
+        member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool) =
             initializeDDic dbApi
             system2Sqlite x dbApi removeExistingData
 
-        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:DbApi) =
+        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi) =
             initializeDDic dbApi
             ()

@@ -36,12 +36,10 @@ module DbApiModule =
 
 
     /// Database API
-    type DbApi(dbProvider:DbProvider) =
-        let venderDb:DcDbBase =
-            match dbProvider with
-            | Sqlite   connStr -> DcSqlite(connStr, enableWAL=true, enableForeignKey=true)
-            | Postgres connStr -> DcPgSql(connStr)
+    type AppDbApi(dbProvider:DbProvider) =
+        inherit DbApi(dbProvider)
 
+        let venderDb = base.VendorDB
         let conn() =
             venderDb.CreateConnection()
             |> tee (fun conn ->
@@ -71,11 +69,11 @@ module DbApiModule =
                         use tr = conn.BeginTransaction()
                         try
                             conn.Execute(schema, transaction=tr) |> ignore
-                            insertEnumValues<DbStatus4>   conn tr
-                            insertEnumValues<DbCallType>  conn tr
-                            insertEnumValues<DbArrowType> conn tr
-                            insertEnumValues<DbDataType>  conn tr
-                            insertEnumValues<DbRangeType> conn tr
+                            insertEnumValues<DbStatus4>   conn tr Tn.Enum
+                            insertEnumValues<DbCallType>  conn tr Tn.Enum
+                            insertEnumValues<DbArrowType> conn tr Tn.Enum
+                            insertEnumValues<DbDataType>  conn tr Tn.Enum
+                            insertEnumValues<DbRangeType> conn tr Tn.Enum
                             tr.Commit()
                         with ex ->
                             logError $"Failed to create database schema: {ex.Message}"
@@ -93,10 +91,6 @@ module DbApiModule =
             // 강제 초기화 실행
             conn() |> dispose
 
-        member val DDic = DynamicDictionary() with get, set
-
-        member val ConnectionString = venderDb.ConnectionString
-
         /// DB 의 ORMWork[] 에 대한 cache
         member val WorkCache = createCache<ORMWork>(venderDb, Tn.Work)
 
@@ -106,8 +100,6 @@ module DbApiModule =
         /// DB 의 ORMEnum[] 에 대한 cache
         member val EnumCache = createCache<ORMEnum>(venderDb, Tn.Enum)
 
-        member x.VendorDB = venderDb
-        member x.DbProvider = dbProvider
 
         member x.ClearAllCaches() =
             x.WorkCache.Reset() |> ignore
@@ -123,17 +115,6 @@ module DbApiModule =
         member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
         member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId",   flowIds   |? [||])
         member x.EnumerateCalls       (?workIds:int[])   = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds   |? [||])
-
-        static member GetDefaultConnectionString(dbName:string, ?busyTimeoutSec) =
-            let busyTimeoutSec = busyTimeoutSec |? 20
-            let dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{dbName}.sqlite3")
-            $"Data Source={dbPath};Version=3;BusyTimeout={busyTimeoutSec}"
-
-        /// DB connection 및 transaction wrapper 생성 및 관리하에서 주어진 action 수행.
-        member x.With<'T>(action:IDbConnection * IDbTransaction -> 'T, ?optOnError:Exception->unit) =
-            venderDb.With(action, ?optOnError=optOnError)
-
-
 
         // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
         // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
@@ -151,7 +132,7 @@ module DbApiModule =
                         | Tn.Call -> x.CallCache.Reset() |> ignore
                         | _ -> ()
                     conn.Execute($"DELETE FROM {Tn.TableHistory}", tr) |> ignore
-                    conn.Execute($"DELETE FROM sqlite_sequence WHERE name = '{Tn.TableHistory}'", tr) |> ignore     // auto increment id 초기화
+                    conn.ResetSequence(Tn.TableHistory, tr) |> ignore  // auto increment id 초기화
             , optOnError = fun ex -> logError $"CheckDatabaseChange failed: {ex.Message}")
 
 
@@ -159,7 +140,7 @@ module DbApiModule =
 [<AutoOpen>]
 module ORMTypeConversionModule =
     // see insertEnumValues also.  e.g let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(DbCallType.Call)
-    type DbApi with
+    type AppDbApi with
         /// DB 에서 enum value 의 id 를 찾는다.  e.g. DbCallType.Call -> 1
         member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : int option =
             let category = typeof<'TEnum>.Name
@@ -183,14 +164,14 @@ module ORMTypeConversionModule =
             >>= (fun z -> Enum.TryParse<'TEnum>(z.Name) |> tryParseToOption)
 
     type ORMCall with   // Create
-        static member Create(dbApi:DbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
+        static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
             autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>
         ): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
             ORMCall(workId, status4Id, callTypeId, autoPre, safety, isDisabled, timeout)
 
-    let internal ds2Orm (dbApi:DbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
+    let internal ds2Orm (dbApi:AppDbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
         let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
         let bag = dbApi.DDic.Get<Db2RtBag>()
 
@@ -280,18 +261,18 @@ module ORMTypeConversionModule =
 
     type IDsObject with // ToORM
         /// Rt object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g RtProject -> ORMProject
-        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:DbApi, guidDic:Dictionary<Guid, ORMUnique>) =
+        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi, guidDic:Dictionary<Guid, ORMUnique>) =
             ds2Orm dbApi guidDic x :?> 'T
 
     type RtProject with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
-        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUnique> * ORMProject =
+        member x.ToORM(dbApi:AppDbApi): Dictionary<Guid, ORMUnique> * ORMProject =
             let guidDic = Dictionary<Guid, ORMUnique>()
             guidDic, ds2Orm dbApi guidDic x :?> ORMProject
 
     type RtSystem with // ToORM
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
-        member x.ToORM(dbApi:DbApi): Dictionary<Guid, ORMUnique> * ORMSystem =
+        member x.ToORM(dbApi:AppDbApi): Dictionary<Guid, ORMUnique> * ORMSystem =
             let guidDic = Dictionary<Guid, ORMUnique>()
             guidDic, ds2Orm dbApi guidDic x :?> ORMSystem
 
