@@ -109,11 +109,10 @@ module internal Ds2SqliteImpl =
                     onInserted=idUpdator [ormApiDef; rtAd;])
 
             match r with
-            | Some newId, affectedRows ->
+            | Some newId ->
                 tracefn $"Inserted API Def: {rtAd.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
-            | None, 0 -> ()     // no change
-            | None, affectedRows -> // update
-                tracefn $"Updated API Def: {rtAd.Name} with Id {ormApiDef.Id.Value}, systemId={ormApiDef.SystemId}"
+            | None -> // update or no change
+                tracefn $"Updated/Or No change API Def: {rtAd.Name} with Id {ormApiDef.Id.Value}, systemId={ormApiDef.SystemId}"
             ()
 
         // system 의 apiCalls 를 삽입

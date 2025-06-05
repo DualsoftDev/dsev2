@@ -105,7 +105,7 @@ module SchemaTestModule =
         // project 삽입
         let prjGuid = newGuid()
         let prjName = "MainProject"
-        let prjId = conn.InsertAndQueryLastRowId(
+        let prjId = conn.Insert(
                         $"INSERT INTO {Tn.Project} (guid, name, author, version) VALUES (@Guid, @Name, @Author, @Version)",
                         {| Guid=prjGuid; Name=prjName; Author=Environment.UserName; Version=ver|})
 
@@ -113,19 +113,19 @@ module SchemaTestModule =
         // system 삽입
         let sysGuid = newGuid()
         let sysName = "MainSystem"
-        let systemId = conn.InsertAndQueryLastRowId(
+        let systemId = conn.Insert(
                         $"INSERT INTO {Tn.System} (guid, name, author, langVersion, engineVersion) VALUES (@Guid, @Name, @Author, @LangVersion, @EngineVersion)",
                         {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver;|})
 
         // flow 삽입
         let flowGuid = newGuid()
-        let flowId = conn.InsertAndQueryLastRowId(
+        let flowId = conn.Insert(
                         $"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@Guid, @Name, @SystemId)",
                         {| Guid=flowGuid; Name="MainFlow"; SystemId=systemId|})
 
         // work 삽입 (flow 연결된 경우)
         let workGuid1 = newGuid()
-        let workId = conn.InsertAndQueryLastRowId(
+        let workId = conn.Insert(
                         $"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@Guid, @Name, @SystemId, @FlowId)",
                         {| Guid=workGuid1; Name="Work1"; SystemId=systemId; FlowId=flowId|})
 
@@ -284,6 +284,7 @@ module SchemaTestModule =
             "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
             |> DbProvider.Postgres
             |> DbApi
+
         basic_test dbApi
 
 

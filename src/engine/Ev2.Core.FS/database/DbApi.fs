@@ -165,7 +165,7 @@ module ORMTypeConversionModule =
             let name = enumValue.ToString()
             use conn = dbApi.CreateConnection()
             conn.TryQuerySingle<ORMEnum>(
-                $"SELECT * FROM {Tn.Enum} WHERE Category = @Category AND Name = @Name",
+                $"SELECT * FROM {Tn.Enum} WHERE category = @Category AND name = @Name",
                 {| Category = category; Name = name |}
             ) >>= (fun z -> n2o z.Id)
 
