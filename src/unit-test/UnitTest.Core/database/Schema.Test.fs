@@ -487,16 +487,45 @@ module SchemaTestModule =
     [<Test>]
     let ``비교`` () =
         let dsProject = edProject |> validateRuntime
-        let dsProject2 = dsProject.Replicate() |> validateRuntime
-        dsProject.IsEqual dsProject2 === true
 
-        // dsProject2 의 work 이름을 변경하고 비교
-        let w = dsProject.Systems[0].Works[0]
-        let w2 = dsProject2.Systems[0].Works[0]
-        w2.Name <- "ChangedWorkName"
-        let diff = dsProject.ComputeDiff(dsProject2) |> toList
-        diff.Length === 1
-        diff[0] === Diff("Name", w, w2)
+
+        do
+            let dsProject2 = dsProject.Replicate() |> validateRuntime
+            dsProject.IsEqual dsProject2 === true
+
+            // dsProject2 의 work 이름을 변경하고 비교
+            let w = dsProject.Systems[0].Works[0]
+            let w2 = dsProject2.Systems[0].Works[0]
+            w2.Name <- "ChangedWorkName"
+            w2.Motion <- "MyMotion"
+            w2.Parameter <- """{"Age": 3}"""
+            let diff = dsProject.ComputeDiff(dsProject2) |> toList
+            diff.Length === 3
+            diff |> contains (Diff("Name",      w, w2)) === true
+            diff |> contains (Diff("Parameter", w, w2)) === true
+            diff |> contains (Diff("Motion",    w, w2)) === true
+
+        do
+            // 추가한 개체 (arrow) detect 가능해야 한다.
+            let dsProject2 = dsProject.Replicate() |> validateRuntime
+            let w = dsProject2.Systems[0].Works[0]
+            let c1, c2 = w.Calls[0], w.Calls[0]
+            let arrow = RtArrowBetweenCalls(c1, c2, DbArrowType.Start)
+            w.AddArrows([arrow])
+            let diff = dsProject.ComputeDiff(dsProject2) |> toList
+            diff |> contains (RightOnly(arrow)) === true
+            noop()
+
+        do
+            // 삭제한 개체 (arrow) detect 가능해야 한다.
+            let dsProject2 = dsProject.Replicate() |> validateRuntime
+            let w = dsProject2.Systems[0].Works[0]
+            let arrowRight = w.Arrows.Head
+            let arrowLeft = dsProject.Systems[0].Works[0].Arrows.Head
+            w.RemoveArrows([arrowRight])
+            let diff = dsProject.ComputeDiff(dsProject2) |> toList
+            diff |> contains (LeftOnly arrowLeft) === true
+            noop()
         noop()
 
 

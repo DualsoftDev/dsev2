@@ -28,30 +28,12 @@ module NewtonsoftJsonModules =
 
     [<AbstractClass>]
     type NjUnique() as this =
-        //inherit Unique()
+        inherit Unique()
         interface IUnique
-
 
         /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
         [<JsonProperty(Order = -101)>] member val private RuntimeType = let name = this.GetType().Name in Regex.Replace(name, "^Nj", "")
 
-        /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        [<JsonProperty(Order = -100)>] member val internal Id = nullableId with get, set
-        ///// Database 의 primary id key.  Database 에 삽입시 생성
-        [<JsonIgnore>] member x.OptId = x.Id |> Option.ofNullable
-
-        [<JsonProperty(Order = -99)>] member val Name = nullString with get, set
-
-        /// Guid: 메모리에 최초 객체 생성시 생성
-        [<JsonProperty(Order = -98)>] member val Guid:Guid = emptyGuid with get, set
-
-        [<JsonProperty(Order = -97)>] member val Parameter = nullString with get, set
-
-        /// DateTime: 메모리에 최초 객체 생성시 생성
-        [<JsonProperty(Order = -96)>] member val DateTime = minDate with get, set
-
-        /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
-        [<JsonIgnore>] member val RawParent = Option<NjUnique>.None with get, set
 
         /// 내부 구현 전용.  serialize 대상에서 제외됨
         [<JsonIgnore>] member val internal DDic = DynamicDictionary()
@@ -72,22 +54,10 @@ module NewtonsoftJsonModules =
 module rec NewtonsoftJsonObjects =
     //let njSetParentI (parent:NjUnique) (x:#NjUnique): unit = x.RawParent <- Some parent
 
-    /// NjUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
-    let internal fromNjUniqINGD (src:#NjUnique) (dst:#Unique): #Unique =
-        dst.Id <- n2o src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
-        dst.Parameter <- src.Parameter
-        dst.DateTime <- src.DateTime
-        dst
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 NjUnique 객체에 저장
-    let internal toNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
-        dst.Id <- o2n src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
-        dst.DateTime <- src.DateTime
-        dst.Parameter <- src.Parameter
+    let internal fromNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
+        fromUniqINGD src dst |> ignore
 
         match box src with
         | :? Unique as ds ->
@@ -169,7 +139,7 @@ module rec NewtonsoftJsonObjects =
 
             NjSystem(OriginGuid=originGuid, IRI=rt.IRI, Author=rt.Author,
                 LangVersion=rt.LangVersion, EngineVersion=rt.EngineVersion, Description=rt.Description)
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
             |> tee (fun z ->
                 z.Flows    <- rt.Flows    |-> NjFlow.FromRuntime    |> toArray
                 z.Arrows   <- rt.Arrows   |-> NjArrow.FromRuntime   |> toArray
@@ -184,7 +154,7 @@ module rec NewtonsoftJsonObjects =
 
         static member FromRuntime(rt:RtFlow) =
             NjFlow()
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
 
     type NjWork () =
         inherit NjUnique()
@@ -207,7 +177,7 @@ module rec NewtonsoftJsonObjects =
 
         static member FromRuntime(rt:RtWork) =
             NjWork()
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
             |> tee (fun z ->
                 z.Motion     <- rt.Motion
                 z.Script     <- rt.Script
@@ -232,7 +202,7 @@ module rec NewtonsoftJsonObjects =
         static member FromRuntime(rt:IArrow) =
             assert(isItNotNull rt)
             NjArrow()
-            |> toNjUniqINGD (rt :?> Unique)
+            |> fromNjUniqINGD (rt :?> Unique)
             |> tee (fun z ->
                 z.Source <- guid2str (rt.GetSource().Guid)
                 z.Target <- guid2str (rt.GetTarget().Guid)
@@ -261,7 +231,7 @@ module rec NewtonsoftJsonObjects =
 
         static member FromRuntime(rt:RtCall) =
             NjCall(CallType = rt.CallType.ToString(), AutoPre=rt.AutoPre, Safety=rt.Safety, Timeout=o2n rt.Timeout)
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
             |> tee (fun z ->
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
             )
@@ -286,7 +256,7 @@ module rec NewtonsoftJsonObjects =
                 InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
                 ValueType=rt.ValueType.ToString(), RangeType=rt.RangeType.ToString(),
                 Value1=rt.Value1, Value2=rt.Value2 )
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
 
     type NjApiDef() =
         inherit NjUnique()
@@ -297,7 +267,7 @@ module rec NewtonsoftJsonObjects =
         static member FromRuntime(rt:RtApiDef) =
             assert(isItNotNull rt)
             NjApiDef(IsPush=rt.IsPush)
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
 
 
 
@@ -316,7 +286,7 @@ module rec NewtonsoftJsonObjects =
     let rec internal onNsJsonSerializing (njObj:INjObject) =
         match njObj with
         | :? NjUnique as uniq ->
-            uniq |> toNjUniqINGD uniq.RuntimeObject |> ignore
+            uniq |> fromNjUniqINGD uniq.RuntimeObject |> ignore
         | _ ->
             ()
 
@@ -407,7 +377,7 @@ module rec NewtonsoftJsonObjects =
                     , Version=njp.Version
                     , Description=njp.Description
                     , Database=njp.Database )
-                |> fromNjUniqINGD njp
+                |> fromUniqINGD njp
                 |> tee (fun z ->
                     actives @ passives
                     |> iter (setParentI z) )
@@ -440,7 +410,7 @@ module rec NewtonsoftJsonObjects =
 
                     let dsWork =
                         RtWork.Create(calls, arrows, optFlow)
-                        |> fromNjUniqINGD njw
+                        |> fromUniqINGD njw
                         |> tee(fun z ->
                             z.Motion     <- njw.Motion
                             z.Script     <- njw.Script
@@ -467,7 +437,7 @@ module rec NewtonsoftJsonObjects =
 
                 a.RuntimeObject <-
                     RtArrowBetweenWorks(src, tgt, arrowType)
-                    |> fromNjUniqINGD a)
+                    |> fromUniqINGD a)
 
             let arrows   = njs.Arrows   |-> (fun z -> z.RuntimeObject :?> RtArrowBetweenWorks)
             let apiDefs  = njs.ApiDefs  |-> (fun z -> z.RuntimeObject :?> RtApiDef)
@@ -492,10 +462,10 @@ module rec NewtonsoftJsonObjects =
                                 , EngineVersion=njs.EngineVersion
                                 , Description=njs.Description
                                 , OriginGuid=n2o njs.OriginGuid)
-                |> fromNjUniqINGD njs
+                |> fromUniqINGD njs
 
         | :? NjFlow as njf ->
-            njf.RuntimeObject <- RtFlow() |> fromNjUniqINGD njf
+            njf.RuntimeObject <- RtFlow() |> fromUniqINGD njf
             ()
 
         | :? NjWork as njw ->
@@ -516,7 +486,7 @@ module rec NewtonsoftJsonObjects =
 
                 a.RuntimeObject <-
                     RtArrowBetweenCalls(src, tgt, arrowType)
-                    |> fromNjUniqINGD a )
+                    |> fromUniqINGD a )
 
             (* DsWork 객체 생성은 flow guid 생성 시까지 지연 *)
 
@@ -531,7 +501,7 @@ module rec NewtonsoftJsonObjects =
 
             njc.RuntimeObject <-
                 RtCall(callType, njc.ApiCalls, njc.AutoPre, njc.Safety, njc.IsDisabled, n2o njc.Timeout)
-                |> fromNjUniqINGD njc
+                |> fromUniqINGD njc
             ()
 
         | :? NjApiCall as njac ->
@@ -550,12 +520,12 @@ module rec NewtonsoftJsonObjects =
             njac.RuntimeObject <-
                 RtApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueType, rangeType, njac.Value1, njac.Value2)
-                |> fromNjUniqINGD njac
+                |> fromUniqINGD njac
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
                 RtApiDef(njad.IsPush)
-                |> fromNjUniqINGD njad
+                |> fromUniqINGD njad
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
@@ -604,7 +574,7 @@ module Ds2JsonModule =
                 , Author=rt.Author
                 , Version=rt.Version
                 , Description=rt.Description)
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
             |> tee(fun nj -> verify (nj.RuntimeObject = rt)) // serialization 연결 고리
 
 
@@ -640,7 +610,7 @@ module Ds2JsonModule =
                 , LangVersion=rt.LangVersion
                 , EngineVersion=rt.EngineVersion
                 , Description=rt.Description)
-            |> toNjUniqINGD rt
+            |> fromNjUniqINGD rt
             |> tee(fun nj -> verify (nj.RuntimeObject = rt)) // serialization 연결 고리
 
     type RtSystem with // // ToJson, FromJson

@@ -4,6 +4,7 @@ open System
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
+open Newtonsoft.Json
 
 
 [<AutoOpen>]
@@ -56,19 +57,19 @@ module Interfaces =
         internal new() = Unique(nullString, newGuid(), nullString, now(), ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        member val Id = id with get, set
+        [<JsonProperty(Order = -100)>] member val Id = id with get, set
 
-        member val Name = name with get, set
-        member val Parameter = parameter with get, set
+        [<JsonProperty(Order = -100)>] member val Name = name with get, set
+        [<JsonProperty(Order = -97)>]  member val Parameter = parameter with get, set
 
         /// Guid: 메모리에 최초 객체 생성시 생성
-        member val Guid:Guid = guid with get, set
+        [<JsonProperty(Order = -98)>]  member val Guid:Guid = guid with get, set
 
         /// DateTime: 메모리에 최초 객체 생성시 생성
-        member val DateTime = dateTime with get, set
+        [<JsonProperty(Order = -96)>]  member val DateTime = dateTime with get, set
 
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
-        member val RawParent = parent with get, set
+        [<JsonIgnore>] member val RawParent = parent with get, set
 
         /// 내부 구현 전용.  serialize 대상에서 제외됨
         member val internal DDic = DynamicDictionary()
@@ -125,18 +126,18 @@ module internal UniqueHelpers =
 
     /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
     let fromUniqINGD (src:#Unique) (dst:#Unique): #Unique =
-        dst.Id <- src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
+        dst.Id        <- src.Id
+        dst.Name      <- src.Name
+        dst.Guid      <- src.Guid
         dst.Parameter <- src.Parameter
-        dst.DateTime <- src.DateTime
+        dst.DateTime  <- src.DateTime
         dst
 
 
 
     let uniqRenew (dst:#Unique): #Unique =
-        dst.Id <- None
-        dst.Guid <- newGuid()
+        dst.Id       <- None
+        dst.Guid     <- newGuid()
         dst.DateTime <- now()
         dst
 
