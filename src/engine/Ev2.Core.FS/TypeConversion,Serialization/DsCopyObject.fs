@@ -173,6 +173,9 @@ module DsObjectCopyAPIModule =
             let current = now()
 
             replica.OriginGuid <- Some x.Guid
+            replica.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
+
+
             objs |> iter (fun obj ->
                 obj.Id <- None
                 obj.Guid <- guidDic[obj.Guid]
@@ -232,6 +235,7 @@ module DsObjectCopyAPIModule =
                 protos   |> z.RawPrototypeSystems.AddRange
 
                 z.Name        <- x.Name
+                z.Parameter   <- x.Parameter
                 z.Version     <- x.Version
                 z.Author      <- x.Author
                 z.Description <- x.Description

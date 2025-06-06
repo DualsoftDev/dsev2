@@ -168,6 +168,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "originGuid"}    TEXT      -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , {k "description"}   TEXT
     , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
+    , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
 );
 
 
