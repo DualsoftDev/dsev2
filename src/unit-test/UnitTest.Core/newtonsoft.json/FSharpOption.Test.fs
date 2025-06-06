@@ -14,11 +14,13 @@ open System.Drawing
 open Dual.Common.UnitTest.FS
 open Ev2.Core.FS
 
-
+// see ..\submodules\nuget\UnitTest\UnitTest.Nuget.Common\Json\NsFsOption.Test.fs
 type NullContainer (nullstr:string, nullableInt:Nullable<int>, optNullable:int option) =
     member val String = nullString with get, set
     member val NullableInt = nullableInt with get, set
     member val OptNullable = optNullable with get, set
+
+
 [<Test>]
 let doTestNullable() =
     do
@@ -27,8 +29,9 @@ let doTestNullable() =
         json === "{}"
     do
         let nullData = NullContainer(null, Nullable(3), Some(3))
-        let json = EmJson.ToJson(nullData)
+        let json = JsonConvert.SerializeObject(nullData, Formatting.Indented)
         json === """{
+  "String": null,
   "NullableInt": 3,
   "OptNullable": {
     "Case": "Some",
@@ -37,5 +40,9 @@ let doTestNullable() =
     ]
   }
 }"""
-        ()
-    ()
+
+        let json2 = EmJson.ToJson(nullData)
+        json2 === """{
+  "NullableInt": 3,
+  "OptNullable": 3
+}"""

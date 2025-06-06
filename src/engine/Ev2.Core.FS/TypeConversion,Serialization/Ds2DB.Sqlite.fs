@@ -17,17 +17,11 @@ type DbObjectIdentifier =
     | ByName of string
 
 module internal Ds2SqliteImpl =
-    /// src ORM 객체의 unique 속성(Id, Name, Guid, DateTime) 들을 dst 에 복사
-    let fromOrmUniqINGD (src:#ORMUnique) (dst:#Unique) =
-        dst
-        |> uniqINGD (n2o src.Id) src.Name src.Guid src.DateTime
-
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
         for t in targets do
             match t with
-            | :? ORMUnique as a -> a.Id <- Nullable id
-            | :? RtUnique  as a -> a.Id <- Some id
+            | :? Unique  as a -> a.Id <- Some id
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
@@ -39,7 +33,7 @@ module internal Ds2SqliteImpl =
                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""", ormSystem, tr)
 
         s.Id <- Some sysId
-        cache[s.Guid].Id <- sysId
+        cache[s.Guid].Id <- Some sysId
 
         match optProject with
         | Some rtp ->
@@ -84,14 +78,14 @@ module internal Ds2SqliteImpl =
         // flows 삽입
         for f in s.Flows do
             let ormFlow = f.ToORM<ORMFlow>(dbApi, cache)
-            ormFlow.SystemId <- Nullable sysId
+            ormFlow.SystemId <- Some sysId
 
             let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
                                     (guid, parameter, dateTime, name, systemId)
                              VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @SystemId);""", ormFlow, tr)
 
             f.Id <- Some flowId
-            ormFlow.Id <- flowId
+            ormFlow.Id <- Some flowId
             assert (cache[f.Guid] = ormFlow)
 
             // TODO : arrow 처리.  System, flow, work 공히...
@@ -100,7 +94,7 @@ module internal Ds2SqliteImpl =
         // system 의 apiDefs 를 삽입
         for rtAd in s.ApiDefs do
             let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi, cache)
-            ormApiDef.SystemId <- sysId
+            ormApiDef.SystemId <- Some sysId
 
             let r = conn.Upsert(Tn.ApiDef, ormApiDef,
                     ["Guid"; "Parameter"; "DateTime"; "Name"; "IsPush"; "SystemId"],     // PK 는 자동으로 채우져야 해서 "Id" 는 생략해야 함
@@ -129,19 +123,19 @@ module internal Ds2SqliteImpl =
         // works, calls 삽입
         for w in s.Works do
             let ormWork = w.ToORM<ORMWork>(dbApi, cache)
-            ormWork.SystemId <- Nullable sysId
+            ormWork.SystemId <- Some sysId
 
             let workId = conn.Insert($"""INSERT INTO {Tn.Work}
                                 (guid, parameter, dateTime,   name, systemId, status4Id, flowId)
                          VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @SystemId, @Status4Id, @FlowId);""", ormWork, tr)
 
             w.Id <- Some workId
-            ormWork.Id <- workId
+            ormWork.Id <- Some workId
             assert(cache[w.Guid] = ormWork)
 
             for c in w.Calls do
                 let ormCall = c.ToORM<ORMCall>(dbApi, cache)
-                ormCall.WorkId <- Nullable workId
+                ormCall.WorkId <- Some workId
 
                 let callId =
                     conn.Insert($"""INSERT INTO {Tn.Call}
@@ -149,7 +143,7 @@ module internal Ds2SqliteImpl =
                          VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoPre, @Safety, @IsDisabled, @Timeout);""", ormCall, tr)
 
                 c.Id <- Some callId
-                ormCall.Id <- callId
+                ormCall.Id <- Some callId
                 assert(cache[c.Guid] = ormCall)
 
                 // call - apiCall 에 대한 mapping 정보 삽입
@@ -233,7 +227,7 @@ module internal Ds2SqliteImpl =
                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
 
             proj.Id <- Some projId
-            ormProject.Id <- projId
+            ormProject.Id <- Some projId
 
             for s in systems do
                 system2SqliteHelper dbApi conn tr guidDic s (Some proj)
@@ -308,14 +302,14 @@ module internal Sqlite2DsImpl =
 
             let edProj =
                 RtProject.Create()
-                |> fromOrmUniqINGD ormProject
+                |> fromUniqINGD ormProject
                 |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
 
             let edSystems =
                 ormSystems
                     |-> fun s ->
                         RtSystem.Create()
-                        |> fromOrmUniqINGD s
+                        |> fromUniqINGD s
                         |> uniqParent (Some edProj)
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
 
@@ -337,7 +331,7 @@ module internal Sqlite2DsImpl =
                         bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                         RtFlow(RawParent = Some s)
-                        |> fromOrmUniqINGD orm
+                        |> fromUniqINGD orm
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edFlows |> s.AddFlows
@@ -349,7 +343,7 @@ module internal Sqlite2DsImpl =
                         bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                         RtApiDef(orm.IsPush, RawParent = Some s)
-                        |> fromOrmUniqINGD orm
+                        |> fromUniqINGD orm
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edApiDefs |> s.AddApiDefs
@@ -363,14 +357,14 @@ module internal Sqlite2DsImpl =
                         (* orm.ApiDefId -> EdApiDef : DB 에 저장된 key 로 bag 을 뒤져서 EdApiDef 객체를 찾는다. *)
                         let apiDefGuid =
                             bag.DbDic.Values.OfType<ORMApiDef>()
-                            |> find(fun z -> z.Id = Nullable orm.ApiDefId)
+                            |> find(fun z -> z.Id = Some orm.ApiDefId)
                             |> _.Guid
 
                         let valueType = dbApi.TryFindEnumValue<DbDataType> orm.ValueTypeId |> Option.get
                         let rangeType = dbApi.TryFindEnumValue<DbRangeType> orm.RangeTypeId |> Option.get
                         RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                                     orm.InSymbol, orm.OutSymbol, valueType, rangeType, orm.Value1, orm.Value2)
-                        |> fromOrmUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+                        |> fromUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edApiCalls |> s.AddApiCalls
 
@@ -382,7 +376,7 @@ module internal Sqlite2DsImpl =
                     for orm in orms do
                         RtWork.Create()
                         |> setParent s
-                        |> fromOrmUniqINGD orm
+                        |> fromUniqINGD orm
                         |> tee(fun w ->
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
@@ -412,7 +406,7 @@ module internal Sqlite2DsImpl =
 
                             RtCall(callType, apiCallGuids, orm.AutoPre, orm.Safety, orm.IsDisabled, n2o orm.Timeout)
                             |> setParent w
-                            |> fromOrmUniqINGD orm
+                            |> fromUniqINGD orm
                             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                             |> tee(fun c ->
                                 c.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
@@ -438,7 +432,7 @@ module internal Sqlite2DsImpl =
                             let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
                             RtArrowBetweenCalls(src, tgt, arrowType)
-                            |> fromOrmUniqINGD orm
+                            |> fromUniqINGD orm
                             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                     ]
                     w.AddArrows edArrows
@@ -461,7 +455,7 @@ module internal Sqlite2DsImpl =
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
                         RtArrowBetweenWorks(src, tgt, arrowType)
-                        |> fromOrmUniqINGD orm
+                        |> fromUniqINGD orm
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edArrows |> s.AddArrows

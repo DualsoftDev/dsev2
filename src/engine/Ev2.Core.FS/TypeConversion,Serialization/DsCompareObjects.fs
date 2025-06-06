@@ -12,35 +12,30 @@ module rec DsCompareObjects =
             match x with
             | :? Unique as u    -> u.Guid
             | :? NjUnique as u  -> u.Guid
-            | :? ORMUnique as u -> u.Guid
             | _ -> failwith "ERROR"
 
         member x.GetName() =
             match x with
             | :? Unique as u    -> u.Name
             | :? NjUnique as u  -> u.Name
-            | :? ORMUnique as u -> u.Name
             | _ -> failwith "ERROR"
 
         member x.TryGetId():Id option =
             match x with
             | :? Unique as u    -> u.Id
             | :? NjUnique as u  -> n2o u.Id
-            | :? ORMUnique as u -> n2o u.Id
             | _ -> failwith "ERROR"
 
         member x.GetDateTime() =
             match x with
             | :? Unique as u    -> u.DateTime
             | :? NjUnique as u  -> u.DateTime
-            | :? ORMUnique as u -> u.DateTime
             | _ -> failwith "ERROR"
 
         member x.TryGetRawParent():IUnique option =
             match x with
             | :? Unique as u    -> u.RawParent >>= tryCast<IUnique>
             | :? NjUnique as u  -> u.RawParent >>= tryCast<IUnique>
-            | :? ORMUnique as u -> u.RawParent >>= tryCast<IUnique>
             | _ -> failwith "ERROR"
 
     type UniqueCompareCriteria(?id:bool, ?guid:bool, ?dateTime:bool, ?parentGuid) =

@@ -8,7 +8,7 @@ open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module Interfaces =
-    type Id = int   //int64
+    type Id = int64
     /// 기본 객체 인터페이스
     type IDsObject  = interface end
     type IParameter = inherit IDsObject

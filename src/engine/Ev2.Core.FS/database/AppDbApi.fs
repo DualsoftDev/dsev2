@@ -142,7 +142,7 @@ module ORMTypeConversionModule =
     // see insertEnumValues also.  e.g let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(DbCallType.Call)
     type AppDbApi with
         /// DB 에서 enum value 의 id 를 찾는다.  e.g. DbCallType.Call -> 1
-        member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : int option =
+        member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : Id option =
             let category = typeof<'TEnum>.Name
             let name = enumValue.ToString()
             use conn = dbApi.CreateConnection()
@@ -157,7 +157,7 @@ module ORMTypeConversionModule =
                 and 'TEnum : enum<int>
                 and 'TEnum : (new : unit -> 'TEnum)
                 and 'TEnum :> ValueType>
-            (enumId: int) : 'TEnum option =
+            (enumId: Id) : 'TEnum option =
 
             use conn = dbApi.CreateConnection()
             conn.TryQuerySingle<ORMEnum>($"SELECT * FROM {Tn.Enum} WHERE id = {enumId}")
@@ -199,7 +199,7 @@ module ORMTypeConversionModule =
                     >>= (fun (s:RtSystem) ->                // s : prototype 에 해당하는 RtSystem
                             s.DDic.TryGet("ORMObject")      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
                             >>= tryCast<ORMSystem>
-                            >>= fun s -> n2o s.Id)
+                            >>= _.Id)
                     |> o2n
 
                 ORMSystem(prototypeId, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)

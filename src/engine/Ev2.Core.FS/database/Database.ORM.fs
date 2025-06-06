@@ -29,29 +29,17 @@ module ORMTypesModule =
     type IORMLog        = inherit IORMUnique
 
     [<AbstractClass>]
-    type ORMUnique(name:string, guid:Guid, id:Nullable<Id>, parameter:string, dateTime:DateTime) =
+    type ORMUnique(name:string, guid:Guid, id:Id option, parameter:string, dateTime:DateTime) =
+        inherit Unique()
         interface IORMUnique
 
-        new() = ORMUnique(nullString, emptyGuid, nullableId, nullString, minDate)
-
-        member val Id = id with get, set
+        new() = ORMUnique(nullString, emptyGuid, None, nullString, minDate)
         /// Parent Id
-        member val ParentId = Nullable<Id>() with get, set
-        member val Parameter = parameter with get, set
-        member val Name = name with get, set
-
-        //member val Guid = guid2str guid with get, set
-        member val Guid = guid with get, set
-
-        member val DateTime = dateTime with get, set
-        member val RawParent = Option<ORMUnique>.None with get, set
-
-        /// 내부 구현 전용.  serialize 대상에서 제외됨
-        member val internal DDic = DynamicDictionary()
+        member val ParentId = Option<Id>.None with get, set
 
     /// ORMUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
-    let fromOrmUniqINGD (src:#ORMUnique) (dst:#Unique): #Unique =
-        dst.Id <- n2o src.Id
+    let fromUniqINGD (src:#Unique) (dst:#Unique): #Unique =
+        dst.Id <- src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
         dst.Parameter <- src.Parameter
@@ -60,14 +48,9 @@ module ORMTypesModule =
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
     let toOrmUniqINGDP (src:#Unique) (dst:#ORMUnique): #ORMUnique =
-        dst.Id <- o2n src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
-        dst.Parameter <- src.Parameter
-        dst.DateTime <- src.DateTime
+        dst |> fromUniqINGD src |> ignore
 
-        let pid = src.RawParent >>= _.Id
-        dst.ParentId <- o2n pid
+        dst.ParentId <- src.RawParent >>= _.Id
         dst.DDic.Set("RtObject", src)
         src.DDic.Set("ORMObject", dst)
         dst
@@ -75,24 +58,24 @@ module ORMTypesModule =
 
 
     [<AbstractClass>]
-    type ORMArrowBase(srcId:int, tgtId:int, parentId:Id, arrowTypeId:Id) =
+    type ORMArrowBase(srcId:Id, tgtId:Id, parentId:Id option, arrowTypeId:Id) =
         inherit ORMUnique(ParentId=parentId)
-        new() = ORMArrowBase(-1, -1, -1, -1)
+        new() = ORMArrowBase(-1, -1, None, -1)
         interface IORMArrow
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
         member val TypeId = arrowTypeId with get, set
 
     /// Work 간 연결.  System 에 속함
-    type ORMArrowWork(srcId:int, tgtId:int, systemId:int, arrowTypeId:Id) =
-        inherit ORMArrowBase(srcId, tgtId, systemId, arrowTypeId)
+    type ORMArrowWork(srcId:Id, tgtId:Id, systemId:Id, arrowTypeId:Id) =
+        inherit ORMArrowBase(srcId, tgtId, Some systemId, arrowTypeId)
         new() = ORMArrowWork(-1, -1, -1, -1)
         interface IORMArrowWork
         member val SystemId = systemId with get, set
 
     /// Call 간 연결.  Work 에 속함
-    type ORMArrowCall(srcId:int, tgtId:int, workId:int, arrowTypeId:Id) =
-        inherit ORMArrowBase(srcId, tgtId, workId, arrowTypeId)
+    type ORMArrowCall(srcId:Id, tgtId:Id, workId:Id, arrowTypeId:Id) =
+        inherit ORMArrowBase(srcId, tgtId, Some workId, arrowTypeId)
         new() = ORMArrowCall(-1, -1, -1, -1)
         interface IORMArrowCall
         member val WorkId = workId with get, set
@@ -122,14 +105,14 @@ module ORMTypesModule =
         member val OriginGuid = originGuid with get, set
 
     type ORMFlow(systemId:Id) =
-        inherit ORMUnique(ParentId=systemId)
+        inherit ORMUnique(ParentId=Some systemId)
 
         new() = ORMFlow(-1)
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
     type ORMWork(systemId:Id, status4Id:Nullable<Id>, flowId:Nullable<Id>) =
-        inherit ORMUnique(ParentId=systemId)
+        inherit ORMUnique(ParentId=Some systemId)
 
         new() = ORMWork(-1, nullableId, nullableId)
         interface IORMWork
@@ -137,10 +120,10 @@ module ORMTypesModule =
         member val FlowId = flowId with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<int>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
-        inherit ORMUnique(ParentId=workId)
+    type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
+        inherit ORMUnique(ParentId=Some workId)
 
-        new() = ORMCall(-1, nullableId, DbCallType.Normal |> int |> Nullable, nullString, nullString, false, nullableInt)
+        new() = ORMCall(-1, nullableId, (DbCallType.Normal |> int64 |> Nullable), nullString, nullString, false, nullableInt)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id = status4Id with get, set
@@ -173,7 +156,7 @@ module ORMTypesModule =
     type ORMApiCall(systemId:Id, apiDefId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string,
         valueTypeId:Id, rangeTypeId:Id, value1:string, value2:string
     ) =
-        inherit ORMUnique(ParentId=systemId)
+        inherit ORMUnique(ParentId=Some systemId)
 
         new() = ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, -1, -1, nullString, nullString)
         interface IORMApiCall
@@ -191,7 +174,7 @@ module ORMTypesModule =
 
 
     type ORMApiDef(systemId:Id) =
-        inherit ORMUnique(ParentId=systemId)
+        inherit ORMUnique(ParentId=Some systemId)
 
         new() = ORMApiDef(-1)
         interface IORMApiDef
