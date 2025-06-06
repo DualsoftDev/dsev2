@@ -515,8 +515,8 @@ module SchemaTestModule =
             |> createSqliteDbApi
         dbApi.With(fun (conn, tr) ->
             conn.Execute($"""INSERT INTO {Tn.TypeTest}
-                                   (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
-                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
+                                   (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,  dateTime)
+                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
         |> ignore
 
     [<Test>]
