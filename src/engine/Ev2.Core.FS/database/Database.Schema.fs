@@ -90,6 +90,7 @@ module DatabaseSchemaModule =
 
         let int32 = "INT"
         let boolean = dbProvider.SqlBoolean
+        let now = dbProvider.SqlNow
         let guid = dbProvider.SqlGuidKeyType
         let jsonb = dbProvider.SqlJsonBType
 
@@ -115,26 +116,54 @@ module DatabaseSchemaModule =
             |> String.concat "\n"
 
 
+        let sysIdKey = "trigger_temp_systemId"
+        let sqlConcat (name:string) =
+            match dbProvider with
+            | Sqlite _ -> $"GROUP_CONCAT({name})"
+            | Postgres _ -> $"STRING_AGG({name}::TEXT, ',')"
+            //| Postgres _ -> " ARRAY_AGG(systemId)"
+
         let projectTriggerBeforeDelete =
             let name = "trigger_project_beforeDelete_recordSystemIds"
             let body = $"""
-    DELETE FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId';
+    INSERT INTO {Tn.Log} (message)
+    SELECT
+      'beforeDelete: projectId=' || OLD.id ||
+      ', systemIds=' || {sqlConcat "systemId"}
+    FROM {Tn.MapProject2System}
+    WHERE projectId = OLD.id;
+
+
+    DELETE FROM {Tn.Temp} WHERE key = '{sysIdKey}';
     INSERT INTO {Tn.Temp} (key, val)
-    SELECT 'trigger_temp_systemId', systemId FROM {Tn.MapProject2System}
+    SELECT '{sysIdKey}', systemId FROM {Tn.MapProject2System}
     WHERE projectId = OLD.id;
     """
             dbProvider.SqlCreateCustomTrigger(name, "BEFORE", "DELETE", Tn.Project, body)
 
+
+
+
         let projectTriggerAfterDelete =
             let name = "trigger_project_afterDelete_dropSystems"
             let body = $"""
+
+    -- 로그 남기기
+    INSERT INTO {Tn.Log} (message)
+    SELECT
+      'afterDelete: projectId=' || OLD.id ||
+      ', systemIds=' || {sqlConcat "val"}   -- 'val' 은 temp 테이블의 column 명
+    FROM {Tn.Temp}
+    WHERE key = '{sysIdKey}';
+
+
     DELETE FROM {Tn.System}
     WHERE id IN (
-        SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId'
+        SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = '{sysIdKey}'
     ) AND NOT EXISTS (
         SELECT 1 FROM {Tn.MapProject2System} WHERE systemId = {Tn.System}.id
     );
-    DELETE FROM meta WHERE key = 'trigger_temp_systemId';
+    DELETE FROM meta WHERE key = '{sysIdKey}';
     """
             dbProvider.SqlCreateCustomTrigger(name, "AFTER", "DELETE", Tn.Project, body)
 
@@ -365,6 +394,12 @@ CREATE TABLE {k Tn.Meta} (
     {k "id"}  {autoincPrimaryKey},
     {k "key"} TEXT NOT NULL,
     {k "val"} TEXT NOT NULL
+);
+
+CREATE TABLE {k Tn.Log} (
+    {k "id"}  {autoincPrimaryKey},
+    {k "dateTime"} {datetime} NOT NULL DEFAULT {now},
+    {k "message"} TEXT NOT NULL
 );
 
 CREATE TABLE {k Tn.Temp} (
