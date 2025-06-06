@@ -190,6 +190,12 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         interface INjWork
         member val FlowGuid = null:string with get, set
+        member val Motion     = nullString with get, set
+        member val Script     = nullString with get, set
+        member val IsFinished = false      with get, set
+        member val NumRepeat  = 0          with get, set
+        member val Period     = 0          with get, set
+        member val Delay      = 0          with get, set
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
@@ -203,6 +209,13 @@ module rec NewtonsoftJsonObjects =
             NjWork()
             |> toNjUniqINGD rt
             |> tee (fun z ->
+                z.Motion     <- rt.Motion
+                z.Script     <- rt.Script
+                z.IsFinished <- rt.IsFinished
+                z.NumRepeat  <- rt.NumRepeat
+                z.Period     <- rt.Period
+                z.Delay      <- rt.Delay
+
                 z.Calls    <- rt.Calls   |-> NjCall.FromRuntime  |> toArray
                 z.Arrows   <- rt.Arrows  |-> NjArrow.FromRuntime |> toArray
                 z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
@@ -428,6 +441,13 @@ module rec NewtonsoftJsonObjects =
                     let dsWork =
                         RtWork.Create(calls, arrows, optFlow)
                         |> fromNjUniqINGD njw
+                        |> tee(fun z ->
+                            z.Motion     <- njw.Motion
+                            z.Script     <- njw.Script
+                            z.IsFinished <- njw.IsFinished
+                            z.NumRepeat  <- njw.NumRepeat
+                            z.Period     <- njw.Period
+                            z.Delay      <- njw.Delay )
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork

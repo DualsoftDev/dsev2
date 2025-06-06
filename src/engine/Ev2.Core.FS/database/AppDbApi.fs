@@ -213,6 +213,13 @@ module ORMTypeConversionModule =
                 let flowId = (z.Flow >>= _.Id) |> Option.toNullable
                 let status4Id = z.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
                 ORMWork  (pid, status4Id, flowId)
+                |> tee(fun y ->
+                    y.Motion <- z.Motion
+                    y.Script <- z.Script
+                    y.IsFinished <- z.IsFinished
+                    y.NumRepeat <- z.NumRepeat
+                    y.Period <- z.Period
+                    y.Delay <- z.Delay )
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtCall as z ->

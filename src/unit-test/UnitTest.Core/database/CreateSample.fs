@@ -55,9 +55,15 @@ module CreateSampleModule =
             [edApiCall1a] |> edSystem.AddApiCalls
 
             edFlow    <- RtFlow   (Name = "MainFlow")
-            edWork1   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1"; z.Status4 <- Some DbStatus4.Ready)
-            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Status4 <- Some DbStatus4.Going; z.Flow <- Some edFlow)
-            edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1";    z.Status4 <- Some DbStatus4.Finished)
+            edWork1 <-
+                RtWork.Create()
+                |> tee (fun z ->
+                    z.Name      <- "BoundedWork1"
+                    z.Status4   <- Some DbStatus4.Ready
+                    z.Motion    <- "Fast my motion"
+                    z.Parameter <- {|Name="kwak"; Company="dualsoft"; Room=510|} |> EmJson.ToJson)
+            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Status4 <- Some DbStatus4.Going; z.Script<-"My script"; z.Flow <- Some edFlow)
+            edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1";    z.Status4 <- Some DbStatus4.Finished; z.IsFinished<-true)
             [edWork1; edWork2; edWork3] |> edSystem.AddWorks
             [edFlow] |> edSystem.AddFlows
 

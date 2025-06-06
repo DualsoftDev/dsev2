@@ -103,7 +103,14 @@ module internal rec DsObjectCopyImpl =
             RtWork.Create(calls, arrows, flow)
             |> uniqNGD (nn x.Name) guid x.DateTime
             |> tee(fun z -> bag.Newbies[guid] <- z)
-            |> tee(fun w -> w.Status4 <- x.Status4 )
+            |> tee(fun w ->
+                w.Status4    <- x.Status4
+                w.Motion     <- x.Motion
+                w.Script     <- x.Script
+                w.IsFinished <- x.IsFinished
+                w.NumRepeat  <- x.NumRepeat
+                w.Period     <- x.Period
+                w.Delay      <- x.Delay )
 
     type RtCall with // replicate
         member x.replicate(bag:ReplicateBag) =

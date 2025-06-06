@@ -126,8 +126,8 @@ module internal Ds2SqliteImpl =
             ormWork.SystemId <- Some sysId
 
             let workId = conn.Insert($"""INSERT INTO {Tn.Work}
-                                (guid, parameter, dateTime,   name, systemId, status4Id, flowId)
-                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @SystemId, @Status4Id, @FlowId);""", ormWork, tr)
+                                (guid, parameter,                      dateTime,  name,  systemId,  flowId,  status4Id,  motion,  script,  isFinished,  numRepeat,  period,  delay)
+                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @IsFinished, @NumRepeat, @Period, @Delay);""", ormWork, tr)
 
             w.Id <- Some workId
             ormWork.Id <- Some workId
@@ -381,8 +381,14 @@ module internal Sqlite2DsImpl =
                             if orm.FlowId.HasValue then
                                 let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
                                 //w.Status4 <- orm.Status4Id
-                                w.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
-                                w.Flow <- Some flow )
+                                w.Flow <- Some flow
+                            w.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                            w.Motion     <- orm.Motion
+                            w.Script     <- orm.Script
+                            w.IsFinished <- orm.IsFinished
+                            w.NumRepeat  <- orm.NumRepeat
+                            w.Period     <- orm.Period
+                            w.Delay      <- orm.Delay )
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edWorks |> s.AddWorks

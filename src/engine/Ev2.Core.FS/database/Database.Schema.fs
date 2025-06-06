@@ -88,6 +88,7 @@ module DatabaseSchemaModule =
 
         let guidUniqSpec = "UNIQUE"
 
+        let int32 = "INT"
         let boolean = dbProvider.SqlBoolean
         let guid = dbProvider.SqlGuidKeyType
         let jsonb = dbProvider.SqlJsonBType
@@ -252,6 +253,12 @@ CREATE TABLE {k Tn.Enum}(
 CREATE TABLE {k Tn.Work}( {sqlUniqWithName()}
     , {k "systemId"}    {intKeyType} NOT NULL
     , {k "flowId"}      {intKeyType} DEFAULT NULL    -- NULL 허용 (work가 flow에 속하지 않을 수도 있음)
+    , {k "motion"}      TEXT
+    , {k "script"}      TEXT
+    , {k "isFinished"}  {boolean} NOT NULL DEFAULT {falseValue}
+    , {k "numRepeat"}   {int32} NOT NULL DEFAULT 0  -- 반복 횟수
+    , {k "period"}      {int32} NOT NULL DEFAULT 0  -- 주기
+    , {k "delay"}       {int32} NOT NULL DEFAULT 0  -- 지연
     , {k "status4Id"}   {intKeyType} DEFAULT NULL
     , FOREIGN KEY(systemId)  REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)    REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
@@ -438,6 +445,7 @@ CREATE VIEW {k Vn.System} AS
     SELECT
         s.{k "id"}
         , s.{k "name"}  AS systemName
+        , s.{k "parameter"}
         , s.{k "iri"}
         , psm.{k "loadedName"}
         , p.{k "id"}    AS projectId
@@ -451,6 +459,7 @@ CREATE VIEW {k Vn.ApiDef} AS
     SELECT
         x.{k "id"}
         , x.{k "name"}
+        , x.{k "parameter"}
         , x.{k "isPush"}
         , s.{k "id"}    AS systemId
         , s.{k "name"}  AS systemName
@@ -462,6 +471,7 @@ CREATE VIEW {k Vn.ApiCall} AS
     SELECT
         x.{k "id"}
         , x.{k "name"}
+        , x.{k "parameter"}
         , x.{k "inAddress"}
         , x.{k "outAddress"}
         , x.{k "inSymbol"}
@@ -486,6 +496,7 @@ CREATE VIEW {k Vn.Flow} AS
     SELECT
         x.{k "id"}
         , x.{k "name"}  AS flowName
+        , x.{k "parameter"}
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
         , s.{k "id"}    AS systemId
@@ -504,6 +515,14 @@ CREATE VIEW {k Vn.Work} AS
     SELECT
         x.{k "id"}
         , x.{k "name"}  AS workName
+        , x.{k "parameter"}
+        , x.{k "motion"}
+        , x.{k "script"}
+        , x.{k "isFinished"}
+        , x.{k "numRepeat"}
+        , x.{k "period"}
+        , x.{k "delay"}
+
         , e.{k "name"}  AS status4
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
@@ -524,6 +543,7 @@ CREATE VIEW {k Vn.Call} AS
         c.{k "id"}
         , c.{k "name"}  AS callName
         , e.{k "name"}  AS status4
+        , c.{k "parameter"}
         , c.{k "timeout"}
         , c.{k "autoPre"}
         , c.{k "safety"}
@@ -547,6 +567,7 @@ CREATE VIEW {k Vn.Call} AS
 CREATE VIEW {k Vn.ArrowCall} AS
     SELECT
         ac.{k "id"}
+        , ac.{k "parameter"}
         , ac.{k "source"}
         , src.{k "name"} AS sourceName
         , ac.{k "target"}
@@ -573,6 +594,7 @@ CREATE VIEW {k Vn.ArrowCall} AS
 CREATE VIEW {k Vn.ArrowWork} AS
     SELECT
         aw.{k "id"}
+        , aw.{k "parameter"}
         , aw.{k "source"}
         , src.{k "name"}      AS sourceName
         , aw.{k "target"}

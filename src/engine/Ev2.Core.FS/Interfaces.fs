@@ -152,7 +152,15 @@ module rec DsObjectModule =
         interface IRtWork
         member val internal RawCalls  = ResizeArray calls
         member val internal RawArrows = ResizeArray arrows
-        member val Flow   = flow with get, set
+        member val Flow = flow with get, set
+
+        member val Motion     = nullString with get, set
+        member val Script     = nullString with get, set
+        member val IsFinished = false      with get, set
+        member val NumRepeat  = 0          with get, set
+        member val Period     = 0          with get, set
+        member val Delay      = 0          with get, set
+
         member val Status4 = Option<DbStatus4>.None with get, set
 
         member x.Calls  = x.RawCalls  |> toList

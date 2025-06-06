@@ -117,8 +117,15 @@ module ORMTypesModule =
 
         new() = ORMWork(-1, nullableId, nullableId)
         interface IORMWork
+
+        member val FlowId     = flowId     with get, set
+        member val Motion     = nullString with get, set
+        member val Script     = nullString with get, set
+        member val IsFinished = false      with get, set
+        member val NumRepeat  = 0          with get, set
+        member val Period     = 0          with get, set
+        member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
-        member val FlowId    = flowId    with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
     type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
