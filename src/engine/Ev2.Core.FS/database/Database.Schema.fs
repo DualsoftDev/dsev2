@@ -118,24 +118,24 @@ module DatabaseSchemaModule =
         let projectTriggerBeforeDelete =
             let name = "trigger_project_beforeDelete_recordSystemIds"
             let body = $"""
-        DELETE FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId';
-        INSERT INTO {Tn.Temp} (key, val)
-        SELECT 'trigger_temp_systemId', systemId FROM {Tn.MapProject2System}
-        WHERE projectId = OLD.id;
-        """
+    DELETE FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId';
+    INSERT INTO {Tn.Temp} (key, val)
+    SELECT 'trigger_temp_systemId', systemId FROM {Tn.MapProject2System}
+    WHERE projectId = OLD.id;
+    """
             dbProvider.SqlCreateCustomTrigger(name, "BEFORE", "DELETE", Tn.Project, body)
 
         let projectTriggerAfterDelete =
             let name = "trigger_project_afterDelete_dropSystems"
             let body = $"""
-        DELETE FROM {Tn.System}
-        WHERE id IN (
-            SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId'
-        ) AND NOT EXISTS (
-            SELECT 1 FROM {Tn.MapProject2System} WHERE systemId = {Tn.System}.id
-        );
-        DELETE FROM meta WHERE key = 'trigger_temp_systemId';
-        """
+    DELETE FROM {Tn.System}
+    WHERE id IN (
+        SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = 'trigger_temp_systemId'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM {Tn.MapProject2System} WHERE systemId = {Tn.System}.id
+    );
+    DELETE FROM meta WHERE key = 'trigger_temp_systemId';
+    """
             dbProvider.SqlCreateCustomTrigger(name, "AFTER", "DELETE", Tn.Project, body)
 
 
@@ -160,12 +160,12 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 );
 
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
-    , {k "prototypeId"}   {intKeyType}                  -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
-    , {k "iri"}           TEXT NOT NULL
+    , {k "prototypeId"}   {intKeyType}    -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
+    , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
     , {k "author"}        TEXT NOT NULL
-    , {k "langVersion"}   TEXT NOT NULL
+    , {k "langVersion"}   TEXT NOT NULL   -- System.Version 형식의 문자열.  e.g. "1.0.0"  -- System 의 언어 버전
     , {k "engineVersion"} TEXT NOT NULL
-    , {k "originGuid"}    TEXT      -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
+    , {k "originGuid"}    TEXT            -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , {k "description"}   TEXT
     , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
     , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
@@ -222,25 +222,25 @@ CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
 );
 
 
-    CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
-        , {k "flowId"}        {intKeyType} NOT NULL
-        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    );
+CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
+    , {k "flowId"}        {intKeyType} NOT NULL
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+);
 
-    CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
-        , {k "flowId"}        {intKeyType} NOT NULL
-        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    );
+CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
+    , {k "flowId"}        {intKeyType} NOT NULL
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+);
 
-    CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
-        , {k "flowId"}        {intKeyType} NOT NULL
-        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    );
+CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
+    , {k "flowId"}        {intKeyType} NOT NULL
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+);
 
-    CREATE TABLE {k Tn.Action}( {sqlUniqWithName()}
-        , {k "flowId"}        {intKeyType} NOT NULL
-        , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    );
+CREATE TABLE {k Tn.Action}( {sqlUniqWithName()}
+    , {k "flowId"}        {intKeyType} NOT NULL
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+);
 
 CREATE TABLE {k Tn.Enum}(
     {k "id"}              {autoincPrimaryKey}
