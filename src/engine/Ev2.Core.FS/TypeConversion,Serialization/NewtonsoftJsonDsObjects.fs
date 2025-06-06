@@ -141,6 +141,7 @@ module rec NewtonsoftJsonObjects =
 
         member val OriginGuid    = Nullable<Guid>() with get, set
         member val Prototype     = false      with get, set
+        member val IRI           = nullString with get, set
         member val Author        = nullString with get, set
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
@@ -166,7 +167,7 @@ module rec NewtonsoftJsonObjects =
         static member FromRuntime(rt:RtSystem) =
             let originGuid = rt.OriginGuid |> Option.toNullable
 
-            NjSystem(OriginGuid=originGuid, Author=rt.Author,
+            NjSystem(OriginGuid=originGuid, IRI=rt.IRI, Author=rt.Author,
                 LangVersion=rt.LangVersion, EngineVersion=rt.EngineVersion, Description=rt.Description)
             |> toNjUniqINGD rt
             |> tee (fun z ->
@@ -465,6 +466,7 @@ module rec NewtonsoftJsonObjects =
                     | None -> None
 
                 RtSystem.Create(protoGuid, flows, works, arrows, apiDefs, apiCalls
+                                , IRI=njs.IRI
                                 , Author=njs.Author
                                 , LangVersion=njs.LangVersion
                                 , EngineVersion=njs.EngineVersion
@@ -613,7 +615,8 @@ module Ds2JsonModule =
         static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
 
         static member FromRuntime(rt:RtSystem) =
-            NjSystem(Author=rt.Author
+            NjSystem(IRI=rt.IRI
+                , Author=rt.Author
                 , LangVersion=rt.LangVersion
                 , EngineVersion=rt.EngineVersion
                 , Description=rt.Description)

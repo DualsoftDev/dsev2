@@ -27,7 +27,12 @@ module CreateSampleModule =
     let createEditableProject() =
         if isItNull edProject then
             edProject <- RtProject.Create(Name = "MainProject")
-            edSystem  <- RtSystem.Create() |> tee (fun z -> z.Name <- "MainSystem"(*, IsPrototype=true*))
+            edSystem  <-
+                RtSystem.Create()
+                |> tee (fun z ->
+                    z.Name <- "MainSystem"(*, IsPrototype=true*)
+                    z.IRI <- "http://example.com/ev2/system/main"
+                    )
 
             edApiDef1 <- RtApiDef.Create(Name = "ApiDef1a")
             edApiDef2 <- RtApiDef.Create() |> tee (fun z -> z.Name <- "UnusedApi")

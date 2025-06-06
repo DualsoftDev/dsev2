@@ -202,7 +202,7 @@ module ORMTypeConversionModule =
                             >>= _.Id)
                     |> o2n
 
-                ORMSystem(prototypeId, originGuid, z.Author, z.LangVersion, z.EngineVersion, z.Description)
+                ORMSystem(prototypeId, originGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description)
                 |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
 
             | :? RtFlow as z ->

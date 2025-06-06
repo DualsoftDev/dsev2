@@ -49,12 +49,13 @@ module rec DsCompareObjects =
         member val ParentGuid = parentGuid with get, set
 
         (* Project/System 속성 *)
-        member val Author = true with get, set
-        member val Version = true with get, set
-        member val Description = true with get, set
+        member val IRI                  = true with get, set
+        member val Author               = true with get, set
+        member val Version              = true with get, set
+        member val Description          = true with get, set
         member val LastConnectionString = true with get, set
-        member val EngineVersion = true with get, set
-        member val LangVersion   = true with get, set
+        member val EngineVersion        = true with get, set
+        member val LangVersion          = true with get, set
 
     /// 객체 비교 결과 반환용....
     type UniqueCompareResult =
@@ -135,6 +136,7 @@ module rec DsCompareObjects =
 
                 if x.PrototypeSystemGuid <> y.PrototypeSystemGuid then yield Diff("PrototypeSystemGuid", x, y)
                 if x.Author        <> y.Author        then yield Diff("Author", x, y)
+                if x.IRI           <> y.IRI           then yield Diff("IRI", x, y)
                 if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)
                 if x.LangVersion   <> y.LangVersion   then yield Diff("LangVersion", x, y)
                 if x.Description   <> y.Description   then yield Diff("Description", x, y)

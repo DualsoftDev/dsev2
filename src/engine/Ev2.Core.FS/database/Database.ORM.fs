@@ -91,12 +91,13 @@ module ORMTypesModule =
         member val Description   = description with get, set
 
 
-    type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, author:string, langVersion:Version, engineVersion:Version, description:string) =
+    type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string) =
         inherit ORMUnique()
 
-        new() = ORMSystem(nullableId, emptyGuid, nullString, nullVersion, nullVersion, nullString)
+        new() = ORMSystem(nullableId, emptyGuid, nullString, nullString, nullVersion, nullVersion, nullString)
         interface IORMSystem
-        member val PrototypeId   = prototypeId with get, set
+        member val PrototypeId   = prototypeId   with get, set
+        member val IRI           = iri           with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set
         member val LangVersion   = langVersion   with get, set
@@ -117,7 +118,7 @@ module ORMTypesModule =
         new() = ORMWork(-1, nullableId, nullableId)
         interface IORMWork
         member val Status4Id = status4Id with get, set
-        member val FlowId = flowId with get, set
+        member val FlowId    = flowId    with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
     type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
@@ -126,12 +127,12 @@ module ORMTypesModule =
         new() = ORMCall(-1, nullableId, (DbCallType.Normal |> int64 |> Nullable), nullString, nullString, false, nullableInt)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
-        member val Status4Id = status4Id with get, set
+        member val Status4Id  = status4Id  with get, set
         member val CallTypeId = callTypeId with get, set
-        member val AutoPre = autoPre with get, set
-        member val Safety = safety with get, set
+        member val AutoPre    = autoPre    with get, set
+        member val Safety     = safety     with get, set
         member val IsDisabled = isDisabled with get, set
-        member val Timeout = timeout with get, set
+        member val Timeout    = timeout    with get, set
 
 
 
@@ -141,8 +142,8 @@ module ORMTypesModule =
         new() = ORMMapProjectSystem(-1, -1, false)
         interface IORMRow
         member val ProjectId = projectId with get, set
-        member val SystemId = systemId with get, set
-        member val IsActive = isActive with get, set
+        member val SystemId  = systemId  with get, set
+        member val IsActive  = isActive  with get, set
 
     type ORMMapCall2ApiCall(callId:Id, apiCallId:Id) =
         inherit ORMUnique()
@@ -187,8 +188,8 @@ module ORMTypesModule =
 
         new() = ORMEnum(nullString, nullString, -1)
         interface IORMRow
-        member val Id = Nullable<Id>() with get, set
-        member val Name = name with get, set
-        member val Category = category with get, set
-        member val Value = value with get, set
+        member val Id       = Nullable<Id>() with get, set
+        member val Name     = name           with get, set
+        member val Category = category       with get, set
+        member val Value    = value          with get, set
 

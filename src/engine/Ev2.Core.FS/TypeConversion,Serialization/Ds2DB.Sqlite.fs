@@ -29,8 +29,8 @@ module internal Ds2SqliteImpl =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                (guid, parameter, dateTime, name, author,     langVersion, engineVersion, description, originGuid, prototypeId)
-                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""", ormSystem, tr)
+                                (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description, originGuid, prototypeId)
+                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""", ormSystem, tr)
 
         s.Id <- Some sysId
         cache[s.Guid].Id <- Some sysId

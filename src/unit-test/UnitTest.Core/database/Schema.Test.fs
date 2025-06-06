@@ -114,8 +114,8 @@ module SchemaTestModule =
         let sysGuid = newGuid()
         let sysName = "MainSystem"
         let systemId = conn.Insert(
-                        $"INSERT INTO {Tn.System} (guid, name, author, langVersion, engineVersion) VALUES (@Guid, @Name, @Author, @LangVersion, @EngineVersion)",
-                        {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver;|})
+                        $"INSERT INTO {Tn.System} (guid, name, iri, author, langVersion, engineVersion) VALUES (@Guid, @Name, @IRI, @Author, @LangVersion, @EngineVersion)",
+                        {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver; IRI="http://dualsoft.com/unique/12345"|})
 
         // flow 삽입
         let flowGuid = newGuid()

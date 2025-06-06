@@ -160,6 +160,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "prototypeId"}   {intKeyType}                  -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
+    , {k "iri"}           TEXT NOT NULL
     , {k "author"}        TEXT NOT NULL
     , {k "langVersion"}   TEXT NOT NULL
     , {k "engineVersion"} TEXT NOT NULL
@@ -437,6 +438,7 @@ CREATE VIEW {k Vn.System} AS
     SELECT
         s.{k "id"}
         , s.{k "name"}  AS systemName
+        , s.{k "iri"}
         , psm.{k "loadedName"}
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName

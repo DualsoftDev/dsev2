@@ -110,6 +110,7 @@ module rec DsObjectModule =
         member val OriginGuid = noneGuid with get, set
         member val PrototypeSystemGuid = protoGuid with get, set
 
+        member val IRI           = nullString with get, set
         member val Author        = Environment.UserName with get, set
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set

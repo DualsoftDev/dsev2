@@ -73,6 +73,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
+                s.IRI <- x.IRI
                 s.Author <- x.Author
                 s.EngineVersion <- x.EngineVersion
                 s.LangVersion <- x.LangVersion
