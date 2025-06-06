@@ -108,26 +108,31 @@ module internal UniqueHelpers =
             |> uniqName "KKKKKKKKKKKKK"
     *)
 
-    let uniqId       id       (dst:#Unique) = dst.Id        <- id;       dst
-    let uniqName     name     (dst:#Unique) = dst.Name      <- name;     dst
-    let uniqGuid     guid     (dst:#Unique) = dst.Guid      <- guid;     dst
-    let uniqDateTime dateTime (dst:#Unique) = dst.DateTime  <- dateTime; dst
-    let uniqParent   (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
+    let uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst
+    let uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
+    let uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
+    let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
+    let uniqDateTime  dateTime (dst:#Unique) = dst.DateTime  <- dateTime; dst
+    let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
 
     let uniqGD       guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
-    let uniqNGD      name guid dateTime           (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime
+    let uniqNGDA     name guid dateTime args      (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime |> uniqParameter args
     /// src unique 속성 (Id, Name, Guid, DateTime) 들을 dst 에 복사
-    let uniqINGD     id name guid dateTime        (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime
+    let uniqINGDA    id name guid dateTime args   (dst:#Unique) = dst |> uniqId id     |> uniqNGDA name guid dateTime args
     /// src unique 속성 (Id, Name, Guid, DateTime, RawParent) 들을 dst 에 복사
-    let uniqINGDP    id name guid dateTime parent (dst:#Unique) = dst |> uniqId id     |> uniqNGD name guid dateTime |> uniqParent parent
-    let uniqAll = uniqINGDP
+    let uniqINGDAP    id name guid dateTime args parent (dst:#Unique) = dst |> uniqId id |> uniqNGDA name guid dateTime args |> uniqParent parent
+    let uniqAll = uniqINGDAP
 
-    let uniqINGD_fromObj (src:#Unique) (dst:#Unique): #Unique =
+    /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
+    let fromUniqINGD (src:#Unique) (dst:#Unique): #Unique =
         dst.Id <- src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
+        dst.Parameter <- src.Parameter
         dst.DateTime <- src.DateTime
         dst
+
+
 
     let uniqRenew (dst:#Unique): #Unique =
         dst.Id <- None

@@ -75,6 +75,9 @@ module internal Ds2SqliteImpl =
             failwith "Not yet implemented: system2SqliteHelper without project context"
             ()
 
+
+        let jsonbColumns = if dbApi.IsPostgres() then ["Parameter"] else []
+
         // flows 삽입
         for f in s.Flows do
             let ormFlow = f.ToORM<ORMFlow>(dbApi, cache)
@@ -98,13 +101,14 @@ module internal Ds2SqliteImpl =
 
             let r = conn.Upsert(Tn.ApiDef, ormApiDef,
                     ["Guid"; "Parameter"; "DateTime"; "Name"; "IsPush"; "SystemId"],     // PK 는 자동으로 채우져야 해서 "Id" 는 생략해야 함
+                    jsonbColumns=jsonbColumns,
                     onInserted=idUpdator [ormApiDef; rtAd;])
 
             match r with
             | Some newId ->
                 tracefn $"Inserted API Def: {rtAd.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
             | None -> // update or no change
-                tracefn $"Updated/Or No change API Def: {rtAd.Name} with Id {ormApiDef.Id.Value}, systemId={ormApiDef.SystemId}"
+                tracefn $"Updated/Or No change API Def: {rtAd.Name}, systemId={ormApiDef.SystemId}"
             ()
 
         // system 의 apiCalls 를 삽입
@@ -116,6 +120,7 @@ module internal Ds2SqliteImpl =
                         [   "Guid"; "Parameter"; "DateTime"; "Name"
                             "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
                             "InSymbol"; "OutSymbol"; "ValueTypeId"; "RangeTypeId"; "Value1"; "Value2"],
+                        jsonbColumns=jsonbColumns,
                         onInserted=idUpdator [ormApiCall; rtAc;])
             let xxx = r
             noop()
@@ -175,6 +180,7 @@ module internal Ds2SqliteImpl =
 
                 let r = conn.Upsert(Tn.ArrowCall, ormArrow,
                     ["Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "Parameter"; "DateTime"],
+                    jsonbColumns=jsonbColumns,
                     onInserted=idUpdator [ormArrow; a;])
                 ()
 
@@ -185,6 +191,7 @@ module internal Ds2SqliteImpl =
 
             let r = conn.Upsert(Tn.ArrowWork, ormArrow,
                     ["Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "Parameter"; "DateTime"],
+                    jsonbColumns=jsonbColumns,
                     onInserted=idUpdator [ormArrow; a;])
             ()
 

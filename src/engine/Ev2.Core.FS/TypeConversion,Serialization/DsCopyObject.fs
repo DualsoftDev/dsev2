@@ -29,16 +29,16 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             let prototypes = x.PrototypeSystems |-> _.replicate(bag) |> toArray
-            let actives  = x.ActiveSystems  |-> _.replicate(bag) |> toArray
-            let passives = x.PassiveSystems |-> _.replicate(bag) |> toArray
+            let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
+            let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
 
             RtProject.Create()
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:RtSystem) -> setParentI z s)
                 prototypes |> z.RawPrototypeSystems.AddRange
-                actives  |> z.RawActiveSystems.AddRange
-                passives |> z.RawPassiveSystems.AddRange )
-            |> uniqNGD (nn x.Name) guid x.DateTime
+                actives    |> z.RawActiveSystems   .AddRange
+                passives   |> z.RawPassiveSystems  .AddRange )
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> validateRuntime
 
@@ -49,7 +49,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             RtFlow()
-            |> uniqNGD (nn x.Name) guid x.DateTime
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type RtSystem with // replicate
@@ -69,15 +69,15 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Target |> verify)
 
             RtSystem.Create(x.PrototypeSystemGuid, flows, works, arrows, apiDefs, apiCalls)
-            |> uniqNGD (nn x.Name) guid x.DateTime
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
-                s.OriginGuid <- Some x.Guid                                       // 최근 원본 지향 버젼
-                s.IRI <- x.IRI
-                s.Author <- x.Author
+                s.OriginGuid    <- Some x.Guid                                       // 최근 원본 지향 버젼
+                s.IRI           <- x.IRI
+                s.Author        <- x.Author
                 s.EngineVersion <- x.EngineVersion
-                s.LangVersion <- x.LangVersion
-                s.Description <- x.Description
+                s.LangVersion   <- x.LangVersion
+                s.Description   <- x.Description
             ) |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -101,7 +101,7 @@ module internal rec DsObjectCopyImpl =
                 |-> (fun f -> bag.Newbies[f.Guid] :?> RtFlow)
 
             RtWork.Create(calls, arrows, flow)
-            |> uniqNGD (nn x.Name) guid x.DateTime
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> tee(fun w ->
                 w.Status4    <- x.Status4
@@ -117,7 +117,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.IsDisabled, x.Timeout)
-            |> uniqNGD (nn x.Name) guid x.DateTime
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> tee(fun c -> c.Status4 <- x.Status4 )
 
@@ -127,14 +127,14 @@ module internal rec DsObjectCopyImpl =
 
             RtApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress,
                       x.InSymbol, x.OutSymbol, x.ValueType, x.RangeType, x.Value1, x.Value2)
-            |> uniqNGD (nn x.Name) guid x.DateTime
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type RtApiDef with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtApiDef(x.IsPush)
-            |> uniqINGD_fromObj x |> uniqGuid guid
+            |> fromUniqINGD x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -144,7 +144,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> RtWork
             let target = bag.Newbies[x.Target.Guid] :?> RtWork
             RtArrowBetweenWorks(source, target, x.Type)
-            |> uniqINGD x.Id x.Name guid x.DateTime
+            |> uniqINGDA x.Id x.Name guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -154,7 +154,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> RtCall
             let target = bag.Newbies[x.Target.Guid] :?> RtCall
             RtArrowBetweenCalls(source, target, x.Type)
-            |> uniqINGD x.Id x.Name guid x.DateTime
+            |> uniqINGDA x.Id x.Name guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]
@@ -223,19 +223,19 @@ module DsObjectCopyAPIModule =
         member x.Duplicate() =  // RtProject
             RtProject.Create()
             |> tee(fun z ->
-                let actives  = x.ActiveSystems |-> _.Duplicate()
-                let passives = x.PassiveSystems |-> _.Duplicate()
-                let protos = x.PrototypeSystems |-> _.Duplicate()
+                let actives  = x.ActiveSystems    |-> _.Duplicate()
+                let passives = x.PassiveSystems   |-> _.Duplicate()
+                let protos   = x.PrototypeSystems |-> _.Duplicate()
                 (actives @ passives) |> iter (setParentI z)
-                actives |> z.RawActiveSystems.AddRange
+                actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange
-                protos |> z.RawPrototypeSystems.AddRange
+                protos   |> z.RawPrototypeSystems.AddRange
 
-                z.Name <- x.Name
-                z.Version <- x.Version
-                z.Author <- x.Author
+                z.Name        <- x.Name
+                z.Version     <- x.Version
+                z.Author      <- x.Author
                 z.Description <- x.Description
-                z.Database <- x.Database )
+                z.Database    <- x.Database )
             |> uniqName (nn x.Name)
 
 

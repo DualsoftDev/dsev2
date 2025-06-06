@@ -62,12 +62,27 @@ module CreateSampleModule =
                     z.Status4   <- Some DbStatus4.Ready
                     z.Motion    <- "Fast my motion"
                     z.Parameter <- {|Name="kwak"; Company="dualsoft"; Room=510|} |> EmJson.ToJson)
-            edWork2   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Status4 <- Some DbStatus4.Going; z.Script<-"My script"; z.Flow <- Some edFlow)
-            edWork3   <- RtWork.Create() |> tee (fun z -> z.Name <- "FreeWork1";    z.Status4 <- Some DbStatus4.Finished; z.IsFinished<-true)
+            edWork2 <-
+                RtWork.Create()
+                |> tee (fun z ->
+                    z.Name    <- "BoundedWork2"
+                    z.Status4 <- Some DbStatus4.Going
+                    z.Script  <- "My script"
+                    z.Flow    <- Some edFlow)
+            edWork3 <-
+                RtWork.Create()
+                |> tee (fun z ->
+                    z.Name <- "FreeWork1"
+                    z.Status4 <- Some DbStatus4.Finished
+                    z.IsFinished<-true)
+
             [edWork1; edWork2; edWork3] |> edSystem.AddWorks
             [edFlow] |> edSystem.AddFlows
 
-            let edArrowW = RtArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
+            let edArrowW =
+                RtArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
+                |> tee (fun z ->
+                    z.Parameter <- {| ArrowWidth=2.1; ArrowHead="Diamond"; ArrowTail="Rectangle" |} |> EmJson.ToJson)
             [edArrowW] |> edSystem.AddArrows
 
 
@@ -80,6 +95,7 @@ module CreateSampleModule =
                     z.AutoPre  <- "AutoPre 테스트 1"
                     z.Safety   <- "안전조건1"
                     z.Timeout  <- Some 30
+                    z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> EmJson.ToJson
                     z.ApiCallGuids.AddRange [edApiCall1a.Guid] )
 
             edCall1b  <-

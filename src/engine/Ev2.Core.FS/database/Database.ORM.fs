@@ -37,15 +37,6 @@ module ORMTypesModule =
         /// Parent Id
         member val ParentId = Option<Id>.None with get, set
 
-    /// ORMUnique 객체의 속성정보 (Id, Name, Guid, DateTime)를 Unique 객체에 저장
-    let fromUniqINGD (src:#Unique) (dst:#Unique): #Unique =
-        dst.Id <- src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
-        dst.Parameter <- src.Parameter
-        dst.DateTime <- src.DateTime
-        dst
-
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
     let toOrmUniqINGDP (src:#Unique) (dst:#ORMUnique): #ORMUnique =
         dst |> fromUniqINGD src |> ignore
