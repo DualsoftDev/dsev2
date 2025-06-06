@@ -29,14 +29,15 @@ module ORMTypesModule =
     type IORMLog        = inherit IORMUnique
 
     [<AbstractClass>]
-    type ORMUnique(name:string, guid:Guid, id:Nullable<Id>, dateTime:DateTime) =
+    type ORMUnique(name:string, guid:Guid, id:Nullable<Id>, parameter:string, dateTime:DateTime) =
         interface IORMUnique
 
-        new() = ORMUnique(nullString, emptyGuid, nullableId, minDate)
+        new() = ORMUnique(nullString, emptyGuid, nullableId, nullString, minDate)
 
         member val Id = id with get, set
         /// Parent Id
         member val ParentId = Nullable<Id>() with get, set
+        member val Parameter = parameter with get, set
         member val Name = name with get, set
 
         //member val Guid = guid2str guid with get, set
@@ -53,6 +54,7 @@ module ORMTypesModule =
         dst.Id <- n2o src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
+        dst.Parameter <- src.Parameter
         dst.DateTime <- src.DateTime
         dst
 
@@ -61,7 +63,9 @@ module ORMTypesModule =
         dst.Id <- o2n src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
+        dst.Parameter <- src.Parameter
         dst.DateTime <- src.DateTime
+
         let pid = src.RawParent >>= _.Id
         dst.ParentId <- o2n pid
         dst.DDic.Set("RtObject", src)

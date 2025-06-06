@@ -35,8 +35,8 @@ module internal Ds2SqliteImpl =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                (guid, dateTime, name, author,     langVersion, engineVersion, description, originGuid, prototypeId)
-                        VALUES (@Guid, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""", ormSystem, tr)
+                                (guid, parameter, dateTime, name, author,     langVersion, engineVersion, description, originGuid, prototypeId)
+                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""", ormSystem, tr)
 
         s.Id <- Some sysId
         cache[s.Guid].Id <- sysId
@@ -87,8 +87,8 @@ module internal Ds2SqliteImpl =
             ormFlow.SystemId <- Nullable sysId
 
             let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
-                                    (guid, dateTime, name, systemId)
-                             VALUES (@Guid, @DateTime, @Name, @SystemId);""", ormFlow, tr)
+                                    (guid, parameter, dateTime, name, systemId)
+                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @SystemId);""", ormFlow, tr)
 
             f.Id <- Some flowId
             ormFlow.Id <- flowId
@@ -103,7 +103,7 @@ module internal Ds2SqliteImpl =
             ormApiDef.SystemId <- sysId
 
             let r = conn.Upsert(Tn.ApiDef, ormApiDef,
-                    ["Guid"; "DateTime"; "Name"; "IsPush"; "SystemId"],     // PK 는 자동으로 채우져야 해서 "Id" 는 생략해야 함
+                    ["Guid"; "Parameter"; "DateTime"; "Name"; "IsPush"; "SystemId"],     // PK 는 자동으로 채우져야 해서 "Id" 는 생략해야 함
                     onInserted=idUpdator [ormApiDef; rtAd;])
 
             match r with
@@ -119,7 +119,7 @@ module internal Ds2SqliteImpl =
             ormApiCall.SystemId <- sysId
 
             let r = conn.Upsert(Tn.ApiCall, ormApiCall,
-                        [   "Guid"; "DateTime"; "Name"
+                        [   "Guid"; "Parameter"; "DateTime"; "Name"
                             "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
                             "InSymbol"; "OutSymbol"; "ValueTypeId"; "RangeTypeId"; "Value1"; "Value2"],
                         onInserted=idUpdator [ormApiCall; rtAc;])
@@ -132,8 +132,8 @@ module internal Ds2SqliteImpl =
             ormWork.SystemId <- Nullable sysId
 
             let workId = conn.Insert($"""INSERT INTO {Tn.Work}
-                                (guid, dateTime,   name, systemId, status4Id, flowId)
-                         VALUES (@Guid, @DateTime, @Name, @SystemId, @Status4Id, @FlowId);""", ormWork, tr)
+                                (guid, parameter, dateTime,   name, systemId, status4Id, flowId)
+                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @SystemId, @Status4Id, @FlowId);""", ormWork, tr)
 
             w.Id <- Some workId
             ormWork.Id <- workId
@@ -145,8 +145,8 @@ module internal Ds2SqliteImpl =
 
                 let callId =
                     conn.Insert($"""INSERT INTO {Tn.Call}
-                                (guid, dateTime,   name, workId,   status4Id,  callTypeId,  autoPre, safety, isDisabled, timeout)
-                         VALUES (@Guid, @DateTime, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoPre, @Safety, @IsDisabled, @Timeout);""", ormCall, tr)
+                                (guid, parameter, dateTime,   name, workId,   status4Id,  callTypeId,  autoPre, safety, isDisabled, timeout)
+                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoPre, @Safety, @IsDisabled, @Timeout);""", ormCall, tr)
 
                 c.Id <- Some callId
                 ormCall.Id <- callId
@@ -180,7 +180,7 @@ module internal Ds2SqliteImpl =
                 ormArrow.WorkId <- workId
 
                 let r = conn.Upsert(Tn.ArrowCall, ormArrow,
-                    ["Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "DateTime"],
+                    ["Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "Parameter"; "DateTime"],
                     onInserted=idUpdator [ormArrow; a;])
                 ()
 
@@ -190,7 +190,7 @@ module internal Ds2SqliteImpl =
             ormArrow.SystemId <- sysId
 
             let r = conn.Upsert(Tn.ArrowWork, ormArrow,
-                    ["Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "DateTime"],
+                    ["Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "Parameter"; "DateTime"],
                     onInserted=idUpdator [ormArrow; a;])
             ()
 
@@ -229,8 +229,8 @@ module internal Ds2SqliteImpl =
 
             let projId =
                 conn.Insert($"""INSERT INTO {Tn.Project}
-                           (guid, dateTime, name, author, version, description)
-                    VALUES (@Guid, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
+                           (guid, parameter, dateTime, name, author, version, description)
+                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
 
             proj.Id <- Some projId
             ormProject.Id <- projId

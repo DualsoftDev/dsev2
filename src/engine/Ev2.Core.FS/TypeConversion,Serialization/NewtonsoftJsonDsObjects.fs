@@ -45,8 +45,10 @@ module NewtonsoftJsonModules =
         /// Guid: 메모리에 최초 객체 생성시 생성
         [<JsonProperty(Order = -98)>] member val Guid:Guid = emptyGuid with get, set
 
+        [<JsonProperty(Order = -97)>] member val Parameter = nullString with get, set
+
         /// DateTime: 메모리에 최초 객체 생성시 생성
-        [<JsonProperty(Order = -97)>] member val DateTime = minDate with get, set
+        [<JsonProperty(Order = -96)>] member val DateTime = minDate with get, set
 
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = Option<NjUnique>.None with get, set
@@ -75,6 +77,7 @@ module rec NewtonsoftJsonObjects =
         dst.Id <- n2o src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
+        dst.Parameter <- src.Parameter
         dst.DateTime <- src.DateTime
         dst
 
@@ -84,6 +87,8 @@ module rec NewtonsoftJsonObjects =
         dst.Name <- src.Name
         dst.Guid <- src.Guid
         dst.DateTime <- src.DateTime
+        dst.Parameter <- src.Parameter
+
         match box src with
         | :? Unique as ds ->
             dst.DDic.Set("RtObject", ds)

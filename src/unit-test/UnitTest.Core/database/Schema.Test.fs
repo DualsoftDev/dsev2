@@ -183,6 +183,12 @@ module SchemaTestModule =
             dsobj.Id.IsNone === true
         )
 
+        dsProject.Parameter <- {|
+            Name = "Alice"
+            Age = 30
+            Skills = [ "SQL"; "Python" ] |} |> JsonConvert.SerializeObject
+
+
         dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
         dsProject.CommitToDB(dbApi, removeExistingData)
 

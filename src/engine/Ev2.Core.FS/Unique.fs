@@ -50,15 +50,16 @@ module Interfaces =
     let mutable internal fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, dateTime:DateTime, ?id:Id, ?parent:Unique) =
+    type Unique(name:string, guid:Guid, parameter:string, dateTime:DateTime, ?id:Id, ?parent:Unique) =
         interface IUnique
 
-        internal new() = Unique(nullString, newGuid(), now(), ?id=None, ?parent=None)
+        internal new() = Unique(nullString, newGuid(), nullString, now(), ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         member val Id = id with get, set
 
         member val Name = name with get, set
+        member val Parameter = parameter with get, set
 
         /// Guid: 메모리에 최초 객체 생성시 생성
         member val Guid:Guid = guid with get, set

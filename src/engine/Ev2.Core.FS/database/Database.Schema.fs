@@ -89,6 +89,7 @@ module DatabaseSchemaModule =
 
         let boolean = dbProvider.SqlBoolean
         let guid = dbProvider.SqlGuidKeyType
+        let jsonb = dbProvider.SqlJsonBType
 
         let falseValue = dbProvider.SqlFalse
         let k (name: string) = dbProvider.SqlWrapName name
@@ -96,7 +97,7 @@ module DatabaseSchemaModule =
         let varchar (n: int) = $"{dbProvider.SqlVarChar}({n})"
         let autoincPrimaryKey = dbProvider.SqlAutoincPrimaryKey
 
-        let datetime = $"{dbProvider.SqlDateTime}(7)"
+        let datetime = $"{dbProvider.SqlDateTime}(6)"
 
         //let dropTriggerSql (dbProvider: DbProvider) (triggerName:string) (tableName:string) =
         //    match dbProvider with
@@ -139,6 +140,7 @@ module DatabaseSchemaModule =
         let sqlUniq () = $"""
     {k "id"}              {autoincPrimaryKey}
     , {k "guid"}          {guid} NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
+    , {k "parameter"}     {jsonb}
     , {k "dateTime"}      {datetime}"""
 
         let sqlUniqWithName () = sqlUniq() + $"""
