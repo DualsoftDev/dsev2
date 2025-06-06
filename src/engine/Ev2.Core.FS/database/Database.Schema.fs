@@ -56,6 +56,7 @@ module DatabaseSchemaModule =
         let [<Literal>] Temp         = "temp"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
+        let [<Literal>] TypeTest     = "typeTest"
         let [<Literal>] EOT          = "endOfTable"
 
         let AllTableNames = [
@@ -149,7 +150,7 @@ module DatabaseSchemaModule =
 
 
 
-        $"""
+        let sqlTables = $"""
 CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
     , {k "author"}       TEXT NOT NULL
     , {k "version"}      TEXT NOT NULL
@@ -374,7 +375,20 @@ CREATE TABLE {k Tn.TableHistory} (
     CONSTRAINT {Tn.TableHistory}_uniq UNIQUE (name, operation, oldId, newId)
 );
 
+CREATE TABLE {k Tn.TypeTest} (
+    {k "id"}  {autoincPrimaryKey}
+    , {k "guid"}          {guid}
+    , {k "optionGuid"}    {guid}
+    , {k "nullableGuid"}  {guid}
+    , {k "optionInt"}     {intKeyType}
+    , {k "nullableInt"}   {intKeyType}
+    , {k "jsonb"}         {jsonb}
+    , {k "dateTime"}      {datetime}
+);
 
+"""
+
+        let sqlViews = $"""
 CREATE VIEW {k Vn.MapProject2System} AS
     SELECT
         m.{k "id"}
@@ -590,6 +604,8 @@ CREATE TABLE {k Tn.EOT} (
 -- End of database schema
 --
 """
+
+        sqlTables + "\n" + sqlViews
 
 
 

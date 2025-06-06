@@ -499,3 +499,37 @@ module SchemaTestModule =
         diff[0] === Diff("Name", w, w2)
         noop()
 
+
+
+
+    let guid = Guid.Parse "42dad0ec-6441-47b7-829e-1487e1c89360"
+    type Gender = Male | Female
+    let jsonb = {| Name = "Kwak"; Gender = Male; Age=30 |} |> JsonConvert.SerializeObject
+    let testRowFull = RtTypeTest(OptionGuid=Some guid, NullableGuid=Nullable<Guid>(guid), OptionInt=Some 1, NullableInt=Nullable 1, Jsonb=jsonb)
+    let testRowEmpty = RtTypeTest()
+
+    [<Test>]
+    let ``Sqlite Dapper test`` () =
+        let dbApi =
+            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
+            |> createSqliteDbApi
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"""INSERT INTO {Tn.TypeTest}
+                                   (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
+                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
+        |> ignore
+
+    [<Test>]
+    let ``PGSql Dapper test`` () =
+        let dbApi =
+            "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
+            |> DbProvider.Postgres
+            |> AppDbApi
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"""INSERT INTO {Tn.TypeTest}
+                                   (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
+                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
+        |> ignore
+
+
+

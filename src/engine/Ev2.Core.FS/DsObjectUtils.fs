@@ -342,5 +342,14 @@ module DsObjectUtilsModule =
                 //tracefn $"Skipping {(x.GetType())} in Validate"
                 ()
 
-
+    // for debugging/test only
+    type RtTypeTest() =
+        member val Id           = Nullable<int>()   with get, set
+        member val Guid         = Guid.Empty        with get, set
+        member val OptionGuid   = Option<Guid>.None with get, set
+        member val NullableGuid = Nullable<Guid>()  with get, set
+        member val OptionInt    = Option<int>.None  with get, set
+        member val NullableInt  = Nullable<int>()   with get, set
+        member val Jsonb        = null:string       with get, set
+        member val DateTime     = DateTime.MinValue with get, set
 
