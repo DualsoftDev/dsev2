@@ -10,7 +10,6 @@ open Dual.Common.Base
 module ORMTypesModule =
 
     type RowId = int
-    type IORMUnique     = inherit IUnique inherit IORMRow
     type IORMProject    = inherit IORMUnique
     type IORMSystem     = inherit IORMUnique
     type IORMFlow       = inherit IORMUnique
@@ -42,8 +41,8 @@ module ORMTypesModule =
         dst |> fromUniqINGD src |> ignore
 
         dst.ParentId <- src.RawParent >>= _.Id
-        dst.DDic.Set("RtObject", src)
-        src.DDic.Set("ORMObject", dst)
+        dst.RtObject <- Some src
+        src.ORMObject <- Some dst
         dst
 
 

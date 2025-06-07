@@ -5,6 +5,7 @@ open System
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open Newtonsoft.Json
+open Dual.Common.Db.FS
 
 
 [<AutoOpen>]
@@ -29,6 +30,16 @@ module Interfaces =
     type IDsApiCall = inherit IDsObject
     type IDsApiDef  = inherit IDsObject
 
+    /// Runtime 객체 인터페이스
+    type IRtObject  = inherit IDsObject
+    type IRtUnique  = inherit IRtObject inherit IUnique
+
+    /// Newtonsoft JSON 객체 인터페이스
+    type INjObject  = inherit IDsObject
+    type INjUnique  = inherit INjObject inherit IUnique
+
+    /// ORM 객체 인터페이스
+    type IORMUnique     = inherit IUnique inherit IORMRow
 
     let internal minDate      = DateTime.MinValue
     let internal nullableId   = Nullable<Id>()
@@ -71,8 +82,12 @@ module Interfaces =
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
 
-        /// 내부 구현 전용.  serialize 대상에서 제외됨
-        member val internal DDic = DynamicDictionary()
+        // { 내부 구현 전용.  serialize 대상에서 제외됨
+        member val internal ORMObject = Option<IORMUnique>.None with get, set
+        member val internal NjObject  = Option<INjUnique> .None with get, set
+        member val internal RtObject  = Option<IRtUnique> .None with get, set
+        member val internal DDic      = DynamicDictionary()
+        // } 내부 구현 전용.  serialize 대상에서 제외됨
 
 
 

@@ -197,7 +197,7 @@ module ORMTypeConversionModule =
                                 .OfType<RtSystem>()
                                 .First(fun s -> s.Guid = protoGuid))        // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
                     >>= (fun (s:RtSystem) ->                // s : prototype 에 해당하는 RtSystem
-                            s.DDic.TryGet("ORMObject")      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
+                            s.ORMObject      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
                             >>= tryCast<ORMSystem>
                             >>= _.Id)
                     |> o2n

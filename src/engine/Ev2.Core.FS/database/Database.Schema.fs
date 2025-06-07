@@ -124,6 +124,12 @@ module DatabaseSchemaModule =
             | Postgres _ -> $"concat('{sysIdKey}_', OLD.id)"
 
 
+        (* Project 는 개념적으로는 System 을 child 로 가지지만, DB 구조에서는 독립 구성에 mapping table 에 의존하므로,
+           ON DELETE CASCADE 를 적용할 수 없다.  따라서 Project 삭제시, mapping table 관계를 고려해서 system 을 삭제한다.
+           - 삭제 전에 systemId 를 temp table 에 저장하고, 삭제 후에 temp table 에서 systemId 를 읽어와서
+             해당 system 을 삭제한다.
+         *)
+        /// Project 삭제시, 시스템을 제거하기 위한 정보 저장용 trigger 생성
         let projectTriggerBeforeDelete =
             let name = "trigger_project_beforeDelete_recordSystemIds"
             let body = $"""
@@ -145,6 +151,7 @@ module DatabaseSchemaModule =
 
 
 
+        /// Project 삭제 후, 저장된 정보를 이용해서 시스템을 제거하는 trigger 생성
         let projectTriggerAfterDelete =
             let name = "trigger_project_afterDelete_dropSystems"
             let body = $"""

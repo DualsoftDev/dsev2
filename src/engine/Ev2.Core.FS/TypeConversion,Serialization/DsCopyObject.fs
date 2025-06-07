@@ -215,7 +215,12 @@ module DsObjectCopyAPIModule =
     type RtProject with // Replicate, Duplicate
         /// RtProject 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
         member x.Replicate() =  // RtProject
-            x.EnumerateRtObjects() |> iter (fun z -> z.DDic.Clear())
+            x.EnumerateRtObjects()
+            |> iter (fun z ->
+                z.RtObject <- None
+                z.NjObject <- None
+                z.ORMObject <- None
+                z.DDic.Clear())
 
             x.replicate(ReplicateBag())
             |> validateRuntime

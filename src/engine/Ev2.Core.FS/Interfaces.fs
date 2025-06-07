@@ -10,11 +10,6 @@ open Dual.Common.Db.FS
 
 [<AutoOpen>]
 module DsRuntimeObjectInterfaceModule =
-    /// Runtime 객체 인터페이스
-    type IRtObject  = inherit IDsObject
-    /// Guid, Name, DateTime
-    type IRtUnique    = inherit IRtObject inherit IUnique
-
     type IRtParameter = inherit IRtUnique inherit IParameter
     type IRtParameterContainer = inherit IRtUnique inherit IParameterContainer
 

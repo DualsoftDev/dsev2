@@ -16,15 +16,14 @@ open Dual.Common.Db.FS
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
 module NewtonsoftJsonModules =
-    type INjObject  = inherit IDsObject
-    type INjProject = inherit INjObject inherit IDsProject
-    type INjSystem  = inherit INjObject inherit IDsSystem
-    type INjFlow    = inherit INjObject inherit IDsFlow
-    type INjWork    = inherit INjObject inherit IDsWork
-    type INjCall    = inherit INjObject inherit IDsCall
-    type INjApiCall = inherit INjObject inherit IDsApiCall
-    type INjApiDef  = inherit INjObject inherit IDsApiDef
-    type INjArrow   = inherit INjObject inherit IArrow
+    type INjProject = inherit INjUnique inherit IDsProject
+    type INjSystem  = inherit INjUnique inherit IDsSystem
+    type INjFlow    = inherit INjUnique inherit IDsFlow
+    type INjWork    = inherit INjUnique inherit IDsWork
+    type INjCall    = inherit INjUnique inherit IDsCall
+    type INjApiCall = inherit INjUnique inherit IDsApiCall
+    type INjApiDef  = inherit INjUnique inherit IDsApiDef
+    type INjArrow   = inherit INjUnique inherit IArrow
 
     [<AbstractClass>]
     type NjUnique() as this =
@@ -34,16 +33,10 @@ module NewtonsoftJsonModules =
         /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
         [<JsonProperty(Order = -101)>] member val private RuntimeType = let name = this.GetType().Name in Regex.Replace(name, "^Nj", "")
 
-
-        /// 내부 구현 전용.  serialize 대상에서 제외됨
-        [<JsonIgnore>] member val internal DDic = DynamicDictionary()
         [<JsonIgnore>]
         member internal x.RuntimeObject
-            with get():Unique =
-                match x.DDic.TryGet("RtObject") |-> box with
-                | Some (:? Unique as rt) -> rt
-                | _ -> failwith "RtObject not found in DynamicDictionary.  This is a bug."
-            and set (v:Unique) = x.DDic.Set("RtObject", v)
+            with get():Unique = x.RtObject >>= tryCast<Unique> |?? (fun () -> failwithlog "RtObject not found in DynamicDictionary.  This is a bug." )
+            and set (v:Unique) = x.RtObject <- Some (box v :?> IRtUnique)
 
 
     let mutable internal fwdOnNsJsonSerializing:  INjObject->unit = let dummy (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
@@ -61,7 +54,7 @@ module rec NewtonsoftJsonObjects =
 
         match box src with
         | :? Unique as ds ->
-            dst.DDic.Set("RtObject", ds)
+            dst.RtObject <- ds |> tryCast<IRtUnique>
         | _ ->
             ()
         dst
