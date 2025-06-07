@@ -144,8 +144,8 @@ module internal Ds2SqliteImpl =
 
                 let callId =
                     conn.Insert($"""INSERT INTO {Tn.Call}
-                                (guid, parameter, dateTime,   name, workId,   status4Id,  callTypeId,  autoPre, safety, isDisabled, timeout)
-                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoPre, @Safety, @IsDisabled, @Timeout);""", ormCall, tr)
+                                (guid,  parameter,                     dateTime,   name, workId,   status4Id,  callTypeId,  autoConditions, commonConditions,   isDisabled, timeout)
+                         VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoConditions, @CommonConditions, @IsDisabled, @Timeout);""", ormCall, tr)
 
                 c.Id <- Some callId
                 ormCall.Id <- Some callId
@@ -416,7 +416,9 @@ module internal Sqlite2DsImpl =
                                                         WHERE m.callId = @CallId""",
                                 {| CallId = orm.Id.Value |}, tr)
 
-                            RtCall(callType, apiCallGuids, orm.AutoPre, orm.Safety, orm.IsDisabled, n2o orm.Timeout)
+                            let acs = orm.AutoConditions |> jsonDeserializeStrings
+                            let ccs = orm.CommonConditions |> jsonDeserializeStrings
+                            RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, n2o orm.Timeout)
                             |> setParent w
                             |> fromUniqINGD orm
                             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )

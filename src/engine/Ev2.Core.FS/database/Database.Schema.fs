@@ -384,8 +384,8 @@ CREATE TABLE {k Tn.Call}( {sqlUniqWithName()}
     , {k "callTypeId"}    {intKeyType} -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
     , {k "status4Id"}     {intKeyType} DEFAULT NULL
     , {k "timeout"}       INT   -- ms
-    , {k "autoPre"}       TEXT
-    , {k "safety"}        TEXT
+    , {k "autoConditions"}   TEXT
+    , {k "commonConditions"} TEXT
     , {k "isDisabled"}    {boolean} NOT NULL DEFAULT {falseValue}   -- 0: 활성화, 1: 비활성화
     , {k "workId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
@@ -615,10 +615,10 @@ CREATE VIEW {k Vn.Call} AS
         , e.{k "name"}  AS status4
         , c.{k "parameter"}
         , c.{k "timeout"}
-        , c.{k "autoPre"}
-        , c.{k "safety"}
+        , c.{k "autoConditions"}
+        , c.{k "commonConditions"}
         , c.{k "isDisabled"}
-        , p.{k "id"}      AS projectId
+        , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
         , s.{k "id"}    AS systemId
         , s.{k "name"}  AS systemName

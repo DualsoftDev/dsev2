@@ -116,7 +116,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
 
-            RtCall(x.CallType, x.ApiCallGuids, x.AutoPre, x.Safety, x.IsDisabled, x.Timeout)
+            RtCall(x.CallType, x.ApiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> tee(fun c -> c.Status4 <- x.Status4 )

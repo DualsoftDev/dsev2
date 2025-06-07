@@ -162,11 +162,11 @@ module ORMTypeConversionModule =
 
     type ORMCall with   // Create
         static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
-            autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>
+            autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:Nullable<int>
         ): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
-            ORMCall(workId, status4Id, callTypeId, autoPre, safety, isDisabled, timeout)
+            ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
     let internal ds2Orm (dbApi:AppDbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
         let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
@@ -218,7 +218,7 @@ module ORMTypeConversionModule =
                 |> ormUniqINGDP z
 
             | :? RtCall as z ->
-                ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoPre, z.Safety, z.IsDisabled, o2n z.Timeout)
+                ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoConditions, z.CommonConditions, z.IsDisabled, o2n z.Timeout)
                 |> ormUniqINGDP z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.

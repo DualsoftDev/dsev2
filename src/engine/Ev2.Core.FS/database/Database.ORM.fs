@@ -118,18 +118,18 @@ module ORMTypesModule =
         member val Status4Id = status4Id with get, set
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoPre:string, safety:string, isDisabled:bool, timeout:Nullable<int>) =
+    type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:Nullable<int>) =
         inherit ORMUnique(ParentId=Some workId)
 
-        new() = ORMCall(-1, nullableId, (DbCallType.Normal |> int64 |> Nullable), nullString, nullString, false, nullableInt)
+        new() = ORMCall(-1, nullableId, (DbCallType.Normal |> int64 |> Nullable), [], [], false, nullableInt)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set
         member val CallTypeId = callTypeId with get, set
-        member val AutoPre    = autoPre    with get, set
-        member val Safety     = safety     with get, set
         member val IsDisabled = isDisabled with get, set
         member val Timeout    = timeout    with get, set
+        member val AutoConditions   = autoConditions   |> jsonSerializeStrings with get, set
+        member val CommonConditions = commonConditions |> jsonSerializeStrings with get, set
 
 
 

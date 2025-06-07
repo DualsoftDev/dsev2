@@ -104,8 +104,8 @@ module CreateSampleModule =
                     z.Name     <- "Call1a"
                     z.Status4  <- Some DbStatus4.Ready
                     z.CallType <- DbCallType.Parallel
-                    z.AutoPre  <- "AutoPre 테스트 1"
-                    z.Safety   <- "안전조건1"
+                    z.AutoConditions.AddRange ["AutoPre 테스트 1"; "AutoConditions 테스트 2"]
+                    z.CommonConditions.AddRange ["안전조건1"; "안전조건2"; ]
                     z.Timeout  <- Some 30
                     z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> EmJson.ToJson
                     z.ApiCallGuids.AddRange [edApiCall1a.Guid] )

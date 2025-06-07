@@ -167,11 +167,11 @@ module rec DsCompareObjects =
                 yield! x.ComputeDiffUnique(y, criteria)
 
                 if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff("Work", x, y)
-                if x.CallType   <> y.CallType   then yield Diff("CallType", x, y)
-                if x.AutoPre    <> y.AutoPre    then yield Diff("AutoPre", x, y)
-                if x.Safety     <> y.Safety     then yield Diff("Safety", x, y)
-                if x.IsDisabled <> y.IsDisabled then yield Diff("IsDisabled", x, y)
-                if x.Timeout    <> y.Timeout    then yield Diff("Timeout", x, y)
+                if x.CallType         <> y.CallType         then yield Diff("CallType", x, y)
+                if not <| isStringsEqual x.AutoConditions   y.AutoConditions   then yield Diff("AutoConditions", x, y)
+                if not <| isStringsEqual x.CommonConditions y.CommonConditions then yield Diff("CommonConditions", x, y)
+                if x.IsDisabled       <> y.IsDisabled       then yield Diff("IsDisabled", x, y)
+                if x.Timeout          <> y.Timeout          then yield Diff("Timeout", x, y)
 
                 let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
                 if d1 then yield Diff("ApiCalls", x, y)
@@ -193,7 +193,7 @@ module rec DsCompareObjects =
                 if x.OutAddress <> y.OutAddress then yield Diff("OutAddress", x, y)
                 if x.InSymbol   <> y.InSymbol   then yield Diff("InSymbol", x, y)
                 if x.OutSymbol  <> y.OutSymbol  then yield Diff("OutSymbol", x, y)
-                if x.ValueSpec <> y.ValueSpec  then yield Diff("ValueSpec", x, y)
+                if x.ValueSpec  <> y.ValueSpec  then yield Diff("ValueSpec", x, y)
             }
 
     type RtArrowBetweenWorks with // ComputeDiff

@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open Dual.Common.Core.FS
 open System
 open System.Collections.Generic
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module rec TmpCompatibility =
@@ -184,15 +185,15 @@ module DsObjectUtilsModule =
 
     type RtCall with
         static member Create(callType:DbCallType, apiCalls:RtApiCall seq,
-            autoPre:string, safety:string, isDisabled:bool, timeout:int option
+            autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
             let apiCallGuids = apiCalls |-> _.Guid
 
-            RtCall(callType, apiCallGuids, autoPre, safety, isDisabled, timeout)
+            RtCall(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = RtCall(DbCallType.Normal, [], nullString, nullString, false, None)
+        static member Create() = RtCall(DbCallType.Normal, [], [], [], false, None)
 
     type RtApiDef with
         static member Create() = RtApiDef(true)
@@ -324,3 +325,9 @@ module DsObjectUtilsModule =
         member val Jsonb        = null:string       with get, set
         member val DateTime     = DateTime.MinValue with get, set
 
+    let jsonSerializeStrings(strings:string seq) =
+        strings |> toArray |> JsonConvert.SerializeObject
+    let jsonDeserializeStrings(json:string): string[] =
+        JsonConvert.DeserializeObject<string[]>(json)
+    let isStringsEqual (xs:string seq) (ys:string seq) =
+        Set.ofSeq xs = Set.ofSeq ys

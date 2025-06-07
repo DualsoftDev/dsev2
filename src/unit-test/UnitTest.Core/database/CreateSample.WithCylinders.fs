@@ -60,8 +60,8 @@ module CreateSampleWithCylinderModule =
                 |> tee(fun z ->
                     z.Name     <- "Call1a"
                     z.CallType <- DbCallType.Parallel
-                    z.AutoPre  <- "AutoPre 테스트 1"
-                    z.Safety   <- "안전조건1"
+                    z.AutoConditions  .Add "AutoPre 테스트 1"
+                    z.CommonConditions.Add "안전조건1"
                     z.Timeout  <- Some 30
                     z.ApiCallGuids.AddRange [edApiCall1aCyl.Guid] )
 

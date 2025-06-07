@@ -212,10 +212,10 @@ module rec NewtonsoftJsonObjects =
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
-        member val AutoPre    = nullString      with get, set
-        member val Safety     = nullString      with get, set
+        member val AutoConditions   = nullString with get, set
+        member val CommonConditions = nullString with get, set
         member val IsDisabled = false           with get, set
-        member val Timeout    = Nullable<int>() with get, set
+        member val Timeout    = Option<int>.None with get, set
 
         (* 특별한 조건일 때에만 json 표출 *)
         member x.ShouldSerializeApiCalls()   = x.ApiCalls.NonNullAny()
@@ -223,7 +223,9 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
 
         static member FromRuntime(rt:RtCall) =
-            NjCall(CallType = rt.CallType.ToString(), AutoPre=rt.AutoPre, Safety=rt.Safety, Timeout=o2n rt.Timeout)
+            let ac = rt.AutoConditions |> jsonSerializeStrings
+            let cc = rt.CommonConditions |> jsonSerializeStrings
+            NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
             |> fromNjUniqINGD rt
             |> tee (fun z ->
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
@@ -490,7 +492,9 @@ module rec NewtonsoftJsonObjects =
                 |? DbCallType.Normal
 
             njc.RuntimeObject <-
-                RtCall(callType, njc.ApiCalls, njc.AutoPre, njc.Safety, njc.IsDisabled, n2o njc.Timeout)
+                let acs = njc.AutoConditions |> jsonDeserializeStrings
+                let ccs = njc.CommonConditions |> jsonDeserializeStrings
+                RtCall(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> fromUniqINGD njc
             ()
 
