@@ -193,10 +193,7 @@ module rec DsCompareObjects =
                 if x.OutAddress <> y.OutAddress then yield Diff("OutAddress", x, y)
                 if x.InSymbol   <> y.InSymbol   then yield Diff("InSymbol", x, y)
                 if x.OutSymbol  <> y.OutSymbol  then yield Diff("OutSymbol", x, y)
-                if x.ValueType  <> y.ValueType  then yield Diff("ValueType", x, y)
-                if x.RangeType  <> y.RangeType  then yield Diff("RangeType", x, y)
-                if x.Value1     <> y.Value1     then yield Diff("Value1", x, y)
-                if x.Value2     <> y.Value2     then yield Diff("Value2", x, y)
+                if x.ValueParameter <> y.ValueParameter  then yield Diff("ValueParameter", x, y)
             }
 
     type RtArrowBetweenWorks with // ComputeDiff

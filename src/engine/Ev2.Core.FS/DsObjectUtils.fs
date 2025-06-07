@@ -200,27 +200,7 @@ module DsObjectUtilsModule =
     type RtApiCall with
         static member Create() =
             RtApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-                      DbDataType.None, DbRangeType.Single, nullString, nullString)
-
-        member private x.tryGetValue(value:string) =
-            match x.ValueType with
-            | DbDataType.Int8   -> value |> SByte  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)     // 단순 |-> box 사용시 반환값이 objnull option 이 됨.. 명시적으로 boxing
-            | DbDataType.Int16  -> value |> Int16  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Int32  -> value |> Int32  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Int64  -> value |> Int64  .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Uint8  -> value |> Byte   .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Uint16 -> value |> UInt16 .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Uint32 -> value |> UInt32 .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Uint64 -> value |> UInt64 .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Single -> value |> Single .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Double -> value |> Double .TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.Bool   -> value |> Boolean.TryParse |> tryParseToOption |-> (fun z -> z :> obj)
-            | DbDataType.String -> Some value
-            | _ -> failwith $"Unsupported ValueType: {x.ValueType}"
-
-        member x.TryGetValue1() = x.tryGetValue(x.Value1)
-        member x.TryGetValue2() = x.tryGetValue(x.Value2)
-
+                      Option<IValueParameter>.None)
 
     type IArrow with
         member x.GetSource(): Unique =
@@ -322,16 +302,7 @@ module DsObjectUtilsModule =
                 ()
 
             | :? RtApiCall as ac ->
-                verify (ac.ValueType <> DbDataType.None)
-                match ac.RangeType with
-                | DbRangeType.None -> verify (false)
-                | DbRangeType.Single ->
-                    verify (ac.Value1.NonNullAny())
-                    ac.TryGetValue1().IsSome |> verify
-                | _ ->
-                    verify (ac.Value1.NonNullAny() && ac.Value2.NonNullAny())
-                    ac.TryGetValue1().IsSome |> verify
-                    ac.TryGetValue2().IsSome |> verify
+                verify (ac.ValueParameter.IsSome)
                 ()
 
             | :? RtApiDef as ad ->

@@ -71,8 +71,6 @@ module DbApiModule =
                             insertEnumValues<DbStatus4>   conn tr Tn.Enum
                             insertEnumValues<DbCallType>  conn tr Tn.Enum
                             insertEnumValues<DbArrowType> conn tr Tn.Enum
-                            insertEnumValues<DbDataType>  conn tr Tn.Enum
-                            insertEnumValues<DbRangeType> conn tr Tn.Enum
                             tr.Commit()
                         with ex ->
                             logError $"Failed to create database schema: {ex.Message}"
@@ -190,9 +188,9 @@ module ORMTypeConversionModule =
                 // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
                 let prototypeId:Nullable<Id> =
                     z.PrototypeSystemGuid
-                    |-> (fun protoGuid ->
+                    >>= (fun protoGuid ->
                             z.Project.Value.Systems
-                            |> find (fun s -> s.Guid = protoGuid))   // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
+                            |> tryFind (fun s -> s.Guid = protoGuid))   // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
                     >>= (fun (s:RtSystem) ->                // s : prototype 에 해당하는 RtSystem
                             s.ORMObject      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
                             >>= tryCast<ORMSystem>
@@ -248,10 +246,8 @@ module ORMTypeConversionModule =
                 |> ormUniqINGDP z
 
             | :? RtApiCall as z ->
-                let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType).Value
-                let rangeTypeId = dbApi.TryFindEnumValueId<DbRangeType>(z.RangeType).Value
                 let apiDefId = guidDic[z.ApiDefGuid].Id.Value
-                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, rangeTypeId, z.Value1, z.Value2)
+                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, z.ValueParameter.Value.Jsonize())
                 |> ormUniqINGDP z
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

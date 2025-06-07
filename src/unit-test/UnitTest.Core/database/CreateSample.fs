@@ -47,10 +47,12 @@ module CreateSampleModule =
                     z.OutAddress<- "OutAddress1"
                     z.InSymbol  <- "XTag1"
                     z.OutSymbol <- "YTag2"
-                    z.ValueType <- DbDataType.Double
-                    z.RangeType <- DbRangeType.MIN_MAX
-                    z.Value1    <- "3.14"
-                    z.Value2    <- "9.99"
+                    z.ValueParameter <-
+                        Some <| Ranges [
+                            { Lower = None; Upper = Some (3.14, Open) }
+                            { Lower = Some (5.0, Open); Upper = Some (6.0, Open) }
+                            { Lower = Some (7.1, Closed); Upper = None }
+                        ]
                     )
             [edApiCall1a] |> edSystem.AddApiCalls
 

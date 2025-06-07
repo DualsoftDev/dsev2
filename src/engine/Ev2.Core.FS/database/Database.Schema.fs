@@ -328,14 +328,9 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
     , {k "outSymbol"}       TEXT NOT NULL
 
     -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
-    , {k "value1"}          TEXT -- 값
-    , {k "value2"}          TEXT -- 값
-    , {k "valueTypeId"}     {intKeyType} NOT NULL         -- (e.g. "string", "int", "float", "bool", "dateTime",
-    , {k "rangeTypeId"}     {intKeyType} NOT NULL         -- (e.g. "Single", "min_max", ...
+    , {k "valueParameter"}  {jsonb}
     , {k "apiDefId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
-    , FOREIGN KEY(valueTypeId) REFERENCES {Tn.Enum}(id)
-    , FOREIGN KEY(rangeTypeId) REFERENCES {Tn.Enum}(id)
 );
 
 CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
@@ -535,10 +530,7 @@ CREATE VIEW {k Vn.ApiCall} AS
         , x.{k "outAddress"}
         , x.{k "inSymbol"}
         , x.{k "outSymbol"}
-        , x.{k "value1"}
-        , x.{k "value2"}
-        , enumV.{k "name"} AS valueType
-        , enumR.{k "name"} AS rangeType
+        , x.{k "valueParameter"}
         , ad.{k "id"}   AS apiDefId
         , ad.{k "name"} AS apiDefName
         , s.{k "id"}    AS systemId
@@ -546,8 +538,6 @@ CREATE VIEW {k Vn.ApiCall} AS
     FROM {k Tn.ApiCall} x
     JOIN {k Tn.ApiDef} ad ON ad.id = x.apiDefId
     JOIN {k Tn.System} s  ON s.id = ad.systemId
-    JOIN {k Tn.Enum} enumV ON enumV.id = x.valueTypeId
-    JOIN {k Tn.Enum} enumR ON enumR.id = x.rangeTypeId
     ;
 
 

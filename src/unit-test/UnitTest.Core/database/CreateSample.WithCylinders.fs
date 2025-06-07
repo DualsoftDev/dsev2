@@ -35,11 +35,10 @@ module CreateSampleWithCylinderModule =
                     z.OutAddress <- "OutAddress1"
                     z.InSymbol   <- "XTag1"
                     z.OutSymbol  <- "YTag2"
-                    z.ValueType  <- DbDataType.Int32
-                    z.RangeType  <- DbRangeType.MAX_MIN
-                    z.Value1     <- "20"
-                    z.Value2     <- "80"
+                    z.ValueParameter <-
+                        Some <| Multiple [1; 2; 3]
                     )
+
             edSystemCyl  <- RtSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
             edFlowCyl    <- RtFlow   (Name = "CylFlow")
             edWork1Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
