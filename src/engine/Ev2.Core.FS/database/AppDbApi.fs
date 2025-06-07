@@ -20,7 +20,6 @@ module DbApiModule =
         member val RtDic = Dictionary<Guid, RtUnique>()
         member x.Add(u:ORMUnique) = x.DbDic.TryAdd(guid2str u.Guid, u) |> ignore
         member x.Add(u:RtUnique)  = x.RtDic.TryAdd(u.Guid, u) |> ignore
-        member x.Add2 (db:ORMUnique) (rt:RtUnique) = x.Add db; x.Add rt
 
 
     /// 공용 캐시 초기화 함수
@@ -173,7 +172,6 @@ module ORMTypeConversionModule =
 
     let internal ds2Orm (dbApi:AppDbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
         let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
-        let bag = dbApi.DDic.Get<Db2RtBag>()
 
         match x |> tryCast<Unique> with
         | Some uniq ->
@@ -184,7 +182,7 @@ module ORMTypeConversionModule =
             match uniq with
             | :? RtProject as z ->
                 ORMProject(z.Author, z.Version, z.Description)
-                |> ormUniqINGDP z |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtSystem as z ->
                 let originGuid = z.OriginGuid |> Option.toNullable
@@ -193,9 +191,8 @@ module ORMTypeConversionModule =
                 let prototypeId:Nullable<Id> =
                     z.PrototypeSystemGuid
                     |-> (fun protoGuid ->
-                            bag.RtDic.Values
-                                .OfType<RtSystem>()
-                                .First(fun s -> s.Guid = protoGuid))        // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
+                            z.Project.Value.Systems
+                            |> find (fun s -> s.Guid = protoGuid))   // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
                     >>= (fun (s:RtSystem) ->                // s : prototype 에 해당하는 RtSystem
                             s.ORMObject      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
                             >>= tryCast<ORMSystem>
@@ -203,11 +200,11 @@ module ORMTypeConversionModule =
                     |> o2n
 
                 ORMSystem(prototypeId, originGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description)
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtFlow as z ->
                 ORMFlow()
-                |> ormUniqINGDP z |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtWork as z ->
                 let flowId = (z.Flow >>= _.Id) |> Option.toNullable
@@ -220,11 +217,11 @@ module ORMTypeConversionModule =
                     y.NumRepeat <- z.NumRepeat
                     y.Period <- z.Period
                     y.Delay <- z.Delay )
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtCall as z ->
                 ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoPre, z.Safety, z.IsDisabled, o2n z.Timeout)
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
@@ -234,7 +231,7 @@ module ORMTypeConversionModule =
                     |? int DbArrowType.None
 
                 ORMArrowWork(src, tgt, parentId, arrowTypeId)
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
@@ -244,18 +241,18 @@ module ORMTypeConversionModule =
                     |? int DbArrowType.None
 
                 ORMArrowCall(src, tgt, parentId, arrowTypeId)
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtApiDef as z ->
                 ORMApiDef(pid)
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | :? RtApiCall as z ->
                 let valueTypeId = dbApi.TryFindEnumValueId<DbDataType>(z.ValueType).Value
                 let rangeTypeId = dbApi.TryFindEnumValueId<DbRangeType>(z.RangeType).Value
                 let apiDefId = guidDic[z.ApiDefGuid].Id.Value
                 ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueTypeId, rangeTypeId, z.Value1, z.Value2)
-                |> ormUniqINGDP z  |> tee (fun y -> bag.Add2 y z)
+                |> ormUniqINGDP z
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 

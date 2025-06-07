@@ -98,6 +98,11 @@ module SchemaTestModule =
     [<Test>]
     let ``insert test`` () =
         use conn = dbApi.CreateConnection()
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"DELETE FROM {Tn.Project};", tr)
+        ) |> ignore
+
+
         dbApi.VendorDB.TruncateAllTables(conn)
         let newGuid() = Guid.NewGuid().ToString()
 

@@ -136,9 +136,12 @@ module DatabaseSchemaModule =
         INSERT INTO {Tn.Log} (projectId, message)
         SELECT
             OLD.id,
-            'beforeDelete: projectId=' || OLD.id || ', systemIds=' || {sqlConcat "systemId"}
-        FROM {Tn.MapProject2System}
-        WHERE projectId = OLD.id;
+            'beforeDelete: projectId=' || OLD.id || ', systemIds=' ||
+                COALESCE((
+                    SELECT {sqlConcat "systemId"}
+                    FROM {Tn.MapProject2System}
+                    WHERE projectId = OLD.id
+                ), '없음');
 
         DELETE FROM {Tn.Temp} WHERE key = {sysIdKeyExpr};
 
@@ -159,9 +162,15 @@ module DatabaseSchemaModule =
         INSERT INTO {Tn.Log} (projectId, message)
         SELECT
             OLD.id,
-            'afterDelete: projectId=' || OLD.id || ', systemIds=' || {sqlConcat "val"}
-        FROM {Tn.Temp}
-        WHERE key = {sysIdKeyExpr};
+            'afterDelete: projectId=' || OLD.id || ', systemIds=' ||
+                COALESCE((
+                    SELECT {sqlConcat "val"}
+                    FROM {Tn.Temp}
+                    WHERE key = {sysIdKeyExpr}
+                ), '없음');
+
+
+
 
         -- 시스템 제거
         DELETE FROM {Tn.System}
