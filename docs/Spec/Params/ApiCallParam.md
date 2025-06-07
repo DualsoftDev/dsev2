@@ -9,46 +9,85 @@
 
 
 ```fsharp
-type ApiCallParam = {
-    InAddress: string            // 디바이스 입력 주소
-    OutAddress: string           // 디바이스 출력 주소
-    InSymbol: string             // 입력 신호 이름
-    OutSymbol: string            // 출력 신호 이름
-    Value: ValueParam option     // 값 범위 또는 단일 값 조건 정의 (선택 사항)
-} with interface IParameter with interface IParameter
+type RtApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
+                inSymbol:string, outSymbol:string,
+                valueSpec:IValueSpec option
+) =
+    inherit RtUnique()
+    interface IRtApiCall
+    member val ApiDefGuid = apiDefGuid  with get, set
+    member val InAddress  = inAddress   with get, set
+    member val OutAddress = outAddress  with get, set
+    member val InSymbol   = inSymbol    with get, set
+    member val OutSymbol  = outSymbol   with get, set
+
+    member val ValueSpec = valueSpec with get, set
+    ... 중략
 ```
-### 🔹 ValueParam 타입
+### 🔹 ValueSpec 타입
+- ValueSpec 은 저장되는 값의 type 을 가지며 (e.g int32, int64, double, ...)
+- 다음의 형태로 지정할 수 있다.
+    1. 하나의 단일 값.   e.g 1
+    2. 복수개의 값.  e.g {1, 3, 5}
+    3. 범위 값.  e.g 0 < x < 99.  범위에는 (등호를 포함할 수 있는) 부등호가 사용됨
+    4. 복수개의 범위 값.  e.g x < 0 || 20 < x < 30 || 50 <= x <= 60 || 90 < x < 100 || x > 1000
+- 저장 형태
+    1. 프로그램 코드 내에서는 `IValueSpec` type 에 저장되고
+    2. DB 에는 JSON string (혹은 jsonb 를 지원하는 관계형 database 에서는 JSONB type) 으로 저장
+    3. *.json 파일 저장시에는 JSON 내에 embedding 된 JSON 으로 저장
+
+- [📁 ValueSpec 소스 보기](../../../src/engine/Ev2.Core.FS/ConstEnums.fs)
 ```fsharp
-type ValueParam = {
-    TargetValue: obj option           // 단일 값 기준
-    Min: obj option                   // 최소값 (범위 조건일 경우)
-    Max: obj option                   // 최대값 (범위 조건일 경우)
-    IsNegativeTarget: bool            // 조건 부정 여부 (!값)
-    IsInclusiveMin: bool              // 최소값 포함 여부
-    IsInclusiveMax: bool              // 최대값 포함 여부
+type BoundType = | Open | Closed
+type Bound<'T> = 'T * BoundType
+
+type RangeSegment<'T> = {
+    Lower: option<Bound<'T>>
+    Upper: option<Bound<'T>>
 }
+
+type IValueSpec =
+    abstract member Jsonize:   unit -> string
+    abstract member Stringify: unit -> string
+
+type ValueSpec<'T> =
+    | Single of 'T
+    | Multiple of 'T list
+    | Ranges of RangeSegment<'T> list   // 단일 or 복수 범위 모두 표현 가능
+    with ... // 중략
 ```
 
 
 ## 🧪 사용 예시
 
 ```fsharp
-let apiCallParam: ApiCallParam = {
-    InAddress = "M100"
-    OutAddress = "M200"
-    InSymbol = "SensorReady"
-    OutSymbol = "ActuateStart"
-    Value = Some {
-        TargetValue = Some(box true)
-        Min = None
-        Max = None
-        IsNegativeTarget = false
-        IsInclusiveMin = false
-        IsInclusiveMax = false
-    }
-}
-```
+let apiCallParam =
+    RtApiCall.Create()
+    |> tee (fun z ->
+        z.ApiDefGuid <- edApiDef1Cyl.Guid
+        z.Name       <- "ApiCall1aCyl"
+        z.InAddress  <- "M100"
+        z.OutAddress <- "M200"
+        z.InSymbol   <- "SensorReady"
+        z.OutSymbol  <- "ActuateStart"
+        z.ValueSpec <-
+            Some <| Multiple [1; 2; 3] )
 
+let valueSpecSingleValue:IValueSpec = Single 3.14156952
+let valueSpecMultipleValues:IValueSpec = Multiple [1; 2; 3]
+let valueSpecSingleRange:IValueSpec = Ranges [
+    { Lower = None; Upper = Some (3.14, Open) } ]
+let valueSpecMultipleRange:IValueSpec = Ranges [
+    { Lower = None; Upper = Some (3.14, Open) }
+    { Lower = Some (5.0, Open); Upper = Some (6.0, Open) }
+    { Lower = Some (7.1, Closed); Upper = None }]
+
+valueSpecSingleValue   .ToString() === "x = 3.14156952"
+valueSpecMultipleValues.ToString() === "x ∈ {1, 2, 3}"
+valueSpecSingleRange   .ToString() === "x < 3.14"
+valueSpecMultipleRange .ToString() === "x < 3.14 || 5.0 < x < 6.0 || 7.1 <= x"
+```
+- 더 자세한 사항은 - [📁 ValueSpec 테스트 소스 보기](../../../src/unit-test/UnitTest.Core/ValueSpec.Test.fs) 참조
 
 
 ## 💬 비고

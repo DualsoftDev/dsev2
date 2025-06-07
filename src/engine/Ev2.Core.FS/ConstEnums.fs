@@ -70,9 +70,9 @@ module ValueRangeModule =
                         let format (v: 'T, b: BoundType) isLower =
                             match b, isLower with
                             | Open  , true  -> sprintf "%A < x" v
-                            | Closed, true  -> sprintf "%A ≤ x" v
+                            | Closed, true  -> sprintf "%A <= x" v
                             | Open  , false -> sprintf "x < %A" v
-                            | Closed, false -> sprintf "x ≤ %A" v
+                            | Closed, false -> sprintf "x <= %A" v
 
                         match r.Lower, r.Upper with
                         | Some l, Some u ->   // 예: 5 < x < 6
@@ -121,6 +121,7 @@ module ValueRangeModule =
             | t when t = typedefof<uint32>.Name -> typeof<ValueSpec<uint32>>
             | t when t = typedefof<uint64>.Name -> typeof<ValueSpec<uint64>>
             | t when t = typedefof<char>  .Name -> typeof<ValueSpec<char>>
+            | t when t = typedefof<bool>  .Name -> typeof<ValueSpec<bool>>
             | _ -> failwith $"Unsupported type hint: {typeName}"
 
         JsonConvert.DeserializeObject(valueJson, ty) |> box :?> IValueSpec
@@ -185,14 +186,14 @@ module ValueRangeModule =
                 | Some result -> Ok result
                 | None -> Ok (Multiple (Array.toList parts) :> IValueSpec)
 
-            // 범위 표현: 3 < x ≤ 7 || 10 ≤ x
-            elif Regex.IsMatch(trimmed, @"(\d+\s*(<|≤)\s*x)|x\s*(<|≤)\s*\d+") then
+            // 범위 표현: 3 < x <= 7 || 10 <= x
+            elif Regex.IsMatch(trimmed, @"(\d+\s*(<|<=)\s*x)|x\s*(<|<=)\s*\d+") then
                 let parts = trimmed.Split([| "||" |], StringSplitOptions.RemoveEmptyEntries)
 
                 let parseSegment (part: string) : Result<RangeSegment<float>, string> =
                     let part = part.Trim()
 
-                    let m1 = Regex.Match(part, @"^(.+)\s(<|≤)\s+x\s(<|≤)\s(.+)$")
+                    let m1 = Regex.Match(part, @"^(.+)\s(<|<=)\s+x\s(<|<=)\s(.+)$")
                     if m1.Success then
                         let lraw, lop, rop, rraw =
                             m1.Groups[1].Value.Trim(), m1.Groups[2].Value, m1.Groups[3].Value, m1.Groups[4].Value.Trim()
@@ -205,7 +206,7 @@ module ValueRangeModule =
                         | _ -> Error $"Invalid numeric bounds: '{part}'"
 
                     else
-                        let m2 = Regex.Match(part, @"^x\s(<|≤)\s(.+)$")
+                        let m2 = Regex.Match(part, @"^x\s(<|<=)\s(.+)$")
                         if m2.Success then
                             let op = m2.Groups[1].Value
                             let raw = m2.Groups[2].Value.Trim()
@@ -213,7 +214,7 @@ module ValueRangeModule =
                             | Some v -> Ok { Lower = None; Upper = Some (v, if op = "<" then Open else Closed) }
                             | _ -> Error $"Invalid upper bound: '{part}'"
                         else
-                            let m3 = Regex.Match(part, @"^(.+)\s(<|≤)\s+x$")
+                            let m3 = Regex.Match(part, @"^(.+)\s(<|<=)\s+x$")
                             if m3.Success then
                                 let raw = m3.Groups[1].Value.Trim()
                                 let op = m3.Groups[2].Value
@@ -249,7 +250,7 @@ module ValueRangeModule =
             else
                 Some <| deserializeWithType text
 
-        /// 사용자 편의 텍스트 parsing 함수.  e.g "3 < x ≤ 7 || 10 ≤ x"
+        /// 사용자 편의 텍스트 parsing 함수.  e.g "3 < x <= 7 || 10 <= x"
         static member Parse(text: string) : IValueSpec = parseValueSpec text
         static member RTryParse(text: string) = rTryParseValueSpec text
         static member TryParse(text: string) = rTryParseValueSpec text |> Option.ofResult
@@ -257,7 +258,7 @@ module ValueRangeModule =
 (*
 
 
-1. 단일 범위: 3 < x ≤ 7
+1. 단일 범위: 3 < x <= 7
 
 let v1 = Ranges [
     { Lower = Some (3.0, Open); Upper = Some (7.0, Closed) }
