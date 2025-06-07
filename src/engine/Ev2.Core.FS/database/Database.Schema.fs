@@ -89,13 +89,14 @@ module DatabaseSchemaModule =
         let guidUniqSpec = "UNIQUE"
 
         let int32 = "INT"
-        let boolean = dbProvider.SqlBoolean
-        let now = dbProvider.SqlNow
-        let guid = dbProvider.SqlGuidKeyType
-        let jsonb = dbProvider.SqlJsonBType
+        let boolean    = dbProvider.SqlBoolean
+        let now        = dbProvider.SqlNow
+        let guid       = dbProvider.SqlGuidKeyType
+        let jsonb      = dbProvider.SqlJsonBType
+        let sqlConcat  = dbProvider.SqlConcat
 
         let falseValue = dbProvider.SqlFalse
-        let k (name: string) = dbProvider.SqlWrapName name
+        let k          = dbProvider.SqlWrapName
 
         let varchar (n: int) = $"{dbProvider.SqlVarChar}({n})"
         let autoincPrimaryKey = dbProvider.SqlAutoincPrimaryKey
@@ -116,55 +117,58 @@ module DatabaseSchemaModule =
             |> String.concat "\n"
 
 
-        let sysIdKey = "trigger_temp_systemId"
-        let sqlConcat (name:string) =
+        let sysIdKeyExpr =
+            let sysIdKey = "trigger_temp_systemId"
             match dbProvider with
-            | Sqlite _ -> $"GROUP_CONCAT({name})"
-            | Postgres _ -> $"STRING_AGG({name}::TEXT, ',')"
-            //| Postgres _ -> " ARRAY_AGG(systemId)"
+            | Sqlite _ -> $"'{sysIdKey}_' || OLD.id"
+            | Postgres _ -> $"concat('{sysIdKey}_', OLD.id)"
+
 
         let projectTriggerBeforeDelete =
             let name = "trigger_project_beforeDelete_recordSystemIds"
             let body = $"""
-    INSERT INTO {Tn.Log} (message)
-    SELECT
-      'beforeDelete: projectId=' || OLD.id ||
-      ', systemIds=' || {sqlConcat "systemId"}
-    FROM {Tn.MapProject2System}
-    WHERE projectId = OLD.id;
+        INSERT INTO {Tn.Log} (projectId, message)
+        SELECT
+            OLD.id,
+            'beforeDelete: projectId=' || OLD.id || ', systemIds=' || {sqlConcat "systemId"}
+        FROM {Tn.MapProject2System}
+        WHERE projectId = OLD.id;
 
+        DELETE FROM {Tn.Temp} WHERE key = {sysIdKeyExpr};
 
-    DELETE FROM {Tn.Temp} WHERE key = '{sysIdKey}';
-    INSERT INTO {Tn.Temp} (key, val)
-    SELECT '{sysIdKey}', systemId FROM {Tn.MapProject2System}
-    WHERE projectId = OLD.id;
-    """
+        INSERT INTO {Tn.Temp} (key, val)
+        SELECT {sysIdKeyExpr}, systemId
+        FROM {Tn.MapProject2System}
+        WHERE projectId = OLD.id;
+        """
             dbProvider.SqlCreateCustomTrigger(name, "BEFORE", "DELETE", Tn.Project, body)
-
 
 
 
         let projectTriggerAfterDelete =
             let name = "trigger_project_afterDelete_dropSystems"
             let body = $"""
+        -- 로그 기록
+        INSERT INTO {Tn.Log} (projectId, message)
+        SELECT
+            OLD.id,
+            'afterDelete: projectId=' || OLD.id || ', systemIds=' || {sqlConcat "val"}
+        FROM {Tn.Temp}
+        WHERE key = {sysIdKeyExpr};
 
-    -- 로그 남기기
-    INSERT INTO {Tn.Log} (message)
-    SELECT
-      'afterDelete: projectId=' || OLD.id ||
-      ', systemIds=' || {sqlConcat "val"}   -- 'val' 은 temp 테이블의 column 명
-    FROM {Tn.Temp}
-    WHERE key = '{sysIdKey}';
+        -- 시스템 제거
+        DELETE FROM {Tn.System}
+        WHERE id IN (
+            SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = {sysIdKeyExpr}
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM {Tn.MapProject2System}
+            WHERE systemId = {Tn.System}.id
+        );
 
-
-    DELETE FROM {Tn.System}
-    WHERE id IN (
-        SELECT CAST(val AS INTEGER) FROM {Tn.Temp} WHERE key = '{sysIdKey}'
-    ) AND NOT EXISTS (
-        SELECT 1 FROM {Tn.MapProject2System} WHERE systemId = {Tn.System}.id
-    );
-    DELETE FROM meta WHERE key = '{sysIdKey}';
-    """
+        -- temp 정리
+        DELETE FROM {Tn.Temp} WHERE key = {sysIdKeyExpr};
+        """
             dbProvider.SqlCreateCustomTrigger(name, "AFTER", "DELETE", Tn.Project, body)
 
 
@@ -397,26 +401,29 @@ CREATE TABLE {k Tn.Meta} (
 );
 
 CREATE TABLE {k Tn.Log} (
-    {k "id"}  {autoincPrimaryKey},
-    {k "dateTime"} {datetime} NOT NULL DEFAULT {now},
-    {k "message"} TEXT NOT NULL
+    {k "id"}  {autoincPrimaryKey}
+    , {k "projectId"}   {intKeyType}
+    , {k "dateTime"}    {datetime} NOT NULL DEFAULT {now}
+    , {k "message"}     TEXT NOT NULL
+    -- , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- "log" 테이블에서 자료 추가, 갱신 작업이 "log_projectid_fkey" 참조키(foreign key) 제약 조건을 위배했습니다
+    -- FK cascade 는 동작 어려움... Project 삭제시 현재 log table 에 기록하기 때문에 입력과 동시에 삭제 일어나야 하는 상황 발생함
 );
 
 CREATE TABLE {k Tn.Temp} (
-    {k "id"}  {autoincPrimaryKey},
-    {k "key"} TEXT NOT NULL,
-    {k "val"} TEXT NOT NULL
+    {k "id"}  {autoincPrimaryKey}
+    , {k "key"} TEXT NOT NULL
+    , {k "val"} TEXT NOT NULL
 );
 
 
 -- tableHistory 테이블
 CREATE TABLE {k Tn.TableHistory} (
-    {k "id"}  {autoincPrimaryKey},
-    {k "name"} TEXT NOT NULL,
-    {k "operation"} TEXT,
-    {k "oldId"} {intKeyType},
-    {k "newId"} {intKeyType},
-    CONSTRAINT {Tn.TableHistory}_uniq UNIQUE (name, operation, oldId, newId)
+    {k "id"}  {autoincPrimaryKey}
+    , {k "name"} TEXT NOT NULL
+    , {k "operation"} TEXT
+    , {k "oldId"} {intKeyType}
+    , {k "newId"} {intKeyType}
+    , CONSTRAINT {Tn.TableHistory}_uniq UNIQUE (name, operation, oldId, newId)
 );
 
 CREATE TABLE {k Tn.TypeTest} (
