@@ -19,8 +19,8 @@ module AppSettingsModule =
         [<OnSerializing>]
         member x.OnSerializing(_context:StreamingContext) =
             x.NjDbProvider <- NjDbProvider.FromDbProvider x.DbProvider
-        [<OnSerialized>]
-        member x.OnSerialized(_context:StreamingContext) =
+        [<OnDeserialized>]
+        member x.OnDeserializedMethod(context: StreamingContext) =
             x.DbProvider <- x.NjDbProvider.ToDbProvider()
 
         member val DatabaseWatchdogIntervalSec = 5 with get, set
