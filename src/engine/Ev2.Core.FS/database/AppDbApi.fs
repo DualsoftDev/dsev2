@@ -60,7 +60,7 @@ module DbApiModule =
                         let sqlSpecFile = Path.Combine(specDir, "sqlite-schema.sql")
                         let header = $"""
 --
--- Auto-generated DS schema.  Do *NOT* Edit.
+-- Auto-generated DS schema for {dbProvider.VendorName}.  Do *NOT* Edit.
 --
 """
                         File.WriteAllText(sqlSpecFile, header + schema)

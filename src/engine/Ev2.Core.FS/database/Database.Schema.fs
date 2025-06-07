@@ -199,6 +199,43 @@ module DatabaseSchemaModule =
     , {k "name"}          {varchar NameLength} NOT NULL"""
 
 
+        let sqlViewApiCall =
+            let jsonbColumns =
+                if supportsJsonB then
+                    $"""
+        -- '->' 는 json/jsonb 객체를 그대로 유지
+        -- '->>' 는 문자열을 추출
+        , x.valueParameter->>'valueType' AS valueType
+        , x.valueParameter->'value'->>'Case' AS case
+        , CASE
+            WHEN x.valueParameter->'value'->>'Case' = 'Single'
+            THEN x.valueParameter->'value'->'Fields'->>0
+            ELSE NULL
+          END AS singleValue"""
+                else
+                    ""
+
+            $"""
+CREATE VIEW {k Vn.ApiCall} AS
+    SELECT
+        x.{k "id"}
+        , x.{k "name"}
+        , x.{k "parameter"}
+        , x.{k "inAddress"}
+        , x.{k "outAddress"}
+        , x.{k "inSymbol"}
+        , x.{k "outSymbol"}
+        , x.{k "valueParameter"}
+        {jsonbColumns}
+        , ad.{k "id"}   AS apiDefId
+        , ad.{k "name"} AS apiDefName
+        , s.{k "id"}    AS systemId
+        , s.{k "name"}  AS systemName
+    FROM {k Tn.ApiCall} x
+    JOIN {k Tn.ApiDef} ad ON ad.id = x.apiDefId
+    JOIN {k Tn.System} s  ON s.id = ad.systemId
+    ;
+"""
 
 
         let sqlTables = $"""
@@ -522,37 +559,7 @@ CREATE VIEW {k Vn.ApiDef} AS
     JOIN {k Tn.System} s  ON s.id = x.systemId
     ;
 
-CREATE VIEW {k Vn.ApiCall} AS
-    SELECT
-        x.{k "id"}
-        , x.{k "name"}
-        , x.{k "parameter"}
-        , x.{k "inAddress"}
-        , x.{k "outAddress"}
-        , x.{k "inSymbol"}
-        , x.{k "outSymbol"}
-        , x.{k "valueParameter"}
-        {if supportsJsonB then "        -- '->' 는 json/jsonb 객체를 그대로 유지" else ""}
-        {if supportsJsonB then "        -- '->>' 는 문자열을 추출" else ""}
-        {if supportsJsonB then "        , x.valueParameter->>'valueType' AS valueType" else ""}
-        {if supportsJsonB then "        , x.valueParameter->'value'->>'Case' AS case" else ""}
-        {if supportsJsonB then
-            ", CASE\n" +
-            "    WHEN x.valueParameter->'value'->>'Case' = 'Single'\n" +
-            "    THEN x.valueParameter->'value'->'Fields'->>0\n" +
-            "    ELSE NULL\n" +
-            "  END AS singleValue"
-         else ""}
-
-        , ad.{k "id"}   AS apiDefId
-        , ad.{k "name"} AS apiDefName
-        , s.{k "id"}    AS systemId
-        , s.{k "name"}  AS systemName
-    FROM {k Tn.ApiCall} x
-    JOIN {k Tn.ApiDef} ad ON ad.id = x.apiDefId
-    JOIN {k Tn.System} s  ON s.id = ad.systemId
-    ;
-
+{sqlViewApiCall}
 
 CREATE VIEW {k Vn.Flow} AS
     SELECT
@@ -584,7 +591,6 @@ CREATE VIEW {k Vn.Work} AS
         , x.{k "numRepeat"}
         , x.{k "period"}
         , x.{k "delay"}
-
         , e.{k "name"}  AS status4
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
