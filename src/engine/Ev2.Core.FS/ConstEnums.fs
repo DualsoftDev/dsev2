@@ -1,8 +1,11 @@
 namespace Ev2.Core.FS
 
+open System
+open System.Text.RegularExpressions
 open Dual.Common.Base
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
+open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module ConstEnums =
@@ -121,6 +124,120 @@ module ValueRangeModule =
             | _ -> failwith $"Unsupported type hint: {typeName}"
 
         JsonConvert.DeserializeObject(valueJson, ty) |> box :?> IValueParameter
+
+
+    let rTryParseValueParameter (text: string) : Result<IValueParameter, string> =
+        let trimmed = text.Trim()
+
+        let tryParseFloat (s: string) = Double .TryParse(s.Trim())  |> tryParseToOption
+        let tryParseInt   (s: string) = Int32  .TryParse(s.Trim())  |> tryParseToOption
+        let tryParseBool  (s: string) = Boolean.TryParse(s.Trim())  |> tryParseToOption
+        let tryParseChar  (s: string) =
+            let s = s.Trim().Trim('\'', '"')
+            if s.Length = 1 then Some s.[0] else None
+
+        // x = VALUE
+        if Regex.IsMatch(trimmed, @"^x\s*=\s*.+$") then
+            let raw = trimmed.Substring(2).TrimStart('=').Trim()
+
+            match tryParseInt raw with
+            | Some i -> Ok (Single i :> IValueParameter)
+            | None ->
+                match tryParseFloat raw with
+                | Some f -> Ok (Single f :> IValueParameter)
+                | None ->
+                    match tryParseBool raw with
+                    | Some b -> Ok (Single b :> IValueParameter)
+                    | None ->
+                        match tryParseChar raw with
+                        | Some c -> Ok (Single c :> IValueParameter)
+                        | None -> Ok (Single raw :> IValueParameter)
+
+        // x ∈ {a, b, c}
+        elif Regex.IsMatch(trimmed, @"^x\s*∈\s*\{(.+)\}$") then
+            let inner = Regex.Match(trimmed, @"\{(.+)\}").Groups[1].Value
+            let parts = inner.Split(',') |> Array.map (fun s -> s.Trim())
+
+            let tryAllParsers =
+                seq {
+                    let allInts = parts |> Array.choose tryParseInt
+                    if allInts.Length = parts.Length then
+                        yield Some (Multiple (Array.toList allInts) :> IValueParameter)
+
+                    let allFloats = parts |> Array.choose tryParseFloat
+                    if allFloats.Length = parts.Length then
+                        yield Some (Multiple (Array.toList allFloats) :> IValueParameter)
+
+                    let allBools = parts |> Array.choose tryParseBool
+                    if allBools.Length = parts.Length then
+                        yield Some (Multiple (Array.toList allBools) :> IValueParameter)
+
+                    let allChars = parts |> Array.choose tryParseChar
+                    if allChars.Length = parts.Length then
+                        yield Some (Multiple (Array.toList allChars) :> IValueParameter)
+                }
+
+            match tryAllParsers |> Seq.tryPick id with
+            | Some result -> Ok result
+            | None -> Ok (Multiple (Array.toList parts) :> IValueParameter)
+
+        // 범위 표현: 3 < x ≤ 7 || 10 ≤ x
+        elif Regex.IsMatch(trimmed, @"(\d+\s*(<|≤)\s*x)|x\s*(<|≤)\s*\d+") then
+            let parts = trimmed.Split([| "||" |], StringSplitOptions.RemoveEmptyEntries)
+
+            let parseSegment (part: string) : Result<RangeSegment<float>, string> =
+                let part = part.Trim()
+
+                let m1 = Regex.Match(part, @"^(.+)\s(<|≤)\s+x\s(<|≤)\s(.+)$")
+                if m1.Success then
+                    let lraw, lop, rop, rraw =
+                        m1.Groups[1].Value.Trim(), m1.Groups[2].Value, m1.Groups[3].Value, m1.Groups[4].Value.Trim()
+                    match tryParseFloat lraw, tryParseFloat rraw with
+                    | Some lval, Some rval ->
+                        Ok {
+                            Lower = Some (lval, if lop = "<" then Open else Closed)
+                            Upper = Some (rval, if rop = "<" then Open else Closed)
+                        }
+                    | _ -> Error $"Invalid numeric bounds: '{part}'"
+
+                else
+                    let m2 = Regex.Match(part, @"^x\s(<|≤)\s(.+)$")
+                    if m2.Success then
+                        let op = m2.Groups[1].Value
+                        let raw = m2.Groups[2].Value.Trim()
+                        match tryParseFloat raw with
+                        | Some v -> Ok { Lower = None; Upper = Some (v, if op = "<" then Open else Closed) }
+                        | _ -> Error $"Invalid upper bound: '{part}'"
+                    else
+                        let m3 = Regex.Match(part, @"^(.+)\s(<|≤)\s+x$")
+                        if m3.Success then
+                            let raw = m3.Groups[1].Value.Trim()
+                            let op = m3.Groups[2].Value
+                            match tryParseFloat raw with
+                            | Some v -> Ok { Lower = Some (v, if op = "<" then Open else Closed); Upper = None }
+                            | _ -> Error $"Invalid lower bound: '{part}'"
+                        else
+                            Error $"Unrecognized range format: '{part}'"
+
+            // 모든 구간이 성공적으로 파싱되는 경우만 Ok
+            let parsedSegments = parts |> Array.map parseSegment |> Array.toList
+
+            match parsedSegments |> List.partition (function Ok _ -> true | _ -> false) with
+            | oks, [] ->
+                let segments = oks |> List.choose (function Ok v -> Some v | _ -> None)
+                Ok (Ranges segments :> IValueParameter)
+            | _, errs ->
+                let messages = errs |> List.choose (function Error msg -> Some msg | _ -> None)
+                Error (String.concat "\n" messages)
+
+        else
+            Error $"Unrecognized ValueCondition syntax: {text}"
+
+    let parseValueParameter text = rTryParseValueParameter text |> Result.get
+
+
+    type IValueParameter with
+        static member Parse(text: string) : IValueParameter = parseValueParameter text
 
 (*
 

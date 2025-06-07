@@ -30,9 +30,8 @@ module SchemaTestModule =
         member _.GlobalSetup() =
             Ev2.Core.FS.ModuleInitializer.Initialize(null)
             DcLogger.EnableTrace <- true
-            //DapperTypeHandler.AddHandlers()
-            //checkHandlers()
             AppSettings.TheAppSettings <- AppSettings(UseUtcTime = false)
+
             Directory.CreateDirectory(testDataDir()) |> ignore
             createEditableProject()
 
@@ -380,7 +379,7 @@ module SchemaTestModule =
         edProject.AddPrototypeSystem edSystemCyl
         let edSysCyl1 = edProject.Instantiate(protoGuid, Name="실린더 instance1", asActive=false)
         let edSysCyl2 = edProject.Instantiate(protoGuid, Name="실린더 instance2", asActive=false)
-        let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=true)
+        let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=false)
 
         let curernt = now()
         let rtProject = edProject.Replicate()

@@ -121,8 +121,8 @@ module DatabaseSchemaModule =
         let sysIdKeyExpr =
             let sysIdKey = "trigger_temp_systemId"
             match dbProvider with
-            | Sqlite _ -> $"'{sysIdKey}_' || OLD.id"
-            | Postgres _ -> $"concat('{sysIdKey}_', OLD.id)"
+            | DbProvider.Sqlite _ -> $"'{sysIdKey}_' || OLD.id"
+            | DbProvider.Postgres _ -> $"concat('{sysIdKey}_', OLD.id)"
 
 
         (* Project 는 개념적으로는 System 을 child 로 가지지만, DB 구조에서는 독립 구성에 mapping table 에 의존하므로,

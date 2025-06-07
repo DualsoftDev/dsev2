@@ -367,7 +367,7 @@ module internal Sqlite2DsImpl =
                             |> find(fun z -> z.Id = Some orm.ApiDefId)
                             |> _.Guid
 
-                        let valueParam = deserializeWithType orm.ValueParameter
+                        let valueParam = IValueParameter.Parse orm.ValueParameter
                         RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                                     orm.InSymbol, orm.OutSymbol, Some valueParam)
                         |> fromUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )

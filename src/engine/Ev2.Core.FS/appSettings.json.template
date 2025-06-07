@@ -1,4 +1,7 @@
 {
-  "ConnectionString": "Data Source=F:\\tmp\\DsDB\\DsDB.sqlite3;Version=3;BusyTimeout=20000",
+  "Database": {
+    "Type": "Sqlite",
+    "ConnectionString": "Data Source=F:\\tmp\\DsDB\\DsDB.sqlite3;Version=3;BusyTimeout=20000"
+  },
   "DatabaseWatchdogIntervalSec": 10
 }
