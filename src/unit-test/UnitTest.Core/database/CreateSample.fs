@@ -12,6 +12,7 @@ module CreateSampleModule =
     let mutable edProject  = getNull<RtProject>()
     let mutable edSystem   = getNull<RtSystem>()
     let mutable edApiCall1a = getNull<RtApiCall>()
+    let mutable edApiCall1b = getNull<RtApiCall>()
     let mutable edApiDef1  = getNull<RtApiDef>()
     let mutable edApiDef2  = getNull<RtApiDef>()
 
@@ -47,14 +48,23 @@ module CreateSampleModule =
                     z.OutAddress<- "OutAddress1"
                     z.InSymbol  <- "XTag1"
                     z.OutSymbol <- "YTag2"
-                    z.ValueParameter <-
+                    z.ValueSpec <-
                         Some <| Ranges [
                             { Lower = None; Upper = Some (3.14, Open) }
                             { Lower = Some (5.0, Open); Upper = Some (6.0, Open) }
                             { Lower = Some (7.1, Closed); Upper = None }
                         ]
                     )
-            [edApiCall1a] |> edSystem.AddApiCalls
+            edApiCall1b <-
+                RtApiCall.Create()
+                |> tee (fun z ->
+                    z.ApiDefGuid <- edApiDef2.Guid
+                    z.Name      <- "ApiCall1b"
+                    z.InAddress <- "X0"
+                    z.OutAddress<- "Y1"
+                    z.InSymbol  <- "XTag2"
+                    z.OutSymbol <- "YTag2")
+            [edApiCall1a; edApiCall1b] |> edSystem.AddApiCalls
 
             edFlow    <- RtFlow   (Name = "MainFlow")
             edWork1 <-

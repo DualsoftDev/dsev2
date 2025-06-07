@@ -239,12 +239,13 @@ module rec NewtonsoftJsonObjects =
         member val OutAddress = nullString with get, set
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
-        member val ValueParameter = nullString with get, set
+        member val ValueSpec  = nullString with get, set
 
         static member FromRuntime(rt:RtApiCall) =
+            let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
             NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
                 InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
-                ValueParameter=rt.ValueParameter.Value.Jsonize() )
+                ValueSpec=valueSpec )
             |> fromNjUniqINGD rt
 
     type NjApiDef() =
@@ -495,9 +496,13 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjApiCall as njac ->
             njac.RuntimeObject <-
-                let valueParam = deserializeWithType njac.ValueParameter
+                let valueParam =
+                    match njac.ValueSpec with
+                    | null | "" -> None
+                    | p -> deserializeWithType p |> Some
+                noop()
                 RtApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
-                    Some valueParam)
+                    valueParam)
                 |> fromUniqINGD njac
 
         | :? NjApiDef as njad ->

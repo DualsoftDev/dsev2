@@ -152,7 +152,7 @@ module ORMTypesModule =
 
     //type ORMApiCall(systemId:Id) =
     type ORMApiCall(systemId:Id, apiDefId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string,
-        valueParam:string
+        valueSpec:string
     ) =
         inherit ORMUnique(ParentId=Some systemId)
 
@@ -165,7 +165,7 @@ module ORMTypesModule =
         member val OutAddress  = outAddress  with get, set
         member val InSymbol    = inSymbol    with get, set
         member val OutSymbol   = outSymbol   with get, set
-        member val ValueParameter = valueParam with get, set
+        member val ValueSpec   = valueSpec with get, set
 
 
     type ORMApiDef(systemId:Id) =

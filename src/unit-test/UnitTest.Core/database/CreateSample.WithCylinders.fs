@@ -35,7 +35,7 @@ module CreateSampleWithCylinderModule =
                     z.OutAddress <- "OutAddress1"
                     z.InSymbol   <- "XTag1"
                     z.OutSymbol  <- "YTag2"
-                    z.ValueParameter <-
+                    z.ValueSpec <-
                         Some <| Multiple [1; 2; 3]
                     )
 

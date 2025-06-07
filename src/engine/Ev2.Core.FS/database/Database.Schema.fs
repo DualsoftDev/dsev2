@@ -205,11 +205,11 @@ module DatabaseSchemaModule =
                     $"""
         -- '->' 는 json/jsonb 객체를 그대로 유지
         -- '->>' 는 문자열을 추출
-        , x.valueParameter->>'valueType' AS valueType
-        , x.valueParameter->'value'->>'Case' AS case
+        , x.valueSpec->>'valueType' AS valueType
+        , x.valueSpec->'value'->>'Case' AS case
         , CASE
-            WHEN x.valueParameter->'value'->>'Case' = 'Single'
-            THEN x.valueParameter->'value'->'Fields'->>0
+            WHEN x.valueSpec->'value'->>'Case' = 'Single'
+            THEN x.valueSpec->'value'->'Fields'->>0
             ELSE NULL
           END AS singleValue"""
                 else
@@ -225,7 +225,7 @@ CREATE VIEW {k Vn.ApiCall} AS
         , x.{k "outAddress"}
         , x.{k "inSymbol"}
         , x.{k "outSymbol"}
-        , x.{k "valueParameter"}
+        , x.{k "valueSpec"}
         {jsonbColumns}
         , ad.{k "id"}   AS apiDefId
         , ad.{k "name"} AS apiDefName
@@ -366,15 +366,15 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
     , {k "outSymbol"}       TEXT NOT NULL
 
     -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
-    , {k "valueParameter"}  {jsonb}
+    , {k "valueSpec"}       {jsonb}
     , {k "apiDefId"}        {intKeyType} NOT NULL
-    , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
 );
 
 CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "isPush"}          {boolean} NOT NULL DEFAULT {falseValue}
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
-    , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
 );
 
 

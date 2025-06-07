@@ -274,7 +274,7 @@ module SchemaTestModule =
             dsProject3.Duplicate()
             |> tee(fun z ->
                 z.Name <- $"{z.Name}4"
-                z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueParameter <- Some <| Single 3.14156952
+                z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueSpec <- Some <| Single 3.14156952
                 z.AddPassiveSystem dsSystem4)
 
         validateRuntime dsProject4 |> ignore

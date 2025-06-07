@@ -200,7 +200,7 @@ module DsObjectUtilsModule =
     type RtApiCall with
         static member Create() =
             RtApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-                      Option<IValueParameter>.None)
+                      Option<IValueSpec>.None)
 
     type IArrow with
         member x.GetSource(): Unique =
@@ -302,7 +302,7 @@ module DsObjectUtilsModule =
                 ()
 
             | :? RtApiCall as ac ->
-                verify (ac.ValueParameter.IsSome)
+                //verify (ac.ValueSpec.IsSome)
                 ()
 
             | :? RtApiDef as ad ->

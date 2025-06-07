@@ -247,7 +247,8 @@ module ORMTypeConversionModule =
 
             | :? RtApiCall as z ->
                 let apiDefId = guidDic[z.ApiDefGuid].Id.Value
-                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, z.ValueParameter.Value.Jsonize())
+                let valueParam = z.ValueSpec |-> _.Jsonize() |? null
+                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueParam)
                 |> ormUniqINGDP z
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

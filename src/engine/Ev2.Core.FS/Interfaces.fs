@@ -185,7 +185,7 @@ module rec DsObjectModule =
 
     type RtApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
                    inSymbol:string, outSymbol:string,
-                   valueParameter:IValueParameter option
+                   valueSpec:IValueSpec option
     ) =
         inherit RtUnique()
         interface IRtApiCall
@@ -195,7 +195,7 @@ module rec DsObjectModule =
         member val InSymbol   = inSymbol    with get, set
         member val OutSymbol  = outSymbol   with get, set
 
-        member val ValueParameter = valueParameter with get, set
+        member val ValueSpec = valueSpec with get, set
 
 
         member x.System   = x.RawParent >>= tryCast<RtSystem>
