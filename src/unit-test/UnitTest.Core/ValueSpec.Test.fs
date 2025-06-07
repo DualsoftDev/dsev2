@@ -21,13 +21,13 @@ module ValueSpecTestModule =
 
     [<Test>]
     let ``toString test`` () =
-        let singleDoubleValue:IValueSpec = Single 3.14156952
-        let singleBoolValue:IValueSpec = Single true
-        let singleIntValue:IValueSpec = Single 99
-        let multipleIntValues:IValueSpec = Multiple [1; 2; 3]
+        let singleDoubleValue   :IValueSpec = Single 3.14156952
+        let singleBoolValue     :IValueSpec = Single true
+        let singleIntValue      :IValueSpec = Single 99
+        let multipleIntValues   :IValueSpec = Multiple [1; 2; 3]
         let multipleDoubleValues:IValueSpec = Multiple [1.1; 2.2; 3.3]
-        let singleRange1:IValueSpec = Ranges [ { Lower = None; Upper = Some (3.14, Open) } ]
-        let singleRange2:IValueSpec = Ranges [ { Lower = None; Upper = Some (3.14, Closed) } ]
+        let singleRange1        :IValueSpec = Ranges [ { Lower = None; Upper = Some (3.14, Open) } ]
+        let singleRange2        :IValueSpec = Ranges [ { Lower = None; Upper = Some (3.14, Closed) } ]
 
         let multipleRange:IValueSpec = Ranges [
             { Lower = None; Upper = Some (3.14, Open) }

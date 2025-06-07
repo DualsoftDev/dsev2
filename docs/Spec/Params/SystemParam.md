@@ -7,12 +7,37 @@
 ## 📌 타입 정의
 
 ```fsharp
-type SystemParam = {
-    LangVersion: string            // 사용 언어 버전
-    EngineVersion: string          // 엔진 버전
-    Description: string option     // 시스템 설명
-    Iri: string option             // AASX용 식별 URI (옵션)
-} with interface IParameter
+    type RtSystem internal(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
+            arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
+    ) =
+        inherit RtUnique()
+
+        (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
+        interface IParameterContainer
+        interface IRtSystem
+        member val internal RawFlows    = ResizeArray flows
+        member val internal RawWorks    = ResizeArray works
+        member val internal RawArrows   = ResizeArray arrows
+        member val internal RawApiDefs  = ResizeArray apiDefs
+        member val internal RawApiCalls = ResizeArray apiCalls
+        /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
+        member val OriginGuid = noneGuid with get, set
+        member val PrototypeSystemGuid = protoGuid with get, set
+
+        member val IRI           = nullString with get, set
+        member val Author        = Environment.UserName with get, set
+        member val EngineVersion = Version()  with get, set
+        member val LangVersion   = Version()  with get, set
+        member val Description   = nullString with get, set
+
+        // serialize 대상 아님
+        member x.Project = x.RawParent >>= tryCast<RtProject>
+
+        member x.Flows    = x.RawFlows    |> toList
+        member x.Works    = x.RawWorks    |> toList
+        member x.Arrows   = x.RawArrows   |> toList
+        member x.ApiDefs  = x.RawApiDefs  |> toList
+        member x.ApiCalls = x.RawApiCalls |> toList
 ```
 
 ---
@@ -20,12 +45,16 @@ type SystemParam = {
 ## 🧪 사용 예시
 
 ```fsharp
-let systemParam: SystemParam = {
-    LangVersion = "1.0.0"
-    EngineVersion = "2.1.5"
-    Description = Some "로봇 조립 공정 시스템"
-    Iri = Some "urn:dualsoft:system:RobotSys"
-}
+let system:RtSystem =
+    RtSystem.Create()
+    |> tee (fun z ->
+        z.Name <- "MainSystem"
+        z.Author <- "kwak@dualsoft.com"
+        z.LangVersion <- Version(1, 0, 0)
+        z.EngineVersion <- Version(2, 1, 5)
+        z.Description <- "로봇 조립 공정 시스템"
+        z.IRI <- "urn:dualsoft:system:RobotSys" )
+
 ```
 
 ---

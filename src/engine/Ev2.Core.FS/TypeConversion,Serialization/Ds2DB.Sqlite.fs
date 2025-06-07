@@ -119,7 +119,7 @@ module internal Ds2SqliteImpl =
             let r = conn.Upsert(Tn.ApiCall, ormApiCall,
                         [   "Guid"; "Parameter"; "DateTime"; "Name"
                             "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
-                            "InSymbol"; "OutSymbol"; "ValueSpec"],
+                            "InSymbol"; "OutSymbol"; "ValueSpec"; "ValueSpecHint"],
                         jsonbColumns=["Parameter"; "ValueSpec"],
                         onInserted=idUpdator [ormApiCall; rtAc;])
             let xxx = r

@@ -7,13 +7,29 @@
 ## 📌 타입 정의
 
 ```fsharp
-type WorkParam = {
-    Motion: string                 // 동작 또는 모션 이름 (예: "PickAndPlace")
-    Script: string                 // 연결된 스크립트 명 또는 DSL 코드
-    DsTime: int * int              // (주기, 지연) 단위: ms
-    Finished: bool                 // 완료 여부
-    RepeatCount: int              // 반복 횟수
-} with interface IParameter
+    type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) as this =
+        inherit RtUnique()
+        do
+            calls  |> iter (setParentI this)
+            arrows |> iter (setParentI this)
+
+        interface IRtWork
+        member val internal RawCalls  = ResizeArray calls
+        member val internal RawArrows = ResizeArray arrows
+        member val Flow = flow with get, set
+
+        member val Motion     = nullString with get, set
+        member val Script     = nullString with get, set
+        member val IsFinished = false      with get, set
+        member val NumRepeat  = 0          with get, set
+        member val Period     = 0          with get, set
+        member val Delay      = 0          with get, set
+
+        member val Status4 = Option<DbStatus4>.None with get, set
+
+        member x.Calls  = x.RawCalls  |> toList
+        member x.Arrows = x.RawArrows |> toList
+        member x.System = x.RawParent >>= tryCast<RtSystem>
 ```
 
 ---
@@ -21,13 +37,19 @@ type WorkParam = {
 ## 🧪 사용 예시
 
 ```fsharp
-let workParam: WorkParam = {
-    Motion = "PushCylinder"
-    Script = "auto_push.fsx"
-    DsTime = (500, 50)
-    Finished = false
-    RepeatCount = 1
-}
+let work:RtWork =
+    RtWork.Create()
+    |> tee (fun z ->
+        z.Name    <- "BoundedWork1"
+        z.Status4 <- Some DbStatus4.Ready
+        z.Motion  <- "PushCylinder"
+        z.Script  <- "auto_push.fsx"
+        z.NumRepeat  <- 1
+        z.IsFinished = false
+        z.Period  <- 500    // ms
+        z.Delay   <- 50     // ms
+        z.Parameter <- {| Name="kwak"; Company="dualsoft"; Room=510 |} |> EmJson.ToJson)
+
 ```
 
 ---

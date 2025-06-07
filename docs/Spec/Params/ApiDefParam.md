@@ -7,13 +7,23 @@
 ## 📌 타입 정의
 
 ```fsharp
-type ActionType =
-    | ActionNormal = 0
-    | Push = 1
 
-type ApiDefParam = {
-    ActionType: ActionType   // 동작 유형: 정규 동작 or 푸시 동작
-} with interface IParameter
+type RtApiDef(isPush:bool) =
+    inherit RtUnique()
+    interface IRtApiDef
+
+    member val IsPush = isPush
+    member x.System   = x.RawParent >>= tryCast<RtSystem>
+
+    // system 에서 현재 ApiDef 을 사용하는 ApiCall 들
+    member x.ApiUsers:RtApiCall[] =
+        x.System
+        |-> (fun s ->
+            s.ApiCalls
+            |> filter (fun c -> c.ApiDef = x)
+            |> toArray)
+        |? [||]
+
 ```
 
 ---
@@ -21,9 +31,10 @@ type ApiDefParam = {
 ## 🧪 사용 예시
 
 ```fsharp
-let apiDefParam: ApiDefParam = {
-    ActionType = ActionNormal
-}
+let apiDef:RtApiDef =
+    RtApiDef.Create(Name = "ApiDef1Cyl")
+    |> tee(fun z -> z.IsPush <- false)
+
 ```
 
 ---

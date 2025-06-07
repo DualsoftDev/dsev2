@@ -226,6 +226,7 @@ CREATE VIEW {k Vn.ApiCall} AS
         , x.{k "inSymbol"}
         , x.{k "outSymbol"}
         , x.{k "valueSpec"}
+        , x.{k "valueSpecHint"}
         {jsonbColumns}
         , ad.{k "id"}   AS apiDefId
         , ad.{k "name"} AS apiDefName
@@ -367,6 +368,7 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
 
     -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
     , {k "valueSpec"}       {jsonb}
+    , {k "valueSpecHint"}   TEXT
     , {k "apiDefId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
 );

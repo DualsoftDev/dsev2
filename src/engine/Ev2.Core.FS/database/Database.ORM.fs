@@ -167,6 +167,11 @@ module ORMTypesModule =
         member val OutSymbol   = outSymbol   with get, set
         member val ValueSpec   = valueSpec with get, set
 
+        /// View only.  ValueSpec 에 대한 user friendly 표현.  e.g "3 <= x < 5".   TODO: ValueSpec 값 수정 시, tableHistory 를 통해 모니터링 하다가 update 해야 함.
+        member x.ValueSpecHint =
+            if x.ValueSpec.IsNullOrEmpty() then null
+            else x.ValueSpec |> IValueSpec.Deserialize |> _.ToString()
+
 
     type ORMApiDef(systemId:Id) =
         inherit ORMUnique(ParentId=Some systemId)
