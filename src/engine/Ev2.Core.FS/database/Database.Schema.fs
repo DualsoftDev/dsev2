@@ -93,6 +93,7 @@ module DatabaseSchemaModule =
         let now        = dbProvider.SqlNow
         let guid       = dbProvider.SqlGuidKeyType
         let jsonb      = dbProvider.SqlJsonBType
+        let supportsJsonB = dbProvider.SupportsJsonB
         let sqlConcat  = dbProvider.SqlConcat
 
         let falseValue = dbProvider.SqlFalse
@@ -531,6 +532,18 @@ CREATE VIEW {k Vn.ApiCall} AS
         , x.{k "inSymbol"}
         , x.{k "outSymbol"}
         , x.{k "valueParameter"}
+        {if supportsJsonB then "        -- '->' 는 json/jsonb 객체를 그대로 유지" else ""}
+        {if supportsJsonB then "        -- '->>' 는 문자열을 추출" else ""}
+        {if supportsJsonB then "        , x.valueParameter->>'valueType' AS valueType" else ""}
+        {if supportsJsonB then "        , x.valueParameter->'value'->>'Case' AS case" else ""}
+        {if supportsJsonB then
+            ", CASE\n" +
+            "    WHEN x.valueParameter->'value'->>'Case' = 'Single'\n" +
+            "    THEN x.valueParameter->'value'->'Fields'->>0\n" +
+            "    ELSE NULL\n" +
+            "  END AS singleValue"
+         else ""}
+
         , ad.{k "id"}   AS apiDefId
         , ad.{k "name"} AS apiDefName
         , s.{k "id"}    AS systemId

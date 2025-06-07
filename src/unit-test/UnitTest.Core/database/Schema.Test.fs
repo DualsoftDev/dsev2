@@ -1,6 +1,7 @@
 namespace T
 
 open System
+open System.Linq
 open System.IO
 open System.Data.SQLite
 
@@ -274,6 +275,7 @@ module SchemaTestModule =
             dsProject3.Duplicate()
             |> tee(fun z ->
                 z.Name <- $"{z.Name}4"
+                z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueParameter <- Some <| Single 3.14156952
                 z.AddPassiveSystem dsSystem4)
 
         validateRuntime dsProject4 |> ignore

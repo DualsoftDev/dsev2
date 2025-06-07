@@ -49,7 +49,7 @@ module ValueRangeModule =
         abstract member Jsonize:   unit -> string
         abstract member Stringify: unit -> string
 
-    type ValueCondition<'T> =
+    type ValueSpec<'T> =
         | Single of 'T
         | Multiple of 'T list
         | Ranges of RangeSegment<'T> list   // 단일 or 복수 범위 모두 표현 가능
@@ -107,17 +107,17 @@ module ValueRangeModule =
 
         let ty =
             match typeName with
-            | t when t = typedefof<single>.Name -> typeof<ValueCondition<single>>
-            | t when t = typedefof<double>.Name -> typeof<ValueCondition<double>>   // = float
-            | t when t = typedefof<int8>  .Name -> typeof<ValueCondition<int8>>
-            | t when t = typedefof<int16> .Name -> typeof<ValueCondition<int16>>
-            | t when t = typedefof<int32> .Name -> typeof<ValueCondition<int32>>
-            | t when t = typedefof<int64> .Name -> typeof<ValueCondition<int64>>
-            | t when t = typedefof<uint8> .Name -> typeof<ValueCondition<uint8>>
-            | t when t = typedefof<uint16>.Name -> typeof<ValueCondition<uint16>>
-            | t when t = typedefof<uint32>.Name -> typeof<ValueCondition<uint32>>
-            | t when t = typedefof<uint64>.Name -> typeof<ValueCondition<uint64>>
-            | t when t = typedefof<char>  .Name -> typeof<ValueCondition<char>>
+            | t when t = typedefof<single>.Name -> typeof<ValueSpec<single>>
+            | t when t = typedefof<double>.Name -> typeof<ValueSpec<double>>   // = float
+            | t when t = typedefof<int8>  .Name -> typeof<ValueSpec<int8>>
+            | t when t = typedefof<int16> .Name -> typeof<ValueSpec<int16>>
+            | t when t = typedefof<int32> .Name -> typeof<ValueSpec<int32>>
+            | t when t = typedefof<int64> .Name -> typeof<ValueSpec<int64>>
+            | t when t = typedefof<uint8> .Name -> typeof<ValueSpec<uint8>>
+            | t when t = typedefof<uint16>.Name -> typeof<ValueSpec<uint16>>
+            | t when t = typedefof<uint32>.Name -> typeof<ValueSpec<uint32>>
+            | t when t = typedefof<uint64>.Name -> typeof<ValueSpec<uint64>>
+            | t when t = typedefof<char>  .Name -> typeof<ValueSpec<char>>
             | _ -> failwith $"Unsupported type hint: {typeName}"
 
         JsonConvert.DeserializeObject(valueJson, ty) |> box :?> IValueParameter
