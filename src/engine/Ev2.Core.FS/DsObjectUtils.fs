@@ -326,8 +326,15 @@ module DsObjectUtilsModule =
         member val DateTime     = DateTime.MinValue with get, set
 
     let jsonSerializeStrings(strings:string seq) =
-        strings |> toArray |> JsonConvert.SerializeObject
+        match strings |> toList with
+        | [] -> null
+        | xs -> xs |> JsonConvert.SerializeObject
+
     let jsonDeserializeStrings(json:string): string[] =
-        JsonConvert.DeserializeObject<string[]>(json)
+        if json.IsNullOrEmpty() then
+            [||]
+        else
+            JsonConvert.DeserializeObject<string[]>(json)
+
     let isStringsEqual (xs:string seq) (ys:string seq) =
         Set.ofSeq xs = Set.ofSeq ys

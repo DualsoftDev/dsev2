@@ -106,7 +106,7 @@ module rec DsObjectModule =
         member val PrototypeSystemGuid = protoGuid with get, set
 
         member val IRI           = nullString with get, set
-        member val Author        = Environment.UserName with get, set
+        member val Author        = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set

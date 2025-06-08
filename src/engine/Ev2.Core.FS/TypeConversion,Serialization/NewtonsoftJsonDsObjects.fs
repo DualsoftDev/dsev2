@@ -167,6 +167,10 @@ module rec NewtonsoftJsonObjects =
 
         member x.ShouldSerializeCalls() = x.Calls.NonNullAny()
         member x.ShouldSerializeArrows() = x.Arrows.NonNullAny()
+        member x.ShouldSerializeIsFinished() = x.IsFinished
+        member x.ShouldSerializeNumRepeat() = x.NumRepeat > 0
+        member x.ShouldSerializePeriod() = x.Period > 0
+        member x.ShouldSerializeDelay() = x.Period > 0
 
         static member FromRuntime(rt:RtWork) =
             NjWork()
