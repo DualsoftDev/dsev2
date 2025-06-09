@@ -548,6 +548,7 @@ module SchemaTestModule =
     [<Test>]
     let ``복제 비교`` () =
         let dsProject = edProject.Replicate() |> validateRuntime
+        let diff = dsProject.ComputeDiff edProject
         edProject.IsEqual dsProject === true
 
     [<Test>]

@@ -38,8 +38,7 @@ module internal rec DsObjectCopyImpl =
                 x.RawPrototypeSystems |> z.RawPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> validateRuntime
 
@@ -61,7 +60,7 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Target |> verify)
 
             RtSystem.Create(x.PrototypeSystemGuid, flows, works, arrows, apiDefs, apiCalls)
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid    <- Some x.Guid                                       // 최근 원본 지향 버젼
@@ -70,7 +69,6 @@ module internal rec DsObjectCopyImpl =
                 s.EngineVersion <- x.EngineVersion
                 s.LangVersion   <- x.LangVersion
                 s.Description   <- x.Description )
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -94,9 +92,8 @@ module internal rec DsObjectCopyImpl =
                 |-> (fun f -> bag.Newbies[f.Guid] :?> RtFlow)
 
             RtWork.Create(calls, arrows, flow)
-            |> uniqNGA (nn x.Name) guid x.Parameter
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun w ->
                 w.Status4    <- x.Status4
                 w.Motion     <- x.Motion
@@ -118,8 +115,7 @@ module internal rec DsObjectCopyImpl =
             let actions    = x.Actions    |-> _.replicate(bag) |> toArray
 
             RtFlow(buttons, lamps, conditions, actions)
-            |> uniqNGA (nn x.Name) guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -127,8 +123,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtButton()
-            |> uniqNGA (nn x.Name) guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -136,8 +131,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtLamp()
-            |> uniqNGA (nn x.Name) guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -145,8 +139,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtCondition()
-            |> uniqNGA (nn x.Name) guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -154,8 +147,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtAction()
-            |> uniqNGA (nn x.Name) guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -172,7 +164,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             RtCall(x.CallType, x.ApiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
-            |> uniqNGA (nn x.Name) guid x.Parameter
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> tee(fun c -> c.Status4 <- x.Status4 )
 
@@ -182,8 +174,7 @@ module internal rec DsObjectCopyImpl =
 
             RtApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress,
                       x.InSymbol, x.OutSymbol, x.ValueSpec)
-            |> uniqNGA (nn x.Name) guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type RtApiDef with // replicate
@@ -200,8 +191,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> RtWork
             let target = bag.Newbies[x.Target.Guid] :?> RtWork
             RtArrowBetweenWorks(source, target, x.Type)
-            |> uniqINGA x.Id x.Name guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -211,8 +201,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> RtCall
             let target = bag.Newbies[x.Target.Guid] :?> RtCall
             RtArrowBetweenCalls(source, target, x.Type)
-            |> uniqINGA x.Id x.Name guid x.Parameter
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]
@@ -281,28 +270,6 @@ module DsObjectCopyAPIModule =
 
             x.replicate(ReplicateBag())
             |> validateRuntime
-
-
-
-        ///// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        //member x.DuplicateXXX() =  // RtProject
-        //    RtProject.Create()
-        //    |> tee(fun z ->
-        //        let actives  = x.ActiveSystems    |-> _.Duplicate()
-        //        let passives = x.PassiveSystems   |-> _.Duplicate()
-        //        let protos   = x.PrototypeSystems |-> _.Duplicate()
-        //        (actives @ passives) |> iter (setParentI z)
-        //        actives  |> z.RawActiveSystems.AddRange
-        //        passives |> z.RawPassiveSystems.AddRange
-        //        protos   |> z.RawPrototypeSystems.AddRange
-
-        //        z.Name        <- x.Name
-        //        z.Parameter   <- x.Parameter
-        //        z.Version     <- x.Version
-        //        z.Author      <- x.Author
-        //        z.Description <- x.Description
-        //        z.Database    <- x.Database )
-        //    |> uniqName (nn x.Name)
 
 
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
