@@ -535,22 +535,22 @@ module internal Db2DsImpl =
         rtProj
 
 
-    let checkoutProjectFromDB(identifier:DbObjectIdentifier) (dbApi:AppDbApi):RtProject =
+    let rTryCheckoutProjectFromDB(identifier:DbObjectIdentifier) (dbApi:AppDbApi):Result<RtProject, ErrorMessage> =
         Trace.WriteLine($"--------------------------------------- checkoutProjectFromDB: {identifier}")
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowIdentifiedBy<ORMProject> conn tr Tn.Project identifier with
             | None ->
-                failwithf "Project not found: %A" identifier
+                Error <| sprintf "Project not found: %A" identifier
             | Some ormProject ->
-                checkoutProjectFromDBHelper ormProject conn tr dbApi)
+                Ok <| checkoutProjectFromDBHelper ormProject conn tr dbApi)
 
-    let checkoutSystemFromDB(identifier:DbObjectIdentifier) (dbApi:AppDbApi):RtSystem =
+    let rTryCheckoutSystemFromDB(identifier:DbObjectIdentifier) (dbApi:AppDbApi):Result<RtSystem, ErrorMessage> =
         Trace.WriteLine($"--------------------------------------- checkoutSystemFromDB: {identifier}")
 
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowIdentifiedBy<ORMSystem> conn tr Tn.System identifier with
             | None ->
-                failwithf "System not found: %A" identifier
+                Error <| sprintf "System not found: %A" identifier
             | Some ormSystem ->
                 let bag = Db2RtBag()
                 bag.DbDic.Add(guid2str ormSystem.Guid, ormSystem)
@@ -562,7 +562,7 @@ module internal Db2DsImpl =
                         |> tee(fun rs -> bag.RtDic.Add(rs.Guid, rs))
                     Some rtSystem
 
-                checkoutSystemFromDBHelper ormSystem conn tr dbApi bag)
+                Ok <| checkoutSystemFromDBHelper ormSystem conn tr dbApi bag)
 
 
 [<AutoOpen>]
@@ -582,15 +582,15 @@ module Ds2SqliteModule =
             initializeDDic dbApi
             insertProjectToDB x dbApi removeExistingData
 
-        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi) =
+        static member RTryCheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi):Result<RtProject, ErrorMessage> =
             initializeDDic dbApi
-            checkoutProjectFromDB identifier dbApi
+            rTryCheckoutProjectFromDB identifier dbApi
 
     type RtSystem with  // CommitToDB, CheckoutFromDB
         member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool) =
             initializeDDic dbApi
             insertSystemToDB x dbApi removeExistingData
 
-        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi):RtSystem =
+        static member RTryCheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi):Result<RtSystem, ErrorMessage> =
             initializeDDic dbApi
-            checkoutSystemFromDB identifier dbApi
+            rTryCheckoutSystemFromDB identifier dbApi

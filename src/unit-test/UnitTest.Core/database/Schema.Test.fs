@@ -41,6 +41,7 @@ module SchemaTestModule =
             //File.Delete(dbFilePath)
             ()
 
+
     let createSqliteDbApi (path:string) =
         path
         |> path2ConnectionString
@@ -49,6 +50,19 @@ module SchemaTestModule =
 
 
     let dbApi = createSqliteDbApi dbFilePath
+
+
+    // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
+    let pgsqlDbApi() =
+            "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
+            |> DbProvider.Postgres
+            |> AppDbApi
+
+    // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
+    let sqliteDbApi() =
+            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
+            |> createSqliteDbApi
+
 
     [<Test>]
     let dbCreateTest() =
@@ -283,21 +297,14 @@ module SchemaTestModule =
 
         ()
 
+
     [<Test>]
     let ``SQLite: EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
-        let dbApi =
-            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> createSqliteDbApi
-        basic_test dbApi
+        sqliteDbApi() |> basic_test
 
     [<Test>]
     let ``PGSql: EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
-        let dbApi =
-            "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
-            |> DbProvider.Postgres
-            |> AppDbApi
-
-        basic_test dbApi
+        pgsqlDbApi() |> basic_test
 
 
     [<Test>]
@@ -612,15 +619,16 @@ module SchemaTestModule =
 
     [<Test>]
     let ``PGSql Dapper test`` () =
-        let dbApi =
-            "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
-            |> DbProvider.Postgres
-            |> AppDbApi
-        dbApi.With(fun (conn, tr) ->
+        pgsqlDbApi().With(fun (conn, tr) ->
             conn.Execute($"""INSERT INTO {Tn.TypeTest}
                                    (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
                             VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
         |> ignore
 
 
+    [<Test>]
+    let ``X PGSql DB 수정 commit`` () =
+        let dsProject = edProject.Replicate() |> validateRuntime
+        dsProject.Systems[0].Works[0].Name <- "ModifiedWorkName"
+        pgsqlDbApi() |> dsProject.CommitToDB
 
