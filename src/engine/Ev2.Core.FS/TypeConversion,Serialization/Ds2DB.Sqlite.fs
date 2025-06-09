@@ -16,7 +16,7 @@ type DbObjectIdentifier =
     | ById of int
     | ByName of string
 
-module internal Ds2SqliteImpl =
+module internal Ds2DbImpl =
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
         for t in targets do
@@ -25,7 +25,7 @@ module internal Ds2SqliteImpl =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
-    let system2SqliteHelper (dbApi:AppDbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
+    let insertSystemToDBHelper (dbApi:AppDbApi) (conn:IDbConnection) (tr:IDbTransaction) (cache:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, cache)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
@@ -72,7 +72,7 @@ module internal Ds2SqliteImpl =
                 ()
         | None ->
             // project 와 무관한 system 을 DB 에 저장
-            failwith "Not yet implemented: system2SqliteHelper without project context"
+            failwith "Not yet implemented: insertSystemToDBHelper without project context"
             ()
 
 
@@ -229,8 +229,8 @@ module internal Ds2SqliteImpl =
 
 
 
-    /// DsProject 을 sqlite database 에 저장
-    let project2Sqlite (proj:RtProject) (dbApi:AppDbApi) (removeExistingData:bool option) =
+    /// DsProject 을 database (sqlite or pgsql) 에 저장
+    let insertProjectToDB (proj:RtProject) (dbApi:AppDbApi) (removeExistingData:bool option) =
         let bag = dbApi.DDic.Get<Db2RtBag>()
 
         let rtObjs =
@@ -244,7 +244,7 @@ module internal Ds2SqliteImpl =
             grDic.[typeof<RtSystem>]
             |> Seq.cast<RtSystem> |> List.ofSeq
 
-        let onError (ex:Exception) = logError $"project2Sqlite failed: {ex.Message}"; raise ex
+        let onError (ex:Exception) = logError $"insertProjectToDB failed: {ex.Message}"; raise ex
 
         checkHandlers()
 
@@ -270,14 +270,14 @@ module internal Ds2SqliteImpl =
             ormProject.Id <- Some projId
 
             for s in systems do
-                system2SqliteHelper dbApi conn tr guidDic s (Some proj)
+                insertSystemToDBHelper dbApi conn tr guidDic s (Some proj)
 
             proj.Database <- dbApi.DbProvider
         , onError)
 
 
-    let system2Sqlite (x:RtSystem) (dbApi:AppDbApi) (removeExistingData:bool option) =
-        let onError (ex:Exception) = logError $"system2Sqlite failed: {ex.Message}"; raise ex
+    let insertSystemToDB (x:RtSystem) (dbApi:AppDbApi) (removeExistingData:bool option) =
+        let onError (ex:Exception) = logError $"insertSystemToDB failed: {ex.Message}"; raise ex
 
         checkHandlers()
 
@@ -287,12 +287,12 @@ module internal Ds2SqliteImpl =
                 //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
                 conn.Execute($"DELETE FROM {Tn.System} WHERE guid = @Guid", ormSystem, tr) |> ignore
 
-            system2SqliteHelper dbApi conn tr cache x None
+            insertSystemToDBHelper dbApi conn tr cache x None
         , onError)
 
 
-module internal Sqlite2DsImpl =
-    open Ds2SqliteImpl
+module internal Db2DsImpl =
+    open Ds2DbImpl
 
     //let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
     //    ()
@@ -302,233 +302,274 @@ module internal Sqlite2DsImpl =
     //        deleteFromDatabase identifier conn tr
     //    )
 
-    let fromSqlite3(identifier:DbObjectIdentifier) (dbApi:AppDbApi) =
-        let bag = Db2RtBag()
-        Trace.WriteLine($"--------------------------------------- fromSqlite3: {identifier}")
-        noop()
-        dbApi.With(fun (conn, tr) ->
-            (* DB 로부터 project, project-system map, systems, ... 등등의 정보를 읽어 들인후, EdXXXX 객체를 생성. *)
+    let private tryGetORMRowIdentifiedBy<'T> (conn:IDbConnection) (tr:IDbTransaction) (tableName:string) (identifier:DbObjectIdentifier) =
+        match tableName with
+        | Tn.Project when typedefof<'T> = typedefof<ORMProject> -> ()
+        | Tn.System  when typedefof<'T> = typedefof<ORMSystem>  -> ()
+        | _ -> failwithf "Invalid type %A for table %s" (typeof<'T>.Name) tableName
 
-            let ormProject =
-                let sqlBase = $"SELECT * FROM {Tn.Project} WHERE "
+        let sqlBase = $"SELECT * FROM {tableName} WHERE "
 
-                let sqlTail, param =
-                    match identifier with
-                    | ByGuid guid -> "guid = @Guid", {| Guid = guid |} |> box
-                    | ById   id   -> "id = @Id",     {| Id = id |}
-                    | ByName name -> "name = @Name", {| Name = name |}
+        let sqlTail, param =
+            match tableName, identifier with
+            | _,          ByGuid guid -> "guid = @Guid", {| Guid = guid |} |> box
+            | _,          ById   id   -> "id = @Id",     {| Id = id |}
+            | Tn.Project, ByName name -> "name = @Name", {| Name = name |}      // project 명만 unique.  system 명은 중복 가능.
+            | _ -> failwithf "Invalid identifier %A for table %s" identifier tableName
+        let sql = sqlBase + sqlTail
 
-                let sql = sqlBase + sqlTail
+        conn.TryQuerySingle<'T>(sql, param, tr)
 
-                conn.QuerySingle<ORMProject>(sql, param, tr)
-                |> tee (fun z -> bag.DbDic.Add(guid2str z.Guid, z) )
+    // 사전 조건: ormSystem.RtObject 에 RtSystem 이 생성되어 있어야 한다.
+    let private checkoutSystemFromDBHelper(ormSystem:ORMSystem) (conn:IDbConnection) (tr:IDbTransaction) (dbApi:AppDbApi) (bag:Db2RtBag):RtSystem =
+        let rtSystem = ormSystem.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR")
+        let s = rtSystem
+        let rtFlows = [
+            let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
 
-            let projSysMaps =
-                conn.Query<ORMMapProjectSystem>(
-                    $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
-                    {| ProjectId = ormProject.Id |}, tr)
-                |> tees (fun z -> bag.DbDic.Add(guid2str z.Guid, z))
-                |> toArray
+            for ormFlow in orms do
+                bag.DbDic.Add(guid2str ormFlow.Guid, ormFlow) |> ignore
 
-            let ormSystems =
-                let systemIds = projSysMaps |-> _.SystemId
+                let f = {| FlowId = ormFlow.Id |}
+                let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE flowId = @FlowId", f,  tr)
+                let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE flowId = @FlowId", f,  tr)
+                let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
+                let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
 
-                conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
-                    {| SystemIds = systemIds |}, tr)
-                |> tees (fun z -> bag.DbDic.Add(guid2str z.Guid, z))
-                |> toArray
+                let buttons    = ormButtons    |-> (fun z -> RtButton    ()) |> toArray
+                let lamps      = ormLamps      |-> (fun z -> RtLamp      ()) |> toArray
+                let conditions = ormConditions |-> (fun z -> RtCondition ()) |> toArray
+                let actions    = ormActions    |-> (fun z -> RtAction    ()) |> toArray
 
-            let edProj =
-                RtProject.Create()
-                |> fromUniqINGD ormProject
+                RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
+                |> fromUniqINGD ormFlow
                 |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+        ]
+        rtFlows |> s.AddFlows
 
-            let edSystems =
-                ormSystems
-                    |-> fun s ->
-                        RtSystem.Create()
-                        |> fromUniqINGD s
-                        |> uniqParent (Some edProj)
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+        let rtApiDefs = [
+            let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
 
-            let actives, passives =
-                edSystems
-                |> partition (fun s ->
-                    projSysMaps
-                    |> tryFind(fun m -> m.SystemId = s.Id.Value)
-                    |-> _.IsActive |? false)
+            for orm in orms do
+                bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
-            actives  |> edProj.RawActiveSystems.AddRange
-            passives |> edProj.RawPassiveSystems.AddRange
+                RtApiDef(orm.IsPush, RawParent = Some s)
+                |> fromUniqINGD orm
+                |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+        ]
+        rtApiDefs |> s.AddApiDefs
 
-            for s in edSystems do
-                let edFlows = [
-                    let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
+        let rtApiCalls = [
+            let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
 
-                    for ormFlow in orms do
-                        bag.DbDic.Add(guid2str ormFlow.Guid, ormFlow) |> ignore
+            for orm in orms do
+                bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
-                        let f = {| FlowId = ormFlow.Id |}
-                        let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE flowId = @FlowId", f,  tr)
-                        let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE flowId = @FlowId", f,  tr)
-                        let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
-                        let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
+                (* orm.ApiDefId -> EdApiDef : DB 에 저장된 key 로 bag 을 뒤져서 EdApiDef 객체를 찾는다. *)
+                let apiDefGuid =
+                    bag.DbDic.Values.OfType<ORMApiDef>()
+                    |> find(fun z -> z.Id = Some orm.ApiDefId)
+                    |> _.Guid
 
-                        let buttons    = ormButtons    |-> (fun z -> RtButton    ()) |> toArray    //.Create
-                        let lamps      = ormLamps      |-> (fun z -> RtLamp      ()) |> toArray    //.Create
-                        let conditions = ormConditions |-> (fun z -> RtCondition ()) |> toArray    //.Create
-                        let actions    = ormActions    |-> (fun z -> RtAction    ()) |> toArray    //.Create
-
-                        RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
-                        |> fromUniqINGD ormFlow
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                ]
-                edFlows |> s.AddFlows
-
-                let edApiDefs = [
-                    let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
-
-                    for orm in orms do
-                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
-
-                        RtApiDef(orm.IsPush, RawParent = Some s)
-                        |> fromUniqINGD orm
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                ]
-                edApiDefs |> s.AddApiDefs
-
-                let edApiCalls = [
-                    let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
-
-                    for orm in orms do
-                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
-
-                        (* orm.ApiDefId -> EdApiDef : DB 에 저장된 key 로 bag 을 뒤져서 EdApiDef 객체를 찾는다. *)
-                        let apiDefGuid =
-                            bag.DbDic.Values.OfType<ORMApiDef>()
-                            |> find(fun z -> z.Id = Some orm.ApiDefId)
-                            |> _.Guid
-
-                        let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
-                        RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
-                                    orm.InSymbol, orm.OutSymbol, valueParam)
-                        |> fromUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                ]
-                edApiCalls |> s.AddApiCalls
+                let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
+                RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
+                            orm.InSymbol, orm.OutSymbol, valueParam)
+                |> fromUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+        ]
+        rtApiCalls |> s.AddApiCalls
 
 
 
-                let edWorks = [
-                    let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr)
+        let rtWorks = [
+            let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr)
 
-                    for orm in orms do
-                        RtWork.Create()
-                        |> setParent s
-                        |> fromUniqINGD orm
-                        |> tee(fun w ->
-                            if orm.FlowId.HasValue then
-                                let flow = edFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
-                                //w.Status4 <- orm.Status4Id
-                                w.Flow <- Some flow
-                            w.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
-                            w.Motion     <- orm.Motion
-                            w.Script     <- orm.Script
-                            w.IsFinished <- orm.IsFinished
-                            w.NumRepeat  <- orm.NumRepeat
-                            w.Period     <- orm.Period
-                            w.Delay      <- orm.Delay )
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                ]
-                edWorks |> s.AddWorks
+            for orm in orms do
+                RtWork.Create()
+                |> setParent s
+                |> fromUniqINGD orm
+                |> tee(fun w ->
+                    if orm.FlowId.HasValue then
+                        let flow = rtFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
+                        //w.Status4 <- orm.Status4Id
+                        w.Flow <- Some flow
+                    w.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                    w.Motion     <- orm.Motion
+                    w.Script     <- orm.Script
+                    w.IsFinished <- orm.IsFinished
+                    w.NumRepeat  <- orm.NumRepeat
+                    w.Period     <- orm.Period
+                    w.Delay      <- orm.Delay )
+                |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+        ]
+        rtWorks |> s.AddWorks
 
-                for w in edWorks do
-                    let edCalls = [
-                        let orms = conn.Query<ORMCall>(
-                                $"SELECT * FROM {Tn.Call} WHERE workId = @WorkId",
-                                {| WorkId = w.Id.Value |}, tr)
+        for w in rtWorks do
+            let rtCalls = [
+                let orms = conn.Query<ORMCall>(
+                        $"SELECT * FROM {Tn.Call} WHERE workId = @WorkId",
+                        {| WorkId = w.Id.Value |}, tr)
 
-                        for orm in orms do
-                            bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
+                for orm in orms do
+                    bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
-                            let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
-                            let apiCallGuids =
-                                conn.Query<Guid>($"""SELECT ac.guid
-                                                        FROM {Tn.MapCall2ApiCall} m
-                                                        JOIN {Tn.ApiCall} ac ON ac.id = m.apiCallId
-                                                        WHERE m.callId = @CallId""",
-                                {| CallId = orm.Id.Value |}, tr)
+                    let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
+                    let apiCallGuids =
+                        conn.Query<Guid>(
+                        $"""SELECT ac.guid
+                            FROM {Tn.MapCall2ApiCall} m
+                            JOIN {Tn.ApiCall} ac ON ac.id = m.apiCallId
+                            WHERE m.callId = @CallId"""
+                        , {| CallId = orm.Id.Value |}, tr)
 
-                            let acs = orm.AutoConditions |> jsonDeserializeStrings
-                            let ccs = orm.CommonConditions |> jsonDeserializeStrings
-                            RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, n2o orm.Timeout)
-                            |> setParent w
-                            |> fromUniqINGD orm
-                            |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                            |> tee(fun c ->
-                                c.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
-                                edApiCalls
-                                |> iter (fun apiCall ->
-                                    apiCall
-                                    |> uniqParent (Some c)
-                                    |> ignore))
-                    ]
-                    w.AddCalls edCalls
-
-
-                    // work 내의 call 간 연결
-                    let edArrows = [
-                        let orms = conn.Query<ORMArrowCall>(
-                                $"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId",
-                                {| WorkId = w.Id.Value |}, tr)
-
-                        for orm in orms do
-                            bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
-                            let src = edCalls |> find(fun c -> c.Id.Value = orm.Source)
-                            let tgt = edCalls |> find(fun c -> c.Id.Value = orm.Target)
-                            let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
-
-                            RtArrowBetweenCalls(src, tgt, arrowType)
-                            |> fromUniqINGD orm
-                            |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                    ]
-                    w.AddArrows edArrows
-
-                    // call 이하는 더 이상 읽어 들일 구조가 없다.
-                    for c in edCalls do
-                        ()
+                    let acs = orm.AutoConditions |> jsonDeserializeStrings
+                    let ccs = orm.CommonConditions |> jsonDeserializeStrings
+                    RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, n2o orm.Timeout)
+                    |> setParent w
+                    |> fromUniqINGD orm
+                    |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+                    |> tee(fun c ->
+                        c.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                        rtApiCalls
+                        |> iter (fun apiCall ->
+                            apiCall
+                            |> uniqParent (Some c)
+                            |> ignore))
+            ]
+            w.AddCalls rtCalls
 
 
-                // system 내의 work 간 연결
-                let edArrows = [
-                    let orms = conn.Query<ORMArrowWork>(
-                            $"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId",
-                            {| SystemId = s.Id.Value |}, tr)
+            // work 내의 call 간 연결
+            let rtArrows = [
+                let orms = conn.Query<ORMArrowCall>(
+                        $"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId",
+                        {| WorkId = w.Id.Value |}, tr)
 
-                    for orm in orms do
-                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
-                        let src = edWorks |> find(fun w -> w.Id.Value = orm.Source)
-                        let tgt = edWorks |> find(fun w -> w.Id.Value = orm.Target)
-                        let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                for orm in orms do
+                    bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
+                    let src = rtCalls |> find(fun c -> c.Id.Value = orm.Source)
+                    let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
+                    let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                        RtArrowBetweenWorks(src, tgt, arrowType)
-                        |> fromUniqINGD orm
-                        |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
-                ]
-                edArrows |> s.AddArrows
-                assert(setEqual s.Arrows edArrows)
+                    RtArrowBetweenCalls(src, tgt, arrowType)
+                    |> fromUniqINGD orm
+                    |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+            ]
+            w.AddArrows rtArrows
 
+            // call 이하는 더 이상 읽어 들일 구조가 없다.
+            for c in rtCalls do
                 ()
 
 
-            edProj
-            //|> _.ToDsProject
-        )
+        // system 내의 work 간 연결
+        let rtArrows = [
+            let orms = conn.Query<ORMArrowWork>(
+                    $"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId"
+                    , {| SystemId = s.Id.Value |}, tr)
+
+            for orm in orms do
+                bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
+                let src = rtWorks |> find(fun w -> w.Id.Value = orm.Source)
+                let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
+                let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+
+                RtArrowBetweenWorks(src, tgt, arrowType)
+                |> fromUniqINGD orm
+                |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+        ]
+        rtArrows |> s.AddArrows
+        assert(setEqual s.Arrows rtArrows)
+
+        rtSystem
+
+
+
+    let private checkoutProjectFromDBHelper(ormProject:ORMProject) (conn:IDbConnection) (tr:IDbTransaction) (dbApi:AppDbApi):RtProject =
+        let bag = Db2RtBag()
+        bag.DbDic.Add(guid2str ormProject.Guid, ormProject)
+        noop()
+
+
+        let projSysMaps =
+            conn.Query<ORMMapProjectSystem>(
+                $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
+                {| ProjectId = ormProject.Id |}, tr)
+            |> tees (fun z -> bag.DbDic.Add(guid2str z.Guid, z))
+            |> toArray
+
+        let rtProj =
+            RtProject.Create()
+            |> fromUniqINGD ormProject
+            |> tee(fun z -> z.ORMObject <- Some ormProject; ormProject.RtObject <- Some z)
+            |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+
+        let ormSystems =
+            let systemIds = projSysMaps |-> _.SystemId
+
+            conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
+                {| SystemIds = systemIds |}, tr)
+            |> tees (fun os ->
+                    RtSystem.Create()
+                    |> fromUniqINGD os
+                    |> uniqParent (Some rtProj)
+                    |> tee(fun rs -> rs.ORMObject <- Some os; os.RtObject <- Some rs)
+                    |> (fun rs -> bag.RtDic.Add(rs.Guid, rs)) )
+            |> tees (fun os -> bag.DbDic.Add(guid2str os.Guid, os))
+            |> toArray
+
+        let rtSystems =
+            ormSystems |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
+
+        let actives, passives =
+            rtSystems
+            |> partition (fun s ->
+                projSysMaps
+                |> tryFind(fun m -> m.SystemId = s.Id.Value)
+                |-> _.IsActive |? false)
+
+        actives  |> rtProj.RawActiveSystems.AddRange
+        passives |> rtProj.RawPassiveSystems.AddRange
+
+        ormSystems |> iter (fun os -> checkoutSystemFromDBHelper os conn tr dbApi bag |> ignore)
+
+        rtProj
+
+
+    let checkoutProjectFromDB(identifier:DbObjectIdentifier) (dbApi:AppDbApi):RtProject =
+        Trace.WriteLine($"--------------------------------------- checkoutProjectFromDB: {identifier}")
+        dbApi.With(fun (conn, tr) ->
+            match tryGetORMRowIdentifiedBy<ORMProject> conn tr Tn.Project identifier with
+            | None ->
+                failwithf "Project not found: %A" identifier
+            | Some ormProject ->
+                checkoutProjectFromDBHelper ormProject conn tr dbApi)
+
+    let checkoutSystemFromDB(identifier:DbObjectIdentifier) (dbApi:AppDbApi):RtSystem =
+        Trace.WriteLine($"--------------------------------------- checkoutSystemFromDB: {identifier}")
+
+        dbApi.With(fun (conn, tr) ->
+            match tryGetORMRowIdentifiedBy<ORMSystem> conn tr Tn.System identifier with
+            | None ->
+                failwithf "System not found: %A" identifier
+            | Some ormSystem ->
+                let bag = Db2RtBag()
+                bag.DbDic.Add(guid2str ormSystem.Guid, ormSystem)
+                ormSystem.RtObject <-
+                    let rtSystem =
+                        RtSystem.Create()
+                        |> fromUniqINGD ormSystem
+                        |> tee(fun rs -> rs.ORMObject <- Some ormSystem; ormSystem.RtObject <- Some rs)
+                        |> tee(fun rs -> bag.RtDic.Add(rs.Guid, rs))
+                    Some rtSystem
+
+                checkoutSystemFromDBHelper ormSystem conn tr dbApi bag)
+
 
 [<AutoOpen>]
 module Ds2SqliteModule =
 
-    open Ds2SqliteImpl
-    open Sqlite2DsImpl
+    open Ds2DbImpl
+    open Db2DsImpl
 
     let private initializeDDic (dbApi:AppDbApi) =
         let ddic = DynamicDictionary()
@@ -536,20 +577,20 @@ module Ds2SqliteModule =
         dbApi.DDic <- ddic
 
 
-    type RtProject with // ToSqlite3, FromSqlite3
+    type RtProject with // CommitToDB, CheckoutFromDB
         member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool) =
             initializeDDic dbApi
-            project2Sqlite x dbApi removeExistingData
+            insertProjectToDB x dbApi removeExistingData
 
         static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi) =
             initializeDDic dbApi
-            fromSqlite3 identifier dbApi
+            checkoutProjectFromDB identifier dbApi
 
-    type RtSystem with  // ToSqlite3, FromSqlite3
+    type RtSystem with  // CommitToDB, CheckoutFromDB
         member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool) =
             initializeDDic dbApi
-            system2Sqlite x dbApi removeExistingData
+            insertSystemToDB x dbApi removeExistingData
 
-        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi) =
+        static member CheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi):RtSystem =
             initializeDDic dbApi
-            ()
+            checkoutSystemFromDB identifier dbApi
