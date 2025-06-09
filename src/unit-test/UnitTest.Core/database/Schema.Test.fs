@@ -383,14 +383,14 @@ module SchemaTestModule =
 
         let curernt = now()
         let rtProject = edProject.Replicate()
-        rtProject |> _.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- curernt)
+        rtProject |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
         let json =
             rtProject
             |> validateRuntime
             |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
 
         let rtProject2 = RtProject.FromJson json
-        rtProject2 |> _.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- curernt)
+        rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
         // 설계 문서 위치에 drop
         let json2 =
             rtProject2
@@ -461,10 +461,9 @@ module SchemaTestModule =
                         $"""SELECT id FROM {Tn.MapProject2System}
                             WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
 
-                conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, dateTime, projectId, systemId, isActive, loadedName)
+                conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, isActive, loadedName)
                                     SELECT
                                         guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
-                                        datetime('now'),          -- 복사 시간 갱신
                                         {newProjId},              -- 새로 만든 project id
                                         systemId,
                                         isActive,

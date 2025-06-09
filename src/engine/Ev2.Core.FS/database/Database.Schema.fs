@@ -199,8 +199,7 @@ module DatabaseSchemaModule =
         let sqlUniq () = $"""
     {k "id"}              {autoincPrimaryKey}
     , {k "guid"}          {guid} NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
-    , {k "parameter"}     {jsonb}
-    , {k "dateTime"}      {datetime}"""
+    , {k "parameter"}     {jsonb}"""
 
         let sqlUniqWithName () = sqlUniq() + $"""
     , {k "name"}          {varchar NameLength} NOT NULL"""
@@ -253,6 +252,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
     , {k "author"}       TEXT NOT NULL
     , {k "version"}      TEXT NOT NULL
     , {k "description"}  TEXT
+    , {k "dateTime"}     {datetime}
     , CONSTRAINT {Tn.Project}_uniq UNIQUE (name)    -- Project 의 이름은 유일해야 함
 );
 
@@ -264,6 +264,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "engineVersion"} TEXT NOT NULL
     , {k "originGuid"}    TEXT            -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , {k "description"}   TEXT
+    , {k "dateTime"}      {datetime}
     , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
     , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
 );

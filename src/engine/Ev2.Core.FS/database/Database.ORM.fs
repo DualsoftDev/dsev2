@@ -10,8 +10,8 @@ open Dual.Common.Base
 module ORMTypesModule =
 
     type RowId = int
-    type IORMProject    = inherit IORMUnique
-    type IORMSystem     = inherit IORMUnique
+    type IORMProject    = inherit IORMUnique inherit IWithDateTime
+    type IORMSystem     = inherit IORMUnique inherit IWithDateTime
     type IORMFlow       = inherit IORMUnique
     type IORMWork       = inherit IORMUnique
     type IORMCall       = inherit IORMUnique
@@ -113,27 +113,33 @@ module ORMTypesModule =
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description) =
+    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) =
         inherit ORMUnique()
 
-        new() = ORMProject(Environment.UserName, nullVersion, nullString)
-        interface IORMProject
+        new() = ORMProject(Environment.UserName, nullVersion, nullString, minDate)
+        interface IORMProject with
+            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+
         member val Author = author with get, set
         member val Version       = version     with get, set
         member val Description   = description with get, set
+        member val DateTime      = dateTime with get, set
 
 
-    type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string) =
+    type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string, dateTime) =
         inherit ORMProjectEntity()
 
-        new() = ORMSystem(nullableId, emptyGuid, nullString, nullString, nullVersion, nullVersion, nullString)
-        interface IORMSystem
+        new() = ORMSystem(nullableId, emptyGuid, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
+        interface IORMSystem with
+            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+
         member val PrototypeId   = prototypeId   with get, set
         member val IRI           = iri           with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set
         member val LangVersion   = langVersion   with get, set
         member val Description   = description   with get, set
+        member val DateTime      = dateTime with get, set
 
         member val OriginGuid = originGuid with get, set
 

@@ -16,32 +16,36 @@ module Interfaces =
     type IParameter = inherit IDsObject
     type IParameterContainer = inherit IDsObject
     type IArrow     = inherit IDsObject
+    type IWithDateTime =
+        inherit IDsObject
+        /// DateTime 속성을 가지는 객체 인터페이스
+        abstract member DateTime: DateTime with get, set
 
     /// Guid, Name, DateTime
     type IUnique    = inherit IDsObject
 
     (* Project > System > Work > Call > ApiCall > ApiDef *)
 
-    type IDsProject = inherit IDsObject
-    type IDsSystem  = inherit IDsObject
-    type IDsFlow    = inherit IDsObject
-    type IDsWork    = inherit IDsObject
-    type IDsCall    = inherit IDsObject
-    type IDsApiCall = inherit IDsObject
-    type IDsApiDef  = inherit IDsObject
+    type IDsProject = inherit IUnique
+    type IDsSystem  = inherit IUnique
+    type IDsFlow    = inherit IUnique
+    type IDsWork    = inherit IUnique
+    type IDsCall    = inherit IUnique
+    type IDsApiCall = inherit IUnique
+    type IDsApiDef  = inherit IUnique
 
-    type IDsButton    = inherit IDsObject
-    type IDsLamp      = inherit IDsObject
-    type IDsCondition = inherit IDsObject
-    type IDsAction    = inherit IDsObject
+    type IDsButton    = inherit IUnique
+    type IDsLamp      = inherit IUnique
+    type IDsCondition = inherit IUnique
+    type IDsAction    = inherit IUnique
 
 
     /// Runtime 객체 인터페이스
-    type IRtObject  = inherit IDsObject
-    type IRtUnique  = inherit IRtObject inherit IUnique
+    type IRtObject  = inherit IUnique
+    type IRtUnique  = inherit IRtObject
 
     /// Newtonsoft JSON 객체 인터페이스
-    type INjObject  = inherit IDsObject
+    type INjObject  = inherit IUnique
     type INjUnique  = inherit INjObject inherit IUnique
 
     /// ORM 객체 인터페이스
@@ -82,9 +86,6 @@ module Interfaces =
         /// Guid: 메모리에 최초 객체 생성시 생성
         [<JsonProperty(Order = -98)>]  member val Guid:Guid = guid with get, set
 
-        /// DateTime: 메모리에 최초 객체 생성시 생성
-        [<JsonProperty(Order = -96)>]  member val DateTime = dateTime with get, set
-
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
 
@@ -117,8 +118,12 @@ module internal UniqueHelpers =
         dst.Id <- src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
-        dst.DateTime <- src.DateTime
         dst.RawParent <- src.RawParent
+
+        match box src, box dst with
+        | (:? IWithDateTime as src), (:? IWithDateTime as dst) ->
+            dst.DateTime <- src.DateTime
+        | _ -> ()
         dst
 
     (*
@@ -134,16 +139,16 @@ module internal UniqueHelpers =
     let uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
     let uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
     let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
-    let uniqDateTime  dateTime (dst:#Unique) = dst.DateTime  <- dateTime; dst
+    let uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- dateTime); dst
     let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
 
     let uniqGD       guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
-    let uniqNGDA     name guid dateTime args      (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqDateTime dateTime |> uniqParameter args
+    let uniqNGA      name guid args               (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqParameter args
+    let uniqNGDA     name guid dateTime args      (dst:#Unique) = dst |> uniqNGA name guid args |> uniqDateTime dateTime
     /// src unique 속성 (Id, Name, Guid, DateTime) 들을 dst 에 복사
+    let uniqINGA     id name guid args            (dst:#Unique) = dst |> uniqId id     |> uniqNGA name guid args
     let uniqINGDA    id name guid dateTime args   (dst:#Unique) = dst |> uniqId id     |> uniqNGDA name guid dateTime args
-    /// src unique 속성 (Id, Name, Guid, DateTime, RawParent) 들을 dst 에 복사
-    let uniqINGDAP    id name guid dateTime args parent (dst:#Unique) = dst |> uniqId id |> uniqNGDA name guid dateTime args |> uniqParent parent
-    let uniqAll = uniqINGDAP
+
 
     /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
     let fromUniqINGD (src:#Unique) (dst:#Unique): #Unique =
@@ -151,7 +156,10 @@ module internal UniqueHelpers =
         dst.Name      <- src.Name
         dst.Guid      <- src.Guid
         dst.Parameter <- src.Parameter
-        dst.DateTime  <- src.DateTime
+        match box src, box dst with
+        | (:? IWithDateTime as src), (:? IWithDateTime as dst) ->
+            dst.DateTime <- src.DateTime
+        | _ -> ()
         dst
 
 
@@ -159,7 +167,7 @@ module internal UniqueHelpers =
     let uniqRenew (dst:#Unique): #Unique =
         dst.Id       <- None
         dst.Guid     <- newGuid()
-        dst.DateTime <- now()
+        dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- now())
         dst
 
 
@@ -169,7 +177,7 @@ module internal UniqueHelpers =
             let x = this :?> 'T
             x.Id <- None
             x.Guid <- newGuid()
-            x.DateTime <- now()
+            x |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- now())
             x
 
 

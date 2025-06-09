@@ -1,9 +1,12 @@
 namespace Ev2.Core.FS
 
-open Dual.Common.Core.FS
 open System
+open System.Linq
 open System.Collections.Generic
 open Newtonsoft.Json
+
+open Dual.Common.Core.FS
+open Dual.Common.Base
 
 [<AutoOpen>]
 module rec TmpCompatibility =
@@ -13,7 +16,7 @@ module rec TmpCompatibility =
         /// project, system 만 date time 가지는 걸로 변경 고려 중..
         member x.UpdateDateTime(?dateTime:DateTime) =
             let dateTime = dateTime |?? now
-            x.EnumerateRtObjects() |> iter (fun z -> z.DateTime <- dateTime)
+            x.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- dateTime)
 
         (* see also EdUnique.EnumerateRtObjects *)
         member x.EnumerateRtObjects(?includeMe): RtUnique list =
@@ -298,7 +301,7 @@ module DsObjectUtilsModule =
     type RtUnique with
         member x.Validate(guidDic:Dictionary<Guid, RtUnique>) =
             verify (x.Guid <> emptyGuid)
-            verify (x.DateTime <> minDate)
+            x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
             match x with
             | :? RtProject | :? RtSystem | :? RtFlow  | :? RtWork  | :? RtCall -> verify (x.Name.NonNullAny())
             | _ -> ()

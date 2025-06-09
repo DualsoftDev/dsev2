@@ -94,7 +94,7 @@ module internal rec DsObjectCopyImpl =
                 |-> (fun f -> bag.Newbies[f.Guid] :?> RtFlow)
 
             RtWork.Create(calls, arrows, flow)
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun w ->
@@ -118,7 +118,7 @@ module internal rec DsObjectCopyImpl =
             let actions    = x.Actions    |-> _.replicate(bag) |> toArray
 
             RtFlow(buttons, lamps, conditions, actions)
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -127,7 +127,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtButton()
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -136,7 +136,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtLamp()
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -145,7 +145,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtCondition()
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -154,7 +154,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtAction()
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -172,7 +172,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
 
             RtCall(x.CallType, x.ApiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> tee(fun c -> c.Status4 <- x.Status4 )
 
@@ -182,7 +182,7 @@ module internal rec DsObjectCopyImpl =
 
             RtApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress,
                       x.InSymbol, x.OutSymbol, x.ValueSpec)
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> uniqNGA (nn x.Name) guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -201,7 +201,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> RtWork
             let target = bag.Newbies[x.Target.Guid] :?> RtWork
             RtArrowBetweenWorks(source, target, x.Type)
-            |> uniqINGDA x.Id x.Name guid x.DateTime x.Parameter
+            |> uniqINGA x.Id x.Name guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -212,7 +212,7 @@ module internal rec DsObjectCopyImpl =
             let source = bag.Newbies[x.Source.Guid] :?> RtCall
             let target = bag.Newbies[x.Target.Guid] :?> RtCall
             RtArrowBetweenCalls(source, target, x.Type)
-            |> uniqINGDA x.Id x.Name guid x.DateTime x.Parameter
+            |> uniqINGA x.Id x.Name guid x.Parameter
             |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
@@ -227,18 +227,17 @@ module DsObjectCopyAPIModule =
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate() =
             let oldies = x.EnumerateRtObjects().ToDictionary( _.Guid, id)
-            let replicaSys = x.Replicate() |> validateRuntime
+            let current = now()
+            let replicaSys = x.Replicate() |> tee(fun z -> z.DateTime <- current) |> validateRuntime
             let replicas = replicaSys.EnumerateRtObjects()
             let newGuids = replicas.ToDictionary( _.Guid, (fun _ -> newGuid()))
-            let current = now()
 
             replicaSys.OriginGuid <- Some x.Guid
             replicaSys.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
 
             replicas |> iter (fun repl ->
                 repl.Id <- None
-                repl.Guid <- newGuids[repl.Guid]
-                repl.DateTime <- current)
+                repl.Guid <- newGuids[repl.Guid])
 
             // [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
             for ac in replicaSys.ApiCalls do

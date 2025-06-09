@@ -7,6 +7,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open System.Collections.Generic
 open Dual.Common.Db.FS
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module DsRuntimeObjectInterfaceModule =
@@ -15,8 +16,8 @@ module DsRuntimeObjectInterfaceModule =
 
     type IRtArrow     = inherit IRtUnique inherit IArrow
 
-    type IRtProject = inherit IRtUnique inherit IDsProject
-    type IRtSystem  = inherit IRtUnique inherit IDsSystem
+    type IRtProject = inherit IRtUnique inherit IWithDateTime
+    type IRtSystem  = inherit IRtUnique inherit IWithDateTime
     type IRtFlow    = inherit IRtUnique inherit IDsFlow
     type IRtWork    = inherit IRtUnique inherit IDsWork
     type IRtCall    = inherit IRtUnique inherit IDsCall
@@ -106,7 +107,8 @@ module rec DsObjectModule =
             activeSystems  |> iter (setParentI this)
             passiveSystems |> iter (setParentI this)
 
-        interface IRtProject
+        interface IRtProject with
+            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
         interface IParameterContainer
 
         // { JSON 용
@@ -118,6 +120,9 @@ module rec DsObjectModule =
         //member val LangVersion   = langVersion   |? Version()  with get, set
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = nullString with get, set
+
+        /// DateTime: 메모리에 최초 객체 생성시 생성
+        member val DateTime = now() with get, set
 
         member val internal RawActiveSystems    = ResizeArray activeSystems
         member val internal RawPassiveSystems   = ResizeArray passiveSystems
@@ -138,7 +143,8 @@ module rec DsObjectModule =
 
         (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
-        interface IRtSystem
+        interface IRtProject with
+            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
         member val internal RawFlows    = ResizeArray flows
         member val internal RawWorks    = ResizeArray works
         member val internal RawArrows   = ResizeArray arrows
@@ -153,6 +159,8 @@ module rec DsObjectModule =
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
+        /// DateTime: 메모리에 최초 객체 생성시 생성
+        member val DateTime      = now()      with get, set
 
         member x.Flows    = x.RawFlows    |> toList
         member x.Works    = x.RawWorks    |> toList

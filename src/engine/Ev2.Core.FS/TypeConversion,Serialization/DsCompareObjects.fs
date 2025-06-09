@@ -15,7 +15,6 @@ module rec DsCompareObjects =
         member x.GetName()                       = x.get().Name
         member x.GetParameter()                  = x.get().Parameter
         member x.TryGetId():Id option            = x |> tryCast<Unique> >>= _.Id
-        member x.GetDateTime()                   = x.get().DateTime
         member x.TryGetRawParent():Unique option = x.tryGet() >>= _.RawParent
 
     type UniqueCompareCriteria(?id:bool, ?guid:bool, ?dateTime:bool, ?parentGuid, ?parameter) =
@@ -58,7 +57,6 @@ module rec DsCompareObjects =
                 if x.GetName() <> y.GetName() then yield Diff("Name", x, y)
                 if c.Id        && x.TryGetId()     <> y.TryGetId()     then yield Diff("Id", x, y)
                 if c.Guid      && x.GetGuid()      <> y.GetGuid()      then yield Diff("Guid", x, y)
-                if c.DateTime  && x.GetDateTime()  <> y.GetDateTime()  then yield Diff("DateTime", x, y)
                 if c.Parameter && x.GetParameter() <> y.GetParameter() then yield Diff("Parameter", x, y)
 
                 let xp = x.TryGetRawParent() |-> _.GetGuid()
@@ -105,6 +103,7 @@ module rec DsCompareObjects =
 
                 (* 기타 속성 비교 *)
                 if criteria.Author && x.Author <> y.Author then yield Diff("Author", x, y)
+                if criteria.DateTime && x.DateTime <> y.DateTime then yield Diff("DateTime", x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Ucc())
 
@@ -125,6 +124,7 @@ module rec DsCompareObjects =
                 if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)
                 if x.LangVersion   <> y.LangVersion   then yield Diff("LangVersion", x, y)
                 if x.Description   <> y.Description   then yield Diff("Description", x, y)
+                if criteria.DateTime && x.DateTime <> y.DateTime then yield Diff("DateTime", x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Ucc())
 

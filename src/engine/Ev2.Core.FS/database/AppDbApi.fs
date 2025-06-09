@@ -184,7 +184,7 @@ module ORMTypeConversionModule =
 
             match uniq with
             | :? RtProject as z ->
-                ORMProject(z.Author, z.Version, z.Description)
+                ORMProject(z.Author, z.Version, z.Description, z.DateTime)
                 |> ormUniqINGDP z
 
             | :? RtSystem as z ->
@@ -202,7 +202,7 @@ module ORMTypeConversionModule =
                             >>= _.Id)
                     |> o2n
 
-                ORMSystem(prototypeId, originGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description)
+                ORMSystem(prototypeId, originGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
                 |> ormUniqINGDP z
 
             | :? RtFlow as z ->

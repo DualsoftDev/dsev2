@@ -16,8 +16,8 @@ open Dual.Common.Db.FS
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
 module NewtonsoftJsonModules =
-    type INjProject = inherit INjUnique inherit IDsProject
-    type INjSystem  = inherit INjUnique inherit IDsSystem
+    type INjProject = inherit INjUnique inherit IDsProject inherit IWithDateTime
+    type INjSystem  = inherit INjUnique inherit IDsSystem inherit IWithDateTime
     type INjFlow    = inherit INjUnique inherit IDsFlow
     type INjWork    = inherit INjUnique inherit IDsWork
     type INjCall    = inherit INjUnique inherit IDsCall
@@ -117,12 +117,15 @@ module rec NewtonsoftJsonObjects =
 
     type NjProject() =
         inherit NjUnique()
-        interface INjProject
+        interface INjProject with
+            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+
 
         member val Database    = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
         member val Description = null:string     with get, set
         member val Author      = null:string     with get, set
         member val Version     = Version()       with get, set
+        member val DateTime    = minDate         with get, set
 
         /// serialize 직전에 Runtime 으로부터 채워지고,
         /// deserialize 직후에 Runtime 으로 변환시켜 채워 줌.
@@ -137,8 +140,8 @@ module rec NewtonsoftJsonObjects =
 
     type NjSystem() =
         inherit NjProjectEntity()
-        interface INjSystem
-
+        interface INjSystem with
+            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
         [<JsonProperty(Order = 101)>] member val Flows    = [||]:NjFlow[]    with get, set
         [<JsonProperty(Order = 102)>] member val Works    = [||]:NjWork[]    with get, set
@@ -153,6 +156,7 @@ module rec NewtonsoftJsonObjects =
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
+        member val DateTime      = minDate    with get, set
         //[<JsonIgnore>] member val IsSaveAsReference = false with get, set
 
         member x.ShouldSerializeFlows   () = x.Flows   .NonNullAny()
