@@ -4,6 +4,7 @@ open System
 
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
+open System.Collections.ObjectModel
 
 [<AutoOpen>]
 module DatabaseSchemaModule =
@@ -53,13 +54,15 @@ module DatabaseSchemaModule =
         let [<Literal>] Temp         = "temp"
         let [<Literal>] Log          = "log"
         let [<Literal>] TableHistory = "tableHistory"
+        let [<Literal>] TableDescription = "tableDescription"
         let [<Literal>] TypeTest     = "typeTest"
-        let [<Literal>] EOT          = "endOfTable"
 
         let AllTableNames = [
             Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef;
             Button; Lamp; Condition; Action; Enum;
-            Meta; Temp; TableHistory; MapProject2System; MapCall2ApiCall; ]        // Log;
+            TableHistory; MapProject2System; MapCall2ApiCall;
+            Meta; Temp; TableDescription
+        ]
 
     // database view names
     module Vn =
@@ -443,9 +446,9 @@ CREATE TABLE {k Tn.ArrowCall}( {sqlUniq()}
 
 
 CREATE TABLE {k Tn.Meta} (
-    {k "id"}  {autoincPrimaryKey},
-    {k "key"} TEXT NOT NULL,
-    {k "val"} TEXT NOT NULL
+    {k "id"}  {autoincPrimaryKey}
+    , {k "key"} TEXT NOT NULL
+    , {k "val"} TEXT NOT NULL
 );
 
 CREATE TABLE {k Tn.Log} (
@@ -745,21 +748,79 @@ CREATE VIEW {k Vn.ArrowWork} AS
     ;
 
 
-
-INSERT INTO {k Tn.Meta} (key, val) VALUES ('Version', '1.0.0.0');
 DELETE FROM {k Tn.TableHistory};
 { if withTrigger then triggerSql dbProvider else "" }
 
-CREATE TABLE {k Tn.EOT} (
+CREATE TABLE {k Tn.TableDescription} (
     {k "id"}  {autoincPrimaryKey}
+    , {k "tableName"}   TEXT NOT NULL
+    , {k "columnName"}  TEXT
+    , {k "description"} TEXT NOT NULL
+    , CONSTRAINT {Tn.TableDescription}_uniq UNIQUE (tableName, columnName)
 );
+"""
+
+
+
+        (* ----------------------- [sqlTableDescription] ----------------------- *)
+
+        let sqlTableDescription =
+            let descT (tableName:string) (description:string) =
+                $"INSERT INTO {k Tn.TableDescription} (tableName, description) VALUES ('{tableName}', '{description}');"
+
+            let desc (tableName:string) (columnName:string) (description:string) =
+                $"INSERT INTO {k Tn.TableDescription} (tableName, columnName, description) VALUES ('{tableName}', '{columnName}', '{description}');"
+
+            seq {
+                // 각 table 의 설명
+                descT Tn.Project          $"{Tn.Project   } 관리 table"
+                descT Tn.System           $"{Tn.System    } 관리 table"
+                descT Tn.Flow             $"{Tn.Flow      } 관리 table"
+                descT Tn.Work             $"{Tn.Work      } 관리 table"
+                descT Tn.Call             $"{Tn.Call      } 관리 table"
+                descT Tn.ArrowWork        $"{Tn.ArrowWork } 관리 table"
+                descT Tn.ArrowCall        $"{Tn.ArrowCall } 관리 table"
+                descT Tn.ApiCall          $"{Tn.ApiCall   } 관리 table"
+                descT Tn.ApiDef           $"{Tn.ApiDef    } 관리 table"
+
+                descT Tn.Button           $"{Tn.Button    } 관리 table"
+                descT Tn.Lamp             $"{Tn.Lamp      } 관리 table"
+                descT Tn.Condition        $"{Tn.Condition } 관리 table"
+                descT Tn.Action           $"{Tn.Action    } 관리 table"
+
+                descT Tn.MapProject2System "Projecdt 와 System 간의 mapping 관리 table"
+                descT Tn.MapCall2ApiCall   "Call 과 ApiCall 간의 mapping 관리 table"
+
+                descT Tn.Enum             "코드 상의 enumeration 과 DB 의 enumeration mapping 관리 table"
+                descT Tn.Meta             "기타 정보"
+                descT Tn.Temp             "임시 table.  engine 내부 전용"
+                descT Tn.Log              "DB 관련 logging table"
+                descT Tn.TypeTest         "디버깅 전용 table"
+
+                descT Tn.TableHistory     "DB CUD 추적용 table.  Create/Update/Delete"
+                descT Tn.TableDescription "본 table"
+
+                // 각 table 의 column 설명
+                desc "<All table>"       "Parameter"        "임의의 객체에 대한 JSON 문자열 혹은 Jsonb.  Jsonb 는 Postgresql 에서 지원 중.  그외에서는 문자열로 처리 필요"
+                desc Tn.MapProject2System "LoadedName"      "systemId 로 주어진 system 이 projectId 로 주어진 project 에 loading 될 때의 이름"
+                desc Tn.ApiCall           "ValueSpec"       "ValueSpec 에 대한 JSON 문자열 혹은 Jsonb.  Jsonb 는 Postgresql 에서 지원 중.  그외에서는 문자열로 처리 필요"
+                desc Tn.ApiCall           "ValueSpecHint"   "ValueSpec column 에 입력된 JSON 의 사용자 친화적 문자열.  읽기 전용.  ValueSpec 의 값 변경에 따라 update 지연될 수 있음"
+
+            } |> String.concat "\n"
+
+
+
+        (* ----------------------- [최종 SQL schema] ----------------------- *)
+        $"""
+{sqlTables}
+{sqlViews}
+{sqlTableDescription}
 
 --
 -- End of database schema
 --
 """
 
-        sqlTables + "\n" + sqlViews
 
 
 

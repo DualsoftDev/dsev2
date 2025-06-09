@@ -60,7 +60,9 @@ module DbApiModule =
                         let sqlSpecFile = Path.Combine(specDir, "sqlite-schema.sql")
                         let header = $"""
 --
--- Auto-generated DS schema for {dbProvider.VendorName}.  Do *NOT* Edit.
+-- Auto-generated DS schema for {dbProvider.VendorName}.
+-- Date: {DateTime.Now}
+-- Do *NOT* Edit.
 --
 """
                         File.WriteAllText(sqlSpecFile, header + schema)
@@ -71,6 +73,9 @@ module DbApiModule =
                             insertEnumValues<DbStatus4>   conn tr Tn.Enum
                             insertEnumValues<DbCallType>  conn tr Tn.Enum
                             insertEnumValues<DbArrowType> conn tr Tn.Enum
+                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database vendor name', '{dbProvider.VendorName}')", transaction=tr) |> ignore
+                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database version',     '{conn.GetVersion()}')",     transaction=tr) |> ignore
+                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('engine version',       '{Version(0, 9, 99)}')",      transaction=tr) |> ignore
                             tr.Commit()
                         with ex ->
                             logError $"Failed to create database schema: {ex.Message}"
@@ -79,7 +84,7 @@ module DbApiModule =
                     try
                         let dic = conn.ParseConnectionString()
                         let schemaName = dic.TryGet("Search Path")// |? "tia"
-                        if not <| conn.IsTableExists(Tn.EOT, ?schemaName=schemaName) then
+                        if not <| conn.IsTableExists(Tn.TableDescription, ?schemaName=schemaName) then
                             createDb()
                     with exn ->
                         createDb() )
