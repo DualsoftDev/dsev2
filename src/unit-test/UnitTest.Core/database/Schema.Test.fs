@@ -260,7 +260,7 @@ module SchemaTestModule =
         dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
         //(fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
         do
-            let dsProj = dsProject2.Duplicate()
+            let dsProj = dsProject2.Duplicate($"CC_{dsProject2.Name}")
             dsProj.Name <- $"Duplicate of {dsProj.Name}"
             validateRuntime dsProj |> ignore
             dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
@@ -271,7 +271,7 @@ module SchemaTestModule =
             let dsSystem4 = dsProject3.Systems[0].Duplicate()
             validateRuntime dsSystem4 |> ignore
             dsSystem4.Name <- "DuplicatedSystem"
-            dsProject3.Duplicate()
+            dsProject3.Duplicate($"CC_{dsProject3.Name}")
             |> tee(fun z ->
                 z.Name <- $"{z.Name}4"
                 z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueSpec <- Some <| Single 3.14156952
@@ -313,7 +313,7 @@ module SchemaTestModule =
 
         let dsProject1 = RtProject.FromJson json |> validateRuntime
         noop()
-        let dsProject2 = dsProject1 |> _.Duplicate()
+        let dsProject2 = dsProject1 |> _.Duplicate($"CC_{dsProject1.Name}")
         let sys = dsProject2.ActiveSystems[0]
         sys.Flows.Length === 1
         let flow = sys.Flows[0]
@@ -539,7 +539,59 @@ module SchemaTestModule =
             noop()
         noop()
 
+    [<Test>]
+    let ``복제 비교`` () =
+        let dsProject = edProject.Replicate() |> validateRuntime
+        edProject.IsEqual dsProject === true
 
+    [<Test>]
+    let ``복사 비교`` () =
+        (* Project 복사:
+            - Active/Passive system 들의 Guid 변경되어야 함.
+            - Parent 및 OwnerSystem member 변경되어야 함.
+        *)
+        let dsProject = edProject.Duplicate($"CC_{edProject.Name}") |> validateRuntime
+        edProject.IsEqual dsProject === false
+
+        let diff = edProject.ComputeDiff(dsProject) |> toList
+        diff.Length === 4
+        diff |> contains (Diff ("Guid", edProject, dsProject)) === true
+        diff |> contains (Diff ("DateTime", edProject, dsProject)) === true
+        diff |> contains (LeftOnly edProject.Systems[0]) === true
+        diff |> contains (RightOnly dsProject.Systems[0]) === true
+
+        do
+            (* Project 하부의 System 은 구조적으로는 동일해야 함.
+                - 복사로 인해 System 의 Guid 는 새로 생성, IRI 는 초기화되어 다름
+                - 시스템 하부에 존재하는 Work, Flow, ApiDef, ApiCall 은 모두 다른 객체로 생성.
+            *)
+            let src = edProject.Systems[0]
+            let cc = dsProject.Systems[0]
+            diff |> contains (LeftOnly src) === true
+            diff |> contains (RightOnly cc) === true
+            let diff = src.ComputeDiff cc |> toArray
+            diff |> contains (Diff ("Guid", src, cc)) === true
+            diff
+            |> forall(fun d ->
+                match d with
+                | Diff("Guid", x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                | Diff("IRI",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                | Diff("DateTime",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                | Diff("Parent",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                | (   LeftOnly (:? RtFlow)
+                    | LeftOnly (:? RtWork)
+                    | LeftOnly (:? RtArrowBetweenWorks)
+                    | LeftOnly (:? RtApiDef)
+                    | LeftOnly (:? RtApiCall)
+                    | RightOnly (:? RtFlow)
+                    | RightOnly (:? RtWork)
+                    | RightOnly (:? RtArrowBetweenWorks)
+                    | RightOnly (:? RtApiDef)
+                    | RightOnly (:? RtApiCall) ) -> true
+                | _ -> false
+            ) === true
+
+        ()
 
 
     let guid = Guid.Parse "42dad0ec-6441-47b7-829e-1487e1c89360"

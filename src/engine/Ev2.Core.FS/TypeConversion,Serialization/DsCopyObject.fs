@@ -26,16 +26,16 @@ module internal rec DsObjectCopyImpl =
 //#endif
 
     type RtProject with // replicate
+        /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
-            let prototypes = x.PrototypeSystems |-> _.replicate(bag) |> toArray
             let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
             let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
 
             RtProject.Create()
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:RtSystem) -> setParentI z s)
-                prototypes |> z.RawPrototypeSystems.AddRange
+                x.RawPrototypeSystems |> z.RawPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
@@ -226,48 +226,49 @@ module DsObjectCopyAPIModule =
 
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate() =
-            let replica = x.Replicate() |> validateRuntime
-            let objs = replica.EnumerateRtObjects()
-            let guidDic = objs.ToDictionary( _.Guid, (fun _ -> newGuid()))
+            let oldies = x.EnumerateRtObjects().ToDictionary( _.Guid, id)
+            let replicaSys = x.Replicate() |> validateRuntime
+            let replicas = replicaSys.EnumerateRtObjects()
+            let newGuids = replicas.ToDictionary( _.Guid, (fun _ -> newGuid()))
             let current = now()
 
-            replica.OriginGuid <- Some x.Guid
-            replica.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
+            replicaSys.OriginGuid <- Some x.Guid
+            replicaSys.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
 
-            objs |> iter (fun obj ->
-                obj.Id <- None
-                obj.Guid <- guidDic[obj.Guid]
-                obj.DateTime <- current)
+            replicas |> iter (fun repl ->
+                repl.Id <- None
+                repl.Guid <- newGuids[repl.Guid]
+                repl.DateTime <- current)
 
             // [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
-            for ac in replica.ApiCalls do
-                let newGuid = guidDic[ac.ApiDefGuid]
+            for ac in replicaSys.ApiCalls do
+                let newGuid = newGuids[ac.ApiDefGuid]
                 ac.ApiDefGuid <- newGuid
 
-            for c in replica.Works >>= _.Calls do
+            for c in replicaSys.Works >>= _.Calls do
 
                 // [Call 에서 APiCall Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
                 let newGuids =
                     c.ApiCallGuids
-                    |-> (fun g -> guidDic[g])
+                    |-> (fun g -> newGuids[g])
                     |> toList
 
                 c.ApiCallGuids.Clear()
                 c.ApiCallGuids.AddRange newGuids
 
 
-            replica |> validateRuntime |> ignore
+            replicaSys |> validateRuntime |> ignore
 
             // 삭제 요망: debug only
             // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
-            replica.Works
+            replicaSys.Works
             |> filter _.Flow.IsSome
             |> iter (fun w ->
-                replica.Flows
+                replicaSys.Flows
                 |> exists (fun f -> f.Guid = w.Flow.Value.Guid)
                 |> verify)
 
-            replica
+            replicaSys
 
 
     type RtProject with // Replicate, Duplicate
@@ -285,17 +286,39 @@ module DsObjectCopyAPIModule =
 
 
 
+        ///// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
+        //member x.DuplicateXXX() =  // RtProject
+        //    RtProject.Create()
+        //    |> tee(fun z ->
+        //        let actives  = x.ActiveSystems    |-> _.Duplicate()
+        //        let passives = x.PassiveSystems   |-> _.Duplicate()
+        //        let protos   = x.PrototypeSystems |-> _.Duplicate()
+        //        (actives @ passives) |> iter (setParentI z)
+        //        actives  |> z.RawActiveSystems.AddRange
+        //        passives |> z.RawPassiveSystems.AddRange
+        //        protos   |> z.RawPrototypeSystems.AddRange
+
+        //        z.Name        <- x.Name
+        //        z.Parameter   <- x.Parameter
+        //        z.Version     <- x.Version
+        //        z.Author      <- x.Author
+        //        z.Description <- x.Description
+        //        z.Database    <- x.Database )
+        //    |> uniqName (nn x.Name)
+
+
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        member x.Duplicate() =  // RtProject
+        member x.Duplicate(newName:string) =  // RtProject
+            let actives  = x.ActiveSystems    |-> _.Duplicate()
+            let passives = x.PassiveSystems   |-> _.Duplicate()
             RtProject.Create()
-            |> tee(fun z ->
-                let actives  = x.ActiveSystems    |-> _.Duplicate()
-                let passives = x.PassiveSystems   |-> _.Duplicate()
-                let protos   = x.PrototypeSystems |-> _.Duplicate()
-                (actives @ passives) |> iter (setParentI z)
+            |> uniqName newName
+            |> tee (fun z ->
                 actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange
-                protos   |> z.RawPrototypeSystems.AddRange
+                x.PrototypeSystems   |> z.RawPrototypeSystems.AddRange
+
+                actives @ passives |> iter (fun s -> s.RawParent <- Some z)
 
                 z.Name        <- x.Name
                 z.Parameter   <- x.Parameter
@@ -303,12 +326,21 @@ module DsObjectCopyAPIModule =
                 z.Author      <- x.Author
                 z.Description <- x.Description
                 z.Database    <- x.Database )
-            |> uniqName (nn x.Name)
+
+            //x.Replicate()
+            //|> tee(fun replicaPrj ->
+            //    replicaPrj.Guid <- newGuid()
+
+            //    replicaPrj.ActiveSystems @ replicaPrj.PassiveSystems
+            //    |> iter(fun z ->
+            //        z.IRI <- null // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
+            //        z.Guid <- newGuid()))
+
 
 
     /// fwdDuplicate <- duplicateUnique
     let internal duplicateUnique (source:IUnique): IUnique =
         match source with
         | :? RtSystem  as rs -> rs.Duplicate()
-        | :? RtProject as rp -> rp.Duplicate()
+        | :? RtProject as rp -> rp.Duplicate($"CC_{rp.Name}")
         | _ -> failwithf "Unsupported type for duplication: %A" (source.GetType())
