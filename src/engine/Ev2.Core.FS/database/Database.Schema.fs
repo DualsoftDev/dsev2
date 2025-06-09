@@ -31,9 +31,6 @@ module DatabaseSchemaModule =
         let [<Literal>] ApiCall      = "apiCall"
         let [<Literal>] ApiDef       = "apiDef"
 
-        let [<Literal>] ParamWork    = "paramWork"
-        let [<Literal>] ParamCall    = "paramCall"
-
         // { Flow 하부 정의 용
         let [<Literal>] Button       = "button"
         let [<Literal>] Lamp         = "lamp"
@@ -60,7 +57,7 @@ module DatabaseSchemaModule =
         let [<Literal>] EOT          = "endOfTable"
 
         let AllTableNames = [
-            Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef; ParamWork; ParamCall;
+            Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef;
             Button; Lamp; Condition; Action; Enum;
             Meta; Temp; TableHistory; MapProject2System; MapCall2ApiCall; ]        // Log;
 
@@ -76,9 +73,16 @@ module DatabaseSchemaModule =
         let [<Literal>] ArrowWork  = "vwArrowWork"
         let [<Literal>] ApiDef     = "vwApiDef"
         let [<Literal>] ApiCall    = "vwApiCall"
+
+        let [<Literal>] Button     = "vwButton"
+        let [<Literal>] Lamp       = "vwLamp"
+        let [<Literal>] Condition  = "vwCondition"
+        let [<Literal>] Action     = "vwAction"
+
         let AllViewTableNames = [
                 MapProject2System; MapCall2ApiCall
                 System; Flow; Work; Call; ApiDef; ApiCall
+                Button; Lamp; Condition; Action;
                 ArrowCall; ArrowWork; ]
 
     /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
@@ -237,6 +241,8 @@ CREATE VIEW {k Vn.ApiCall} AS
     JOIN {k Tn.System} s  ON s.id = ad.systemId
     ;
 """
+
+        (* ----------------------- [sqlTables] ----------------------- *)
 
 
         let sqlTables = $"""
@@ -436,15 +442,6 @@ CREATE TABLE {k Tn.ArrowCall}( {sqlUniq()}
 
 
 
--- 삭제 ??
-CREATE TABLE {k Tn.ParamWork} (  {sqlUniq()}
-);
-
--- 삭제 ??
-CREATE TABLE {k Tn.ParamCall} (  {sqlUniq()}
-);
-
-
 CREATE TABLE {k Tn.Meta} (
     {k "id"}  {autoincPrimaryKey},
     {k "key"} TEXT NOT NULL,
@@ -489,6 +486,8 @@ CREATE TABLE {k Tn.TypeTest} (
 );
 
 """
+
+        (* ----------------------- [sqlViews] ----------------------- *)
 
         let sqlViews = $"""
 CREATE VIEW {k Vn.MapProject2System} AS
@@ -580,6 +579,67 @@ CREATE VIEW {k Vn.Flow} AS
     JOIN {k Tn.MapProject2System} psm ON psm.systemId = s.id
     JOIN {k Tn.Project} p             ON p.id         = psm.projectId
     ;
+
+
+CREATE VIEW {k Vn.Button} AS
+    SELECT
+        x.{k "id"}
+        , x.{k "name"}
+        , x.{k "parameter"}
+        , f.{k "id"}    AS flowId
+        , f.{k "name"}  AS flowName
+        , s.{k "id"}    AS systemId
+        , s.{k "name"}  AS systemName
+    FROM {k Tn.Button} x
+    JOIN {k Tn.Flow}   f ON f.id = x.flowId
+    JOIN {k Tn.System} s ON s.id = f.systemId
+    ;
+
+CREATE VIEW {k Vn.Lamp} AS
+    SELECT
+        x.{k "id"}
+        , x.{k "name"}
+        , x.{k "parameter"}
+        , f.{k "id"}    AS flowId
+        , f.{k "name"}  AS flowName
+        , s.{k "id"}    AS systemId
+        , s.{k "name"}  AS systemName
+    FROM {k Tn.Lamp} x
+    JOIN {k Tn.Flow}   f ON f.id = x.flowId
+    JOIN {k Tn.System} s ON s.id = f.systemId
+    ;
+
+CREATE VIEW {k Vn.Condition} AS
+    SELECT
+        x.{k "id"}
+        , x.{k "name"}
+        , x.{k "parameter"}
+        , f.{k "id"}    AS flowId
+        , f.{k "name"}  AS flowName
+        , s.{k "id"}    AS systemId
+        , s.{k "name"}  AS systemName
+    FROM {k Tn.Condition} x
+    JOIN {k Tn.Flow}   f ON f.id = x.flowId
+    JOIN {k Tn.System} s ON s.id = f.systemId
+    ;
+
+CREATE VIEW {k Vn.Action} AS
+    SELECT
+        x.{k "id"}
+        , x.{k "name"}
+        , x.{k "parameter"}
+        , f.{k "id"}    AS flowId
+        , f.{k "name"}  AS flowName
+        , s.{k "id"}    AS systemId
+        , s.{k "name"}  AS systemName
+    FROM {k Tn.Action} x
+    JOIN {k Tn.Flow}   f ON f.id = x.flowId
+    JOIN {k Tn.System} s ON s.id = f.systemId
+    ;
+
+
+
+
 
 
 CREATE VIEW {k Vn.Work} AS
