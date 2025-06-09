@@ -45,12 +45,9 @@ module ORMTypesModule =
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
     let toOrmUniqINGDP (src:#Unique) (dst:#ORMUnique): #ORMUnique =
-        dst |> fromUniqINGD src |> ignore
-
-        dst.ParentId <- src.RawParent >>= _.Id
-        dst.RtObject <- Some src
-        src.ORMObject <- Some dst
         dst
+        |> uniqReplicate src
+        |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
 
 
 
@@ -210,7 +207,6 @@ module ORMTypesModule =
         inherit ORMUnique()
 
         new() = ORMMapProjectSystem(-1, -1, false)
-        interface IORMRow
         member val ProjectId = projectId with get, set
         member val SystemId  = systemId  with get, set
         member val IsActive  = isActive  with get, set
@@ -219,7 +215,6 @@ module ORMTypesModule =
         inherit ORMUnique()
 
         new() = ORMMapCall2ApiCall(-1, -1)
-        interface IORMRow
         member val CallId = callId with get, set
         member val ApiCallId = apiCallId with get, set
 
@@ -257,7 +252,7 @@ module ORMTypesModule =
         interface IORMEnum
 
         new() = ORMEnum(nullString, nullString, -1)
-        interface IORMRow
+        interface IORMUnique
         member val Id       = Nullable<Id>() with get, set
         member val Name     = name           with get, set
         member val Category = category       with get, set

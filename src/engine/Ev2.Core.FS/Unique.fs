@@ -46,10 +46,11 @@ module Interfaces =
 
     /// Newtonsoft JSON 객체 인터페이스
     type INjObject  = inherit IUnique
-    type INjUnique  = inherit INjObject inherit IUnique
+    type INjUnique  = inherit INjObject
 
     /// ORM 객체 인터페이스
-    type IORMUnique     = inherit IUnique inherit IORMRow
+    type IORMObject  = inherit IUnique
+    type IORMUnique  = inherit IORMObject inherit IORMRow
 
     let internal minDate      = DateTime.MinValue
     let internal nullableId   = Nullable<Id>()
@@ -114,7 +115,35 @@ module internal UniqueHelpers =
     /// Unique 객체의 parent guid 부합 체크
     let isParentGuid (x:#Unique) (maybeParentGuid:Guid) = x.RawParent |-> _.Guid = Some maybeParentGuid
 
+    (*
+        Chaining 해서 사용할 수 있는 Uniq 속성 수정 helper 함수들.  예제
+            dsProject
+            |> uniqDateTime (now())
+            |> uniqGuid (newGuid())
+            |> uniqId (Some 3)
+            |> uniqName "KKKKKKKKKKKKK"
+    *)
+
+    let linkUniq (src:Unique) (dst:Unique) =
+        match box src with
+        | :? IRtUnique  as s -> dst.RtObject  <- Some s
+        | :? INjUnique  as s -> dst.NjObject  <- Some s
+        | :? IORMUnique as s -> dst.ORMObject <- Some s
+        | _  -> failwith "ERROR"
+
+        match box dst with
+        | :? IRtUnique  as d -> src.RtObject  <- Some d
+        | :? INjUnique  as d -> src.NjObject  <- Some d
+        | :? IORMUnique as d -> src.ORMObject <- Some d
+        | _  -> failwith "ERROR"
+
+        dst
+
+    /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
     let uniqReplicate (src:#Unique) (dst:#Unique) : #Unique =
+
+        linkUniq src dst |> ignore
+
         dst.Id <- src.Id
         dst.Name <- src.Name
         dst.Guid <- src.Guid
@@ -126,58 +155,19 @@ module internal UniqueHelpers =
         | _ -> ()
         dst
 
-    (*
-        Chaining 해서 사용할 수 있는 Uniq 속성 수정 helper 함수들.  예제
-            dsProject
-            |> uniqDateTime (now())
-            |> uniqGuid (newGuid())
-            |> uniqId (Some 3)
-            |> uniqName "KKKKKKKKKKKKK"
-    *)
-
-    let uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst
-    let uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
-    let uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
+    let private uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst
+    let private uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
+    let private uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- dateTime); dst
+    let private uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
     let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
-    let uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- dateTime); dst
     let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
 
-    let uniqGD       guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
+    //let uniqGD       guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
     let uniqNGA      name guid args               (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqParameter args
     let uniqNGDA     name guid dateTime args      (dst:#Unique) = dst |> uniqNGA name guid args |> uniqDateTime dateTime
     /// src unique 속성 (Id, Name, Guid, DateTime) 들을 dst 에 복사
     let uniqINGA     id name guid args            (dst:#Unique) = dst |> uniqId id     |> uniqNGA name guid args
-    let uniqINGDA    id name guid dateTime args   (dst:#Unique) = dst |> uniqId id     |> uniqNGDA name guid dateTime args
+    //let uniqINGDA    id name guid dateTime args   (dst:#Unique) = dst |> uniqId id     |> uniqNGDA name guid dateTime args
 
-
-    /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
-    let fromUniqINGD (src:#Unique) (dst:#Unique): #Unique =
-        dst.Id        <- src.Id
-        dst.Name      <- src.Name
-        dst.Guid      <- src.Guid
-        dst.Parameter <- src.Parameter
-        match box src, box dst with
-        | (:? IWithDateTime as src), (:? IWithDateTime as dst) ->
-            dst.DateTime <- src.DateTime
-        | _ -> ()
-        dst
-
-
-
-    let uniqRenew (dst:#Unique): #Unique =
-        dst.Id       <- None
-        dst.Guid     <- newGuid()
-        dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- now())
-        dst
-
-
-    type Unique with
-        member this.Renew<'T when 'T :> Unique> () : 'T =
-            // 'this'는 Unique 타입이라 강제로 캐스팅 필요
-            let x = this :?> 'T
-            x.Id <- None
-            x.Guid <- newGuid()
-            x |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- now())
-            x
 
 

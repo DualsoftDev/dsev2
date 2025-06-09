@@ -190,8 +190,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
             RtApiDef(x.IsPush)
-            |> fromUniqINGD x |> uniqGuid guid
-            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> uniqReplicate x |> uniqGuid guid
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -310,8 +309,7 @@ module DsObjectCopyAPIModule =
         member x.Duplicate(newName:string) =  // RtProject
             let actives  = x.ActiveSystems    |-> _.Duplicate()
             let passives = x.PassiveSystems   |-> _.Duplicate()
-            RtProject.Create()
-            |> uniqName newName
+            RtProject.Create(Name=newName)
             |> tee (fun z ->
                 actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange

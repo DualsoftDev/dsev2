@@ -351,7 +351,7 @@ module internal Db2DsImpl =
                 let actions    = ormActions    |-> (fun z -> RtAction    ()) |> toArray
 
                 RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
-                |> fromUniqINGD ormFlow
+                |> uniqReplicate ormFlow
                 |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
         ]
         rtFlows |> s.AddFlows
@@ -363,7 +363,7 @@ module internal Db2DsImpl =
                 bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
 
                 RtApiDef(orm.IsPush, RawParent = Some s)
-                |> fromUniqINGD orm
+                |> uniqReplicate orm
                 |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
         ]
         rtApiDefs |> s.AddApiDefs
@@ -383,7 +383,7 @@ module internal Db2DsImpl =
                 let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
                 RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                             orm.InSymbol, orm.OutSymbol, valueParam)
-                |> fromUniqINGD orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
+                |> uniqReplicate orm |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
         ]
         rtApiCalls |> s.AddApiCalls
 
@@ -395,7 +395,7 @@ module internal Db2DsImpl =
             for orm in orms do
                 RtWork.Create()
                 |> setParent s
-                |> fromUniqINGD orm
+                |> uniqReplicate orm
                 |> tee(fun w ->
                     if orm.FlowId.HasValue then
                         let flow = rtFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
@@ -434,7 +434,7 @@ module internal Db2DsImpl =
                     let ccs = orm.CommonConditions |> jsonDeserializeStrings
                     RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, n2o orm.Timeout)
                     |> setParent w
-                    |> fromUniqINGD orm
+                    |> uniqReplicate orm
                     |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                     |> tee(fun c ->
                         c.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
@@ -460,7 +460,7 @@ module internal Db2DsImpl =
                     let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
                     RtArrowBetweenCalls(src, tgt, arrowType)
-                    |> fromUniqINGD orm
+                    |> uniqReplicate orm
                     |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
             ]
             w.AddArrows rtArrows
@@ -483,7 +483,7 @@ module internal Db2DsImpl =
                 let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
                 RtArrowBetweenWorks(src, tgt, arrowType)
-                |> fromUniqINGD orm
+                |> uniqReplicate orm
                 |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
         ]
         rtArrows |> s.AddArrows
@@ -508,8 +508,7 @@ module internal Db2DsImpl =
 
         let rtProj =
             RtProject.Create()
-            |> fromUniqINGD ormProject
-            |> tee(fun z -> z.ORMObject <- Some ormProject; ormProject.RtObject <- Some z)
+            |> uniqReplicate ormProject
             |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
 
         let ormSystems =
@@ -519,9 +518,8 @@ module internal Db2DsImpl =
                 {| SystemIds = systemIds |}, tr)
             |> tees (fun os ->
                     RtSystem.Create()
-                    |> fromUniqINGD os
+                    |> uniqReplicate os
                     |> uniqParent (Some rtProj)
-                    |> tee(fun rs -> rs.ORMObject <- Some os; os.RtObject <- Some rs)
                     |> (fun rs -> bag.RtDic.Add(rs.Guid, rs)) )
             |> tees (fun os -> bag.DbDic.Add(guid2str os.Guid, os))
             |> toArray
@@ -566,8 +564,7 @@ module internal Db2DsImpl =
                 ormSystem.RtObject <-
                     let rtSystem =
                         RtSystem.Create()
-                        |> fromUniqINGD ormSystem
-                        |> tee(fun rs -> rs.ORMObject <- Some ormSystem; ormSystem.RtObject <- Some rs)
+                        |> uniqReplicate ormSystem
                         |> tee(fun rs -> bag.RtDic.Add(rs.Guid, rs))
                     Some rtSystem
 
