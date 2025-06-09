@@ -173,8 +173,15 @@ module ORMTypeConversionModule =
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
             ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
-    let internal ds2Orm (dbApi:AppDbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject) =
-        let ormUniqINGDP (src:#Unique) (dst:#ORMUnique): ORMUnique = toOrmUniqINGDP src dst :> ORMUnique
+    let internal ds2Orm (dbApi:AppDbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject): ORMUnique =
+        /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
+        let ormUniqReplicate (src:#Unique) (dst:ORMUnique): ORMUnique =
+            dst
+            |> uniqReplicate src
+            |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
+
+
+
 
         match x |> tryCast<Unique> with
         | Some uniq ->
@@ -185,7 +192,7 @@ module ORMTypeConversionModule =
             match uniq with
             | :? RtProject as z ->
                 ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtSystem as z ->
                 let originGuid = z.OriginGuid |> Option.toNullable
@@ -203,11 +210,11 @@ module ORMTypeConversionModule =
                     |> o2n
 
                 ORMSystem(prototypeId, originGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtFlow as z ->
                 ORMFlow()
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtWork as z ->
                 let flowId = (z.Flow >>= _.Id) |> Option.toNullable
@@ -220,11 +227,11 @@ module ORMTypeConversionModule =
                     y.NumRepeat <- z.NumRepeat
                     y.Period <- z.Period
                     y.Delay <- z.Delay )
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtCall as z ->
                 ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoConditions, z.CommonConditions, z.IsDisabled, o2n z.Timeout)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
@@ -234,7 +241,7 @@ module ORMTypeConversionModule =
                     |? int DbArrowType.None
 
                 ORMArrowWork(src, tgt, parentId, arrowTypeId)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
@@ -244,24 +251,24 @@ module ORMTypeConversionModule =
                     |? int DbArrowType.None
 
                 ORMArrowCall(src, tgt, parentId, arrowTypeId)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | :? RtApiDef as z ->
                 ORMApiDef(pid)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
 
-            | :? RtButton    as z -> ORMButton(pid)    |> ormUniqINGDP z
-            | :? RtLamp      as z -> ORMLamp(pid)      |> ormUniqINGDP z
-            | :? RtCondition as z -> ORMCondition(pid) |> ormUniqINGDP z
-            | :? RtAction    as z -> ORMAction(pid)    |> ormUniqINGDP z
+            | :? RtButton    as z -> ORMButton(pid)    |> ormUniqReplicate z
+            | :? RtLamp      as z -> ORMLamp(pid)      |> ormUniqReplicate z
+            | :? RtCondition as z -> ORMCondition(pid) |> ormUniqReplicate z
+            | :? RtAction    as z -> ORMAction(pid)    |> ormUniqReplicate z
 
 
             | :? RtApiCall as z ->
                 let apiDefId = guidDic[z.ApiDefGuid].Id.Value
                 let valueParam = z.ValueSpec |-> _.Jsonize() |? null
                 ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueParam)
-                |> ormUniqINGDP z
+                |> ormUniqReplicate z
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 

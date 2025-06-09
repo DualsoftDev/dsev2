@@ -43,14 +43,6 @@ module ORMTypesModule =
         /// Parent Id
         member val ParentId = Option<Id>.None with get, set
 
-    /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
-    let toOrmUniqINGDP (src:#Unique) (dst:#ORMUnique): #ORMUnique =
-        dst
-        |> uniqReplicate src
-        |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
-
-
-
     [<AbstractClass>]
     type ORMProjectEntity(?projectId:Id) =
         inherit ORMUnique(ParentId=projectId)
