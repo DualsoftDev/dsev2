@@ -137,6 +137,11 @@ module rec DsCompareObjects =
 
                 // System 의 works 에서 비교할 것이기 때문에 여기서 비교하면 중복 비교가 됨.
                 //yield! (x.Works, y.Works, criteria) |||> computeDiffList
+
+                yield! (x.Buttons,     y.Buttons,     criteria) |||> computeDiffRecursively
+                yield! (x.Lamps,       y.Lamps,       criteria) |||> computeDiffRecursively
+                yield! (x.Conditions,  y.Conditions,  criteria) |||> computeDiffRecursively
+                yield! (x.Actions,     y.Actions,     criteria) |||> computeDiffRecursively
             }
 
     type RtWork with // ComputeDiff
@@ -214,6 +219,30 @@ module rec DsCompareObjects =
                 if x.Type <> y.Type then yield Diff("Type", x, y)
             }
 
+    type RtButton with // ComputeDiff
+        member x.ComputeDiff(y:RtButton, criteria:Ucc): Ucr seq =
+            seq {
+                yield! x.ComputeDiffUnique(y, criteria)
+            }
+    type RtLamp with // ComputeDiff
+        member x.ComputeDiff(y:RtLamp, criteria:Ucc): Ucr seq =
+            seq {
+                yield! x.ComputeDiffUnique(y, criteria)
+            }
+    type RtCondition with // ComputeDiff
+        member x.ComputeDiff(y:RtCondition, criteria:Ucc): Ucr seq =
+            seq {
+                yield! x.ComputeDiffUnique(y, criteria)
+            }
+    type RtAction with // ComputeDiff
+        member x.ComputeDiff(y:RtAction, criteria:Ucc): Ucr seq =
+            seq {
+                yield! x.ComputeDiffUnique(y, criteria)
+            }
+
+
+
+
     type IRtUnique with // ComputeDiff, IsEqual
         member internal x.ComputeDiff(y:IRtUnique, criteria:Ucc): Ucr seq =
             seq {
@@ -225,6 +254,12 @@ module rec DsCompareObjects =
                 | (:? RtCall    as u), (:? RtCall    as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? RtApiDef  as u), (:? RtApiDef  as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? RtApiCall as u), (:? RtApiCall as v)  -> yield! u.ComputeDiff(v, criteria)
+
+                | (:? RtButton    as u), (:? RtButton    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? RtLamp      as u), (:? RtLamp      as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? RtCondition as u), (:? RtCondition as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? RtAction    as u), (:? RtAction    as v)  -> yield! u.ComputeDiff(v, criteria)
+
                 | (:? RtArrowBetweenWorks as u), (:? RtArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? RtArrowBetweenCalls as u), (:? RtArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)
 
@@ -232,5 +267,6 @@ module rec DsCompareObjects =
             }
         member x.IsEqual(y:RtProject, ?criteria:Ucc) =
             let criteria = criteria |? Ucc()
+            let xxx = x.ComputeDiff(y, criteria).ToArray()
             x.ComputeDiff(y, criteria)
             |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working

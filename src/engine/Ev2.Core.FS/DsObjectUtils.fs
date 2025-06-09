@@ -119,7 +119,7 @@ module rec TmpCompatibility =
 
 
 
-    type RtFlow with    // AddWorks, RemoveWorks
+    type RtFlow with    // {Add/Remove}{Works, Buttons, Lamps, Conditions, Actions}
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
         member x.AddWorks(ws:RtWork seq) =
             x.UpdateDateTime()

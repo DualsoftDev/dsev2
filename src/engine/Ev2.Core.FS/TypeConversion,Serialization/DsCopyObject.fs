@@ -37,8 +37,9 @@ module internal rec DsObjectCopyImpl =
                 (actives @ passives) |> iter (fun (s:RtSystem) -> setParentI z s)
                 prototypes |> z.RawPrototypeSystems.AddRange
                 actives    |> z.RawActiveSystems   .AddRange
-                passives   |> z.RawPassiveSystems  .AddRange )
+                passives   |> z.RawPassiveSystems  .AddRange)
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
             |> validateRuntime
 
@@ -68,8 +69,9 @@ module internal rec DsObjectCopyImpl =
                 s.Author        <- x.Author
                 s.EngineVersion <- x.EngineVersion
                 s.LangVersion   <- x.LangVersion
-                s.Description   <- x.Description
-            ) |> tee(fun z -> bag.Newbies[guid] <- z)
+                s.Description   <- x.Description )
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
+            |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
     type RtWork with // replicate
@@ -94,6 +96,7 @@ module internal rec DsObjectCopyImpl =
             RtWork.Create(calls, arrows, flow)
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
             |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun w ->
                 w.Status4    <- x.Status4
                 w.Motion     <- x.Motion
@@ -116,6 +119,7 @@ module internal rec DsObjectCopyImpl =
 
             RtFlow(buttons, lamps, conditions, actions)
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -124,6 +128,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             RtButton()
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -132,6 +137,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             RtLamp()
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -140,6 +146,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             RtCondition()
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -148,6 +155,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             RtAction()
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -175,6 +183,7 @@ module internal rec DsObjectCopyImpl =
             RtApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress,
                       x.InSymbol, x.OutSymbol, x.ValueSpec)
             |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
     type RtApiDef with // replicate
@@ -182,6 +191,7 @@ module internal rec DsObjectCopyImpl =
             let guid = bag.Add(x)
             RtApiDef(x.IsPush)
             |> fromUniqINGD x |> uniqGuid guid
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -192,6 +202,7 @@ module internal rec DsObjectCopyImpl =
             let target = bag.Newbies[x.Target.Guid] :?> RtWork
             RtArrowBetweenWorks(source, target, x.Type)
             |> uniqINGDA x.Id x.Name guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
@@ -202,6 +213,7 @@ module internal rec DsObjectCopyImpl =
             let target = bag.Newbies[x.Target.Guid] :?> RtCall
             RtArrowBetweenCalls(source, target, x.Type)
             |> uniqINGDA x.Id x.Name guid x.DateTime x.Parameter
+            |> tee(fun z -> x.RtObject <- Some z; z.RtObject <- Some x)
             |> tee(fun z -> bag.Newbies[guid] <- z)
 
 [<AutoOpen>]

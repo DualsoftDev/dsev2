@@ -518,8 +518,13 @@ module SchemaTestModule =
             let c1, c2 = w.Calls[0], w.Calls[0]
             let arrow = RtArrowBetweenCalls(c1, c2, DbArrowType.Start)
             w.AddArrows([arrow])
+
+            let f = dsProject2.Systems[0].Flows[0]
+            let button = RtButton(Name="NewButton")
+            f.AddButtons( [ button ])
             let diff = dsProject.ComputeDiff(dsProject2) |> toList
             diff |> contains (RightOnly(arrow)) === true
+            diff |> contains (RightOnly(button)) === true
             noop()
 
         do

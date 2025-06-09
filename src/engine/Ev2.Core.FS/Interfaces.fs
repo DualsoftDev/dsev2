@@ -162,8 +162,13 @@ module rec DsObjectModule =
 
 
 
-    type RtFlow(buttons:RtButton seq, lamps:RtLamp seq, conditions:RtCondition seq, actions:RtAction seq) =
+    type RtFlow(buttons:RtButton seq, lamps:RtLamp seq, conditions:RtCondition seq, actions:RtAction seq) as this =
         inherit RtSystemEntity()
+        do
+            buttons    |> iter (fun z -> z.RawParent <- Some this)
+            lamps      |> iter (fun z -> z.RawParent <- Some this)
+            conditions |> iter (fun z -> z.RawParent <- Some this)
+            actions    |> iter (fun z -> z.RawParent <- Some this)
 
         interface IRtFlow
         member val internal RawButtons    = ResizeArray buttons

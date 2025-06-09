@@ -377,13 +377,10 @@ module internal Sqlite2DsImpl =
                         let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
                         let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
 
-                        failwith "ERROR: fix me..."
                         let buttons    = ormButtons    |-> (fun z -> RtButton    ()) |> toArray    //.Create
                         let lamps      = ormLamps      |-> (fun z -> RtLamp      ()) |> toArray    //.Create
                         let conditions = ormConditions |-> (fun z -> RtCondition ()) |> toArray    //.Create
                         let actions    = ormActions    |-> (fun z -> RtAction    ()) |> toArray    //.Create
-
-
 
                         RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
                         |> fromUniqINGD ormFlow
