@@ -23,6 +23,11 @@ module DsRuntimeObjectInterfaceModule =
     type IRtApiCall = inherit IRtUnique inherit IDsApiCall
     type IRtApiDef  = inherit IRtUnique inherit IDsApiDef
 
+    type IRtButton    = inherit IRtUnique inherit IDsButton
+    type IRtLamp      = inherit IRtUnique inherit IDsLamp
+    type IRtCondition = inherit IRtUnique inherit IDsCondition
+    type IRtAction    = inherit IRtUnique inherit IDsAction
+
 
 [<AutoOpen>]
 module rec DsObjectModule =
@@ -31,6 +36,44 @@ module rec DsObjectModule =
         inherit Unique()
         interface IRtUnique
 
+    (* RtXXXEntity 들의 멤버는 serialize 대상 아님 *)
+
+    [<AbstractClass>]
+    type RtProjectEntity() =
+        inherit RtUnique()
+        member x.Project = x.RawParent >>= tryCast<RtProject>
+
+    /// RtSystem 객체에 포함되는 member 들이 상속할 base class.  e.g RtFlow, RtWork, RtArrowBetweenWorks, RtApiDef, RtApiCall
+    [<AbstractClass>]
+    type RtSystemEntity() =
+        inherit RtUnique()
+        member x.System  = x.RawParent >>= tryCast<RtSystem>
+        member x.Project = x.RawParent >>= _.RawParent >>= tryCast<RtProject>
+
+    [<AbstractClass>]
+    type RtFlowEntity() =
+        inherit RtUnique()
+        member x.Flow    = x.RawParent >>= tryCast<RtFlow>
+        member x.System  = x.RawParent >>= _.RawParent >>= tryCast<RtSystem>
+        member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<RtProject>
+
+    [<AbstractClass>]
+    type RtWorkEntity() =
+        inherit RtUnique()
+        member x.Work    = x.RawParent >>= tryCast<RtWork>
+        member x.System  = x.RawParent >>= _.RawParent >>= tryCast<RtSystem>
+        member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<RtProject>
+
+    [<AbstractClass>]
+    type RtCallEntity() =
+        inherit RtUnique()
+        member x.Call    = x.RawParent >>= tryCast<RtCall>
+        member x.Work    = x.RawParent >>= _.RawParent >>= tryCast<RtWork>
+        member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<RtSystem>
+        member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<RtProject>
+
+
+
     type internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) =
         member val Source = source with get, set
         member val Target = target with get, set
@@ -38,7 +81,7 @@ module rec DsObjectModule =
 
     /// Call 간 화살표 연결.  Work 내에 존재
     type RtArrowBetweenCalls(source:RtCall, target:RtCall, typ:DbArrowType) =
-        inherit RtUnique()
+        inherit RtWorkEntity()
         let arrow = Arrow<RtCall>(source, target, typ)
 
         interface IRtArrow
@@ -46,9 +89,9 @@ module rec DsObjectModule =
         member x.Target with get() = arrow.Target and set v = arrow.Target <- v
         member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
-    /// Work 간 화살표 연결.  System 이나 Flow 내에 존재
+    /// Work 간 화살표 연결.  System 내에 존재
     type RtArrowBetweenWorks(source:RtWork, target:RtWork, typ:DbArrowType) =
-        inherit RtUnique()
+        inherit RtSystemEntity()
         let arrow = Arrow<RtWork>(source, target, typ)
 
         interface IRtArrow
@@ -91,7 +134,7 @@ module rec DsObjectModule =
     type RtSystem internal(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
             arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
     ) =
-        inherit RtUnique()
+        inherit RtProjectEntity()
 
         (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
@@ -111,9 +154,6 @@ module rec DsObjectModule =
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
 
-        // serialize 대상 아님
-        member x.Project = x.RawParent >>= tryCast<RtProject>
-
         member x.Flows    = x.RawFlows    |> toList
         member x.Works    = x.RawWorks    |> toList
         member x.Arrows   = x.RawArrows   |> toList
@@ -122,12 +162,21 @@ module rec DsObjectModule =
 
 
 
-    type RtFlow() =
-        inherit RtUnique()
+    type RtFlow(buttons:RtButton seq, lamps:RtLamp seq, conditions:RtCondition seq, actions:RtAction seq) =
+        inherit RtSystemEntity()
 
         interface IRtFlow
+        member val internal RawButtons    = ResizeArray buttons
+        member val internal RawLamps      = ResizeArray lamps
+        member val internal RawConditions = ResizeArray conditions
+        member val internal RawActions    = ResizeArray actions
 
         member x.System = x.RawParent >>= tryCast<RtSystem>
+
+        member x.Buttons    = x.RawButtons    |> toList
+        member x.Lamps      = x.RawLamps      |> toList
+        member x.Conditions = x.RawConditions |> toList
+        member x.Actions    = x.RawActions    |> toList
 
         member x.Works:RtWork[] =
             x.System
@@ -137,9 +186,30 @@ module rec DsObjectModule =
                 |> toArray)
             |? [||]
 
+    type RtButton() =
+        inherit RtFlowEntity()
+
+        interface IRtButton
+
+    type RtLamp() =
+        inherit RtFlowEntity()
+
+        interface IRtLamp
+
+    type RtCondition() =
+        inherit RtFlowEntity()
+
+        interface IRtCondition
+
+    type RtAction() =
+        inherit RtFlowEntity()
+
+        interface IRtAction
+
+
     // see static member Create
     type RtWork internal(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) as this =
-        inherit RtUnique()
+        inherit RtSystemEntity()
         do
             calls  |> iter (setParentI this)
             arrows |> iter (setParentI this)
@@ -160,12 +230,11 @@ module rec DsObjectModule =
 
         member x.Calls  = x.RawCalls  |> toList
         member x.Arrows = x.RawArrows |> toList
-        member x.System = x.RawParent >>= tryCast<RtSystem>
 
 
     // see static member Create
     type RtCall(callType:DbCallType, apiCallGuids:Guid seq, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option) =
-        inherit RtUnique()
+        inherit RtWorkEntity()
         interface IRtCall
         member val CallType   = callType   with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
         member val IsDisabled = isDisabled with get, set
@@ -175,7 +244,6 @@ module rec DsObjectModule =
         member val ApiCallGuids = ResizeArray apiCallGuids    // DB 저장시에는 callId 로 저장
         member val Status4 = Option<DbStatus4>.None with get, set
 
-        member x.Work = x.RawParent >>= tryCast<RtWork>
         member x.ApiCalls =
             let sys = (x.RawParent >>= _.RawParent).Value :?> RtSystem
             sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
@@ -187,7 +255,7 @@ module rec DsObjectModule =
                    inSymbol:string, outSymbol:string,
                    valueSpec:IValueSpec option
     ) =
-        inherit RtUnique()
+        inherit RtSystemEntity()
         interface IRtApiCall
         member val ApiDefGuid = apiDefGuid  with get, set
         member val InAddress  = inAddress   with get, set
@@ -198,7 +266,6 @@ module rec DsObjectModule =
         member val ValueSpec = valueSpec with get, set
 
 
-        member x.System   = x.RawParent >>= tryCast<RtSystem>
         /// system 에서 현재 ApiCall 을 호출하는 Call 들
         member x.Callers:RtCall[] =
             x.System
@@ -217,7 +284,7 @@ module rec DsObjectModule =
 
 
     type RtApiDef(isPush:bool) =
-        inherit RtUnique()
+        inherit RtSystemEntity()
         interface IRtApiDef
 
         member val IsPush = isPush

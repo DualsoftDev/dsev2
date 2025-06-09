@@ -30,6 +30,12 @@ module Interfaces =
     type IDsApiCall = inherit IDsObject
     type IDsApiDef  = inherit IDsObject
 
+    type IDsButton    = inherit IDsObject
+    type IDsLamp      = inherit IDsObject
+    type IDsCondition = inherit IDsObject
+    type IDsAction    = inherit IDsObject
+
+
     /// Runtime 객체 인터페이스
     type IRtObject  = inherit IDsObject
     type IRtUnique  = inherit IRtObject inherit IUnique

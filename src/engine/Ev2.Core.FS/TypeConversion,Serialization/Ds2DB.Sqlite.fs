@@ -91,7 +91,38 @@ module internal Ds2SqliteImpl =
             ormFlow.Id <- Some flowId
             assert (cache[f.Guid] = ormFlow)
 
+
+            let insertFlowElement (tableName:string) (rtX:#RtFlowEntity, ormX:#ORMFlowEntity) =
+                    ormX.FlowId <- Some flowId
+                    let xId =
+                        conn.Insert($"""INSERT INTO {tableName}
+                                        (guid, parameter, dateTime, name, flowId)
+                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @FlowId);""", ormX, tr)
+                    rtX.Id <- Some xId
+                    ormX.Id <- Some xId
+                    assert (cache[rtX.Guid] = ormX)
+                    ()
+
             // TODO : arrow 처리.  System, flow, work 공히...
+
+
+            //for x in f.Buttons do
+            //    let ormX = x.ToORM<ORMButton>(dbApi, cache)
+            //    ormX.FlowId <- Some flowId
+            //    let buttonId =
+            //        conn.Insert($"""INSERT INTO {Tn.Button}
+            //                        (guid, parameter, dateTime, name, flowId)
+            //                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @FlowId);""", ormX, tr)
+            //    x.Id <- Some buttonId
+            //    ormX.Id <- Some buttonId
+            //    assert (cache[x.Guid] = ormX)
+            f.Buttons    |-> (fun z -> z, z.ToORM<ORMButton>   (dbApi, cache)) |> iter (insertFlowElement Tn.Button)
+            f.Lamps      |-> (fun z -> z, z.ToORM<ORMLamp>     (dbApi, cache)) |> iter (insertFlowElement Tn.Lamp)
+            f.Conditions |-> (fun z -> z, z.ToORM<ORMCondition>(dbApi, cache)) |> iter (insertFlowElement Tn.Condition)
+            f.Actions    |-> (fun z -> z, z.ToORM<ORMAction>   (dbApi, cache)) |> iter (insertFlowElement Tn.Action)
+
+
+
             //f.Arrows
 
         // system 의 apiDefs 를 삽입
@@ -114,7 +145,7 @@ module internal Ds2SqliteImpl =
         // system 의 apiCalls 를 삽입
         for rtAc in s.ApiCalls do
             let ormApiCall = rtAc.ToORM<ORMApiCall>(dbApi, cache)
-            ormApiCall.SystemId <- sysId
+            ormApiCall.SystemId <- Some sysId
 
             let r = conn.Upsert(Tn.ApiCall, ormApiCall,
                         [   "Guid"; "Parameter"; "DateTime"; "Name"
@@ -224,6 +255,9 @@ module internal Ds2SqliteImpl =
                 //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
                 conn.Execute($"DELETE FROM {Tn.Project} WHERE id = {id}", tr) |> ignore
                 //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
+
+                tr.Commit()
+                failwith "ERROR"
             | _ -> ()
 
             let guidDic, ormProject = proj.ToORM(dbApi)
@@ -334,11 +368,25 @@ module internal Sqlite2DsImpl =
                 let edFlows = [
                     let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
 
-                    for orm in orms do
-                        bag.DbDic.Add(guid2str orm.Guid, orm) |> ignore
+                    for ormFlow in orms do
+                        bag.DbDic.Add(guid2str ormFlow.Guid, ormFlow) |> ignore
 
-                        RtFlow(RawParent = Some s)
-                        |> fromUniqINGD orm
+                        let f = {| FlowId = ormFlow.Id |}
+                        let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE flowId = @FlowId", f,  tr)
+                        let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE flowId = @FlowId", f,  tr)
+                        let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
+                        let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
+
+                        failwith "ERROR: fix me..."
+                        let buttons    = ormButtons    |-> (fun z -> RtButton    ()) |> toArray    //.Create
+                        let lamps      = ormLamps      |-> (fun z -> RtLamp      ()) |> toArray    //.Create
+                        let conditions = ormConditions |-> (fun z -> RtCondition ()) |> toArray    //.Create
+                        let actions    = ormActions    |-> (fun z -> RtAction    ()) |> toArray    //.Create
+
+
+
+                        RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
+                        |> fromUniqINGD ormFlow
                         |> tee (fun z -> bag.RtDic.Add(z.Guid, z) )
                 ]
                 edFlows |> s.AddFlows

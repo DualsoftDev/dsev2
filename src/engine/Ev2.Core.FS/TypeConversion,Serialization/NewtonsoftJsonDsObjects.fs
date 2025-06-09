@@ -25,6 +25,13 @@ module NewtonsoftJsonModules =
     type INjApiDef  = inherit INjUnique inherit IDsApiDef
     type INjArrow   = inherit INjUnique inherit IArrow
 
+    type INjButton    = inherit INjUnique inherit IDsButton
+    type INjLamp      = inherit INjUnique inherit IDsLamp
+    type INjCondition = inherit INjUnique inherit IDsCondition
+    type INjAction    = inherit INjUnique inherit IDsAction
+
+
+
     [<AbstractClass>]
     type NjUnique() as this =
         inherit Unique()
@@ -60,6 +67,43 @@ module rec NewtonsoftJsonObjects =
         dst
 
 
+    [<AbstractClass>]
+    type NjProjectEntity() =
+        inherit NjUnique()
+        member x.Project = x.RawParent >>= tryCast<NjProject>
+
+    /// NjSystem 객체에 포함되는 member 들이 상속할 base class.  e.g NjFlow, NjWork, NjArrowBetweenWorks, NjApiDef, NjApiCall
+    [<AbstractClass>]
+    type NjSystemEntity() =
+        inherit NjUnique()
+        member x.System  = x.RawParent >>= tryCast<NjSystem>
+        member x.Project = x.RawParent >>= _.RawParent >>= tryCast<NjProject>
+
+    [<AbstractClass>]
+    type NjFlowEntity() =
+        inherit NjUnique()
+        member x.Flow    = x.RawParent >>= tryCast<NjFlow>
+        member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
+
+    [<AbstractClass>]
+    type NjWorkEntity() =
+        inherit NjUnique()
+        member x.Work    = x.RawParent >>= tryCast<NjWork>
+        member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
+
+    [<AbstractClass>]
+    type NjCallEntity() =
+        inherit NjUnique()
+        member x.Call    = x.RawParent >>= tryCast<NjCall>
+        member x.Work    = x.RawParent >>= _.RawParent >>= tryCast<NjWork>
+        member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
+
+
+
+
     type ReferenceInstance = {
         InstanceName: string
         PrototypeGuid: Guid
@@ -92,7 +136,7 @@ module rec NewtonsoftJsonObjects =
 
 
     type NjSystem() =
-        inherit NjUnique()
+        inherit NjProjectEntity()
         interface INjSystem
 
 
@@ -142,15 +186,65 @@ module rec NewtonsoftJsonObjects =
             )
 
     type NjFlow () =
-        inherit NjUnique()
+        inherit NjSystemEntity()
         interface INjFlow
+
+        [<JsonProperty(Order = 101)>] member val Buttons    = [||]:NjButton    []    with get, set
+        [<JsonProperty(Order = 102)>] member val Lamps      = [||]:NjLamp      []    with get, set
+        [<JsonProperty(Order = 103)>] member val Conditions = [||]:NjCondition []    with get, set
+        [<JsonProperty(Order = 104)>] member val Actions    = [||]:NjAction    []    with get, set
+
+        member x.ShouldSerializeButtons    () = x.Buttons   .NonNullAny()
+        member x.ShouldSerializeLamps      () = x.Lamps     .NonNullAny()
+        member x.ShouldSerializeConditions () = x.Conditions.NonNullAny()
+        member x.ShouldSerializeActions    () = x.Actions   .NonNullAny()
+
 
         static member FromRuntime(rt:RtFlow) =
             NjFlow()
             |> fromNjUniqINGD rt
+            |> tee(fun z ->
+                z.Buttons    <- rt.Buttons    |-> NjButton   .FromRuntime |> toArray
+                z.Lamps      <- rt.Lamps      |-> NjLamp     .FromRuntime |> toArray
+                z.Conditions <- rt.Conditions |-> NjCondition.FromRuntime |> toArray
+                z.Actions    <- rt.Actions    |-> NjAction   .FromRuntime |> toArray
+            )
+
+    type NjButton() =
+        inherit NjFlowEntity()
+
+        interface INjButton
+        static member FromRuntime(rt:RtButton) =
+            NjButton()
+            |> fromNjUniqINGD rt
+
+    type NjLamp() =
+        inherit NjFlowEntity()
+
+        interface INjLamp
+        static member FromRuntime(rt:RtLamp) =
+            NjLamp()
+            |> fromNjUniqINGD rt
+
+    type NjCondition() =
+        inherit NjFlowEntity()
+
+        interface INjCondition
+        static member FromRuntime(rt:RtCondition) =
+            NjCondition()
+            |> fromNjUniqINGD rt
+
+    type NjAction() =
+        inherit NjFlowEntity()
+
+        interface INjAction
+        static member FromRuntime(rt:RtAction) =
+            NjAction()
+            |> fromNjUniqINGD rt
+
 
     type NjWork () =
-        inherit NjUnique()
+        inherit NjSystemEntity()
         interface INjWork
         member val FlowGuid = null:string with get, set
         member val Motion     = nullString with get, set
@@ -207,7 +301,7 @@ module rec NewtonsoftJsonObjects =
             )
 
     type NjCall() =
-        inherit NjUnique()
+        inherit NjWorkEntity()
 
         interface INjCall
         member val CallType = DbCallType.Normal.ToString() with get, set
@@ -237,7 +331,7 @@ module rec NewtonsoftJsonObjects =
 
 
     type NjApiCall() =
-        inherit NjUnique()
+        inherit NjSystemEntity()
 
         interface INjApiCall
         member val ApiDef     = emptyGuid  with get, set
@@ -255,7 +349,7 @@ module rec NewtonsoftJsonObjects =
             |> fromNjUniqINGD rt
 
     type NjApiDef() =
-        inherit NjUnique()
+        inherit NjSystemEntity()
         interface INjApiDef
 
         member val IsPush = false with get, set
@@ -461,7 +555,27 @@ module rec NewtonsoftJsonObjects =
                 |> fromUniqINGD njs
 
         | :? NjFlow as njf ->
-            njf.RuntimeObject <- RtFlow() |> fromUniqINGD njf
+            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- RtButton()     |> fromUniqINGD z)
+            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- RtLamp()       |> fromUniqINGD z)
+            njf.Conditions |> iter (fun z -> z.RuntimeObject <- RtCondition()  |> fromUniqINGD z)
+            njf.Actions    |> iter (fun z -> z.RuntimeObject <- RtAction()     |> fromUniqINGD z)
+
+
+
+            let buttons    = njf.Buttons    |-> (fun z -> z.RuntimeObject :?> RtButton)
+            let lamps      = njf.Lamps      |-> (fun z -> z.RuntimeObject :?> RtLamp)
+            let conditions = njf.Conditions |-> (fun z -> z.RuntimeObject :?> RtCondition)
+            let actions    = njf.Actions    |-> (fun z -> z.RuntimeObject :?> RtAction)
+
+            let rtFlow = RtFlow(buttons, lamps, conditions, actions) |> fromUniqINGD njf
+            let all:NjUnique seq =
+                njf.Buttons     .Cast<NjUnique>()
+                @ njf.Lamps     .Cast<NjUnique>()
+                @ njf.Conditions.Cast<NjUnique>()
+                @ njf.Actions   .Cast<NjUnique>()
+            all |> iter (fun z -> z.RawParent <- Some njf)
+
+            njf.RuntimeObject <-  rtFlow
             ()
 
         | :? NjWork as njw ->
@@ -519,6 +633,14 @@ module rec NewtonsoftJsonObjects =
                 |> fromUniqINGD njad
             ()
 
+
+        | :? NjButton as njx ->
+            njx.RuntimeObject <-
+                RtButton()
+                |> fromUniqINGD njx
+
+
+
         | _ -> failwith "ERROR.  확장 필요?"
 
 
@@ -528,7 +650,6 @@ module rec NewtonsoftJsonObjects =
 module Ds2JsonModule =
     /// Runtime 객체의 validation
     let internal validateRuntime (rtObj:#RtUnique): #RtUnique =
-        let xxx = rtObj.EnumerateRtObjects() |> toArray
         let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, id)
         rtObj.Validate(guidDic)
         rtObj

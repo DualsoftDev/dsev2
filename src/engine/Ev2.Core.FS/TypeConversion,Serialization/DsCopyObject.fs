@@ -43,15 +43,6 @@ module internal rec DsObjectCopyImpl =
             |> validateRuntime
 
 
-    /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
-    type RtFlow with // replicate
-        member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-
-            RtFlow()
-            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
-            |> tee(fun z -> bag.Newbies[guid] <- z)
-
     type RtSystem with // replicate
         member x.replicate(bag:ReplicateBag) =
             let guid = bag.Add(x)
@@ -111,6 +102,62 @@ module internal rec DsObjectCopyImpl =
                 w.NumRepeat  <- x.NumRepeat
                 w.Period     <- x.Period
                 w.Delay      <- x.Delay )
+
+
+    /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
+    type RtFlow with // replicate
+        member x.replicate(bag:ReplicateBag) =
+            let guid = bag.Add(x)
+
+            let buttons    = x.Buttons    |-> _.replicate(bag) |> toArray
+            let lamps      = x.Lamps      |-> _.replicate(bag) |> toArray
+            let conditions = x.Conditions |-> _.replicate(bag) |> toArray
+            let actions    = x.Actions    |-> _.replicate(bag) |> toArray
+
+            RtFlow(buttons, lamps, conditions, actions)
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> bag.Newbies[guid] <- z)
+
+
+    type RtButton with // replicate
+        member x.replicate(bag:ReplicateBag) =
+            let guid = bag.Add(x)
+            RtButton()
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> bag.Newbies[guid] <- z)
+
+
+    type RtLamp with // replicate
+        member x.replicate(bag:ReplicateBag) =
+            let guid = bag.Add(x)
+            RtLamp()
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> bag.Newbies[guid] <- z)
+
+
+    type RtCondition with // replicate
+        member x.replicate(bag:ReplicateBag) =
+            let guid = bag.Add(x)
+            RtCondition()
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> bag.Newbies[guid] <- z)
+
+
+    type RtAction with // replicate
+        member x.replicate(bag:ReplicateBag) =
+            let guid = bag.Add(x)
+            RtAction()
+            |> uniqNGDA (nn x.Name) guid x.DateTime x.Parameter
+            |> tee(fun z -> bag.Newbies[guid] <- z)
+
+
+
+
+
+
+
+
+
 
     type RtCall with // replicate
         member x.replicate(bag:ReplicateBag) =
@@ -174,7 +221,6 @@ module DsObjectCopyAPIModule =
 
             replica.OriginGuid <- Some x.Guid
             replica.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
-
 
             objs |> iter (fun obj ->
                 obj.Id <- None

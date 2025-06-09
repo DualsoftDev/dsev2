@@ -66,7 +66,14 @@ module CreateSampleModule =
                     z.OutSymbol <- "YTag2")
             [edApiCall1a; edApiCall1b] |> edSystem.AddApiCalls
 
-            edFlow    <- RtFlow   (Name = "MainFlow")
+            edFlow <-
+                RtFlow.Create(Name = "MainFlow")
+                |> tee (fun z ->
+                    z.AddButtons    [ RtButton   (Name="MyButton1")]
+                    z.AddLamps      [ RtLamp     (Name="MyLamp1")]
+                    z.AddConditions [ RtCondition(Name="MyCondition1")]
+                    z.AddActions    [ RtAction   (Name="MyAction1")]
+                    )
             edWork1 <-
                 RtWork.Create()
                 |> tee (fun z ->

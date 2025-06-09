@@ -40,7 +40,7 @@ module CreateSampleWithCylinderModule =
                     )
 
             edSystemCyl  <- RtSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
-            edFlowCyl    <- RtFlow   (Name = "CylFlow")
+            edFlowCyl    <- RtFlow.Create(Name = "CylFlow")
             edWork1Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
             edWork2Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlowCyl)
 

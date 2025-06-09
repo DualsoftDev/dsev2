@@ -19,6 +19,13 @@ module ORMTypesModule =
     type IORMArrowWork  = inherit IORMArrow
     type IORMArrowCall  = inherit IORMArrow
 
+    type IORMButton     = inherit IORMUnique
+    type IORMLamp       = inherit IORMUnique
+    type IORMCondition  = inherit IORMUnique
+    type IORMAction     = inherit IORMUnique
+
+
+
     type IORMApiCall    = inherit IORMUnique
     type IORMApiDef     = inherit IORMUnique
     type IORMParamWork  = inherit IORMUnique
@@ -44,6 +51,41 @@ module ORMTypesModule =
         dst.RtObject <- Some src
         src.ORMObject <- Some dst
         dst
+
+
+
+    [<AbstractClass>]
+    type ORMProjectEntity(?projectId:Id) =
+        inherit ORMUnique(ParentId=projectId)
+        member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
+
+    [<AbstractClass>]
+    type ORMSystemEntity(systemId:Id) =
+        inherit ORMUnique(ParentId=Some systemId)
+        member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
+
+    [<AbstractClass>]
+    type ORMFlowEntity(flowId:Id) =
+        inherit ORMUnique(ParentId=Some flowId)
+        member x.FlowId with get() = x.ParentId and set v = x.ParentId <- v
+
+    [<AbstractClass>]
+    type ORMWorkEntity(workId:Id) =
+        inherit ORMUnique(ParentId=Some workId)
+        member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
+
+    [<AbstractClass>]
+    type ORMCallEntity(callId:Id) =
+        inherit ORMUnique(ParentId=Some callId)
+        member x.CallId with get() = x.ParentId and set v = x.ParentId <- v
+
+
+
+
+
+
+
+
 
 
 
@@ -82,7 +124,7 @@ module ORMTypesModule =
 
 
     type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string) =
-        inherit ORMUnique()
+        inherit ORMProjectEntity()
 
         new() = ORMSystem(nullableId, emptyGuid, nullString, nullString, nullVersion, nullVersion, nullString)
         interface IORMSystem
@@ -96,14 +138,40 @@ module ORMTypesModule =
         member val OriginGuid = originGuid with get, set
 
     type ORMFlow(systemId:Id) =
-        inherit ORMUnique(ParentId=Some systemId)
+        inherit ORMWorkEntity(systemId)
 
         new() = ORMFlow(-1)
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
+
+    type ORMButton(flowId:Id) =
+        inherit ORMFlowEntity(flowId)
+
+        new() = ORMButton(-1)
+        interface IORMButton
+
+    type ORMLamp(flowId:Id) =
+        inherit ORMFlowEntity(flowId)
+
+        new() = ORMLamp(-1)
+        interface IORMLamp
+
+    type ORMCondition(flowId:Id) =
+        inherit ORMFlowEntity(flowId)
+
+        new() = ORMCondition(-1)
+        interface IORMCondition
+
+    type ORMAction(flowId:Id) =
+        inherit ORMFlowEntity(flowId)
+
+        new() = ORMAction(-1)
+        interface IORMAction
+
+
     type ORMWork(systemId:Id, status4Id:Nullable<Id>, flowId:Nullable<Id>) =
-        inherit ORMUnique(ParentId=Some systemId)
+        inherit ORMSystemEntity(systemId)
 
         new() = ORMWork(-1, nullableId, nullableId)
         interface IORMWork
@@ -116,10 +184,9 @@ module ORMTypesModule =
         member val Period     = 0          with get, set
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
-        member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
     type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:Nullable<int>) =
-        inherit ORMUnique(ParentId=Some workId)
+        inherit ORMWorkEntity(workId)
 
         new() = ORMCall(-1, nullableId, (DbCallType.Normal |> int64 |> Nullable), [], [], false, nullableInt)
         interface IORMCall
@@ -154,11 +221,10 @@ module ORMTypesModule =
     type ORMApiCall(systemId:Id, apiDefId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string,
         valueSpec:string
     ) =
-        inherit ORMUnique(ParentId=Some systemId)
+        inherit ORMSystemEntity(systemId)
 
         new() = ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString)
         interface IORMApiCall
-        member val SystemId = systemId with get, set
         member val ApiDefId = apiDefId with get, set
 
         member val InAddress   = inAddress   with get, set
@@ -174,11 +240,10 @@ module ORMTypesModule =
 
 
     type ORMApiDef(systemId:Id) =
-        inherit ORMUnique(ParentId=Some systemId)
+        inherit ORMSystemEntity(systemId)
 
         new() = ORMApiDef(-1)
         interface IORMApiDef
-        member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
         member val IsPush = false with get, set
 
 

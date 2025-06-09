@@ -34,6 +34,12 @@ module rec TmpCompatibility =
                 | :? RtWork as work ->
                     yield! work.Calls    >>= _.EnumerateRtObjects()
                     yield! work.Arrows   >>= _.EnumerateRtObjects()
+                | :? RtFlow as flow ->
+                    yield! flow.Buttons    >>= _.EnumerateRtObjects()
+                    yield! flow.Lamps      >>= _.EnumerateRtObjects()
+                    yield! flow.Conditions >>= _.EnumerateRtObjects()
+                    yield! flow.Actions    >>= _.EnumerateRtObjects()
+
                 | (:? RtCall) | (:? RtApiCall) | (:? RtApiDef) | (:? RtArrowBetweenWorks) | (:? RtArrowBetweenCalls)  ->
                     ()
                 | _ ->
@@ -123,6 +129,52 @@ module rec TmpCompatibility =
             x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- None)
 
+        member x.AddButtons(buttons:RtButton seq) =
+            x.UpdateDateTime()
+            buttons |> iter (setParentI x)
+            buttons |> verifyAddRangeAsSet x.RawButtons
+        member x.RemoveButtons(buttons:RtButton seq) =
+            x.UpdateDateTime()
+            buttons |> iter clearParentI
+            buttons |> iter (x.RawButtons.Remove >> ignore)
+
+
+        member x.AddLamps(lamps:RtLamp seq) =
+            x.UpdateDateTime()
+            lamps |> iter (setParentI x)
+            lamps |> verifyAddRangeAsSet x.RawLamps
+        member x.RemoveLamps(lamps:RtLamp seq) =
+            x.UpdateDateTime()
+            lamps |> iter clearParentI
+            lamps |> iter (x.RawLamps.Remove >> ignore)
+
+        member x.AddConditions(conditions:RtCondition seq) =
+            x.UpdateDateTime()
+            conditions |> iter (setParentI x)
+            conditions |> verifyAddRangeAsSet x.RawConditions
+        member x.RemoveConditions(conditions:RtCondition seq) =
+            x.UpdateDateTime()
+            conditions |> iter clearParentI
+            conditions |> iter (x.RawConditions.Remove >> ignore)
+
+        member x.AddActions(actions:RtAction seq) =
+            x.UpdateDateTime()
+            actions |> iter (setParentI x)
+            actions |> verifyAddRangeAsSet x.RawActions
+        member x.RemoveActions(actions:RtAction seq) =
+            x.UpdateDateTime()
+            actions |> iter clearParentI
+            actions |> iter (x.RawActions.Remove >> ignore)
+
+
+
+
+
+
+
+
+
+
     type RtWork with    // AddCalls, RemoveCalls, AddArrows, RemoveArrows
         member x.AddCalls(calls:RtCall seq) =
             x.UpdateDateTime()
@@ -194,6 +246,9 @@ module DsObjectUtilsModule =
                 apiCalls |> iter (setParentI z) )
 
         static member Create() = RtCall(DbCallType.Normal, [], [], [], false, None)
+
+    type RtFlow with
+        static member Create() = RtFlow([], [], [], [])
 
     type RtApiDef with
         static member Create() = RtApiDef(true)

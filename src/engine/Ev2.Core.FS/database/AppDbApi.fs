@@ -245,6 +245,13 @@ module ORMTypeConversionModule =
                 ORMApiDef(pid)
                 |> ormUniqINGDP z
 
+
+            | :? RtButton    as z -> ORMButton(pid)    |> ormUniqINGDP z
+            | :? RtLamp      as z -> ORMLamp(pid)      |> ormUniqINGDP z
+            | :? RtCondition as z -> ORMCondition(pid) |> ormUniqINGDP z
+            | :? RtAction    as z -> ORMAction(pid)    |> ormUniqINGDP z
+
+
             | :? RtApiCall as z ->
                 let apiDefId = guidDic[z.ApiDefGuid].Id.Value
                 let valueParam = z.ValueSpec |-> _.Jsonize() |? null
