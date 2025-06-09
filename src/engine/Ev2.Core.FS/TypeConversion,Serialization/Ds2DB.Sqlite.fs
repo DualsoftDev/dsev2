@@ -16,6 +16,8 @@ type DbObjectIdentifier =
     | ById of int
     | ByName of string
 
+
+[<AutoOpen>]
 module internal Ds2DbImpl =
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
@@ -291,8 +293,15 @@ module internal Ds2DbImpl =
         , onError)
 
 
+
+[<AutoOpen>]
+module internal DbUpdateImpl =
+    [<Obsolete("구현 필요")>]
+    let updateProjectToDB (proj:RtProject) (dbApi:AppDbApi) =
+        ()
+
+[<AutoOpen>]
 module internal Db2DsImpl =
-    open Ds2DbImpl
 
     //let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
     //    ()
@@ -580,7 +589,16 @@ module Ds2SqliteModule =
     type RtProject with // CommitToDB, CheckoutFromDB
         member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool) =
             initializeDDic dbApi
-            insertProjectToDB x dbApi removeExistingData
+            match dbApi.WithConn _.TryQuerySingle($"SELECT * FROM {Tn.Project} WHERE guid = @Guid", {| Guid = x.Guid |}) with
+            | Some _ ->
+                // 이미 존재하는 프로젝트는 업데이트
+                updateProjectToDB x dbApi
+            | None ->
+                // 신규 project 삽입
+                insertProjectToDB x dbApi removeExistingData
+
+        member x.RemoveFromDB(dbApi:AppDbApi) =
+            ()
 
         static member RTryCheckoutFromDB(identifier:DbObjectIdentifier, dbApi:AppDbApi):Result<RtProject, ErrorMessage> =
             initializeDDic dbApi
