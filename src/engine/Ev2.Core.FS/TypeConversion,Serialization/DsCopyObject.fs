@@ -216,7 +216,10 @@ module DsObjectCopyAPIModule =
         member x.Duplicate() =
             let oldies = x.EnumerateRtObjects().ToDictionary( _.Guid, id)
             let current = now()
-            let replicaSys = x.Replicate() |> tee(fun z -> z.DateTime <- current) |> validateRuntime
+            let replicaSys =
+                x.Replicate()
+                |> uniqGuid (newGuid()) |> uniqDateTime current |> uniqId None
+                |> validateRuntime
             let replicas = replicaSys.EnumerateRtObjects()
             let newGuids = replicas.ToDictionary( _.Guid, (fun _ -> newGuid()))
 
@@ -271,12 +274,12 @@ module DsObjectCopyAPIModule =
             x.replicate(ReplicateBag())
             |> validateRuntime
 
-
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
         member x.Duplicate(newName:string) =  // RtProject
             let actives  = x.ActiveSystems    |-> _.Duplicate()
             let passives = x.PassiveSystems   |-> _.Duplicate()
-            RtProject.Create(Name=newName)
+            RtProject.Create()
+            |> uniqReplicate x |> uniqName newName |> uniqGuid (newGuid()) |> uniqDateTime (now())  |> uniqId None
             |> tee (fun z ->
                 actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange
@@ -284,22 +287,10 @@ module DsObjectCopyAPIModule =
 
                 actives @ passives |> iter (fun s -> s.RawParent <- Some z)
 
-                z.Name        <- x.Name
-                z.Parameter   <- x.Parameter
                 z.Version     <- x.Version
                 z.Author      <- x.Author
                 z.Description <- x.Description
                 z.Database    <- x.Database )
-
-            //x.Replicate()
-            //|> tee(fun replicaPrj ->
-            //    replicaPrj.Guid <- newGuid()
-
-            //    replicaPrj.ActiveSystems @ replicaPrj.PassiveSystems
-            //    |> iter(fun z ->
-            //        z.IRI <- null // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
-            //        z.Guid <- newGuid()))
-
 
 
     /// fwdDuplicate <- duplicateUnique

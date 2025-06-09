@@ -256,9 +256,6 @@ module internal Ds2DbImpl =
                 //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
                 conn.Execute($"DELETE FROM {Tn.Project} WHERE id = {id}", tr) |> ignore
                 //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
-
-                tr.Commit()
-                failwith "ERROR"
             | _ -> ()
 
             let guidDic, ormProject = proj.ToORM(dbApi)

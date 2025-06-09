@@ -561,9 +561,10 @@ module SchemaTestModule =
         edProject.IsEqual dsProject === false
 
         let diff = edProject.ComputeDiff(dsProject) |> toList
-        diff.Length === 4
+        diff.Length === 5
         diff |> contains (Diff ("Guid", edProject, dsProject)) === true
         diff |> contains (Diff ("DateTime", edProject, dsProject)) === true
+        diff |> contains (Diff ("Name", edProject, dsProject)) === true
         diff |> contains (LeftOnly edProject.Systems[0]) === true
         diff |> contains (RightOnly dsProject.Systems[0]) === true
 

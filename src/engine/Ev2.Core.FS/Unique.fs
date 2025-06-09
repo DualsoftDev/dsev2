@@ -124,7 +124,7 @@ module internal UniqueHelpers =
             |> uniqName "KKKKKKKKKKKKK"
     *)
 
-    let linkUniq (src:#Unique) (dst:#Unique): #Unique=
+    let private linkUniq (src:#Unique) (dst:#Unique): #Unique=
         match box src with
         | :? IRtUnique  as s -> dst.RtObject  <- Some s
         | :? INjUnique  as s -> dst.NjObject  <- Some s
@@ -156,9 +156,9 @@ module internal UniqueHelpers =
         | _ -> ()
         dst
 
-    let private uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst
     let private uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
-    let private uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- dateTime); dst
+    let uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst
+    let uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- dateTime); dst
     let uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
     let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
     let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
