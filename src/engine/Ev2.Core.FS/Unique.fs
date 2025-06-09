@@ -168,8 +168,8 @@ module internal UniqueHelpers =
             // 'this'는 Unique 타입이라 강제로 캐스팅 필요
             let x = this :?> 'T
             x.Id <- None
-            x.Guid <- System.Guid.NewGuid()
-            x.DateTime <- System.DateTime.Now
+            x.Guid <- newGuid()
+            x.DateTime <- now()
             x
 
 

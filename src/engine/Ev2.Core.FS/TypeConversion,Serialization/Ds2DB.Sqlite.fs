@@ -236,8 +236,7 @@ module internal Ds2SqliteImpl =
         let rtObjs =
             proj.EnumerateRtObjects()
             |> List.cast<RtUnique>
-            |> tee(fun zs ->
-                zs |> iter bag.Add)
+            |> tees bag.Add
 
         let grDic = rtObjs |> groupByToDictionary _.GetType()
 
@@ -328,8 +327,7 @@ module internal Sqlite2DsImpl =
                 conn.Query<ORMMapProjectSystem>(
                     $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
                     {| ProjectId = ormProject.Id |}, tr)
-                |> tee (fun zs ->
-                    zs |> iter (fun z -> bag.DbDic.Add(guid2str z.Guid, z)) )
+                |> tees (fun z -> bag.DbDic.Add(guid2str z.Guid, z))
                 |> toArray
 
             let ormSystems =
@@ -337,8 +335,7 @@ module internal Sqlite2DsImpl =
 
                 conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
                     {| SystemIds = systemIds |}, tr)
-                |> tee (fun zs ->
-                    zs |> iter (fun z -> bag.DbDic.Add(guid2str z.Guid, z)) )
+                |> tees (fun z -> bag.DbDic.Add(guid2str z.Guid, z))
                 |> toArray
 
             let edProj =
