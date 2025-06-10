@@ -3,8 +3,6 @@ namespace Ev2.Core.FS
 open System
 open System.Data
 open System.IO
-open System.Data.SQLite
-open System.Linq
 open Dapper
 
 open Dual.Common.Db.FS
@@ -15,13 +13,6 @@ open System.Collections.Generic
 
 [<AutoOpen>]
 module DbApiModule =
-    type Db2RtBag() =
-        member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
-        member val RtDic = Dictionary<Guid, RtUnique>()
-        member x.Add(u:ORMUnique) = x.DbDic.TryAdd(guid2str u.Guid, u) |> ignore
-        member x.Add(u:RtUnique)  = x.RtDic.TryAdd(u.Guid, u) |> ignore
-
-
     /// 공용 캐시 초기화 함수
     let private createCache<'T> (venderDb:DcDbBase, tableName: string) =
         ResettableLazy<'T[]>(fun () ->
