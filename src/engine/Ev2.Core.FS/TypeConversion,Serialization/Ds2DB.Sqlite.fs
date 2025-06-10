@@ -48,10 +48,15 @@ module internal Db2DsImpl =
                 let conditions = ormConditions |-> (fun z -> RtCondition () |> replicateProperties z) |> toArray
                 let actions    = ormActions    |-> (fun z -> RtAction    () |> replicateProperties z) |> toArray
 
+                Trace.WriteLine $"DT: {rtSystem.DateTime}"
+
                 RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
                 |> replicateProperties ormFlow
         ]
-        rtFlows |> s.AddFlows
+
+        Trace.WriteLine $"DT1: {rtSystem.DateTime}"
+        rtFlows |> s.addFlows
+        Trace.WriteLine $"DT2: {rtSystem.DateTime}"
 
         let rtApiDefs = [
             let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
@@ -61,7 +66,7 @@ module internal Db2DsImpl =
                 |> replicateProperties orm
                 |> tee(fun z -> z.RawParent <- Some s)
         ]
-        rtApiDefs |> s.AddApiDefs
+        rtApiDefs |> s.addApiDefs
 
         let rtApiCalls = [
             let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
@@ -79,7 +84,7 @@ module internal Db2DsImpl =
                 |> replicateProperties orm
                 |> tee(fun z -> z.RawParent <- Some s)
         ]
-        rtApiCalls |> s.AddApiCalls
+        rtApiCalls |> s.addApiCalls
 
 
 
@@ -106,7 +111,7 @@ module internal Db2DsImpl =
                     w.Period     <- orm.Period
                     w.Delay      <- orm.Delay )
         ]
-        rtWorks |> s.AddWorks
+        rtWorks |> s.addWorks
 
         for w in rtWorks do
             let rtCalls = [
@@ -132,7 +137,7 @@ module internal Db2DsImpl =
                     |> setParent w
                     |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
             ]
-            w.AddCalls rtCalls
+            w.addCalls rtCalls
 
 
             // work 내의 call 간 연결
@@ -149,7 +154,7 @@ module internal Db2DsImpl =
                     RtArrowBetweenCalls(src, tgt, arrowType)
                     |> replicateProperties orm
             ]
-            w.AddArrows rtArrows
+            w.addArrows rtArrows
 
             // call 이하는 더 이상 읽어 들일 구조가 없다.
             for c in rtCalls do
@@ -170,7 +175,7 @@ module internal Db2DsImpl =
                 RtArrowBetweenWorks(src, tgt, arrowType)
                 |> replicateProperties orm
         ]
-        rtArrows |> s.AddArrows
+        rtArrows |> s.addArrows
         assert(setEqual s.Arrows rtArrows)
 
         rtSystem
@@ -250,6 +255,7 @@ module internal Db2DsImpl =
                         z.IRI <- ormSystem.IRI
                         z.DateTime <- ormSystem.DateTime
                     )
+                Trace.WriteLine $"DT: {rtSystem.DateTime}"
                 Some rtSystem
 
             Ok <| checkoutSystemFromDBHelper ormSystem dbApi
@@ -473,7 +479,8 @@ module internal Ds2DbImpl =
         | Some id ->             // 이미 DB 에 저장된 system 이므로 update
             match rTryCheckoutSystemFromDB id dbApi with
             | Ok system ->
-                let diff = system.ComputeDiff s |> toArray
+                let criteria = Cc(parentGuid=false)
+                let diff = system.ComputeDiff(s, criteria) |> toArray
                 ()
             | Error err ->
                 failwith "ERROR: 구현"

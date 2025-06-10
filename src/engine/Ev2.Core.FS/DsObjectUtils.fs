@@ -76,103 +76,129 @@ module rec TmpCompatibility =
                 else x.AddPassiveSystem z)
 
     type RtSystem with
-        member x.AddWorks(works:RtWork seq) =
-            x.UpdateDateTime()
+        member internal x.addWorks(works:RtWork seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             works |> iter (setParentI x)
             works |> verifyAddRangeAsSet x.RawWorks
-        member x.RemoveWorks(works:RtWork seq) =
-            x.UpdateDateTime()
+        member internal x.removeWorks(works:RtWork seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             works |> iter (fun w -> w.RawParent <- None)
             works |> iter (x.RawWorks.Remove >> ignore)
 
-        member x.AddFlows(flows:RtFlow seq) =
-            x.UpdateDateTime()
+        member internal x.addFlows(flows:RtFlow seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             flows |> iter (setParentI x)
             flows |> verifyAddRangeAsSet x.RawFlows
-        member x.RemoveFlows(flows:RtFlow seq) =
-            x.UpdateDateTime()
+        member internal x.removeFlows(flows:RtFlow seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             flows |> iter clearParentI
             flows |> iter (x.RawFlows.Remove >> ignore)
 
-        member x.AddArrows(arrows:RtArrowBetweenWorks seq) =
-            x.UpdateDateTime()
+        member internal x.addArrows(arrows:RtArrowBetweenWorks seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             arrows |> verifyAddRangeAsSet x.RawArrows
-        member x.RemoveArrows(arrows:RtArrowBetweenWorks seq) =
-            x.UpdateDateTime()
+        member internal x.removeArrows(arrows:RtArrowBetweenWorks seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
-        member x.AddApiDefs(apiDefs:RtApiDef seq) =
-            x.UpdateDateTime()
+        member internal x.addApiDefs(apiDefs:RtApiDef seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             apiDefs |> iter (setParentI x)
             apiDefs |> verifyAddRangeAsSet x.RawApiDefs
-        member x.RemoveApiDefs(apiDefs:RtApiDef seq) =
-            x.UpdateDateTime()
+        member internal x.removeApiDefs(apiDefs:RtApiDef seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             apiDefs |> iter clearParentI
             apiDefs |> iter (x.RawApiDefs.Remove >> ignore)
 
-        member x.AddApiCalls(apiCalls:RtApiCall seq) =
-            x.UpdateDateTime()
+        member internal x.addApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
             apiCalls |> verifyAddRangeAsSet x.RawApiCalls
-        member x.RemoveApiCalls(apiCalls:RtApiCall seq) =
-            x.UpdateDateTime()
+        member internal x.removeApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter clearParentI
             apiCalls |> iter (x.RawApiCalls.Remove >> ignore)
+
+
+
+        member x.AddWorks      (works:RtWork seq)               = x.addWorks(works, true)
+        member x.RemoveWorks   (works:RtWork seq)               = x.removeWorks(works, true)
+
+        member x.AddFlows      (flows:RtFlow seq)               = x.addFlows(flows, true)
+        member x.RemoveFlows   (flows:RtFlow seq)               = x.removeFlows(flows, true)
+
+        member x.AddArrows     (arrows:RtArrowBetweenWorks seq) = x.addArrows(arrows, true)
+        member x.RemoveArrows  (arrows:RtArrowBetweenWorks seq) = x.removeArrows(arrows, true)
+
+        member x.AddApiDefs    (apiDefs:RtApiDef seq)           = x.addApiDefs(apiDefs, true)
+        member x.RemoveApiDefs (apiDefs:RtApiDef seq)           = x.removeApiDefs(apiDefs, true)
+
+        member x.AddApiCalls   (apiCalls:RtApiCall seq)         = x.addApiCalls(apiCalls, true)
+        member x.RemoveApiCalls(apiCalls:RtApiCall seq)         = x.removeApiCalls(apiCalls, true)
 
 
 
 
     type RtFlow with    // {Add/Remove}{Works, Buttons, Lamps, Conditions, Actions}
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
-        member x.AddWorks(ws:RtWork seq) =
-            x.UpdateDateTime()
+        member internal x.addWorks(ws:RtWork seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- Some x)
 
-        member x.RemoveWorks(ws:RtWork seq) =
-            x.UpdateDateTime()
+        member internal x.removeWorks(ws:RtWork seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- None)
 
-        member x.AddButtons(buttons:RtButton seq) =
-            x.UpdateDateTime()
+        member internal x.addButtons(buttons:RtButton seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             buttons |> iter (setParentI x)
             buttons |> verifyAddRangeAsSet x.RawButtons
-        member x.RemoveButtons(buttons:RtButton seq) =
-            x.UpdateDateTime()
+        member internal x.removeButtons(buttons:RtButton seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             buttons |> iter clearParentI
             buttons |> iter (x.RawButtons.Remove >> ignore)
 
 
-        member x.AddLamps(lamps:RtLamp seq) =
-            x.UpdateDateTime()
+        member internal x.addLamps(lamps:RtLamp seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             lamps |> iter (setParentI x)
             lamps |> verifyAddRangeAsSet x.RawLamps
-        member x.RemoveLamps(lamps:RtLamp seq) =
-            x.UpdateDateTime()
+        member internal x.removeLamps(lamps:RtLamp seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             lamps |> iter clearParentI
             lamps |> iter (x.RawLamps.Remove >> ignore)
 
-        member x.AddConditions(conditions:RtCondition seq) =
-            x.UpdateDateTime()
+        member internal x.addConditions(conditions:RtCondition seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             conditions |> iter (setParentI x)
             conditions |> verifyAddRangeAsSet x.RawConditions
-        member x.RemoveConditions(conditions:RtCondition seq) =
-            x.UpdateDateTime()
+        member internal x.removeConditions(conditions:RtCondition seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             conditions |> iter clearParentI
             conditions |> iter (x.RawConditions.Remove >> ignore)
 
-        member x.AddActions(actions:RtAction seq) =
-            x.UpdateDateTime()
+        member internal x.addActions(actions:RtAction seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             actions |> iter (setParentI x)
             actions |> verifyAddRangeAsSet x.RawActions
-        member x.RemoveActions(actions:RtAction seq) =
-            x.UpdateDateTime()
+        member internal x.removeActions(actions:RtAction seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             actions |> iter clearParentI
             actions |> iter (x.RawActions.Remove >> ignore)
 
 
-
+        member x.AddWorks        (ws:RtWork seq)              = x.addWorks        (ws, true)
+        member x.RemoveWorks     (ws:RtWork seq)              = x.removeWorks     (ws, true)
+        member x.AddButtons      (buttons:RtButton seq)       = x.addButtons      (buttons, true)
+        member x.RemoveButtons   (buttons:RtButton seq)       = x.removeButtons   (buttons, true)
+        member x.AddLamps        (lamps:RtLamp seq)           = x.addLamps        (lamps, true)
+        member x.RemoveLamps     (lamps:RtLamp seq)           = x.removeLamps     (lamps, true)
+        member x.AddConditions   (conditions:RtCondition seq) = x.addConditions   (conditions, true)
+        member x.RemoveConditions(conditions:RtCondition seq) = x.removeConditions(conditions, true)
+        member x.AddActions      (actions:RtAction seq)       = x.addActions      (actions, true)
+        member x.RemoveActions   (actions:RtAction seq)       = x.removeActions   (actions, true)
 
 
 
@@ -181,30 +207,45 @@ module rec TmpCompatibility =
 
 
     type RtWork with    // AddCalls, RemoveCalls, AddArrows, RemoveArrows
-        member x.AddCalls(calls:RtCall seq) =
-            x.UpdateDateTime()
+        member internal x.addCalls(calls:RtCall seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             calls |> iter (setParentI x)
             calls |> verifyAddRangeAsSet x.RawCalls
-        member x.RemoveCalls(calls:RtCall seq) =
-            x.UpdateDateTime()
+        member internal x.removeCalls(calls:RtCall seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             calls |> iter clearParentI
             calls |> iter (x.RawCalls.Remove >> ignore)
 
-        member x.AddArrows(arrows:RtArrowBetweenCalls seq) =
-            x.UpdateDateTime()
+        member internal x.addArrows(arrows:RtArrowBetweenCalls seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             arrows |> verifyAddRangeAsSet x.RawArrows
-        member x.RemoveArrows(arrows:RtArrowBetweenCalls seq) =
-            x.UpdateDateTime()
+        member internal x.removeArrows(arrows:RtArrowBetweenCalls seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
+        member x.AddCalls    (calls:RtCall seq)               = x.addCalls    (calls, true)
+        member x.RemoveCalls (calls:RtCall seq)               = x.removeCalls (calls, true)
+        member x.AddArrows   (arrows:RtArrowBetweenCalls seq) = x.addArrows   (arrows, true)
+        member x.RemoveArrows(arrows:RtArrowBetweenCalls seq) = x.removeArrows(arrows, true)
 
     type RtCall with    // AddApiCalls
-        member x.AddApiCalls(apiCalls:RtApiCall seq) =
-            x.UpdateDateTime()
+        member internal x.addApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
+            if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
             apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
+
+        member x.AddApiCalls (apiCalls:RtApiCall seq)         = x.addApiCalls (apiCalls, true)
+
+
+
+
+
+
+
+
+
 
 
 
