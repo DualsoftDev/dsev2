@@ -10,7 +10,7 @@ module internal rec DsObjectCopyImpl =
     /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
     type ReplicateBag() =
         /// NewGuid -> New object
-        member val Newbies = Dictionary<Guid, Unique>()
+        member val Newbies = Guid2UniqDic()
 
     let uniqReplicateWithBag (bag:ReplicateBag) (src:#Unique) (dst:#Unique) : #Unique =
         dst

@@ -10,6 +10,8 @@ open Dual.Common.Base
 
 [<AutoOpen>]
 module rec TmpCompatibility =
+    type Guid2UniqDic = Dictionary<Guid, Unique>
+
     type RtUnique with  // UpdateDateTime, EnumerateRtObjects
         /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
         ///
@@ -299,7 +301,7 @@ module DsObjectUtilsModule =
 
 
     type RtUnique with
-        member x.Validate(guidDicDebug:Dictionary<Guid, RtUnique>) =
+        member x.Validate(guidDicDebug:Guid2UniqDic) =
             verify (x.Guid <> emptyGuid)
             x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
             match x with

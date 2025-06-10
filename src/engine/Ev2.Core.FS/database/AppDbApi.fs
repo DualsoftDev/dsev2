@@ -164,7 +164,7 @@ module ORMTypeConversionModule =
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
             ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
-    let internal ds2Orm (dbApi:AppDbApi) (guidDicDebug:Dictionary<Guid, ORMUnique>) (x:IDsObject): ORMUnique =
+    let internal ds2Orm (dbApi:AppDbApi) (guidDicDebug:Guid2UniqDic) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
         let ormUniqReplicate (src:#Unique) (dst:ORMUnique): ORMUnique =
             dst
@@ -269,18 +269,18 @@ module ORMTypeConversionModule =
 
     type IDsObject with // ToORM
         /// Rt object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g RtProject -> ORMProject
-        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi, guidDicDebug:Dictionary<Guid, ORMUnique>) =
+        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi, guidDicDebug:Guid2UniqDic) =
             ds2Orm dbApi guidDicDebug x :?> 'T
 
     type RtProject with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
-        member x.ToORM(dbApi:AppDbApi): Dictionary<Guid, ORMUnique> * ORMProject =
-            let guidDic = Dictionary<Guid, ORMUnique>()
-            guidDic, ds2Orm dbApi guidDic x :?> ORMProject
+        member x.ToORM(dbApi:AppDbApi): Guid2UniqDic * ORMProject =
+            let guidDicDebug = Guid2UniqDic()
+            guidDicDebug, ds2Orm dbApi guidDicDebug x :?> ORMProject
 
     type RtSystem with // ToORM
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
-        member x.ToORM(dbApi:AppDbApi): Dictionary<Guid, ORMUnique> * ORMSystem =
-            let guidDic = Dictionary<Guid, ORMUnique>()
-            guidDic, ds2Orm dbApi guidDic x :?> ORMSystem
+        member x.ToORM(dbApi:AppDbApi): Guid2UniqDic * ORMSystem =
+            let guidDicDebug = Guid2UniqDic()
+            guidDicDebug, ds2Orm dbApi guidDicDebug x :?> ORMSystem
 

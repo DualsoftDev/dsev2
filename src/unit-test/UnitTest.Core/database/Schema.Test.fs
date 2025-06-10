@@ -194,7 +194,7 @@ module SchemaTestModule =
         for rtObj in rtObjs do
             tracefn $"{rtObj.GetType().Name}: {rtObj.GetFQDN()}"
 
-        let rtObjDic = rtObjs.ToDictionary(_.Guid, id)
+        let rtObjDic = rtObjs.ToDictionary(_.Guid, fun z -> z :> Unique)
         dsProject.Validate(rtObjDic)
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->
@@ -635,7 +635,7 @@ module SchemaTestModule =
         pgsqlDbApi() |> dsProject.CommitToDB
 
     [<Test>]
-    let ``X PGSql: System DB 수정 commit`` () =
+    let ``X DB (PGSql): System 수정 commit`` () =
         let json = Path.Combine(testDataDir(), "dssystem.json") |> File.ReadAllText
         let dsProject = RtProject.FromJson json |> validateRuntime
         let dsSystem = dsProject.Systems[0]

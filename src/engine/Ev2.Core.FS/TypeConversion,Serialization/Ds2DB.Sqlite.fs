@@ -27,7 +27,7 @@ module internal Ds2DbImpl =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
-    let commitSystemToDBHelper (dbApi:AppDbApi) (conn:IDbConnection) (tr:IDbTransaction) (guidDicDebug:Dictionary<Guid, ORMUnique>) (s:RtSystem) (optProject:RtProject option)  =
+    let commitSystemToDBHelper (dbApi:AppDbApi) (conn:IDbConnection) (tr:IDbTransaction) (guidDicDebug:Guid2UniqDic) (s:RtSystem) (optProject:RtProject option)  =
         let ormSystem = s.ToORM<ORMSystem>(dbApi, guidDicDebug)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
