@@ -300,7 +300,7 @@ module rec DsObjectModule =
         inherit RtSystemEntity()
         interface IRtApiDef
 
-        member val IsPush = isPush
+        member val IsPush = isPush with get, set
         member x.System   = x.RawParent >>= tryCast<RtSystem>
 
         // system 에서 현재 ApiDef 을 사용하는 ApiCall 들

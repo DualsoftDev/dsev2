@@ -4,6 +4,7 @@ open System
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open System.ComponentModel
+open System.Diagnostics
 
 [<AutoOpen>]
 module rec DsCompareObjects =
@@ -41,12 +42,23 @@ module rec DsCompareObjects =
         member val LangVersion          = true with get, set
 
     /// 객체 비교 결과 반환용....
+    [<DebuggerDisplay("{ToString()}")>]
     type CompareResult =
         | Equal
         | LeftOnly of IRtUnique
         | RightOnly of IRtUnique
         /// (diff property name) * left * right
         | Diff of Name * IRtUnique * IRtUnique
+    with
+        override x.ToString() =
+            match x with
+            | Equal -> "Equal"
+            | LeftOnly  (:? RtUnique as u) -> $"<- {u.Name}/{u.Id}/{guid2str u.Guid}"
+            | RightOnly (:? RtUnique as u) -> $"-> {u.Name}/{u.Id}/{guid2str u.Guid}"
+            | Diff (name, (:? RtUnique as left), (:? RtUnique as right)) ->
+                let l = $"{left.Name}/{left.Id}/{guid2str left.Guid}"
+                let r = $"{right.Name}/{right.Id}/{guid2str right.Guid}"
+                $"Diff({name}): {l} <> {r}"
 
     /// abberviation
     type internal Cc = CompareCriteria
@@ -63,7 +75,8 @@ module rec DsCompareObjects =
 
                 let xp = x.TryGetRawParent() |-> _.GetGuid()
                 let yp = y.TryGetRawParent() |-> _.GetGuid()
-                if c.ParentGuid && ( xp <> yp ) then yield Diff("Parent", x, y)
+                if c.ParentGuid && ( xp <> yp ) then
+                    yield Diff("Parent", x, y)
             }
 
     let private sortByGuid (xs:#IRtUnique list): #IRtUnique list = xs |> List.sortBy (fun x -> x.GetGuid())

@@ -420,6 +420,7 @@ CREATE TABLE {k Tn.MapCall2ApiCall}( {sqlUniq()}
 
 -- Work 간 연결.  System 에 속함
 CREATE TABLE {k Tn.ArrowWork}( {sqlUniq()}
+    , {k "name"}          {varchar NameLength}          -- nullalbe.
     , {k "source"}        {intKeyType} NOT NULL
     , {k "target"}        {intKeyType} NOT NULL
     , {k "typeId"}        {intKeyType} NOT NULL         -- arrow type : "Start", "Reset", ??
@@ -433,6 +434,7 @@ CREATE TABLE {k Tn.ArrowWork}( {sqlUniq()}
 
 -- Call 간 연결.  Work 에 속함
 CREATE TABLE {k Tn.ArrowCall}( {sqlUniq()}
+    , {k "name"}          {varchar NameLength}          -- nullalbe.
     , {k "source"}        {intKeyType} NOT NULL
     , {k "target"}        {intKeyType} NOT NULL
     , {k "typeId"}        {intKeyType} NOT NULL         -- arrow type : "Start", "Reset", ??

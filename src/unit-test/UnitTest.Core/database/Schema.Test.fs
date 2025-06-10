@@ -636,8 +636,19 @@ module SchemaTestModule =
 
     [<Test>]
     let ``X DB (PGSql): System 수정 commit`` () =
-        let json = Path.Combine(testDataDir(), "dssystem.json") |> File.ReadAllText
-        let dsProject = RtProject.FromJson json |> validateRuntime
-        let dsSystem = dsProject.Systems[0]
-        pgsqlDbApi() |> dsSystem.CommitToDB
+        let dbApi = sqliteDbApi()
+        dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
+        let dsProject = edProject.Replicate() |> validateRuntime
+        let diff = dsProject.ComputeDiff edProject |> toArray
+
+        dsProject.CommitToDB(dbApi, true)
+        let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
+        dsProject.ToJson(jsonPath)
+
+        let json = jsonPath |> File.ReadAllText
+        let dsProject2 = RtProject.FromJson json |> validateRuntime
+        let diff2 = dsProject2.ComputeDiff dsProject |> toArray
+
+        let dsSystem = dsProject2.Systems[0]
+        dsSystem.CommitToDB dbApi
 

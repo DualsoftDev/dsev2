@@ -166,7 +166,7 @@ module ORMTypeConversionModule =
 
     let internal ds2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
-        let ormUniqReplicate (src:#Unique) (dst:ORMUnique): ORMUnique =
+        let ormUniqReplicate (src:Unique) (dst:ORMUnique): ORMUnique =
             dst
             |> uniqReplicate src
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
@@ -241,9 +241,10 @@ module ORMTypeConversionModule =
                 ORMArrowCall(src, tgt, parentId, arrowTypeId)
                 |> ormUniqReplicate z
 
-            | :? RtApiDef as z ->
+            | :? RtApiDef as r ->
                 ORMApiDef(pid)
-                |> ormUniqReplicate z
+                |> tee(fun z -> z.IsPush <- r.IsPush)
+                |> ormUniqReplicate r
 
 
             | :? RtButton    as z -> ORMButton(pid)    |> ormUniqReplicate z
