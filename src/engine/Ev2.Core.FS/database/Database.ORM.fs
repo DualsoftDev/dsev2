@@ -115,7 +115,10 @@ module ORMTypesModule =
         member val DateTime      = dateTime with get, set
 
 
-    type ORMSystem(prototypeId:Id option, originGuid:Guid option, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string, dateTime) =
+    type ORMSystem(prototypeId:Id option, originGuid:Guid option
+        , iri:string, author:string, langVersion:Version, engineVersion:Version
+        , description:string, dateTime
+    ) =
         inherit ORMProjectEntity()
 
         new() = ORMSystem(None, None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
@@ -180,7 +183,10 @@ module ORMTypesModule =
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
 
-    type ORMCall(workId:Id, status4Id:Id option, callTypeId:Id option, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option) =
+    type ORMCall(workId:Id, status4Id:Id option
+        , callTypeId:Id option, autoConditions:string seq
+        , commonConditions:string seq, isDisabled:bool, timeout:int option
+    ) =
         inherit ORMWorkEntity(workId)
 
         new() = ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), [], [], false, None)
@@ -211,8 +217,10 @@ module ORMTypesModule =
         member val ApiCallId = apiCallId with get, set
 
     //type ORMApiCall(systemId:Id) =
-    type ORMApiCall(systemId:Id, apiDefId:Id, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string,
-        valueSpec:string
+    type ORMApiCall(systemId:Id, apiDefId:Id
+        , inAddress:string, outAddress:string
+        , inSymbol:string, outSymbol:string
+        , valueSpec:string
     ) =
         inherit ORMSystemEntity(systemId)
 

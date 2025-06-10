@@ -166,7 +166,7 @@ module ORMTypeConversionModule =
 
     let internal ds2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
-        let ormUniqReplicate (src:Unique) (dst:ORMUnique): ORMUnique =
+        let ormReplicateProperties (src:Unique) (dst:ORMUnique): ORMUnique =
             dst
             |> replicateProperties src
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
@@ -180,7 +180,7 @@ module ORMTypeConversionModule =
             match uniq with
             | :? RtProject as z ->
                 ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtSystem as z ->
                 // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
@@ -195,11 +195,11 @@ module ORMTypeConversionModule =
                             >>= _.Id)
 
                 ORMSystem(prototypeId, z.OriginGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtFlow as z ->
                 ORMFlow()
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtWork as z ->
                 let flowId = (z.Flow >>= _.Id)
@@ -212,11 +212,11 @@ module ORMTypeConversionModule =
                     y.NumRepeat  <- z.NumRepeat
                     y.Period     <- z.Period
                     y.Delay      <- z.Delay )
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtCall as z ->
                 ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoConditions, z.CommonConditions, z.IsDisabled, z.Timeout)
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
@@ -226,7 +226,7 @@ module ORMTypeConversionModule =
                     |? int DbArrowType.None
 
                 ORMArrowWork(src, tgt, parentId, arrowTypeId)
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
@@ -236,25 +236,25 @@ module ORMTypeConversionModule =
                     |? int DbArrowType.None
 
                 ORMArrowCall(src, tgt, parentId, arrowTypeId)
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | :? RtApiDef as r ->
                 ORMApiDef(pid)
                 |> tee(fun z -> z.IsPush <- r.IsPush)
-                |> ormUniqReplicate r
+                |> ormReplicateProperties r
 
 
-            | :? RtButton    as z -> ORMButton(pid)    |> ormUniqReplicate z
-            | :? RtLamp      as z -> ORMLamp(pid)      |> ormUniqReplicate z
-            | :? RtCondition as z -> ORMCondition(pid) |> ormUniqReplicate z
-            | :? RtAction    as z -> ORMAction(pid)    |> ormUniqReplicate z
+            | :? RtButton    as z -> ORMButton(pid)    |> ormReplicateProperties z
+            | :? RtLamp      as z -> ORMLamp(pid)      |> ormReplicateProperties z
+            | :? RtCondition as z -> ORMCondition(pid) |> ormReplicateProperties z
+            | :? RtAction    as z -> ORMAction(pid)    |> ormReplicateProperties z
 
 
             | :? RtApiCall as z ->
                 let apiDefId = z.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
                 let valueParam = z.ValueSpec |-> _.Jsonize() |? null
                 ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueParam)
-                |> ormUniqReplicate z
+                |> ormReplicateProperties z
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
