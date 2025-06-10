@@ -27,8 +27,10 @@ module internal Ds2DbImpl =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
-    let commitSystemToDBHelper (dbApi:AppDbApi) (conn:IDbConnection) (tr:IDbTransaction) (guidDicDebug:Guid2UniqDic) (s:RtSystem) (optProject:RtProject option)  =
-        let ormSystem = s.ToORM<ORMSystem>(dbApi, guidDicDebug)
+    let insertSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem) (optProject:RtProject option)  =
+        let conn, tr = dbApi.ActiveConnection, dbApi.ActiveTransaction
+
+        let ormSystem = s.ToORM<ORMSystem>(dbApi)
 
         let sysId = conn.Insert($"""INSERT INTO {Tn.System}
                                 (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description, originGuid, prototypeId)
@@ -36,6 +38,7 @@ module internal Ds2DbImpl =
                         ormSystem, tr)
 
         s.Id <- Some sysId
+        let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
         guidDicDebug[s.Guid].Id <- Some sysId
 
         match optProject with
@@ -82,7 +85,7 @@ module internal Ds2DbImpl =
 
         // flows 삽입
         for f in s.Flows do
-            let ormFlow = f.ToORM<ORMFlow>(dbApi, guidDicDebug)
+            let ormFlow = f.ToORM<ORMFlow>(dbApi)
             ormFlow.SystemId <- Some sysId
 
             let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
@@ -119,15 +122,15 @@ module internal Ds2DbImpl =
             //    assert (cache[x.Guid] = ormX)
 
             (* 간략 format .. *)
-            f.Buttons    |-> (fun z -> z, z.ToORM<ORMButton>   (dbApi, guidDicDebug)) |> iter (insertFlowElement Tn.Button)
-            f.Lamps      |-> (fun z -> z, z.ToORM<ORMLamp>     (dbApi, guidDicDebug)) |> iter (insertFlowElement Tn.Lamp)
-            f.Conditions |-> (fun z -> z, z.ToORM<ORMCondition>(dbApi, guidDicDebug)) |> iter (insertFlowElement Tn.Condition)
-            f.Actions    |-> (fun z -> z, z.ToORM<ORMAction>   (dbApi, guidDicDebug)) |> iter (insertFlowElement Tn.Action)
+            f.Buttons    |-> (fun z -> z, z.ToORM<ORMButton>    dbApi) |> iter (insertFlowElement Tn.Button)
+            f.Lamps      |-> (fun z -> z, z.ToORM<ORMLamp>      dbApi) |> iter (insertFlowElement Tn.Lamp)
+            f.Conditions |-> (fun z -> z, z.ToORM<ORMCondition> dbApi) |> iter (insertFlowElement Tn.Condition)
+            f.Actions    |-> (fun z -> z, z.ToORM<ORMAction>    dbApi) |> iter (insertFlowElement Tn.Action)
 
 
         // system 의 apiDefs 를 삽입
         for rtAd in s.ApiDefs do
-            let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi, guidDicDebug)
+            let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi)
             ormApiDef.SystemId <- Some sysId
 
             let r = conn.Upsert(Tn.ApiDef, ormApiDef,
@@ -144,7 +147,7 @@ module internal Ds2DbImpl =
 
         // system 의 apiCalls 를 삽입
         for rtAc in s.ApiCalls do
-            let ormApiCall = rtAc.ToORM<ORMApiCall>(dbApi, guidDicDebug)
+            let ormApiCall = rtAc.ToORM<ORMApiCall>(dbApi)
             ormApiCall.SystemId <- Some sysId
 
             let r = conn.Upsert(Tn.ApiCall, ormApiCall,
@@ -158,7 +161,7 @@ module internal Ds2DbImpl =
 
         // works, calls 삽입
         for w in s.Works do
-            let ormWork = w.ToORM<ORMWork>(dbApi, guidDicDebug)
+            let ormWork = w.ToORM<ORMWork>(dbApi)
             ormWork.SystemId <- Some sysId
 
             let workId = conn.Insert($"""INSERT INTO {Tn.Work}
@@ -170,7 +173,7 @@ module internal Ds2DbImpl =
             assert(guidDicDebug[w.Guid] = ormWork)
 
             for c in w.Calls do
-                let ormCall = c.ToORM<ORMCall>(dbApi, guidDicDebug)
+                let ormCall = c.ToORM<ORMCall>(dbApi)
                 ormCall.WorkId <- Some workId
 
                 let callId =
@@ -206,7 +209,7 @@ module internal Ds2DbImpl =
 
             // work 의 arrows 를 삽입 (calls 간 연결)
             for a in w.Arrows do
-                let ormArrow = a.ToORM<ORMArrowCall>(dbApi, guidDicDebug)
+                let ormArrow = a.ToORM<ORMArrowCall>(dbApi)
                 ormArrow.WorkId <- workId
 
                 let r = conn.Upsert(Tn.ArrowCall, ormArrow,
@@ -217,7 +220,7 @@ module internal Ds2DbImpl =
 
         // system 의 arrows 를 삽입 (works 간 연결)
         for a in s.Arrows do
-            let ormArrow = a.ToORM<ORMArrowWork>(dbApi, guidDicDebug)
+            let ormArrow = a.ToORM<ORMArrowWork>(dbApi)
             ormArrow.SystemId <- sysId
 
             let r = conn.Upsert(Tn.ArrowWork, ormArrow,
@@ -226,6 +229,12 @@ module internal Ds2DbImpl =
                     onInserted=idUpdator [ormArrow; a;])
             ()
 
+    let commitSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem) (optProject:RtProject option) =
+        match s.Id with
+        | Some id ->             // 이미 DB 에 저장된 system 이므로 update
+            failwith "ERROR: 구현"
+        | None ->   // DB 에 저장되지 않은 system 이므로 insert
+            insertSystemToDBHelper dbApi s optProject
 
 
 
@@ -253,7 +262,9 @@ module internal Ds2DbImpl =
                 //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
             | _ -> ()
 
-            let guidDic, ormProject = proj.ToORM(dbApi)
+            Guid2UniqDic() |> dbApi.DDic.Set
+            let ormProject = proj.ToORM(dbApi)
+            assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
             let projId =
                 conn.Insert($"""INSERT INTO {Tn.Project}
@@ -264,7 +275,7 @@ module internal Ds2DbImpl =
             ormProject.Id <- Some projId
 
             for s in systems do
-                commitSystemToDBHelper dbApi conn tr guidDic s (Some proj)
+                commitSystemToDBHelper dbApi s (Some proj)
 
             proj.Database <- dbApi.DbProvider
         , onError)
@@ -274,12 +285,11 @@ module internal Ds2DbImpl =
         let onError (ex:Exception) = logError $"insertSystemToDB failed: {ex.Message}"; raise ex
 
         dbApi.With(fun (conn, tr) ->
-            let guidDic, ormSystem = x.ToORM(dbApi)
-            //if removeExistingData = Some true then
-            //    //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
-            //    conn.Execute($"DELETE FROM {Tn.System} WHERE guid = @Guid", ormSystem, tr) |> ignore
+            Guid2UniqDic() |> dbApi.DDic.Set
+            let ormSystem = x.ToORM(dbApi)
+            assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
-            commitSystemToDBHelper dbApi conn tr guidDic x None
+            commitSystemToDBHelper dbApi x None
         , onError)
 
 
@@ -302,7 +312,8 @@ module internal Db2DsImpl =
     //    )
 
     // 사전 조건: ormSystem.RtObject 에 RtSystem 이 생성되어 있어야 한다.
-    let private checkoutSystemFromDBHelper(ormSystem:ORMSystem) (conn:IDbConnection) (tr:IDbTransaction) (dbApi:AppDbApi) :RtSystem =
+    let private checkoutSystemFromDBHelper(ormSystem:ORMSystem) (dbApi:AppDbApi) :RtSystem =
+        let conn, tr = dbApi.ActiveConnection, dbApi.ActiveTransaction
         let rtSystem = ormSystem.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR")
         let s = rtSystem
         let rtFlows = [
@@ -450,7 +461,8 @@ module internal Db2DsImpl =
 
 
 
-    let private checkoutProjectFromDBHelper(ormProject:ORMProject) (conn:IDbConnection) (tr:IDbTransaction) (dbApi:AppDbApi):RtProject =
+    let private checkoutProjectFromDBHelper(ormProject:ORMProject) (dbApi:AppDbApi):RtProject =
+        let conn, tr = dbApi.ActiveConnection, dbApi.ActiveTransaction
         let projSysMaps =
             conn.Query<ORMMapProjectSystem>(
                 $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
@@ -485,7 +497,7 @@ module internal Db2DsImpl =
         actives  |> rtProj.RawActiveSystems.AddRange
         passives |> rtProj.RawPassiveSystems.AddRange
 
-        ormSystems |> iter (fun os -> checkoutSystemFromDBHelper os conn tr dbApi |> ignore)
+        ormSystems |> iter (fun os -> checkoutSystemFromDBHelper os dbApi |> ignore)
 
         rtProj
 
@@ -500,7 +512,7 @@ module internal Db2DsImpl =
             | None ->
                 Error <| sprintf "Project not found: %A" id
             | Some ormProject ->
-                Ok <| checkoutProjectFromDBHelper ormProject conn tr dbApi)
+                Ok <| checkoutProjectFromDBHelper ormProject dbApi)
 
     let rTryCheckoutSystemFromDB(id:Id) (dbApi:AppDbApi):Result<RtSystem, ErrorMessage> =
         Trace.WriteLine($"--------------------------------------- checkoutSystemFromDB: {id}")
@@ -516,7 +528,7 @@ module internal Db2DsImpl =
                         |> uniqReplicate ormSystem
                     Some rtSystem
 
-                Ok <| checkoutSystemFromDBHelper ormSystem conn tr dbApi )
+                Ok <| checkoutSystemFromDBHelper ormSystem dbApi )
 
 
 [<AutoOpen>]
