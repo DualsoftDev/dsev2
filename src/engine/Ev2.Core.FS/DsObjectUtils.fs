@@ -299,7 +299,7 @@ module DsObjectUtilsModule =
 
 
     type RtUnique with
-        member x.Validate(guidDic:Dictionary<Guid, RtUnique>) =
+        member x.Validate(guidDicDebug:Dictionary<Guid, RtUnique>) =
             verify (x.Guid <> emptyGuid)
             x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
             match x with
@@ -308,49 +308,49 @@ module DsObjectUtilsModule =
 
             match x with
             | :? RtProject as prj ->
-                prj.Systems |> iter _.Validate(guidDic)
+                prj.Systems |> iter _.Validate(guidDicDebug)
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
             | :? RtSystem as sys ->
-                sys.Works |> iter _.Validate(guidDic)
+                sys.Works |> iter _.Validate(guidDicDebug)
 
 
                 for w in sys.Works  do
                     verify (sys.Guid |> isParentGuid w)
                     for c in w.Calls do
-                        c.ApiCalls |-> _.Guid |> forall(guidDic.ContainsKey) |> verify
+                        c.ApiCalls |-> _.Guid |> forall(guidDicDebug.ContainsKey) |> verify
                         c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
                         for ac in c.ApiCalls do
                             ac.ApiDef.Guid = ac.ApiDefGuid |> verify
                             sys.ApiDefs |> contains ac.ApiDef |> verify
 
-                sys.Arrows |> iter _.Validate(guidDic)
+                sys.Arrows |> iter _.Validate(guidDicDebug)
                 for a in sys.Arrows do
                     verify (sys.Guid |> isParentGuid a)
                     sys.Works |> contains a.Source |> verify
                     sys.Works |> contains a.Target |> verify
 
-                sys.ApiDefs |> iter _.Validate(guidDic)
+                sys.ApiDefs |> iter _.Validate(guidDicDebug)
                 for w in sys.ApiDefs do
                     verify (sys.Guid |> isParentGuid w)
 
-                sys.ApiCalls |> iter _.Validate(guidDic)
+                sys.ApiCalls |> iter _.Validate(guidDicDebug)
                 for ac in sys.ApiCalls  do
                     verify (sys.Guid |> isParentGuid ac)
 
             | :? RtFlow as flow ->
                 let works = flow.Works
-                works |> iter _.Validate(guidDic)
+                works |> iter _.Validate(guidDicDebug)
                 for w in works  do
                     verify (w.Flow = Some flow)
 
 
             | :? RtWork as work ->
-                work.Calls |> iter _.Validate(guidDic)
+                work.Calls |> iter _.Validate(guidDicDebug)
                 for c in work.Calls do
                     verify (work.Guid |> isParentGuid c)
 
-                work.Arrows |> iter _.Validate(guidDic)
+                work.Arrows |> iter _.Validate(guidDicDebug)
                 for a in work.Arrows do
                     verify (work.Guid |> isParentGuid a)
                     work.Calls |> contains a.Source |> verify

@@ -23,7 +23,7 @@ module ReadFromDBTestModule =
 
 
         let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
-        let dsProject = RtProject.RTryCheckoutFromDB(ByName "MainProject", dbApi)
+        let dsProject = RtProject.CheckoutFromDB("MainProject", dbApi)
         use conn = dbApi.CreateConnection()
         ()
 
