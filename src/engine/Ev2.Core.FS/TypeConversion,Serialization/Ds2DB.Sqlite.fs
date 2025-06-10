@@ -48,15 +48,11 @@ module internal Db2DsImpl =
                 let conditions = ormConditions |-> (fun z -> RtCondition () |> replicateProperties z) |> toArray
                 let actions    = ormActions    |-> (fun z -> RtAction    () |> replicateProperties z) |> toArray
 
-                Trace.WriteLine $"DT: {rtSystem.DateTime}"
-
                 RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
                 |> replicateProperties ormFlow
         ]
 
-        Trace.WriteLine $"DT1: {rtSystem.DateTime}"
         rtFlows |> s.addFlows
-        Trace.WriteLine $"DT2: {rtSystem.DateTime}"
 
         let rtApiDefs = [
             let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
@@ -64,7 +60,6 @@ module internal Db2DsImpl =
             for orm in orms do
                 RtApiDef(orm.IsPush)
                 |> replicateProperties orm
-                |> tee(fun z -> z.RawParent <- Some s)
         ]
         rtApiDefs |> s.addApiDefs
 
@@ -82,7 +77,6 @@ module internal Db2DsImpl =
                 RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                             orm.InSymbol, orm.OutSymbol, valueParam)
                 |> replicateProperties orm
-                |> tee(fun z -> z.RawParent <- Some s)
         ]
         rtApiCalls |> s.addApiCalls
 
@@ -99,17 +93,10 @@ module internal Db2DsImpl =
                     match orm.FlowId with
                     | Some flowId ->
                         let flow = rtFlows |> find(fun f -> f.Id.Value = flowId)
-                        //w.Status4 <- orm.Status4Id
                         w.Flow <- Some flow
                     | None -> ()
 
-                    w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
-                    w.Motion     <- orm.Motion
-                    w.Script     <- orm.Script
-                    w.IsFinished <- orm.IsFinished
-                    w.NumRepeat  <- orm.NumRepeat
-                    w.Period     <- orm.Period
-                    w.Delay      <- orm.Delay )
+                    w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
         ]
         rtWorks |> s.addWorks
 
@@ -137,7 +124,7 @@ module internal Db2DsImpl =
                     |> setParent w
                     |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
             ]
-            w.addCalls rtCalls
+            rtCalls |> w.addCalls
 
 
             // work 내의 call 간 연결
@@ -154,7 +141,7 @@ module internal Db2DsImpl =
                     RtArrowBetweenCalls(src, tgt, arrowType)
                     |> replicateProperties orm
             ]
-            w.addArrows rtArrows
+            rtArrows |> w.addArrows
 
             // call 이하는 더 이상 읽어 들일 구조가 없다.
             for c in rtCalls do
@@ -202,9 +189,6 @@ module internal Db2DsImpl =
             |> tees (fun os ->
                     RtSystem.Create()
                     |> replicateProperties os
-                    |> tee (fun z ->
-                        z.IRI <- os.IRI
-                        z.DateTime <- os.DateTime)
                     |> uniqParent (Some rtProj))
             |> toArray
 
@@ -251,11 +235,6 @@ module internal Db2DsImpl =
                 let rtSystem =
                     RtSystem.Create()
                     |> replicateProperties ormSystem
-                    |> tee(fun z ->
-                        z.IRI <- ormSystem.IRI
-                        z.DateTime <- ormSystem.DateTime
-                    )
-                Trace.WriteLine $"DT: {rtSystem.DateTime}"
                 Some rtSystem
 
             Ok <| checkoutSystemFromDBHelper ormSystem dbApi

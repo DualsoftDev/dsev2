@@ -143,7 +143,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 104)>] member val ApiCalls = [||]:NjApiCall[] with get, set
 
-        member val OriginGuid    = Nullable<Guid>() with get, set
+        member val OriginGuid    = Option<Guid>.None with get, set
         member val Prototype     = false      with get, set
         member val IRI           = nullString with get, set
         member val Author        = nullString with get, set
@@ -168,10 +168,7 @@ module rec NewtonsoftJsonObjects =
             fwdOnNsJsonDeserialized x
 
         static member FromRuntime(rt:RtSystem) =
-            let originGuid = rt.OriginGuid |> Option.toNullable
-
-            NjSystem(OriginGuid=originGuid, IRI=rt.IRI, Author=rt.Author,
-                LangVersion=rt.LangVersion, EngineVersion=rt.EngineVersion, Description=rt.Description)
+            NjSystem()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
                 z.Flows    <- rt.Flows    |-> NjFlow.FromRuntime    |> toArray
@@ -497,13 +494,6 @@ module rec NewtonsoftJsonObjects =
                     let dsWork =
                         RtWork.Create(calls, arrows, optFlow)
                         |> replicateProperties njw
-                        |> tee(fun z ->
-                            z.Motion     <- njw.Motion
-                            z.Script     <- njw.Script
-                            z.IsFinished <- njw.IsFinished
-                            z.NumRepeat  <- njw.NumRepeat
-                            z.Period     <- njw.Period
-                            z.Delay      <- njw.Delay )
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork
@@ -541,13 +531,7 @@ module rec NewtonsoftJsonObjects =
                             | _ -> None ] |> choose id |> tryHead
                     | None -> None
 
-                RtSystem.Create(protoGuid, flows, works, arrows, apiDefs, apiCalls
-                                , IRI=njs.IRI
-                                , Author=njs.Author
-                                , LangVersion=njs.LangVersion
-                                , EngineVersion=njs.EngineVersion
-                                , Description=njs.Description
-                                , OriginGuid=n2o njs.OriginGuid)
+                RtSystem.Create(protoGuid, flows, works, arrows, apiDefs, apiCalls)
                 |> replicateProperties njs
 
         | :? NjFlow as njf ->
