@@ -3,8 +3,6 @@ namespace Ev2.Core.FS
 open System
 open System.Data
 open System.IO
-open System.Data.SQLite
-open System.Linq
 open Dapper
 
 open Dual.Common.Db.FS
@@ -15,13 +13,6 @@ open System.Collections.Generic
 
 [<AutoOpen>]
 module DbApiModule =
-    type Db2RtBag() =
-        member val DbDic = Dictionary<string, ORMUnique>()  // string Guid
-        member val RtDic = Dictionary<Guid, RtUnique>()
-        member x.Add(u:ORMUnique) = x.DbDic.TryAdd(guid2str u.Guid, u) |> ignore
-        member x.Add(u:RtUnique)  = x.RtDic.TryAdd(u.Guid, u) |> ignore
-
-
     /// 공용 캐시 초기화 함수
     let private createCache<'T> (venderDb:DcDbBase, tableName: string) =
         ResettableLazy<'T[]>(fun () ->
@@ -173,15 +164,12 @@ module ORMTypeConversionModule =
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
             ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
-    let internal ds2Orm (dbApi:AppDbApi) (guidDic:Dictionary<Guid, ORMUnique>) (x:IDsObject): ORMUnique =
+    let internal ds2Orm (dbApi:AppDbApi) (guidDicDebug:Dictionary<Guid, ORMUnique>) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
         let ormUniqReplicate (src:#Unique) (dst:ORMUnique): ORMUnique =
             dst
             |> uniqReplicate src
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
-
-
-
 
         match x |> tryCast<Unique> with
         | Some uniq ->
@@ -265,7 +253,7 @@ module ORMTypeConversionModule =
 
 
             | :? RtApiCall as z ->
-                let apiDefId = guidDic[z.ApiDefGuid].Id.Value
+                let apiDefId = z.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
                 let valueParam = z.ValueSpec |-> _.Jsonize() |? null
                 ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueParam)
                 |> ormUniqReplicate z
@@ -273,7 +261,7 @@ module ORMTypeConversionModule =
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
             // 새로 생성된 ORMUnique 객체에 대한 신규 Guid 정보를 dic 에 기록
-            |> tee (fun ormUniq -> guidDic[guid] <- ormUniq )
+            |> tee (fun ormUniq -> guidDicDebug[guid] <- ormUniq )
 
         | _ -> failwithf "Cannot convert to ORM. %A" x
 
@@ -281,8 +269,8 @@ module ORMTypeConversionModule =
 
     type IDsObject with // ToORM
         /// Rt object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g RtProject -> ORMProject
-        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi, guidDic:Dictionary<Guid, ORMUnique>) =
-            ds2Orm dbApi guidDic x :?> 'T
+        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi, guidDicDebug:Dictionary<Guid, ORMUnique>) =
+            ds2Orm dbApi guidDicDebug x :?> 'T
 
     type RtProject with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.

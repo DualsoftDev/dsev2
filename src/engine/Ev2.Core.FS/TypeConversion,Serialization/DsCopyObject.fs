@@ -7,28 +7,19 @@ open Dual.Common.Base
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
 module internal rec DsObjectCopyImpl =
+    /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
     type ReplicateBag() =
-        /// OldGuid -> Old object
-        member val Oldies = Dictionary<Guid, Unique>()
         /// NewGuid -> New object
         member val Newbies = Dictionary<Guid, Unique>()
-    with
-        member x.Add(old:Unique) =
-            old.Guid |> tee (fun guid -> x.Oldies.TryAdd(guid, old))
 
-    let internal nn (oldName:string) =
-//#if DEBUG
-//        match oldName with
-//        | null | "" -> null
-//        | _ -> $"Copy of {oldName}"
-//#else
-        oldName
-//#endif
+    let uniqReplicateWithBag (bag:ReplicateBag) (src:#Unique) (dst:#Unique) : #Unique =
+        dst
+        |> uniqReplicate src
+        |> tee(fun z -> bag.Newbies.TryAdd(src.Guid, z))
 
     type RtProject with // replicate
         /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
             let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
             let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
 
@@ -38,15 +29,12 @@ module internal rec DsObjectCopyImpl =
                 x.RawPrototypeSystems |> z.RawPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
             |> validateRuntime
 
 
     type RtSystem with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
             let apiDefs  = x.ApiDefs  |-> _.replicate(bag)  |> toArray
             let apiCalls = x.ApiCalls |-> _.replicate(bag)  |> toArray
@@ -60,7 +48,7 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Target |> verify)
 
             RtSystem.Create(x.PrototypeSystemGuid, flows, works, arrows, apiDefs, apiCalls)
-            |> uniqReplicate x |> uniqGuid guid
+            |> uniqReplicateWithBag bag x
             |> tee(fun s ->
                 //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
                 s.OriginGuid    <- Some x.Guid                                       // 최근 원본 지향 버젼
@@ -69,13 +57,10 @@ module internal rec DsObjectCopyImpl =
                 s.EngineVersion <- x.EngineVersion
                 s.LangVersion   <- x.LangVersion
                 s.Description   <- x.Description )
-            |> tee(fun z -> bag.Newbies[guid] <- z)
 
 
     type RtWork with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-
             let calls =
                 x.Calls |> Seq.map(fun z -> z.replicate bag) |> List.ofSeq
 
@@ -92,8 +77,7 @@ module internal rec DsObjectCopyImpl =
                 |-> (fun f -> bag.Newbies[f.Guid] :?> RtFlow)
 
             RtWork.Create(calls, arrows, flow)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
             |> tee(fun w ->
                 w.Status4    <- x.Status4
                 w.Motion     <- x.Motion
@@ -107,102 +91,62 @@ module internal rec DsObjectCopyImpl =
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
     type RtFlow with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-
             let buttons    = x.Buttons    |-> _.replicate(bag) |> toArray
             let lamps      = x.Lamps      |-> _.replicate(bag) |> toArray
             let conditions = x.Conditions |-> _.replicate(bag) |> toArray
             let actions    = x.Actions    |-> _.replicate(bag) |> toArray
 
             RtFlow(buttons, lamps, conditions, actions)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
 
 
     type RtButton with // replicate
-        member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-            RtButton()
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+        member x.replicate(bag:ReplicateBag) = RtButton()    |> uniqReplicateWithBag bag x
 
 
     type RtLamp with // replicate
-        member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-            RtLamp()
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+        member x.replicate(bag:ReplicateBag) = RtLamp()      |> uniqReplicateWithBag bag x
 
 
     type RtCondition with // replicate
-        member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-            RtCondition()
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+        member x.replicate(bag:ReplicateBag) = RtCondition() |> uniqReplicateWithBag bag x
 
 
     type RtAction with // replicate
-        member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-            RtAction()
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
-
-
-
-
-
-
-
-
+        member x.replicate(bag:ReplicateBag) = RtAction()    |> uniqReplicateWithBag bag x
 
 
     type RtCall with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-
             RtCall(x.CallType, x.ApiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
             |> tee(fun c -> c.Status4 <- x.Status4 )
 
     type RtApiCall with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
-
             RtApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress,
                       x.InSymbol, x.OutSymbol, x.ValueSpec)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
 
     type RtApiDef with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
             RtApiDef(x.IsPush)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
 
 
     type RtArrowBetweenWorks with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> RtWork
             let target = bag.Newbies[x.Target.Guid] :?> RtWork
             RtArrowBetweenWorks(source, target, x.Type)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
-
+            |> uniqReplicateWithBag bag x
 
     type RtArrowBetweenCalls with // replicate
         member x.replicate(bag:ReplicateBag) =
-            let guid = bag.Add(x)
             let source = bag.Newbies[x.Source.Guid] :?> RtCall
             let target = bag.Newbies[x.Target.Guid] :?> RtCall
             RtArrowBetweenCalls(source, target, x.Type)
-            |> uniqReplicate x |> uniqGuid guid
-            |> tee(fun z -> bag.Newbies[guid] <- z)
+            |> uniqReplicateWithBag bag x
 
 [<AutoOpen>]
 module DsObjectCopyAPIModule =

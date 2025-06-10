@@ -162,11 +162,9 @@ module rec NewtonsoftJsonObjects =
 
         [<OnSerializing>]
         member x.OnSerializingMethod (ctx: StreamingContext) =
-            //let bag = ctx.Context |> cast<Nj2RtBag>
             fwdOnNsJsonSerializing x
         [<OnDeserialized>]
         member x.OnDeserializedMethod(ctx: StreamingContext) =
-            //let bag = ctx.Context |> cast<Nj2RtBag>
             fwdOnNsJsonDeserialized x
 
         static member FromRuntime(rt:RtSystem) =
