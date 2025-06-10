@@ -43,13 +43,13 @@ module internal Db2DsImpl =
                 let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
                 let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
 
-                let buttons    = ormButtons    |-> (fun z -> RtButton    () |> uniqReplicate z) |> toArray
-                let lamps      = ormLamps      |-> (fun z -> RtLamp      () |> uniqReplicate z) |> toArray
-                let conditions = ormConditions |-> (fun z -> RtCondition () |> uniqReplicate z) |> toArray
-                let actions    = ormActions    |-> (fun z -> RtAction    () |> uniqReplicate z) |> toArray
+                let buttons    = ormButtons    |-> (fun z -> RtButton    () |> replicateProperties z) |> toArray
+                let lamps      = ormLamps      |-> (fun z -> RtLamp      () |> replicateProperties z) |> toArray
+                let conditions = ormConditions |-> (fun z -> RtCondition () |> replicateProperties z) |> toArray
+                let actions    = ormActions    |-> (fun z -> RtAction    () |> replicateProperties z) |> toArray
 
                 RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
-                |> uniqReplicate ormFlow
+                |> replicateProperties ormFlow
         ]
         rtFlows |> s.AddFlows
 
@@ -58,7 +58,7 @@ module internal Db2DsImpl =
 
             for orm in orms do
                 RtApiDef(orm.IsPush)
-                |> uniqReplicate orm
+                |> replicateProperties orm
                 |> tee(fun z -> z.RawParent <- Some s)
         ]
         rtApiDefs |> s.AddApiDefs
@@ -76,7 +76,7 @@ module internal Db2DsImpl =
                 let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
                 RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                             orm.InSymbol, orm.OutSymbol, valueParam)
-                |> uniqReplicate orm
+                |> replicateProperties orm
                 |> tee(fun z -> z.RawParent <- Some s)
         ]
         rtApiCalls |> s.AddApiCalls
@@ -89,13 +89,16 @@ module internal Db2DsImpl =
             for orm in orms do
                 RtWork.Create()
                 |> setParent s
-                |> uniqReplicate orm
+                |> replicateProperties orm
                 |> tee(fun w ->
-                    if orm.FlowId.HasValue then
-                        let flow = rtFlows |> find(fun f -> f.Id.Value = orm.FlowId.Value)
+                    match orm.FlowId with
+                    | Some flowId ->
+                        let flow = rtFlows |> find(fun f -> f.Id.Value = flowId)
                         //w.Status4 <- orm.Status4Id
                         w.Flow <- Some flow
-                    w.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                    | None -> ()
+
+                    w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
                     w.Motion     <- orm.Motion
                     w.Script     <- orm.Script
                     w.IsFinished <- orm.IsFinished
@@ -124,10 +127,10 @@ module internal Db2DsImpl =
 
                     let acs = orm.AutoConditions |> jsonDeserializeStrings
                     let ccs = orm.CommonConditions |> jsonDeserializeStrings
-                    RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, n2o orm.Timeout)
-                    |> uniqReplicate orm
+                    RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
+                    |> replicateProperties orm
                     |> setParent w
-                    |> tee(fun c -> c.Status4 <- n2o orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+                    |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
             ]
             w.AddCalls rtCalls
 
@@ -144,7 +147,7 @@ module internal Db2DsImpl =
                     let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
                     RtArrowBetweenCalls(src, tgt, arrowType)
-                    |> uniqReplicate orm
+                    |> replicateProperties orm
             ]
             w.AddArrows rtArrows
 
@@ -165,7 +168,7 @@ module internal Db2DsImpl =
                 let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
                 RtArrowBetweenWorks(src, tgt, arrowType)
-                |> uniqReplicate orm
+                |> replicateProperties orm
         ]
         rtArrows |> s.AddArrows
         assert(setEqual s.Arrows rtArrows)
@@ -184,7 +187,7 @@ module internal Db2DsImpl =
 
         let rtProj =
             RtProject.Create()
-            |> uniqReplicate ormProject
+            |> replicateProperties ormProject
 
         let ormSystems =
             let systemIds = projSysMaps |-> _.SystemId
@@ -193,7 +196,7 @@ module internal Db2DsImpl =
                 {| SystemIds = systemIds |}, tr)
             |> tees (fun os ->
                     RtSystem.Create()
-                    |> uniqReplicate os
+                    |> replicateProperties os
                     |> tee (fun z ->
                         z.IRI <- os.IRI
                         z.DateTime <- os.DateTime)
@@ -242,7 +245,7 @@ module internal Db2DsImpl =
             ormSystem.RtObject <-
                 let rtSystem =
                     RtSystem.Create()
-                    |> uniqReplicate ormSystem
+                    |> replicateProperties ormSystem
                     |> tee(fun z ->
                         z.IRI <- ormSystem.IRI
                         z.DateTime <- ormSystem.DateTime

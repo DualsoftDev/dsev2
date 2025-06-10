@@ -59,6 +59,7 @@ module rec DsCompareObjects =
                 let l = $"{left.Name}/{left.Id}/{guid2str left.Guid}"
                 let r = $"{right.Name}/{right.Id}/{guid2str right.Guid}"
                 $"Diff({name}): {l} <> {r}"
+            | _ -> failwith "ERROR: CompareResult.ToString()"
 
     /// abberviation
     type internal Cc = CompareCriteria

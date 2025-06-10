@@ -73,10 +73,10 @@ module Interfaces =
     let mutable internal fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, parameter:string, dateTime:DateTime, ?id:Id, ?parent:Unique) =
+    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =
         interface IUnique
 
-        internal new() = Unique(nullString, newGuid(), nullString, now(), ?id=None, ?parent=None)
+        internal new() = Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         [<JsonProperty(Order = -100)>] member val Id = id with get, set
@@ -98,6 +98,10 @@ module Interfaces =
         // } 내부 구현 전용.  serialize 대상에서 제외됨
 
 
+    let mutable fwdReplicateProperties: Unique -> Unique -> Unique = let dummy (src:Unique) (dst:Unique) = failwith "Should be reimplemented" in dummy
+    let replicateProperties (src:#Unique) (dst:#Unique): #Unique =
+        fwdReplicateProperties src dst |> ignore
+        dst
 
 [<AutoOpen>]
 module internal UniqueHelpers =
@@ -124,37 +128,6 @@ module internal UniqueHelpers =
             |> uniqName "KKKKKKKKKKKKK"
     *)
 
-    let private linkUniq (src:#Unique) (dst:#Unique): #Unique=
-        match box src with
-        | :? IRtUnique  as s -> dst.RtObject  <- Some s
-        | :? INjUnique  as s -> dst.NjObject  <- Some s
-        | :? IORMUnique as s -> dst.ORMObject <- Some s
-        | _  -> failwith "ERROR"
-
-        match box dst with
-        | :? IRtUnique  as d -> src.RtObject  <- Some d
-        | :? INjUnique  as d -> src.NjObject  <- Some d
-        | :? IORMUnique as d -> src.ORMObject <- Some d
-        | _  -> failwith "ERROR"
-
-        dst
-
-    /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
-    let uniqReplicate (src:#Unique) (dst:#Unique) : #Unique =
-
-        linkUniq src dst |> ignore
-
-        dst.Id <- src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
-        dst.Parameter <- src.Parameter
-        dst.RawParent <- src.RawParent
-
-        match box src, box dst with
-        | (:? IWithDateTime as src), (:? IWithDateTime as dst) ->
-            dst.DateTime <- src.DateTime
-        | _ -> ()
-        dst
 
     let private uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
     let uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst

@@ -158,17 +158,17 @@ module ORMTypeConversionModule =
 
     type ORMCall with   // Create
         static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
-            autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:Nullable<int>
+            autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ): ORMUnique =
-            let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType) |> Option.toNullable
-            let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
+            let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType)
+            let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
             ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
     let internal ds2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
         let ormUniqReplicate (src:Unique) (dst:ORMUnique): ORMUnique =
             dst
-            |> uniqReplicate src
+            |> replicateProperties src
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
 
         match x |> tryCast<Unique> with
@@ -183,10 +183,8 @@ module ORMTypeConversionModule =
                 |> ormUniqReplicate z
 
             | :? RtSystem as z ->
-                let originGuid = z.OriginGuid |> Option.toNullable
-
                 // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
-                let prototypeId:Nullable<Id> =
+                let prototypeId:Id option =
                     z.PrototypeSystemGuid
                     >>= (fun protoGuid ->
                             z.Project.Value.Systems
@@ -195,9 +193,8 @@ module ORMTypeConversionModule =
                             s.ORMObject      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
                             >>= tryCast<ORMSystem>
                             >>= _.Id)
-                    |> o2n
 
-                ORMSystem(prototypeId, originGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
+                ORMSystem(prototypeId, z.OriginGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
                 |> ormUniqReplicate z
 
             | :? RtFlow as z ->
@@ -205,20 +202,20 @@ module ORMTypeConversionModule =
                 |> ormUniqReplicate z
 
             | :? RtWork as z ->
-                let flowId = (z.Flow >>= _.Id) |> Option.toNullable
-                let status4Id = z.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4> |> Option.toNullable
+                let flowId = (z.Flow >>= _.Id)
+                let status4Id = z.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
                 ORMWork  (pid, status4Id, flowId)
                 |> tee(fun y ->
-                    y.Motion <- z.Motion
-                    y.Script <- z.Script
+                    y.Motion     <- z.Motion
+                    y.Script     <- z.Script
                     y.IsFinished <- z.IsFinished
-                    y.NumRepeat <- z.NumRepeat
-                    y.Period <- z.Period
-                    y.Delay <- z.Delay )
+                    y.NumRepeat  <- z.NumRepeat
+                    y.Period     <- z.Period
+                    y.Delay      <- z.Delay )
                 |> ormUniqReplicate z
 
             | :? RtCall as z ->
-                ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoConditions, z.CommonConditions, z.IsDisabled, o2n z.Timeout)
+                ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoConditions, z.CommonConditions, z.IsDisabled, z.Timeout)
                 |> ormUniqReplicate z
 
             | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.

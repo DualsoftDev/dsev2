@@ -15,4 +15,6 @@ module ModuleInitializer =
             fwdOnNsJsonSerializing <- onNsJsonSerializing
             fwdOnNsJsonDeserialized <- onNsJsonDeserialized
             fwdDuplicate <- duplicateUnique
+
+            fwdReplicateProperties <- replicatePropertiesImpl
             ()

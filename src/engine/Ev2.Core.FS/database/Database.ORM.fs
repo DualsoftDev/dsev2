@@ -115,10 +115,10 @@ module ORMTypesModule =
         member val DateTime      = dateTime with get, set
 
 
-    type ORMSystem(prototypeId:Nullable<Id>, originGuid:Nullable<Guid>, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string, dateTime) =
+    type ORMSystem(prototypeId:Id option, originGuid:Guid option, iri:string, author:string, langVersion:Version, engineVersion:Version, description:string, dateTime) =
         inherit ORMProjectEntity()
 
-        new() = ORMSystem(nullableId, emptyGuid, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
+        new() = ORMSystem(None, None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
@@ -165,10 +165,10 @@ module ORMTypesModule =
         interface IORMAction
 
 
-    type ORMWork(systemId:Id, status4Id:Nullable<Id>, flowId:Nullable<Id>) =
+    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option) =
         inherit ORMSystemEntity(systemId)
 
-        new() = ORMWork(-1, nullableId, nullableId)
+        new() = ORMWork(-1, None, None)
         interface IORMWork
 
         member val FlowId     = flowId     with get, set
@@ -180,10 +180,10 @@ module ORMTypesModule =
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
 
-    type ORMCall(workId:Id, status4Id:Nullable<Id>, callTypeId:Nullable<Id>, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:Nullable<int>) =
+    type ORMCall(workId:Id, status4Id:Id option, callTypeId:Id option, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option) =
         inherit ORMWorkEntity(workId)
 
-        new() = ORMCall(-1, nullableId, (DbCallType.Normal |> int64 |> Nullable), [], [], false, nullableInt)
+        new() = ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), [], [], false, None)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set

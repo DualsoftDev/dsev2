@@ -57,7 +57,7 @@ module rec NewtonsoftJsonObjects =
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 NjUnique 객체에 저장
     let internal fromNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
-        uniqReplicate src dst |> ignore
+        replicateProperties src dst |> ignore
         dst
 
 
@@ -308,7 +308,7 @@ module rec NewtonsoftJsonObjects =
 
         member val AutoConditions   = nullString with get, set
         member val CommonConditions = nullString with get, set
-        member val IsDisabled = false           with get, set
+        member val IsDisabled = false            with get, set
         member val Timeout    = Option<int>.None with get, set
 
         (* 특별한 조건일 때에만 json 표출 *)
@@ -463,7 +463,7 @@ module rec NewtonsoftJsonObjects =
                     , Version=njp.Version
                     , Description=njp.Description
                     , Database=njp.Database )
-                |> uniqReplicate njp
+                |> replicateProperties njp
                 |> tee (fun z ->
                     actives @ passives
                     |> iter (setParentI z) )
@@ -496,7 +496,7 @@ module rec NewtonsoftJsonObjects =
 
                     let dsWork =
                         RtWork.Create(calls, arrows, optFlow)
-                        |> uniqReplicate njw
+                        |> replicateProperties njw
                         |> tee(fun z ->
                             z.Motion     <- njw.Motion
                             z.Script     <- njw.Script
@@ -523,7 +523,7 @@ module rec NewtonsoftJsonObjects =
 
                 a.RuntimeObject <-
                     RtArrowBetweenWorks(src, tgt, arrowType)
-                    |> uniqReplicate a)
+                    |> replicateProperties a)
 
             let arrows   = njs.Arrows   |-> (fun z -> z.RuntimeObject :?> RtArrowBetweenWorks)
             let apiDefs  = njs.ApiDefs  |-> (fun z -> z.RuntimeObject :?> RtApiDef)
@@ -548,13 +548,13 @@ module rec NewtonsoftJsonObjects =
                                 , EngineVersion=njs.EngineVersion
                                 , Description=njs.Description
                                 , OriginGuid=n2o njs.OriginGuid)
-                |> uniqReplicate njs
+                |> replicateProperties njs
 
         | :? NjFlow as njf ->
-            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- RtButton()     |> uniqReplicate z)
-            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- RtLamp()       |> uniqReplicate z)
-            njf.Conditions |> iter (fun z -> z.RuntimeObject <- RtCondition()  |> uniqReplicate z)
-            njf.Actions    |> iter (fun z -> z.RuntimeObject <- RtAction()     |> uniqReplicate z)
+            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- RtButton()     |> replicateProperties z)
+            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- RtLamp()       |> replicateProperties z)
+            njf.Conditions |> iter (fun z -> z.RuntimeObject <- RtCondition()  |> replicateProperties z)
+            njf.Actions    |> iter (fun z -> z.RuntimeObject <- RtAction()     |> replicateProperties z)
 
 
 
@@ -563,7 +563,7 @@ module rec NewtonsoftJsonObjects =
             let conditions = njf.Conditions |-> (fun z -> z.RuntimeObject :?> RtCondition)
             let actions    = njf.Actions    |-> (fun z -> z.RuntimeObject :?> RtAction)
 
-            let rtFlow = RtFlow(buttons, lamps, conditions, actions) |> uniqReplicate njf
+            let rtFlow = RtFlow(buttons, lamps, conditions, actions) |> replicateProperties njf
             let all:NjUnique seq =
                 njf.Buttons     .Cast<NjUnique>()
                 @ njf.Lamps     .Cast<NjUnique>()
@@ -592,7 +592,7 @@ module rec NewtonsoftJsonObjects =
 
                 a.RuntimeObject <-
                     RtArrowBetweenCalls(src, tgt, arrowType)
-                    |> uniqReplicate a )
+                    |> replicateProperties a )
 
             (* DsWork 객체 생성은 flow guid 생성 시까지 지연 *)
 
@@ -609,7 +609,7 @@ module rec NewtonsoftJsonObjects =
                 let acs = njc.AutoConditions |> jsonDeserializeStrings
                 let ccs = njc.CommonConditions |> jsonDeserializeStrings
                 RtCall(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
-                |> uniqReplicate njc
+                |> replicateProperties njc
             ()
 
         | :? NjApiCall as njac ->
@@ -621,19 +621,19 @@ module rec NewtonsoftJsonObjects =
                 noop()
                 RtApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
-                |> uniqReplicate njac
+                |> replicateProperties njac
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
                 RtApiDef(njad.IsPush)
-                |> uniqReplicate njad
+                |> replicateProperties njad
             ()
 
 
         | :? NjButton as njx ->
             njx.RuntimeObject <-
                 RtButton()
-                |> uniqReplicate njx
+                |> replicateProperties njx
 
 
 
