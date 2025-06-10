@@ -23,6 +23,12 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.UnitTest.FS", "
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Aas.FS", "engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj", "{B1D07720-375B-4EC5-3F88-211D4AD3B715}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "솔루션 항목", "솔루션 항목", "{2A3A057F-5D22-31FD-628C-DF5EF75AEF1E}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\Spec\EV2_Rule.md = ..\docs\Spec\EV2_Rule.md
+		..\docs\Spec\EV2_Spec.md = ..\docs\Spec\EV2_Spec.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
