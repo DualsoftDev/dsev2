@@ -295,73 +295,66 @@ ApiDef → Work(Bit Group) → Call(Bit Group) → ApiCall(Tag) → ApiDef → (
 * **ApiDef 구조가 존재할 경우, Bit들의 지시/관찰 경계가 형성되어 해당 Bit들이 Work처럼 해석될 수 있으며, 내부 Bit 그룹은 다시 Call처럼 연결될 수 있습니다.**
 * 결과적으로 DS 시스템은 Bit 기반 흐름에서 시작하여, **ApiDef → Work → Call → ApiCall → ApiDef** 구조를 반복하는 계층적 인과 연결 체계를 형성합니다.
 
-## 🌐 DS Duality 이중성: Case 4 — ApiCall → Tag → ApiDef
+
+
+
+## 🌐 DS Duality 이중성: Case 4 — Tag = Write ⊕ Read
 
 ### 1. 개념 소개
 
-DS 시스템에서 ApiCall과 ApiDef은 시스템 간 연결을 위한 기본 구조를 구성합니다. 이 연결은 단순한 함수 호출이 아니라, **Tag**라는 매개체를 통해 데이터를 전달하고 수신하는 구조로 설계됩니다.
+DS 시스템에서 **Tag**는 시스템 간 데이터 전달을 위한 핵심 인터페이스입니다. 이 Tag는 일반적으로는 **Active 시스템이 WriteTag를 Write, Passive 시스템이 ReadTag를 Read**하는 구조로 사용되며, 이 구조는 \*\*1:1 연결(Pair)\*\*을 전제로 합니다.
 
-Tag는 단순한 변수나 공유 메모리가 아니라, **물리적으로 서로 다른 두 시스템 간에 데이터를 전달하는 쌍(pair) 구조의 인터페이스**입니다. ApiCall은 **Active System** 입장에서 쓰기(Write) 동작을 수행하며, ApiDef는 **Passive System** 입장에서 읽기(Read) 동작만 수행합니다.
+그러나 일부 예외적 구성(예: Shared Memory, 중앙 DB 기반 연동)에서는 **Tag가 동시에 여러 시스템에 의해 Read와 Write 가능한 공유 구조**처럼 작동하며, 이때 Tag는 구조적 제약을 넘어서 실행 단계에서의 **이중성**을 나타냅니다.
 
-이때 Passive System은 Tag에 데이터를 기록하는 내부 처리 로직을 수행하지만, DS 모델 상에서는 **ApiDef는 Tag를 읽을 뿐이며, 해당 동작에는 관여하지 않습니다.** 즉, Passive 쪽은 내부에서 Tag를 통해 물리적으로 처리되고 있다고 가정됩니다.
-
-> 이때, DS의 관찰 범위는 Tag에 대한 접근만 포함되며, Passive 시스템 내부의 물리 처리 로직은 관찰 대상이 아닙니다.
+> ⊕ 이중성 핵심: **Tag는 구조적으로는 ReadTag-WriteTag Pair이지만, Tag를 Share할 경우 Read/Write 이중성이 발생할 수 있음**
 
 ---
 
-### 2. Tag의 Pair 구조와 역할
+### 2. 구조적 정의: 1:1 Pair
 
 ```text
-[Active System - ApiCall] ──▶ Tag ──▶ [Passive System - ApiDef]
-         (Write)                             (Read)
+[Active System] → (Write Tag) →(물리전송)→ (Read Tag) → [Passive System]
 ```
 
-| 요소          | 역할 관점      | 동작 유형      | 시스템 유형  | 설명                        |
-| ----------- | ---------- | ---------- | ------- | ------------------------- |
-| **ApiCall** | 쓰기 (Write) | Tag에 값 설정  | Active  | 외부 시스템에 명령을 전달하기 위해 값을 설정 |
-| **ApiDef**  | 읽기 (Read)  | Tag에서 값 읽기 | Passive | 전달된 값을 수신하여 내부 작업 수행      |
-| **Tag**     | 데이터 경계점    | 쌍(Pair) 구조 | 공유 아님   | 두 시스템 간 데이터를 매개하는 경계 지점   |
+---
 
-* Tag는 공유 메모리 개념이 아닌, **양방향 공유되지 않는 일방향 전달 쌍(pair) 구조**로 설계됨
-* ApiDef는 값을 "읽기만" 하며, 값 설정에는 관여하지 않음
-* Tag는 DS 모델에서 유일하게 관찰 가능한 정보로, 시스템 간 연결의 중심
+### 3. Shared 구조에서의 Read/Write 이중성
+
+#### ▸ Shared Memory 기반
+
+* 여러 시스템이 동일 메모리 주소를 사용하여 Tag를 동시에 읽고 쓸 수 있음
+* Active/Passive 구분 없이 **Tag를 공유 변수처럼 활용**
+
+#### ▸ DB 기반 연동 구조
+
+* Tag가 DB Row에 매핑되어, 다수의 시스템이 값을 조회/갱신 가능
+* 논리적으로 동일 Tag지만, 동기화가 필요하며 이중 접근 허용
+
+| 조건            | Read/Write 가능 여부 | 설명                         |
+| ------------- | ---------------- | -------------------------- |
+| 기본 구조         | ❌                | Write → Read 1:1 구조 (Pair) |
+| Shared Memory | ✅                | 공유 변수처럼 다수 접근 가능           |
+| DB 매핑 구조      | ✅                | 간접 경로로 다수 시스템이 접근 가능       |
+
+> 위의 예외적 사용은 DS의 외부 확장으로 간주되며, 설계상 일관성과 충돌 방지를 위한 동기화가 필수입니다.
 
 ---
 
-### 3. 관찰 불가능한 내부 처리와 Timeout 감지
-
-Passive System은 외부로부터 ApiCall에 의해 값을 전달받지만, 실제 처리는 해당 시스템 내부에서 물리적으로 수행됩니다. DS에서는 이러한 내부 처리를 직접 관찰할 수 없기 때문에, 다음과 같은 방식으로 **이상 감지 또는 타임아웃 판단**을 수행합니다:
-
-* **시간 기반 지시-관찰 타이밍 감지**
-
-  * ApiCall을 통해 Tag에 값이 설정되면, 일정 시간 내에 ApiDef 측의 수신 응답이 예상됨
-  * 이 시간이 초과될 경우 **타임아웃 경고** 또는 **실패 처리**를 수행함
-
----
-
-### 4. 반복되는 구조
+### 4. 반복 연결 구조에서의 해석
 
 ```text
 ApiCall → Tag → ApiDef → Work → Call → ApiCall → Tag → ApiDef → ...
 ```
 
-* Tag를 기준으로 시스템 간 연결이 반복되는 구조
-* 각각의 Tag는 새로운 두 시스템의 연결을 형성하며, 이 구조는 **무한히 중첩 가능한 구조**
-* DS는 이 구조를 통해 **계층적이면서도 유연한 흐름 구성**을 가능하게 함
+* 위 구조처럼 Tag는 시스템 간 반복되는 호출 흐름의 중심입니다.
 
 ---
 
-### 5. 결론
+### 5. 정리
 
-* Tag는 **읽기/쓰기 관점의 쌍(pair) 구조로 정의되며**, 공유 구조가 아님
-* **Passive 측은 내부적으로 물리적으로 Tag를 처리하지만, DS 모델은 관찰 불가**
-* DS는 **ApiCall → Tag → ApiDef** 구조를 관찰 가능한 단위로 하여 모델링함
-* **이상 감지 또는 예외 처리는 시간 기반 관찰 방식(지시 후 응답 감시)을 통해 구현**
-* 이 구조는 **DS 전체 흐름의 연결성을 구성하는 기본 단위이자, 반복 가능한 설계 패턴**
-
-
-
-
+* **Tag는 구조적으로는  ReadTag/WriteTag 1:1 연결된 Pair 구조**입니다.
+* Shared 구조에서는 ActiveSystem은 WriteTag로 해석  PassiveSystem은 ReadTag로 해석 하는 이중성이 나타납니다.
+* DS 시스템은 명확한 흐름 해석을 위해 기본적으로 Pair 구조를 권장하되, 외부 연동 시스템과의 확장을 통해 Tag의 이중성이 실제 운용에서 현실화될 수 있음을 고려해야 합니다.
 
 
 ## DS Duality 이중성: Case 5 — WorkBit = Ready ⊕ Going ⊕ Finish ⊕ Homing
