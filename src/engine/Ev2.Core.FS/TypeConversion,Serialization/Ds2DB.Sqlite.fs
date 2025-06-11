@@ -250,7 +250,7 @@ module internal Db2DsImpl =
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowWithId<ORMSystem> conn tr Tn.System id with
             | None ->
-                Error <| sprintf "System not found: %A" id
+                Error <| $"System not found with id: {id}"
             | Some ormSystem ->
                 ormSystem.RtObject <-
                     let rtSystem =
@@ -502,7 +502,7 @@ module internal Ds2DbImpl =
 
 
     /// DsProject 을 database (sqlite or pgsql) 에 저장
-    let rTryInsertProjectToDB (proj:RtProject) (dbApi:AppDbApi) (removeExistingData:bool option): DbCommitResult =
+    let rTryInsertProjectToDB (proj:RtProject) (dbApi:AppDbApi): DbCommitResult =
         let helper(conn:IDbConnection, tr:IDbTransaction): DbCommitResult =
 
             let rtObjs =
@@ -514,13 +514,6 @@ module internal Ds2DbImpl =
             let systems =
                 grDic.[typeof<RtSystem>]
                 |> Seq.cast<RtSystem> |> List.ofSeq
-
-            match removeExistingData, proj.Id with
-            | Some true, Some id ->
-                //dbApi.DbProvider.TruncateAllTables(conn) |> ignore
-                conn.Execute($"DELETE FROM {Tn.Project} WHERE id = {id}", tr) |> ignore
-                //conn.Execute($"DELETE FROM {Tn.ProjectSystemMap} WHERE projectId = {id}", tr) |> ignore
-            | _ -> ()
 
             Guid2UniqDic() |> dbApi.DDic.Set
             let ormProject = proj.ToORM(dbApi)
@@ -582,15 +575,26 @@ module Ds2SqliteModule =
     open Db2DsImpl
 
     type RtProject with // CommitToDB, CheckoutFromDB
-        member x.RTryCommitToDB(dbApi:AppDbApi, ?removeExistingData:bool): DbCommitResult =
+        member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->
-                match conn.TryQuerySingle($"SELECT * FROM {Tn.Project} WHERE guid = @Guid", {| Guid = x.Guid |}, tr) with
-                | Some _ ->
-                    // 이미 존재하는 프로젝트는 업데이트
-                    rTryUpdateProjectToDB x dbApi
-                | None ->
+                let dbProjs = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project} WHERE id = @Id OR guid = @Guid", x, tr) |> toList
+                match dbProjs with
+                | [] ->
                     // 신규 project 삽입
-                    rTryInsertProjectToDB x dbApi removeExistingData)
+                    rTryInsertProjectToDB x dbApi
+                | [dbProj] when dbProj.Guid = x.Guid ->
+                    // 이미 존재하는 프로젝트는 업데이트
+                    RtProject.RTryCheckoutFromDB(dbProj.Id.Value, dbApi)
+                    >>= (fun dbProject ->
+                        let diff = dbProject.ComputeDiff(x) |> toList
+                        if diff.IsEmpty then
+                            Ok NoChange
+                        else
+                            rTryUpdateProjectToDB x dbApi
+                    )
+                | [dbProj] -> Error $"Project with Id {x.Id} already exists with a different Guid: {dbProj.Guid}. Cannot update."
+                | _ ->
+                    failwith "ERROR" )
 
         member x.RTryRemoveFromDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->

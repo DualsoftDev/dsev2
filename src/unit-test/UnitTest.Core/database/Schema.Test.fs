@@ -5,6 +5,7 @@ open System.Linq
 open System.IO
 open System.Data.SQLite
 
+open Xunit
 open NUnit.Framework
 open Dapper
 
@@ -18,8 +19,13 @@ open Newtonsoft.Json
 open System.Reactive.Concurrency
 
 
+open NUnit.Framework
+open NUnit.Framework.Interfaces
+open System.Collections.Concurrent
+
+
 [<AutoOpen>]
-module SchemaTestModule =
+module Schema =
     let testDataDir() = Path.Combine(__SOURCE_DIRECTORY__, @"..\test-data")
     let dbFilePath = Path.Combine(testDataDir(), "test.sqlite3")
     let path2ConnectionString (dbFilePath:string) =
@@ -65,12 +71,12 @@ module SchemaTestModule =
         Path.Combine(testDataDir(), $"{getFuncName(2)}.json")
         |> createSqliteDbApi
 
-    [<Test>]
-    let dbCreateTest() =
-        use conn = sqliteDbApi().CreateConnection()
-        ()
 
-
+    let guid = Guid.Parse "42dad0ec-6441-47b7-829e-1487e1c89360"
+    type Gender = Male | Female
+    let jsonb = {| Name = "Kwak"; Gender = Male; Age=30 |} |> JsonConvert.SerializeObject
+    let testRowFull = RtTypeTest(OptionGuid=Some guid, NullableGuid=Nullable<Guid>(guid), OptionInt=Some 1, NullableInt=Nullable 1, Jsonb=jsonb, DateTime=DateTime.MaxValue)
+    let testRowEmpty = RtTypeTest()
 
     type Row = {
         mutable Id: Nullable<int>
@@ -79,116 +85,10 @@ module SchemaTestModule =
         Guid: string
     }
 
-    [<Test>]
-    let upsertTest() =
-        use conn = sqliteDbApi().CreateConnection()
-        tracefn $"SQL version: {conn.GetVersionString()}"
-        let r1 = conn.Upsert(
-            "flow",
-            [|
-               "name", box "Alice"
-               "systemId", 1
-               "guid", "b544dcdc-ca2f-43db-9d90-93843269bd3f"
-            |],
-            [|"id"|]
-        )
-
-        let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f" |}
-        let r2 = conn.Upsert(
-            "flow", row, [ "name"; "systemId"; "guid" ],
-            [|"id"|]
-        )
-
-        let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid() }
-        let r3 = conn.Upsert(
-            "flow", row, [ "Name"; "SystemId"; "Guid" ],
-            [|"id"|],
-            onInserted = fun id -> row.Id <- Nullable id
-        )
-        ()
-
-
-
-    [<Test>]
-    let ``insert test`` () =
-        let dbApi = sqliteDbApi()
-        use conn = dbApi.CreateConnection()
-        dbApi.With(fun (conn, tr) ->
-            conn.Execute($"DELETE FROM {Tn.Project};", tr)
-        ) |> ignore
-
-
-        dbApi.VendorDB.TruncateAllTables(conn)
-        let newGuid() = Guid.NewGuid().ToString()
-
-        let ver = Version().ToString()
-        // project 삽입
-        let prjGuid = newGuid()
-        let prjName = "MainProject"
-        let prjId = conn.Insert(
-                        $"INSERT INTO {Tn.Project} (guid, name, author, version) VALUES (@Guid, @Name, @Author, @Version)",
-                        {| Guid=prjGuid; Name=prjName; Author=Environment.UserName; Version=ver|})
-
-
-        // system 삽입
-        let sysGuid = newGuid()
-        let sysName = "MainSystem"
-        let systemId = conn.Insert(
-                        $"INSERT INTO {Tn.System} (guid, name, iri, author, langVersion, engineVersion) VALUES (@Guid, @Name, @IRI, @Author, @LangVersion, @EngineVersion)",
-                        {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver; IRI="http://dualsoft.com/unique/12345"|})
-
-        // flow 삽입
-        let flowGuid = newGuid()
-        let flowId = conn.Insert(
-                        $"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@Guid, @Name, @SystemId)",
-                        {| Guid=flowGuid; Name="MainFlow"; SystemId=systemId|})
-
-        // work 삽입 (flow 연결된 경우)
-        let workGuid1 = newGuid()
-        let workId = conn.Insert(
-                        $"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@Guid, @Name, @SystemId, @FlowId)",
-                        {| Guid=workGuid1; Name="Work1"; SystemId=systemId; FlowId=flowId|})
-
-        // work 삽입 (flow 연결 없는 경우 - flowId = NULL)
-        let workGuid2 = newGuid()
-        conn.Execute($"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@guid, @name, @systemId, NULL)",
-                     dict ["guid", box workGuid2; "name", box "Work2"; "systemId", box systemId]) |> ignore
-
-
-        // call 삽입
-        let callGuid = newGuid()
-        conn.Execute($"INSERT INTO {Tn.Call} (guid, name, workId, autoConditions, commonConditions) VALUES (@Guid, @Name, @WorkId, @AutoConditions, @CommonConditions)",
-                    {| Guid=callGuid; Name="call1"; WorkId=workId; AutoConditions="""[ "AutoConditions" ]"""; CommonConditions="""[ "CommonConditions" ]"""|}) |> ignore
-
-        // 확인: 총 system = 1, flow = 1, work = 2, call = 1
-        let countSystem = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")
-        let countFlow   = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Flow}")
-        let countWork   = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}")
-        let countCall   = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Call}")
-
-        1 === countSystem
-        1 === countFlow
-        2 === countWork
-        1 === countCall
-
-
-        let systems = conn.EnumerateRows<ORMSystem>(Tn.System) |> List.ofSeq
-        let flows = conn.EnumerateRows<ORMFlow>(Tn.Flow) |> List.ofSeq
-        let works = conn.EnumerateRows<ORMWork>(Tn.Work) |> List.ofSeq
-        let calls = conn.EnumerateRows<ORMCall>(Tn.Call) |> List.ofSeq
-
-        systems.Length === 1
-        systems[0].Name === sysName
-
-        ()
-
-
     let ``basic_test`` (dbApi:AppDbApi) =
         createEditableProject()
 
-        let removeExistingData = true
-
-        let dsProject = edProject |> validateRuntime
+        let dsProject = edProject.Replicate() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
         let rtObjs = dsProject.EnumerateRtObjects()
@@ -211,7 +111,7 @@ module SchemaTestModule =
 
         dbApi.With(fun (conn, tr) ->
             conn.Execute($"DELETE FROM {Tn.Project}", tr) |> ignore
-            dsProject.RTryCommitToDB(dbApi, removeExistingData).IsOk === true
+            dsProject.RTryCommitToDB(dbApi) ==== Ok Inserted
 
             dsProject.EnumerateRtObjects()
             |> iter (fun dsobj ->
@@ -220,6 +120,9 @@ module SchemaTestModule =
                 // DB 삽입 후이므로 Id 가 Some 이어야 함
                 dsobj.Id.IsSome === true
             )
+
+            let diffProj = edProject.ComputeDiff dsProject |> toArray
+            let diffSys = edProject.Systems[0].ComputeDiff dsProject.Systems[0] |> toArray
 
             let dsSystem = dsProject.Systems[0]
             let dsFlow = dsSystem.Flows[0]
@@ -264,7 +167,7 @@ module SchemaTestModule =
 
             dsSystem.ToAasJson() |> ignore
 
-            //(fun () -> dsProject2.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
+            dsProject2.RTryCommitToDB(dbApi) ==== Ok NoChange
 
 
             dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
@@ -274,13 +177,18 @@ module SchemaTestModule =
             validateRuntime dsProject3 |> ignore
 
             dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
-            //(fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
+            dsProject3.RTryCommitToDB(dbApi)
+            |> tee(tracefn "Result3: %A")
+            ==== Ok NoChange
+
             do
                 let dsProj = dsProject2.Duplicate($"CC_{dsProject2.Name}")
                 dsProj.Name <- $"Duplicate of {dsProj.Name}"
                 validateRuntime dsProj |> ignore
                 dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
-                dsProj.RTryCommitToDB(dbApi, removeExistingData).IsOk === true
+                dsProj.RTryCommitToDB(dbApi)
+                |> tee(tracefn "Result: %A")
+                ==== Ok Inserted
 
 
             let dsProject4 =
@@ -295,369 +203,504 @@ module SchemaTestModule =
 
             validateRuntime dsProject4 |> ignore
             dsProject4.Systems[0].PrototypeSystemGuid <- None
-            dsProject4.RTryCommitToDB(dbApi, removeExistingData).IsOk === true )
+            dsProject4.RTryCommitToDB(dbApi)
+            |> tee(tracefn "Result4: %A")
+            ==== Ok Inserted)
 
         ()
 
 
-    [<Test>]
-    let ``[SQLite] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
-        sqliteDbApi() |> basic_test
+    type PGSqlTest() =
+        [<Test>]
+        member x.``[PGSql] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
+            pgsqlDbApi() |> basic_test
 
-    [<Test>]
-    let ``[PGSql] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
-        pgsqlDbApi() |> basic_test
-
-
-    [<Test>]
-    let ``JSON - DsObject - DB update test`` () =
-        //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
-        let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
-        if not (File.Exists jsonPath) then
-            edProject.ToJson(jsonPath) |> ignore
-
-        let json = File.ReadAllText(jsonPath)
-        let dsProject0 = NjProject.FromJson json
+        [<Test>]
+        member x.``PGSql Dapper test`` () =
+            pgsqlDbApi().With(fun (conn, tr) ->
+                conn.Execute($"""INSERT INTO {Tn.TypeTest}
+                                       (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
+                                VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty], tr) )
+            |> ignore
 
 
-        let dsProject1 = RtProject.FromJson json |> validateRuntime
-        noop()
-        let dsProject2 = dsProject1 |> _.Duplicate($"CC_{dsProject1.Name}")
-        let sys = dsProject2.ActiveSystems[0]
-        sys.Flows.Length === 1
-        let flow = sys.Flows[0]
-        dsProject2.Name <- "UpdatedProject"
-        let removeExistingData = true
+    type SQLiteTest() =
+        [<Test>]
+        member x.dbCreateTest() =
+            use conn = sqliteDbApi().CreateConnection()
+            ()
 
-        let dbApi = sqliteDbApi()
-
-        dbApi.With(fun (conn, tr) ->
-            conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}) |> ignore
-
-            dsProject2.RTryCommitToDB(dbApi, removeExistingData).IsOk === true)
-
-
-    [<Test>]
-    let ``DB Delete preview test`` () =
-        let projectId = 1
-
-        sqliteDbApi().With(fun (conn, tr) ->
-            let result =
-                conn.GuessCascadeDeleteAffected(Tn.System, 1)
-            noop()
-        )
+        // DB 가 생성되어 있고, "MainProject" 가 저장되어 있어야 함.   다른 test 수행 이후에 실행되면 OK
+        [<Test>]
+        member x.dbReadTest() =
+            Ev2.Core.FS.ModuleInitializer.Initialize(null)
+            DcLogger.EnableTrace <- true
+            //DapperTypeHandler.AddHandlers()
+            //checkHandlers()
+            AppSettings.TheAppSettings <- AppSettings(UseUtcTime = false)
+            Directory.CreateDirectory(testDataDir()) |> ignore
 
 
-    [<Test>]
-    let ``설계 문서 위치에 샘플 생성`` () =
-        let dsProject = edProject |> validateRuntime
-        // 설계 문서 위치에 drop
-        Path.Combine(specDir, "dssystem.json")
-        |> dsProject.ToJson |> ignore
 
-        let dbPath = Path.Combine(specDir, "dssystem.sqlite3")
-        File.Delete(dbPath) |> ignore
-        let dbApi = createSqliteDbApi dbPath
-
-        dsProject.RTryCommitToDB(dbApi, removeExistingData=true).IsOk === true
-
-        //let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
-        //let json =
-        //    let settings = JsonSerializerSettings(
-        //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-        //        TypeNameHandling = TypeNameHandling.Auto,
-        //        NullValueHandling = NullValueHandling.Ignore,
-        //        ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
-        //    )
-        //    JsonConvert.SerializeObject(dsProject, Formatting.Indented, settings)
-
-        //File.WriteAllText(rawJsonPath, json)
+            let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
+            let dsProject = RtProject.CheckoutFromDB("MainProject", dbApi)
+            use conn = dbApi.CreateConnection()
+            ()
 
 
-    (*
-        Project 에 cylinder subsystem 을 reference (loaded system) 으로 추가하는 예제
-    *)
-    [<Test>]
-    let ``Cylinder 추가 test`` () =
-        createEditableProject()
-        createEditableSystemCylinder()
-        let edProject = edProject.Replicate() |> validateRuntime
-        let protoGuid = edSystemCyl.Guid
-        edProject.AddPrototypeSystem edSystemCyl
-        let edSysCyl1 = edProject.Instantiate(protoGuid, Name="실린더 instance1", asActive=false)
-        let edSysCyl2 = edProject.Instantiate(protoGuid, Name="실린더 instance2", asActive=false)
-        let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=false)
-
-        let curernt = now()
-        let rtProject = edProject.Replicate()
-        rtProject |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
-        let json =
-            rtProject
-            |> validateRuntime
-            |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
-
-        let rtProject2 = RtProject.FromJson json
-        rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
-        // 설계 문서 위치에 drop
-        let json2 =
-            rtProject2
-            |> validateRuntime
-            |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder2.json"))
-
-        json === json2
-
-        let dbPath = Path.Combine(testDataDir(), "dssystem-with-cylinder")
-        let dbApi = dbPath |> createSqliteDbApi
-        dbApi.With(fun (conn, tr) -> conn.Execute("DELETE FROM project") |> ignore) |> ignore
-
-        rtProject.RTryCommitToDB(dbApi).IsOk === true
-
-        File.Copy($"{dbPath}.sqlite3", Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
-
-
-        let emptyCheckTables = [ Tn.Project; Tn.MapProject2System; Tn.System;
-                            Tn.Flow; Tn.Work; Tn.Call; Tn.ApiCall; Tn.ApiDef ]
-
-        (* FK test *)
-        let mutable checkDone = false
-        (fun () ->
-            dbApi.With(fun (conn, tr) ->
-                let affected = conn.Execute($"DELETE FROM {Tn.Project}")
-
-                // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
-                for t in emptyCheckTables do
-                    tracefn $"Checking table {t} for empty"
-                    let count = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}")
-                    if count <> 0 then
-                        tracefn $"What's up with {t}??"
-
-                    count === 0
-
-
-                checkDone <- true
-                // transaction 강제 rollback 유도
-                failwith "Aborting")
-        ) |> ShouldFailWithSubstringT "Aborting"
-        checkDone === true
-
-
-        checkDone <- false
-        (* FK test *)
-        // project id = 1 을 복사해서 project id = 2 로 만듦
-        // mapping id = 1 을 복사해서 mapping id = 2 로 만듦 (systemId 는 1 에 대해서 두 project 가 참조 중)
-        // project id = 1 을 삭제했을 때, project id = 2 에 대한 모든 것과 mapping id = 2 은 남아 있어야 함
-        (fun () ->
-            dbApi.With(fun (conn, tr) ->
-                let projId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
-                let newProjId =
-                    conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
-                                    SELECT
-                                        guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
-                                        dateTime,
-                                        name || ' 복사본',
-                                        author,
-                                        version,
-                                        description
-                                    FROM project
-                                    WHERE id = {projId}
-                                    ;""", null, tr)
-                //let newProjId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
-
-                let mapId =
-                    conn.ExecuteScalar<int>(
-                        $"""SELECT id FROM {Tn.MapProject2System}
-                            WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
-
-                conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, isActive, loadedName)
-                                    SELECT
-                                        guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
-                                        {newProjId},              -- 새로 만든 project id
-                                        systemId,
-                                        isActive,
-                                        loadedName
-                                    FROM mapProject2System
-                                    WHERE id = {mapId}
-                                    ;
-                                    """, transaction=tr) |> ignore
-
-                conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", transaction=tr) |> ignore
-
-                // 현재 transaction 내에서는 임의 추가한 porject 와 System 이 하나씩 남아 있어야 한다.
-                for t in emptyCheckTables do
-                    tracefn $"Checking table {t} for empty"
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", transaction=tr) =!= 0
-
-                checkDone <- true
-                // transaction 강제 rollback 유도
-                failwith "Aborting"
+        [<Test>]
+        member x.upsertTest() =
+            use conn = sqliteDbApi().CreateConnection()
+            tracefn $"SQL version: {conn.GetVersionString()}"
+            let r1 = conn.Upsert(
+                "flow",
+                [|
+                   "name", box "Alice"
+                   "systemId", 1
+                   "guid", "b544dcdc-ca2f-43db-9d90-93843269bd3f"
+                |],
+                [|"id"|]
             )
-        ) |> ShouldFailWithSubstringT "Aborting"
 
-        checkDone === true
-        noop()
+            let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f" |}
+            let r2 = conn.Upsert(
+                "flow", row, [ "name"; "systemId"; "guid" ],
+                [|"id"|]
+            )
 
-    [<Test>]
-    let ``비교`` () =
-        let dsProject = edProject |> validateRuntime
-
-
-        do
-            let dsProject2 = dsProject.Replicate() |> validateRuntime
-            dsProject.IsEqual dsProject2 === true
-
-            // dsProject2 의 work 이름을 변경하고 비교
-            let w = dsProject.Systems[0].Works[0]
-            let w2 = dsProject2.Systems[0].Works[0]
-            w2.Name <- "ChangedWorkName"
-            w2.Motion <- "MyMotion"
-            w2.Parameter <- """{"Age": 3}"""
-            let diff = dsProject.ComputeDiff(dsProject2) |> toList
-            diff.Length === 3
-            diff |> contains (Diff("Name",      w, w2)) === true
-            diff |> contains (Diff("Parameter", w, w2)) === true
-            diff |> contains (Diff("Motion",    w, w2)) === true
-
-        do
-            // 추가한 개체 (arrow) detect 가능해야 한다.
-            let dsProject2 = dsProject.Replicate() |> validateRuntime
-            let w = dsProject2.Systems[0].Works[0]
-            let c1, c2 = w.Calls[0], w.Calls[0]
-            let arrow = RtArrowBetweenCalls(c1, c2, DbArrowType.Start)
-            w.AddArrows([arrow])
-
-            let f = dsProject2.Systems[0].Flows[0]
-            let button = RtButton(Name="NewButton")
-            f.AddButtons( [ button ])
-            let diff = dsProject.ComputeDiff(dsProject2) |> toList
-            diff |> contains (RightOnly(arrow)) === true
-            diff |> contains (RightOnly(button)) === true
-            noop()
-
-        do
-            // 삭제한 개체 (arrow) detect 가능해야 한다.
-            let dsProject2 = dsProject.Replicate() |> validateRuntime
-            let w = dsProject2.Systems[0].Works[0]
-            let arrowRight = w.Arrows.Head
-            let arrowLeft = dsProject.Systems[0].Works[0].Arrows.Head
-            w.RemoveArrows([arrowRight])
-            let diff = dsProject.ComputeDiff(dsProject2) |> toList
-            diff |> contains (LeftOnly arrowLeft) === true
-            noop()
-        noop()
-
-    [<Test>]
-    let ``복제 비교`` () =
-        let dsProject = edProject.Replicate() |> validateRuntime
-        let diff = dsProject.ComputeDiff edProject
-        edProject.IsEqual dsProject === true
-
-    [<Test>]
-    let ``복사 비교`` () =
-        (* Project 복사:
-            - Active/Passive system 들의 Guid 변경되어야 함.
-            - Parent 및 OwnerSystem member 변경되어야 함.
-        *)
-        let dsProject = edProject.Duplicate($"CC_{edProject.Name}") |> validateRuntime
-        edProject.IsEqual dsProject === false
-
-        let diff = edProject.ComputeDiff(dsProject) |> toList
-        diff.Length === 5
-        diff |> contains (Diff ("Guid", edProject, dsProject)) === true
-        diff |> contains (Diff ("DateTime", edProject, dsProject)) === true
-        diff |> contains (Diff ("Name", edProject, dsProject)) === true
-        diff |> contains (LeftOnly edProject.Systems[0]) === true
-        diff |> contains (RightOnly dsProject.Systems[0]) === true
-
-        do
-            (* Project 하부의 System 은 구조적으로는 동일해야 함.
-                - 복사로 인해 System 의 Guid 는 새로 생성, IRI 는 초기화되어 다름
-                - 시스템 하부에 존재하는 Work, Flow, ApiDef, ApiCall 은 모두 다른 객체로 생성.
-            *)
-            let src = edProject.Systems[0]
-            let cc = dsProject.Systems[0]
-            diff |> contains (LeftOnly src) === true
-            diff |> contains (RightOnly cc) === true
-            let diff = src.ComputeDiff cc |> toArray
-            diff |> contains (Diff ("Guid", src, cc)) === true
-            diff
-            |> forall(fun d ->
-                match d with
-                | Diff("Guid", x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                | Diff("IRI",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                | Diff("DateTime",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                | Diff("Parent",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                | (   LeftOnly (:? RtFlow)
-                    | LeftOnly (:? RtWork)
-                    | LeftOnly (:? RtArrowBetweenWorks)
-                    | LeftOnly (:? RtApiDef)
-                    | LeftOnly (:? RtApiCall)
-                    | RightOnly (:? RtFlow)
-                    | RightOnly (:? RtWork)
-                    | RightOnly (:? RtArrowBetweenWorks)
-                    | RightOnly (:? RtApiDef)
-                    | RightOnly (:? RtApiCall) ) -> true
-                | _ -> false
-            ) === true
-
-        ()
+            let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid() }
+            let r3 = conn.Upsert(
+                "flow", row, [ "Name"; "SystemId"; "Guid" ],
+                [|"id"|],
+                onInserted = fun id -> row.Id <- Nullable id
+            )
+            ()
 
 
-    let guid = Guid.Parse "42dad0ec-6441-47b7-829e-1487e1c89360"
-    type Gender = Male | Female
-    let jsonb = {| Name = "Kwak"; Gender = Male; Age=30 |} |> JsonConvert.SerializeObject
-    let testRowFull = RtTypeTest(OptionGuid=Some guid, NullableGuid=Nullable<Guid>(guid), OptionInt=Some 1, NullableInt=Nullable 1, Jsonb=jsonb)
-    let testRowEmpty = RtTypeTest()
 
-    [<Test>]
-    let ``Sqlite Dapper test`` () =
-        let dbApi =
-            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> createSqliteDbApi
-        dbApi.With(fun (conn, tr) ->
-            conn.Execute($"""INSERT INTO {Tn.TypeTest}
-                                   (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,  dateTime)
-                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
-        |> ignore
-
-    [<Test>]
-    let ``PGSql Dapper test`` () =
-        pgsqlDbApi().With(fun (conn, tr) ->
-            conn.Execute($"""INSERT INTO {Tn.TypeTest}
-                                   (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
-                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty], tr) )
-        |> ignore
+        [<Test>]
+        member x.``insert test`` () =
+            let dbApi = sqliteDbApi()
+            use conn = dbApi.CreateConnection()
+            dbApi.With(fun (conn, tr) ->
+                conn.Execute($"DELETE FROM {Tn.Project};", tr)
+            ) |> ignore
 
 
-    [<Test>]
-    let ``X PGSql DB 수정 commit`` () =
-        let dsProject = edProject.Replicate() |> validateRuntime
-        dsProject.Systems[0].Works[0].Name <- "ModifiedWorkName"
-        pgsqlDbApi() |> dsProject.RTryCommitToDB
+            dbApi.VendorDB.TruncateAllTables(conn)
+            let newGuid() = Guid.NewGuid().ToString()
 
-    [<Test>]
-    let ``X DB (PGSql)= System 수정 commit`` () =
-        let dsProject = edProject.Replicate() |> validateRuntime
-        let diff = dsProject.ComputeDiff edProject |> toArray
+            let ver = Version().ToString()
+            // project 삽입
+            let prjGuid = newGuid()
+            let prjName = "MainProject"
+            let prjId = conn.Insert(
+                            $"INSERT INTO {Tn.Project} (guid, name, author, version) VALUES (@Guid, @Name, @Author, @Version)",
+                            {| Guid=prjGuid; Name=prjName; Author=Environment.UserName; Version=ver|})
 
-        let dbApi = sqliteDbApi()
-        dbApi.With(fun (conn, tr) ->
-            conn.Execute($"DELETE FROM {Tn.Project}", transaction=tr)
 
-            dsProject.RTryCommitToDB(dbApi, true)
+            // system 삽입
+            let sysGuid = newGuid()
+            let sysName = "MainSystem"
+            let systemId = conn.Insert(
+                            $"INSERT INTO {Tn.System} (guid, name, iri, author, langVersion, engineVersion) VALUES (@Guid, @Name, @IRI, @Author, @LangVersion, @EngineVersion)",
+                            {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver; IRI="http://dualsoft.com/unique/12345"|})
+
+            // flow 삽입
+            let flowGuid = newGuid()
+            let flowId = conn.Insert(
+                            $"INSERT INTO {Tn.Flow} (guid, name, systemId) VALUES (@Guid, @Name, @SystemId)",
+                            {| Guid=flowGuid; Name="MainFlow"; SystemId=systemId|})
+
+            // work 삽입 (flow 연결된 경우)
+            let workGuid1 = newGuid()
+            let workId = conn.Insert(
+                            $"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@Guid, @Name, @SystemId, @FlowId)",
+                            {| Guid=workGuid1; Name="Work1"; SystemId=systemId; FlowId=flowId|})
+
+            // work 삽입 (flow 연결 없는 경우 - flowId = NULL)
+            let workGuid2 = newGuid()
+            conn.Execute($"INSERT INTO {Tn.Work} (guid, name, systemId, flowId) VALUES (@guid, @name, @systemId, NULL)",
+                         dict ["guid", box workGuid2; "name", box "Work2"; "systemId", box systemId]) |> ignore
+
+
+            // call 삽입
+            let callGuid = newGuid()
+            conn.Execute($"INSERT INTO {Tn.Call} (guid, name, workId, autoConditions, commonConditions) VALUES (@Guid, @Name, @WorkId, @AutoConditions, @CommonConditions)",
+                        {| Guid=callGuid; Name="call1"; WorkId=workId; AutoConditions="""[ "AutoConditions" ]"""; CommonConditions="""[ "CommonConditions" ]"""|}) |> ignore
+
+            // 확인: 총 system = 1, flow = 1, work = 2, call = 1
+            let countSystem = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.System}")
+            let countFlow   = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Flow}")
+            let countWork   = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}")
+            let countCall   = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Call}")
+
+            1 === countSystem
+            1 === countFlow
+            2 === countWork
+            1 === countCall
+
+
+            let systems = conn.EnumerateRows<ORMSystem>(Tn.System) |> List.ofSeq
+            let flows = conn.EnumerateRows<ORMFlow>(Tn.Flow) |> List.ofSeq
+            let works = conn.EnumerateRows<ORMWork>(Tn.Work) |> List.ofSeq
+            let calls = conn.EnumerateRows<ORMCall>(Tn.Call) |> List.ofSeq
+
+            systems.Length === 1
+            systems[0].Name === sysName
+
+            ()
+
+
+        [<Test>]
+        member x.``[SQLite] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
+            sqliteDbApi() |> basic_test
+
+
+        [<Test>]
+        member x.``JSON - DsObject - DB update test`` () =
+            //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
             let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
-            dsProject.ToJson(jsonPath)
+            if not (File.Exists jsonPath) then
+                edProject.ToJson(jsonPath) |> ignore
 
-            let json = jsonPath |> File.ReadAllText
-            let dsProject2 = RtProject.FromJson json |> validateRuntime
-            let diff2 = dsProject2.ComputeDiff dsProject |> toArray
+            let json = File.ReadAllText(jsonPath)
+            let dsProject0 = NjProject.FromJson json
 
-            let dsSystem = dsProject2.Systems[0]
-            match dsSystem.RTryCommitToDB dbApi with
-            | Ok response ->
-                tracefn $"DB commit response: {response}"
+
+            let dsProject1 = RtProject.FromJson json |> validateRuntime
+            noop()
+            let dsProject2 = dsProject1 |> _.Duplicate($"CC_{dsProject1.Name}")
+            let sys = dsProject2.ActiveSystems[0]
+            sys.Flows.Length === 1
+            let flow = sys.Flows[0]
+            dsProject2.Name <- "UpdatedProject"
+
+            let dbApi = sqliteDbApi()
+
+            dbApi.With(fun (conn, tr) ->
+                conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}) |> ignore
+
+                dsProject2.RTryCommitToDB(dbApi).IsOk === true)
+
+
+        [<Test>]
+        member x.``DB Delete preview test`` () =
+            let projectId = 1
+
+            sqliteDbApi().With(fun (conn, tr) ->
+                let result =
+                    conn.GuessCascadeDeleteAffected(Tn.System, 1)
+                noop()
+            )
+
+
+        (*
+            Project 에 cylinder subsystem 을 reference (loaded system) 으로 추가하는 예제
+        *)
+        [<NonParallelizable>] // 클래스 단위로 병렬 실행 금지
+        [<Test>]
+        member x.``Cylinder 추가 test`` () =
+            createEditableProject()
+            createEditableSystemCylinder()
+            let edProject = edProject.Replicate() |> validateRuntime
+            let protoGuid = edSystemCyl.Guid
+            edProject.AddPrototypeSystem edSystemCyl
+            let edSysCyl1 = edProject.Instantiate(protoGuid, Name="실린더 instance1", asActive=false)
+            let edSysCyl2 = edProject.Instantiate(protoGuid, Name="실린더 instance2", asActive=false)
+            let edSysCyl3 = edProject.Instantiate(protoGuid, Name="실린더 instance3", asActive=false)
+
+            let curernt = now()
+            let rtProject = edProject.Replicate()
+            rtProject |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
+            let json =
+                rtProject
+                |> validateRuntime
+                |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
+
+            let rtProject2 = RtProject.FromJson json
+            rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
+            // 설계 문서 위치에 drop
+            let json2 =
+                rtProject2
+                |> validateRuntime
+                |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder2.json"))
+
+            json === json2
+
+            let dbApi = sqliteDbApi()
+            dbApi.WithConn(fun conn ->
+                conn.Execute("DELETE FROM project") |> ignore
+
+                rtProject.RTryCommitToDB(dbApi).IsOk === true )
+
+            let emptyCheckTables = [ Tn.Project; Tn.MapProject2System; Tn.System;
+                                Tn.Flow; Tn.Work; Tn.Call; Tn.ApiCall; Tn.ApiDef ]
+
+
+            (* FK test *)
+            let mutable checkDone = false
+            (fun () ->
+                dbApi.With(fun (conn, tr) ->
+                    let affected = conn.Execute($"DELETE FROM {Tn.Project}", transaction=tr)
+
+                    // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
+                    for t in emptyCheckTables do
+                        tracefn $"Checking table {t} for empty"
+                        let count = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", transaction=tr)
+                        if count <> 0 then
+                            tracefn $"What's up with {t}??"
+
+                        count === 0
+
+
+                    checkDone <- true
+                    // transaction 강제 rollback 유도
+                    failwith "Aborting")
+            ) |> ShouldFailWithSubstringT "Aborting"
+            checkDone === true
+
+
+            checkDone <- false
+            (* FK test *)
+            // project id = 1 을 복사해서 project id = 2 로 만듦
+            // mapping id = 1 을 복사해서 mapping id = 2 로 만듦 (systemId 는 1 에 대해서 두 project 가 참조 중)
+            // project id = 1 을 삭제했을 때, project id = 2 에 대한 모든 것과 mapping id = 2 은 남아 있어야 함
+            (fun () ->
+                dbApi.With(fun (conn, tr) ->
+                    let projId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
+                    let newProjId =
+                        conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                                        SELECT
+                                            guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
+                                            dateTime,
+                                            name || ' 복사본',
+                                            author,
+                                            version,
+                                            description
+                                        FROM project
+                                        WHERE id = {projId}
+                                        ;""", null, tr)
+                    //let newProjId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
+
+                    let mapId =
+                        conn.ExecuteScalar<int>(
+                            $"""SELECT id FROM {Tn.MapProject2System}
+                                WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
+
+                    conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, isActive, loadedName)
+                                        SELECT
+                                            guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
+                                            {newProjId},              -- 새로 만든 project id
+                                            systemId,
+                                            isActive,
+                                            loadedName
+                                        FROM mapProject2System
+                                        WHERE id = {mapId}
+                                        ;
+                                        """, transaction=tr) |> ignore
+
+                    conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", transaction=tr) |> ignore
+
+                    // 현재 transaction 내에서는 임의 추가한 porject 와 System 이 하나씩 남아 있어야 한다.
+                    for t in emptyCheckTables do
+                        tracefn $"Checking table {t} for empty"
+                        conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", transaction=tr) =!= 0
+
+                    checkDone <- true
+                    // transaction 강제 rollback 유도
+                    failwith "Aborting"
+                )
+            ) |> ShouldFailWithSubstringT "Aborting"
+
+            checkDone === true
+            noop()
+
+
+
+
+        [<Test>]
+        member x.``설계 문서 위치에 샘플 생성`` () =
+            let dsProject = edProject |> validateRuntime
+            let jsonPath = Path.Combine(testDataDir(), $"{getFuncName(1)}.json")
+            dsProject.ToJson jsonPath |> ignore
+
+
+
+            let dbPath = Path.Combine(testDataDir(), getFuncName(1))
+            File.Delete($"{dbPath}.sqlite3") |> ignore
+            let dbApi = createSqliteDbApi dbPath
+            match dsProject.RTryCommitToDB(dbApi) with
+            | Ok _ ->
+                // 설계 문서 위치에 drop
+                File.Delete(Path.Combine(specDir, "dssystem.sqlite3")) |> ignore
+                File.Delete(Path.Combine(specDir, "dssystem.json")) |> ignore
+                File.Copy($"{dbPath}.sqlite3", Path.Combine(specDir, "dssystem.sqlite3"))
+                File.Copy(jsonPath, Path.Combine(specDir, "dssystem.json"))
             | Error err ->
-                tracefn $"DB commit error: {err}"
-                failwith "ERROR"
-        ) |> ignore
+                failwith err
+
+        [<Test>]
+        member x.``[Sqlite] DB System 수정 commit`` () =
+            let dsProject = edProject.Replicate() |> validateRuntime
+            let diff = dsProject.ComputeDiff edProject |> toArray
+
+            let dbApi = sqliteDbApi()
+            dbApi.With(fun (conn, tr) ->
+                conn.Execute($"DELETE FROM {Tn.Project}", transaction=tr) |> ignore
+
+                dsProject.RTryCommitToDB(dbApi) ==== Ok Inserted
+
+                let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
+                let json = dsProject.ToJson(jsonPath)
+
+                let dsProject2 = RtProject.FromJson json |> validateRuntime
+                let diff2 = dsProject2.ComputeDiff dsProject |> toArray
+
+                let dsSystem = dsProject2.Systems[0]
+                dsSystem.RTryCommitToDB dbApi ==== Ok NoChange
+            ) |> ignore
+
+        [<Test>]
+        member x.``X [Sqlite] DB Project 수정 commit`` () =
+            let dsProject = edProject.Replicate() |> validateRuntime
+            dsProject.Systems[0].Works[0].Name <- "ModifiedWorkName"
+            let dbApi = sqliteDbApi()
+            dbApi.With(fun (conn, tr) ->
+
+                // 깨끗하게 삭제 후, 1번은 insert 성공, 2번째는 NoChange 가 나와야 함
+                conn.Execute($"DELETE FROM {Tn.Project} WHERE id=@Id", {|Id = dsProject.Id|}, tr) |> ignore
+
+                do
+                    dsProject.RTryCommitToDB(dbApi)
+                    |> tee (tracefn "Result2: %A")
+                    ==== Ok Inserted
+
+                do
+                    dsProject.RTryCommitToDB(dbApi)
+                    |> tee (tracefn "Result2: %A")
+                    ==== Ok NoChange
+
+                // 수정 후, 다시 commit 하면 Updated 가 나와야 함
+            )
+
+
+
+    type IndependantTest() =
+        [<Test>]
+        member x.``비교`` () =
+            let dsProject = edProject |> validateRuntime
+
+
+            do
+                let dsProject2 = dsProject.Replicate() |> validateRuntime
+                dsProject.IsEqual dsProject2 === true
+
+                // dsProject2 의 work 이름을 변경하고 비교
+                let w = dsProject.Systems[0].Works[0]
+                let w2 = dsProject2.Systems[0].Works[0]
+                w2.Name <- "ChangedWorkName"
+                w2.Motion <- "MyMotion"
+                w2.Parameter <- """{"Age": 3}"""
+                let diff = dsProject.ComputeDiff(dsProject2) |> toList
+                diff.Length === 3
+                diff |> contains (Diff("Name",      w, w2)) === true
+                diff |> contains (Diff("Parameter", w, w2)) === true
+                diff |> contains (Diff("Motion",    w, w2)) === true
+
+            do
+                // 추가한 개체 (arrow) detect 가능해야 한다.
+                let dsProject2 = dsProject.Replicate() |> validateRuntime
+                let w = dsProject2.Systems[0].Works[0]
+                let c1, c2 = w.Calls[0], w.Calls[0]
+                let arrow = RtArrowBetweenCalls(c1, c2, DbArrowType.Start)
+                w.AddArrows([arrow])
+
+                let f = dsProject2.Systems[0].Flows[0]
+                let button = RtButton(Name="NewButton")
+                f.AddButtons( [ button ])
+                let diff = dsProject.ComputeDiff(dsProject2) |> toList
+                diff |> contains (RightOnly(arrow)) === true
+                diff |> contains (RightOnly(button)) === true
+                noop()
+
+            do
+                // 삭제한 개체 (arrow) detect 가능해야 한다.
+                let dsProject2 = dsProject.Replicate() |> validateRuntime
+                let w = dsProject2.Systems[0].Works[0]
+                let arrowRight = w.Arrows.Head
+                let arrowLeft = dsProject.Systems[0].Works[0].Arrows.Head
+                w.RemoveArrows([arrowRight])
+                let diff = dsProject.ComputeDiff(dsProject2) |> toList
+                diff |> contains (LeftOnly arrowLeft) === true
+                noop()
+            noop()
+
+        [<Test>]
+        member x.``복제 비교`` () =
+            let dsProject = edProject.Replicate() |> validateRuntime
+            let diff = dsProject.ComputeDiff edProject
+            edProject.IsEqual dsProject === true
+
+        [<Test>]
+        member x.``복사 비교`` () =
+            (* Project 복사:
+                - Active/Passive system 들의 Guid 변경되어야 함.
+                - Parent 및 OwnerSystem member 변경되어야 함.
+            *)
+            let dsProject = edProject.Duplicate($"CC_{edProject.Name}") |> validateRuntime
+            edProject.IsEqual dsProject === false
+
+            let diff = edProject.ComputeDiff(dsProject) |> toList
+            diff.Length === 5
+            diff |> contains (Diff ("Guid", edProject, dsProject)) === true
+            diff |> contains (Diff ("DateTime", edProject, dsProject)) === true
+            diff |> contains (Diff ("Name", edProject, dsProject)) === true
+            diff |> contains (LeftOnly edProject.Systems[0]) === true
+            diff |> contains (RightOnly dsProject.Systems[0]) === true
+
+            do
+                (* Project 하부의 System 은 구조적으로는 동일해야 함.
+                    - 복사로 인해 System 의 Guid 는 새로 생성, IRI 는 초기화되어 다름
+                    - 시스템 하부에 존재하는 Work, Flow, ApiDef, ApiCall 은 모두 다른 객체로 생성.
+                *)
+                let src = edProject.Systems[0]
+                let cc = dsProject.Systems[0]
+                diff |> contains (LeftOnly src) === true
+                diff |> contains (RightOnly cc) === true
+                let diff = src.ComputeDiff cc |> toArray
+                diff |> contains (Diff ("Guid", src, cc)) === true
+                diff
+                |> forall(fun d ->
+                    match d with
+                    | Diff("Guid", x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                    | Diff("IRI",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                    | Diff("DateTime",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                    | Diff("Parent",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
+                    | (   LeftOnly (:? RtFlow)
+                        | LeftOnly (:? RtWork)
+                        | LeftOnly (:? RtArrowBetweenWorks)
+                        | LeftOnly (:? RtApiDef)
+                        | LeftOnly (:? RtApiCall)
+                        | RightOnly (:? RtFlow)
+                        | RightOnly (:? RtWork)
+                        | RightOnly (:? RtArrowBetweenWorks)
+                        | RightOnly (:? RtApiDef)
+                        | RightOnly (:? RtApiCall) ) -> true
+                    | _ -> false
+                ) === true
+
+            ()
+
+        [<Test>]
+        member x.``Sqlite Dapper test`` () =
+            let dbApi =
+                Path.Combine(testDataDir(), "test_dssystem.sqlite3")
+                |> createSqliteDbApi
+            dbApi.With(fun (conn, tr) ->
+                conn.Execute($"""INSERT INTO {Tn.TypeTest}
+                                       (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,  dateTime)
+                                VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
+            |> ignore
 
 

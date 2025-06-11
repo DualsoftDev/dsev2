@@ -205,13 +205,6 @@ module ORMTypeConversionModule =
                 let flowId = (z.Flow >>= _.Id)
                 let status4Id = z.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
                 ORMWork  (pid, status4Id, flowId)
-                |> tee(fun y ->
-                    y.Motion     <- z.Motion
-                    y.Script     <- z.Script
-                    y.IsFinished <- z.IsFinished
-                    y.NumRepeat  <- z.NumRepeat
-                    y.Period     <- z.Period
-                    y.Delay      <- z.Delay )
                 |> ormReplicateProperties z
 
             | :? RtCall as z ->
@@ -240,7 +233,6 @@ module ORMTypeConversionModule =
 
             | :? RtApiDef as r ->
                 ORMApiDef(pid)
-                |> tee(fun z -> z.IsPush <- r.IsPush)
                 |> ormReplicateProperties r
 
 

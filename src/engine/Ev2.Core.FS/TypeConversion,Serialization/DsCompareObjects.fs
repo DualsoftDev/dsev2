@@ -283,6 +283,5 @@ module rec DsCompareObjects =
             }
         member x.IsEqual(y:RtProject, ?criteria:Cc) =
             let criteria = criteria |? Cc()
-            let xxx = x.ComputeDiff(y, criteria).ToArray()
             x.ComputeDiff(y, criteria)
             |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working
