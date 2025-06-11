@@ -488,13 +488,13 @@ module internal Ds2DbImpl =
             rTryCheckoutSystemFromDB id dbApi
             |-> (fun system ->
                 let criteria = Cc(parentGuid=false)
-                let diff = system.ComputeDiff(s, criteria) |> toArray
+                let diffs = system.ComputeDiff(s, criteria) |> toArray
 
-                match diff with
+                match diffs with
                 | [||] ->   // DB 에 저장된 system 과 동일하므로 변경 없음
                     NoChange
                 | _ ->   // DB 에 저장된 system 과 다르므로 update
-                    Updated diff
+                    Updated diffs
                 )
         | None ->   // DB 에 저장되지 않은 system 이므로 insert
             rTryInsertSystemToDBHelper dbApi s optProject
@@ -563,9 +563,65 @@ module internal Ds2DbImpl =
 
 [<AutoOpen>]
 module internal DbUpdateImpl =
-    [<Obsolete("구현 필요")>]
-    let rTryUpdateProjectToDB (proj:RtProject) (dbApi:AppDbApi): DbCommitResult =
-        Ok NoChange
+    type IRtUnique with
+        member x.GetTableName() =
+            match x with
+            | :? RtProject -> Tn.Project
+            | :? RtSystem  -> Tn.System
+            | :? RtFlow    -> Tn.Flow
+            | :? RtButton  -> Tn.Button
+            | :? RtLamp    -> Tn.Lamp
+            | :? RtCondition -> Tn.Condition
+            | :? RtAction -> Tn.Action
+            | :? RtApiDef -> Tn.ApiDef
+            | :? RtApiCall -> Tn.ApiCall
+            | :? RtWork -> Tn.Work
+            | :? RtCall -> Tn.Call
+            | :? RtArrowBetweenCalls -> Tn.ArrowCall
+            | :? RtArrowBetweenWorks -> Tn.ArrowWork
+            | _ -> failwith $"Unknown RtUnique type: {x.GetType().Name}"
+
+    type CompareResult with
+        [<Obsolete("구현 중..")>]
+        member x.RTryCommitToDB(conn:IDbConnection, tr:IDbTransaction): DbCommitResult =
+            match x with
+            | Diff (cat, dbEntity, newEntity) ->
+                if allPropertyNames.Contains cat then
+                    assert(dbEntity.GetType() = newEntity.GetType())
+                    let tableName = dbEntity.GetTableName()
+                    let sql = $"UPDATE {tableName} SET {cat.ToLower()}=@{cat} WHERE id=@Id"
+                    let count = conn.Execute(sql, newEntity, tr)
+                    verify(count > 0 )
+                    Ok (Updated [|x|])
+                else
+                    match cat with
+                    | "Id" -> Error "Cannot change Id of a project" // Id 는 변경할 수 없음
+                    | _ -> Error $"Unknown property to update: {cat}"
+
+
+            | LeftOnly dbEntity ->
+                conn.Execute($"DELETE FROM {dbEntity.GetTableName()} WHERE id=@Id", dbEntity, tr) |> ignore
+                Ok Deleted
+
+            | RightOnly newEntity ->
+                Error "Not yet!"
+
+    let rTryUpdateProjectToDB (proj:RtProject) (dbApi:AppDbApi) (diffs:CompareResult []): DbCommitResult =
+        assert (!! diffs.IsNullOrEmpty())
+        dbApi.With(fun (conn, tr) ->
+            let firstError =
+                seq {
+                    for d in diffs do
+                        d.RTryCommitToDB(conn, tr)
+                } |> Result.chooseError
+                |> tryHead
+            match firstError with
+            | Some e ->
+                Error e
+            | None ->
+                Ok (Updated diffs)
+        )
+
 
 
 [<AutoOpen>]
@@ -582,17 +638,21 @@ module Ds2SqliteModule =
                 | [] ->
                     // 신규 project 삽입
                     rTryInsertProjectToDB x dbApi
+
                 | [dbProj] when dbProj.Guid = x.Guid ->
                     // 이미 존재하는 프로젝트는 업데이트
                     RtProject.RTryCheckoutFromDB(dbProj.Id.Value, dbApi)
                     >>= (fun dbProject ->
-                        let diff = dbProject.ComputeDiff(x) |> toList
-                        if diff.IsEmpty then
+                        let diffs = dbProject.ComputeDiff(x) |> toArray
+                        if diffs.IsEmpty() then
                             Ok NoChange
                         else
-                            rTryUpdateProjectToDB x dbApi
+                            rTryUpdateProjectToDB x dbApi diffs
                     )
-                | [dbProj] -> Error $"Project with Id {x.Id} already exists with a different Guid: {dbProj.Guid}. Cannot update."
+
+                | [dbProj] ->
+                    Error $"Project with Id {x.Id} already exists with a different Guid: {dbProj.Guid}. Cannot update."
+
                 | _ ->
                     failwith "ERROR" )
 

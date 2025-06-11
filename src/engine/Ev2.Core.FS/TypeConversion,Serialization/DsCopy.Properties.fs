@@ -159,3 +159,13 @@ module internal DsCopyModule =
 
 
         dst
+
+    let allPropertyNames =
+        [| "Id"; "Name"; "Guid"; "DateTime"; "Parameter"; "RawParent";
+           "Author"; "Version"; "Description"; "Database";
+           "IRI"; "OriginGuid"; "EngineVersion"; "LangVersion";
+           "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay";
+           "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
+           "ValueSpec" |]
+        |> Set.ofArray
+

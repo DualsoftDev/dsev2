@@ -543,7 +543,7 @@ module Schema =
         [<Test>]
         member x.``[Sqlite] DB System 수정 commit`` () =
             let dsProject = edProject.Replicate() |> validateRuntime
-            let diff = dsProject.ComputeDiff edProject |> toArray
+            let diffs = dsProject.ComputeDiff edProject |> toArray
 
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->
@@ -555,21 +555,20 @@ module Schema =
                 let json = dsProject.ToJson(jsonPath)
 
                 let dsProject2 = RtProject.FromJson json |> validateRuntime
-                let diff2 = dsProject2.ComputeDiff dsProject |> toArray
+                let diffs2 = dsProject2.ComputeDiff dsProject |> toArray
 
                 let dsSystem = dsProject2.Systems[0]
                 dsSystem.RTryCommitToDB dbApi ==== Ok NoChange
             ) |> ignore
 
         [<Test>]
-        member x.``X [Sqlite] DB Project 수정 commit`` () =
+        member x.``[Sqlite] DB Project 수정 commit`` () =
             let dsProject = edProject.Replicate() |> validateRuntime
-            dsProject.Systems[0].Works[0].Name <- "ModifiedWorkName"
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->
 
                 // 깨끗하게 삭제 후, 1번은 insert 성공, 2번째는 NoChange 가 나와야 함
-                conn.Execute($"DELETE FROM {Tn.Project} WHERE id=@Id", {|Id = dsProject.Id|}, tr) |> ignore
+                conn.Execute($"DELETE FROM {Tn.Project} WHERE name=@Name", dsProject, tr) |> ignore
 
                 do
                     dsProject.RTryCommitToDB(dbApi)
@@ -581,7 +580,54 @@ module Schema =
                     |> tee (tracefn "Result2: %A")
                     ==== Ok NoChange
 
-                // 수정 후, 다시 commit 하면 Updated 가 나와야 함
+                let w = dsProject.Systems[0].Works[0]
+                do
+                    // 수정 후, 다시 commit 하면 Updated 가 나와야 함.
+                    // Diff 결과는 db 의  work 와 update 한 work 의 이름만 달라야 함
+                    w.Name <- "ModifiedWorkName"
+                    match dsProject.RTryCommitToDB(dbApi) with
+                    | Ok (Updated diffs) ->
+                        diffs.Length === 1
+                        match diffs[0] with
+                        | Diff("Name", dbW, newW) when newW = w -> ()
+                        | _ -> failwith "ERROR"
+                    | _ -> failwith "ERROR"
+
+                do
+                    // 삭제 후, 다시 commit 하면 LeftOnly 가 나와야 함.  (삭제 이전에 Db, 즉 left 에만 존재했었다는 정보 표현)
+                    // 삭제 후 work 및 work 간 arrow 갯수는 1 씩 감소해야 함.  (cascade delete)
+                    let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr)
+                    let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr)
+
+                    dsProject.Systems[0].RemoveWorks([w])
+                    match dsProject.RTryCommitToDB(dbApi) with
+                    | Ok (Updated diffs) ->
+                        diffs.Length === 2
+                        match diffs[0] with
+                        | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
+                        | _ -> failwith "ERROR"
+                        match diffs[1] with
+                        | Diff("DateTime", dbSys, newSys) when dbSys.GetGuid() = newSys.GetGuid() -> ()
+                        | _ -> failwith "ERROR"
+                    | _ -> failwith "ERROR"
+
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr) === nw - 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na - 1
+
+                do
+                    let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr)
+                    let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr)
+
+                    dsProject.Systems[0].AddWorks([w])
+                    match dsProject.RTryCommitToDB(dbApi) with
+                    | Ok (Updated diffs) ->
+                        diffs.Length === 2
+                    | Error err ->
+                        failwith $"ERROR: {err}"
+                    | _ -> failwith "ERROR"
+
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr) === nw - 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na - 1
             )
 
 
@@ -602,11 +648,11 @@ module Schema =
                 w2.Name <- "ChangedWorkName"
                 w2.Motion <- "MyMotion"
                 w2.Parameter <- """{"Age": 3}"""
-                let diff = dsProject.ComputeDiff(dsProject2) |> toList
-                diff.Length === 3
-                diff |> contains (Diff("Name",      w, w2)) === true
-                diff |> contains (Diff("Parameter", w, w2)) === true
-                diff |> contains (Diff("Motion",    w, w2)) === true
+                let diffs = dsProject.ComputeDiff(dsProject2) |> toList
+                diffs.Length === 3
+                diffs |> contains (Diff("Name",      w, w2)) === true
+                diffs |> contains (Diff("Parameter", w, w2)) === true
+                diffs |> contains (Diff("Motion",    w, w2)) === true
 
             do
                 // 추가한 개체 (arrow) detect 가능해야 한다.
@@ -619,9 +665,9 @@ module Schema =
                 let f = dsProject2.Systems[0].Flows[0]
                 let button = RtButton(Name="NewButton")
                 f.AddButtons( [ button ])
-                let diff = dsProject.ComputeDiff(dsProject2) |> toList
-                diff |> contains (RightOnly(arrow)) === true
-                diff |> contains (RightOnly(button)) === true
+                let diffs = dsProject.ComputeDiff(dsProject2) |> toList
+                diffs |> contains (RightOnly(arrow)) === true
+                diffs |> contains (RightOnly(button)) === true
                 noop()
 
             do
@@ -631,15 +677,15 @@ module Schema =
                 let arrowRight = w.Arrows.Head
                 let arrowLeft = dsProject.Systems[0].Works[0].Arrows.Head
                 w.RemoveArrows([arrowRight])
-                let diff = dsProject.ComputeDiff(dsProject2) |> toList
-                diff |> contains (LeftOnly arrowLeft) === true
+                let diffs = dsProject.ComputeDiff(dsProject2) |> toList
+                diffs |> contains (LeftOnly arrowLeft) === true
                 noop()
             noop()
 
         [<Test>]
         member x.``복제 비교`` () =
             let dsProject = edProject.Replicate() |> validateRuntime
-            let diff = dsProject.ComputeDiff edProject
+            let diffs = dsProject.ComputeDiff edProject
             edProject.IsEqual dsProject === true
 
         [<Test>]
@@ -651,13 +697,13 @@ module Schema =
             let dsProject = edProject.Duplicate($"CC_{edProject.Name}") |> validateRuntime
             edProject.IsEqual dsProject === false
 
-            let diff = edProject.ComputeDiff(dsProject) |> toList
-            diff.Length === 5
-            diff |> contains (Diff ("Guid", edProject, dsProject)) === true
-            diff |> contains (Diff ("DateTime", edProject, dsProject)) === true
-            diff |> contains (Diff ("Name", edProject, dsProject)) === true
-            diff |> contains (LeftOnly edProject.Systems[0]) === true
-            diff |> contains (RightOnly dsProject.Systems[0]) === true
+            let diffs = edProject.ComputeDiff(dsProject) |> toList
+            diffs.Length === 5
+            diffs |> contains (Diff ("Guid", edProject, dsProject)) === true
+            diffs |> contains (Diff ("DateTime", edProject, dsProject)) === true
+            diffs |> contains (Diff ("Name", edProject, dsProject)) === true
+            diffs |> contains (LeftOnly edProject.Systems[0]) === true
+            diffs |> contains (RightOnly dsProject.Systems[0]) === true
 
             do
                 (* Project 하부의 System 은 구조적으로는 동일해야 함.
@@ -666,11 +712,11 @@ module Schema =
                 *)
                 let src = edProject.Systems[0]
                 let cc = dsProject.Systems[0]
-                diff |> contains (LeftOnly src) === true
-                diff |> contains (RightOnly cc) === true
-                let diff = src.ComputeDiff cc |> toArray
-                diff |> contains (Diff ("Guid", src, cc)) === true
-                diff
+                diffs |> contains (LeftOnly src) === true
+                diffs |> contains (RightOnly cc) === true
+                let diffs2 = src.ComputeDiff cc |> toArray
+                diffs2 |> contains (Diff ("Guid", src, cc)) === true
+                diffs2
                 |> forall(fun d ->
                     match d with
                     | Diff("Guid", x, y) -> verify (x :? RtSystem && y :? RtSystem); true
