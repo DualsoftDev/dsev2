@@ -531,6 +531,8 @@ module internal Ds2DbImpl =
                             (guid,   parameter,                     dateTime,  name,  author,  version,  description)
                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @Version, @Description);""", ormProject, tr)
 
+            proj.Id <- Some projId
+
             let firstError =
                 seq {
                     for s in systems do
@@ -543,7 +545,7 @@ module internal Ds2DbImpl =
             | Some e ->
                 Error e
             | None ->
-                proj.Id <- Some projId
+                //proj.Id <- Some projId
                 ormProject.Id <- Some projId
                 proj.Database <- dbApi.DbProvider
 
@@ -552,6 +554,7 @@ module internal Ds2DbImpl =
         try
             dbApi.With helper
         with ex ->
+            proj.Id <- None
             Error <| sprintf "Failed to insert project to DB: %s" ex.Message
 
 
@@ -579,35 +582,44 @@ module Ds2SqliteModule =
     open Db2DsImpl
 
     type RtProject with // CommitToDB, CheckoutFromDB
-        member x.CommitToDB(dbApi:AppDbApi, ?removeExistingData:bool): DbCommitResult =
-            match dbApi.WithConn _.TryQuerySingle($"SELECT * FROM {Tn.Project} WHERE guid = @Guid", {| Guid = x.Guid |}) with
-            | Some _ ->
-                // 이미 존재하는 프로젝트는 업데이트
-                rTryUpdateProjectToDB x dbApi
-            | None ->
-                // 신규 project 삽입
-                rTryInsertProjectToDB x dbApi removeExistingData
+        member x.RTryCommitToDB(dbApi:AppDbApi, ?removeExistingData:bool): DbCommitResult =
+            dbApi.With(fun (conn, tr) ->
+                match conn.TryQuerySingle($"SELECT * FROM {Tn.Project} WHERE guid = @Guid", {| Guid = x.Guid |}, tr) with
+                | Some _ ->
+                    // 이미 존재하는 프로젝트는 업데이트
+                    rTryUpdateProjectToDB x dbApi
+                | None ->
+                    // 신규 project 삽입
+                    rTryInsertProjectToDB x dbApi removeExistingData)
 
-        [<Obsolete("구현 필요")>]
         member x.RTryRemoveFromDB(dbApi:AppDbApi): DbCommitResult =
-            Ok Deleted
+            dbApi.With(fun (conn, tr) ->
+                    rTryDo(fun () ->
+                        let id = x.Id |? failwith "Project Id is not set"
+                        let affectedRows = conn.Execute($"DELETE FROM {Tn.Project} WHERE id = @Id", {| Id = id |}, tr)
+                        if affectedRows = 0 then
+                            failwith $"Project with Id {id} not found"
+
+                        Deleted)
+                    ) |> Result.mapError _.Message
 
         static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi):DbCheckoutResult<RtProject> =
             rTryCheckoutProjectFromDB id dbApi
 
         static member RTryCheckoutFromDB(projectName:string, dbApi:AppDbApi):DbCheckoutResult<RtProject> =
-            let id = dbApi.WithConn (fun conn ->
-                match conn.TryQuerySingle<int>($"SELECT id FROM {Tn.Project} WHERE name = @Name", {| Name = projectName |}) with
-                | Some id -> id
-                | None -> failwithf "Project not found: %s" projectName)
-            RtProject.RTryCheckoutFromDB(id, dbApi)
+            dbApi.With(fun (conn, tr) ->
+                match conn.TryQuerySingle<int>($"SELECT id FROM {Tn.Project} WHERE name = @Name", {| Name = projectName |}, tr) with
+                | Some id ->
+                    RtProject.RTryCheckoutFromDB(id, dbApi)
+                | None ->
+                    Error $"Project not found: {projectName}" )
 
         static member CheckoutFromDB(projectName:string, dbApi:AppDbApi): RtProject = RtProject.RTryCheckoutFromDB(projectName, dbApi) |> Result.toObj
         static member CheckoutFromDB(id:Id, dbApi:AppDbApi): RtProject = RtProject.RTryCheckoutFromDB(id, dbApi) |> Result.toObj
 
 
     type RtSystem with  // CommitToDB, CheckoutFromDB
-        member x.CommitToDB(dbApi:AppDbApi): DbCommitResult =
+        member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             rTryCommitSystemToDB x dbApi
 
         static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi): DbCheckoutResult<RtSystem> =

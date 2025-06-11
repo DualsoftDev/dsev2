@@ -76,7 +76,6 @@ module SchemaTestModule =
         Name: string
         SystemId: int
         Guid: string
-        DateTime: DateTime
     }
     [<Test>]
     let upsertTest() =
@@ -88,18 +87,17 @@ module SchemaTestModule =
                "name", box "Alice"
                "systemId", 1
                "guid", "b544dcdc-ca2f-43db-9d90-93843269bd3f"
-               "dateTime", box DateTime.Now
             |],
             [|"id"|]
         )
 
-        let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f"; DateTime = DateTime.Now |}
+        let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f" |}
         let r2 = conn.Upsert(
             "flow", row, [ "name"; "systemId"; "guid" ],
             [|"id"|]
         )
 
-        let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid(); DateTime = DateTime.Now }
+        let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid() }
         let r3 = conn.Upsert(
             "flow", row, [ "Name"; "SystemId"; "Guid" ],
             [|"id"|],
@@ -209,7 +207,7 @@ module SchemaTestModule =
 
 
         dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
-        dsProject.CommitToDB(dbApi, removeExistingData)
+        dsProject.RTryCommitToDB(dbApi, removeExistingData)
 
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->
@@ -278,7 +276,7 @@ module SchemaTestModule =
             dsProj.Name <- $"Duplicate of {dsProj.Name}"
             validateRuntime dsProj |> ignore
             dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
-            dsProj.CommitToDB(dbApi, removeExistingData)
+            dsProj.RTryCommitToDB(dbApi, removeExistingData)
 
 
         let dsProject4 =
@@ -293,7 +291,7 @@ module SchemaTestModule =
 
         validateRuntime dsProject4 |> ignore
         dsProject4.Systems[0].PrototypeSystemGuid <- None
-        dsProject4.CommitToDB(dbApi, removeExistingData)
+        dsProject4.RTryCommitToDB(dbApi, removeExistingData)
 
         ()
 
@@ -333,7 +331,7 @@ module SchemaTestModule =
             conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}))
         |> ignore
 
-        dsProject2.CommitToDB(dbApi, removeExistingData)
+        dsProject2.RTryCommitToDB(dbApi, removeExistingData)
 
 
     [<Test>]
@@ -359,7 +357,7 @@ module SchemaTestModule =
         File.Delete(dbPath) |> ignore
         let dbApi = createSqliteDbApi dbPath
 
-        dsProject.CommitToDB(dbApi, removeExistingData=true)
+        dsProject.RTryCommitToDB(dbApi, removeExistingData=true)
 
         //let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
         //let json =
@@ -410,7 +408,7 @@ module SchemaTestModule =
         let dbApi = dbPath |> createSqliteDbApi
         dbApi.With(fun (conn, tr) -> conn.Execute("DELETE FROM project") |> ignore) |> ignore
 
-        rtProject.CommitToDB(dbApi)
+        rtProject.RTryCommitToDB(dbApi)
 
         File.Copy(dbPath, Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
 
@@ -632,23 +630,32 @@ module SchemaTestModule =
     let ``X PGSql DB 수정 commit`` () =
         let dsProject = edProject.Replicate() |> validateRuntime
         dsProject.Systems[0].Works[0].Name <- "ModifiedWorkName"
-        pgsqlDbApi() |> dsProject.CommitToDB
+        pgsqlDbApi() |> dsProject.RTryCommitToDB
 
     [<Test>]
     let ``X DB (PGSql): System 수정 commit`` () =
-        let dbApi = sqliteDbApi()
-        dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
         let dsProject = edProject.Replicate() |> validateRuntime
         let diff = dsProject.ComputeDiff edProject |> toArray
 
-        dsProject.CommitToDB(dbApi, true)
-        let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
-        dsProject.ToJson(jsonPath)
+        let dbApi = sqliteDbApi()
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"DELETE FROM {Tn.Project}", transaction=tr)
 
-        let json = jsonPath |> File.ReadAllText
-        let dsProject2 = RtProject.FromJson json |> validateRuntime
-        let diff2 = dsProject2.ComputeDiff dsProject |> toArray
+            dsProject.RTryCommitToDB(dbApi, true)
+            let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
+            dsProject.ToJson(jsonPath)
 
-        let dsSystem = dsProject2.Systems[0]
-        dsSystem.CommitToDB dbApi
+            let json = jsonPath |> File.ReadAllText
+            let dsProject2 = RtProject.FromJson json |> validateRuntime
+            let diff2 = dsProject2.ComputeDiff dsProject |> toArray
+
+            let dsSystem = dsProject2.Systems[0]
+            match dsSystem.RTryCommitToDB dbApi with
+            | Ok response ->
+                tracefn $"DB commit response: {response}"
+            | Error err ->
+                tracefn $"DB commit error: {err}"
+                failwith "ERROR"
+        ) |> ignore
+
 
