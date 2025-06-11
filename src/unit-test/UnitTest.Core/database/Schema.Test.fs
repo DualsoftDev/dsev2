@@ -22,7 +22,9 @@ open System.Reactive.Concurrency
 module SchemaTestModule =
     let testDataDir() = Path.Combine(__SOURCE_DIRECTORY__, @"..\test-data")
     let dbFilePath = Path.Combine(testDataDir(), "test.sqlite3")
-    let path2ConnectionString (dbFilePath:string) = $"Data Source={dbFilePath};Version=3;BusyTimeout=20000"    //
+    let path2ConnectionString (dbFilePath:string) =
+        $"Data Source='{dbFilePath}.sqlite3';Version=3;BusyTimeout=20000"
+        |> tee(tracefn "ConnectionString='%s'")
 
     [<SetUpFixture>]
     type GlobalTestSetup() =
@@ -41,6 +43,12 @@ module SchemaTestModule =
             //File.Delete(dbFilePath)
             ()
 
+    // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
+    let pgsqlDbApi() =
+        "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
+        |> DbProvider.Postgres
+        |> AppDbApi
+
 
     let createSqliteDbApi (path:string) =
         path
@@ -48,25 +56,18 @@ module SchemaTestModule =
         |> DbProvider.Sqlite
         |> AppDbApi
 
-
-    let dbApi = createSqliteDbApi dbFilePath
-
-
-    // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
-    let pgsqlDbApi() =
-            "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
-            |> DbProvider.Postgres
-            |> AppDbApi
-
     // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
     let sqliteDbApi() =
-            Path.Combine(testDataDir(), "test_dssystem.sqlite3")
-            |> createSqliteDbApi
+        Path.Combine(testDataDir(), getFuncName(2))
+        |> createSqliteDbApi
 
+    let jsonPath() =
+        Path.Combine(testDataDir(), $"{getFuncName(2)}.json")
+        |> createSqliteDbApi
 
     [<Test>]
     let dbCreateTest() =
-        use conn = dbApi.CreateConnection()
+        use conn = sqliteDbApi().CreateConnection()
         ()
 
 
@@ -77,9 +78,10 @@ module SchemaTestModule =
         SystemId: int
         Guid: string
     }
+
     [<Test>]
     let upsertTest() =
-        use conn = dbApi.CreateConnection()
+        use conn = sqliteDbApi().CreateConnection()
         tracefn $"SQL version: {conn.GetVersionString()}"
         let r1 = conn.Upsert(
             "flow",
@@ -109,6 +111,7 @@ module SchemaTestModule =
 
     [<Test>]
     let ``insert test`` () =
+        let dbApi = sqliteDbApi()
         use conn = dbApi.CreateConnection()
         dbApi.With(fun (conn, tr) ->
             conn.Execute($"DELETE FROM {Tn.Project};", tr)
@@ -206,107 +209,108 @@ module SchemaTestModule =
             Skills = [ "SQL"; "Python" ] |} |> JsonConvert.SerializeObject
 
 
-        dbApi.With(fun (conn, tr) -> conn.Execute($"DELETE FROM {Tn.Project}")) |> ignore
-        dsProject.RTryCommitToDB(dbApi, removeExistingData)
+        dbApi.With(fun (conn, tr) ->
+            conn.Execute($"DELETE FROM {Tn.Project}", tr) |> ignore
+            dsProject.RTryCommitToDB(dbApi, removeExistingData).IsOk === true
 
-        dsProject.EnumerateRtObjects()
-        |> iter (fun dsobj ->
-            if dsobj.Id.IsNone then
-                noop()
-            // DB 삽입 후이므로 Id 가 Some 이어야 함
-            dsobj.Id.IsSome === true
-        )
+            dsProject.EnumerateRtObjects()
+            |> iter (fun dsobj ->
+                if dsobj.Id.IsNone then
+                    noop()
+                // DB 삽입 후이므로 Id 가 Some 이어야 함
+                dsobj.Id.IsSome === true
+            )
 
-        let dsSystem = dsProject.Systems[0]
-        let dsFlow = dsSystem.Flows[0]
-        dsFlow.Guid === edFlow.Guid
-        dsFlow.Works.Length === 2
-        dsSystem.Works.Length === 3
-        let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
-        let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
-        let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
-        dsWork1.Guid === edWork1.Guid
-        dsWork2.Guid === edWork2.Guid
-        dsWork3.Guid === edWork3.Guid
-        dsWork1.Name === edWork1.Name
-        dsWork2.Name === edWork2.Name
-        dsWork3.Name === edWork3.Name
+            let dsSystem = dsProject.Systems[0]
+            let dsFlow = dsSystem.Flows[0]
+            dsFlow.Guid === edFlow.Guid
+            dsFlow.Works.Length === 2
+            dsSystem.Works.Length === 3
+            let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
+            let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
+            let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
+            dsWork1.Guid === edWork1.Guid
+            dsWork2.Guid === edWork2.Guid
+            dsWork3.Guid === edWork3.Guid
+            dsWork1.Name === edWork1.Name
+            dsWork2.Name === edWork2.Name
+            dsWork3.Name === edWork3.Name
 
-        let flowWors = dsFlow.Works
-        flowWors.Length === 2
-        flowWors[0].Guid === edWork1.Guid
-        flowWors[1].Guid === edWork2.Guid
-        dsFlow.Name === edFlow.Name
+            let flowWors = dsFlow.Works
+            flowWors.Length === 2
+            flowWors[0].Guid === edWork1.Guid
+            flowWors[1].Guid === edWork2.Guid
+            dsFlow.Name === edFlow.Name
 
-        edWork1.Calls.Length === 2
-        edWork2.Calls.Length === 2
-        let dsCall1 = dsWork1.Calls[0]
-        let dsCall2 = dsWork2.Calls[0]
-        dsCall1.Guid === edCall1a.Guid
-        dsCall2.Guid === edCall2a.Guid
-        dsCall1.RawParent |->_.Guid === Some dsWork1.Guid
-        dsCall2.RawParent |->_.Guid === Some dsWork2.Guid
+            edWork1.Calls.Length === 2
+            edWork2.Calls.Length === 2
+            let dsCall1 = dsWork1.Calls[0]
+            let dsCall2 = dsWork2.Calls[0]
+            dsCall1.Guid === edCall1a.Guid
+            dsCall2.Guid === edCall2a.Guid
+            dsCall1.RawParent |->_.Guid === Some dsWork1.Guid
+            dsCall2.RawParent |->_.Guid === Some dsWork2.Guid
 
-        dsCall1.Name === edCall1a.Name
-        dsCall2.Name === edCall2a.Name
+            dsCall1.Name === edCall1a.Name
+            dsCall2.Name === edCall2a.Name
 
-        let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
-        tracefn $"---------------------- json:\r\n{json}"
-        let dsProject2 = RtProject.FromJson json
-        validateRuntime dsProject2 |> ignore
-        let json2 = dsProject2.ToJson(Path.Combine(testDataDir(), "json-deserialized-dssystem.json"))
+            let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
+            tracefn $"---------------------- json:\r\n{json}"
+            let dsProject2 = RtProject.FromJson json
+            validateRuntime dsProject2 |> ignore
+            let json2 = dsProject2.ToJson(Path.Combine(testDataDir(), "json-deserialized-dssystem.json"))
 
-        json === json2
+            json === json2
 
-        dsSystem.ToAasJson() |> ignore
+            dsSystem.ToAasJson() |> ignore
 
-        //(fun () -> dsProject2.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
-
-
-        dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
-        validateRuntime dsProject2 |> ignore
-
-        let dsProject3 = dsProject2.Replicate()
-        validateRuntime dsProject3 |> ignore
-
-        dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
-        //(fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
-        do
-            let dsProj = dsProject2.Duplicate($"CC_{dsProject2.Name}")
-            dsProj.Name <- $"Duplicate of {dsProj.Name}"
-            validateRuntime dsProj |> ignore
-            dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
-            dsProj.RTryCommitToDB(dbApi, removeExistingData)
+            //(fun () -> dsProject2.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
 
 
-        let dsProject4 =
-            let dsSystem4 = dsProject3.Systems[0].Duplicate()
-            validateRuntime dsSystem4 |> ignore
-            dsSystem4.Name <- "DuplicatedSystem"
-            dsProject3.Duplicate($"CC_{dsProject3.Name}")
-            |> tee(fun z ->
-                z.Name <- $"{z.Name}4"
-                z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueSpec <- Some <| Single 3.14156952
-                z.AddPassiveSystem dsSystem4)
+            dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
+            validateRuntime dsProject2 |> ignore
 
-        validateRuntime dsProject4 |> ignore
-        dsProject4.Systems[0].PrototypeSystemGuid <- None
-        dsProject4.RTryCommitToDB(dbApi, removeExistingData)
+            let dsProject3 = dsProject2.Replicate()
+            validateRuntime dsProject3 |> ignore
+
+            dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
+            //(fun () -> dsProject3.ToSqlite3(connStr, removeExistingData)) |> ShouldFailWithSubstringT "UNIQUE constraint failed"
+            do
+                let dsProj = dsProject2.Duplicate($"CC_{dsProject2.Name}")
+                dsProj.Name <- $"Duplicate of {dsProj.Name}"
+                validateRuntime dsProj |> ignore
+                dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
+                dsProj.RTryCommitToDB(dbApi, removeExistingData).IsOk === true
+
+
+            let dsProject4 =
+                let dsSystem4 = dsProject3.Systems[0].Duplicate()
+                validateRuntime dsSystem4 |> ignore
+                dsSystem4.Name <- "DuplicatedSystem"
+                dsProject3.Duplicate($"CC_{dsProject3.Name}")
+                |> tee(fun z ->
+                    z.Name <- $"{z.Name}4"
+                    z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueSpec <- Some <| Single 3.14156952
+                    z.AddPassiveSystem dsSystem4)
+
+            validateRuntime dsProject4 |> ignore
+            dsProject4.Systems[0].PrototypeSystemGuid <- None
+            dsProject4.RTryCommitToDB(dbApi, removeExistingData).IsOk === true )
 
         ()
 
 
     [<Test>]
-    let ``SQLite: EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
+    let ``[SQLite] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
         sqliteDbApi() |> basic_test
 
     [<Test>]
-    let ``PGSql: EdObject -> DsObject -> OrmObject -> DB insert -> JSON test`` () =
+    let ``[PGSql] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
         pgsqlDbApi() |> basic_test
 
 
     [<Test>]
-    let ``JSON -> DsObject -> DB update test`` () =
+    let ``JSON - DsObject - DB update test`` () =
         //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
         let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
         if not (File.Exists jsonPath) then
@@ -325,21 +329,19 @@ module SchemaTestModule =
         dsProject2.Name <- "UpdatedProject"
         let removeExistingData = true
 
-        let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
+        let dbApi = sqliteDbApi()
 
         dbApi.With(fun (conn, tr) ->
-            conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}))
-        |> ignore
+            conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}) |> ignore
 
-        dsProject2.RTryCommitToDB(dbApi, removeExistingData)
+            dsProject2.RTryCommitToDB(dbApi, removeExistingData).IsOk === true)
 
 
     [<Test>]
     let ``DB Delete preview test`` () =
         let projectId = 1
-        let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
 
-        dbApi.With(fun (conn, tr) ->
+        sqliteDbApi().With(fun (conn, tr) ->
             let result =
                 conn.GuessCascadeDeleteAffected(Tn.System, 1)
             noop()
@@ -357,7 +359,7 @@ module SchemaTestModule =
         File.Delete(dbPath) |> ignore
         let dbApi = createSqliteDbApi dbPath
 
-        dsProject.RTryCommitToDB(dbApi, removeExistingData=true)
+        dsProject.RTryCommitToDB(dbApi, removeExistingData=true).IsOk === true
 
         //let rawJsonPath = Path.Combine(specDir, "dssystem-raw.json")
         //let json =
@@ -404,13 +406,13 @@ module SchemaTestModule =
 
         json === json2
 
-        let dbPath = Path.Combine(testDataDir(), "dssystem-with-cylinder.sqlite3")
+        let dbPath = Path.Combine(testDataDir(), "dssystem-with-cylinder")
         let dbApi = dbPath |> createSqliteDbApi
         dbApi.With(fun (conn, tr) -> conn.Execute("DELETE FROM project") |> ignore) |> ignore
 
-        rtProject.RTryCommitToDB(dbApi)
+        rtProject.RTryCommitToDB(dbApi).IsOk === true
 
-        File.Copy(dbPath, Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
+        File.Copy($"{dbPath}.sqlite3", Path.Combine(specDir, "dssystem-with-cylinder.sqlite3"), overwrite=true)
 
 
         let emptyCheckTables = [ Tn.Project; Tn.MapProject2System; Tn.System;
@@ -622,7 +624,7 @@ module SchemaTestModule =
         pgsqlDbApi().With(fun (conn, tr) ->
             conn.Execute($"""INSERT INTO {Tn.TypeTest}
                                    (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,         dateTime)
-                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
+                            VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb::jsonb, @DateTime)""", [testRowFull; testRowEmpty], tr) )
         |> ignore
 
 
@@ -633,7 +635,7 @@ module SchemaTestModule =
         pgsqlDbApi() |> dsProject.RTryCommitToDB
 
     [<Test>]
-    let ``X DB (PGSql): System 수정 commit`` () =
+    let ``X DB (PGSql)= System 수정 commit`` () =
         let dsProject = edProject.Replicate() |> validateRuntime
         let diff = dsProject.ComputeDiff edProject |> toArray
 
