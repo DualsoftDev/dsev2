@@ -8,6 +8,7 @@ open Dapper
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
+open System.Diagnostics
 
 
 [<AutoOpen>]
@@ -20,7 +21,7 @@ module internal DbInsertImpl =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
-    let rTryInsertSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem) (optProject:RtProject option): DbCommitResult =
+    let rTryInsertSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem): DbCommitResult =
         let helper(conn:IDbConnection, tr:IDbTransaction) =
             let ormSystem = s.ToORM<ORMSystem>(dbApi)
 
@@ -33,7 +34,7 @@ module internal DbInsertImpl =
             let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
             guidDicDebug[s.Guid].Id <- Some sysId
 
-            match optProject with
+            match s.Project with
             | Some rtp ->
                 // project 하부에 연결된 system 을 DB 에 저장
 
@@ -97,7 +98,7 @@ module internal DbInsertImpl =
 
 
 
-    let rTryCommitSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem) (optProject:RtProject option): DbCommitResult =
+    let rTryCommitSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem): DbCommitResult =
         match s.Id with
         | Some id ->             // 이미 DB 에 저장된 system 이므로 update
             rTryCheckoutSystemFromDB id dbApi
@@ -112,23 +113,13 @@ module internal DbInsertImpl =
                     Updated diffs
                 )
         | None ->   // DB 에 저장되지 않은 system 이므로 insert
-            rTryInsertSystemToDBHelper dbApi s optProject
+            rTryInsertSystemToDBHelper dbApi s
 
 
 
     /// DsProject 을 database (sqlite or pgsql) 에 저장
     let rTryInsertProjectToDB (proj:RtProject) (dbApi:AppDbApi): DbCommitResult =
         let helper(conn:IDbConnection, tr:IDbTransaction): DbCommitResult =
-
-            let rtObjs =
-                proj.EnumerateRtObjects()
-                |> List.cast<RtUnique>
-
-            let grDic = rtObjs |> groupByToDictionary _.GetType()
-
-            let systems =
-                grDic.[typeof<RtSystem>]
-                |> Seq.cast<RtSystem> |> List.ofSeq
 
             Guid2UniqDic() |> dbApi.DDic.Set
             let ormProject = proj.ToORM(dbApi)
@@ -142,10 +133,9 @@ module internal DbInsertImpl =
             proj.Id <- Some projId
 
             let firstError =
-                seq {
-                    for s in systems do
-                        rTryCommitSystemToDBHelper dbApi s (Some proj)
-                } |> tryPick (function
+                proj.Systems
+                |-> rTryCommitSystemToDBHelper dbApi
+                |> tryPick (function
                     | Error e -> Some e
                     | Ok _ -> None)
 
@@ -172,7 +162,7 @@ module internal DbInsertImpl =
             let ormSystem = x.ToORM(dbApi)
             assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
-            rTryCommitSystemToDBHelper dbApi x None)
+            rTryCommitSystemToDBHelper dbApi x)
 
 
 

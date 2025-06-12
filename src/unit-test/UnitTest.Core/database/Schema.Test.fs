@@ -601,14 +601,19 @@ module Schema =
                     let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr)
                     let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr)
 
+                    let sysArrow0 = dsProject.Systems[0].Arrows[0]
                     dsProject.Systems[0].RemoveWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
-                        diffs.Length === 2
+                        // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 DateTime 이 변경됨
+                        diffs.Length === 3
                         match diffs[0] with
                         | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
                         | _ -> failwith "ERROR"
                         match diffs[1] with
+                        | LeftOnly dbA when dbA.GetGuid() = sysArrow0.Guid -> ()
+                        | _ -> failwith "ERROR"
+                        match diffs[2] with
                         | Diff("DateTime", dbSys, newSys) when dbSys.GetGuid() = newSys.GetGuid() -> ()
                         | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
@@ -617,6 +622,7 @@ module Schema =
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na - 1
 
                 do
+                    // work 추가하면 work 갯수만 늘어남.
                     let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr)
                     let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr)
 
@@ -628,8 +634,8 @@ module Schema =
                         failwith $"ERROR: {err}"
                     | _ -> failwith "ERROR"
 
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr) === nw - 1
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na - 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr) === nw + 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na + 0  // no change
             )
 
 

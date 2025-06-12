@@ -82,6 +82,9 @@ module rec TmpCompatibility =
             works |> verifyAddRangeAsSet x.RawWorks
         member internal x.removeWorks(works:RtWork seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
+            let system = works |-> _.System.Value |> distinct |> exactlyOne
+            let arrows = system.Arrows.Where(fun a -> works.Contains a.Source || works.Contains a.Target)
+            system.removeArrows(arrows, ?byUI = byUI)
             works |> iter (fun w -> w.RawParent <- None)
             works |> iter (x.RawWorks.Remove >> ignore)
 
@@ -213,6 +216,9 @@ module rec TmpCompatibility =
             calls |> verifyAddRangeAsSet x.RawCalls
         member internal x.removeCalls(calls:RtCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
+            let work = calls |-> _.RawParent.Value |> distinct |> exactlyOne :?> RtWork
+            let arrows = work.Arrows.Where(fun a -> calls.Contains a.Source || calls.Contains a.Target)
+            work.removeArrows(arrows, ?byUI = byUI)
             calls |> iter clearParentI
             calls |> iter (x.RawCalls.Remove >> ignore)
 
@@ -220,6 +226,8 @@ module rec TmpCompatibility =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             arrows |> verifyAddRangeAsSet x.RawArrows
+
+
         member internal x.removeArrows(arrows:RtArrowBetweenCalls seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter clearParentI
