@@ -15,6 +15,13 @@ module internal DsCopyModule =
         | :? RtProject as rp -> rp.Duplicate($"CC_{rp.Name}")
         | _ -> failwithf "Unsupported type for duplication: %A" (source.GetType())
 
+    /// fwdReplicate <- replicateUnique
+    let replicateUnique (source:IUnique): IUnique =
+        match source with
+        | :? RtSystem  as rs -> rs.Replicate()
+        | :? RtProject as rp -> rp.Replicate()
+        | _ -> failwithf "Unsupported type for replication: %A" (source.GetType())
+
 
     let private linkUniq (src:#Unique) (dst:#Unique): #Unique=
         match box src with

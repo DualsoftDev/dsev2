@@ -74,6 +74,7 @@ module Interfaces =
 
 
     let mutable internal fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
+    let mutable internal fwdReplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
 
     [<AbstractClass>]
     type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =
