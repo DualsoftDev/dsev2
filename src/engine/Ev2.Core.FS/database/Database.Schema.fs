@@ -12,15 +12,6 @@ module DatabaseSchemaModule =
     /// {varchar NameLength} 는 TEXT 와 완전 동일하며, 혹시 다른 DBMS 를 사용할 경우의 호환성을 위한 것.
     let [<Literal>] NameLength = 128
 
-    //#if DEBUG   // TODO : 제거 요망
-    ///// UNIQUE indexing 여부 성능 고려해서 판단 필요
-    //let [<Literal>] guidUniqSpec = "UNIQUE"
-    //let [<Literal>] intKeyType = "INTEGER"      // or "INTEGER"
-    //#else
-    //let [<Literal>] guidUniqSpec = ""
-    //#endif
-
-
     module Tn =
         let [<Literal>] Project      = "project"
         let [<Literal>] System       = "system"

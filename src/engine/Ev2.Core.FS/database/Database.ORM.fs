@@ -253,8 +253,8 @@ module ORMTypesModule =
 
         new() = ORMEnum(nullString, nullString, -1)
         interface IORMUnique
-        member val Id       = Nullable<Id>() with get, set
-        member val Name     = name           with get, set
-        member val Category = category       with get, set
-        member val Value    = value          with get, set
+        member val Id       = Option<Id>.None with get, set
+        member val Name     = name            with get, set
+        member val Category = category        with get, set
+        member val Value    = value           with get, set
 

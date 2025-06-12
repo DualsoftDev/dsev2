@@ -16,28 +16,31 @@ module Interfaces =
     type IParameter = inherit IDsObject
     type IParameterContainer = inherit IDsObject
     type IArrow     = inherit IDsObject
+    /// Guid, Name, DateTime
+    type IUnique     = inherit IDsObject
+
     type IWithDateTime =
         inherit IDsObject
         /// DateTime 속성을 가지는 객체 인터페이스
         abstract member DateTime: DateTime with get, set
 
-    /// Guid, Name, DateTime
-    type IUnique    = inherit IDsObject
+    type IDs1stClass = inherit IUnique inherit IWithDateTime
+    type IDs2ndClass = inherit IUnique
 
     (* Project > System > Work > Call > ApiCall > ApiDef *)
 
-    type IDsProject = inherit IUnique
-    type IDsSystem  = inherit IUnique
-    type IDsFlow    = inherit IUnique
-    type IDsWork    = inherit IUnique
-    type IDsCall    = inherit IUnique
-    type IDsApiCall = inherit IUnique
-    type IDsApiDef  = inherit IUnique
+    type IDsProject = inherit IDs1stClass
+    type IDsSystem  = inherit IDs1stClass
+    type IDsFlow    = inherit IDs2ndClass
+    type IDsWork    = inherit IDs2ndClass
+    type IDsCall    = inherit IDs2ndClass
+    type IDsApiCall = inherit IDs2ndClass
+    type IDsApiDef  = inherit IDs2ndClass
 
-    type IDsButton    = inherit IUnique
-    type IDsLamp      = inherit IUnique
-    type IDsCondition = inherit IUnique
-    type IDsAction    = inherit IUnique
+    type IDsButton    = inherit IDs2ndClass
+    type IDsLamp      = inherit IDs2ndClass
+    type IDsCondition = inherit IDs2ndClass
+    type IDsAction    = inherit IDs2ndClass
 
 
     /// Runtime 객체 인터페이스

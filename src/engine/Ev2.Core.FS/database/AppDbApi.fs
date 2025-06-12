@@ -142,7 +142,7 @@ module ORMTypeConversionModule =
             conn.TryQuerySingle<ORMEnum>(
                 $"SELECT * FROM {Tn.Enum} WHERE category = @Category AND name = @Name",
                 {| Category = category; Name = name |}
-            ) >>= (fun z -> n2o z.Id)
+            ) >>= _.Id
 
         /// DB 의 enum id 에 해당하는 enum value 를 찾는다.  e.g. 1 -> DbCallType.Call
         member dbApi.TryFindEnumValue<'TEnum
