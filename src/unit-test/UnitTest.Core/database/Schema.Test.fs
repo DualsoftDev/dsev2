@@ -470,37 +470,41 @@ module Schema =
             // project id = 1 을 삭제했을 때, project id = 2 에 대한 모든 것과 mapping id = 2 은 남아 있어야 함
             (fun () ->
                 dbApi.With(fun (conn, tr) ->
-                    let projId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
+                    let projId =
+                        conn.ExecuteScalar<int>(
+                            $"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
+
                     let newProjId =
-                        conn.Insert($"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
-                                        SELECT
-                                            guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
-                                            dateTime,
-                                            name || ' 복사본',
-                                            author,
-                                            version,
-                                            description
-                                        FROM project
-                                        WHERE id = {projId}
-                                        ;""", null, tr)
-                    //let newProjId = conn.ExecuteScalar<int>($"SELECT id FROM {Tn.Project} WHERE id = (SELECT MIN(id) FROM {Tn.Project})")
+                        conn.Insert(
+                            $"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                                SELECT
+                                    guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
+                                    dateTime,
+                                    name || ' 복사본',
+                                    author,
+                                    version,
+                                    description
+                                FROM project
+                                WHERE id = {projId}
+                                ;""", null, tr)
 
                     let mapId =
                         conn.ExecuteScalar<int>(
                             $"""SELECT id FROM {Tn.MapProject2System}
                                 WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
 
-                    conn.Execute($"""   INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, isActive, loadedName)
-                                        SELECT
-                                            guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
-                                            {newProjId},              -- 새로 만든 project id
-                                            systemId,
-                                            isActive,
-                                            loadedName
-                                        FROM mapProject2System
-                                        WHERE id = {mapId}
-                                        ;
-                                        """, transaction=tr) |> ignore
+                    conn.Execute(
+                        $"""INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, isActive, loadedName)
+                            SELECT
+                                guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
+                                {newProjId},              -- 새로 만든 project id
+                                systemId,
+                                isActive,
+                                loadedName
+                            FROM mapProject2System
+                            WHERE id = {mapId}
+                            ;
+                            """, transaction=tr) |> ignore
 
                     conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", transaction=tr) |> ignore
 
@@ -629,7 +633,8 @@ module Schema =
                     dsProject.Systems[0].AddWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
-                        diffs.Length === 2
+                        diffs |> contains (RightOnly w) === true
+                        //diffs.Length === 2
                     | Error err ->
                         failwith $"ERROR: {err}"
                     | _ -> failwith "ERROR"

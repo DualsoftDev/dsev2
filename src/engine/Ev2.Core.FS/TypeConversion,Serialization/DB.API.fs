@@ -9,7 +9,6 @@ open Dual.Common.Db.FS
 
 module Ds2SqliteModule =
 
-    open DbInsertImpl
     open Db2DsImpl
 
     type RtProject with // CommitToDB, CheckoutFromDB
