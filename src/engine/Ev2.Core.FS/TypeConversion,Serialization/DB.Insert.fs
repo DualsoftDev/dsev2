@@ -72,84 +72,14 @@ module internal DbInsertImpl =
                 failwith "Not yet implemented: insertSystemToDBHelper without project context"
                 ()
 
-
-            let jsonbColumns = if dbApi.IsPostgres() then ["Parameter"] else []
-
             // flows 삽입
-            for f in s.Flows do
-                let ormFlow = f.ToORM<ORMFlow>(dbApi)
-                ormFlow.SystemId <- Some sysId
-
-                let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
-                                        (guid, parameter, name, systemId)
-                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId);""", ormFlow, tr)
-
-                f.Id <- Some flowId
-                ormFlow.Id <- Some flowId
-                assert (guidDicDebug[f.Guid] = ormFlow)
-
-
-                let insertFlowElement (tableName:string) (rtX:#RtFlowEntity, ormX:#ORMFlowEntity) =
-                        ormX.FlowId <- Some flowId
-                        let xId =
-                            conn.Insert($"""INSERT INTO {tableName}
-                                            (guid, parameter, name, flowId)
-                                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @FlowId);""", ormX, tr)
-                        rtX.Id <- Some xId
-                        ormX.Id <- Some xId
-                        assert (guidDicDebug[rtX.Guid] = ormX)
-                        ()
-
-
-                (* Button, Lamps, Conditions, Action 등이 복잡해 질 경우 이렇게.. *)
-                //for x in f.Buttons do
-                //    let ormX = x.ToORM<ORMButton>(dbApi, cache)
-                //    ormX.FlowId <- Some flowId
-                //    let buttonId =
-                //        conn.Insert($"""INSERT INTO {Tn.Button}
-                //                        (guid, parameter, name, flowId)
-                //                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @FlowId);""", ormX, tr)
-                //    x.Id <- Some buttonId
-                //    ormX.Id <- Some buttonId
-                //    assert (cache[x.Guid] = ormX)
-
-                (* 간략 format .. *)
-                f.Buttons    |-> (fun z -> z, z.ToORM<ORMButton>    dbApi) |> iter (insertFlowElement Tn.Button)
-                f.Lamps      |-> (fun z -> z, z.ToORM<ORMLamp>      dbApi) |> iter (insertFlowElement Tn.Lamp)
-                f.Conditions |-> (fun z -> z, z.ToORM<ORMCondition> dbApi) |> iter (insertFlowElement Tn.Condition)
-                f.Actions    |-> (fun z -> z, z.ToORM<ORMAction>    dbApi) |> iter (insertFlowElement Tn.Action)
-
+            s.Flows |> iter _.InsertToDB(dbApi)
 
             // system 의 apiDefs 를 삽입
-            for rtAd in s.ApiDefs do
-                let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi)
-                ormApiDef.SystemId <- Some sysId
-
-
-                let apiDefId =
-                    conn.Insert($"""INSERT INTO {Tn.ApiDef}
-                                           (guid, parameter, name, isPush, systemId)
-                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @SystemId);""", ormApiDef, tr)
-
-                rtAd.Id <- Some apiDefId
-                ormApiDef.Id <- Some apiDefId
-                assert(guidDicDebug[rtAd.Guid] = ormApiDef)
+            s.ApiDefs |> iter _.InsertToDB(dbApi)
 
             // system 의 apiCalls 를 삽입
-            for rtAc in s.ApiCalls do
-                let ormApiCall = rtAc.ToORM<ORMApiCall>(dbApi)
-                ormApiCall.SystemId <- Some sysId
-
-                let apiCallId =
-                    conn.Insert(
-                        $"""INSERT INTO {Tn.ApiCall}
-                                   (guid,   parameter,                     name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      valueSpecHint)
-                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @ValueSpecHint);"""
-                        , ormApiCall, tr)
-
-                rtAc.Id <- Some apiCallId
-                ormApiCall.Id <- Some apiCallId
-                assert(guidDicDebug[rtAc.Guid] = ormApiCall)
+            s.ApiCalls |> iter _.InsertToDB(dbApi)
 
 
             // works, calls 삽입

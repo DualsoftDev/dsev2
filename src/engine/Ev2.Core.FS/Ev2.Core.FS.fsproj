@@ -23,6 +23,7 @@
 		<Compile Include="TypeConversion,Serialization\DsCopy.Properties.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCompare.Objects.fs" />
 		<Compile Include="TypeConversion,Serialization\DB.Select.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Insert.Prolog.fs" />
 		<Compile Include="TypeConversion,Serialization\DB.Insert.fs" />
 		<Compile Include="TypeConversion,Serialization\DB.Update.fs" />
 		<Compile Include="TypeConversion,Serialization\DB.API.fs" />
