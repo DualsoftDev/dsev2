@@ -1,0 +1,266 @@
+namespace Ev2.Core.FS
+
+open System
+open System.Data
+open System.Linq
+open Dapper
+
+open Dual.Common.Base
+open Dual.Common.Core.FS
+open Dual.Common.Db.FS
+
+type DbObjectIdentifier =
+    | ByGuid of Guid
+    | ById of int
+    | ByName of string
+
+/// DB commit success 응답.  예외난 경우 제외.
+type DbCommitSuccessResponse =
+    /// commit 으로 인한 db 변경 없음
+    | NoChange
+    /// 신규 추가 (하부 포함)
+    | Inserted
+    /// 수정, 하부 추가/삭제
+    | Updated of CompareResult[]
+    /// 삭제 (하부 포함)
+    | Deleted
+
+type DbCommitResult = Result<DbCommitSuccessResponse, ErrorMessage>
+
+type DbCheckoutResult<'T> = Result<'T, ErrorMessage>
+
+[<AutoOpen>]
+module internal Db2DsImpl =
+
+    //let deleteFromDatabase(identifier:DbObjectIdentifier) (conn:IDbConnection) (tr:IDbTransaction) =
+    //    ()
+
+    //let deleteFromDatabaseWithConnectionString(identifier:DbObjectIdentifier) (connStr:string) =
+    //    DbApi(connStr).With(fun (conn, tr) ->
+    //        deleteFromDatabase identifier conn tr
+    //    )
+
+    // 사전 조건: ormSystem.RtObject 에 RtSystem 이 생성되어 있어야 한다.
+    let private rTryCheckoutSystemFromDBHelper(ormSystem:ORMSystem) (dbApi:AppDbApi): DbCheckoutResult<RtSystem> =
+        let helper(conn:IDbConnection, tr:IDbTransaction) =
+            let rtSystem = ormSystem.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR")
+            verify(rtSystem.Guid = ormSystem.Guid)
+            let s = rtSystem
+            let rtFlows = [
+                let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
+
+                for ormFlow in orms do
+                    let f = {| FlowId = ormFlow.Id |}
+                    let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE flowId = @FlowId", f,  tr)
+                    let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE flowId = @FlowId", f,  tr)
+                    let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
+                    let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
+
+                    let buttons    = ormButtons    |-> (fun z -> RtButton    () |> replicateProperties z) |> toArray
+                    let lamps      = ormLamps      |-> (fun z -> RtLamp      () |> replicateProperties z) |> toArray
+                    let conditions = ormConditions |-> (fun z -> RtCondition () |> replicateProperties z) |> toArray
+                    let actions    = ormActions    |-> (fun z -> RtAction    () |> replicateProperties z) |> toArray
+
+                    RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
+                    |> replicateProperties ormFlow
+            ]
+
+            rtFlows |> s.addFlows
+
+            let rtApiDefs = [
+                let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
+
+                for orm in orms do
+                    RtApiDef(orm.IsPush)
+                    |> replicateProperties orm
+            ]
+            rtApiDefs |> s.addApiDefs
+
+            let rtApiCalls = [
+                let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
+
+                /// orm.ApiDefId -> RtApiDef : rtSystem 하부의 RtApiDef 타입 객체들
+                let rtApiDefs = rtSystem.EnumerateRtObjects().OfType<RtApiDef>().ToArray()
+                for orm in orms do
+
+                    // orm.ApiDefId -> rtApiDef -> _.Guid
+                    let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
+
+                    let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
+                    RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
+                                orm.InSymbol, orm.OutSymbol, valueParam)
+                    |> replicateProperties orm
+            ]
+            rtApiCalls |> s.addApiCalls
+
+
+
+            let rtWorks = [
+                let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr)
+
+                for orm in orms do
+                    RtWork.Create()
+                    |> setParent s
+                    |> replicateProperties orm
+                    |> tee(fun w ->
+                        match orm.FlowId with
+                        | Some flowId ->
+                            let flow = rtFlows |> find(fun f -> f.Id.Value = flowId)
+                            w.Flow <- Some flow
+                        | None -> ()
+
+                        w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+            ]
+            rtWorks |> s.addWorks
+
+            for w in rtWorks do
+                let rtCalls = [
+                    let orms = conn.Query<ORMCall>(
+                            $"SELECT * FROM {Tn.Call} WHERE workId = @WorkId",
+                            {| WorkId = w.Id.Value |}, tr)
+
+                    for orm in orms do
+
+                        let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
+                        let apiCallGuids =
+                            conn.Query<Guid>(
+                            $"""SELECT ac.guid
+                                FROM {Tn.MapCall2ApiCall} m
+                                JOIN {Tn.ApiCall} ac ON ac.id = m.apiCallId
+                                WHERE m.callId = @CallId"""
+                            , {| CallId = orm.Id.Value |}, tr)
+
+                        let acs = orm.AutoConditions |> jsonDeserializeStrings
+                        let ccs = orm.CommonConditions |> jsonDeserializeStrings
+                        RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
+                        |> replicateProperties orm
+                        |> setParent w
+                        |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+                ]
+                rtCalls |> w.addCalls
+
+
+                // work 내의 call 간 연결
+                let rtArrows = [
+                    let orms = conn.Query<ORMArrowCall>(
+                            $"SELECT * FROM {Tn.ArrowCall} WHERE workId = @WorkId",
+                            {| WorkId = w.Id.Value |}, tr)
+
+                    for orm in orms do
+                        let src = rtCalls |> find(fun c -> c.Id.Value = orm.Source)
+                        let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
+                        let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+
+                        RtArrowBetweenCalls(src, tgt, arrowType)
+                        |> replicateProperties orm
+                ]
+                rtArrows |> w.addArrows
+
+                // call 이하는 더 이상 읽어 들일 구조가 없다.
+                for c in rtCalls do
+                    ()
+
+
+            // system 내의 work 간 연결
+            let rtArrows = [
+                let orms = conn.Query<ORMArrowWork>(
+                        $"SELECT * FROM {Tn.ArrowWork} WHERE systemId = @SystemId"
+                        , {| SystemId = s.Id.Value |}, tr)
+
+                for orm in orms do
+                    let src = rtWorks |> find(fun w -> w.Id.Value = orm.Source)
+                    let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
+                    let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+
+                    RtArrowBetweenWorks(src, tgt, arrowType)
+                    |> replicateProperties orm
+            ]
+            rtArrows |> s.addArrows
+            assert(setEqual s.Arrows rtArrows)
+
+            rtSystem
+
+        try
+            Ok (dbApi.With helper)
+        with ex ->
+            Error <| sprintf "Failed to checkout system from DB: %s" ex.Message
+
+
+
+    let private rTryCheckoutProjectFromDBHelper(ormProject:ORMProject) (dbApi:AppDbApi): DbCheckoutResult<RtProject> =
+        let helper(conn:IDbConnection, tr:IDbTransaction) =
+            let projSysMaps =
+                conn.Query<ORMMapProjectSystem>(
+                    $"SELECT * FROM {Tn.MapProject2System} WHERE projectId = @ProjectId",
+                    {| ProjectId = ormProject.Id |}, tr)
+                |> toArray
+
+            let rtProj =
+                RtProject.Create()
+                |> replicateProperties ormProject
+
+            let ormSystems =
+                let systemIds = projSysMaps |-> _.SystemId
+
+                let sql =
+                    let idCheck = if dbApi.IsPostgres() then "id = ANY(@SystemIds)" else "id IN @SystemIds"
+                    $"SELECT * FROM {Tn.System} WHERE {idCheck}"
+
+                conn.Query<ORMSystem>(sql, {| SystemIds = systemIds |}, tr)
+                |> tees (fun os ->
+                        RtSystem.Create()
+                        |> replicateProperties os
+                        |> uniqParent (Some rtProj))
+                |> toArray
+
+            let rtSystems =
+                ormSystems |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
+
+            let actives, passives =
+                rtSystems
+                |> partition (fun s ->
+                    projSysMaps
+                    |> tryFind(fun m -> m.SystemId = s.Id.Value)
+                    |-> _.IsActive |? false)
+
+            actives  |> rtProj.RawActiveSystems.AddRange
+            passives |> rtProj.RawPassiveSystems.AddRange
+
+            ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
+
+            rtProj
+
+        try
+            Ok (dbApi.With helper)
+        with ex ->
+            Error <| sprintf "Failed to checkout project from DB: %s" ex.Message
+
+    let private tryGetORMRowWithId<'T> (conn:IDbConnection) (tr:IDbTransaction) (tableName:string) (id:Id) =
+        conn.TryQuerySingle<'T>($"SELECT * FROM {tableName} WHERE id=@Id", {|Id = id|}, tr)
+
+
+    let rTryCheckoutProjectFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<RtProject> =
+        dbApi.With(fun (conn, tr) ->
+            match tryGetORMRowWithId<ORMProject> conn tr Tn.Project id with
+            | None ->
+                Error <| sprintf "Project not found: %A" id
+            | Some ormProject ->
+                rTryCheckoutProjectFromDBHelper ormProject dbApi)
+
+    let rTryCheckoutSystemFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<RtSystem> =
+        dbApi.With(fun (conn, tr) ->
+            match tryGetORMRowWithId<ORMSystem> conn tr Tn.System id with
+            | None ->
+                Error <| $"System not found with id: {id}"
+            | Some ormSystem ->
+                ormSystem.RtObject <-
+                    let rtSystem =
+                        RtSystem.Create()
+                        |> replicateProperties ormSystem
+                    Some rtSystem
+
+                rTryCheckoutSystemFromDBHelper ormSystem dbApi
+        )
+
+
+

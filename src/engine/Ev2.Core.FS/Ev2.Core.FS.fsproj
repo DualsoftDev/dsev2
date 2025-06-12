@@ -21,8 +21,11 @@
 		<Compile Include="TypeConversion,Serialization\NewtonsoftJsonDsObjects.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopy.Object.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopy.Properties.fs" />
-		<Compile Include="TypeConversion,Serialization\DsCompareObjects.fs" />
-		<Compile Include="TypeConversion,Serialization\Ds2DB.Sqlite.fs" />
+		<Compile Include="TypeConversion,Serialization\DsCompare.Objects.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Select.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Insert.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Update.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.API.fs" />
 		<Compile Include="TypeConversion,Serialization\Ds2Aas.fs" />
 		<Compile Include="EntryPoint.fs" />
 	</ItemGroup>
