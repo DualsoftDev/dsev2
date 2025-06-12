@@ -211,8 +211,8 @@ module internal Db2DsImpl =
                 conn.Query<ORMSystem>(sql, {| SystemIds = systemIds |}, tr)
 
             let ormActiveSystems =
-                let sql = $"SELECT * FROM {Tn.System} WHERE supervisorProjectId = @SupervisorProjectId"
-                conn.Query<ORMSystem>(sql, {| SupervisorProjectId = ormProject.Id |}, tr)
+                let sql = $"SELECT * FROM {Tn.System} WHERE ownerProjectId = @OwnerProjectId"
+                conn.Query<ORMSystem>(sql, {| OwnerProjectId = ormProject.Id |}, tr)
 
 
             let ormSystems =

@@ -251,7 +251,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 );
 
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
-    , {k "supervisorProjectId"}   {intKeyType}    -- Active system 에 한해, 자신을 제어하는 project Id.  Passive system 은 Null, active system 은 반드시 존재해야 함
+    , {k "ownerProjectId"}   {intKeyType}    -- 현재의 system 을 생성한 project 의 id.
     , {k "prototypeId"}   {intKeyType}    -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
     , {k "author"}        TEXT NOT NULL
@@ -261,7 +261,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "description"}   TEXT
     , {k "dateTime"}      {datetime}
     , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
-    , FOREIGN KEY(supervisorProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 제어하는 project 삭제시, system 도 삭제
+    , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
 );
 
@@ -557,8 +557,8 @@ CREATE VIEW {k Vn.SupervisedSystem} AS
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
     FROM {k Tn.System} s
-    JOIN {k Tn.Project} p ON p.id = s.supervisorProjectId
-    WHERE s.supervisorProjectId IS NOT NULL
+    JOIN {k Tn.Project} p ON p.id = s.ownerProjectId
+    WHERE s.ownerProjectId IS NOT NULL
     ;
 
 
@@ -574,7 +574,7 @@ CREATE VIEW {k Vn.DeviceSystem} AS
     FROM {k Tn.MapProject2System} psm
     JOIN {k Tn.System} s ON psm.systemId = s.id
     JOIN {k Tn.Project} p ON p.id = psm.projectId
-    WHERE s.supervisorProjectId IS NULL
+    WHERE s.ownerProjectId IS NULL
     ;
 
 CREATE VIEW {k Vn.ApiDef} AS
@@ -829,7 +829,7 @@ CREATE TABLE {k Tn.TableDescription} (
                 // 각 table 의 column 설명
                 desc "<All table>"        "Parameter"        "임의의 객체에 대한 JSON 문자열 혹은 Jsonb.  Jsonb 는 Postgresql 에서 지원 중.  그외에서는 문자열로 처리 필요"
 
-                desc Tn.System "supervisorProjectId"   $"""제어기로 제어 가능한 system 에 한해, 자신을 제어하는 project Id.
+                desc Tn.System "ownerProjectId"   $"""제어기로 제어 가능한 system 에 한해, 자신을 제어하는 project Id.
 - 해당 project 에서 이 시스템은 Active 로 사용되어야만 한다.
 - null 값인 경우, 이 시스템을 제어하는 제어기가 없다는 의미로, device 등이 여기에 해당함
 - 제 3의 project 에서 이 시스템을 passive 로 사용하는 것은 {Tn.MapProject2System} 에 mapping 항목 추가해서 정의함."""

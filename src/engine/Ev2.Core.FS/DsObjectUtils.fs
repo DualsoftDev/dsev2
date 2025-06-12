@@ -56,7 +56,9 @@ module rec TmpCompatibility =
 
     type RtProject with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate
         member x.AddPrototypeSystem(system:RtSystem) =
-            x.RawPrototypeSystems.Add system
+            system.IsPrototype <- true
+            system |> x.RawPrototypeSystems.Add
+            system
 
         member x.AddActiveSystem(system:RtSystem) =
             system |> setParent x |> x.RawActiveSystems.Add
@@ -65,13 +67,11 @@ module rec TmpCompatibility =
             system |> setParent x |> x.RawPassiveSystems.Add
 
         /// project 내에 prototypeGuid 를 가진 prototype system 을 복사하여 instance 로 만들어 반환
-        member x.Instantiate(prototypeGuid:Guid, asActive:bool):RtSystem =
-            x.PrototypeSystems
-            |> tryFind(fun s -> s.Guid = prototypeGuid )
-            |?? (fun () -> failwith "Prototype system not found")
-            |> (fun z -> fwdDuplicate z :?> RtSystem)
+        member x.Instantiate(prototypeSystem:RtSystem, asActive:bool): RtSystem =
+            assert(x.PrototypeSystems.Contains prototypeSystem)
+            fwdDuplicate prototypeSystem :?> RtSystem
             |> tee (fun z ->
-                z.PrototypeSystemGuid <- Some prototypeGuid
+                z.PrototypeSystemGuid <- Some prototypeSystem.Guid
                 if asActive then x.AddActiveSystem z
                 else x.AddPassiveSystem z)
 
@@ -290,10 +290,10 @@ module DsObjectUtilsModule =
         static member Create() = RtProject([||], [||], [||])
 
     type RtSystem with
-        static member Create(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
+        static member Create(flows:RtFlow[], works:RtWork[],
             arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
         ) =
-            RtSystem(protoGuid, flows, works, arrows, apiDefs, apiCalls)
+            RtSystem(flows, works, arrows, apiDefs, apiCalls)
             |> tee (fun z ->
                 flows    |> iter (setParentI z)
                 works    |> iter (setParentI z)
@@ -301,7 +301,7 @@ module DsObjectUtilsModule =
                 apiDefs  |> iter (setParentI z)
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = RtSystem(None, [||], [||], [||], [||], [||])
+        static member Create() = RtSystem([||], [||], [||], [||], [||])
 
     type RtWork with
         static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) =

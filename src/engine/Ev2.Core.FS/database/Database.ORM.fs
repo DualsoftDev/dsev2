@@ -115,7 +115,7 @@ module ORMTypesModule =
         member val DateTime      = dateTime with get, set
 
 
-    type ORMSystem(supervisorProjectId:Id option, prototypeId:Id option, originGuid:Guid option
+    type ORMSystem(ownerProjectId:Id option, prototypeId:Id option, originGuid:Guid option
         , iri:string, author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
     ) =
@@ -125,7 +125,7 @@ module ORMTypesModule =
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
-        member val SupervisorProjectId = supervisorProjectId with get, set
+        member val OwnerProjectId = ownerProjectId with get, set
         member val PrototypeId   = prototypeId   with get, set
         member val IRI           = iri           with get, set
         member val Author        = author        with get, set

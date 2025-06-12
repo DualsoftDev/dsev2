@@ -45,7 +45,7 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            RtSystem.Create(x.PrototypeSystemGuid, flows, works, arrows, apiDefs, apiCalls)
+            RtSystem.Create(flows, works, arrows, apiDefs, apiCalls)
             |> uniqReplicateWithBag bag x
 
 

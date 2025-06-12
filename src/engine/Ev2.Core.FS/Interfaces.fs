@@ -101,11 +101,12 @@ module rec DsObjectModule =
         member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 
-    type RtProject(prototypeSystems:RtSystem[], activeSystems:RtSystem[], passiveSystems:RtSystem[]) as this =
+    type RtProject(prototypeSystems:RtSystem seq, activeSystems:RtSystem seq, passiveSystems:RtSystem seq) as this =
         inherit RtUnique()
         do
             activeSystems  |> iter (setParentI this)
             passiveSystems |> iter (setParentI this)
+            prototypeSystems |> forall(_.IsPrototype) |> verify // prototypeSystems must be prototype systems
 
         interface IRtProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -136,10 +137,12 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type RtSystem internal(protoGuid:Guid option, flows:RtFlow[], works:RtWork[],
-            arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
+    type RtSystem internal(flows:RtFlow seq, works:RtWork seq,
+            arrows:RtArrowBetweenWorks seq, apiDefs:RtApiDef seq, apiCalls:RtApiCall seq
     ) =
         inherit RtProjectEntity()
+
+        //internal new() = RtSystem(Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq.empty)
 
         (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
@@ -151,11 +154,17 @@ module rec DsObjectModule =
         member val internal RawApiDefs  = ResizeArray apiDefs
         member val internal RawApiCalls = ResizeArray apiCalls
 
-        member x.SupervisorProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
+        member x.OwnerProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
 
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
-        member val PrototypeSystemGuid = protoGuid with get, set
+
+
+        /// this system 이 prototype 으로 정의되었는지 여부
+        member val IsPrototype = false with get, set
+        /// this system 이 Instance 로 사용될 때에만 Some 값.
+        member val PrototypeSystemGuid = Option<Guid>.None with get, set
+
 
         member val IRI           = nullString with get, set
         member val Author        = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
@@ -170,6 +179,7 @@ module rec DsObjectModule =
         member x.Arrows   = x.RawArrows   |> toList
         member x.ApiDefs  = x.RawApiDefs  |> toList
         member x.ApiCalls = x.RawApiCalls |> toList
+
 
 
 

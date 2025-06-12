@@ -49,6 +49,12 @@ module NewtonsoftJsonModules =
     let mutable internal fwdOnNsJsonSerializing:  INjObject->unit = let dummy (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
     let mutable internal fwdOnNsJsonDeserialized: INjObject->unit = let dummy (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
 
+
+    /// NjUnique 객체의 RuntimeObject 를 'T type 으로 casting 해서 가져온다.
+    let getRuntimeObject<'T when 'T :> RtUnique> (njObj:NjUnique) : 'T = njObj.RuntimeObject :?> 'T
+
+
+
 /// Newtonsoft Json 호환 버젼
 [<AutoOpen>]
 module rec NewtonsoftJsonObjects =
@@ -143,18 +149,18 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 104)>] member val ApiCalls = [||]:NjApiCall[] with get, set
 
-        // NjSystem 에서는 SupervisorProjectId 불필요.  NjProject.ActiveSystem 에 포함되어 있으면 그 project 가 supervisor 임.
-        //member val SupervisorProjectId = Option<Id>.None with get, set
+        /// this system 이 prototype 으로 정의되었는지 여부
+        member val internal IsPrototype = false with get, set
+        /// this system 이 Instance 로 사용될 때에만 Some 값.
+        member val PrototypeSystemGuid = Option<Guid>.None with get, set
 
         member val OriginGuid    = Option<Guid>.None with get, set
-        member val Prototype     = false      with get, set
         member val IRI           = nullString with get, set
         member val Author        = nullString with get, set
         member val EngineVersion = Version()  with get, set
         member val LangVersion   = Version()  with get, set
         member val Description   = nullString with get, set
         member val DateTime      = minDate    with get, set
-        //[<JsonIgnore>] member val IsSaveAsReference = false with get, set
 
         member x.ShouldSerializeFlows   () = x.Flows   .NonNullAny()
         member x.ShouldSerializeWorks   () = x.Works   .NonNullAny()
@@ -349,18 +355,6 @@ module rec NewtonsoftJsonObjects =
             |> fromNjUniqINGD rt
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
     let rec internal onNsJsonSerializing (njObj:INjObject) =
         match njObj with
@@ -371,7 +365,7 @@ module rec NewtonsoftJsonObjects =
 
         match njObj with
         | :? NjProject as njp ->
-            let rtp = njp.RuntimeObject :?> RtProject
+            let rtp = njp |> getRuntimeObject<RtProject>
 
             njp.SystemPrototypes <-
                 rtp.PrototypeSystems
@@ -394,6 +388,8 @@ module rec NewtonsoftJsonObjects =
             njp.SystemPrototypes |> iter onNsJsonSerializing
 
         | :? NjSystem as njs ->
+            njs.RuntimeObject |> replicateProperties njs
+
             njs.Arrows   |> iter onNsJsonSerializing
             njs.Flows    |> iter onNsJsonSerializing
             njs.Works    |> iter onNsJsonSerializing
@@ -401,12 +397,12 @@ module rec NewtonsoftJsonObjects =
             njs.ApiCalls |> iter onNsJsonSerializing
 
         | :? NjWork as njw ->
-            let rtw = njw.RuntimeObject :?> RtWork
+            let rtw = njw |> getRuntimeObject<RtWork>
             njw.Arrows |> iter onNsJsonSerializing
             njw.Calls  |> iter onNsJsonSerializing
 
         | :? NjCall as njc ->
-            let rtc = njc.RuntimeObject :?> RtCall
+            let rtc = njc |> getRuntimeObject<RtCall>
             ()
 
         | (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
@@ -429,11 +425,11 @@ module rec NewtonsoftJsonObjects =
         // 개별 처리
         match njObj with
         | :? NjProject as njp ->
-            let protos = njp.SystemPrototypes |-> (fun z -> z.RuntimeObject :?> RtSystem)
+            let protos = njp.SystemPrototypes |-> getRuntimeObject<RtSystem> |> tees (fun z -> z.IsPrototype <- true)
             let load (loadType:NjSystemLoadType):RtSystem =
                 match loadType with
                 | NjSystemLoadType.LocalDefinition sys ->
-                    sys.RuntimeObject :?> RtSystem
+                    sys |> getRuntimeObject<RtSystem>
                 | NjSystemLoadType.Reference { InstanceName=name; PrototypeGuid=protoGuid; InstanceGuid=instanceGuid } ->
                     protos
                     |> find (fun p -> p.Guid = protoGuid)
@@ -441,21 +437,15 @@ module rec NewtonsoftJsonObjects =
                     |> tee(fun s ->
                         s.Name <- name
                         s.Guid <- instanceGuid
-                        s.PrototypeSystemGuid <- Some protoGuid
-                        )
+                        s.PrototypeSystemGuid <- Some protoGuid )
 
             njp.SystemPrototypes |> iter onNsJsonDeserialized
             njp.RuntimeObject <-
                 noop()
-                let actives  = njp.ActiveSystems  |-> (fun s -> s.RuntimeObject :?> RtSystem)
+                let actives  = njp.ActiveSystems  |-> getRuntimeObject<RtSystem>
                 let passives = njp.PassiveSystems |-> load
-                let prototypeSystems = njp.SystemPrototypes |-> (fun s -> s.RuntimeObject :?> RtSystem )
 
-                RtProject(prototypeSystems, actives, passives
-                    , Author=njp.Author
-                    , Version=njp.Version
-                    , Description=njp.Description
-                    , Database=njp.Database )
+                RtProject(protos, actives, passives)
                 |> replicateProperties njp
                 |> tee (fun z ->
                     actives @ passives
@@ -475,7 +465,7 @@ module rec NewtonsoftJsonObjects =
             njs.Flows    |> iter onNsJsonDeserialized
             njs.Works    |> iter onNsJsonDeserialized
 
-            let flows = njs.Flows |-> (fun z -> z.RuntimeObject :?> RtFlow)
+            let flows = njs.Flows |-> getRuntimeObject<RtFlow>
 
             let works = [|
                 for njw in njs.Works do
@@ -484,8 +474,8 @@ module rec NewtonsoftJsonObjects =
                             flows |> tryFind (fun f -> f.Guid = s2guid njw.FlowGuid)
                         else
                             None
-                    let calls  = njw.Calls  |-> (fun z -> z.RuntimeObject :?> RtCall)
-                    let arrows = njw.Arrows |-> (fun z -> z.RuntimeObject :?> RtArrowBetweenCalls)
+                    let calls  = njw.Calls  |-> getRuntimeObject<RtCall>
+                    let arrows = njw.Arrows |-> getRuntimeObject<RtArrowBetweenCalls>
 
                     let dsWork =
                         RtWork.Create(calls, arrows, optFlow)
@@ -497,7 +487,7 @@ module rec NewtonsoftJsonObjects =
 
             njs.Arrows
             |> iter (fun (a:NjArrow) ->
-                let works = njs.Works |-> (fun z -> z.RuntimeObject :?> RtWork)
+                let works = njs.Works |-> getRuntimeObject<RtWork>
                 let src = works |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
 
@@ -511,23 +501,12 @@ module rec NewtonsoftJsonObjects =
                     RtArrowBetweenWorks(src, tgt, arrowType)
                     |> replicateProperties a)
 
-            let arrows   = njs.Arrows   |-> (fun z -> z.RuntimeObject :?> RtArrowBetweenWorks)
-            let apiDefs  = njs.ApiDefs  |-> (fun z -> z.RuntimeObject :?> RtApiDef)
-            let apiCalls = njs.ApiCalls |-> (fun z -> z.RuntimeObject :?> RtApiCall)
+            let arrows   = njs.Arrows   |-> getRuntimeObject<RtArrowBetweenWorks>
+            let apiDefs  = njs.ApiDefs  |-> getRuntimeObject<RtApiDef>
+            let apiCalls = njs.ApiCalls |-> getRuntimeObject<RtApiCall>
 
             njs.RuntimeObject <-
-                noop()
-                let protoGuid:Guid option =
-                    match njs.Project with
-                    | Some njp -> [
-                        let loadTypes = njp.PassiveSystems
-                        for loadType in loadTypes do
-                            match loadType with
-                            | NjSystemLoadType.Reference r -> Some r.PrototypeGuid
-                            | _ -> None ] |> choose id |> tryHead
-                    | None -> None
-
-                RtSystem.Create(protoGuid, flows, works, arrows, apiDefs, apiCalls)
+                RtSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls)
                 |> replicateProperties njs
 
         | :? NjFlow as njf ->
@@ -538,10 +517,10 @@ module rec NewtonsoftJsonObjects =
 
 
 
-            let buttons    = njf.Buttons    |-> (fun z -> z.RuntimeObject :?> RtButton)
-            let lamps      = njf.Lamps      |-> (fun z -> z.RuntimeObject :?> RtLamp)
-            let conditions = njf.Conditions |-> (fun z -> z.RuntimeObject :?> RtCondition)
-            let actions    = njf.Actions    |-> (fun z -> z.RuntimeObject :?> RtAction)
+            let buttons    = njf.Buttons    |-> getRuntimeObject<RtButton>
+            let lamps      = njf.Lamps      |-> getRuntimeObject<RtLamp>
+            let conditions = njf.Conditions |-> getRuntimeObject<RtCondition>
+            let actions    = njf.Actions    |-> getRuntimeObject<RtAction>
 
             let rtFlow = RtFlow(buttons, lamps, conditions, actions) |> replicateProperties njf
             let all:NjUnique seq =
@@ -561,7 +540,7 @@ module rec NewtonsoftJsonObjects =
 
             njw.Arrows
             |> iter (fun (a:NjArrow) ->
-                let calls = njw.Calls |-> (fun z -> z.RuntimeObject :?> RtCall)
+                let calls = njw.Calls |-> getRuntimeObject<RtCall>
                 let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
                 let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
                 let arrowType =
@@ -675,7 +654,7 @@ module Ds2JsonModule =
         static member FromJson(json:string): RtProject =
             json
             |> NjProject.FromJson
-            |> _.RuntimeObject :?> RtProject        // de-serialization 연결 고리
+            |> getRuntimeObject<RtProject>        // de-serialization 연결 고리
             |> validateRuntime
 
 
@@ -713,7 +692,7 @@ module Ds2JsonModule =
             | Some jValue when jValue.ToString() = "System" ->
                 json
                 |> NjSystem.ImportFromJson
-                |> _.RuntimeObject :?> RtSystem        // de-serialization 연결 고리
+                |> getRuntimeObject<RtSystem>        // de-serialization 연결 고리
                 |> validateRuntime
             | _ -> // RuntimeType 이 없거나, 잘못된 경우
                 failwith "Invalid system JSON file.  'RuntimeType' not found or mismatch."
