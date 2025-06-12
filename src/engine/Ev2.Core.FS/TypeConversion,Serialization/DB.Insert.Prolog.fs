@@ -29,8 +29,6 @@ module DBInsertProlog =
                     orm.Id <- Some apiDefId
                     assert(guidDicDebug[rt.Guid] = orm)
 
-
-
                 | :? RtApiCall as rt ->
                     let orm = rt.ToORM<ORMApiCall>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id
@@ -45,7 +43,6 @@ module DBInsertProlog =
                     rt.Id <- Some apiCallId
                     orm.Id <- Some apiCallId
                     assert(guidDicDebug[rt.Guid] = orm)
-
 
                 | :? RtFlow as rt ->
                     let orm = rt.ToORM<ORMFlow>(dbApi)
@@ -102,6 +99,93 @@ module DBInsertProlog =
                     | :? RtCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertFlowElement Tn.Condition (rtX, orm)
                     | :? RtAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertFlowElement Tn.Action    (rtX, orm)
                     | _ -> failwith "ERROR"
+
+
+                | :? RtWork as rt ->
+                    let orm = rt.ToORM<ORMWork>(dbApi)
+                    orm.SystemId <- rt.System >>= _.Id
+
+                    let workId = conn.Insert($"""INSERT INTO {Tn.Work}
+                                        (guid, parameter,                      name,  systemId,  flowId,  status4Id,  motion,  script,  isFinished,  numRepeat,  period,  delay)
+                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @IsFinished, @NumRepeat, @Period, @Delay);""", orm, tr)
+
+                    rt.Id <- Some workId
+                    orm.Id <- Some workId
+                    assert(guidDicDebug[rt.Guid] = orm)
+
+                    rt.Calls |> iter _.InsertToDB(dbApi)
+
+                    // work 의 arrows 를 삽입 (calls 간 연결)
+                    rt.Arrows |> iter _.InsertToDB(dbApi)
+
+
+                | :? RtCall as rt ->
+                    let orm = rt.ToORM<ORMCall>(dbApi)
+                    orm.WorkId <- rt.RawParent >>= _.Id
+
+                    let callId =
+                        conn.Insert($"""INSERT INTO {Tn.Call}
+                                    (guid,  parameter,                     name, workId,   status4Id,  callTypeId,  autoConditions, commonConditions,   isDisabled, timeout)
+                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoConditions, @CommonConditions, @IsDisabled, @Timeout);""", orm, tr)
+
+                    rt.Id <- Some callId
+                    orm.Id <- Some callId
+                    assert(guidDicDebug[rt.Guid] = orm)
+
+                    // call - apiCall 에 대한 mapping 정보 삽입
+                    for apiCall in rt.ApiCalls do
+                        let apiCallId = apiCall.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+
+                        let m = conn.TryQuerySingle<ORMMapCall2ApiCall>(
+                                    $"""SELECT * FROM {Tn.MapCall2ApiCall}
+                                        WHERE callId = {rt.Id.Value} AND apiCallId = {apiCallId}""", transaction=tr)
+                        match m with
+                        | Some row ->
+                            noop()
+                            //conn.Execute($"UPDATE {Tn.MapCall2ApiCall} SET active = {isActive} WHERE id = {row.Id}",
+                            //            transaction=tr) |> ignore
+                        | None ->
+                            let guid = newGuid()
+                            let affectedRows = conn.Execute(
+                                    $"INSERT INTO {Tn.MapCall2ApiCall} (callId, apiCallId,   guid)
+                                                                VALUES (@CallId, @ApiCallId, @Guid)",
+                                    {| CallId = rt.Id.Value; ApiCallId = apiCallId ; Guid=guid |}, tr)
+
+                            noop()
+                        ()
+
+
+                | :? RtArrowBetweenCalls as rt ->
+                    let ormArrow = rt.ToORM<ORMArrowCall>(dbApi)
+                    ormArrow.WorkId <- rt.RawParent >>= _.Id |?? (fun () -> failwith "ERROR: RtArrowBetweenCalls must have a WorkId set before inserting to DB.")
+
+                    let arrowCallId =
+                        conn.Insert(
+                            $"""INSERT INTO {Tn.ArrowCall}
+                                       ( source, target,   typeId, workId,   guid, parameter,                     name)
+                                VALUES (@Source, @Target, @TypeId, @WorkId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
+                            , ormArrow, tr)
+
+                    rt.Id <- Some arrowCallId
+                    ormArrow.Id <- Some arrowCallId
+                    assert(guidDicDebug[rt.Guid] = ormArrow)
+
+                | :? RtArrowBetweenWorks as rt ->
+                    let orm = rt.ToORM<ORMArrowWork>(dbApi)
+                    orm.SystemId <- rt.System >>= _.Id |?? (fun () -> failwith "ERROR: RtArrowBetweenWorks must have a SystemId set before inserting to DB.")
+
+                    let arrowWorkId =
+                        conn.Insert(
+                            $"""INSERT INTO {Tn.ArrowWork}
+                                       (source,   target,  typeId,  systemId,  guid,  parameter,                    name)
+                                VALUES (@Source, @Target, @TypeId, @SystemId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
+                            , orm, tr)
+
+                    rt.Id <- Some arrowWorkId
+                    orm.Id <- Some arrowWorkId
+                    assert(guidDicDebug[rt.Guid] = orm)
+                    ()
+
 
                 | _ -> failwith "ERROR"
 

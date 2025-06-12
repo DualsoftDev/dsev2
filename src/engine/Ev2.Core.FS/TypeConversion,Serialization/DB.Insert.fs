@@ -81,91 +81,12 @@ module internal DbInsertImpl =
             // system 의 apiCalls 를 삽입
             s.ApiCalls |> iter _.InsertToDB(dbApi)
 
-
-            // works, calls 삽입
-            for w in s.Works do
-                let ormWork = w.ToORM<ORMWork>(dbApi)
-                ormWork.SystemId <- Some sysId
-
-                let workId = conn.Insert($"""INSERT INTO {Tn.Work}
-                                    (guid, parameter,                      name,  systemId,  flowId,  status4Id,  motion,  script,  isFinished,  numRepeat,  period,  delay)
-                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @IsFinished, @NumRepeat, @Period, @Delay);""", ormWork, tr)
-
-                w.Id <- Some workId
-                ormWork.Id <- Some workId
-                assert(guidDicDebug[w.Guid] = ormWork)
-
-                for c in w.Calls do
-                    let ormCall = c.ToORM<ORMCall>(dbApi)
-                    ormCall.WorkId <- Some workId
-
-                    let callId =
-                        conn.Insert($"""INSERT INTO {Tn.Call}
-                                    (guid,  parameter,                     name, workId,   status4Id,  callTypeId,  autoConditions, commonConditions,   isDisabled, timeout)
-                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoConditions, @CommonConditions, @IsDisabled, @Timeout);""", ormCall, tr)
-
-                    c.Id <- Some callId
-                    ormCall.Id <- Some callId
-                    assert(guidDicDebug[c.Guid] = ormCall)
-
-                    // call - apiCall 에 대한 mapping 정보 삽입
-                    for apiCall in c.ApiCalls do
-                        let apiCallId = apiCall.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
-
-                        let m = conn.TryQuerySingle<ORMMapCall2ApiCall>(
-                                    $"""SELECT * FROM {Tn.MapCall2ApiCall}
-                                        WHERE callId = {c.Id.Value} AND apiCallId = {apiCallId}""", transaction=tr)
-                        match m with
-                        | Some row ->
-                            noop()
-                            //conn.Execute($"UPDATE {Tn.MapCall2ApiCall} SET active = {isActive} WHERE id = {row.Id}",
-                            //            transaction=tr) |> ignore
-                        | None ->
-                            let guid = newGuid()
-                            let affectedRows = conn.Execute(
-                                    $"INSERT INTO {Tn.MapCall2ApiCall} (callId, apiCallId,   guid)
-                                                                VALUES (@CallId, @ApiCallId, @Guid)",
-                                    {| CallId = c.Id.Value; ApiCallId = apiCallId ; Guid=guid |}, tr)
-
-                            noop()
-                        ()
-
-                // work 의 arrows 를 삽입 (calls 간 연결)
-                for a in w.Arrows do
-                    let ormArrow = a.ToORM<ORMArrowCall>(dbApi)
-                    ormArrow.WorkId <- workId
-
-                    let arrowCallId =
-                        conn.Insert(
-                            $"""INSERT INTO {Tn.ArrowCall}
-                                       ( source, target,   typeId, workId,   guid, parameter,                     name)
-                                VALUES (@Source, @Target, @TypeId, @WorkId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
-                            , ormArrow, tr)
-
-                    a.Id <- Some arrowCallId
-                    ormArrow.Id <- Some arrowCallId
-                    assert(guidDicDebug[a.Guid] = ormArrow)
-
-                    ()
+            // works 및 하부의 calls 삽입
+            s.Works |> iter _.InsertToDB(dbApi)
 
             // system 의 arrows 를 삽입 (works 간 연결)
-            for a in s.Arrows do
-                let ormArrow = a.ToORM<ORMArrowWork>(dbApi)
-                ormArrow.SystemId <- sysId
+            s.Arrows |> iter _.InsertToDB(dbApi)
 
-                let arrowWorkId =
-                    conn.Insert(
-                        $"""INSERT INTO {Tn.ArrowWork}
-                                   (source,   target,  typeId,  systemId,  guid,  parameter,                    name)
-                            VALUES (@Source, @Target, @TypeId, @SystemId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
-                        , ormArrow, tr)
-
-                a.Id <- Some arrowWorkId
-                ormArrow.Id <- Some arrowWorkId
-                assert(guidDicDebug[a.Guid] = ormArrow)
-
-
-                ()
             Inserted
 
         try

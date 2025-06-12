@@ -68,7 +68,8 @@ module internal rec DbUpdateImpl =
 
                 // DB 삽입
                 | RightOnly newEntity ->
-                    Error "Not yet!"
+                    newEntity.InsertToDB(dbApi)
+                    Ok Inserted
 
                 | _ ->
                     failwith $"ERROR: Unknown CompareResult type: {x.GetType().Name}"
