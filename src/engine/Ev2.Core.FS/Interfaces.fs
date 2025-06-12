@@ -150,6 +150,9 @@ module rec DsObjectModule =
         member val internal RawArrows   = ResizeArray arrows
         member val internal RawApiDefs  = ResizeArray apiDefs
         member val internal RawApiCalls = ResizeArray apiCalls
+
+        member x.SupervisorProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
+
         /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
         member val OriginGuid = noneGuid with get, set
         member val PrototypeSystemGuid = protoGuid with get, set

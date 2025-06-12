@@ -60,6 +60,8 @@ module DatabaseSchemaModule =
         let [<Literal>] MapProject2System = "vwMapProject2System"
         let [<Literal>] MapCall2ApiCall   = "vwMapCall2ApiCall"
         let [<Literal>] System     = "vwSystem"
+        let [<Literal>] SupervisedSystem = "vwSupervisedSystem"
+        let [<Literal>] DeviceSystem     = "vwDeviceSystem"
         let [<Literal>] Flow       = "vwFlow"
         let [<Literal>] Work       = "vwWork"
         let [<Literal>] Call       = "vwCall"
@@ -75,7 +77,8 @@ module DatabaseSchemaModule =
 
         let AllViewTableNames = [
                 MapProject2System; MapCall2ApiCall
-                System; Flow; Work; Call; ApiDef; ApiCall
+                System; SupervisedSystem; DeviceSystem;
+                Flow; Work; Call; ApiDef; ApiCall
                 Button; Lamp; Condition; Action;
                 ArrowCall; ArrowWork; ]
 
@@ -248,6 +251,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 );
 
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
+    , {k "supervisorProjectId"}   {intKeyType}    -- Active system 에 한해, 자신을 제어하는 project Id.  Passive system 은 Null, active system 은 반드시 존재해야 함
     , {k "prototypeId"}   {intKeyType}    -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
     , {k "author"}        TEXT NOT NULL
@@ -257,6 +261,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "description"}   TEXT
     , {k "dateTime"}      {datetime}
     , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
+    , FOREIGN KEY(supervisorProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 제어하는 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
 );
 
@@ -264,7 +269,6 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
     , {k "projectId"}      {intKeyType} NOT NULL
     , {k "systemId"}       {intKeyType} NOT NULL
-    , {k "isActive"}       {boolean} NOT NULL DEFAULT {falseValue}
     , {k "loadedName"}     TEXT
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- NO ACTION       -- ON DELETE RESTRICT    -- RESTRICT: 부모 레코드가 삭제되기 전에 참조되고 있는 자식 레코드가 있는지 즉시 검사하고, 있으면 삭제를 막음.
@@ -497,7 +501,6 @@ CREATE VIEW {k Vn.MapProject2System} AS
         , s2.{k "id"}   AS prototypeId
         , s2.{k "name"} AS prototypeName
         , m.{k "loadedName"}
-        , m.{k "isActive"}
     FROM {k Tn.MapProject2System} m
     JOIN {k Tn.Project} p ON p.id = m.projectId
     JOIN {k Tn.System}  s ON s.id = m.systemId
@@ -531,7 +534,35 @@ CREATE VIEW {k Vn.MapCall2ApiCall} AS
     JOIN {k Tn.Project} p             ON p.id         = psm.projectId
     ;
 
-CREATE VIEW {k Vn.System} AS
+
+--CREATE VIEW {k Vn.System} AS
+--    SELECT
+--        s.{k "id"}
+--        , s.{k "name"}  AS systemName
+--        , s.{k "parameter"}
+--        , s.{k "iri"}
+--        , p.{k "id"}    AS projectId
+--        , p.{k "name"}  AS projectName
+--    FROM {k Tn.System} s
+--    JOIN {k Tn.MapProject2System} psm ON psm.systemId = s.id
+--    JOIN {k Tn.Project} p ON p.id = psm.projectId
+--    ;
+
+CREATE VIEW {k Vn.SupervisedSystem} AS
+    SELECT
+        s.{k "id"}
+        , s.{k "name"}  AS systemName
+        , s.{k "parameter"}
+        , s.{k "iri"}
+        , p.{k "id"}    AS projectId
+        , p.{k "name"}  AS projectName
+    FROM {k Tn.System} s
+    JOIN {k Tn.Project} p ON p.id = s.supervisorProjectId
+    WHERE s.supervisorProjectId IS NOT NULL
+    ;
+
+
+CREATE VIEW {k Vn.DeviceSystem} AS
     SELECT
         s.{k "id"}
         , s.{k "name"}  AS systemName
@@ -543,6 +574,7 @@ CREATE VIEW {k Vn.System} AS
     FROM {k Tn.MapProject2System} psm
     JOIN {k Tn.System} s ON psm.systemId = s.id
     JOIN {k Tn.Project} p ON p.id = psm.projectId
+    WHERE s.supervisorProjectId IS NULL
     ;
 
 CREATE VIEW {k Vn.ApiDef} AS
@@ -795,7 +827,13 @@ CREATE TABLE {k Tn.TableDescription} (
                 descT Tn.TableDescription "본 table"
 
                 // 각 table 의 column 설명
-                desc "<All table>"       "Parameter"        "임의의 객체에 대한 JSON 문자열 혹은 Jsonb.  Jsonb 는 Postgresql 에서 지원 중.  그외에서는 문자열로 처리 필요"
+                desc "<All table>"        "Parameter"        "임의의 객체에 대한 JSON 문자열 혹은 Jsonb.  Jsonb 는 Postgresql 에서 지원 중.  그외에서는 문자열로 처리 필요"
+
+                desc Tn.System "supervisorProjectId"   $"""제어기로 제어 가능한 system 에 한해, 자신을 제어하는 project Id.
+- 해당 project 에서 이 시스템은 Active 로 사용되어야만 한다.
+- null 값인 경우, 이 시스템을 제어하는 제어기가 없다는 의미로, device 등이 여기에 해당함
+- 제 3의 project 에서 이 시스템을 passive 로 사용하는 것은 {Tn.MapProject2System} 에 mapping 항목 추가해서 정의함."""
+
                 desc Tn.MapProject2System "LoadedName"      "systemId 로 주어진 system 이 projectId 로 주어진 project 에 loading 될 때의 이름"
                 desc Tn.ApiCall           "ValueSpec"       "ValueSpec 에 대한 JSON 문자열 혹은 Jsonb.  Jsonb 는 Postgresql 에서 지원 중.  그외에서는 문자열로 처리 필요"
                 desc Tn.ApiCall           "ValueSpecHint"   "ValueSpec column 에 입력된 JSON 의 사용자 친화적 문자열.  읽기 전용.  ValueSpec 의 값 변경에 따라 update 지연될 수 있음"

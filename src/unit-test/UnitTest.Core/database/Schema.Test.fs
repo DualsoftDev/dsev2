@@ -494,12 +494,11 @@ module Schema =
                                 WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
 
                     conn.Execute(
-                        $"""INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, isActive, loadedName)
+                        $"""INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, loadedName)
                             SELECT
                                 guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
                                 {newProjId},              -- 새로 만든 project id
                                 systemId,
-                                isActive,
                                 loadedName
                             FROM mapProject2System
                             WHERE id = {mapId}
@@ -569,6 +568,7 @@ module Schema =
 
         [<Test>]
         member x.``[Sqlite] DB Project 수정 commit`` () =
+            let xxx = edProject
             let dsProject = edProject.Replicate() |> validateRuntime
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->

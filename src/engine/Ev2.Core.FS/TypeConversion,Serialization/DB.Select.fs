@@ -199,7 +199,9 @@ module internal Db2DsImpl =
                 RtProject.Create()
                 |> replicateProperties ormProject
 
-            let ormSystems =
+
+
+            let ormPassiveSystems =
                 let systemIds = projSysMaps |-> _.SystemId
 
                 let sql =
@@ -207,24 +209,26 @@ module internal Db2DsImpl =
                     $"SELECT * FROM {Tn.System} WHERE {idCheck}"
 
                 conn.Query<ORMSystem>(sql, {| SystemIds = systemIds |}, tr)
+
+            let ormActiveSystems =
+                let sql = $"SELECT * FROM {Tn.System} WHERE supervisorProjectId = @SupervisorProjectId"
+                conn.Query<ORMSystem>(sql, {| SupervisorProjectId = ormProject.Id |}, tr)
+
+
+            let ormSystems =
+                ormActiveSystems @ ormPassiveSystems
                 |> tees (fun os ->
-                        RtSystem.Create()
-                        |> replicateProperties os
-                        |> uniqParent (Some rtProj))
+                    RtSystem.Create()
+                    |> replicateProperties os
+                    |> uniqParent (Some rtProj))
                 |> toArray
 
-            let rtSystems =
-                ormSystems |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
 
-            let actives, passives =
-                rtSystems
-                |> partition (fun s ->
-                    projSysMaps
-                    |> tryFind(fun m -> m.SystemId = s.Id.Value)
-                    |-> _.IsActive |? false)
+            let rtActives = ormActiveSystems   |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
+            let rtPassives = ormPassiveSystems |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
 
-            actives  |> rtProj.RawActiveSystems.AddRange
-            passives |> rtProj.RawPassiveSystems.AddRange
+            rtActives  |> rtProj.RawActiveSystems.AddRange
+            rtPassives |> rtProj.RawPassiveSystems.AddRange
 
             ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
 

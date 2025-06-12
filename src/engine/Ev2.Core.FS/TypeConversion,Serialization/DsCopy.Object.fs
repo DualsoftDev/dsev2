@@ -1,7 +1,5 @@
 namespace Ev2.Core.FS
 
-open System
-open System.Collections.Generic
 open Dual.Common.Core.FS
 open Dual.Common.Base
 
@@ -49,14 +47,6 @@ module internal rec DsObjectCopyImpl =
 
             RtSystem.Create(x.PrototypeSystemGuid, flows, works, arrows, apiDefs, apiCalls)
             |> uniqReplicateWithBag bag x
-            |> tee(fun s ->
-                //s.OriginGuid <- x.OriginGuid |> Option.orElse (Some x.Guid)     // 최초 원본 지향 버젼
-                s.OriginGuid    <- Some x.Guid                                       // 최근 원본 지향 버젼
-                s.IRI           <- x.IRI
-                s.Author        <- x.Author
-                s.EngineVersion <- x.EngineVersion
-                s.LangVersion   <- x.LangVersion
-                s.Description   <- x.Description )
 
 
     type RtWork with // replicate
@@ -78,14 +68,6 @@ module internal rec DsObjectCopyImpl =
 
             RtWork.Create(calls, arrows, flow)
             |> uniqReplicateWithBag bag x
-            |> tee(fun w ->
-                w.Status4    <- x.Status4
-                w.Motion     <- x.Motion
-                w.Script     <- x.Script
-                w.IsFinished <- x.IsFinished
-                w.NumRepeat  <- x.NumRepeat
-                w.Period     <- x.Period
-                w.Delay      <- x.Delay )
 
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행

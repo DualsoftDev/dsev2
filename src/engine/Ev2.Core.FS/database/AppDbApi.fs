@@ -1,6 +1,7 @@
 namespace Ev2.Core.FS
 
 open System
+open System.Linq
 open System.Data
 open System.IO
 open Dapper
@@ -194,7 +195,8 @@ module ORMTypeConversionModule =
                             >>= tryCast<ORMSystem>
                             >>= _.Id)
 
-                ORMSystem(prototypeId, z.OriginGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
+                let supervisorProjectId = z.Project >>= (fun p -> if p.ActiveSystems.Contains(z) then p.Id else None)
+                ORMSystem(supervisorProjectId, prototypeId, z.OriginGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
                 |> ormReplicateProperties z
 
             | :? RtFlow as z ->

@@ -13,13 +13,13 @@ open Dual.Common.Db.FS
 module internal DbInsertModule =
 
     type RtProject with
-        // project 하부에 연결된 system 을 DB 에 저장
+        // project 하부에 연결된 passive system 을 DB 에 저장
         member x.InsertSystemMapToDB(dbApi:DbApi) =
 
             dbApi.With(fun (conn, tr) ->
 
 
-                let insertSystemMap (isActive:bool) (s:RtSystem) =
+                let insertSystemMap (s:RtSystem) =
                     // s.PrototypeSystemGuid 에 따라 다른 처리???
                     //assert(not s.PrototypeSystemGuid.Is)
 
@@ -27,31 +27,24 @@ module internal DbInsertModule =
                     let projId = x.Id.Value
                     let sysId = s.Id.Value
 
-                    //// prototype 이 아니라면, active 나 passive 중 하나만 true 여야 한다.
-                    //assert(isActive <> isPassive || s.PrototypeSystemGuid.IsNone)   // XOR
 
                     match conn.TryQuerySingle<ORMMapProjectSystem>(
                                     $"""SELECT * FROM {Tn.MapProject2System}
                                         WHERE projectId = @ProjectId AND systemId = @SystemId""", {|ProjectId = projId; SystemId=sysId|}, tr) with
                     | Some row ->
-                        if row.IsActive = isActive then
-                            ()
-                        else
                             conn.Execute($"""UPDATE {Tn.MapProject2System}
-                                             SET active = {isActive}
+                                             SET loadedName = {s.Name}
                                              WHERE id = {row.Id}""", transaction=tr) |> ignore
                     | None ->
-                        let loadedName = s.PrototypeSystemGuid |-> (fun _ -> s.Name) |? null     // RtSystem.Name 은 loaded name 을 의미한다.
                         let affectedRows = conn.Execute(
                                 $"""INSERT INTO {Tn.MapProject2System}
-                                            (projectId, systemId, loadedName, isActive, guid)
-                                     VALUES (@ProjectId, @SystemId, @LoadedName, @IsActive, @Guid)""",
-                                {|  ProjectId = projId; SystemId = sysId; LoadedName=loadedName; IsActive = isActive;
+                                            (projectId, systemId, loadedName, guid)
+                                     VALUES (@ProjectId, @SystemId, @LoadedName, @Guid)""",
+                                {|  ProjectId = projId; SystemId = sysId; LoadedName=s.Name
                                     Guid=Guid.NewGuid() |}, tr)
                         ()
 
-                x.ActiveSystems  |> iter (insertSystemMap true)
-                x.PassiveSystems |> iter (insertSystemMap false)
+                x.PassiveSystems |> iter insertSystemMap
             )
 
 
@@ -87,8 +80,8 @@ module internal DbInsertModule =
                     let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
 
                     let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                            (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description, originGuid, prototypeId)
-                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId);""",
+                                            (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description, originGuid, prototypeId, supervisorProjectId)
+                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId, @SupervisorProjectId);""",
                                     ormSystem, tr)
 
                     rt.Id <- Some sysId

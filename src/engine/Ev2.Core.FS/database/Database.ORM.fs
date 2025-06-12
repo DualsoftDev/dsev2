@@ -115,25 +115,25 @@ module ORMTypesModule =
         member val DateTime      = dateTime with get, set
 
 
-    type ORMSystem(prototypeId:Id option, originGuid:Guid option
+    type ORMSystem(supervisorProjectId:Id option, prototypeId:Id option, originGuid:Guid option
         , iri:string, author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
     ) =
         inherit ORMProjectEntity()
 
-        new() = ORMSystem(None, None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
+        new() = ORMSystem(None, None, None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
+        member val SupervisorProjectId = supervisorProjectId with get, set
         member val PrototypeId   = prototypeId   with get, set
         member val IRI           = iri           with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set
         member val LangVersion   = langVersion   with get, set
         member val Description   = description   with get, set
-        member val DateTime      = dateTime with get, set
-
-        member val OriginGuid = originGuid with get, set
+        member val DateTime      = dateTime      with get, set
+        member val OriginGuid    = originGuid    with get, set
 
     type ORMFlow(systemId:Id) =
         inherit ORMWorkEntity(systemId)
@@ -201,13 +201,12 @@ module ORMTypesModule =
 
 
 
-    type ORMMapProjectSystem(projectId:Id, systemId:Id, isActive:bool) =
+    type ORMMapProjectSystem(projectId:Id, systemId:Id) =
         inherit ORMUnique()
 
-        new() = ORMMapProjectSystem(-1, -1, false)
+        new() = ORMMapProjectSystem(-1, -1)
         member val ProjectId = projectId with get, set
         member val SystemId  = systemId  with get, set
-        member val IsActive  = isActive  with get, set
 
     type ORMMapCall2ApiCall(callId:Id, apiCallId:Id) =
         inherit ORMUnique()

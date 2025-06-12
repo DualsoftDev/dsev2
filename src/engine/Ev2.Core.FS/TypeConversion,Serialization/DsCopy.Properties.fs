@@ -163,7 +163,7 @@ module internal DsCopyModule =
     let private allPropertyNames =
         [| "Id"; "Name"; "Guid"; "DateTime"; "Parameter"; "RawParent";
            "Author"; "Version"; "Description"; "Database";
-           "IRI"; "OriginGuid"; "EngineVersion"; "LangVersion";
+           "IRI"; "OriginGuid"; "EngineVersion"; "LangVersion"; "SupervisorProjectId"
            "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay"; "Status4"
            "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
            "ValueSpec" |]

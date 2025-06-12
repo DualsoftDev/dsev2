@@ -42,8 +42,8 @@ module NewtonsoftJsonModules =
 
         [<JsonIgnore>]
         member internal x.RuntimeObject
-            with get():Unique = x.RtObject >>= tryCast<Unique> |?? (fun () -> failwithlog "RtObject not found in DynamicDictionary.  This is a bug." )
-            and set (v:Unique) = x.RtObject <- Some (box v :?> IRtUnique)
+            with get():Unique   = x.RtObject >>= tryCast<Unique> |?? (fun () -> failwithlog "RtObject not found in DynamicDictionary.  This is a bug." )
+            and  set (v:Unique) = x.RtObject <- Some (box v :?> IRtUnique)
 
 
     let mutable internal fwdOnNsJsonSerializing:  INjObject->unit = let dummy (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
@@ -125,7 +125,7 @@ module rec NewtonsoftJsonObjects =
         /// deserialize 직후에 Runtime 으로 변환시켜 채워 줌.
         [<JsonProperty(Order = 100)>] member val SystemPrototypes = [||]:NjSystem[] with get, set
 
-        [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystemLoadType[]     with get, set
+        [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystemLoadType[]     with get, set
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  x
@@ -142,6 +142,9 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 104)>] member val ApiCalls = [||]:NjApiCall[] with get, set
+
+        // NjSystem 에서는 SupervisorProjectId 불필요.  NjProject.ActiveSystem 에 포함되어 있으면 그 project 가 supervisor 임.
+        //member val SupervisorProjectId = Option<Id>.None with get, set
 
         member val OriginGuid    = Option<Guid>.None with get, set
         member val Prototype     = false      with get, set
@@ -171,10 +174,10 @@ module rec NewtonsoftJsonObjects =
             NjSystem()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                z.Flows    <- rt.Flows    |-> NjFlow.FromRuntime    |> toArray
-                z.Arrows   <- rt.Arrows   |-> NjArrow.FromRuntime   |> toArray
-                z.Works    <- rt.Works    |-> NjWork.FromRuntime    |> toArray
-                z.ApiDefs  <- rt.ApiDefs  |-> NjApiDef.FromRuntime  |> toArray
+                z.Flows    <- rt.Flows    |-> NjFlow   .FromRuntime |> toArray
+                z.Arrows   <- rt.Arrows   |-> NjArrow  .FromRuntime |> toArray
+                z.Works    <- rt.Works    |-> NjWork   .FromRuntime |> toArray
+                z.ApiDefs  <- rt.ApiDefs  |-> NjApiDef .FromRuntime |> toArray
                 z.ApiCalls <- rt.ApiCalls |-> NjApiCall.FromRuntime |> toArray
             )
 
@@ -239,37 +242,30 @@ module rec NewtonsoftJsonObjects =
     type NjWork () =
         inherit NjSystemEntity()
         interface INjWork
-        member val FlowGuid = null:string with get, set
-        member val Motion     = nullString with get, set
-        member val Script     = nullString with get, set
-        member val IsFinished = false      with get, set
-        member val NumRepeat  = 0          with get, set
-        member val Period     = 0          with get, set
-        member val Delay      = 0          with get, set
+        member val FlowGuid   = null:string with get, set
+        member val Motion     = nullString  with get, set
+        member val Script     = nullString  with get, set
+        member val IsFinished = false       with get, set
+        member val NumRepeat  = 0           with get, set
+        member val Period     = 0           with get, set
+        member val Delay      = 0           with get, set
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
         member val Calls: NjCall[] = [||] with get, set
         member val Arrows:NjArrow[] = [||] with get, set
 
-        member x.ShouldSerializeCalls() = x.Calls.NonNullAny()
-        member x.ShouldSerializeArrows() = x.Arrows.NonNullAny()
+        member x.ShouldSerializeCalls()      = x.Calls.NonNullAny()
+        member x.ShouldSerializeArrows()     = x.Arrows.NonNullAny()
         member x.ShouldSerializeIsFinished() = x.IsFinished
-        member x.ShouldSerializeNumRepeat() = x.NumRepeat > 0
-        member x.ShouldSerializePeriod() = x.Period > 0
-        member x.ShouldSerializeDelay() = x.Period > 0
+        member x.ShouldSerializeNumRepeat()  = x.NumRepeat > 0
+        member x.ShouldSerializePeriod()     = x.Period > 0
+        member x.ShouldSerializeDelay()      = x.Period > 0
 
         static member FromRuntime(rt:RtWork) =
             NjWork()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                z.Motion     <- rt.Motion
-                z.Script     <- rt.Script
-                z.IsFinished <- rt.IsFinished
-                z.NumRepeat  <- rt.NumRepeat
-                z.Period     <- rt.Period
-                z.Delay      <- rt.Delay
-
                 z.Calls    <- rt.Calls   |-> NjCall.FromRuntime  |> toArray
                 z.Arrows   <- rt.Arrows  |-> NjArrow.FromRuntime |> toArray
                 z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
@@ -391,7 +387,7 @@ module rec NewtonsoftJsonObjects =
                     let nj = rt |> NjSystem.FromRuntime
                     NjSystemLoadType.LocalDefinition nj
 
-            njp.ActiveSystems  <- rtp.ActiveSystems  |-> rtToSystemLoadType |> toArray
+            njp.ActiveSystems  <- rtp.ActiveSystems  |-> NjSystem.FromRuntime |> toArray
             njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
 
             njp.Database <- rtp.Database
@@ -451,7 +447,7 @@ module rec NewtonsoftJsonObjects =
             njp.SystemPrototypes |> iter onNsJsonDeserialized
             njp.RuntimeObject <-
                 noop()
-                let actives  = njp.ActiveSystems  |-> load
+                let actives  = njp.ActiveSystems  |-> (fun s -> s.RuntimeObject :?> RtSystem)
                 let passives = njp.PassiveSystems |-> load
                 let prototypeSystems = njp.SystemPrototypes |-> (fun s -> s.RuntimeObject :?> RtSystem )
 
@@ -522,9 +518,9 @@ module rec NewtonsoftJsonObjects =
             njs.RuntimeObject <-
                 noop()
                 let protoGuid:Guid option =
-                    match njs.RawParent >>= tryCast<NjProject> with
+                    match njs.Project with
                     | Some njp -> [
-                        let loadTypes = njp.ActiveSystems @ njp.PassiveSystems
+                        let loadTypes = njp.PassiveSystems
                         for loadType in loadTypes do
                             match loadType with
                             | NjSystemLoadType.Reference r -> Some r.PrototypeGuid
