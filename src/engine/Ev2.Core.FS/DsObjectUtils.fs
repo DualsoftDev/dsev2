@@ -80,6 +80,7 @@ module rec TmpCompatibility =
             if byUI = Some true then x.UpdateDateTime()
             works |> iter (setParentI x)
             works |> verifyAddRangeAsSet x.RawWorks
+
         member internal x.removeWorks(works:RtWork seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             let system = works |-> _.System.Value |> distinct |> exactlyOne
@@ -88,37 +89,63 @@ module rec TmpCompatibility =
             works |> iter (fun w -> w.RawParent <- None)
             works |> iter (x.RawWorks.Remove >> ignore)
 
+
         member internal x.addFlows(flows:RtFlow seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             flows |> iter (setParentI x)
             flows |> verifyAddRangeAsSet x.RawFlows
+
         member internal x.removeFlows(flows:RtFlow seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
+            let flowsDic = flows |> HashSet
+            // 삭제 대상인 flows 를 쳐다보고 있는 works 들을 찾아서, 그들의 Flow 를 None 으로 설정
+            x.Works
+            |> choose( fun w ->
+                w.Flow >>= flowsDic.TryGet      // work 중에서 w.Flow 가 삭제 대상인 flows 에 포함된 것들만 선택
+                |-> fun f -> w)
+            |> iter (fun w -> w.Flow <- None)  // 선택된 works 의 Flow 를 None 으로 설정
+
             flows |> iter clearParentI
             flows |> iter (x.RawFlows.Remove >> ignore)
+
 
         member internal x.addArrows(arrows:RtArrowBetweenWorks seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             arrows |> verifyAddRangeAsSet x.RawArrows
+
         member internal x.removeArrows(arrows:RtArrowBetweenWorks seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
+
         member internal x.addApiDefs(apiDefs:RtApiDef seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiDefs |> iter (setParentI x)
             apiDefs |> verifyAddRangeAsSet x.RawApiDefs
+
         member internal x.removeApiDefs(apiDefs:RtApiDef seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
+
+            // 삭제 대상인 ApiDef 을 쳐다보고 있는 ApiCall 들을 삭제
+            let apiDefsDic = apiDefs |> HashSet
+            let apiCallsToRemove =
+                x.ApiCalls
+                |> choose(fun ac ->
+                    apiDefsDic.TryGet(ac.ApiDef)      // apiCall 중에서 ac.ApiDef 가 삭제 대상인 apiDefs 에 포함된 것들만 선택
+                    |-> fun f -> ac)
+            apiCallsToRemove |> iter (x.RawApiCalls.Remove >> ignore) // 선택된 works 의 Flow 를 None 으로 설정
+
             apiDefs |> iter clearParentI
             apiDefs |> iter (x.RawApiDefs.Remove >> ignore)
+
 
         member internal x.addApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
             apiCalls |> verifyAddRangeAsSet x.RawApiCalls
+
         member internal x.removeApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter clearParentI
