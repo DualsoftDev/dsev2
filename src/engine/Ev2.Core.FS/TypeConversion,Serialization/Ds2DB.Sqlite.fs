@@ -204,8 +204,11 @@ module internal Db2DsImpl =
             let ormSystems =
                 let systemIds = projSysMaps |-> _.SystemId
 
-                conn.Query<ORMSystem>($"SELECT * FROM {Tn.System} WHERE id IN @SystemIds",
-                    {| SystemIds = systemIds |}, tr)
+                let sql =
+                    let idCheck = if dbApi.IsPostgres() then "id = ANY(@SystemIds)" else "id IN @SystemIds"
+                    $"SELECT * FROM {Tn.System} WHERE {idCheck}"
+
+                conn.Query<ORMSystem>(sql, {| SystemIds = systemIds |}, tr)
                 |> tees (fun os ->
                         RtSystem.Create()
                         |> replicateProperties os
@@ -263,7 +266,7 @@ module internal Db2DsImpl =
 
 
 [<AutoOpen>]
-module internal Ds2DbImpl =
+module internal DbInsertImpl =
     /// IUnique 를 상속하는 객체에 대한 db insert/update 시, 메모리 객체의 Id 를 db Id 로 업데이트
     let idUpdator (targets:IUnique seq) (id:int)=
         for t in targets do
@@ -377,31 +380,32 @@ module internal Ds2DbImpl =
                 let ormApiDef = rtAd.ToORM<ORMApiDef>(dbApi)
                 ormApiDef.SystemId <- Some sysId
 
-                let r = conn.Upsert(Tn.ApiDef, ormApiDef,
-                        ["Guid"; "Parameter"; "Name"; "IsPush"; "SystemId"],     // PK 는 자동으로 채우져야 해서 "Id" 는 생략해야 함
-                        jsonbColumns=jsonbColumns,
-                        onInserted=idUpdator [ormApiDef; rtAd;])
 
-                match r with
-                | Some newId ->
-                    tracefn $"Inserted API Def: {rtAd.Name} with Id {newId}, systemId={ormApiDef.SystemId}"
-                | None -> // update or no change
-                    tracefn $"Updated/Or No change API Def: {rtAd.Name}, systemId={ormApiDef.SystemId}"
-                ()
+                let apiDefId =
+                    conn.Insert($"""INSERT INTO {Tn.ApiDef}
+                                           (guid, parameter, name, isPush, systemId)
+                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @SystemId);""", ormApiDef, tr)
+
+                rtAd.Id <- Some apiDefId
+                ormApiDef.Id <- Some apiDefId
+                assert(guidDicDebug[rtAd.Guid] = ormApiDef)
 
             // system 의 apiCalls 를 삽입
             for rtAc in s.ApiCalls do
                 let ormApiCall = rtAc.ToORM<ORMApiCall>(dbApi)
                 ormApiCall.SystemId <- Some sysId
 
-                let r = conn.Upsert(Tn.ApiCall, ormApiCall,
-                            [   "Guid"; "Parameter"; "Name"
-                                "SystemId"; "ApiDefId"; "InAddress"; "OutAddress"
-                                "InSymbol"; "OutSymbol"; "ValueSpec"; "ValueSpecHint"],
-                            jsonbColumns=["Parameter"; "ValueSpec"],
-                            onInserted=idUpdator [ormApiCall; rtAc;])
-                let xxx = r
-                noop()
+                let apiCallId =
+                    conn.Insert(
+                        $"""INSERT INTO {Tn.ApiCall}
+                                   (guid,   parameter,                     name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      valueSpecHint)
+                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @ValueSpecHint);"""
+                        , ormApiCall, tr)
+
+                rtAc.Id <- Some apiCallId
+                ormApiCall.Id <- Some apiCallId
+                assert(guidDicDebug[rtAc.Guid] = ormApiCall)
+
 
             // works, calls 삽입
             for w in s.Works do
@@ -456,10 +460,17 @@ module internal Ds2DbImpl =
                     let ormArrow = a.ToORM<ORMArrowCall>(dbApi)
                     ormArrow.WorkId <- workId
 
-                    let r = conn.Upsert(Tn.ArrowCall, ormArrow,
-                        [ "Source"; "Target"; "TypeId"; "WorkId"; "Guid"; "Parameter"; "Name" ],
-                        jsonbColumns=jsonbColumns,
-                        onInserted=idUpdator [ormArrow; a;])
+                    let arrowCallId =
+                        conn.Insert(
+                            $"""INSERT INTO {Tn.ArrowCall}
+                                       ( source, target,   typeId, workId,   guid, parameter,                     name)
+                                VALUES (@Source, @Target, @TypeId, @WorkId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
+                            , ormArrow, tr)
+
+                    a.Id <- Some arrowCallId
+                    ormArrow.Id <- Some arrowCallId
+                    assert(guidDicDebug[a.Guid] = ormArrow)
+
                     ()
 
             // system 의 arrows 를 삽입 (works 간 연결)
@@ -467,10 +478,18 @@ module internal Ds2DbImpl =
                 let ormArrow = a.ToORM<ORMArrowWork>(dbApi)
                 ormArrow.SystemId <- sysId
 
-                let r = conn.Upsert(Tn.ArrowWork, ormArrow,
-                        [ "Source"; "Target"; "TypeId"; "SystemId"; "Guid"; "Parameter"; "Name"  ],
-                        jsonbColumns=jsonbColumns,
-                        onInserted=idUpdator [ormArrow; a;])
+                let arrowWorkId =
+                    conn.Insert(
+                        $"""INSERT INTO {Tn.ArrowWork}
+                                   (source,   target,  typeId,  systemId,  guid,  parameter,                    name)
+                            VALUES (@Source, @Target, @TypeId, @SystemId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
+                        , ormArrow, tr)
+
+                a.Id <- Some arrowWorkId
+                ormArrow.Id <- Some arrowWorkId
+                assert(guidDicDebug[a.Guid] = ormArrow)
+
+
                 ()
             Inserted
 
@@ -562,9 +581,10 @@ module internal Ds2DbImpl =
 
 
 [<AutoOpen>]
-module internal DbUpdateImpl =
+module internal rec DbUpdateImpl =
+
     type IRtUnique with
-        member x.GetTableName() =
+        member x.getTableName() =
             match x with
             | :? RtProject -> Tn.Project
             | :? RtSystem  -> Tn.System
@@ -581,53 +601,52 @@ module internal DbUpdateImpl =
             | :? RtArrowBetweenWorks -> Tn.ArrowWork
             | _ -> failwith $"Unknown RtUnique type: {x.GetType().Name}"
 
+        member x.rTryUpdateProjectToDB (dbApi:AppDbApi, diffs:CompareResult []): DbCommitResult =
+            assert (!! diffs.IsNullOrEmpty())
+            assert (x :? RtProject || x :? RtSystem)
+            dbApi.With(fun (conn, tr) ->
+                let firstError =
+                    seq {
+                        for d in diffs do
+                            d.rTryCommitToDB dbApi
+                    } |> Result.chooseError
+                    |> tryHead
+                match firstError with
+                | Some e ->
+                    Error e
+                | None ->
+                    Ok (Updated diffs)
+            )
+
+
     type CompareResult with
         [<Obsolete("구현 중..")>]
-        member x.RTryCommitToDB(conn:IDbConnection, tr:IDbTransaction): DbCommitResult =
-            match x with
-            | Diff (cat, dbEntity, newEntity) ->
-                if allPropertyNames.Contains cat then
+        member x.rTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
+            dbApi.With(fun (conn, tr) ->
+                match x with
+                | Diff (cat, dbEntity, newEntity) ->
+                    let dbColumnName = tryGetDBColumnName(dbApi, cat) |?? (fun () -> failwith $"Unknown property name: {cat}")
+                    let propertyName = getPropertyNameForDB(dbApi, cat)
                     assert(dbEntity.GetType() = newEntity.GetType())
-                    let tableName = dbEntity.GetTableName()
-                    let sql = $"UPDATE {tableName} SET {cat.ToLower()}=@{cat} WHERE id=@Id"
+                    let tableName = dbEntity.getTableName()
+                    let sql = $"UPDATE {tableName} SET {dbColumnName}=@{propertyName} WHERE id=@Id"
                     let count = conn.Execute(sql, newEntity, tr)
                     verify(count > 0 )
                     Ok (Updated [|x|])
-                else
-                    match cat with
-                    | "Id" -> Error "Cannot change Id of a project" // Id 는 변경할 수 없음
-                    | _ -> Error $"Unknown property to update: {cat}"
 
+                | LeftOnly dbEntity ->
+                    conn.Execute($"DELETE FROM {dbEntity.getTableName()} WHERE id=@Id", dbEntity, tr) |> ignore
+                    Ok Deleted
 
-            | LeftOnly dbEntity ->
-                conn.Execute($"DELETE FROM {dbEntity.GetTableName()} WHERE id=@Id", dbEntity, tr) |> ignore
-                Ok Deleted
-
-            | RightOnly newEntity ->
-                Error "Not yet!"
-
-    let rTryUpdateProjectToDB (proj:RtProject) (dbApi:AppDbApi) (diffs:CompareResult []): DbCommitResult =
-        assert (!! diffs.IsNullOrEmpty())
-        dbApi.With(fun (conn, tr) ->
-            let firstError =
-                seq {
-                    for d in diffs do
-                        d.RTryCommitToDB(conn, tr)
-                } |> Result.chooseError
-                |> tryHead
-            match firstError with
-            | Some e ->
-                Error e
-            | None ->
-                Ok (Updated diffs)
-        )
-
+                | RightOnly newEntity ->
+                    Error "Not yet!"
+            )
 
 
 [<AutoOpen>]
 module Ds2SqliteModule =
 
-    open Ds2DbImpl
+    open DbInsertImpl
     open Db2DsImpl
 
     type RtProject with // CommitToDB, CheckoutFromDB
@@ -647,7 +666,7 @@ module Ds2SqliteModule =
                         if diffs.IsEmpty() then
                             Ok NoChange
                         else
-                            rTryUpdateProjectToDB x dbApi diffs
+                            x.rTryUpdateProjectToDB(dbApi, diffs)
                     )
 
                 | [dbProj] ->

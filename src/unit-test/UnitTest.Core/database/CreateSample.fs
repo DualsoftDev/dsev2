@@ -5,6 +5,7 @@ open Dual.Common.UnitTest.FS
 open Dual.Common.Core.FS
 
 open Ev2.Core.FS
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module CreateSampleModule =
@@ -80,7 +81,7 @@ module CreateSampleModule =
                     z.Name      <- "BoundedWork1"
                     z.Status4   <- Some DbStatus4.Ready
                     z.Motion    <- "Fast my motion"
-                    z.Parameter <- {|Name="kwak"; Company="dualsoft"; Room=510|} |> EmJson.ToJson)
+                    z.Parameter <- {|Name="kwak"; Company="dualsoft"; Room=510|} |> JsonConvert.SerializeObject)
             edWork2 <-
                 RtWork.Create()
                 |> tee (fun z ->
@@ -101,7 +102,7 @@ module CreateSampleModule =
             let edArrowW =
                 RtArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
                 |> tee (fun z ->
-                    z.Parameter <- {| ArrowWidth=2.1; ArrowHead="Diamond"; ArrowTail="Rectangle" |} |> EmJson.ToJson)
+                    z.Parameter <- {| ArrowWidth=2.1; ArrowHead="Diamond"; ArrowTail="Rectangle" |} |> JsonConvert.SerializeObject)
             [edArrowW] |> edSystem.AddArrows
 
 
@@ -114,7 +115,7 @@ module CreateSampleModule =
                     z.AutoConditions.AddRange ["AutoPre 테스트 1"; "AutoConditions 테스트 2"]
                     z.CommonConditions.AddRange ["안전조건1"; "안전조건2"; ]
                     z.Timeout  <- Some 30
-                    z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> EmJson.ToJson
+                    z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> JsonConvert.SerializeObject
                     z.ApiCallGuids.AddRange [edApiCall1a.Guid] )
 
             edCall1b  <-

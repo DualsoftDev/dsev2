@@ -160,12 +160,21 @@ module internal DsCopyModule =
 
         dst
 
-    let allPropertyNames =
+    let private allPropertyNames =
         [| "Id"; "Name"; "Guid"; "DateTime"; "Parameter"; "RawParent";
            "Author"; "Version"; "Description"; "Database";
            "IRI"; "OriginGuid"; "EngineVersion"; "LangVersion";
-           "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay";
+           "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay"; "Status4"
            "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
            "ValueSpec" |]
         |> Set.ofArray
 
+    let tryGetDBColumnName(dbApi:DbApi, propertyName: string) : string option =
+        allPropertyNames.TryGet(propertyName)
+        |-> (fun propertyName ->
+                propertyName[0..0].ToLower() + propertyName[1..])    // 첫 문자만 소문자로 변경
+
+    let getPropertyNameForDB(dbApi:DbApi, propertyName: string) : string =
+        match propertyName with
+        | "Parameter" | "ValueSpec" -> $"{propertyName}{dbApi.DapperJsonB}"
+        | _ -> propertyName

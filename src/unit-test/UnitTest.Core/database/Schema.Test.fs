@@ -121,6 +121,7 @@ module Schema =
                 dsobj.Id.IsSome === true
             )
 
+            let edProject = edProject
             let diffProj = edProject.ComputeDiff dsProject |> toArray
             let diffSys = edProject.Systems[0].ComputeDiff dsProject.Systems[0] |> toArray
 
@@ -167,7 +168,8 @@ module Schema =
 
             dsSystem.ToAasJson() |> ignore
 
-            dsProject2.RTryCommitToDB(dbApi) ==== Ok NoChange
+            let r = dsProject2.RTryCommitToDB(dbApi)
+            r ==== Ok NoChange
 
 
             dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore

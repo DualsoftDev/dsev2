@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 open Dual.Common.Core.FS
+open Dual.Common.Db.FS
 open Dual.Common.Base
 open System.ComponentModel
 open System.Diagnostics
@@ -72,7 +73,9 @@ module rec DsCompareObjects =
                 if x.GetName() <> y.GetName() then yield Diff("Name", x, y)
                 if c.Id        && x.TryGetId()     <> y.TryGetId()     then yield Diff("Id", x, y)
                 if c.Guid      && x.GetGuid()      <> y.GetGuid()      then yield Diff("Guid", x, y)
-                if c.Parameter && x.GetParameter() <> y.GetParameter() then yield Diff("Parameter", x, y)
+
+                if (c.Parameter && !! EmJson.IsJsonEquals(x.GetParameter(), y.GetParameter())) then
+                    yield Diff("Parameter", x, y)
 
                 let xp = x.TryGetRawParent() |-> _.GetGuid()
                 let yp = y.TryGetRawParent() |-> _.GetGuid()
@@ -106,7 +109,6 @@ module rec DsCompareObjects =
                 | _ -> ()
         }
 
-
     type RtProject with // ComputeDiff
         member x.ComputeDiff(y:RtProject, criteria:Cc): Cr seq =
             seq {
@@ -119,7 +121,7 @@ module rec DsCompareObjects =
 
                 (* 기타 속성 비교 *)
                 if criteria.Author && x.Author <> y.Author then yield Diff("Author", x, y)
-                if criteria.DateTime && x.DateTime <> y.DateTime then yield Diff("DateTime", x, y)
+                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then yield Diff("DateTime", x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -140,7 +142,7 @@ module rec DsCompareObjects =
                 if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)
                 if x.LangVersion   <> y.LangVersion   then yield Diff("LangVersion", x, y)
                 if x.Description   <> y.Description   then yield Diff("Description", x, y)
-                if criteria.DateTime && x.DateTime <> y.DateTime then yield Diff("DateTime", x, y)
+                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then yield Diff("DateTime", x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
