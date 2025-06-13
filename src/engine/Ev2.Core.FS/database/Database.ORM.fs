@@ -115,18 +115,23 @@ module ORMTypesModule =
         member val DateTime      = dateTime with get, set
 
 
-    type ORMSystem(ownerProjectId:Id option, prototypeId:Id option, originGuid:Guid option
+    type ORMSystem(ownerProjectId:Id option, prototypeId:Id option, isPrototype:bool, originGuid:Guid option
         , iri:string, author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
     ) =
         inherit ORMProjectEntity()
 
-        new() = ORMSystem(None, None, None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
+        new() = ORMSystem(None, None, false, None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
         member val OwnerProjectId = ownerProjectId with get, set
+        /// this system 이 prototype 으로 정의되었는지 여부
+        member val IsPrototype = isPrototype with get, set
+        /// this system 이 Instance 로 사용될 때에만 Some 값.
         member val PrototypeId   = prototypeId   with get, set
+
+
         member val IRI           = iri           with get, set
         member val Author        = author        with get, set
         member val EngineVersion = engineVersion with get, set

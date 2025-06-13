@@ -164,6 +164,7 @@ module rec DsObjectModule =
         member val IsPrototype = false with get, set
         /// this system 이 Instance 로 사용될 때에만 Some 값.
         member val PrototypeSystemGuid = Option<Guid>.None with get, set
+        member x.Prototype = x.Project >>= _.PrototypeSystems.TryFind(fun s -> Some s.Guid = x.PrototypeSystemGuid)
 
 
         member val IRI           = nullString with get, set

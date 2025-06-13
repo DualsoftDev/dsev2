@@ -165,7 +165,7 @@ module ORMTypeConversionModule =
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
             ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
-    let internal ds2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
+    let internal rt2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
         let ormReplicateProperties (src:Unique) (dst:ORMUnique): ORMUnique =
             dst
@@ -183,72 +183,74 @@ module ORMTypeConversionModule =
                 ORMProject(z.Author, z.Version, z.Description, z.DateTime)
                 |> ormReplicateProperties z
 
-            | :? RtSystem as z ->
+            | :? RtSystem as rt ->
                 // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
-                let prototypeId:Id option =
-                    z.PrototypeSystemGuid
-                    >>= (fun protoGuid ->
-                            z.Project.Value.Systems
-                            |> tryFind (fun s -> s.Guid = protoGuid))   // 현재 RtSystem z 의 Prototype 이 지정되어 있으면, 이미 저장된 RtSystem 들 중에서 해당 prototype 을 갖는 객체를 찾는다.
-                    >>= (fun (s:RtSystem) ->                // s : prototype 에 해당하는 RtSystem
-                            s.ORMObject      // 이미 변환된 ORMSystem 객체가 있다면, 해당 객체의 Id 를 구한다.
-                            >>= tryCast<ORMSystem>
-                            >>= _.Id)
+                let prototypeId:Id option = rt.Prototype >>= _.Id
 
-                let ownerProjectId = z.Project >>= (fun p -> if p.ActiveSystems.Contains(z) then p.Id else None)
-                ORMSystem(ownerProjectId, prototypeId, z.OriginGuid, z.IRI, z.Author, z.LangVersion, z.EngineVersion, z.Description, z.DateTime)
-                |> ormReplicateProperties z
+                (* System 소유주 project 지정.  1. system 이 project 에 active system 으로 사용된 경우.  또는 2. project 에 prototype 으로 등록된 경우. *)
+                let ownerProjectId =
+                    rt.Project
+                    >>= (fun p ->
+                        match rt.Project with
+                        | Some proj ->
+                            match rt.Prototype with
+                            | _ when rt.IsPrototype -> proj.Id
+                            | _ when proj.ActiveSystems.Contains(rt) -> proj.Id
+                            | _ -> None)
 
-            | :? RtFlow as z ->
+                ORMSystem(ownerProjectId, prototypeId, rt.IsPrototype, rt.OriginGuid, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                |> ormReplicateProperties rt
+
+            | :? RtFlow as rt ->
                 ORMFlow()
-                |> ormReplicateProperties z
+                |> ormReplicateProperties rt
 
-            | :? RtWork as z ->
-                let flowId = (z.Flow >>= _.Id)
-                let status4Id = z.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
+            | :? RtWork as rt ->
+                let flowId = (rt.Flow >>= _.Id)
+                let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
                 ORMWork  (pid, status4Id, flowId)
-                |> ormReplicateProperties z
+                |> ormReplicateProperties rt
 
-            | :? RtCall as z ->
-                ORMCall.Create(dbApi, pid, z.Status4, z.CallType, z.AutoConditions, z.CommonConditions, z.IsDisabled, z.Timeout)
-                |> ormReplicateProperties z
+            | :? RtCall as rt ->
+                ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout)
+                |> ormReplicateProperties rt
 
-            | :? RtArrowBetweenWorks as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                let parentId = (z.RawParent >>= _.Id).Value
+            | :? RtArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
+                let parentId = (rt.RawParent >>= _.Id).Value
                 let arrowTypeId =
-                    dbApi.TryFindEnumValueId<DbArrowType>(z.Type)
+                    dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
                     |? int DbArrowType.None
 
                 ORMArrowWork(src, tgt, parentId, arrowTypeId)
-                |> ormReplicateProperties z
+                |> ormReplicateProperties rt
 
-            | :? RtArrowBetweenCalls as z ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                let id, src, tgt = o2n z.Id, z.Source.Id.Value, z.Target.Id.Value
-                let parentId = (z.RawParent >>= _.Id).Value
+            | :? RtArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
+                let parentId = (rt.RawParent >>= _.Id).Value
                 let arrowTypeId =
-                    dbApi.TryFindEnumValueId<DbArrowType>(z.Type)
+                    dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
                     |? int DbArrowType.None
 
                 ORMArrowCall(src, tgt, parentId, arrowTypeId)
-                |> ormReplicateProperties z
+                |> ormReplicateProperties rt
 
-            | :? RtApiDef as r ->
+            | :? RtApiDef as rt ->
                 ORMApiDef(pid)
-                |> ormReplicateProperties r
+                |> ormReplicateProperties rt
 
 
-            | :? RtButton    as z -> ORMButton(pid)    |> ormReplicateProperties z
-            | :? RtLamp      as z -> ORMLamp(pid)      |> ormReplicateProperties z
-            | :? RtCondition as z -> ORMCondition(pid) |> ormReplicateProperties z
-            | :? RtAction    as z -> ORMAction(pid)    |> ormReplicateProperties z
+            | :? RtButton    as rt -> ORMButton(pid)    |> ormReplicateProperties rt
+            | :? RtLamp      as rt -> ORMLamp(pid)      |> ormReplicateProperties rt
+            | :? RtCondition as rt -> ORMCondition(pid) |> ormReplicateProperties rt
+            | :? RtAction    as rt -> ORMAction(pid)    |> ormReplicateProperties rt
 
 
-            | :? RtApiCall as z ->
-                let apiDefId = z.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
-                let valueParam = z.ValueSpec |-> _.Jsonize() |? null
-                ORMApiCall (pid, apiDefId, z.InAddress, z.OutAddress, z.InSymbol, z.OutSymbol, valueParam)
-                |> ormReplicateProperties z
+            | :? RtApiCall as rt ->
+                let apiDefId = rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+                let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
+                ORMApiCall (pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
+                |> ormReplicateProperties rt
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
@@ -264,15 +266,15 @@ module ORMTypeConversionModule =
     type IDsObject with // ToORM
         /// Rt object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g RtProject -> ORMProject
         member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi) =
-            ds2Orm dbApi x :?> 'T
+            rt2Orm dbApi x :?> 'T
 
     type RtProject with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
         member x.ToORM(dbApi:AppDbApi): ORMProject =
-            ds2Orm dbApi x :?> ORMProject
+            rt2Orm dbApi x :?> ORMProject
 
     type RtSystem with // ToORM
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
         member x.ToORM(dbApi:AppDbApi): ORMSystem =
-            ds2Orm dbApi x :?> ORMSystem
+            rt2Orm dbApi x :?> ORMSystem
 

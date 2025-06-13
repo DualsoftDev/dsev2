@@ -407,9 +407,11 @@ module Schema =
             createEditableSystemCylinder()
             let edProject = edProject.Replicate() |> validateRuntime
             let prototype = edProject.AddPrototypeSystem edSystemCyl
-            let edSysCyl1 = edProject.Instantiate(prototype, Name="실린더 instance1", asActive=false)
-            let edSysCyl2 = edProject.Instantiate(prototype, Name="실린더 instance2", asActive=false)
-            let edSysCyl3 = edProject.Instantiate(prototype, Name="실린더 instance3", asActive=false)
+            let edSysCyl1 = edProject.Instantiate(prototype, Name="실린더 instance1")
+            let edSysCyl2 = edProject.Instantiate(prototype, Name="실린더 instance2")
+            let edSysCyl3 = edProject.Instantiate(prototype, Name="실린더 instance3")
+
+            edProject |> validateRuntime |> ignore
 
             let curernt = now()
             let rtProject = edProject.Replicate()

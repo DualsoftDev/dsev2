@@ -70,36 +70,36 @@ module rec NewtonsoftJsonObjects =
     [<AbstractClass>]
     type NjProjectEntity() =
         inherit NjUnique()
-        member x.Project = x.RawParent >>= tryCast<NjProject>
+        [<JsonIgnore>] member x.Project = x.RawParent >>= tryCast<NjProject>
 
     /// NjSystem 객체에 포함되는 member 들이 상속할 base class.  e.g NjFlow, NjWork, NjArrowBetweenWorks, NjApiDef, NjApiCall
     [<AbstractClass>]
     type NjSystemEntity() =
         inherit NjUnique()
-        member x.System  = x.RawParent >>= tryCast<NjSystem>
-        member x.Project = x.RawParent >>= _.RawParent >>= tryCast<NjProject>
+        [<JsonIgnore>] member x.System  = x.RawParent >>= tryCast<NjSystem>
+        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
     [<AbstractClass>]
     type NjFlowEntity() =
         inherit NjUnique()
-        member x.Flow    = x.RawParent >>= tryCast<NjFlow>
-        member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
-        member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
+        [<JsonIgnore>] member x.Flow    = x.RawParent >>= tryCast<NjFlow>
+        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
 
     [<AbstractClass>]
     type NjWorkEntity() =
         inherit NjUnique()
-        member x.Work    = x.RawParent >>= tryCast<NjWork>
-        member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
-        member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
+        [<JsonIgnore>] member x.Work    = x.RawParent >>= tryCast<NjWork>
+        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
 
     [<AbstractClass>]
     type NjCallEntity() =
         inherit NjUnique()
-        member x.Call    = x.RawParent >>= tryCast<NjCall>
-        member x.Work    = x.RawParent >>= _.RawParent >>= tryCast<NjWork>
-        member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
-        member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
+        [<JsonIgnore>] member x.Call    = x.RawParent >>= tryCast<NjCall>
+        [<JsonIgnore>] member x.Work    = x.RawParent >>= _.RawParent >>= tryCast<NjWork>
+        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
 
 
@@ -425,7 +425,13 @@ module rec NewtonsoftJsonObjects =
         // 개별 처리
         match njObj with
         | :? NjProject as njp ->
-            let protos = njp.SystemPrototypes |-> getRuntimeObject<RtSystem> |> tees (fun z -> z.IsPrototype <- true)
+            let protos =
+                njp.SystemPrototypes
+                |-> getRuntimeObject<RtSystem>
+                |> tees (fun z ->
+                    z.IsPrototype <- true
+                    z.RawParent <- Some njp
+                    )
             let load (loadType:NjSystemLoadType):RtSystem =
                 match loadType with
                 | NjSystemLoadType.LocalDefinition sys ->
@@ -447,9 +453,11 @@ module rec NewtonsoftJsonObjects =
 
                 RtProject(protos, actives, passives)
                 |> replicateProperties njp
-                |> tee (fun z ->
+                |> tee (fun rtp ->
                     actives @ passives
-                    |> iter (setParentI z) )
+                    |> iter (fun rtSys ->
+                        rtSys.IsPrototype <- false
+                        setParentI rtp rtSys) )
 
         | :? NjSystem as njs ->
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정

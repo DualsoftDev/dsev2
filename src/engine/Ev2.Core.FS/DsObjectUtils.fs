@@ -57,7 +57,7 @@ module rec TmpCompatibility =
     type RtProject with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate
         member x.AddPrototypeSystem(system:RtSystem) =
             system.IsPrototype <- true
-            system |> x.RawPrototypeSystems.Add
+            system |> setParent x |> x.RawPrototypeSystems.Add
             system
 
         member x.AddActiveSystem(system:RtSystem) =
@@ -67,13 +67,14 @@ module rec TmpCompatibility =
             system |> setParent x |> x.RawPassiveSystems.Add
 
         /// project 내에 prototypeGuid 를 가진 prototype system 을 복사하여 instance 로 만들어 반환
-        member x.Instantiate(prototypeSystem:RtSystem, asActive:bool): RtSystem =
+        member x.Instantiate(prototypeSystem:RtSystem): RtSystem =
             assert(x.PrototypeSystems.Contains prototypeSystem)
             fwdDuplicate prototypeSystem :?> RtSystem
             |> tee (fun z ->
                 z.PrototypeSystemGuid <- Some prototypeSystem.Guid
-                if asActive then x.AddActiveSystem z
-                else x.AddPassiveSystem z)
+                z.IsPrototype <- false
+                z |> setParentI x
+                x.AddPassiveSystem z)
 
     type RtSystem with
         member internal x.addWorks(works:RtWork seq, ?byUI:bool) =
@@ -389,6 +390,12 @@ module DsObjectUtilsModule =
                 prj.Systems |> iter _.Validate(guidDicDebug)
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
+                for p in prj.PrototypeSystems do
+                    p.IsPrototype |> verify
+                    p.RawParent.IsSome |> verify
+
+                prj.Systems |> iter (_.IsPrototype >> not >> verify)
+
             | :? RtSystem as sys ->
                 sys.Works |> iter _.Validate(guidDicDebug)
 

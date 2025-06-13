@@ -65,6 +65,7 @@ module internal DbInsertModule =
 
                     rt.Id <- Some projId
 
+                    rt.PrototypeSystems |> iter _.InsertToDB(dbApi)  // Prototype system 을 따로 등록
                     rt.Systems |> iter _.InsertToDB(dbApi)  // 시스템 하부에 연결된 시스템들을 삽입 (재귀적 호출, prototype 은 제외됨)
                     //proj.Id <- Some projId
                     orm.Id <- Some projId
@@ -80,8 +81,8 @@ module internal DbInsertModule =
                     let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
 
                     let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                            (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description, originGuid, prototypeId, ownerProjectId)
-                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId, @OwnerProjectId);""",
+                                            (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description,   originGuid,  prototypeId, isPrototype, ownerProjectId)
+                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OriginGuid, @PrototypeId, @IsPrototype, @OwnerProjectId);""",
                                     ormSystem, tr)
 
                     rt.Id <- Some sysId

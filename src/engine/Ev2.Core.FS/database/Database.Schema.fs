@@ -252,6 +252,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "ownerProjectId"}   {intKeyType}    -- 현재의 system 을 생성한 project 의 id.
+    , {k "isPrototype"}   {boolean} NOT NULL DEFAULT {falseValue}
     , {k "prototypeId"}   {intKeyType}    -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
     , {k "author"}        TEXT NOT NULL
