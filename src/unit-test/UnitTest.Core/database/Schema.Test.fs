@@ -405,8 +405,9 @@ module Schema =
         member x.``Cylinder 추가 test`` () =
             createEditableProject()
             createEditableSystemCylinder()
+            let originalEdProject = edProject
             let edProject = edProject.Replicate() |> validateRuntime
-            let prototype = edProject.AddPrototypeSystem edSystemCyl
+            let prototype = edProject.AddMyPrototypeSystem edSystemCyl
             let edSysCyl1 = edProject.Instantiate(prototype, Name="실린더 instance1")
             let edSysCyl2 = edProject.Instantiate(prototype, Name="실린더 instance2")
             let edSysCyl3 = edProject.Instantiate(prototype, Name="실린더 instance3")

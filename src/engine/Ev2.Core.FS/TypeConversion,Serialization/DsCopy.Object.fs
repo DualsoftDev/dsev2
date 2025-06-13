@@ -24,7 +24,8 @@ module internal rec DsObjectCopyImpl =
             RtProject.Create()
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:RtSystem) -> setParentI z s)
-                x.RawPrototypeSystems |> z.RawPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
+                x.RawMyPrototypeSystems       |> z.RawMyPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
+                x.RawImportedPrototypeSystems |> z.RawImportedPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
             |> uniqReplicateWithBag bag x
@@ -209,7 +210,8 @@ module DsObjectCopyAPIModule =
             |> tee (fun z ->
                 actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange
-                x.PrototypeSystems |> z.RawPrototypeSystems.AddRange
+                x.MyPrototypeSystems |> z.RawMyPrototypeSystems.AddRange
+                x.ImportedPrototypeSystems |> z.RawImportedPrototypeSystems.AddRange
 
                 actives @ passives |> iter (fun s -> s.RawParent <- Some z))
 

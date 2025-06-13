@@ -129,7 +129,8 @@ module rec NewtonsoftJsonObjects =
 
         /// serialize 직전에 Runtime 으로부터 채워지고,
         /// deserialize 직후에 Runtime 으로 변환시켜 채워 줌.
-        [<JsonProperty(Order = 100)>] member val SystemPrototypes = [||]:NjSystem[] with get, set
+        [<JsonProperty(Order =  99)>] member val MyPrototypeSystems = [||]:NjSystem[] with get, set
+        [<JsonProperty(Order = 100)>] member val ImportedPrototypeSystems = [||]:NjSystem[] with get, set
 
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystemLoadType[]     with get, set
@@ -367,8 +368,14 @@ module rec NewtonsoftJsonObjects =
         | :? NjProject as njp ->
             let rtp = njp |> getRuntimeObject<RtProject>
 
-            njp.SystemPrototypes <-
-                rtp.PrototypeSystems
+            njp.MyPrototypeSystems <-
+                rtp.MyPrototypeSystems
+                |> distinct
+                |-> NjSystem.FromRuntime
+                |> toArray
+
+            njp.ImportedPrototypeSystems <-
+                rtp.ImportedPrototypeSystems
                 |> distinct
                 |-> NjSystem.FromRuntime
                 |> toArray
@@ -385,7 +392,8 @@ module rec NewtonsoftJsonObjects =
             njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
 
             njp.Database <- rtp.Database
-            njp.SystemPrototypes |> iter onNsJsonSerializing
+            njp.MyPrototypeSystems |> iter onNsJsonSerializing
+            njp.ImportedPrototypeSystems |> iter onNsJsonSerializing
 
         | :? NjSystem as njs ->
             njs.RuntimeObject |> replicateProperties njs
@@ -425,19 +433,26 @@ module rec NewtonsoftJsonObjects =
         // 개별 처리
         match njObj with
         | :? NjProject as njp ->
-            let protos =
-                njp.SystemPrototypes
+            let myProtos =
+                njp.MyPrototypeSystems
                 |-> getRuntimeObject<RtSystem>
                 |> tees (fun z ->
                     z.IsPrototype <- true
-                    z.RawParent <- Some njp
-                    )
+                    z.RawParent <- Some njp )
+
+            let importedProtos =
+                njp.ImportedPrototypeSystems
+                |-> getRuntimeObject<RtSystem>
+                |> tees (fun z ->
+                    z.IsPrototype <- true
+                    z.RawParent <- Some njp )
+
             let load (loadType:NjSystemLoadType):RtSystem =
                 match loadType with
                 | NjSystemLoadType.LocalDefinition sys ->
                     sys |> getRuntimeObject<RtSystem>
                 | NjSystemLoadType.Reference { InstanceName=name; PrototypeGuid=protoGuid; InstanceGuid=instanceGuid } ->
-                    protos
+                    myProtos @ importedProtos
                     |> find (fun p -> p.Guid = protoGuid)
                     |> (fun z -> fwdDuplicate z :?> RtSystem)
                     |> tee(fun s ->
@@ -445,13 +460,15 @@ module rec NewtonsoftJsonObjects =
                         s.Guid <- instanceGuid
                         s.PrototypeSystemGuid <- Some protoGuid )
 
-            njp.SystemPrototypes |> iter onNsJsonDeserialized
+            njp.MyPrototypeSystems       |> iter onNsJsonDeserialized
+            njp.ImportedPrototypeSystems |> iter onNsJsonDeserialized
+
             njp.RuntimeObject <-
                 noop()
                 let actives  = njp.ActiveSystems  |-> getRuntimeObject<RtSystem>
                 let passives = njp.PassiveSystems |-> load
 
-                RtProject(protos, actives, passives)
+                RtProject(myProtos, importedProtos, actives, passives)
                 |> replicateProperties njp
                 |> tee (fun rtp ->
                     actives @ passives

@@ -28,7 +28,8 @@ module rec TmpCompatibility =
                     yield x
                 match x with
                 | :? RtProject as prj ->
-                    yield! prj.PrototypeSystems >>= _.EnumerateRtObjects()
+                    yield! prj.MyPrototypeSystems >>= _.EnumerateRtObjects()
+                    yield! prj.ImportedPrototypeSystems >>= _.EnumerateRtObjects()
                     yield! prj.Systems   >>= _.EnumerateRtObjects()
                 | :? RtSystem as sys ->
                     yield! sys.Works     >>= _.EnumerateRtObjects()
@@ -55,9 +56,17 @@ module rec TmpCompatibility =
 
 
     type RtProject with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate
-        member x.AddPrototypeSystem(system:RtSystem) =
+        member x.AddMyPrototypeSystem(system:RtSystem) =
+            system
+            |> fwdReplicate :?> RtSystem
+            |> tee(fun system ->
+                system.IsPrototype <- true
+                system |> setParent x |> x.RawMyPrototypeSystems.Add
+                system)
+
+        member x.AddImportedPrototypeSystem(system:RtSystem) =
             system.IsPrototype <- true
-            system |> setParent x |> x.RawPrototypeSystems.Add
+            system |> setParent x |> x.RawImportedPrototypeSystems.Add
             system
 
         member x.AddActiveSystem(system:RtSystem) =
@@ -68,7 +77,7 @@ module rec TmpCompatibility =
 
         /// project 내에 prototypeGuid 를 가진 prototype system 을 복사하여 instance 로 만들어 반환
         member x.Instantiate(prototypeSystem:RtSystem): RtSystem =
-            assert(x.PrototypeSystems.Contains prototypeSystem)
+            assert(x.MyPrototypeSystems.Contains prototypeSystem || x.ImportedPrototypeSystems.Contains prototypeSystem)
             fwdDuplicate prototypeSystem :?> RtSystem
             |> tee (fun z ->
                 z.PrototypeSystemGuid <- Some prototypeSystem.Guid
@@ -288,7 +297,7 @@ module rec TmpCompatibility =
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type RtProject with
-        static member Create() = RtProject([||], [||], [||])
+        static member Create() = RtProject([], [], [], [])
 
     type RtSystem with
         static member Create(flows:RtFlow[], works:RtWork[],
@@ -390,7 +399,12 @@ module DsObjectUtilsModule =
                 prj.Systems |> iter _.Validate(guidDicDebug)
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
-                for p in prj.PrototypeSystems do
+
+                for p in prj.MyPrototypeSystems do
+                    p.IsPrototype |> verify
+                    p.RawParent.IsSome |> verify
+
+                for p in prj.ImportedPrototypeSystems do
                     p.IsPrototype |> verify
                     p.RawParent.IsSome |> verify
 

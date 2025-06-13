@@ -194,9 +194,15 @@ module ORMTypeConversionModule =
                         match rt.Project with
                         | Some proj ->
                             match rt.Prototype with
-                            | _ when rt.IsPrototype -> proj.Id
-                            | _ when proj.ActiveSystems.Contains(rt) -> proj.Id
+                            | _ when rt.IsPrototype || proj.ActiveSystems.Contains(rt) ->
+                                proj.Id
+                                |> Option.orElseWith(fun () ->
+                                    dbApi.With(fun (conn, tr) ->
+                                        conn.TryExecuteScalar<Id>($"SELECT id FROM {Tn.Project} where guid = @Guid", {|Guid = proj.Guid|})))
                             | _ -> None)
+
+                if ownerProjectId.IsNone then
+                    noop()
 
                 ORMSystem(ownerProjectId, prototypeId, rt.IsPrototype, rt.OriginGuid, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
                 |> ormReplicateProperties rt
