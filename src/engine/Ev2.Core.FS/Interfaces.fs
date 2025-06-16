@@ -131,7 +131,7 @@ module rec DsObjectModule =
         member val internal RawMyPrototypeSystems       = ResizeArray myPrototypeSystems
         member val internal RawImportedPrototypeSystems = ResizeArray importedPrototypeSystems
 
-        member x.MyPrototypeSystems       = x.RawMyPrototypeSystems |> toList
+        member x.MyPrototypeSystems       = x.RawMyPrototypeSystems       |> toList
         member x.ImportedPrototypeSystems = x.RawImportedPrototypeSystems |> toList
         // { Runtime/DB 용
         member x.ActiveSystems  = x.RawActiveSystems  |> toList
@@ -167,6 +167,8 @@ module rec DsObjectModule =
         member val IsPrototype = false with get, set
         /// this system 이 Instance 로 사용될 때에만 Some 값.
         member val PrototypeSystemGuid = Option<Guid>.None with get, set
+
+
         member x.Prototype = x.Project >>= (fun z -> (z.MyPrototypeSystems @ z.ImportedPrototypeSystems).TryFind(fun s -> Some s.Guid = x.PrototypeSystemGuid))
 
 

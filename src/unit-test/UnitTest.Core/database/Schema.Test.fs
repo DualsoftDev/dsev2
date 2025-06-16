@@ -110,7 +110,7 @@ module Schema =
 
 
         dbApi.With(fun (conn, tr) ->
-            conn.Execute($"DELETE FROM {Tn.Project}", tr) |> ignore
+            conn.Execute($"DELETE FROM {Tn.Project}", null, tr) |> ignore
             dsProject.RTryCommitToDB(dbApi) ==== Ok Inserted
 
             dsProject.EnumerateRtObjects()
@@ -285,7 +285,7 @@ module Schema =
             let dbApi = sqliteDbApi()
             use conn = dbApi.CreateConnection()
             dbApi.With(fun (conn, tr) ->
-                conn.Execute($"DELETE FROM {Tn.Project};", tr)
+                conn.Execute($"DELETE FROM {Tn.Project};", null, tr)
             ) |> ignore
 
 
@@ -381,7 +381,7 @@ module Schema =
             let dbApi = sqliteDbApi()
 
             dbApi.With(fun (conn, tr) ->
-                conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}) |> ignore
+                conn.Execute($"DELETE FROM {Tn.Project} where name = @Name", {| Name=dsProject2.Name|}, tr) |> ignore
 
                 dsProject2.RTryCommitToDB(dbApi).IsOk === true)
 
@@ -446,12 +446,12 @@ module Schema =
             let mutable checkDone = false
             (fun () ->
                 dbApi.With(fun (conn, tr) ->
-                    let affected = conn.Execute($"DELETE FROM {Tn.Project}", transaction=tr)
+                    let affected = conn.Execute($"DELETE FROM {Tn.Project}", null, tr)
 
                     // 현재 transaction 내에서는 System 갯수가 0 이 되어야 한다.
                     for t in emptyCheckTables do
                         tracefn $"Checking table {t} for empty"
-                        let count = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", transaction=tr)
+                        let count = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", null, tr)
                         if count <> 0 then
                             tracefn $"What's up with {t}??"
 
@@ -493,7 +493,7 @@ module Schema =
                     let mapId =
                         conn.ExecuteScalar<int>(
                             $"""SELECT id FROM {Tn.MapProject2System}
-                                WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", transaction=tr)
+                                WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", null, tr)
 
                     conn.Execute(
                         $"""INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, loadedName)
@@ -505,14 +505,14 @@ module Schema =
                             FROM mapProject2System
                             WHERE id = {mapId}
                             ;
-                            """, transaction=tr) |> ignore
+                            """, null, tr) |> ignore
 
-                    conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", transaction=tr) |> ignore
+                    conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", null, tr) |> ignore
 
                     // 현재 transaction 내에서는 임의 추가한 porject 와 System 이 하나씩 남아 있어야 한다.
                     for t in emptyCheckTables do
                         tracefn $"Checking table {t} for empty"
-                        conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", transaction=tr) =!= 0
+                        conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", null, tr) =!= 0
 
                     checkDone <- true
                     // transaction 강제 rollback 유도
@@ -554,7 +554,7 @@ module Schema =
 
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->
-                conn.Execute($"DELETE FROM {Tn.Project}", transaction=tr) |> ignore
+                conn.Execute($"DELETE FROM {Tn.Project}", null, tr) |> ignore
 
                 dsProject.RTryCommitToDB(dbApi) ==== Ok Inserted
 
@@ -604,8 +604,8 @@ module Schema =
                 do
                     // 삭제 후, 다시 commit 하면 LeftOnly 가 나와야 함.  (삭제 이전에 Db, 즉 left 에만 존재했었다는 정보 표현)
                     // 삭제 후 work 및 work 간 arrow 갯수는 1 씩 감소해야 함.  (cascade delete)
-                    let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr)
-                    let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr)
+                    let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr)
+                    let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr)
 
                     let sysArrow0 = dsProject.Systems[0].Arrows[0]
                     dsProject.Systems[0].RemoveWorks([w])
@@ -624,13 +624,13 @@ module Schema =
                         | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
 
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr) === nw - 1
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na - 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw - 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr) === na - 1
 
                 do
                     // work 추가하면 work 갯수만 늘어남.
-                    let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr)
-                    let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr)
+                    let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr)
+                    let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr)
 
                     dsProject.Systems[0].AddWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
@@ -641,8 +641,8 @@ module Schema =
                         failwith $"ERROR: {err}"
                     | _ -> failwith "ERROR"
 
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}", transaction=tr) === nw + 1
-                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", transaction=tr) === na + 0  // no change
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw + 1
+                    conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr) === na + 0  // no change
             )
 
 
@@ -761,7 +761,7 @@ module Schema =
             dbApi.With(fun (conn, tr) ->
                 conn.Execute($"""INSERT INTO {Tn.TypeTest}
                                        (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,  dateTime)
-                                VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty]) )
+                                VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty], tr) )
             |> ignore
 
 

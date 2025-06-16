@@ -61,13 +61,13 @@ module DbApiModule =
 #endif
                         use tr = conn.BeginTransaction()
                         try
-                            conn.Execute(schema, transaction=tr) |> ignore
+                            conn.Execute(schema, null, tr) |> ignore
                             insertEnumValues<DbStatus4>   conn tr Tn.Enum
                             insertEnumValues<DbCallType>  conn tr Tn.Enum
                             insertEnumValues<DbArrowType> conn tr Tn.Enum
-                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database vendor name', '{dbProvider.VendorName}')", transaction=tr) |> ignore
-                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database version',     '{conn.GetVersion()}')",     transaction=tr) |> ignore
-                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('engine version',       '{Version(0, 9, 99)}')",      transaction=tr) |> ignore
+                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database vendor name', '{dbProvider.VendorName}')", null, tr) |> ignore
+                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database version',     '{conn.GetVersion()}')",     null, tr) |> ignore
+                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('engine version',       '{Version(0, 9, 99)}')",     null, tr) |> ignore
                             tr.Commit()
                         with ex ->
                             logError $"Failed to create database schema: {ex.Message}"
@@ -125,7 +125,7 @@ module DbApiModule =
                         | Tn.Work -> x.WorkCache.Reset() |> ignore
                         | Tn.Call -> x.CallCache.Reset() |> ignore
                         | _ -> ()
-                    conn.Execute($"DELETE FROM {Tn.TableHistory}", tr) |> ignore
+                    conn.Execute($"DELETE FROM {Tn.TableHistory}", null, tr) |> ignore
                     conn.ResetSequence(Tn.TableHistory, tr) |> ignore  // auto increment id 초기화
             , optOnError = fun ex -> logError $"CheckDatabaseChange failed: {ex.Message}")
 

@@ -33,8 +33,8 @@ module internal DbInsertModule =
                                         WHERE projectId = @ProjectId AND systemId = @SystemId""", {|ProjectId = projId; SystemId=sysId|}, tr) with
                     | Some row ->
                             conn.Execute($"""UPDATE {Tn.MapProject2System}
-                                             SET loadedName = {s.Name}
-                                             WHERE id = {row.Id}""", transaction=tr) |> ignore
+                                             SET loadedName = @LoadedName
+                                             WHERE id = @Id""", {|LoadedName=s.Name; Id=row.Id|}, tr) |> ignore
                     | None ->
                         let affectedRows = conn.Execute(
                                 $"""INSERT INTO {Tn.MapProject2System}
@@ -228,12 +228,12 @@ module internal DbInsertModule =
 
                         let m = conn.TryQuerySingle<ORMMapCall2ApiCall>(
                                     $"""SELECT * FROM {Tn.MapCall2ApiCall}
-                                        WHERE callId = {rt.Id.Value} AND apiCallId = {apiCallId}""", transaction=tr)
+                                        WHERE callId = @CallId AND apiCallId = @ApiCallId""", {|CallId=rt.Id; ApiCallId=apiCallId|}, tr)
                         match m with
                         | Some row ->
                             noop()
-                            //conn.Execute($"UPDATE {Tn.MapCall2ApiCall} SET active = {isActive} WHERE id = {row.Id}",
-                            //            transaction=tr) |> ignore
+                            //conn.Execute($"UPDATE {Tn.MapCall2ApiCall} SET active = @IsActive WHERE id = @Id", {|IsActive=isActive; Id=row.Id|}
+                            //            tr) |> ignore
                         | None ->
                             let guid = newGuid()
                             let affectedRows = conn.Execute(
