@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+
+		<IsPackable>false</IsPackable>
+		<GenerateProgramFile>false</GenerateProgramFile>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="CommonTest\**" />
+	  <EmbeddedResource Remove="Expression\**" />
+	  <EmbeddedResource Remove="Json\**" />
+	  <EmbeddedResource Remove="Parser\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="TestData.fs" />
+		<Compile Include="AasCore3.0Test.fs" />
+		<Compile Include="AasTest.fs" />
+		<Compile Include="FromAasTest.fs" />
+		<Compile Include="ToAasTest.fs" />
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="..\..\engine\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<None Include="..\..\engine\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template"/>
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<PackageReference Include="FsUnit" Version="6.0.0" />
+		<PackageReference Include="FsUnit.xUnit" Version="6.0.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
+		<ProjectReference Include="..\..\engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj" />
+		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
+		<ProjectReference Include="..\UnitTest.Core\UnitTest.Core.fsproj" />
+	</ItemGroup>
+
+</Project>

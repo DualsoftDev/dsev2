@@ -29,6 +29,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "솔루션 항목", "솔루�
 		..\docs\Spec\EV2_Spec.md = ..\docs\Spec\EV2_Spec.md
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTest.Aas", "unit-test\UnitTest.Aas\UnitTest.Aas.fsproj", "{95EF490D-78A4-E995-DCB6-F0E4EF344003}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{B1D07720-375B-4EC5-3F88-211D4AD3B715}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1D07720-375B-4EC5-3F88-211D4AD3B715}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1D07720-375B-4EC5-3F88-211D4AD3B715}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -75,6 +81,7 @@ Global
 		{CD567837-94B2-BBE2-7346-F39B8F45B16F} = {D73FE292-67C0-4C2F-B669-ED6B0EF46205}
 		{90A555CB-59D0-5341-2DB0-E81AC20FD9AC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{B1D07720-375B-4EC5-3F88-211D4AD3B715} = {8B7346C4-33AD-44AB-A6CB-7990A20AFD54}
+		{95EF490D-78A4-E995-DCB6-F0E4EF344003} = {D73FE292-67C0-4C2F-B669-ED6B0EF46205}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ECA6317A-9AE4-4081-9DBE-DE379EDD6040}

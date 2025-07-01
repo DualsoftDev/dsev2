@@ -721,6 +721,7 @@ module Ds2JsonModule =
                 |> validateRuntime
             | _ -> // RuntimeType 이 없거나, 잘못된 경우
                 failwith "Invalid system JSON file.  'RuntimeType' not found or mismatch."
+        static member FromJson(json) = RtSystem.ImportFromJson(json)
 
 
 
