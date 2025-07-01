@@ -23,6 +23,7 @@ module DbApiModule =
 
     let specDir = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\..\..\docs\Spec")
 
+    /// schema 생성 확인 완료된 connection strings
     let checkedConnections = HashSet<string>()
 
 
@@ -79,7 +80,8 @@ module DbApiModule =
                         if not <| conn.IsTableExists(Tn.TableDescription, ?schemaName=schemaName) then
                             createDb()
                     with exn ->
-                        createDb() )
+                        createDb()
+            )
             //:?> SQLiteConnection
         do
             // 강제 초기화 실행
