@@ -29,7 +29,7 @@ module CoreToAas =
                     idShort = "Flows",
                     modelType = A.smc,
                     values = fs
-                )
+                ).SetSemantic("Flows")
 
             let ws = x.Works |-> _.ToSMC()
             let works =
@@ -37,7 +37,7 @@ module CoreToAas =
                     idShort = "Works",
                     modelType = A.smc,
                     values = ws
-                )
+                ).SetSemantic("Works")
 
             let arrs = x.Arrows |-> _.ToSMC()
             let arrows =
@@ -45,7 +45,7 @@ module CoreToAas =
                     idShort = "Arrows",
                     modelType = A.smc,
                     values = arrs
-                )
+                ).SetSemantic("Arrows")
 
             [|flows; arrows; works|]
 
@@ -57,7 +57,7 @@ module CoreToAas =
                     idShort = "Identification",
                     id = A.ridIdentification,
                     kind = KindType.Instance,
-                    semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, A.ridIdentification),
+                    semantic = A.ridIdentification,
                     smel = sys.collectChildren()
                 )
             sm

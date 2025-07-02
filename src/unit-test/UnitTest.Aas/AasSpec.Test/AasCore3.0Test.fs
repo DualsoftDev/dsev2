@@ -3,21 +3,10 @@ namespace T.Core
 open AasCore.Aas3_0
 open Dual.Ev2
 open Dual.Ev2.Aas
-open Dual.Ev2.Aas.CoreToJsonViaCode
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
-open Dual.Common.Base
 
-open Dual.Common.Base
-open Dual.Common.UnitTest.FS
-open Dual.Common.Db.FS
-open Dual.Common.Core.FS
 
-open Ev2.Core.FS
-open Newtonsoft.Json
-open System.Reactive.Concurrency
-open System.IO
-open T
 
 
 

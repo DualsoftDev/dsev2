@@ -6,6 +6,7 @@ open Dual.Common.Core.FS
 open System.Text.Json
 open System
 open Dual.Common.Base
+open System.Collections.Generic
 
 /// System.Text.Json.Nodes.JsonNode 의 축약
 type JNode = System.Text.Json.Nodes.JsonNode
@@ -16,7 +17,38 @@ type JObj = System.Text.Json.Nodes.JsonObject
 /// System.Text.Json.Nodes.JsonArray 의 축약.  JsonNode(=>JNode) 를 상속 받음
 type JArr = System.Text.Json.Nodes.JsonArray
 
+module AasSemantics =
+    let map : Map<string, string> =
+        Map [
+            "Name",             "https://dualsoft.com/aas/unique/name"
+            "Guid",             "https://dualsoft.com/aas/unique/guid"
+            "Id",               "https://dualsoft.com/aas/unique/id"
+            "Parameter",        "https://dualsoft.com/aas/unique/parameter"
 
+            "Works",            "https://dualsoft.com/aas/plural/works"
+            "Arrows",           "https://dualsoft.com/aas/plural/arrows"
+            "Calls",            "https://dualsoft.com/aas/plural/calls"
+            "Flows",            "https://dualsoft.com/aas/plural/flows"
+
+            "FlowGuid",         "https://dualsoft.com/aas/work/flowGuid"
+            "Motion",           "https://dualsoft.com/aas/work/motion"
+            "Script",           "https://dualsoft.com/aas/work/script"
+            "IsFinished",       "https://dualsoft.com/aas/work/isFinished"
+            "NumRepeat",        "https://dualsoft.com/aas/work/numRepeat"
+            "Period",           "https://dualsoft.com/aas/work/period"
+            "Delay",            "https://dualsoft.com/aas/work/delay"
+
+            "Type",             "https://dualsoft.com/aas/arrow/type"
+            "Source",           "https://dualsoft.com/aas/arrow/source"
+            "Target",           "https://dualsoft.com/aas/arrow/target"
+            "Timeout",          "https://dualsoft.com/aas/call/timeout"
+            "IsDisabled",       "https://dualsoft.com/aas/call/isDisabled"
+            "CommonConditions", "https://dualsoft.com/aas/call/commonConditions"
+            "AutoConditions",   "https://dualsoft.com/aas/call/autoConditions"
+            "Status4",          "https://dualsoft.com/aas/call/status4"
+
+            "__RidIdentification",   "https://www.hsu-hh.de/aut/aas/identification"
+        ]
 
 module Aas =
     open AasCore.Aas3_0
@@ -39,7 +71,7 @@ module A =
     let internal sml = ModelType.SubmodelElementList
     /// ModelType.Submodel
     let internal sm = ModelType.Submodel
-    let internal ridIdentification = "https://www.hsu-hh.de/aut/aas/identification"
+    let internal ridIdentification = "__RidIdentification"
 
 
 [<AutoOpen>]
@@ -148,6 +180,9 @@ module JsonExtensionModule =
         // see J.CreateIClassFromJson<'T>(), J.CreateIClassFromXml<'T>() for FromJson(), FromXml() methods
 
 
+    type PropertyCounter = Dictionary<string, int>
+    let thePropertyCounter = PropertyCounter() // 전역으로 사용되는 property counter.  이름별로 몇 개의 property 가 있는지 카운트
+
     type System.Text.Json.Nodes.JsonObject with
         member x.Set(key:N, value:string):  JObj = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
         member x.Set(key:N, ja:JArr):       JObj = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
@@ -192,13 +227,38 @@ module JsonExtensionModule =
 
         member x.SetModelType(modelType:ModelType) = x.Set(N.ModelType, modelType.ToString())
 
-        member x.SetProperty<'T>(value:'T, idShort:string): JObj option =
-            match x.SetTypedValue(value) with // value 속성 설정
+        member this.SetSemantic(semanticName:string): JObj =
+            match AasSemantics.map |> Map.tryFind semanticName with
+            | Some semanticId -> this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
+            | None -> failwithf "Not supported semantic name: %s" semanticName
+
+        /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
+        member this.SetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =
+            let counters = counters |? thePropertyCounter // 전역 property counter 사용
+            let count =
+                if counters.ContainsKey(name) then
+                    let current = counters.[name]
+                    counters.[name] <- current + 1
+                    current + 1
+                else
+                    counters.[name] <- 0
+                    0
+
+            let idShort = if count = 0 then name else sprintf "%s%d" name count
+
+            let semanticId =
+                AasSemantics.map
+                |> Map.tryFind name
+
+            match this.SetTypedValue(value) with
             | Some jobj ->
-                jobj.Set(N.IdShort, idShort) |> ignore
-                jobj.Set(N.ModelType, ModelType.Property.ToString()) |> ignore
-                Some jobj
+                jobj
+                    .Set(N.IdShort, idShort)
+                    .Set(N.ModelType, ModelType.Property.ToString())
+                    .SetSemantic(name)
+                |> Some
             | None -> None
+
 
         (*
             <keys>
@@ -252,7 +312,7 @@ module JsonExtensionModule =
             ?idShort:string,
             ?id:string,
             ?modelType:ModelType,
-            ?semantic:JObj,
+            ?semantic:string,
             ?value:'T,
             ?values:JNode seq,
             ?kind:KindType,
@@ -265,7 +325,7 @@ module JsonExtensionModule =
                 modelType .Iter(fun y  -> j.Set(N.ModelType, y.ToString()) |> ignore)
                 idShort   .Iter(fun y  -> j.Set(N.IdShort,   y)            |> ignore)
                 id        .Iter(fun y  -> j.Set(N.Id,        y)            |> ignore)
-                semantic  .Iter(fun y  -> j.Set(N.SemanticId,y)            |> ignore)
+                semantic  .Iter(fun y  -> j.SetSemantic(y)                 |> ignore)
                 value     .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
                 values    .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
                 kind      .Iter(fun y ->  j.Set(N.Kind, y.ToString())      |> ignore)

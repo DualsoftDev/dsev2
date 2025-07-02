@@ -12,6 +12,26 @@ open AasCore.Aas3_0
 
 
 [<AutoOpen>]
+module PropModule =
+    let tryGetPropValueByCategory (smc: SubmodelElementCollection) (category:string): string option =
+        smc.Value
+        |> Seq.tryPick (function
+            | :? Property as p when p.Category = category -> Some p.Value
+            | _ -> None)
+
+    let tryGetPropValueBySemanticKey (smc: SubmodelElementCollection) (semanticKey:string): string option =
+        let semanticId = AasSemantics.map[semanticKey]
+        smc.Value
+        |> Seq.tryPick (function
+            | :? Property as p when
+                p.SemanticId <> null
+                &&  p.SemanticId.Keys
+                    |> Seq.exists (fun k -> k.Value = semanticId) ->
+                Some p.Value
+            | _ -> None)
+
+
+[<AutoOpen>]
 module CoreFromAas =
     type Environment = AasCore.Aas3_0.Environment
     type ISubmodel = AasCore.Aas3_0.ISubmodel
@@ -29,14 +49,21 @@ module CoreFromAas =
         static member FromISubmodel(submodel:ISubmodel): NjSystem =
             assert(submodel.IdShort.IsOneOf("Identification", "System"))
 
-            let getSMC idShort =
+            let getSMC semanticId =
                 submodel.SubmodelElements
-                |> Seq.tryFind (fun sm -> sm.IdShort = idShort)
+                |> Seq.tryFind (fun sm ->
+                    match sm.SemanticId with
+                    | null -> false
+                    | sid ->
+                        match sid.Keys |> Seq.tryHead with
+                        | Some key -> key.Value = AasSemantics.map[semanticId]
+                        | None -> false)
                 >>= (fun sm ->
                     match sm with
-                    | :? SubmodelElementCollection as smc -> Some <| smc.Value.OfType<SubmodelElementCollection>().ToArray()
+                    | :? SubmodelElementCollection as smc -> Some (smc.Value.OfType<SubmodelElementCollection>().ToArray())
                     | _ -> None)
                 |? [||]
+
 
             let works  = getSMC "Works"  |-> NjWork.FromSMC
             let flows  = getSMC "Flows"  |-> NjFlow.FromSMC
@@ -61,10 +88,13 @@ module CoreFromAas =
                     | _ -> None
                 ) |> Map.ofSeq
 
+            let src = tryGetPropValueBySemanticKey smc "Source" |> Option.get
+            let tgt = tryGetPropValueBySemanticKey smc "Target" |> Option.get
+            let typ = tryGetPropValueBySemanticKey smc "Type" |> Option.get
             NjArrow(
-                Source   = props["Source"]
-                , Target = props["Target"]
-                , Type   = props["Type"] )
+                Source   = src
+                , Target = tgt
+                , Type   = typ)
 
     type NjFlow with
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
