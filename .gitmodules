@@ -6,3 +6,6 @@
 	url = https://github.com/aas-core-works/aas-core3.0-csharp
 [submodule "submodules/nuget"]
 	branch = bEV2
+[submodule "submodules/aas-specs-metamodel"]
+	path = submodules/aas-specs-metamodel
+	url = https://github.com/admin-shell-io/aas-specs-metamodel.git

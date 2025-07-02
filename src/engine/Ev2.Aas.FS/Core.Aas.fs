@@ -246,8 +246,8 @@ module JsonExtensionModule =
             ?value:'T,
             ?values:JNode seq,
             ?kind:KindType,
-            ?smc:JObj seq,
-            ?sml:JObj seq
+            ?smec:JObj seq,
+            ?smel:JObj seq
         ): JObj =
             assert(value.IsNone || values.IsNone)
             x |> tee(fun j ->
@@ -259,17 +259,10 @@ module JsonExtensionModule =
                 value     .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
                 values    .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
                 kind      .Iter(fun y ->  j.Set(N.Kind, y.ToString())      |> ignore)
-                smc       .Iter(fun ys -> j.Set(N.SubmodelElementCollection, J.CreateJArr ys) |> ignore)
-                sml       .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
+                smec      .Iter(fun ys -> j.Set(N.SubmodelElementCollection, J.CreateJArr ys) |> ignore)
+                smel      .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
             )
 
-        member x.WrapWith(
-            ?modelType:ModelType
-        ): JObj =
-            JObj()
-            |> tee(fun j ->
-                modelType .Iter(fun y  -> j.Set(N.ModelType, y.ToString()) |> ignore)
-            )
 
     // Json 관련 static method 들을 모아놓은 static class
     [<AbstractClass; Sealed>]
@@ -298,10 +291,10 @@ module JsonExtensionModule =
             , ?modelType:ModelType
             , ?semantic:JObj
             , ?typedValue:'T
-            , ?values:JNode seq
+            , ?values:JNode seq      // JNode
             , ?kind:KindType
-            , ?smc:JObj seq     // SubmodelElementCollection
-            , ?sml:JObj seq     // SubmodelElementList
+            , ?smec:JObj seq     // SubmodelElementCollection
+            , ?smel:JObj seq     // SubmodelElementList
         ): JObj =
             JObj().AddProperties(
                 ?category   = category,
@@ -312,8 +305,8 @@ module JsonExtensionModule =
                 ?value      = typedValue,
                 ?values     = values,
                 ?kind       = kind,
-                ?smc        = smc,
-                ?sml        = sml
+                ?smec       = smec,
+                ?smel       = smel
             )
 
         /// value 속성을 가진 <property> JObj 를 생성

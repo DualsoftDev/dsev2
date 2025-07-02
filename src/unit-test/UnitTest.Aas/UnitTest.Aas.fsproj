@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -17,7 +17,8 @@
 
 	<ItemGroup>
 		<Compile Include="TestData.fs" />
-		<Compile Include="AasCore3.0Test.fs" />
+		<Compile Include="TestSetup.fs" />
+		<Compile Include="AasSpec.Test\AasCore3.0Test.fs" />
 		<Compile Include="AasTest.fs" />
 		<Compile Include="FromAasTest.fs" />
 		<Compile Include="ToAasTest.fs" />
@@ -28,7 +29,7 @@
 		<Content Include="..\..\engine\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<None Include="..\..\engine\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template"/>
+		<None Include="..\..\engine\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
 	</ItemGroup>
 
 
@@ -44,6 +45,10 @@
 		<ProjectReference Include="..\..\engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj" />
 		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 		<ProjectReference Include="..\UnitTest.Core\UnitTest.Core.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="AasSpec.Test\" />
 	</ItemGroup>
 
 </Project>

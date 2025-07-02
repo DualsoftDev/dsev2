@@ -13,6 +13,8 @@
 
 	<ItemGroup>
 		<Content Include="AasSyntax.md" />
+		<Content Include="maximal.json" />
+		<Content Include="minimal.json" />
 		<Compile Include="Core.Aas.fs" />
 		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.To.Json.ViaCode.fs" />
@@ -20,11 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="AasCore.Aas3_0" Version="1.0.4" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<!--<ProjectReference Include="..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />-->
+		<ProjectReference Include="..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
 		<ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 	</ItemGroup>
 

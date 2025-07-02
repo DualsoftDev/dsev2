@@ -103,12 +103,12 @@ module CoreToAas =
                 )
 
             //let jGraph = x.GraphToSMC()
-            let ws = x.Works |> map _.ToSMC() |> Seq.cast<JNode>
+            let ws = x.Works |> map _.ToSMC() //|> Seq.cast<JNode>
             let works =
                 J.CreateJObj(
                     idShort = "Works",
                     modelType = A.smc,
-                    values = ws
+                    values = (ws |> Seq.cast<JNode>)
                 )
 
             let arrs = x.Arrows |-> _.ToSMC() |> Seq.cast<JNode>
@@ -119,13 +119,18 @@ module CoreToAas =
                     values = arrs
                 )
 
-            [|flows; arrows; works|]
+            //[|flows; arrows; works|]
 
 
-        /// DsSystem -> JNode(SMC: Submodel Element Collection)
-        member x.ToSMC(): JObj =
-            x.DsNamedObjectToSMC("System")
-                .AddValues(x.collectChildren())
+            J.CreateJObj(
+                //modelType = A.sml,
+                smec = [|flows; arrows; works|] ) |> Array.singleton
+
+
+        ///// DsSystem -> JNode(SMC: Submodel Element Collection)
+        //member x.ToSMC(): JObj =
+        //    x.DsNamedObjectToSMC("System")
+        //        .AddValues(x.collectChildren())
 
         member sys.ToSM(): JObj =
             let sml =
@@ -141,7 +146,7 @@ module CoreToAas =
                     kind = KindType.Instance,
                     semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, A.ridIdentification),
                     //sml = sml,
-                    sml = sys.collectChildren()
+                    smel = sys.collectChildren()
                 )//.AddValues(x.collectChildren())
             sm
 
@@ -163,7 +168,6 @@ module CoreToAas =
                 J.CreateJObj(
                     idShort = "Arrows",
                     modelType = A.smc,
-                    //values = arrowNodes
                     values = arrowNodes
                 )
 
