@@ -301,49 +301,10 @@ module JsonExtensionModule =
                 .SetKeys(keyType, keyValue)
 
 
-        /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
-        ///
-        /// value(typedValue) 와 values 는 양립할 수 없다.
-        /// value : single typed value
-        /// values : multiple values
-        static member CreateJObj<'T>(
-            ?category:Category
-            , ?idShort:string
-            , ?id:string
-            , ?modelType:ModelType
-            , ?semantic:JObj
-            , ?typedValue:'T
-            , ?values:JNode seq      // JNode
-            , ?kind:KindType
-            , ?smec:JNode seq     // SubmodelElementCollection
-            , ?smel:JNode seq     // SubmodelElementList
-        ): JNode =
-            JObj().AddProperties(
-                ?category   = category,
-                ?idShort    = idShort,
-                ?id         = id,
-                ?modelType  = modelType,
-                ?semantic   = semantic,
-                ?value      = typedValue,
-                ?values     = values,
-                ?kind       = kind,
-                ?smec       = smec,
-                ?smel       = smel
-            )
-
-        /// value 속성을 가진 <property> JObj 를 생성
-        (*
-          <idShort>something3fdd3eb4</idShort>
-          <valueType>xs:double</valueType>
-          <value>1234.01234</value>
-        *)
-        static member CreateProp<'T>(idShort:string, value:'T, ?category:Category, ?semantic:JObj): JNode =
-            J.CreateJObj(idShort = idShort, typedValue = value, modelType = ModelType.Property, ?semantic=semantic, ?category=category)
-
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
-        static member CreateIClassFromJson<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClassFromJson<'T> json :?> 'T
+        static member CreateIClassFromJson<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClassFromJsonHelper<'T> json :?> 'T
 
-        static member private createIClassFromJson<'T>(json:string): Aas.IClass =
+        static member private createIClassFromJsonHelper<'T>(json:string): Aas.IClass =
             let jnode = JNode.Parse(json)
             match typeof<'T>.Name with
             | "AdministrativeInformation"           -> Aas.Jsonization.Deserialize.AdministrativeInformationFrom          (jnode)

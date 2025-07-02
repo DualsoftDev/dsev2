@@ -25,7 +25,7 @@ module CoreToAas =
         member private x.collectChildren(): JNode[] =
             let fs = x.Flows |-> _.ToSMC()
             let flows =
-                J.CreateJObj(
+                JObj().AddProperties(
                     idShort = "Flows",
                     modelType = A.smc,
                     values = fs
@@ -33,7 +33,7 @@ module CoreToAas =
 
             let ws = x.Works |-> _.ToSMC()
             let works =
-                J.CreateJObj(
+                JObj().AddProperties(
                     idShort = "Works",
                     modelType = A.smc,
                     values = ws
@@ -41,7 +41,7 @@ module CoreToAas =
 
             let arrs = x.Arrows |-> _.ToSMC()
             let arrows =
-                J.CreateJObj(
+                JObj().AddProperties(
                     idShort = "Arrows",
                     modelType = A.smc,
                     values = arrs
@@ -49,44 +49,77 @@ module CoreToAas =
 
             [|flows; arrows; works|]
 
-
-            //J.CreateJObj(
-            //    //modelType = A.sml,
-            //    smec = [|flows; arrows; works|] ) |> Array.singleton
-
-
-        ///// DsSystem -> JNode(SMC: Submodel Element Collection)
-        //member x.ToSMC(): JObj =
-        //    x.DsNamedObjectToSMC("System")
-        //        .AddValues(x.collectChildren())
-
         member sys.ToSM(): JNode =
-            let sml =
-                let sysName = J.CreateProp("Name", sys.Name)
-                let flows = sys.Flows.Map _.ToSMC()
-                ([sysName] @ flows) //|> map (fun smc -> smc.WrapWith(modelType = ModelType.SubmodelElement))
             let sm =
-                J.CreateJObj(
+                JObj().AddProperties(
                     category = Category.CONSTANT,
                     modelType = ModelType.Submodel,
                     idShort = "Identification",
                     id = A.ridIdentification,
                     kind = KindType.Instance,
                     semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, A.ridIdentification),
-                    //sml = sml,
                     smel = sys.collectChildren()
-                )//.AddValues(x.collectChildren())
+                )
             sm
 
 
         [<Obsolete("TODO")>] member x.ToENV(): JObj = null
         [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
 
+    type NjButton with
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                //yield! seq {
+                //} |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("Button", props)
+
+    type NjLamp with
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                //yield! seq {
+                //} |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("Lamp", props)
+    type NjCondition with
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                //yield! seq {
+                //} |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("Condition", props)
+    type NjAction with
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                //yield! seq {
+                //} |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("Action", props)
 
     type NjFlow with    // ToSMC
         /// DsFlow -> JNode
         member x.ToSMC(): JNode =
-            x.DsNamedObjectToSMC("Flow")
+            let buttons    = x.Buttons    |-> _.ToSMC() |> toSMC "Buttons"
+            let lamps      = x.Lamps      |-> _.ToSMC() |> toSMC "Lamps"
+            let conditions = x.Conditions |-> _.ToSMC() |> toSMC "Conditions"
+            let actions    = x.Actions    |-> _.ToSMC() |> toSMC "Actions"
+
+            let props = [|
+                yield! x.CollectProperties()
+                //yield! seq {
+                //} |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("Flow", props)
+            |> _.AddValues([|buttons; lamps; conditions; actions|] |> choose id)
 
     type NjCall with
         /// DsAction -> JNode
@@ -120,69 +153,35 @@ module CoreToAas =
 
             JObj().ToSMC("Edge", props)
 
-
-        //member x.ToSMC(): JNode =
-        //    let source = J.CreateProp( idShort = "Source", value = x.Source )
-        //    let target = J.CreateProp( idShort = "Target", value = x.Target )
-        //    let et     = J.CreateProp( idShort = "EdgeType", value = x.Type.ToString() )
-
-        //    let edge   = J.CreateJObj( idShort = "Edge", modelType = A.smc, values = [| et; source; target; |] )
-        //    edge
-
-
-    let toSMC (idShort:string) (values:JNode seq) =
-        JObj()
-            .Set(N.IdShort, idShort)
-            .Set(N.ModelType, ModelType.SubmodelElementCollection.ToString())
-            |> _.AddValues(values)
+    let toSMC (idShort:string) (values:JNode[]) =
+        match values with
+        | [||] -> None
+        | _ ->
+            JObj()
+                .Set(N.IdShort, idShort)
+                .Set(N.ModelType, ModelType.SubmodelElementCollection.ToString())
+                |> _.AddValues(values)
+                |> Some
 
     type NjWork with    // ToSMC
         /// DsWork -> JNode
         member x.ToSMC(): JNode =
             let arrows = x.Arrows |-> _.ToSMC() |> toSMC "Arrows"
             let calls  = x.Calls  |-> _.ToSMC() |> toSMC "Calls"
+            let props = [|
+                yield! x.CollectProperties()
+                yield! seq {
+                    JObj().SetProperty(x.FlowGuid, "FlowGuid")
+                    JObj().SetProperty(x.Motion, "Motion")
+                    JObj().SetProperty(x.Script, "Script")
+                    JObj().SetProperty(x.IsFinished, "IsFinished")
+                    JObj().SetProperty(x.NumRepeat, "NumRepeat")
+                    JObj().SetProperty(x.Period, "Period")
+                    JObj().SetProperty(x.Delay, "Delay")
+                } |> choose id |> Seq.cast<JNode>
+            |]
 
-            x.DsNamedObjectToSMC("Work")
-                :?> JObj
-                |> _.AddValues([|arrows; calls|])
+            JObj().ToSMC("Work", props)
+            |> _.AddValues([|arrows; calls|] |> choose id)
 
-
-            //let arrowNodes = x.Arrows |-> _.ToSMC()
-            //let arrows =
-            //    J.CreateJObj(
-            //        idShort = "Arrows",
-            //        modelType = A.smc,
-            //        values = arrowNodes
-            //    )
-
-            //let callNodes = x.Calls |> map _.ToSMC()
-            //let calls =
-            //    J.CreateJObj(
-            //        idShort = "Calls",
-            //        modelType = A.smc,
-            //        values = callNodes
-            //    )
-
-            //x.DsNamedObjectToSMC("Work")
-            //    :?> JObj
-            //    |> _.AddValues([|arrows; calls|])
-
-
-
-
-    //type IWithName with
-    type INjUnique with
-        member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JNode =
-            let modelType = modelType |? A.smc
-            let vals:JNode seq = [
-                    match x with
-                    | :? INamed as named ->
-                        J.CreateProp("Name", named.Name)
-                    | _ -> ()
-                    match x with
-                    | :? IGuid as guid ->
-                        J.CreateProp("Guid", guid.Guid.ToString())
-                    | _ -> ()
-                ]
-            J.CreateJObj( idShort = typeName, modelType = modelType, values=vals)
 

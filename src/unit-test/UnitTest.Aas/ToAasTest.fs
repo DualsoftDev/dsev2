@@ -2,12 +2,8 @@ namespace T.Core
 
 open Dual.Ev2
 open Dual.Ev2.Aas
-open Dual.Ev2.Aas.CoreToJsonViaCode
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
-open Dual.Common.Base
-open System
-open Dual.Common.Base
 open Ev2.Core.FS
 
 
@@ -112,7 +108,7 @@ module ToAasTest =
             let submodel = J.CreateIClassFromJson<Aas.Submodel>(sm.ToJsonString())
             let xml = submodel.ToXml()
 
-            let xxx = NjSystem.FromISubmodel(submodel)
+            let njSystem2 = NjSystem.FromISubmodel(submodel)
 
 
             //let smc = njSystem.ToSMC()

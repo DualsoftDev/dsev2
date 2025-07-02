@@ -26,12 +26,8 @@ module CoreFromAas =
             let sm = J.CreateIClassFromXml<Environment>(xml).Submodels.First()
             NjSystem.FromISubmodel(sm)
 
-        [<Obsolete("TODO: ISubmodel 에서 NjSystem 구축 코드 작성")>]
         static member FromISubmodel(submodel:ISubmodel): NjSystem =
             assert(submodel.IdShort.IsOneOf("Identification", "System"))
-            //submodel.SubmodelElements[0].
-            //let name = submodel.IdShort
-            //getNull<NjSystem>()
 
             let getSMC idShort =
                 submodel.SubmodelElements
@@ -68,7 +64,7 @@ module CoreFromAas =
             NjArrow(
                 Source   = props["Source"]
                 , Target = props["Target"]
-                , Type   = props["EdgeType"] )
+                , Type   = props["Type"] )
 
     type NjFlow with
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
