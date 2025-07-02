@@ -100,6 +100,13 @@ module ToAasTest =
         [<Test>]
         member _.``System: instance -> Aas Test`` () =
             let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.FromRuntime
+
+            let sm = njSystem.Works[0].Calls[0].ToSMC()
+            let json = sm.Stringify()
+            let submodel = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(sm.ToJsonString())
+            ()
+
+
             let sm = njSystem.ToSM()
             let json = sm.Stringify()
             let submodel = J.CreateIClassFromJson<Aas.Submodel>(sm.ToJsonString())

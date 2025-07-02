@@ -71,7 +71,7 @@ let dsJson = """
             "ac98ee1a-70e9-46c5-844f-d65c3d7a8157"
           ],
           "AutoConditions": "[\r\n  \"AutoPre 테스트 1\",\r\n  \"AutoConditions 테스트 2\"\r\n]",
-          "CommonConditions": "[\r\n  \"안전조건1\",\r\n  \"안전조건2\"\r\n]",
+          "CommonConditions": "[\r\n  \"CommonCondition1\",\r\n  \"안전조건2\"\r\n]",
           "Timeout": 30
         },
         {

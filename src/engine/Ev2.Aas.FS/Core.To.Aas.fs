@@ -8,93 +8,22 @@ open System
 open Dual.Common.Base
 open Ev2.Core.FS
 
-[<AutoOpen>]
-module CoreGraphToAas =
-    type NjArrow with
-        /// Convert arrow to submodelElementCollection
-        member x.ToSMC(): JObj =
-            let source = J.CreateProp( idShort = "Source", value = x.Source )
-            let target = J.CreateProp( idShort = "Target", value = x.Target )
-            let et     = J.CreateProp( idShort = "EdgeType", value = x.Type.ToString() )
-
-            let edge   = J.CreateJObj( idShort = "Edge", modelType = A.smc, values = [| et; source; target; |] )
-            edge
-
-//    type VertexDTO with
-//        /// Convert EdgeDTO to submodelElementCollection
-//        member x.ToSMC(): JObj =
-//            let xx = x
-//            J.CreateJObj(
-//                idShort = "Vertex",
-//                modelType = A.smc,
-//                values = [|
-//                    J.CreateProp("Guid", x.Guid.ToString())
-//                    J.CreateProp("ContentGuid", x.ContentGuid.ToString())
-//                |]
-//            )
-
-//    (*
-//		<category></category>
-//		<idShort>Document01</idShort>
-//		<semanticId>
-//			<type>ExternalReference</type>
-//			<keys>
-//				<key>
-//					<type>ConceptDescription</type>
-//					<value>0173-1#02-ABI500#001/0173-1#01-AHF579#001*01</value>
-//				</key>
-//			</keys>
-//		</semanticId>
-//    *)
-
-
-//    type GuidVertex with    // ToSMC()
-//        /// Convert GridVertex to submodelElementCollection
-//        member x.ToSMC(): JObj =
-//            assert(false)
-//            null
-
-//    type DsItemWithGraph with
-//        /// IGraph.ToSMC() -> JNode
-//        member x.GraphToSMC(): JObj =
-//            match x with
-//            | :? DsSystem as y -> y.WriteJsonProlog()
-//            | :? DsWork as y -> y.WriteJsonProlog()
-//            | _ -> failwith "ERROR"
-
-//            let vs = x.VertexDTOs |> map _.ToSMC() |> Seq.cast<JNode>
-//            let vs =
-//                J.CreateJObj(
-//                    idShort = "Vertices",
-//                    modelType = A.smc,
-//                    values = vs
-//                )
-
-//            let es = x.EdgeDTOs  |> map _.ToSMC()  |> Seq.cast<JNode>
-//            let es =
-//                J.CreateJObj(
-//                    idShort = "Edges",
-//                    modelType = A.smc,
-//                    values = es
-//                )
-
-//            let graph =
-//                J.CreateJObj(
-//                    idShort = "Graph",
-//                    modelType = A.smc,
-//                    values = [|vs; es|]
-//                )
-//            graph
-
-
-
 
 [<AutoOpen>]
 module CoreToAas =
+    type NjUnique with
+        member x.CollectProperties(): JNode[] =
+            seq {
+                JObj().SetProperty(x.Name, "Name")
+                JObj().SetProperty(x.Parameter, "Parameter")
+                JObj().SetProperty(x.Guid, "Guid")
+                if x.Id.IsSome then
+                    JObj().SetProperty(x.Id.Value, "Id")
+            } |> choose id |> Seq.cast<JNode> |> toArray
 
     type NjSystem with
-        member private x.collectChildren(): JObj[] =
-            let fs = x.Flows |> map _.ToSMC() |> Seq.cast<JNode>
+        member private x.collectChildren(): JNode[] =
+            let fs = x.Flows |-> _.ToSMC()
             let flows =
                 J.CreateJObj(
                     idShort = "Flows",
@@ -102,16 +31,15 @@ module CoreToAas =
                     values = fs
                 )
 
-            //let jGraph = x.GraphToSMC()
-            let ws = x.Works |> map _.ToSMC() //|> Seq.cast<JNode>
+            let ws = x.Works |-> _.ToSMC()
             let works =
                 J.CreateJObj(
                     idShort = "Works",
                     modelType = A.smc,
-                    values = (ws |> Seq.cast<JNode>)
+                    values = ws
                 )
 
-            let arrs = x.Arrows |-> _.ToSMC() |> Seq.cast<JNode>
+            let arrs = x.Arrows |-> _.ToSMC()
             let arrows =
                 J.CreateJObj(
                     idShort = "Arrows",
@@ -119,12 +47,12 @@ module CoreToAas =
                     values = arrs
                 )
 
-            //[|flows; arrows; works|]
+            [|flows; arrows; works|]
 
 
-            J.CreateJObj(
-                //modelType = A.sml,
-                smec = [|flows; arrows; works|] ) |> Array.singleton
+            //J.CreateJObj(
+            //    //modelType = A.sml,
+            //    smec = [|flows; arrows; works|] ) |> Array.singleton
 
 
         ///// DsSystem -> JNode(SMC: Submodel Element Collection)
@@ -132,7 +60,7 @@ module CoreToAas =
         //    x.DsNamedObjectToSMC("System")
         //        .AddValues(x.collectChildren())
 
-        member sys.ToSM(): JObj =
+        member sys.ToSM(): JNode =
             let sml =
                 let sysName = J.CreateProp("Name", sys.Name)
                 let flows = sys.Flows.Map _.ToSMC()
@@ -157,77 +85,94 @@ module CoreToAas =
 
     type NjFlow with    // ToSMC
         /// DsFlow -> JNode
-        member x.ToSMC(): JObj =
+        member x.ToSMC(): JNode =
             x.DsNamedObjectToSMC("Flow")
-
-    type NjWork with    // ToSMC
-        /// DsWork -> JNode
-        member x.ToSMC(): JObj =
-            let arrowNodes = x.Arrows |-> _.ToSMC() |> Seq.cast<JNode> |> toArray
-            let arrows =
-                J.CreateJObj(
-                    idShort = "Arrows",
-                    modelType = A.smc,
-                    values = arrowNodes
-                )
-
-            let callNodes = x.Calls |> map _.ToSMC() |> Seq.cast<JNode> |> toArray
-            let calls =
-                J.CreateJObj(
-                    idShort = "Calls",
-                    modelType = A.smc,
-                    values = callNodes
-                )
-
-            x.DsNamedObjectToSMC("Work")
-                .AddValues([|arrows; calls|])
 
     type NjCall with
         /// DsAction -> JNode
-        member x.ToSMC(): JObj =
-            x.DsNamedObjectToSMC("Call")
-                .AddProperties(values=[
-                    J.CreateJObj(
-                        idShort = "IsDisable"
-                        , modelType = ModelType.Property
-                        , typedValue = x.IsDisabled
-                    )
-                ])
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                yield! seq {
+                    JObj().SetProperty(x.IsDisabled, "IsDisabled")
+                    JObj().SetProperty(x.CommonConditions, "CommonConditions")
+                    JObj().SetProperty(x.AutoConditions, "AutoConditions")
+                    if x.Timeout.IsSome then
+                        JObj().SetProperty(x.Timeout.Value, "Timeout")
+                } |> choose id |> Seq.cast<JNode>
+
+            |]
+
+            JObj().ToSMC("Call", props)
+
+    type NjArrow with
+        /// Convert arrow to submodelElementCollection
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                yield! seq {
+                    JObj().SetProperty(x.Source, "Source")
+                    JObj().SetProperty(x.Target, "Target")
+                    JObj().SetProperty(x.Type, "Type")
+                } |> choose id |> Seq.cast<JNode>
+
+            |]
+
+            JObj().ToSMC("Edge", props)
 
 
-    //type IRtArrow with  // RtArrowBetweenCalls, RtArrowBetweenWorks
-    //    /// DsAction -> JNode
-    //    member x.ToSMC(): JObj =
-    //        x.DsNamedObjectToSMC("Arrow")
-    //            .AddProperties(values=[
-    //                J.CreateJObj(
-    //                    idShort = "IsDisable"
-    //                    , modelType = ModelType.Property
-    //                    //, typedValue = x.IsDisabled
-    //                )
-    //            ])
+        //member x.ToSMC(): JNode =
+        //    let source = J.CreateProp( idShort = "Source", value = x.Source )
+        //    let target = J.CreateProp( idShort = "Target", value = x.Target )
+        //    let et     = J.CreateProp( idShort = "EdgeType", value = x.Type.ToString() )
+
+        //    let edge   = J.CreateJObj( idShort = "Edge", modelType = A.smc, values = [| et; source; target; |] )
+        //    edge
 
 
-//    type DsAutoPre with
-//        /// DsAutoPre -> JNode
-//        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("AutoPre")
+    let toSMC (idShort:string) (values:JNode seq) =
+        JObj()
+            .Set(N.IdShort, idShort)
+            .Set(N.ModelType, ModelType.SubmodelElementCollection.ToString())
+            |> _.AddValues(values)
 
-//    type DsSafety with
-//        /// DsSafety -> JNode
-//        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Safety")
+    type NjWork with    // ToSMC
+        /// DsWork -> JNode
+        member x.ToSMC(): JNode =
+            let arrows = x.Arrows |-> _.ToSMC() |> toSMC "Arrows"
+            let calls  = x.Calls  |-> _.ToSMC() |> toSMC "Calls"
 
-//    type DsCommand with
-//        /// DsCommand -> JNode
-//        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Command")
+            x.DsNamedObjectToSMC("Work")
+                :?> JObj
+                |> _.AddValues([|arrows; calls|])
 
-//    type DsOperator with
-//        /// DsOperator -> JNode
-//        member x.ToSMC(): JObj = x.DsNamedObjectToSMC("Operator")
+
+            //let arrowNodes = x.Arrows |-> _.ToSMC()
+            //let arrows =
+            //    J.CreateJObj(
+            //        idShort = "Arrows",
+            //        modelType = A.smc,
+            //        values = arrowNodes
+            //    )
+
+            //let callNodes = x.Calls |> map _.ToSMC()
+            //let calls =
+            //    J.CreateJObj(
+            //        idShort = "Calls",
+            //        modelType = A.smc,
+            //        values = callNodes
+            //    )
+
+            //x.DsNamedObjectToSMC("Work")
+            //    :?> JObj
+            //    |> _.AddValues([|arrows; calls|])
+
+
 
 
     //type IWithName with
     type INjUnique with
-        member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
+        member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JNode =
             let modelType = modelType |? A.smc
             let vals:JNode seq = [
                     match x with
