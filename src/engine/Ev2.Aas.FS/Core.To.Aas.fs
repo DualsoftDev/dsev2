@@ -10,16 +10,7 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreGraphToAas =
-    type RtArrowBetweenCalls with
-        /// Convert arrow to submodelElementCollection
-        member x.ToSMC(): JObj =
-            let source = J.CreateProp( idShort = "Source", value = x.Source )
-            let target = J.CreateProp( idShort = "Target", value = x.Target )
-            let et     = J.CreateProp( idShort = "EdgeType", value = x.Type.ToString() )
-
-            let edge   = J.CreateJObj( idShort = "Edge", modelType = A.smc, values = [| et; source; target; |] )
-            edge
-    type RtArrowBetweenWorks with
+    type NjArrow with
         /// Convert arrow to submodelElementCollection
         member x.ToSMC(): JObj =
             let source = J.CreateProp( idShort = "Source", value = x.Source )
@@ -101,9 +92,8 @@ module CoreGraphToAas =
 [<AutoOpen>]
 module CoreToAas =
 
-    type RtSystem with
-        /// DsSystem -> JNode(SMC: Submodel Element Collection)
-        member x.ToSMC(): JObj =
+    type NjSystem with
+        member private x.collectChildren(): JObj[] =
             let fs = x.Flows |> map _.ToSMC() |> Seq.cast<JNode>
             let flows =
                 J.CreateJObj(
@@ -129,14 +119,18 @@ module CoreToAas =
                     values = arrs
                 )
 
+            [|flows; arrows; works|]
 
+
+        /// DsSystem -> JNode(SMC: Submodel Element Collection)
+        member x.ToSMC(): JObj =
             x.DsNamedObjectToSMC("System")
-                .AddValues([|flows; arrows; works|])
+                .AddValues(x.collectChildren())
 
-        member x.ToSM(): JObj =
+        member sys.ToSM(): JObj =
             let sml =
-                let sysName = J.CreateProp("Name", x.Name)
-                let flows = x.Flows.Map _.ToSMC()
+                let sysName = J.CreateProp("Name", sys.Name)
+                let flows = sys.Flows.Map _.ToSMC()
                 ([sysName] @ flows) //|> map (fun smc -> smc.WrapWith(modelType = ModelType.SubmodelElement))
             let sm =
                 J.CreateJObj(
@@ -146,8 +140,9 @@ module CoreToAas =
                     id = A.ridIdentification,
                     kind = KindType.Instance,
                     semantic = J.CreateSemantic(SemanticIdType.ModelReference, KeyType.Submodel, A.ridIdentification),
-                    sml = sml
-                )//.AddValues([|x.ToSMC()|])
+                    //sml = sml,
+                    sml = sys.collectChildren()
+                )//.AddValues(x.collectChildren())
             sm
 
 
@@ -155,34 +150,35 @@ module CoreToAas =
         [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
 
 
-    type RtFlow with    // ToSMC
+    type NjFlow with    // ToSMC
         /// DsFlow -> JNode
         member x.ToSMC(): JObj =
             x.DsNamedObjectToSMC("Flow")
 
-    type RtWork with    // ToSMC
+    type NjWork with    // ToSMC
         /// DsWork -> JNode
         member x.ToSMC(): JObj =
-            let arrs = x.Arrows |-> _.ToSMC() |> Seq.cast<JNode>
+            let arrowNodes = x.Arrows |-> _.ToSMC() |> Seq.cast<JNode> |> toArray
             let arrows =
                 J.CreateJObj(
                     idShort = "Arrows",
                     modelType = A.smc,
-                    values = arrs
+                    //values = arrowNodes
+                    values = arrowNodes
                 )
 
-            let acts = x.Calls |> map _.ToSMC() |> Seq.cast<JNode>
-            let actions =
+            let callNodes = x.Calls |> map _.ToSMC() |> Seq.cast<JNode> |> toArray
+            let calls =
                 J.CreateJObj(
                     idShort = "Calls",
                     modelType = A.smc,
-                    values = acts
+                    values = callNodes
                 )
 
             x.DsNamedObjectToSMC("Work")
-                .AddValues([|arrows; actions|])
+                .AddValues([|arrows; calls|])
 
-    type RtCall with
+    type NjCall with
         /// DsAction -> JNode
         member x.ToSMC(): JObj =
             x.DsNamedObjectToSMC("Call")
@@ -226,7 +222,7 @@ module CoreToAas =
 
 
     //type IWithName with
-    type IRtUnique with
+    type INjUnique with
         member internal x.DsNamedObjectToSMC(typeName:string, ?modelType:ModelType): JObj =
             let modelType = modelType |? A.smc
             let vals:JNode seq = [

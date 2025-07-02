@@ -86,8 +86,8 @@ module ToAasTest =
         [<Test>]
         member _.``System: instance -> JObj(SM) -> Json ConversionTest`` () =
 
-            let system2 = RtSystem.ImportFromJson(dsJson)
-            let json = system2.ToSM().Stringify()
+            let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.FromRuntime
+            let json = njSystem.ToSM().Stringify()
             //writeClipboard(json)
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
@@ -99,6 +99,18 @@ module ToAasTest =
     type T2() =
         [<Test>]
         member _.``System: instance -> Aas Test`` () =
-            let system2 = RtSystem.FromJson(dsJson)
-            let smc = system2.ToSMC()
+            let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.FromRuntime
+            let sm = njSystem.ToSM()
+            let json = sm.Stringify()
+            let submodel = J.CreateIClassFromJson<Aas.Submodel>(sm.ToJsonString())
+            let xml = submodel.ToXml()
+
+            let xxx = NjSystem.FromISubmodel(submodel)
+
+
+            //let smc = njSystem.ToSMC()
+            //let yyy = smc.ToJsonString()
+            //let zzz = smc.ToString()
+            //let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(smc.ToJsonString()).ToXml()
+
             ()

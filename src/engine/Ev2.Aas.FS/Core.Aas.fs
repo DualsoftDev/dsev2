@@ -288,20 +288,20 @@ module JsonExtensionModule =
 
         /// category, idShort, id, modelType, semanticId 등의 속성을 가진 JObj 를 생성
         ///
-        /// value 와 values 는 양립할 수 없다.
+        /// value(typedValue) 와 values 는 양립할 수 없다.
         /// value : single typed value
         /// values : multiple values
         static member CreateJObj<'T>(
-            ?category:Category,
-            ?idShort:string,
-            ?id:string,
-            ?modelType:ModelType,
-            ?semantic:JObj,
-            ?typedValue:'T,
-            ?values:JNode seq,
-            ?kind:KindType,
-            ?smc:JObj seq,
-            ?sml:JObj seq
+            ?category:Category
+            , ?idShort:string
+            , ?id:string
+            , ?modelType:ModelType
+            , ?semantic:JObj
+            , ?typedValue:'T
+            , ?values:JNode seq
+            , ?kind:KindType
+            , ?smc:JObj seq     // SubmodelElementCollection
+            , ?sml:JObj seq     // SubmodelElementList
         ): JObj =
             JObj().AddProperties(
                 ?category   = category,
