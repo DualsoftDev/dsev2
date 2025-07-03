@@ -101,8 +101,10 @@ module internal DsCopyModule =
 
 
         | (:? RtCall) | (:? NjCall) | (:? ORMCall) ->   // 미처리 : ApiCalls, Status4
-            let fj s = EmJson.FromJson<ResizeArray<string>> s
-            let tj s = EmJson.ToJson s
+            /// From Json
+            let fj (s:string) = if s.IsNullOrEmpty() then ResizeArray() else EmJson.FromJson<ResizeArray<string>> s
+            /// To Json
+            let tj obj = EmJson.ToJson obj
             let s =
                 match sbx with
                 | :? RtCall  as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; (*ApiCall=s.ApiCall; Status4*) |}

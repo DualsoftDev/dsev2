@@ -12,6 +12,7 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 open Dual.Common.Db.FS
+open System.Diagnostics
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -40,10 +41,18 @@ module NewtonsoftJsonModules =
         /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
         [<JsonProperty(Order = -101)>] member val private RuntimeType = let name = this.GetType().Name in Regex.Replace(name, "^Nj", "")
 
+        // RtUnique     -> NjUnique -> json 저장 시, RuntimeObject Some 값 이어야 함.
+        // AAS Submodel -> NjUnique -> json 저장 시, RuntimeObject None 값 허용
         [<JsonIgnore>]
         member internal x.RuntimeObject
-            with get():Unique   = x.RtObject >>= tryCast<Unique> |?? (fun () -> failwithlog "RtObject not found in DynamicDictionary.  This is a bug." )
-            and  set (v:Unique) = x.RtObject <- Some (box v :?> IRtUnique)
+            with get():Unique =
+                x.RtObject
+                >>= tryCast<Unique>
+                |?? (fun () ->
+                    Trace.WriteLine "RtObject not found in DynamicDictionary.  이 상황은 AAS 로부터 생성한 경우에 한해 허용됨."
+                    getNull<Unique>())
+            and set (v:Unique) =
+                x.RtObject <- Some (box v :?> IRtUnique)
 
 
     let mutable internal fwdOnNsJsonSerializing:  INjObject->unit = let dummy (dsObj:INjObject) = failwithlog "Should be reimplemented." in dummy
@@ -51,7 +60,11 @@ module NewtonsoftJsonModules =
 
 
     /// NjUnique 객체의 RuntimeObject 를 'T type 으로 casting 해서 가져온다.
-    let getRuntimeObject<'T when 'T :> RtUnique> (njObj:NjUnique) : 'T = njObj.RuntimeObject :?> 'T
+    let getRuntimeObject<'T when 'T :> RtUnique and 'T : not struct> (njObj:NjUnique) : 'T =
+        if isItNull njObj.RuntimeObject then
+            getNull<'T>()
+        else
+            njObj.RuntimeObject :?> 'T
 
 
 
@@ -63,7 +76,8 @@ module rec NewtonsoftJsonObjects =
 
     /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 NjUnique 객체에 저장
     let internal fromNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
-        replicateProperties src dst |> ignore
+        if isItNotNull src then
+            replicateProperties src dst |> ignore
         dst
 
 
@@ -358,67 +372,71 @@ module rec NewtonsoftJsonObjects =
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
     let rec internal onNsJsonSerializing (njObj:INjObject) =
-        match njObj with
-        | :? NjUnique as uniq ->
-            uniq |> fromNjUniqINGD uniq.RuntimeObject |> ignore
-        | _ ->
+        let njUnique = njObj |> tryCast<NjUnique>
+        match njUnique |-> _.RuntimeObject with
+        | None ->
+            // RuntimeObject 가 없는 경우는 AAS Submodel 에서 생성한 경우임.
+            // 이 경우는 RuntimeObject 를 채우지 않고, 그냥 넘어감.
             ()
+        | Some runtimeObj ->
+            fromNjUniqINGD runtimeObj njUnique.Value |> ignore
 
-        match njObj with
-        | :? NjProject as njp ->
-            let rtp = njp |> getRuntimeObject<RtProject>
+            match njObj with
+            | :? NjProject as njp ->
+                let rtp = njp |> getRuntimeObject<RtProject>
 
-            njp.MyPrototypeSystems <-
-                rtp.MyPrototypeSystems
-                |> distinct
-                |-> NjSystem.FromRuntime
-                |> toArray
+                njp.MyPrototypeSystems <-
+                    rtp.MyPrototypeSystems
+                    |> distinct
+                    |-> NjSystem.FromRuntime
+                    |> toArray
 
-            njp.ImportedPrototypeSystems <-
-                rtp.ImportedPrototypeSystems
-                |> distinct
-                |-> NjSystem.FromRuntime
-                |> toArray
+                njp.ImportedPrototypeSystems <-
+                    rtp.ImportedPrototypeSystems
+                    |> distinct
+                    |-> NjSystem.FromRuntime
+                    |> toArray
 
-            let rtToSystemLoadType (rt:RtSystem) =
-                match rt.PrototypeSystemGuid with
-                | Some guid ->
-                    NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
-                | None ->
-                    let nj = rt |> NjSystem.FromRuntime
-                    NjSystemLoadType.LocalDefinition nj
+                let rtToSystemLoadType (rt:RtSystem) =
+                    match rt.PrototypeSystemGuid with
+                    | Some guid ->
+                        NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
+                    | None ->
+                        let nj = rt |> NjSystem.FromRuntime
+                        NjSystemLoadType.LocalDefinition nj
 
-            njp.ActiveSystems  <- rtp.ActiveSystems  |-> NjSystem.FromRuntime |> toArray
-            njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
+                njp.ActiveSystems  <- rtp.ActiveSystems  |-> NjSystem.FromRuntime |> toArray
+                njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
 
-            njp.Database <- rtp.Database
-            njp.MyPrototypeSystems |> iter onNsJsonSerializing
-            njp.ImportedPrototypeSystems |> iter onNsJsonSerializing
+                njp.Database <- rtp.Database
+                njp.MyPrototypeSystems |> iter onNsJsonSerializing
+                njp.ImportedPrototypeSystems |> iter onNsJsonSerializing
 
-        | :? NjSystem as njs ->
-            njs.RuntimeObject |> replicateProperties njs
+            | :? NjSystem as njs ->
+                if isItNotNull njs.RuntimeObject then
+                    njs.RuntimeObject |> replicateProperties njs |> ignore
 
-            njs.Arrows   |> iter onNsJsonSerializing
-            njs.Flows    |> iter onNsJsonSerializing
-            njs.Works    |> iter onNsJsonSerializing
-            njs.ApiDefs  |> iter onNsJsonSerializing
-            njs.ApiCalls |> iter onNsJsonSerializing
+                njs.Arrows   |> iter onNsJsonSerializing
+                njs.Flows    |> iter onNsJsonSerializing
+                njs.Works    |> iter onNsJsonSerializing
+                njs.ApiDefs  |> iter onNsJsonSerializing
+                njs.ApiCalls |> iter onNsJsonSerializing
 
-        | :? NjWork as njw ->
-            let rtw = njw |> getRuntimeObject<RtWork>
-            njw.Arrows |> iter onNsJsonSerializing
-            njw.Calls  |> iter onNsJsonSerializing
+            | :? NjWork as njw ->
+                let rtw = njw |> getRuntimeObject<RtWork>
+                njw.Arrows |> iter onNsJsonSerializing
+                njw.Calls  |> iter onNsJsonSerializing
 
-        | :? NjCall as njc ->
-            let rtc = njc |> getRuntimeObject<RtCall>
-            ()
+            | :? NjCall as njc ->
+                let rtc = njc |> getRuntimeObject<RtCall>
+                ()
 
-        | (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
-            (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
-            ()
+            | (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
+                (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
+                ()
 
-        | _ ->
-            failwith "ERROR.  확장 필요?"
+            | _ ->
+                failwith "ERROR.  확장 필요?"
 
 
 

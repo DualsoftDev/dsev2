@@ -8,6 +8,8 @@ open System
 open Dual.Common.Base
 open System.Collections.Generic
 open System.Diagnostics
+open System.Globalization
+
 
 /// System.Text.Json.Nodes.JsonNode 의 축약
 type JNode = System.Text.Json.Nodes.JsonNode
@@ -26,6 +28,14 @@ module AasSemantics =
             "Id",               "https://dualsoft.com/aas/unique/id"
             "Parameter",        "https://dualsoft.com/aas/unique/parameter"
 
+            "IRI",              "https://dualsoft.com/aas/system/iri"
+            "Author",           "https://dualsoft.com/aas/system/author"
+            "EngineVersion",    "https://dualsoft.com/aas/system/engineVersion"
+            "LangVersion",      "https://dualsoft.com/aas/system/langVersion"
+            "Description",      "https://dualsoft.com/aas/system/description"
+            "DateTime",         "https://dualsoft.com/aas/system/dateTime"
+
+
             "Works",            "https://dualsoft.com/aas/plural/works"
             "Arrows",           "https://dualsoft.com/aas/plural/arrows"
             "Calls",            "https://dualsoft.com/aas/plural/calls"
@@ -35,6 +45,7 @@ module AasSemantics =
             "Conditions",       "https://dualsoft.com/aas/plural/conditions"
             "Actions",          "https://dualsoft.com/aas/plural/actions"
 
+            "Detail",           "https://dualsoft.com/aas/singular/detail"
             "Work",             "https://dualsoft.com/aas/singular/work"
             "Arrow",            "https://dualsoft.com/aas/singular/arrow"
             "Call",             "https://dualsoft.com/aas/singular/call"
@@ -230,23 +241,24 @@ module JsonExtensionModule =
                 None
             else
                 match box value with
-                | :? string  as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v)
-                | :? int     as v -> x.Set(N.ValueType, "xs:integer").Set(N.Value, v.ToString())
-                | :? int64   as v -> x.Set(N.ValueType, "xs:long")   .Set(N.Value, v.ToString())
-                | :? double  as v -> x.Set(N.ValueType, "xs:double") .Set(N.Value, v.ToString())
-                | :? single  as v -> x.Set(N.ValueType, "xs:float")  .Set(N.Value, v.ToString())
-                | :? bool    as v -> x.Set(N.ValueType, "xs:boolean").Set(N.Value, v.ToString())
-                | :? Guid    as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v.ToString())
+                | :? string   as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v)
+                | :? int      as v -> x.Set(N.ValueType, "xs:integer").Set(N.Value, v.ToString())
+                | :? int64    as v -> x.Set(N.ValueType, "xs:long")   .Set(N.Value, v.ToString())
+                | :? double   as v -> x.Set(N.ValueType, "xs:double") .Set(N.Value, v.ToString())
+                | :? single   as v -> x.Set(N.ValueType, "xs:float")  .Set(N.Value, v.ToString())
+                | :? bool     as v -> x.Set(N.ValueType, "xs:boolean").Set(N.Value, v.ToString())
+                | :? Guid     as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v.ToString())
+                | :? DateTime as v -> x.Set(N.ValueType, "xs:date")   .Set(N.Value, v.ToString(CultureInfo("en-US")))
                 | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
                 |> Some
 
 
         member x.SetModelType(modelType:ModelType) = x.Set(N.ModelType, modelType.ToString())
 
-        member this.SetSemantic(semanticName:string): JObj =
-            match AasSemantics.map |> Map.tryFind semanticName with
+        member this.SetSemantic(semanticKey:string): JObj =
+            match AasSemantics.map |> Map.tryFind semanticKey with
             | Some semanticId -> this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
-            | None -> failwithf "Not supported semantic name: %s" semanticName
+            | None -> failwithf "Not supported semantic name: %s" semanticKey
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
         member this.TrySetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =

@@ -23,6 +23,21 @@ module CoreToAas =
 
     type NjSystem with
         member private x.collectChildren(): JNode[] =
+            let details =
+                let props = [|
+                    yield! x.CollectProperties()
+                    yield! seq {
+                        JObj().TrySetProperty(x.IRI,                      "IRI")
+                        JObj().TrySetProperty(x.Author,                   "Author")
+                        JObj().TrySetProperty(x.EngineVersion.ToString(), "EngineVersion")
+                        JObj().TrySetProperty(x.LangVersion.ToString(),   "LangVersion")
+                        JObj().TrySetProperty(x.Description,              "Description")
+                        JObj().TrySetProperty(x.DateTime,                 "DateTime")
+                    } |> choose id |> Seq.cast<JNode>
+                |]
+                JObj().ToSMC("Detail", props)
+
+
             let fs = x.Flows |-> _.ToSMC()
             let flows =
                 JObj().AddProperties(
@@ -47,7 +62,7 @@ module CoreToAas =
                     , semanticKey = "Arrows"
                 )
 
-            [|flows; arrows; works|]
+            [| details; flows; arrows; works |]
 
         member sys.ToSM(): JNode =
             let sm =
@@ -124,6 +139,7 @@ module CoreToAas =
     type NjCall with
         /// DsAction -> JNode
         member x.ToSMC(): JNode =
+            let me = x
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
