@@ -14,11 +14,11 @@ module CoreToAas =
     type NjUnique with
         member x.CollectProperties(): JNode[] =
             seq {
-                JObj().SetProperty(x.Name, "Name")
-                JObj().SetProperty(x.Parameter, "Parameter")
-                JObj().SetProperty(x.Guid, "Guid")
+                JObj().TrySetProperty(x.Name, "Name")
+                JObj().TrySetProperty(x.Parameter, "Parameter")
+                JObj().TrySetProperty(x.Guid, "Guid")
                 if x.Id.IsSome then
-                    JObj().SetProperty(x.Id.Value, "Id")
+                    JObj().TrySetProperty(x.Id.Value, "Id")
             } |> choose id |> Seq.cast<JNode> |> toArray
 
     type NjSystem with
@@ -26,26 +26,26 @@ module CoreToAas =
             let fs = x.Flows |-> _.ToSMC()
             let flows =
                 JObj().AddProperties(
-                    idShort = "Flows",
-                    modelType = A.smc,
-                    values = fs
-                ).SetSemantic("Flows")
+                    modelType = A.smc
+                    , values = fs
+                    , semanticKey = "Flows"
+                )
 
             let ws = x.Works |-> _.ToSMC()
             let works =
                 JObj().AddProperties(
-                    idShort = "Works",
-                    modelType = A.smc,
-                    values = ws
-                ).SetSemantic("Works")
+                    modelType = A.smc
+                    , values = ws
+                    , semanticKey = "Works"
+                )
 
             let arrs = x.Arrows |-> _.ToSMC()
             let arrows =
                 JObj().AddProperties(
-                    idShort = "Arrows",
-                    modelType = A.smc,
-                    values = arrs
-                ).SetSemantic("Arrows")
+                    modelType = A.smc
+                    , values = arrs
+                    , semanticKey = "Arrows"
+                )
 
             [|flows; arrows; works|]
 
@@ -57,7 +57,7 @@ module CoreToAas =
                     idShort = "Identification",
                     id = A.ridIdentification,
                     kind = KindType.Instance,
-                    semantic = A.ridIdentification,
+                    semanticKey = A.ridIdentification,
                     smel = sys.collectChildren()
                 )
             sm
@@ -127,11 +127,11 @@ module CoreToAas =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
-                    JObj().SetProperty(x.IsDisabled, "IsDisabled")
-                    JObj().SetProperty(x.CommonConditions, "CommonConditions")
-                    JObj().SetProperty(x.AutoConditions, "AutoConditions")
+                    JObj().TrySetProperty(x.IsDisabled, "IsDisabled")
+                    JObj().TrySetProperty(x.CommonConditions, "CommonConditions")
+                    JObj().TrySetProperty(x.AutoConditions, "AutoConditions")
                     if x.Timeout.IsSome then
-                        JObj().SetProperty(x.Timeout.Value, "Timeout")
+                        JObj().TrySetProperty(x.Timeout.Value, "Timeout")
                 } |> choose id |> Seq.cast<JNode>
 
             |]
@@ -144,21 +144,21 @@ module CoreToAas =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
-                    JObj().SetProperty(x.Source, "Source")
-                    JObj().SetProperty(x.Target, "Target")
-                    JObj().SetProperty(x.Type, "Type")
+                    JObj().TrySetProperty(x.Source, "Source")
+                    JObj().TrySetProperty(x.Target, "Target")
+                    JObj().TrySetProperty(x.Type, "Type")
                 } |> choose id |> Seq.cast<JNode>
 
             |]
 
-            JObj().ToSMC("Edge", props)
+            JObj().ToSMC("Arrow", props)
 
-    let toSMC (idShort:string) (values:JNode[]) =
+    let toSMC (semanticKey:string) (values:JNode[]) =
         match values with
         | [||] -> None
         | _ ->
             JObj()
-                .Set(N.IdShort, idShort)
+                .SetSemantic(semanticKey)
                 .Set(N.ModelType, ModelType.SubmodelElementCollection.ToString())
                 |> _.AddValues(values)
                 |> Some
@@ -171,13 +171,13 @@ module CoreToAas =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
-                    JObj().SetProperty(x.FlowGuid, "FlowGuid")
-                    JObj().SetProperty(x.Motion, "Motion")
-                    JObj().SetProperty(x.Script, "Script")
-                    JObj().SetProperty(x.IsFinished, "IsFinished")
-                    JObj().SetProperty(x.NumRepeat, "NumRepeat")
-                    JObj().SetProperty(x.Period, "Period")
-                    JObj().SetProperty(x.Delay, "Delay")
+                    JObj().TrySetProperty(x.FlowGuid,   "FlowGuid")
+                    JObj().TrySetProperty(x.Motion,     "Motion")
+                    JObj().TrySetProperty(x.Script,     "Script")
+                    JObj().TrySetProperty(x.IsFinished, "IsFinished")
+                    JObj().TrySetProperty(x.NumRepeat,  "NumRepeat")
+                    JObj().TrySetProperty(x.Period,     "Period")
+                    JObj().TrySetProperty(x.Delay,      "Delay")
                 } |> choose id |> Seq.cast<JNode>
             |]
 

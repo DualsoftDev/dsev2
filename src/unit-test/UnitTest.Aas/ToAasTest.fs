@@ -5,6 +5,7 @@ open Dual.Ev2.Aas
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Core.FS
+open Dual.Common.Base
 
 
 module ToAasTest =
@@ -111,9 +112,10 @@ module ToAasTest =
             let njSystem2 = NjSystem.FromISubmodel(submodel)
 
 
-            //let smc = njSystem.ToSMC()
-            //let yyy = smc.ToJsonString()
-            //let zzz = smc.ToString()
-            //let xml = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(smc.ToJsonString()).ToXml()
+
+
+            let json2 = EmJson.ToJson(njSystem2)
+
+            let rtSystem = RtSystem.ImportFromJson(json2)
 
             ()

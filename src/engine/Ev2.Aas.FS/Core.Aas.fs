@@ -7,6 +7,7 @@ open System.Text.Json
 open System
 open Dual.Common.Base
 open System.Collections.Generic
+open System.Diagnostics
 
 /// System.Text.Json.Nodes.JsonNode 의 축약
 type JNode = System.Text.Json.Nodes.JsonNode
@@ -29,6 +30,20 @@ module AasSemantics =
             "Arrows",           "https://dualsoft.com/aas/plural/arrows"
             "Calls",            "https://dualsoft.com/aas/plural/calls"
             "Flows",            "https://dualsoft.com/aas/plural/flows"
+            "Buttons",          "https://dualsoft.com/aas/plural/buttons"
+            "Lamps",            "https://dualsoft.com/aas/plural/lamps"
+            "Conditions",       "https://dualsoft.com/aas/plural/conditions"
+            "Actions",          "https://dualsoft.com/aas/plural/actions"
+
+            "Work",             "https://dualsoft.com/aas/singular/work"
+            "Arrow",            "https://dualsoft.com/aas/singular/arrow"
+            "Call",             "https://dualsoft.com/aas/singular/call"
+            "Flow",             "https://dualsoft.com/aas/singular/flow"
+            "Button",           "https://dualsoft.com/aas/singular/button"
+            "Lamp",             "https://dualsoft.com/aas/singular/lamp"
+            "Condition",        "https://dualsoft.com/aas/singular/condition"
+            "Action",           "https://dualsoft.com/aas/singular/action"
+
 
             "FlowGuid",         "https://dualsoft.com/aas/work/flowGuid"
             "Motion",           "https://dualsoft.com/aas/work/motion"
@@ -41,6 +56,7 @@ module AasSemantics =
             "Type",             "https://dualsoft.com/aas/arrow/type"
             "Source",           "https://dualsoft.com/aas/arrow/source"
             "Target",           "https://dualsoft.com/aas/arrow/target"
+            "Call",             "https://dualsoft.com/aas/call/call"
             "Timeout",          "https://dualsoft.com/aas/call/timeout"
             "IsDisabled",       "https://dualsoft.com/aas/call/isDisabled"
             "CommonConditions", "https://dualsoft.com/aas/call/commonConditions"
@@ -233,31 +249,35 @@ module JsonExtensionModule =
             | None -> failwithf "Not supported semantic name: %s" semanticName
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
-        member this.SetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =
-            let counters = counters |? thePropertyCounter // 전역 property counter 사용
-            let count =
-                if counters.ContainsKey(name) then
-                    let current = counters.[name]
-                    counters.[name] <- current + 1
-                    current + 1
-                else
-                    counters.[name] <- 0
-                    0
+        member this.TrySetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =
+            if name = "Source" then
+                noop()
 
-            let idShort = if count = 0 then name else sprintf "%s%d" name count
-
-            let semanticId =
-                AasSemantics.map
-                |> Map.tryFind name
 
             match this.SetTypedValue(value) with
             | Some jobj ->
-                jobj
+                let counters = counters |? thePropertyCounter // 전역 property counter 사용
+                let count =
+                    if counters.ContainsKey(name) then
+                        let current = counters.[name]
+                        counters.[name] <- current + 1
+                        current + 1
+                    else
+                        counters.[name] <- 0
+                        0
+
+                let idShort = if count = 0 then name else sprintf "%s%d" name count
+
+                jobj.SetSemantic(name)
                     .Set(N.IdShort, idShort)
                     .Set(N.ModelType, ModelType.Property.ToString())
-                    .SetSemantic(name)
                 |> Some
-            | None -> None
+
+            | None ->
+                Trace.WriteLine $"Failed to set property [{name}] with value = [{value}]"
+                //if not <| name.IsOneOf("Parameter", "Name") then
+                //    Debugger.Break() // value 가 null 이면 None 반환
+                None
 
 
         (*
@@ -309,10 +329,10 @@ module JsonExtensionModule =
 
         member x.AddProperties<'T>(
             ?category:Category,
-            ?idShort:string,
+            ?semanticKey:string,
             ?id:string,
+            ?idShort:string,
             ?modelType:ModelType,
-            ?semantic:string,
             ?value:'T,
             ?values:JNode seq,
             ?kind:KindType,
@@ -321,21 +341,21 @@ module JsonExtensionModule =
         ): JObj =
             assert(value.IsNone || values.IsNone)
             x |> tee(fun j ->
-                category  .Iter(fun y  -> j.Set(N.Category,  y.ToString()) |> ignore)
-                modelType .Iter(fun y  -> j.Set(N.ModelType, y.ToString()) |> ignore)
-                idShort   .Iter(fun y  -> j.Set(N.IdShort,   y)            |> ignore)
-                id        .Iter(fun y  -> j.Set(N.Id,        y)            |> ignore)
-                semantic  .Iter(fun y  -> j.SetSemantic(y)                 |> ignore)
-                value     .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
-                values    .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
-                kind      .Iter(fun y ->  j.Set(N.Kind, y.ToString())      |> ignore)
-                smec      .Iter(fun ys -> j.Set(N.SubmodelElementCollection, J.CreateJArr ys) |> ignore)
-                smel      .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
+                category   .Iter(fun y  -> j.Set(N.Category,  y.ToString()) |> ignore)
+                modelType  .Iter(fun y  -> j.Set(N.ModelType, y.ToString()) |> ignore)
+                semanticKey.Iter(fun y  -> j.SetSemantic(y)                 |> ignore)
+                idShort    .Iter(fun y  -> j.Set(N.IdShort,   y)            |> ignore)
+                id         .Iter(fun y  -> j.Set(N.Id,        y)            |> ignore)
+                value      .Iter(fun y  -> j.SetTypedValue(y)               |> ignore)
+                values     .Iter(fun ys -> j.AddValues(ys)                  |> ignore)
+                kind       .Iter(fun y ->  j.Set(N.Kind, y.ToString())      |> ignore)
+                smec       .Iter(fun ys -> j.Set(N.SubmodelElementCollection, J.CreateJArr ys) |> ignore)
+                smel       .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
             )
 
-        member x.ToSMC(idShort:string, values:JNode seq): JObj =
+        member x.ToSMC(semanticKey:string, values:JNode seq): JObj =
             x.AddProperties(
-                idShort = idShort,
+                semanticKey = semanticKey,
                 modelType = A.smc,
                 values = values
             )

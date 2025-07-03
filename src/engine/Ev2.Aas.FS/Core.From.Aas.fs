@@ -13,22 +13,45 @@ open AasCore.Aas3_0
 
 [<AutoOpen>]
 module PropModule =
-    let tryGetPropValueByCategory (smc: SubmodelElementCollection) (category:string): string option =
-        smc.Value
-        |> Seq.tryPick (function
-            | :? Property as p when p.Category = category -> Some p.Value
-            | _ -> None)
+    /// SemanticId 키 매칭 유틸
+    let private hasSemanticKey (semanticKey: string) (semantic: IHasSemantics) =
+        let xxx =
+            if semantic.SemanticId <> null then
+                semantic.SemanticId.Keys
+            else
+                null
 
-    let tryGetPropValueBySemanticKey (smc: SubmodelElementCollection) (semanticKey:string): string option =
-        let semanticId = AasSemantics.map[semanticKey]
-        smc.Value
-        |> Seq.tryPick (function
-            | :? Property as p when
-                p.SemanticId <> null
-                &&  p.SemanticId.Keys
-                    |> Seq.exists (fun k -> k.Value = semanticId) ->
-                Some p.Value
-            | _ -> None)
+        semantic.SemanticId <> null &&
+        semantic.SemanticId.Keys
+        |> Seq.exists (fun k -> k.Value = AasSemantics.map[semanticKey])
+
+    type SubmodelElementCollection with
+        member smc.TryGetPropValueByCategory (category:string): string option =
+            smc.Value
+            |> Seq.tryPick (function
+                | :? Property as p when p.Category = category -> Some p.Value
+                | _ -> None)
+
+        member smc.TryGetPropValueBySemanticKey (semanticKey:string): string option =
+            let semanticId = AasSemantics.map[semanticKey]
+            smc.Value
+            |> Seq.tryPick (function
+                | :? Property as p when hasSemanticKey semanticKey p -> Some p.Value
+                | _ -> None)
+
+        member smc.GetPropValueBySemanticKey semanticKey =
+            smc.TryGetPropValueBySemanticKey semanticKey |> Option.get
+
+        member smc.EnumerateChildrenSMC(semanticKey: string): SubmodelElementCollection [] =
+            let semanticId = AasSemantics.map[semanticKey]
+            smc.Value
+            >>= (function
+                | :? SubmodelElementCollection as child when hasSemanticKey semanticKey child -> [child]
+                | _ -> [])
+            |> toArray
+
+        member smc.TryFindChildSMC(semanticKey: string): SubmodelElementCollection option =
+            smc.EnumerateChildrenSMC semanticKey |> tryHead
 
 
 [<AutoOpen>]
@@ -81,100 +104,35 @@ module CoreFromAas =
 
     type NjArrow with
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
-            let props =
-                smc.Value |> Seq.choose (fun sm ->
-                    match sm with
-                    | :? AasCore.Aas3_0.Property as p -> Some(p.IdShort, p.Value)
-                    | _ -> None
-                ) |> Map.ofSeq
-
-            let src = tryGetPropValueBySemanticKey smc "Source" |> Option.get
-            let tgt = tryGetPropValueBySemanticKey smc "Target" |> Option.get
-            let typ = tryGetPropValueBySemanticKey smc "Type" |> Option.get
-            NjArrow(
-                Source   = src
-                , Target = tgt
-                , Type   = typ)
+            let src = smc.GetPropValueBySemanticKey "Source"
+            let tgt = smc.GetPropValueBySemanticKey "Target"
+            let typ = smc.GetPropValueBySemanticKey "Type"
+            NjArrow( Source=src, Target=tgt, Type=typ)
 
     type NjFlow with
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
-            let name =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? AasCore.Aas3_0.Property as p when p.IdShort = "Name" -> Some p.Value
-                    | _ -> None)
-                |? "Unnamed"
-
-            let guid =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? AasCore.Aas3_0.Property as p when p.IdShort = "Guid" -> Some(Guid.Parse(p.Value))
-                    | _ -> None)
-                |? Guid.NewGuid()
+            let name = smc.GetPropValueBySemanticKey "Name"
+            let guid = smc.GetPropValueBySemanticKey "Guid" |> Guid.Parse
 
             NjFlow( Name = name, Guid = guid)
 
 
     type NjWork with
         static member FromSMC(smc: SubmodelElementCollection): NjWork =
-            let name =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? AasCore.Aas3_0.Property as p when p.IdShort = "Name" -> Some p.Value
-                    | _ -> None)
-                |? "Unnamed"
+            let name   = smc.GetPropValueBySemanticKey "Name"
+            let guid   = smc.GetPropValueBySemanticKey "Guid" |> Guid.Parse
 
-            let guid =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? AasCore.Aas3_0.Property as p when p.IdShort = "Guid" -> Some(Guid.Parse(p.Value))
-                    | _ -> None)
-                |? Guid.NewGuid()
-
-            let calls =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? SubmodelElementCollection as col when col.IdShort = "Calls" ->
-                        Some (
-                            col.Value
-                            |> Seq.choose (fun elem ->
-                                match elem with
-                                | :? SubmodelElementCollection as call -> Some(NjCall.FromSMC(call))
-                                | _ -> None
-                            )
-                            |> toArray
-                        )
-                    | _ -> None
-                ) |? [||]
-
-            let arrows =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? SubmodelElementCollection as col when col.IdShort = "Arrows" ->
-                        Some (
-                            col.Value
-                            |> Seq.choose (fun elem ->
-                                match elem with
-                                | :? SubmodelElementCollection as arrow -> Some(NjArrow.FromSMC(arrow))
-                                | _ -> None
-                            )
-                            |> toArray
-                        )
-                    | _ -> None
-                ) |? [||]
+            (* AAS 구조상 Work/Calls/Call[], Work/Arrows/Arrow[] 형태로 존재 *)
+            let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Call")  |? [||] |-> NjCall.FromSMC
+            let arrows = smc.TryFindChildSMC "Arrows" |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Arrow") |? [||] |-> NjArrow.FromSMC
 
             NjWork( Name = name, Guid = guid, Calls = calls, Arrows = arrows)
 
     type NjCall with
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
             let isDisabled =
-                smc.Value
-                |> Seq.tryPick (function
-                    | :? AasCore.Aas3_0.Property as p when p.IdShort = "IsDisable" ->
-                        match Boolean.TryParse(p.Value) with
-                        | true, v -> Some v
-                        | _ -> None
-                    | _ -> None)
+                smc.TryGetPropValueBySemanticKey "IsDisabled"
+                >>= Parse.TryBool
                 |? false
 
             NjCall(IsDisabled = isDisabled) //, Name = smc.IdShort, Guid = Guid.NewGuid())
