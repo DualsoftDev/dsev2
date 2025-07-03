@@ -104,10 +104,10 @@ module ToAasTest =
             ()
 
 
-            let sm = njSystem.ToSM()
-            let json = sm.Stringify()
-            let submodel = J.CreateIClassFromJson<Aas.Submodel>(sm.ToJsonString())
-            let xml = submodel.ToXml()
+            let jSm:JNode = njSystem.ToSM()
+            let aasJson = jSm.Stringify()
+            let submodel = J.CreateIClassFromJson<Aas.Submodel>(aasJson)
+            let aasXml = submodel.ToXml()
 
             let njSystem2 = NjSystem.FromISubmodel(submodel)
 
