@@ -212,9 +212,17 @@ module CoreFromAas =
             let timeout          = smc.TryGetPropValue<int>  "Timeout"
             let callType         = smc.TryGetPropValue       "CallType"         |? null
 
-            let apiCalls         = smc.TryGetPropValue       "ApiCalls"         |? null
 
-            // TODO: CommonConditions, AutoConditions, Timeout, CallType, Status4, etc.
+            let apiCalls =
+                match smc.TryGetPropValue "ApiCalls" with
+                | Some guids ->
+                    let inner = guids.Trim().TrimStart('[', '|').TrimEnd('|', ']').Trim()
+                    if String.IsNullOrEmpty(inner) then [||]
+                    else inner.Split(';') |-> Guid.Parse
+                | None -> [||]
+
+
+            // Status4 는 저장 안함.  DB 전용
 
             NjCall(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , IsDisabled = isDisabled
@@ -222,7 +230,7 @@ module CoreFromAas =
                 , AutoConditions = autoConditions
                 , Timeout = timeout
                 , CallType = callType
-                //, ApiCalls = apiCalls     // Guid[] type
+                , ApiCalls = apiCalls     // Guid[] type
                 )
 
 

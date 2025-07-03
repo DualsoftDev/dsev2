@@ -9,6 +9,7 @@ open Dual.Common.Base
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
+open Newtonsoft.Json.Linq
 
 
 /// System.Text.Json.Nodes.JsonNode 의 축약
@@ -267,7 +268,24 @@ module JsonExtensionModule =
                 | :? bool     as v -> x.Set(N.ValueType, "xs:boolean").Set(N.Value, v.ToString())
                 | :? Guid     as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v.ToString())
                 | :? DateTime as v -> x.Set(N.ValueType, "xs:date")   .Set(N.Value, v.ToString(CultureInfo("en-US")))
-                | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
+
+                //// --- Array 처리 ---
+                //| :? (Guid[]) as arr ->
+                //    let jarr = arr |> Array.map (fun g -> JObj().Set(N.Value)(string g)) |> JArr
+                //    x.Set(N.ValueType, "xs:Guid[]").Set(N.Value, jarr)
+
+                //| :? (string[]) as arr ->
+                //    let jarr = arr |> Array.map (fun s -> JValue(s)) |> JArr
+                //    Some(jobj.Set(N.ValueType, "xs:string[]").Set(N.Value, jarr))
+
+                //| :? (int[]) as arr ->
+                //    let jarr = arr |> Array.map (fun i -> JValue(string i) :> JNode) |> JArray
+                //    Some(jobj.Set(N.ValueType, "xs:integer[]").Set(N.Value, jarr))
+
+
+                | _ ->
+                    failwithf "Not supported type: %A" typeof<'T>.Name
+
                 |> Some
 
 
@@ -355,7 +373,6 @@ module JsonExtensionModule =
         /// value 와 values 는 양립할 수 없다.
         /// value : single typed value
         /// values : multiple values
-        // semantic = J.CreateSemantic(semanticType, keyType, "Vertices"),
 
         member x.AddProperties<'T>(
             ?category:Category,
@@ -383,7 +400,7 @@ module JsonExtensionModule =
                 smel       .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
             )
 
-        member x.ToSMC(semanticKey:string, values:JNode seq): JObj =
+        member x.ToAjSMC(semanticKey:string, values:JNode seq): JObj =
             x.AddProperties(
                 semanticKey = semanticKey,
                 modelType = A.smc,
@@ -401,15 +418,6 @@ module JsonExtensionModule =
     type J() =
         /// JObj[] -> JArr 변환
         static member CreateJArr(jns:JNode seq): JArr = jns |> toArray |> JArr
-
-        //static member WrapWith(nodeType:N, child:JNode): JNode = wrapWith nodeType child
-
-        /// "semanticId" 에 할당하기 위힌 노드를 생성
-        static member CreateSemantic(semanticIdType:SemanticIdType, keyType:KeyType, keyValue:string): JObj =
-            JObj()
-                .Set(N.Type, semanticIdType.ToString())
-                .SetKeys(keyType, keyValue)
-
 
         /// Json string 을 aas core 의 IClass subtype 객체로 변환
         static member CreateIClassFromJson<'T when 'T :> Aas.IClass>(json: string) : 'T = J.createIClassFromJsonHelper<'T> json :?> 'T
