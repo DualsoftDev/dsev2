@@ -2,15 +2,14 @@ namespace rec Dual.Ev2.Aas
 
 (* AAS Json/Xml 로부터 Core 를 생성하기 위한 코드 *)
 
-open Dual.Common.Core.FS
-open Dual.Ev2
 open System.Linq
 open System
-open Dual.Common.Base
-open Ev2.Core.FS
+
 open AasCore.Aas3_0
-open System.Reflection.Metadata
-open System.Security.Cryptography
+
+open Dual.Common.Core.FS
+open Ev2.Core.FS
+open System.Globalization
 
 
 [<AutoOpen>]
@@ -37,8 +36,32 @@ module PropModule =
                 | :? Property as p when hasSemanticKey semanticKey p -> Some p.Value
                 | _ -> None)
 
-        member smc.GetPropValueBySemanticKey semanticKey =
-            smc.TryGetPropValueBySemanticKey semanticKey |> Option.get
+        member smc.TryGetPropValue (propName:string) = smc.TryGetPropValueBySemanticKey propName
+
+        member smc.TryGetPropValue<'T> (propName: string): 'T option =
+            smc.TryGetPropValue propName
+            >>= (fun str ->
+                try
+                    let value =
+                        match typeof<'T> with
+                        | _ when typeof<'T> = typeof<string> ->
+                            box str
+                        | _ when typeof<'T> = typeof<Guid> ->
+                            str |> Guid.Parse |> box
+                        | _ when typeof<'T> = typeof<int> ->
+                            str |> Int32.Parse |> box
+                        | _ when typeof<'T> = typeof<float> ->
+                            str |> Double.Parse |> box
+                        | _ when typeof<'T> = typeof<bool> ->
+                            str |> Boolean.Parse |> box
+                        | _ ->
+                            // 일반적인 Convert.ChangeType 사용
+                            Convert.ChangeType(str, typeof<'T>, CultureInfo.InvariantCulture)
+                    Some (value :?> 'T)
+                with _ -> None)
+
+        member smc.GetPropValue propName =
+            smc.TryGetPropValue propName |> Option.get
 
         member smc.EnumerateChildrenSMC(semanticKey: string): SubmodelElementCollection [] =
             let semanticId = AasSemantics.map[semanticKey]
@@ -52,10 +75,10 @@ module PropModule =
             smc.EnumerateChildrenSMC semanticKey |> tryHead
 
         member smc.ReadUniqueInfo() =
-            let name = smc.TryGetPropValueBySemanticKey "Name" |? null
-            let guid = smc.GetPropValueBySemanticKey "Guid" |> Guid.Parse
-            let parameter = smc.TryGetPropValueBySemanticKey "Parameter" |? null
-            let id = smc.TryGetPropValueBySemanticKey "Id" |-> Id.Parse
+            let name = smc.TryGetPropValue "Name" |? null
+            let guid = smc.GetPropValue "Guid" |> Guid.Parse
+            let parameter = smc.TryGetPropValue "Parameter" |? null
+            let id = smc.TryGetPropValue "Id" |-> Id.Parse
             { Name=name; Guid=guid; Parameter=parameter; Id=id }
 
 
@@ -95,17 +118,19 @@ module CoreFromAas =
                     .OfType<SubmodelElementCollection>()
                     .FirstOrDefault(fun sm -> PropModule.hasSemanticKey "Detail" sm)
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
-            let dateTime      = details.GetPropValueBySemanticKey "DateTime"  |> DateTime.Parse
-            let iri           = details.GetPropValueBySemanticKey "IRI"
-            let engineVersion = details.TryGetPropValueBySemanticKey "EngineVersion" |-> Version.Parse |? Version(0, 0)
-            let langVersion   = details.TryGetPropValueBySemanticKey "LangVersion"   |-> Version.Parse |? Version(0, 0)
-            let author        = details.TryGetPropValueBySemanticKey "Author" |? null
-            let description   = details.TryGetPropValueBySemanticKey "Description" |? null
+            let dateTime      = details.GetPropValue "DateTime"  |> DateTime.Parse
+            let iri           = details.GetPropValue "IRI"
+            let engineVersion = details.TryGetPropValue "EngineVersion" |-> Version.Parse |? Version(0, 0)
+            let langVersion   = details.TryGetPropValue "LangVersion"   |-> Version.Parse |? Version(0, 0)
+            let author        = details.TryGetPropValue "Author" |? null
+            let description   = details.TryGetPropValue "Description" |? null
 
 
-            let works  = getSMC "Works"  |-> NjWork.FromSMC
-            let flows  = getSMC "Flows"  |-> NjFlow.FromSMC
-            let arrows = getSMC "Arrows" |-> NjArrow.FromSMC
+            let apiDefs  = getSMC "ApiDefs"|-> NjApiDef.FromSMC
+            let apiCalls = getSMC "ApiCalls"|-> NjApiCall.FromSMC
+            let works    = getSMC "Works"  |-> NjWork.FromSMC
+            let flows    = getSMC "Flows"  |-> NjFlow.FromSMC
+            let arrows   = getSMC "Arrows" |-> NjArrow.FromSMC
 
             NjSystem(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
@@ -120,16 +145,20 @@ module CoreFromAas =
                 , Flows = flows
                 , Works = works
                 , Arrows = arrows
+                , ApiDefs = apiDefs
+                , ApiCalls = apiCalls
             )
 
 
 
     type NjArrow with
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
-            let src = smc.GetPropValueBySemanticKey "Source"
-            let tgt = smc.GetPropValueBySemanticKey "Target"
-            let typ = smc.GetPropValueBySemanticKey "Type"
-            NjArrow( Source=src, Target=tgt, Type=typ)
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
+            let src = smc.GetPropValue "Source"
+            let tgt = smc.GetPropValue "Target"
+            let typ = smc.GetPropValue "Type"
+            NjArrow(Name=name, Guid=guid, Id=id, Parameter=parameter
+                    , Source=src, Target=tgt, Type=typ)
 
 
     type NjButton with
@@ -177,9 +206,50 @@ module CoreFromAas =
     type NjCall with
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-            let isDisabled =
-                smc.TryGetPropValueBySemanticKey "IsDisabled"
-                >>= Parse.TryBool
-                |? false
+            let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
+            let commonConditions = smc.TryGetPropValue       "CommonConditions" |? null
+            let autoConditions   = smc.TryGetPropValue       "AutoConditions"   |? null
+            let timeout          = smc.TryGetPropValue<int>  "Timeout"
+            let callType         = smc.TryGetPropValue       "CallType"         |? null
 
-            NjCall(Name=name, Guid=guid, Id=id, Parameter=parameter, IsDisabled = isDisabled)
+            let apiCalls         = smc.TryGetPropValue       "ApiCalls"         |? null
+
+            // TODO: CommonConditions, AutoConditions, Timeout, CallType, Status4, etc.
+
+            NjCall(Name=name, Guid=guid, Id=id, Parameter=parameter
+                , IsDisabled = isDisabled
+                , CommonConditions = commonConditions
+                , AutoConditions = autoConditions
+                , Timeout = timeout
+                , CallType = callType
+                //, ApiCalls = apiCalls     // Guid[] type
+                )
+
+
+    type NjApiDef with
+        static member FromSMC(smc: SubmodelElementCollection): NjApiDef =
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
+            let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
+            NjApiDef(Name=name, Guid=guid, Id=id, Parameter=parameter
+                , IsPush = isPush
+            )
+
+    type NjApiCall with
+        static member FromSMC(smc: SubmodelElementCollection): NjApiCall =
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
+
+            let apiDef     = smc.GetPropValue "ApiDef" |> Guid.Parse
+            let inAddress  = smc.TryGetPropValue "InAddress"  |? null
+            let outAddress = smc.TryGetPropValue "OutAddress" |? null
+            let inSymbol   = smc.TryGetPropValue "InSymbol"   |? null
+            let outSymbol  = smc.TryGetPropValue "OutSymbol"  |? null
+            let valueSpec  = smc.TryGetPropValue "ValueSpec"  |? null
+
+            NjApiCall(Name=name, Guid=guid, Id=id, Parameter=parameter
+                , ApiDef = apiDef
+                , InAddress = inAddress
+                , OutAddress = outAddress
+                , InSymbol = inSymbol
+                , OutSymbol = outSymbol
+                , ValueSpec = valueSpec
+            )

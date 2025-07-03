@@ -36,6 +36,8 @@ module AasSemantics =
             "DateTime",         "https://dualsoft.com/aas/system/dateTime"
 
 
+            "ApiDefs",          "https://dualsoft.com/aas/plural/apiDefs"
+            "ApiCalls",         "https://dualsoft.com/aas/plural/apiCalls"
             "Works",            "https://dualsoft.com/aas/plural/works"
             "Arrows",           "https://dualsoft.com/aas/plural/arrows"
             "Calls",            "https://dualsoft.com/aas/plural/calls"
@@ -45,6 +47,8 @@ module AasSemantics =
             "Conditions",       "https://dualsoft.com/aas/plural/conditions"
             "Actions",          "https://dualsoft.com/aas/plural/actions"
 
+            "ApiDef",           "https://dualsoft.com/aas/singular/apiDef"
+            "ApiCall",          "https://dualsoft.com/aas/singular/apiCall"
             "Detail",           "https://dualsoft.com/aas/singular/detail"
             "Work",             "https://dualsoft.com/aas/singular/work"
             "Arrow",            "https://dualsoft.com/aas/singular/arrow"
@@ -56,6 +60,7 @@ module AasSemantics =
             "Action",           "https://dualsoft.com/aas/singular/action"
 
 
+            "IsPush",           "https://dualsoft.com/aas/apiDef/isPush"
             "FlowGuid",         "https://dualsoft.com/aas/work/flowGuid"
             "Motion",           "https://dualsoft.com/aas/work/motion"
             "Script",           "https://dualsoft.com/aas/work/script"
@@ -68,11 +73,24 @@ module AasSemantics =
             "Source",           "https://dualsoft.com/aas/arrow/source"
             "Target",           "https://dualsoft.com/aas/arrow/target"
             "Call",             "https://dualsoft.com/aas/call/call"
+            "CallType",         "https://dualsoft.com/aas/call/callType"
+            //"ApiCall",          "https://dualsoft.com/aas/call/apiCall"
             "Timeout",          "https://dualsoft.com/aas/call/timeout"
             "IsDisabled",       "https://dualsoft.com/aas/call/isDisabled"
             "CommonConditions", "https://dualsoft.com/aas/call/commonConditions"
             "AutoConditions",   "https://dualsoft.com/aas/call/autoConditions"
             "Status4",          "https://dualsoft.com/aas/call/status4"
+
+
+            "InAddress",        "https://dualsoft.com/aas/apiCall/inAddress"
+            "OutAddress",       "https://dualsoft.com/aas/apiCall/outAddress"
+            "InSymbol",         "https://dualsoft.com/aas/apiCall/inSymbol"
+            "OutSymbol",        "https://dualsoft.com/aas/apiCall/outSymbol"
+            "ValueSpec",        "https://dualsoft.com/aas/apiCall/valueSpec"
+
+
+
+
 
             "__RidIdentification",   "https://www.hsu-hh.de/aut/aas/identification"
         ]

@@ -62,7 +62,25 @@ module CoreToAas =
                     , semanticKey = "Arrows"
                 )
 
-            [| details; flows; arrows; works |]
+
+            let ads = x.ApiDefs |-> _.ToSMC()
+            let apiDefs =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = ads
+                    , semanticKey = "ApiDefs"
+                )
+
+            let acs = x.ApiCalls |-> _.ToSMC()
+            let apiCalls =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = acs
+                    , semanticKey = "ApiCalls"
+                )
+
+
+            [| details; apiDefs; apiCalls; flows; arrows; works |]
 
         member sys.ToSM(): JNode =
             let sm =
@@ -80,6 +98,34 @@ module CoreToAas =
 
         [<Obsolete("TODO")>] member x.ToENV(): JObj = null
         [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
+
+    type NjApiDef with
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                yield! seq {
+                    JObj().TrySetProperty(x.IsPush, "IsPush")
+                } |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("ApiDef", props)
+
+    type NjApiCall with
+        member x.ToSMC(): JNode =
+            let props = [|
+                yield! x.CollectProperties()
+                yield! seq {
+                    JObj().TrySetProperty(x.ApiDef,     "ApiDef")       // Guid
+                    JObj().TrySetProperty(x.InAddress,  "InAddress")
+                    JObj().TrySetProperty(x.OutAddress, "OutAddress")
+                    JObj().TrySetProperty(x.InSymbol,   "InSymbol")
+                    JObj().TrySetProperty(x.OutSymbol,  "OutSymbol")
+                    JObj().TrySetProperty(x.ValueSpec,  "ValueSpec")
+                } |> choose id |> Seq.cast<JNode>
+            |]
+
+            JObj().ToSMC("ApiCall", props)
+
 
     type NjButton with
         member x.ToSMC(): JNode =
@@ -143,13 +189,14 @@ module CoreToAas =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
-                    JObj().TrySetProperty(x.IsDisabled, "IsDisabled")
+                    JObj().TrySetProperty(x.IsDisabled,       "IsDisabled")
                     JObj().TrySetProperty(x.CommonConditions, "CommonConditions")
-                    JObj().TrySetProperty(x.AutoConditions, "AutoConditions")
+                    JObj().TrySetProperty(x.AutoConditions,   "AutoConditions")
                     if x.Timeout.IsSome then
-                        JObj().TrySetProperty(x.Timeout.Value, "Timeout")
+                        JObj().TrySetProperty(x.Timeout.Value,     "Timeout")
+                    JObj().TrySetProperty(x.CallType.ToString(),   "CallType")
+                    JObj().TrySetProperty(sprintf "%A" x.ApiCalls, "ApiCalls")      // Guid[] type
                 } |> choose id |> Seq.cast<JNode>
-
             |]
 
             JObj().ToSMC("Call", props)
