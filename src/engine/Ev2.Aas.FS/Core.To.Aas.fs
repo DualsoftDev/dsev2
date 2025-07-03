@@ -20,6 +20,73 @@ module CoreToAas =
                     JObj().TrySetProperty(x.Id.Value, "Id")
             } |> choose id |> Seq.cast<JNode> |> toArray
 
+
+    type NjProject with
+        member private x.collectChildren(): JNode[] =
+            let me = x
+            let details =
+                let props = [|
+                    yield! x.CollectProperties()
+                    yield! seq {
+                        JObj().TrySetProperty(x.Database.ToString(),           "Database")
+                        JObj().TrySetProperty(x.Description,        "Description")
+                        JObj().TrySetProperty(x.Author,             "Author")
+                        JObj().TrySetProperty(x.Version.ToString(), "Version")
+                        JObj().TrySetProperty(x.DateTime,           "DateTime")
+                    } |> choose id |> Seq.cast<JNode>
+                |]
+                JObj().ToAjSMC("Detail", props)
+
+
+            let myprotos = x.MyPrototypeSystems |-> _.ToAjSM()     // _.ToAjSMC()
+            let myPrototypeSystems =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = myprotos
+                    , semanticKey = "MyPrototypeSystems"
+                )
+
+            let impprotos = x.ImportedPrototypeSystems |-> _.ToAjSM()     // _.ToAjSMC()
+            let importedPrototypeSystems =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = impprotos
+                    , semanticKey = "ImportedPrototypeSystems"
+                )
+
+            let actives = x.ActiveSystems |-> _.ToAjSM()     // _.ToAjSMC()
+            let activeSystems =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = actives
+                    , semanticKey = "ActiveSystems"
+                )
+
+
+            let passives = x.PassiveSystems |-> _.ToString() |-> (fun z -> JObj().AddProperties(value=z)) |> Seq.cast<JNode> |> J.CreateJArr
+            let passiveSystems =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = passives
+                    , semanticKey = "PassiveSystems"
+                )
+
+            [| details; myPrototypeSystems; importedPrototypeSystems; activeSystems; passiveSystems |]
+
+        member prj.ToAjSM(): JNode =
+            let sm =
+                JObj().AddProperties(
+                    category = Category.CONSTANT,
+                    modelType = ModelType.Submodel,
+                    idShort = "Identification",
+                    id = A.ridIdentification,
+                    kind = KindType.Instance,
+                    semanticKey = A.ridIdentification,
+                    smel = prj.collectChildren()
+                )
+            sm
+
+
     type NjSystem with
         member private x.collectChildren(): JNode[] =
             let details =

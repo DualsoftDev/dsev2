@@ -88,6 +88,9 @@ module CoreFromAas =
     type Environment = AasCore.Aas3_0.Environment
     type ISubmodel = AasCore.Aas3_0.ISubmodel
 
+    type NjProject with
+        static member FromISubmodel(submodel:ISubmodel): NjProject =
+            failwith "ERROR"
 
     type NjSystem with
         static member FromAasJsonENV(json:string): NjSystem =

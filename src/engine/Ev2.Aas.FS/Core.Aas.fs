@@ -61,6 +61,13 @@ module AasSemantics =
             "Action",           "https://dualsoft.com/aas/singular/action"
 
 
+            "Version",         "https://dualsoft.com/aas/project/version"
+            "Database",         "https://dualsoft.com/aas/project/database"
+            "ActiveSystems",    "https://dualsoft.com/aas/project/activeSystems"
+            "PassiveSystems",   "https://dualsoft.com/aas/project/passiveSystems"
+            "MyPrototypeSystems",   "https://dualsoft.com/aas/project/myPrototypeSystems"
+            "ImportedPrototypeSystems",   "https://dualsoft.com/aas/project/importedPrototypeSystems"
+
             "IsPush",           "https://dualsoft.com/aas/apiDef/isPush"
             "FlowGuid",         "https://dualsoft.com/aas/work/flowGuid"
             "Motion",           "https://dualsoft.com/aas/work/motion"

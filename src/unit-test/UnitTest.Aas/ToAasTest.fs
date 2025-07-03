@@ -119,3 +119,20 @@ module ToAasTest =
             let rtSystem = RtSystem.ImportFromJson(json2)
 
             ()
+        [<Test>]
+        member _.``Project: instance -> Aas Test`` () =
+            let rtProject = dsProject |> RtProject.FromJson
+            let njProject = rtProject |> NjProject.FromRuntime
+
+            let jSm:JNode = njProject.ToAjSM()
+            let aasJson = jSm.Stringify()
+            let submodel = J.CreateIClassFromJson<Aas.Submodel>(aasJson)
+            let aasXml = submodel.ToXml()
+
+            let njProject2 = NjProject.FromISubmodel(submodel)
+
+            let json2 = EmJson.ToJson(njProject2)
+
+            let rtProject2 = RtProject.FromJson(json2)
+
+            ()
