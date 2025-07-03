@@ -413,6 +413,7 @@ module Schema =
             let edSysCyl3 = edProject.Instantiate(prototype, Name="실린더 instance3")
 
             edProject |> validateRuntime |> ignore
+            let projJson = edProject.ToJson(Path.Combine(testDataDir(), "project.json"))
 
             let curernt = now()
             let rtProject = edProject.Replicate()

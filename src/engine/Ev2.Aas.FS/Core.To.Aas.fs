@@ -6,6 +6,7 @@ open System
 
 open Dual.Common.Core.FS
 open Ev2.Core.FS
+open Dual.Common.Base
 
 
 [<AutoOpen>]
@@ -28,17 +29,22 @@ module CoreToAas =
                 let props = [|
                     yield! x.CollectProperties()
                     yield! seq {
-                        JObj().TrySetProperty(x.Database.ToString(),           "Database")
-                        JObj().TrySetProperty(x.Description,        "Description")
-                        JObj().TrySetProperty(x.Author,             "Author")
-                        JObj().TrySetProperty(x.Version.ToString(), "Version")
-                        JObj().TrySetProperty(x.DateTime,           "DateTime")
+                        JObj().TrySetProperty(x.Database.ToString(), "Database")
+                        JObj().TrySetProperty(x.Description,         "Description")
+                        JObj().TrySetProperty(x.Author,              "Author")
+                        JObj().TrySetProperty(x.Version.ToString(),  "Version")
+                        JObj().TrySetProperty(x.DateTime,            "DateTime")
                     } |> choose id |> Seq.cast<JNode>
                 |]
-                JObj().ToAjSMC("Detail", props)
+                JObj().ToSjSMC("Detail", props)
 
+            let me = x
+            noop()
+            for z in x.MyPrototypeSystems do
+                let xxx = z.ToSjSMC()
+                noop()
 
-            let myprotos = x.MyPrototypeSystems |-> _.ToAjSM()     // _.ToAjSMC()
+            let myprotos = x.MyPrototypeSystems |-> _.ToSjSMC()
             let myPrototypeSystems =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -46,7 +52,7 @@ module CoreToAas =
                     , semanticKey = "MyPrototypeSystems"
                 )
 
-            let impprotos = x.ImportedPrototypeSystems |-> _.ToAjSM()     // _.ToAjSMC()
+            let impprotos = x.ImportedPrototypeSystems |-> _.ToSjSMC()
             let importedPrototypeSystems =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -54,7 +60,7 @@ module CoreToAas =
                     , semanticKey = "ImportedPrototypeSystems"
                 )
 
-            let actives = x.ActiveSystems |-> _.ToAjSM()     // _.ToAjSMC()
+            let actives = x.ActiveSystems |-> _.ToSjSMC()
             let activeSystems =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -73,7 +79,8 @@ module CoreToAas =
 
             [| details; myPrototypeSystems; importedPrototypeSystems; activeSystems; passiveSystems |]
 
-        member prj.ToAjSM(): JNode =
+        /// To [S]ystem [J]son Submodel element (SME) 형태로 변환
+        member prj.ToSjSubmodel(): JNode =
             let sm =
                 JObj().AddProperties(
                     category = Category.CONSTANT,
@@ -101,10 +108,10 @@ module CoreToAas =
                         JObj().TrySetProperty(x.DateTime,                 "DateTime")
                     } |> choose id |> Seq.cast<JNode>
                 |]
-                JObj().ToAjSMC("Detail", props)
+                JObj().ToSjSMC("Detail", props)
 
 
-            let fs = x.Flows |-> _.ToAjSMC()
+            let fs = x.Flows |-> _.ToSjSMC()
             let flows =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -112,7 +119,7 @@ module CoreToAas =
                     , semanticKey = "Flows"
                 )
 
-            let ws = x.Works |-> _.ToAjSMC()
+            let ws = x.Works |-> _.ToSjSMC()
             let works =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -120,7 +127,7 @@ module CoreToAas =
                     , semanticKey = "Works"
                 )
 
-            let arrs = x.Arrows |-> _.ToAjSMC()
+            let arrs = x.Arrows |-> _.ToSjSMC()
             let arrows =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -129,7 +136,7 @@ module CoreToAas =
                 )
 
 
-            let ads = x.ApiDefs |-> _.ToAjSMC()
+            let ads = x.ApiDefs |-> _.ToSjSMC()
             let apiDefs =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -137,7 +144,7 @@ module CoreToAas =
                     , semanticKey = "ApiDefs"
                 )
 
-            let acs = x.ApiCalls |-> _.ToAjSMC()
+            let acs = x.ApiCalls |-> _.ToSjSMC()
             let apiCalls =
                 JObj().AddProperties(
                     modelType = A.smc
@@ -148,7 +155,8 @@ module CoreToAas =
 
             [| details; apiDefs; apiCalls; flows; arrows; works |]
 
-        member sys.ToAjSM(): JNode =
+        /// To [S]ystem [J]son Submodel element (SME) 형태로 변환
+        member sys.ToSjSubmodel(): JNode =
             let sm =
                 JObj().AddProperties(
                     category = Category.CONSTANT,
@@ -161,12 +169,18 @@ module CoreToAas =
                 )
             sm
 
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member sys.ToSjSMC(): JNode =
+            let props = sys.CollectProperties()
+            JObj().ToSjSMC("System", props)
+            |> _.AddValues(sys.collectChildren())
 
         [<Obsolete("TODO")>] member x.ToENV(): JObj = null
         [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
 
     type NjApiDef with
-        member x.ToAjSMC(): JNode =
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
@@ -174,10 +188,11 @@ module CoreToAas =
                 } |> choose id |> Seq.cast<JNode>
             |]
 
-            JObj().ToAjSMC("ApiDef", props)
+            JObj().ToSjSMC("ApiDef", props)
 
     type NjApiCall with
-        member x.ToAjSMC(): JNode =
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
@@ -190,44 +205,45 @@ module CoreToAas =
                 } |> choose id |> Seq.cast<JNode>
             |]
 
-            JObj().ToAjSMC("ApiCall", props)
+            JObj().ToSjSMC("ApiCall", props)
 
 
     type NjButton with
-        member x.ToAjSMC(): JNode =
+        member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
-            JObj().ToAjSMC("Button", props)
+            JObj().ToSjSMC("Button", props)
 
     type NjLamp with
-        member x.ToAjSMC(): JNode =
+        member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
-            JObj().ToAjSMC("Lamp", props)
+            JObj().ToSjSMC("Lamp", props)
 
     type NjCondition with
-        member x.ToAjSMC(): JNode =
+        member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
-            JObj().ToAjSMC("Condition", props)
+            JObj().ToSjSMC("Condition", props)
 
     type NjAction with
-        member x.ToAjSMC(): JNode =
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
-            JObj().ToAjSMC("Action", props)
+            JObj().ToSjSMC("Action", props)
 
-    type NjFlow with    // ToAjSMC
-        /// DsFlow -> JNode
-        member x.ToAjSMC(): JNode =
-            let buttons    = x.Buttons    |-> _.ToAjSMC() |> toAjSMC "Buttons"
-            let lamps      = x.Lamps      |-> _.ToAjSMC() |> toAjSMC "Lamps"
-            let conditions = x.Conditions |-> _.ToAjSMC() |> toAjSMC "Conditions"
-            let actions    = x.Actions    |-> _.ToAjSMC() |> toAjSMC "Actions"
+    type NjFlow with    // ToSjSMC
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
+            let buttons    = x.Buttons    |-> _.ToSjSMC() |> toSjSMC "Buttons"
+            let lamps      = x.Lamps      |-> _.ToSjSMC() |> toSjSMC "Lamps"
+            let conditions = x.Conditions |-> _.ToSjSMC() |> toSjSMC "Conditions"
+            let actions    = x.Actions    |-> _.ToSjSMC() |> toSjSMC "Actions"
 
             let props = x.CollectProperties()
-            JObj().ToAjSMC("Flow", props)
+            JObj().ToSjSMC("Flow", props)
             |> _.AddValues([|buttons; lamps; conditions; actions|] |> choose id)
 
     type NjCall with
-        /// DsAction -> JNode
-        member x.ToAjSMC(): JNode =
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
             let me = x
             let props = [|
                 yield! x.CollectProperties()
@@ -244,11 +260,11 @@ module CoreToAas =
                 } |> choose id |> Seq.cast<JNode>
             |]
 
-            JObj().ToAjSMC("Call", props)
+            JObj().ToSjSMC("Call", props)
 
     type NjArrow with
         /// Convert arrow to Aas Jons of SubmodelElementCollection
-        member x.ToAjSMC(): JNode =
+        member x.ToSjSMC(): JNode =
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
@@ -259,9 +275,9 @@ module CoreToAas =
 
             |]
 
-            JObj().ToAjSMC("Arrow", props)
+            JObj().ToSjSMC("Arrow", props)
 
-    let toAjSMC (semanticKey:string) (values:JNode[]) =
+    let toSjSMC (semanticKey:string) (values:JNode[]) =
         match values with
         | [||] -> None
         | _ ->
@@ -271,11 +287,11 @@ module CoreToAas =
                 |> _.AddValues(values)
                 |> Some
 
-    type NjWork with    // ToAjSMC
-        /// DsWork -> JNode
-        member x.ToAjSMC(): JNode =
-            let arrows = x.Arrows |-> _.ToAjSMC() |> toAjSMC "Arrows"
-            let calls  = x.Calls  |-> _.ToAjSMC() |> toAjSMC "Calls"
+    type NjWork with    // ToSjSMC
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
+            let arrows = x.Arrows |-> _.ToSjSMC() |> toSjSMC "Arrows"
+            let calls  = x.Calls  |-> _.ToSjSMC() |> toSjSMC "Calls"
             let props = [|
                 yield! x.CollectProperties()
                 yield! seq {
@@ -289,7 +305,7 @@ module CoreToAas =
                 } |> choose id |> Seq.cast<JNode>
             |]
 
-            JObj().ToAjSMC("Work", props)
+            JObj().ToSjSMC("Work", props)
             |> _.AddValues([|arrows; calls|] |> choose id)
 
 

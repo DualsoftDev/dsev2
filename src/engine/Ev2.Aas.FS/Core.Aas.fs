@@ -24,6 +24,7 @@ type JArr = System.Text.Json.Nodes.JsonArray
 module AasSemantics =
     let map : Map<string, string> =
         Map [
+            "System",           "https://dualsoft.com/aas/system"
             "Name",             "https://dualsoft.com/aas/unique/name"
             "Guid",             "https://dualsoft.com/aas/unique/guid"
             "Id",               "https://dualsoft.com/aas/unique/id"
@@ -407,7 +408,8 @@ module JsonExtensionModule =
                 smel       .Iter(fun ys -> j.Set(N.SubmodelElements, J.CreateJArr ys)     |> ignore)
             )
 
-        member x.ToAjSMC(semanticKey:string, values:JNode seq): JObj =
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(semanticKey:string, values:JNode seq): JObj =
             x.AddProperties(
                 semanticKey = semanticKey,
                 modelType = A.smc,

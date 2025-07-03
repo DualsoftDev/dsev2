@@ -9,7 +9,7 @@ open Ev2.Core.FS
 [<AutoOpen>]
 module SystemImportExportModule =
     [<Test>]
-    let exportTest() =
+    let systemExportTest() =
         let jsonPath = Path.Combine(testDataDir(), "dssystem-export.system.json")
         edSystem.ExportToJson(jsonPath) |> ignore
 

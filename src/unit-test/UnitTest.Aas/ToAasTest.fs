@@ -83,8 +83,8 @@ module ToAasTest =
         [<Test>]
         member _.``System: instance -> JObj(SM) -> Json ConversionTest`` () =
 
-            let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.FromRuntime
-            let json = njSystem.ToAjSM().Stringify()
+            let njSystem = NjSystem.ImportFromJson dsJson
+            let json = njSystem.ToSjSubmodel().Stringify()
             //writeClipboard(json)
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
@@ -96,15 +96,16 @@ module ToAasTest =
     type T2() =
         [<Test>]
         member _.``System: instance -> Aas Test`` () =
-            let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.FromRuntime
+            //let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.fromRuntime
+            let njSystem = NjSystem.ImportFromJson dsJson
 
-            let sm = njSystem.Works[0].Calls[0].ToAjSMC()
-            let json = sm.Stringify()
-            let submodel = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(sm.ToJsonString())
+            let smCall = njSystem.Works[0].Calls[0].ToSjSMC()
+            let jsonCall = smCall.Stringify()
+            let submodelCall = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(smCall.ToJsonString())
             ()
 
 
-            let jSm:JNode = njSystem.ToAjSM()
+            let jSm:JNode = njSystem.ToSjSubmodel()
             let aasJson = jSm.Stringify()
             let submodel = J.CreateIClassFromJson<Aas.Submodel>(aasJson)
             let aasXml = submodel.ToXml()
@@ -122,9 +123,10 @@ module ToAasTest =
         [<Test>]
         member _.``Project: instance -> Aas Test`` () =
             let rtProject = dsProject |> RtProject.FromJson
-            let njProject = rtProject |> NjProject.FromRuntime
+            let xxx = rtProject.ToJson()
+            let njProject = NjProject.FromJson dsProject
 
-            let jSm:JNode = njProject.ToAjSM()
+            let jSm:JNode = njProject.ToSjSubmodel()
             let aasJson = jSm.Stringify()
             let submodel = J.CreateIClassFromJson<Aas.Submodel>(aasJson)
             let aasXml = submodel.ToXml()
