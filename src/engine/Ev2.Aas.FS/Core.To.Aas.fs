@@ -7,7 +7,8 @@ open System
 open Dual.Common.Core.FS
 open Ev2.Core.FS
 open Dual.Common.Base
-
+open AasCore.Aas3_0
+open System.Text.Json
 
 [<AutoOpen>]
 module CoreToAas =
@@ -37,12 +38,6 @@ module CoreToAas =
                     } |> choose id |> Seq.cast<JNode>
                 |]
                 JObj().ToSjSMC("Detail", props)
-
-            let me = x
-            noop()
-            for z in x.MyPrototypeSystems do
-                let xxx = z.ToSjSMC()
-                noop()
 
             let myprotos = x.MyPrototypeSystems |-> _.ToSjSMC()
             let myPrototypeSystems =
@@ -92,6 +87,7 @@ module CoreToAas =
                     smel = prj.collectChildren()
                 )
             sm
+
 
 
     type NjSystem with

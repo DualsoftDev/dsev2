@@ -9,3 +9,6 @@
 [submodule "submodules/aas-specs-metamodel"]
 	path = submodules/aas-specs-metamodel
 	url = https://github.com/admin-shell-io/aas-specs-metamodel.git
+[submodule "submodules/aasx-package-explorer"]
+	path = submodules/aasx-package-explorer
+	url = https://github.com/admin-shell-io/aasx-package-explorer.git

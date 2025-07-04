@@ -11,6 +11,7 @@
 	<ItemGroup>
 		<None Include="DevDoc\속성 추가 절차.md" />
 		<None Include="devdoc\저장 포맷.md" />
+		<None Include="devdoc\AAS 검증.md" />
 		<None Include="DevDoc\ErrorMessages.md" />
 		<Compile Include="AppSettings.fs" />
 		<Compile Include="ConstEnums.fs" />

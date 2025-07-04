@@ -126,6 +126,10 @@ module ToAasTest =
             let xxx = rtProject.ToJson()
             let njProject = NjProject.FromJson dsProject
 
+            njProject.ExportToAasxFile("test.aasx") |> ignore
+
+            let envJson = njProject.ToAasJsonENV()
+
             let jSm:JNode = njProject.ToSjSubmodel()
             let aasJson = jSm.Stringify()
             let submodel = J.CreateIClassFromJson<Aas.Submodel>(aasJson)

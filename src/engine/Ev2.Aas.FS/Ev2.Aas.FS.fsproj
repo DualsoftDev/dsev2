@@ -18,7 +18,12 @@
 		<Compile Include="Core.Aas.fs" />
 		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.From.Aas.fs" />
+		<Compile Include="AasX.fs" />
 	</ItemGroup>
+
+	<!--<ItemGroup>
+	  <PackageReference Include="System.IO.Packaging" Version="9.0.6" />
+	</ItemGroup>-->
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
