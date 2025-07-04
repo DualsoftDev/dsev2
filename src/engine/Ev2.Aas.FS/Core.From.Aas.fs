@@ -85,8 +85,8 @@ module PropModule =
 
 [<AutoOpen>]
 module CoreFromAas =
-    type Environment = AasCore.Aas3_0.Environment
-    type ISubmodel = AasCore.Aas3_0.ISubmodel
+    //type Environment = AasCore.Aas3_0.Environment
+    //type ISubmodel = AasCore.Aas3_0.ISubmodel
 
     type NjProject with
         static member FromISubmodel(submodel:ISubmodel): NjProject =

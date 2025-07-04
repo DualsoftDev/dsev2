@@ -283,14 +283,14 @@ module JsonExtensionModule =
                 None
             else
                 match box value with
-                | :? string   as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v)
-                | :? int      as v -> x.Set(N.ValueType, "xs:integer").Set(N.Value, v.ToString())
-                | :? int64    as v -> x.Set(N.ValueType, "xs:long")   .Set(N.Value, v.ToString())
-                | :? double   as v -> x.Set(N.ValueType, "xs:double") .Set(N.Value, v.ToString())
-                | :? single   as v -> x.Set(N.ValueType, "xs:float")  .Set(N.Value, v.ToString())
-                | :? bool     as v -> x.Set(N.ValueType, "xs:boolean").Set(N.Value, v.ToString())
-                | :? Guid     as v -> x.Set(N.ValueType, "xs:string") .Set(N.Value, v.ToString())
-                | :? DateTime as v -> x.Set(N.ValueType, "xs:date")   .Set(N.Value, v.ToString(CultureInfo("en-US")))
+                | :? string   as v -> x.Set(N.ValueType, "xs:string")  .Set(N.Value, v)
+                | :? int      as v -> x.Set(N.ValueType, "xs:integer") .Set(N.Value, v.ToString())
+                | :? int64    as v -> x.Set(N.ValueType, "xs:long")    .Set(N.Value, v.ToString())
+                | :? double   as v -> x.Set(N.ValueType, "xs:double")  .Set(N.Value, v.ToString())
+                | :? single   as v -> x.Set(N.ValueType, "xs:float")   .Set(N.Value, v.ToString())
+                | :? bool     as v -> x.Set(N.ValueType, "xs:boolean") .Set(N.Value, v.ToString())
+                | :? Guid     as v -> x.Set(N.ValueType, "xs:string")  .Set(N.Value, v.ToString())
+                | :? DateTime as v -> x.Set(N.ValueType, "xs:dateTime").Set(N.Value, v.ToString(CultureInfo("en-US")))
 
                 //// --- Array 처리 ---
                 //| :? (Guid[]) as arr ->
@@ -577,12 +577,4 @@ module JsonExtensionModule =
             | "ValueReferencePair"                  -> Aas.Xmlization.Deserialize.ValueReferencePairFrom                 (xmlReader)
 
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
-
-[<AutoOpen>]
-module JsonObjectHelper =
-    let wrapWith(nodeType:N) (child:JNode): JObj = JObj().Set(nodeType, child)
-
-    let setGuid (guid:Guid) (jo:JObj): JObj =
-        jo["guid"] <- guid
-        jo
 

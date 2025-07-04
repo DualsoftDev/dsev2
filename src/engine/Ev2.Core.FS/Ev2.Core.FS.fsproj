@@ -9,6 +9,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Content Include="devdoc\SampleAASFolder\aasx\aas\aas.aas.xml" />
+		<None Include="devdoc\SampleAASFolder\aasx\aasx-origin" />
+		<None Include="devdoc\SampleAASFolder\aasx\_rels\aasx-origin.rels" />
+		<None Include="devdoc\SampleAASFolder\_rels\.rels" />
+		<Content Include="devdoc\SampleAASFolder\[Content_Types].xml" />
 		<None Include="DevDoc\속성 추가 절차.md" />
 		<None Include="devdoc\저장 포맷.md" />
 		<None Include="devdoc\AAS 검증.md" />
