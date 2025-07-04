@@ -65,7 +65,7 @@ module Interfaces =
     let internal emptyGuid    = Guid.Empty
     let internal newGuid()    = Guid.NewGuid()
     let internal s2guid (s:string) = Guid.Parse s
-    let internal guid2str (g:Guid) = g.ToString("D")
+    let guid2str (g:Guid) = g.ToString("D")
 
     let internal now() =
         let x = AppSettings.TheAppSettings

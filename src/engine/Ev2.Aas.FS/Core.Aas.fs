@@ -24,6 +24,7 @@ type JArr = System.Text.Json.Nodes.JsonArray
 module AasSemantics =
     let map : Map<string, string> =
         Map [
+            "Project",          "https://dualsoft.com/aas/project"
             "System",           "https://dualsoft.com/aas/system"
             "Name",             "https://dualsoft.com/aas/unique/name"
             "Guid",             "https://dualsoft.com/aas/unique/guid"
@@ -237,6 +238,20 @@ module JsonExtensionModule =
     type PropertyCounter = Dictionary<string, int>
     let thePropertyCounter = PropertyCounter() // 전역으로 사용되는 property counter.  이름별로 몇 개의 property 가 있는지 카운트
 
+    let getCountedName2(name:string) (counter:PropertyCounter option) =
+        let counter = counter |? thePropertyCounter // 전역 property counter 사용
+        let count =
+            if counter.ContainsKey(name) then
+                let current = counter.[name]
+                counter.[name] <- current + 1
+                current + 1
+            else
+                counter.[name] <- 0
+                0
+        $"""{name}{if count = 0 then "" else count.ToString()}""" // name + count.  count 가 0 이면 name 만 사용
+    let getCountedName name = getCountedName2 name (Some thePropertyCounter)
+
+
     type System.Text.Json.Nodes.JsonObject with
         member x.Set(key:N, value:string):  JObj = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
         member x.Set(key:N, ja:JArr):       JObj = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
@@ -300,29 +315,21 @@ module JsonExtensionModule =
         member x.SetModelType(modelType:ModelType) = x.Set(N.ModelType, modelType.ToString())
 
         member this.SetSemantic(semanticKey:string): JObj =
+            match this.TryGetPropertyValue(N.IdShort.ToString()) with
+            | true, _ -> ()
+            | _ ->
+                let idShort = getCountedName semanticKey
+                this.Set(N.IdShort, idShort) |> ignore // idShort 가 없으면 semanticKey 를 idShort 로 사용
+
             match AasSemantics.map |> Map.tryFind semanticKey with
             | Some semanticId -> this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
             | None -> failwithf "Not supported semantic name: %s" semanticKey
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
         member this.TrySetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =
-            if name = "Source" then
-                noop()
-
-
             match this.SetTypedValue(value) with
             | Some jobj ->
-                let counters = counters |? thePropertyCounter // 전역 property counter 사용
-                let count =
-                    if counters.ContainsKey(name) then
-                        let current = counters.[name]
-                        counters.[name] <- current + 1
-                        current + 1
-                    else
-                        counters.[name] <- 0
-                        0
-
-                let idShort = if count = 0 then name else sprintf "%s%d" name count
+                let idShort = getCountedName2 name counters
 
                 jobj.SetSemantic(name)
                     .Set(N.IdShort, idShort)
@@ -411,10 +418,11 @@ module JsonExtensionModule =
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(semanticKey:string, values:JNode seq): JObj =
             x.AddProperties(
-                semanticKey = semanticKey,
-                modelType = A.smc,
-                values = values
+                semanticKey = semanticKey
+                , modelType = A.smc
+                , values = values
             )
+
     type System.Text.Json.Nodes.JsonNode with
         /// JsonNode(=> JNode) 를 Json string 으로 변환
         member x.Stringify(?settings:JsonSerializerOptions):string =

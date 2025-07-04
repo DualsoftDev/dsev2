@@ -92,9 +92,9 @@ module AasXModule =
             do
                 let entry = archive.CreateEntry("_rels/.rels")
                 use writer = new StreamWriter(entry.Open(), Encoding.UTF8)
-                let target = doubleQuote "/aasx/aasx-origin"
-                let id = doubleQuote "R320e13957d794f91"
-                writer.Write """<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://www.admin-shell.io/aasx/relationships/aasx-origin" Target="/aasx/aasx-origin" Id="R320e13957d794f91" /></Relationships>"""
+                let target = "/aasx/aasx-origin"
+                let id = "R320e13957d794f91"
+                writer.Write $"""<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://www.admin-shell.io/aasx/relationships/aasx-origin" Target="{target}" Id="{id}" /></Relationships>"""
 
             // 3. aasx/aasx-origin (빈 내용이지만 반드시 있어야 함)
             do
@@ -106,9 +106,9 @@ module AasXModule =
             do
                 let entry = archive.CreateEntry("aasx/_rels/aasx-origin.rels")
                 use writer = new StreamWriter(entry.Open(), Encoding.UTF8)
-                let target = doubleQuote "/aasx/aas/aas.aas.xml"
-                let id = doubleQuote "R40528201d6544e91"
-                writer.Write """<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://www.admin-shell.io/aasx/relationships/aas-spec" Target="/aasx/aas/aas.aas.xml" Id="R40528201d6544e91" /></Relationships>"""
+                let target = "/aasx/aas/aas.aas.xml"
+                let id = "R40528201d6544e91"
+                writer.Write $"""<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://www.admin-shell.io/aasx/relationships/aas-spec" Target="{target}" Id="{id}" /></Relationships>"""
 
             // 5. aasx/aas/aas.aas.xml (실제 AAS XML 데이터)
             do

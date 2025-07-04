@@ -37,7 +37,8 @@ module CoreToAas =
                         JObj().TrySetProperty(x.DateTime,            "DateTime")
                     } |> choose id |> Seq.cast<JNode>
                 |]
-                JObj().ToSjSMC("Detail", props)
+                JObj()
+                    .ToSjSMC("Detail", props)
 
             let myprotos = x.MyPrototypeSystems |-> _.ToSjSMC()
             let myPrototypeSystems =
@@ -80,10 +81,9 @@ module CoreToAas =
                 JObj().AddProperties(
                     category = Category.CONSTANT,
                     modelType = ModelType.Submodel,
-                    idShort = "Identification",
-                    id = A.ridIdentification,
+                    id = guid2str prj.Guid,
                     kind = KindType.Instance,
-                    semanticKey = A.ridIdentification,
+                    semanticKey = "Project",
                     smel = prj.collectChildren()
                 )
             sm
@@ -157,10 +157,9 @@ module CoreToAas =
                 JObj().AddProperties(
                     category = Category.CONSTANT,
                     modelType = ModelType.Submodel,
-                    idShort = "Identification",
-                    id = A.ridIdentification,
+                    id = guid2str sys.Guid,
                     kind = KindType.Instance,
-                    semanticKey = A.ridIdentification,
+                    semanticKey = "System",
                     smel = sys.collectChildren()
                 )
             sm
