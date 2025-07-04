@@ -15,6 +15,7 @@
 		<Content Include="AasSyntax.md" />
 		<Content Include="maximal.json" />
 		<Content Include="minimal.json" />
+		<Compile Include="Prelude.fs" />
 		<Compile Include="Core.Aas.fs" />
 		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.From.Aas.fs" />

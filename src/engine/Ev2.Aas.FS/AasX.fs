@@ -13,13 +13,27 @@ open System.IO.Compression
 open System.Text
 open AasCore.Aas3_0
 open System.Text.Json
-open System.IO.Packaging
+//open System.IO.Packaging
 open System.IO
 open System.IO.Compression
 open System.Text
 open System.Xml
+open System.IO
+open System.IO.Compression
+open System.Text
+open System.Xml
+open System.IO
+open System.IO.Compression
+open System.Xml.Linq
+open AasCore.Aas3_0
+
+
 
 open AasCore.Aas3_0
+
+
+
+
 [<AutoOpen>]
 module AasXModule =
     type NjProject with
@@ -43,18 +57,16 @@ module AasXModule =
                 AssetAdministrationShell(
                     id = "urn:dualsoft:njproject",
                     assetInformation = assetInfo,
-                    idShort = "NjProjectShell",
+                    idShort = "ProjectShell",
                     submodels = ResizeArray<IReference>([ smRef ])
                 )
 
             let env =
-                let submodels = sm :> ISubmodel |> Array.singleton |> ResizeArray   // ResizeArray<ISubmodel>() |> tee(fun z -> z.Add(sm :> ISubmodel))
-                let aasShells = shell :> IAssetAdministrationShell |> Array.singleton |> ResizeArray   // ResizeArray<ISubmodel>() |> tee(fun z -> z.Add(sm :> ISubmodel))
+                let submodels = sm    :> ISubmodel                 |> Array.singleton |> ResizeArray
+                let aasShells = shell :> IAssetAdministrationShell |> Array.singleton |> ResizeArray
                 Environment(submodels = submodels, assetAdministrationShells = aasShells)
-            //env.Submodels.Add(sm)
-            //env.AssetAdministrationShells.Add(shell)
 
-            AasCore.Aas3_0.Jsonization.Serialize.ToJsonObject(env)
+            Jsonization.Serialize.ToJsonObject(env)
 
         member x.ToAasJsonENV(): string =
             let jobj = x.ToSjENV()
@@ -74,38 +86,29 @@ module AasXModule =
             do
                 let entry = archive.CreateEntry("[Content_Types].xml")
                 use writer = new StreamWriter(entry.Open(), Encoding.UTF8)
-                writer.Write """<?xml version="1.0" encoding="utf-8"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-    <Default Extension="xml" ContentType="application/xml" />
-</Types>"""
+                writer.Write """<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" /><Default Extension="xml" ContentType="text/xml" /><Override PartName="/aasx/aasx-origin" ContentType="text/plain" /></Types>"""
 
             // 2. _rels/.rels
             do
                 let entry = archive.CreateEntry("_rels/.rels")
                 use writer = new StreamWriter(entry.Open(), Encoding.UTF8)
-                writer.Write """<?xml version="1.0" encoding="utf-8"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-    <Relationship Type="http://www.admin-shell.io/aasx/relationships/aasx-origin"
-                Target="/aasx/aasx-origin"
-                Id="rel0" />
-</Relationships>"""
+                let target = doubleQuote "/aasx/aasx-origin"
+                let id = doubleQuote "R320e13957d794f91"
+                writer.Write """<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://www.admin-shell.io/aasx/relationships/aasx-origin" Target="/aasx/aasx-origin" Id="R320e13957d794f91" /></Relationships>"""
 
-            // 3. aasx/aasx-origin
+            // 3. aasx/aasx-origin (빈 내용이지만 반드시 있어야 함)
             do
                 let entry = archive.CreateEntry("aasx/aasx-origin")
                 use writer = new StreamWriter(entry.Open(), Encoding.UTF8)
-                writer.Write "/aasx/aas/aas.aas.xml"
+                writer.Write("Intentionally empty.")
 
             // 4. aasx/_rels/aasx-origin.rels
             do
                 let entry = archive.CreateEntry("aasx/_rels/aasx-origin.rels")
                 use writer = new StreamWriter(entry.Open(), Encoding.UTF8)
-                writer.Write """<?xml version="1.0" encoding="utf-8"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-    <Relationship Type="http://www.admin-shell.io/aasx/relationships/aas-spec"
-                Target="/aasx/aas/aas.aas.xml"
-                Id="relAasSpec" />
-</Relationships>"""
+                let target = doubleQuote "/aasx/aas/aas.aas.xml"
+                let id = doubleQuote "R40528201d6544e91"
+                writer.Write """<?xml version="1.0" encoding="utf-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Type="http://www.admin-shell.io/aasx/relationships/aas-spec" Target="/aasx/aas/aas.aas.xml" Id="R40528201d6544e91" /></Relationships>"""
 
             // 5. aasx/aas/aas.aas.xml (실제 AAS XML 데이터)
             do
