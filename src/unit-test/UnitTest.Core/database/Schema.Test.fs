@@ -343,10 +343,10 @@ module Schema =
             1 === countCall
 
 
-            let systems = conn.EnumerateRows<ORMSystem>(Tn.System) |> List.ofSeq
-            let flows = conn.EnumerateRows<ORMFlow>(Tn.Flow) |> List.ofSeq
-            let works = conn.EnumerateRows<ORMWork>(Tn.Work) |> List.ofSeq
-            let calls = conn.EnumerateRows<ORMCall>(Tn.Call) |> List.ofSeq
+            let systems = conn.QueryRows<ORMSystem>(Tn.System) |> List.ofSeq
+            let flows   = conn.QueryRows<ORMFlow>  (Tn.Flow)   |> List.ofSeq
+            let works   = conn.QueryRows<ORMWork>  (Tn.Work)   |> List.ofSeq
+            let calls   = conn.QueryRows<ORMCall>  (Tn.Call)   |> List.ofSeq
 
             systems.Length === 1
             systems[0].Name === sysName

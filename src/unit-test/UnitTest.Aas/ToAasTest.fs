@@ -40,7 +40,7 @@ module ToAasTest =
 
             let project = RtProject.FromJson(dsProject)
             let json = project.ToJson()
-            json === dsJson
+            json =~= dsProject
 
             //let json = project.ToJsonViaCode().Stringify()
             ()
@@ -128,7 +128,7 @@ module ToAasTest =
 
             njProject.ExportToAasxFile("test.aasx") |> ignore
 
-            let envJson = njProject.ToAasJsonStringENV()
+            let envJson:string = njProject.ToAasJsonStringENV()
 
             let jSm:JNode = njProject.ToSjSubmodel()
             let aasJson = jSm.Stringify()

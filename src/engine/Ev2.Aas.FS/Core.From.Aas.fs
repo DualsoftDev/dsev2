@@ -11,76 +11,6 @@ open Dual.Common.Core.FS
 open Ev2.Core.FS
 open System.Globalization
 
-
-[<AutoOpen>]
-module PropModule =
-    /// SemanticId 키 매칭 유틸
-    let internal hasSemanticKey (semanticKey: string) (semantic: IHasSemantics) =
-        semantic.SemanticId <> null &&
-        semantic.SemanticId.Keys
-        |> Seq.exists (fun k -> k.Value = AasSemantics.map[semanticKey])
-
-    type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
-
-    type SubmodelElementCollection with
-        member smc.TryGetPropValueBySemanticKey (semanticKey:string): string option =
-            smc.Value
-            |> Seq.tryPick (function
-                | :? Property as p when hasSemanticKey semanticKey p -> Some p.Value
-                | _ -> None)
-
-        member smc.CollectChildrenSMCWithSemanticKey(semanticKey: string): SubmodelElementCollection [] =
-            smc.Value
-            >>= (function
-                | :? SubmodelElementCollection as child when hasSemanticKey semanticKey child -> [child]
-                | _ -> [])
-            |> toArray
-
-        member smc.TryGetPropValue (propName:string) = smc.TryGetPropValueBySemanticKey propName
-
-        member smc.TryGetPropValue<'T> (propName: string): 'T option =
-            smc.TryGetPropValue propName
-            >>= (fun str ->
-                try
-                    let value =
-                        match typeof<'T> with
-                        | _ when typeof<'T> = typeof<string> ->
-                            box str
-                        | _ when typeof<'T> = typeof<Guid> ->
-                            str |> Guid.Parse |> box
-                        | _ when typeof<'T> = typeof<int> ->
-                            str |> Int32.Parse |> box
-                        | _ when typeof<'T> = typeof<float> ->
-                            str |> Double.Parse |> box
-                        | _ when typeof<'T> = typeof<bool> ->
-                            str |> Boolean.Parse |> box
-                        | _ ->
-                            // 일반적인 Convert.ChangeType 사용
-                            Convert.ChangeType(str, typeof<'T>, CultureInfo.InvariantCulture)
-                    Some (value :?> 'T)
-                with _ -> None)
-
-        member smc.GetPropValue propName =
-            smc.TryGetPropValue propName |> Option.get
-
-        member smc.TryFindChildSMC(semanticKey: string): SubmodelElementCollection option =
-            smc.CollectChildrenSMCWithSemanticKey semanticKey |> tryHead
-
-        member smc.TryGetPropValueByCategory (category:string): string option =
-            smc.Value
-            |> Seq.tryPick (function
-                | :? Property as p when p.Category = category -> Some p.Value
-                | _ -> None)
-
-        member smc.ReadUniqueInfo() =
-            let name      = smc.TryGetPropValue "Name"      |? null
-            let guid      = smc.GetPropValue    "Guid"      |> Guid.Parse
-            let parameter = smc.TryGetPropValue "Parameter" |? null
-            let id        = smc.TryGetPropValue "Id"        |-> Id.Parse
-            { Name=name; Guid=guid; Parameter=parameter; Id=id }
-
-
-
 [<AutoOpen>]
 module CoreFromAas =
     //type Environment = AasCore.Aas3_0.Environment
@@ -91,7 +21,7 @@ module CoreFromAas =
             let details =
                 submodel.SubmodelElements
                     .OfType<SubmodelElementCollection>()
-                    .FirstOrDefault(fun sm -> PropModule.hasSemanticKey "Detail" sm)
+                    .FirstOrDefault(fun sm -> sm.hasSemanticKey "Detail")
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
             failwith "ERROR"
 
@@ -110,7 +40,7 @@ module CoreFromAas =
 
             let getSMC (semanticKey:string):SubmodelElementCollection [] =
                 submodel.SubmodelElements
-                |> Seq.tryFind (fun sm -> PropModule.hasSemanticKey semanticKey sm)
+                |> Seq.tryFind (fun sm -> sm.hasSemanticKey semanticKey)
                 >>= (fun sm ->
                     match sm with
                     | :? SubmodelElementCollection as smc -> Some (smc.Value.OfType<SubmodelElementCollection>().ToArray())
@@ -122,7 +52,7 @@ module CoreFromAas =
             let details =
                 submodel.SubmodelElements
                     .OfType<SubmodelElementCollection>()
-                    .FirstOrDefault(fun sm -> PropModule.hasSemanticKey "Detail" sm)
+                    .FirstOrDefault(fun sm -> sm.hasSemanticKey "Detail")
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
             let dateTime      = details.GetPropValue "DateTime"  |> DateTime.Parse
             let iri           = details.GetPropValue "IRI"

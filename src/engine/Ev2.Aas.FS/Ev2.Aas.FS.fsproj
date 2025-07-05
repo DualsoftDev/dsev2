@@ -17,6 +17,7 @@
 		<Content Include="minimal.json" />
 		<Compile Include="Prelude.fs" />
 		<Compile Include="Core.Aas.fs" />
+		<Compile Include="AAS.Extensions.fs" />
 		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.From.Aas.fs" />
 		<Compile Include="AasX.fs" />

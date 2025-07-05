@@ -27,6 +27,19 @@ module DbApiModule =
     let checkedConnections = HashSet<string>()
 
 
+    type IDbConnection with
+        /// DB 의 table 에서 특정 column 의 id 를 기준으로 row 를 가져온다.
+        // e.g x.QueryRows<ORMAction>(Tn.Action, "assetId", assetIds |? [||])
+        member conn.QueryRows<'T>(tableName:string, criteriaColumnName:string, criteriaIds:int[], tr:IDbTransaction) =
+            let filter =
+                match criteriaIds with
+                | [||] -> ""
+                | criteriaIds ->
+                    let ids = criteriaIds |> Seq.map _.ToString() |> String.concat ", "
+                    $" WHERE {criteriaColumnName} IN ({ids})"
+            conn.Query<'T> ($"SELECT * FROM {tableName} {filter};", null, tr)
+
+
     /// Database API
     type AppDbApi(dbProvider:DbProvider) =
         inherit DbApi(dbProvider)
@@ -106,7 +119,7 @@ module DbApiModule =
 
         member private x.EnumerateRows<'T>(tableName:string, criteriaName:string, criteriaIds:int[]) =
             use conn = x.CreateConnection()
-            conn.EnumerateRows<'T>(tableName, criteriaName, criteriaIds, tr=null) |> toArray
+            conn.QueryRows<'T>(tableName, criteriaName, criteriaIds, tr=null) |> toArray
 
         member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
         member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId",   flowIds   |? [||])
