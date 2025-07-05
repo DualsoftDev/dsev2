@@ -64,8 +64,9 @@ module Interfaces =
     let internal noneGuid     = Option<Guid>.None
     let internal emptyGuid    = Guid.Empty
     let internal newGuid()    = Guid.NewGuid()
-    let internal s2guid (s:string) = Guid.Parse s
+    let s2guid (s:string) = Guid.Parse s
     let guid2str (g:Guid) = g.ToString("D")
+    let formatDateTime(dt:DateTime) = dt.ToString("yyyy-MM-ddTHH:mm:ss")
 
     let internal now() =
         let x = AppSettings.TheAppSettings

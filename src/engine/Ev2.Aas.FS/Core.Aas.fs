@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
 open Newtonsoft.Json.Linq
+open System.Text.Json.Nodes
 
 
 /// System.Text.Json.Nodes.JsonNode 의 축약
@@ -49,10 +50,10 @@ module AasSemantics =
             "Lamps",            "https://dualsoft.com/aas/plural/lamps"
             "Conditions",       "https://dualsoft.com/aas/plural/conditions"
             "Actions",          "https://dualsoft.com/aas/plural/actions"
+            "Details",          "https://dualsoft.com/aas/singular/details"
 
             "ApiDef",           "https://dualsoft.com/aas/singular/apiDef"
             "ApiCall",          "https://dualsoft.com/aas/singular/apiCall"
-            "Detail",           "https://dualsoft.com/aas/singular/detail"
             "Work",             "https://dualsoft.com/aas/singular/work"
             "Arrow",            "https://dualsoft.com/aas/singular/arrow"
             "Call",             "https://dualsoft.com/aas/singular/call"
@@ -63,9 +64,10 @@ module AasSemantics =
             "Action",           "https://dualsoft.com/aas/singular/action"
 
 
-            "Version",         "https://dualsoft.com/aas/project/version"
+            "Version",          "https://dualsoft.com/aas/project/version"
             "Database",         "https://dualsoft.com/aas/project/database"
             "ActiveSystems",    "https://dualsoft.com/aas/project/activeSystems"
+            "PassiveSystem",    "https://dualsoft.com/aas/project/passiveSystem"
             "PassiveSystems",   "https://dualsoft.com/aas/project/passiveSystems"
             "MyPrototypeSystems",   "https://dualsoft.com/aas/project/myPrototypeSystems"
             "ImportedPrototypeSystems",   "https://dualsoft.com/aas/project/importedPrototypeSystems"
@@ -99,6 +101,10 @@ module AasSemantics =
             "ValueSpec",        "https://dualsoft.com/aas/apiCall/valueSpec"
 
 
+            "LocalDefinition",  "https://dualsoft.com/aas/passiveSystemLoadType/localDefinition"
+            "InstanceName",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceName"
+            "PrototypeGuid",    "https://dualsoft.com/aas/passiveSystemLoadType/prototypeGuid"
+            "InstanceGuid",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceGuid"
 
 
 
@@ -252,11 +258,15 @@ module JsonExtensionModule =
     let getCountedName name = getCountedName2 name (Some thePropertyCounter)
 
 
+    let cloneJsonNode (node: JsonNode) : JsonNode =
+        let json = node.ToJsonString()
+        JsonNode.Parse(json)
+
     type System.Text.Json.Nodes.JsonObject with
         member x.Set(key:N, value:string):  JObj = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
         member x.Set(key:N, ja:JArr):       JObj = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
         member x.Set(key:N, jn:JNode):      JObj = x |> tee(fun x -> if isItNotNull jn     then x[key.ToString()] <- jn)
-        member x.Set(key:N, jns:JNode seq): JObj = x |> tee(fun x -> if jns.NonNullAny()   then x[key.ToString()] <- JArr (jns.ToArray()))
+        member x.Set(key:N, jns:JNode seq): JObj = x |> tee(fun x -> if jns.NonNullAny()   then x[key.ToString()] <- JArr (jns |-> cloneJsonNode |> toArray))
 
         member x.SetValues(jns:JNode seq) = x.Set(N.Value, jns)
 

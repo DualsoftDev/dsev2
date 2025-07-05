@@ -374,10 +374,11 @@ module rec NewtonsoftJsonObjects =
     let rec internal onNsJsonSerializing (njObj:INjObject) =
         let njUnique = njObj |> tryCast<NjUnique>
         match njUnique |-> _.RuntimeObject with
-        | None ->
-            // RuntimeObject 가 없는 경우는 AAS Submodel 에서 생성한 경우임.
-            // 이 경우는 RuntimeObject 를 채우지 않고, 그냥 넘어감.
-            ()
+        // RuntimeObject 가 없는 경우는 AAS Submodel 에서 생성한 경우임.
+        // 이 경우는 RuntimeObject 를 채우지 않고, 그냥 넘어감.
+        | Some runtimeObj when isItNull runtimeObj -> ()
+        | None -> ()
+
         | Some runtimeObj ->
             fromNjUniqINGD runtimeObj njUnique.Value |> ignore
 
@@ -647,7 +648,7 @@ module rec NewtonsoftJsonObjects =
 [<AutoOpen>]
 module Ds2JsonModule =
     /// Runtime 객체의 validation
-    let internal validateRuntime (rtObj:#RtUnique): #RtUnique =
+    let validateRuntime (rtObj:#RtUnique): #RtUnique =
         let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, fun z -> z :> Unique)
         rtObj.Validate(guidDic)
         rtObj

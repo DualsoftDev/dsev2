@@ -30,7 +30,8 @@ module CoreToAas =
                 let props = [|
                     yield! x.CollectProperties()
                     yield! seq {
-                        JObj().TrySetProperty(x.Database.ToString(), "Database")
+                        if isItNotNull x.Database then
+                            JObj().TrySetProperty(x.Database.ToString(), "Database")
                         JObj().TrySetProperty(x.Description,         "Description")
                         JObj().TrySetProperty(x.Author,              "Author")
                         JObj().TrySetProperty(x.Version.ToString(),  "Version")
@@ -38,7 +39,7 @@ module CoreToAas =
                     } |> choose id |> Seq.cast<JNode>
                 |]
                 JObj()
-                    .ToSjSMC("Detail", props)
+                    .ToSjSMC("Details", props)
 
             let myprotos = x.MyPrototypeSystems |-> _.ToSjSMC()
             let myPrototypeSystems =
@@ -65,13 +66,20 @@ module CoreToAas =
                 )
 
 
-            let passives = x.PassiveSystems |-> _.ToString() |-> (fun z -> JObj().AddProperties(value=z)) |> Seq.cast<JNode> |> J.CreateJArr
+            let passives = x.PassiveSystems |-> _.ToSjSMC()
             let passiveSystems =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = passives
                     , semanticKey = "PassiveSystems"
                 )
+            //let passives = x.PassiveSystems |-> _.ToString() |-> (fun z -> JObj().AddProperties(modelType=ModelType.Property, value=z)) |> Seq.cast<JNode> |> J.CreateJArr
+            //let passiveSystems =
+            //    JObj().AddProperties(
+            //        modelType = A.smc
+            //        , values = passives
+            //        , semanticKey = "PassiveSystems"
+            //    )
 
             [| details; myPrototypeSystems; importedPrototypeSystems; activeSystems; passiveSystems |]
 
@@ -104,7 +112,7 @@ module CoreToAas =
                         JObj().TrySetProperty(x.DateTime,                 "DateTime")
                     } |> choose id |> Seq.cast<JNode>
                 |]
-                JObj().ToSjSMC("Detail", props)
+                JObj().ToSjSMC("Details", props)
 
 
             let fs = x.Flows |-> _.ToSjSMC()
@@ -303,4 +311,19 @@ module CoreToAas =
             JObj().ToSjSMC("Work", props)
             |> _.AddValues([|arrows; calls|] |> choose id)
 
+    type NjSystemLoadType with
+        member x.ToSjSMC(): JNode =
+            let props =
+                seq {
+                    match x with
+                    | LocalDefinition njSys ->
+                        JObj().TrySetProperty("LocalDefinition", "Type")
+                        JObj().TrySetProperty(guid2str njSys.Guid, "Guid")
+                    | Reference ref ->
+                        JObj().TrySetProperty("Reference", "Type")
+                        JObj().TrySetProperty(ref.InstanceName, "InstanceName")
+                        JObj().TrySetProperty(ref.PrototypeGuid, "PrototypeGuid")
+                        JObj().TrySetProperty(ref.InstanceGuid, "InstanceGuid")
+                } |> choose id |> Seq.cast<JNode>
 
+            JObj().ToSjSMC("PassiveSystem", props)

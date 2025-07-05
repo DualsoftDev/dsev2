@@ -6,6 +6,8 @@ open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Core.FS
 open Dual.Common.Base
+open T
+open System.IO
 
 
 module ToAasTest =
@@ -141,4 +143,27 @@ module ToAasTest =
 
             let rtProject2 = RtProject.FromJson(json2)
 
+            ()
+
+
+        [<Test>]
+        member _.``Project with cylinder: instance -> Aas Test`` () =
+            createEditableProject()
+            createEditableSystemCylinder()
+            let originalEdProject = edProject
+            let edProject = edProject.Replicate() |> validateRuntime
+            let prototype = edProject.AddMyPrototypeSystem edSystemCyl
+            let edSysCyl1 = edProject.Instantiate(prototype, Name="실린더 instance1")
+            let edSysCyl2 = edProject.Instantiate(prototype, Name="실린더 instance2")
+            let edSysCyl3 = edProject.Instantiate(prototype, Name="실린더 instance3")
+
+            let projJson = edProject.ToJson(Path.Combine(testDataDir(), "project.json"))
+            let njProject1 = NjProject.FromJson(projJson)
+            let jNodeSM = njProject1.ToSjSubmodel()
+            let aasJson = jNodeSM.Stringify()
+            let submodel = aasJson |> J.CreateIClassFromJson<Aas.Submodel>
+            let njProject2 = NjProject.FromISubmodel(submodel)
+            let json2 = EmJson.ToJson(njProject2)
+
+            projJson === json2
             ()

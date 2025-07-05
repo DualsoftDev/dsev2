@@ -11,7 +11,7 @@ open Dual.Common.Core.FS
 open Dual.Common.Base.FS
 open Ev2.Core.FS
 open System.Globalization
-
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module AasExtensions =
@@ -24,31 +24,36 @@ module AasExtensions =
 
     type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
 
-    type SubmodelElementCollection with
-        member smc.ValuesOfType<'T when 'T :> ISubmodelElement>() = smc.Value.OfType<'T>()
-
-        member smc.TryGetPropValueBySemanticKey (semanticKey:string): string option =
-            smc.ValuesOfType<Property>()
+    type SMEsExtension =
+        [<Extension>]
+        static member TryGetPropValueBySemanticKey(smc:ISubmodelElement seq, semanticKey:string): string option =
+            smc.OfType<Property>()
             |> tryPick (function
                 | p when p.hasSemanticKey semanticKey -> Some p.Value
                 | _ -> None)
 
-        member smc.TryGetPropValueByCategory (category:string): string option =
-            smc.ValuesOfType<Property>()
+        [<Extension>]
+        static member TryGetPropValueByCategory (smc:ISubmodelElement seq, category:string): string option =
+            smc.OfType<Property>()
             |> tryPick (function
                 | p when p.Category = category -> Some p.Value
                 | _ -> None)
 
-        member smc.CollectChildrenSMEWithSemanticKey(semanticKey: string): ISubmodelElement [] =
-            smc.Value
+        [<Extension>]
+        static member CollectChildrenSMEWithSemanticKey(smc:ISubmodelElement seq, semanticKey: string): ISubmodelElement [] =
+            smc
             |> filter (fun sme -> sme.hasSemanticKey semanticKey)
             |> toArray
-        member smc.CollectChildrenSMCWithSemanticKey(semanticKey: string): SubmodelElementCollection [] =
+
+        [<Extension>]
+        static member CollectChildrenSMCWithSemanticKey(smc:ISubmodelElement seq, semanticKey: string): SubmodelElementCollection [] =
             smc.CollectChildrenSMEWithSemanticKey semanticKey |> Seq.cast<SubmodelElementCollection> |> toArray
 
-        member smc.TryGetPropValue (propName:string) = smc.TryGetPropValueBySemanticKey propName
+        [<Extension>]
+        static member TryGetPropValue (smc:ISubmodelElement seq, propName:string) = smc.TryGetPropValueBySemanticKey propName
 
-        member smc.TryGetPropValue<'T> (propName: string): 'T option =
+        [<Extension>]
+        static member TryGetPropValue<'T> (smc:ISubmodelElement seq, propName: string): 'T option =
             smc.TryGetPropValue propName
             >>= (fun str ->
                 try
@@ -70,21 +75,46 @@ module AasExtensions =
                     Some (value :?> 'T)
                 with _ -> None)
 
-        member smc.GetPropValue propName =
+        [<Extension>]
+        static member GetPropValue(smc:ISubmodelElement seq, propName) =
             smc.TryGetPropValue propName |> Option.get
 
-        member smc.TryFindChildSME(semanticKey: string): ISubmodelElement option =
+        [<Extension>]
+        static member TryFindChildSME(smc:ISubmodelElement seq, semanticKey: string): ISubmodelElement option =
             smc.CollectChildrenSMEWithSemanticKey semanticKey |> tryHead
 
-        member smc.TryFindChildSMC(semanticKey: string): SubmodelElementCollection option =
+        [<Extension>]
+        static member TryFindChildSMC(smc:ISubmodelElement seq, semanticKey: string): SubmodelElementCollection option =
             (smc.TryFindChildSME semanticKey).Cast<SubmodelElementCollection>()
 
-
-        member smc.ReadUniqueInfo() =
+        [<Extension>]
+        static member ReadUniqueInfo(smc:ISubmodelElement seq) =
             let name      = smc.TryGetPropValue "Name"      |? null
             let guid      = smc.GetPropValue    "Guid"      |> Guid.Parse
             let parameter = smc.TryGetPropValue "Parameter" |? null
             let id        = smc.TryGetPropValue "Id"        |-> Id.Parse
             { Name=name; Guid=guid; Parameter=parameter; Id=id }
 
+
+    let private nonnullize(values:ResizeArray<ISubmodelElement>) = if values = null then ResizeArray<ISubmodelElement>() else values
+    type SubmodelElementCollection with
+        member smc.ReadUniqueInfo() = nonnullize(smc.Value).ReadUniqueInfo()
+        member smc.ValuesOfType<'T when 'T :> ISubmodelElement>() = nonnullize(smc.Value).OfType<'T>()
+        member smc.TryGetPropValueBySemanticKey (semanticKey:string): string option = nonnullize(smc.Value).TryGetPropValueBySemanticKey semanticKey
+        member smc.TryGetPropValueByCategory (category:string): string option = nonnullize(smc.Value).TryGetPropValueByCategory category
+        member smc.CollectChildrenSMEWithSemanticKey(semanticKey: string): ISubmodelElement [] = nonnullize(smc.Value).CollectChildrenSMEWithSemanticKey semanticKey
+        member smc.CollectChildrenSMCWithSemanticKey(semanticKey: string): SubmodelElementCollection [] = nonnullize(smc.Value).CollectChildrenSMEWithSemanticKey semanticKey |> Seq.cast<SubmodelElementCollection> |> toArray
+        member smc.TryGetPropValue (propName:string) = smc.TryGetPropValueBySemanticKey propName
+        member smc.TryGetPropValue<'T> (propName: string): 'T option = nonnullize(smc.Value).TryGetPropValue<'T> propName
+        member smc.GetPropValue (propName:string):string = nonnullize(smc.Value).GetPropValue propName
+        member smc.TryFindChildSME(semanticKey: string): ISubmodelElement option = nonnullize(smc.Value).TryFindChildSME semanticKey
+        member smc.TryFindChildSMC(semanticKey: string): SubmodelElementCollection option = nonnullize(smc.Value).TryFindChildSMC semanticKey
+
+        member smc.GetSMC(semanticKey: string): SubmodelElementCollection [] =
+                smc.CollectChildrenSMCWithSemanticKey semanticKey
+
+    type ISubmodel with
+        member sm.GetSMCWithSemanticKey(semanticKey:string): SubmodelElementCollection [] =
+            sm.SubmodelElements
+                .CollectChildrenSMCWithSemanticKey semanticKey
 
