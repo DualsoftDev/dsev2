@@ -12,6 +12,3 @@
 [submodule "submodules/aasx-package-explorer"]
 	path = submodules/aasx-package-explorer
 	url = https://github.com/admin-shell-io/aasx-package-explorer.git
-[submodule "submodules/aas-package3-csharp"]
-	path = submodules/aas-package3-csharp
-	url = https://github.com/aas-core-works/aas-package3-csharp.git

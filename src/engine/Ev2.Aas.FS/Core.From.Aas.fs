@@ -23,18 +23,18 @@ module PropModule =
     type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
 
     type SubmodelElementCollection with
-        member smc.TryGetPropValueByCategory (category:string): string option =
-            smc.Value
-            |> Seq.tryPick (function
-                | :? Property as p when p.Category = category -> Some p.Value
-                | _ -> None)
-
         member smc.TryGetPropValueBySemanticKey (semanticKey:string): string option =
-            let semanticId = AasSemantics.map[semanticKey]
             smc.Value
             |> Seq.tryPick (function
                 | :? Property as p when hasSemanticKey semanticKey p -> Some p.Value
                 | _ -> None)
+
+        member smc.CollectChildrenSMCWithSemanticKey(semanticKey: string): SubmodelElementCollection [] =
+            smc.Value
+            >>= (function
+                | :? SubmodelElementCollection as child when hasSemanticKey semanticKey child -> [child]
+                | _ -> [])
+            |> toArray
 
         member smc.TryGetPropValue (propName:string) = smc.TryGetPropValueBySemanticKey propName
 
@@ -63,22 +63,20 @@ module PropModule =
         member smc.GetPropValue propName =
             smc.TryGetPropValue propName |> Option.get
 
-        member smc.EnumerateChildrenSMC(semanticKey: string): SubmodelElementCollection [] =
-            let semanticId = AasSemantics.map[semanticKey]
-            smc.Value
-            >>= (function
-                | :? SubmodelElementCollection as child when hasSemanticKey semanticKey child -> [child]
-                | _ -> [])
-            |> toArray
-
         member smc.TryFindChildSMC(semanticKey: string): SubmodelElementCollection option =
-            smc.EnumerateChildrenSMC semanticKey |> tryHead
+            smc.CollectChildrenSMCWithSemanticKey semanticKey |> tryHead
+
+        member smc.TryGetPropValueByCategory (category:string): string option =
+            smc.Value
+            |> Seq.tryPick (function
+                | :? Property as p when p.Category = category -> Some p.Value
+                | _ -> None)
 
         member smc.ReadUniqueInfo() =
-            let name = smc.TryGetPropValue "Name" |? null
-            let guid = smc.GetPropValue "Guid" |> Guid.Parse
+            let name      = smc.TryGetPropValue "Name"      |? null
+            let guid      = smc.GetPropValue    "Guid"      |> Guid.Parse
             let parameter = smc.TryGetPropValue "Parameter" |? null
-            let id = smc.TryGetPropValue "Id" |-> Id.Parse
+            let id        = smc.TryGetPropValue "Id"        |-> Id.Parse
             { Name=name; Guid=guid; Parameter=parameter; Id=id }
 
 
@@ -90,11 +88,16 @@ module CoreFromAas =
 
     type NjProject with
         static member FromISubmodel(submodel:ISubmodel): NjProject =
+            let details =
+                submodel.SubmodelElements
+                    .OfType<SubmodelElementCollection>()
+                    .FirstOrDefault(fun sm -> PropModule.hasSemanticKey "Detail" sm)
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
             failwith "ERROR"
 
     type NjSystem with
-        static member FromAasJsonENV(json:string): NjSystem =
-            let env = J.CreateIClassFromJson<Environment>(json)
+        static member FromAasJsonStringENV(jsonEnv:string): NjSystem =
+            let env = J.CreateIClassFromJson<Environment>(jsonEnv)
             let sm = env.Submodels.First()
             NjSystem.FromISubmodel(sm)
 
@@ -105,7 +108,7 @@ module CoreFromAas =
         static member FromISubmodel(submodel:ISubmodel): NjSystem =
             assert(submodel.IdShort.IsOneOf("Identification", "System"))
 
-            let getSMC semanticKey =
+            let getSMC (semanticKey:string):SubmodelElementCollection [] =
                 submodel.SubmodelElements
                 |> Seq.tryFind (fun sm -> PropModule.hasSemanticKey semanticKey sm)
                 >>= (fun sm ->
@@ -129,11 +132,11 @@ module CoreFromAas =
             let description   = details.TryGetPropValue "Description" |? null
 
 
-            let apiDefs  = getSMC "ApiDefs"|-> NjApiDef.FromSMC
+            let apiDefs  = getSMC "ApiDefs" |-> NjApiDef.FromSMC
             let apiCalls = getSMC "ApiCalls"|-> NjApiCall.FromSMC
-            let works    = getSMC "Works"  |-> NjWork.FromSMC
-            let flows    = getSMC "Flows"  |-> NjFlow.FromSMC
-            let arrows   = getSMC "Arrows" |-> NjArrow.FromSMC
+            let works    = getSMC "Works"   |-> NjWork.FromSMC
+            let flows    = getSMC "Flows"   |-> NjFlow.FromSMC
+            let arrows   = getSMC "Arrows"  |-> NjArrow.FromSMC
 
             NjSystem(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
@@ -188,10 +191,10 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
-            let buttons     = smc.TryFindChildSMC "Buttons"     |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Button")     |? [||] |-> NjButton.FromSMC
-            let lamps       = smc.TryFindChildSMC "Lamps"       |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Lamp")       |? [||] |-> NjLamp.FromSMC
-            let conditions  = smc.TryFindChildSMC "Conditions"  |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Condition")  |? [||] |-> NjCondition.FromSMC
-            let actions     = smc.TryFindChildSMC "Actions"     |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Action")     |? [||] |-> NjAction.FromSMC
+            let buttons     = smc.TryFindChildSMC "Buttons"     |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Button")     |? [||] |-> NjButton.FromSMC
+            let lamps       = smc.TryFindChildSMC "Lamps"       |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Lamp")       |? [||] |-> NjLamp.FromSMC
+            let conditions  = smc.TryFindChildSMC "Conditions"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Condition")  |? [||] |-> NjCondition.FromSMC
+            let actions     = smc.TryFindChildSMC "Actions"     |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Action")     |? [||] |-> NjAction.FromSMC
 
             NjFlow( Name=name, Guid=guid, Id=id, Parameter=parameter, Buttons = buttons, Lamps = lamps, Conditions = conditions, Actions = actions)
 
@@ -201,8 +204,8 @@ module CoreFromAas =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
             (* AAS 구조상 Work/Calls/Call[], Work/Arrows/Arrow[] 형태로 존재 *)
-            let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Call")  |? [||] |-> NjCall.FromSMC
-            let arrows = smc.TryFindChildSMC "Arrows" |-> (fun smc2 -> smc2.EnumerateChildrenSMC "Arrow") |? [||] |-> NjArrow.FromSMC
+            let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Call")  |? [||] |-> NjCall.FromSMC
+            let arrows = smc.TryFindChildSMC "Arrows" |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Arrow") |? [||] |-> NjArrow.FromSMC
 
             NjWork(Name=name, Guid=guid, Id=id, Parameter=parameter, Calls = calls, Arrows = arrows)
 

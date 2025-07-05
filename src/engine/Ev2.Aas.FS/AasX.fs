@@ -52,12 +52,12 @@ module AasXModule =
 
             Jsonization.Serialize.ToJsonObject(env)
 
-        member x.ToAasJsonENV(): string =
+        member x.ToAasJsonStringENV(): string =
             let jobj = x.ToSjENV()
             jobj.ToJsonString(JsonSerializerOptions(WriteIndented = true))
 
         member x.ToENV(): Aas.Environment =
-            x.ToAasJsonENV() |> J.CreateIClassFromJson<Aas.Environment>
+            x.ToAasJsonStringENV() |> J.CreateIClassFromJson<Aas.Environment>
 
 
         member prj.ExportToAasxFile(outputPath: string): unit =

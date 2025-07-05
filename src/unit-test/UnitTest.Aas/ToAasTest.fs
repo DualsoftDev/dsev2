@@ -128,7 +128,7 @@ module ToAasTest =
 
             njProject.ExportToAasxFile("test.aasx") |> ignore
 
-            let envJson = njProject.ToAasJsonENV()
+            let envJson = njProject.ToAasJsonStringENV()
 
             let jSm:JNode = njProject.ToSjSubmodel()
             let aasJson = jSm.Stringify()
