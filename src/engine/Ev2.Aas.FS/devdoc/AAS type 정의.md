@@ -1,6 +1,6 @@
 IClass
 	IHasSemantics	
 		ISubmodelElement
-			ISubmodelElementCollection
-				SubmodelElementCollection
+			ISubmodelElementCollection		|	.Value(ISubmodelElement[])
+				SubmodelElementCollection	|	.Category, .IdShort, .SemanticId
 		ISubmodel

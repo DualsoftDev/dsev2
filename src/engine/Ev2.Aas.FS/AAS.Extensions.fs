@@ -33,6 +33,12 @@ module AasExtensions =
                 | p when p.hasSemanticKey semanticKey -> Some p.Value
                 | _ -> None)
 
+        member smc.TryGetPropValueByCategory (category:string): string option =
+            smc.ValuesOfType<Property>()
+            |> tryPick (function
+                | p when p.Category = category -> Some p.Value
+                | _ -> None)
+
         member smc.CollectChildrenSMEWithSemanticKey(semanticKey: string): ISubmodelElement [] =
             smc.Value
             |> filter (fun sme -> sme.hasSemanticKey semanticKey)
@@ -73,12 +79,6 @@ module AasExtensions =
         member smc.TryFindChildSMC(semanticKey: string): SubmodelElementCollection option =
             (smc.TryFindChildSME semanticKey).Cast<SubmodelElementCollection>()
 
-
-        member smc.TryGetPropValueByCategory (category:string): string option =
-            smc.Value
-            |> Seq.tryPick (function
-                | :? Property as p when p.Category = category -> Some p.Value
-                | _ -> None)
 
         member smc.ReadUniqueInfo() =
             let name      = smc.TryGetPropValue "Name"      |? null
