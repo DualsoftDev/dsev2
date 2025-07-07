@@ -17,6 +17,23 @@ open System
 
 [<AutoOpen>]
 module AasXModule =
+    /// XML에서 AAS 버전을 감지하는 헬퍼 함수 (System.Version 사용)
+    let detectAasVersionFromXml(xmlContent: string): System.Version option =
+        try
+            let doc = XmlDocument()
+            doc.LoadXml(xmlContent)
+            let rootElement = doc.DocumentElement
+            if rootElement <> null then
+                match rootElement.NamespaceURI with
+                | "http://www.admin-shell.io/aas/1/0" -> Some (Version(1,0))
+                | "http://www.admin-shell.io/aas/2/0" -> Some (Version(2,0))
+                | "https://admin-shell.io/aas/3/0" -> Some (Version(3,0))
+                | _ -> None
+            else
+                None
+        with
+        | _ -> None
+
     type NjProject with
         member x.ToSjENV() : JObj =
 
@@ -116,44 +133,146 @@ module AasXModule =
 
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
+        /// 개선된 버전: AASX 파일 구조 분석, AAS 버전 확인, Content_Types.xml 기반 파일 찾기
         member prj.InjectToExistingAasxFile(aasxPath: string): unit =
-            // 기존 AASX 파일에서 Environment 읽기
-            let envXml, existingEnv =
+            // AASX 파일 구조 분석 및 AAS 버전 확인
+            let aasFileInfo, existingEnv =
                 use fileStream = new FileStream(aasxPath, FileMode.Open)
                 use archive = new ZipArchive(fileStream, ZipArchiveMode.Read)
 
-                // aasx/aas/aas.aas.xml 파일에서 Environment 추출
-                let aasEntry = archive.GetEntry("aasx/aas/aas.aas.xml")
+                // 1. [Content_Types].xml 파일 분석
+                let contentTypesEntry = archive.GetEntry("[Content_Types].xml")
+                if contentTypesEntry = null then
+                    failwith "AASX file does not contain [Content_Types].xml"
+
+                let contentTypesXml =
+                    use reader = new StreamReader(contentTypesEntry.Open(), Encoding.UTF8)
+                    reader.ReadToEnd()
+
+                // 2. Content_Types.xml에서 AAS XML 파일 찾기
+                let aasXmlFile =
+                    let doc = XmlDocument()
+                    doc.LoadXml(contentTypesXml)
+                    let overrides = doc.SelectNodes("//Override[@ContentType='text/xml']")
+                    let mutable foundAasFile = ""
+
+                    for i = 0 to overrides.Count - 1 do
+                        let overrideNode = overrides.Item(i) :?> XmlElement
+                        let partName = overrideNode.GetAttribute("PartName")
+                        if partName.Contains("aas") && partName.EndsWith(".xml") then
+                            foundAasFile <- partName.TrimStart('/')
+                            ()
+
+                    if foundAasFile = "" then
+                        // 기본 경로 시도
+                        "aasx/aas/aas.aas.xml"
+                    else
+                        foundAasFile
+
+                // 3. AAS XML 파일에서 Environment 추출 및 버전 확인
+                let aasEntry = archive.GetEntry(aasXmlFile)
                 if aasEntry = null then
-                    failwith "AASX file does not contain aasx/aas/aas.aas.xml"
+                    failwith $"AASX file does not contain {aasXmlFile}"
 
                 let xml =
                     use reader = new StreamReader(aasEntry.Open(), Encoding.UTF8)
                     reader.ReadToEnd()
 
+                // 4. AAS 버전 확인
+                let aasVersionOpt = detectAasVersionFromXml(xml)
+
+                match aasVersionOpt with
+                | Some v when v = Version(3,0) ->
+                    () // OK
+                | Some v when v = Version(2,0) ->
+                    failwith "AAS version 2.0 is not supported. Only AAS version 3.0 is supported for injection."
+                | Some v ->
+                    failwith ($"Unsupported AAS version: {v}. Only AAS version 3.0 is supported.")
+                | None ->
+                    failwith "Could not detect AAS version from XML."
+
                 let env = J.CreateIClassFromXml<Aas.Environment>(xml)
-                (xml, env)
+                ({| FilePath = aasXmlFile; Version = (aasVersionOpt |> Option.map string |> Option.defaultValue "unknown") |}, env)
 
             // 현재 프로젝트의 Submodel 생성
             let newProjectSubmodel =
                 let json = prj.ToSjSubmodel().Stringify()
                 J.CreateIClassFromJson<Aas.Submodel>(json)
 
-            // 기존 Environment에서 Project submodel만 교체
+            // 기존 Environment에서 Project submodel 교체 또는 추가
             let updatedSubmodels =
-                existingEnv.Submodels
-                |> Seq.map (fun sm ->
-                    if sm.Id = newProjectSubmodel.Id then
-                        newProjectSubmodel :> ISubmodel
-                    else
-                        sm :> ISubmodel
+                let existingSubmodelIds =
+                    existingEnv.Submodels
+                    |> Seq.map (fun sm -> sm.Id)
+                    |> Set.ofSeq
+
+                let replacedSubmodels =
+                    existingEnv.Submodels
+                    |> Seq.map (fun sm ->
+                        if sm.Id = newProjectSubmodel.Id then
+                            newProjectSubmodel :> ISubmodel
+                        else
+                            sm :> ISubmodel
+                    )
+
+                if existingSubmodelIds.Contains(newProjectSubmodel.Id) then
+                    // 기존 submodel이 있으면 교체
+                    replacedSubmodels |> ResizeArray<ISubmodel>
+                else
+                    // 기존 submodel이 없으면 새로 추가
+                    let allSubmodels =
+                        replacedSubmodels
+                        |> Seq.append [newProjectSubmodel :> ISubmodel]
+                    allSubmodels |> ResizeArray<ISubmodel>
+
+            // AssetAdministrationShell의 submodel 참조도 업데이트
+            let updatedAssetAdministrationShells =
+                existingEnv.AssetAdministrationShells
+                |> Seq.map (fun aas ->
+                    let updatedSubmodelRefs =
+                        let existingRefIds =
+                            aas.Submodels
+                            |> Seq.map (fun ref ->
+                                ref.Keys
+                                |> Seq.find (fun k -> k.Type = KeyTypes.Submodel)
+                                |> fun k -> k.Value
+                            )
+                            |> Set.ofSeq
+
+                        if existingRefIds.Contains(newProjectSubmodel.Id) then
+                            // 기존 참조가 있으면 그대로 유지 (교체된 submodel 참조)
+                            aas.Submodels
+                        else
+                            // 기존 참조가 없으면 새 참조 추가
+                            let newRef =
+                                let key = Key(KeyTypes.Submodel, newProjectSubmodel.Id) :> IKey
+                                Reference(ReferenceTypes.ModelReference, ResizeArray<IKey>([key])) :> IReference
+
+                            let allRefs =
+                                aas.Submodels
+                                |> Seq.append [newRef]
+                            ResizeArray<IReference>(allRefs)
+
+                    AssetAdministrationShell(
+                        id = aas.Id,
+                        assetInformation = aas.AssetInformation,
+                        idShort = aas.IdShort,
+                        submodels = updatedSubmodelRefs,
+                        extensions = aas.Extensions,
+                        category = aas.Category,
+                        description = aas.Description,
+                        displayName = aas.DisplayName,
+                        administration = aas.Administration,
+                        embeddedDataSpecifications = aas.EmbeddedDataSpecifications,
+                        derivedFrom = aas.DerivedFrom
+                    ) :> IAssetAdministrationShell
                 )
-                |> ResizeArray<ISubmodel>
+                |> ResizeArray<IAssetAdministrationShell>
 
             let updatedEnv =
                 Environment(
                     submodels = updatedSubmodels,
-                    assetAdministrationShells = existingEnv.AssetAdministrationShells,
+                    assetAdministrationShells = updatedAssetAdministrationShells,
                     conceptDescriptions = existingEnv.ConceptDescriptions
                 )
 
@@ -162,11 +281,11 @@ module AasXModule =
             do
                 use tempFileStream = new FileStream(tempPath, FileMode.Create)
                 use tempArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create)
-                // 기존 AASX 파일의 모든 엔트리를 복사하되, aas.aas.xml만 업데이트
+                // 기존 AASX 파일의 모든 엔트리를 복사하되, AAS XML 파일만 업데이트
                 use sourceFileStream = new FileStream(aasxPath, FileMode.Open)
                 use sourceArchive = new ZipArchive(sourceFileStream, ZipArchiveMode.Read)
                 for entry in sourceArchive.Entries do
-                    if entry.FullName = "aasx/aas/aas.aas.xml" then
+                    if entry.FullName = aasFileInfo.FilePath then
                         // AAS XML 파일만 새로 생성
                         let newEntry = tempArchive.CreateEntry(entry.FullName)
                         use stream = newEntry.Open()
