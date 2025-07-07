@@ -653,12 +653,15 @@ module Ds2JsonModule =
         rtObj.Validate(guidDic)
         rtObj
 
+    let [<Literal>] DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+
 
     type NjProject with
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             (* Withh context version *)
             let settings = EmJson.CreateDefaultSettings()
+            settings.DateFormatString <- DateFormatString
             // Json deserialize 중에 필요한 담을 그릇 준비
             //settings.Context <- new StreamingContext(StreamingContextStates.All, Nj2RtBag())
 
@@ -707,7 +710,10 @@ module Ds2JsonModule =
 
     type NjSystem with
         /// DsSystem 를 JSON 문자열로 변환
-        member x.ExportToJson():string = EmJson.ToJson(x)
+        member x.ExportToJson():string =
+            let settings = EmJson.CreateDefaultSettings()
+            settings.DateFormatString <- DateFormatString
+            EmJson.ToJson(x, settings)
         member x.ExportToJsonFile(jsonFilePath:string) =
             x.ExportToJson()
             |> tee(fun json -> File.WriteAllText(jsonFilePath, json))

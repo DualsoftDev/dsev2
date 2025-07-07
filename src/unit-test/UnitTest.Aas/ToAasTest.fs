@@ -166,4 +166,7 @@ module ToAasTest =
             let json2 = EmJson.ToJson(njProject2)
 
             projJson === json2
+
+
+            njProject1.InjectToExistingAasxFile("test.aasx") |> ignore
             ()

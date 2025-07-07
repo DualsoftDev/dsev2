@@ -113,3 +113,78 @@ module AasXModule =
                 use writer = XmlWriter.Create(stream, settings)
                 Xmlization.Serialize.To(env, writer)
                 writer.Flush()
+
+
+        /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
+        member prj.InjectToExistingAasxFile(aasxPath: string): unit =
+            // 기존 AASX 파일에서 Environment 읽기
+            let envXml, existingEnv =
+                use fileStream = new FileStream(aasxPath, FileMode.Open)
+                use archive = new ZipArchive(fileStream, ZipArchiveMode.Read)
+
+                // aasx/aas/aas.aas.xml 파일에서 Environment 추출
+                let aasEntry = archive.GetEntry("aasx/aas/aas.aas.xml")
+                if aasEntry = null then
+                    failwith "AASX file does not contain aasx/aas/aas.aas.xml"
+
+                let xml =
+                    use reader = new StreamReader(aasEntry.Open(), Encoding.UTF8)
+                    reader.ReadToEnd()
+
+                let env = J.CreateIClassFromXml<Aas.Environment>(xml)
+                (xml, env)
+
+            // 현재 프로젝트의 Submodel 생성
+            let newProjectSubmodel =
+                let json = prj.ToSjSubmodel().Stringify()
+                J.CreateIClassFromJson<Aas.Submodel>(json)
+
+            // 기존 Environment에서 Project submodel만 교체
+            let updatedSubmodels =
+                existingEnv.Submodels
+                |> Seq.map (fun sm ->
+                    if sm.Id = newProjectSubmodel.Id then
+                        newProjectSubmodel :> ISubmodel
+                    else
+                        sm :> ISubmodel
+                )
+                |> ResizeArray<ISubmodel>
+
+            let updatedEnv =
+                Environment(
+                    submodels = updatedSubmodels,
+                    assetAdministrationShells = existingEnv.AssetAdministrationShells,
+                    conceptDescriptions = existingEnv.ConceptDescriptions
+                )
+
+            // 임시 파일에 저장
+            let tempPath = Path.GetTempFileName()
+            do
+                use tempFileStream = new FileStream(tempPath, FileMode.Create)
+                use tempArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create)
+                // 기존 AASX 파일의 모든 엔트리를 복사하되, aas.aas.xml만 업데이트
+                use sourceFileStream = new FileStream(aasxPath, FileMode.Open)
+                use sourceArchive = new ZipArchive(sourceFileStream, ZipArchiveMode.Read)
+                for entry in sourceArchive.Entries do
+                    if entry.FullName = "aasx/aas/aas.aas.xml" then
+                        // AAS XML 파일만 새로 생성
+                        let newEntry = tempArchive.CreateEntry(entry.FullName)
+                        use stream = newEntry.Open()
+                        let settings = XmlWriterSettings(Indent = true, Encoding = Encoding.UTF8)
+                        use writer = XmlWriter.Create(stream, settings)
+                        Xmlization.Serialize.To(updatedEnv, writer)
+                        writer.Flush()
+                    else
+                        // 다른 파일들은 그대로 복사
+                        let newEntry = tempArchive.CreateEntry(entry.FullName)
+                        use sourceStream = entry.Open()
+                        use targetStream = newEntry.Open()
+                        sourceStream.CopyTo(targetStream)
+
+            // use 블록이 끝난 후 파일 이동
+            let backupPath = aasxPath + ".backup"
+            if File.Exists(backupPath) then
+                File.Delete(backupPath)
+            File.Move(aasxPath, backupPath)
+            File.Move(tempPath, aasxPath)
+
