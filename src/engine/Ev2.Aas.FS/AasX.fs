@@ -149,25 +149,28 @@ module AasXModule =
                     use reader = new StreamReader(contentTypesEntry.Open(), Encoding.UTF8)
                     reader.ReadToEnd()
 
-                // 2. Content_Types.xml에서 AAS XML 파일 찾기
-                let aasXmlFile =
-                    let doc = XmlDocument()
-                    doc.LoadXml(contentTypesXml)
-                    let overrides = doc.SelectNodes("//Override[@ContentType='text/xml']")
-                    let mutable foundAasFile = ""
-
-                    for i = 0 to overrides.Count - 1 do
-                        let overrideNode = overrides.Item(i) :?> XmlElement
-                        let partName = overrideNode.GetAttribute("PartName")
-                        if partName.Contains("aas") && partName.EndsWith(".xml") then
-                            foundAasFile <- partName.TrimStart('/')
-                            ()
-
-                    if foundAasFile = "" then
+                // 2. aasx-origin.rels에서 AAS XML 파일 찾기 (네임스페이스-aware)
+                let aasXmlFile = 
+                    let aasxOriginRelsEntry = archive.GetEntry("aasx/_rels/aasx-origin.rels")
+                    if aasxOriginRelsEntry = null then
                         // 기본 경로 시도
                         "aasx/aas/aas.aas.xml"
                     else
-                        foundAasFile
+                        let relsXml =
+                            use reader = new StreamReader(aasxOriginRelsEntry.Open(), Encoding.UTF8)
+                            reader.ReadToEnd()
+                        let doc = XmlDocument()
+                        doc.LoadXml(relsXml)
+                        let nsmgr = new XmlNamespaceManager(doc.NameTable)
+                        nsmgr.AddNamespace("rel", "http://schemas.openxmlformats.org/package/2006/relationships")
+                        let relationships = doc.SelectNodes("//rel:Relationship[@Type='http://admin-shell.io/aasx/relationships/aas-spec']", nsmgr)
+                        if relationships.Count > 0 then
+                            let relationship = relationships.Item(0) :?> XmlElement
+                            let target = relationship.GetAttribute("Target")
+                            target.TrimStart('/')
+                        else
+                            // 기본 경로 시도
+                            "aasx/aas/aas.aas.xml"
 
                 // 3. AAS XML 파일에서 Environment 추출 및 버전 확인
                 let aasEntry = archive.GetEntry(aasXmlFile)
