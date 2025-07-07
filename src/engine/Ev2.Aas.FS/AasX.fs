@@ -26,7 +26,7 @@ module AasXModule =
                 match rootElement.NamespaceURI with
                 | "http://www.admin-shell.io/aas/1/0" -> Some (Version(1,0))
                 | "http://www.admin-shell.io/aas/2/0" -> Some (Version(2,0))
-                | "https://admin-shell.io/aas/3/0" -> Some (Version(3,0))
+                | "https://admin-shell.io/aas/3/0"    -> Some (Version(3,0))
                 | _ -> None
             else
                 None
@@ -59,12 +59,10 @@ module AasXModule =
     /// AAS 버전을 검증하는 함수
     let validateAasVersion (versionOpt: System.Version option): unit =
         match versionOpt with
-        | Some v when v = Version(3,0) ->
+        | Some v when v >= Version(3,0) ->
             () // OK
-        | Some v when v = Version(2,0) ->
-            failwith "AAS version 2.0 is not supported. Only AAS version 3.0 is supported for injection."
         | Some v ->
-            failwith ($"Unsupported AAS version: {v}. Only AAS version 3.0 is supported.")
+            failwith ($"Unsupported AAS version: {v}. Only AAS version 3.0 or higher is supported.")
         | None ->
             failwith "Could not detect AAS version from XML."
 
@@ -109,7 +107,7 @@ module AasXModule =
         // 기존 submodel 중에서 같은 IdShort을 가진 것 찾기
         let existingSubmodelWithSameIdShort =
             existingEnv.Submodels
-            |> Seq.tryFind (fun sm -> sm.IdShort = targetIdShort)
+            |> tryFind (fun sm -> sm.IdShort = targetIdShort)
 
         // 디버깅: 기존 submodel 정보 출력
         tracefn "기존 Submodel 개수: %d" existingEnv.Submodels.Count
@@ -133,15 +131,17 @@ module AasXModule =
         | None ->
             // 기존 submodel이 없으면 새로 추가
             tracefn "기존 submodel 없음 - 새로 추가"
-            let allSubmodels =
-                existingEnv.Submodels
-                |> Seq.append [newProjectSubmodel :> ISubmodel]
+            let allSubmodels = existingEnv.Submodels @ [newProjectSubmodel :> ISubmodel]
             allSubmodels |> ResizeArray
 
     /// AssetAdministrationShell의 submodel 참조를 업데이트하는 함수
-    let updateAssetAdministrationShells (existingShells: ResizeArray<IAssetAdministrationShell>) (newProjectSubmodel: Aas.Submodel) (existingEnv: Aas.Environment): ResizeArray<IAssetAdministrationShell> =
+    let updateAssetAdministrationShells
+        (existingShells: ResizeArray<IAssetAdministrationShell>)
+        (newProjectSubmodel: Aas.Submodel)
+        (existingEnv: Aas.Environment): ResizeArray<IAssetAdministrationShell>
+      =
         existingShells
-        |> Seq.map (fun aas ->
+        |-> (fun aas ->
             let updatedSubmodelRefs =
                 // IdShort 기반으로 기존 참조 확인
                 let targetIdShort = PreludeModule.SubmodelIdShort
@@ -153,31 +153,29 @@ module AasXModule =
 
                 // 기존 참조 중에서 같은 IdShort을 가진 submodel을 참조하는 것 찾기
                 let existingRefWithSameIdShort =
-                    match existingSubmodelWithSameIdShort with
-                    | Some existingSubmodel ->
+                    existingSubmodelWithSameIdShort
+                    >>= (fun existingSubmodel ->
                         aas.Submodels
-                        |> Seq.tryFind (fun ref ->
+                        |> tryFind (fun ref ->
                             let submodelId =
                                 ref.Keys
                                 |> Seq.find (fun k -> k.Type = KeyTypes.Submodel)
                                 |> fun k -> k.Value
                             submodelId = existingSubmodel.Id
-                        )
-                    | None -> None
+                        ))
 
                 match existingRefWithSameIdShort with
                 | Some existingRef ->
                     // 기존 참조가 있으면 새 submodel로 교체
                     tracefn "기존 참조 발견 - 새 submodel로 교체: %s" targetIdShort
                     aas.Submodels
-                    |> Seq.map (fun ref ->
+                    |-> (fun ref ->
                         if ref = existingRef then
                             let newKey = Key(KeyTypes.Submodel, newProjectSubmodel.Id) :> IKey
                             Aas.Reference(ReferenceTypes.ModelReference, ResizeArray<IKey>([newKey])) :> IReference
                         else
                             ref
-                    )
-                    |> ResizeArray<IReference>
+                    ) |> ResizeArray
                 | None ->
                     // 기존 참조가 없으면 새 참조 추가
                     tracefn "기존 참조 없음 - 새 참조 추가: %s" targetIdShort
@@ -185,10 +183,7 @@ module AasXModule =
                         let key = Key(KeyTypes.Submodel, newProjectSubmodel.Id) :> IKey
                         Aas.Reference(ReferenceTypes.ModelReference, ResizeArray<IKey>([key])) :> IReference
 
-                    let allRefs =
-                        aas.Submodels
-                        |> Seq.append [newRef]
-                    ResizeArray<IReference>(allRefs)
+                    aas.Submodels @ [newRef] |> ResizeArray
 
             AssetAdministrationShell(
                 id = aas.Id,
@@ -203,8 +198,7 @@ module AasXModule =
                 embeddedDataSpecifications = aas.EmbeddedDataSpecifications,
                 derivedFrom = aas.DerivedFrom
             ) :> IAssetAdministrationShell
-        )
-        |> ResizeArray<IAssetAdministrationShell>
+        ) |> ResizeArray
 
     /// 업데이트된 AASX 파일을 생성하는 함수
     let createUpdatedAasxFile (aasxPath: string) (aasXmlFilePath: string) (updatedEnv: Aas.Environment): string =
