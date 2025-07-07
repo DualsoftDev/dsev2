@@ -115,6 +115,7 @@ module Aas =
     open AasCore.Aas3_0
     type Jsonization = AasCore.Aas3_0.Jsonization
     type Xmlization = AasCore.Aas3_0.Xmlization
+    type Reference = AasCore.Aas3_0.Reference
 
     type Environment = AasCore.Aas3_0.Environment
     type AssetAdministrationShell = AasCore.Aas3_0.AssetAdministrationShell

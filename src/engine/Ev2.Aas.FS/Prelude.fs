@@ -13,3 +13,5 @@ module internal PreludeModule =
     //let quote q = surround q q
     let singleQuote = surround q q
     let doubleQuote = surround qq qq
+
+    let [<Literal>] SubmodelIdShort = "SequenceControlSubmodel"

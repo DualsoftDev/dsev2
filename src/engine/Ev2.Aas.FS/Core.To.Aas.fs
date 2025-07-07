@@ -87,12 +87,13 @@ module CoreToAas =
         member prj.ToSjSubmodel(): JNode =
             let sm =
                 JObj().AddProperties(
-                    category = Category.CONSTANT,
-                    modelType = ModelType.Submodel,
-                    id = guid2str prj.Guid,
-                    kind = KindType.Instance,
-                    semanticKey = "Project",
-                    smel = prj.collectChildren()
+                    category = Category.CONSTANT
+                    , modelType = ModelType.Submodel
+                    , id = guid2str prj.Guid
+                    , idShort = SubmodelIdShort
+                    , kind = KindType.Instance
+                    , semanticKey = "Project"
+                    , smel = prj.collectChildren()
                 )
             sm
 

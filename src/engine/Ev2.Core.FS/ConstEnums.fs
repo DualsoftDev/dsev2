@@ -28,8 +28,6 @@ module ConstEnums =
 
 [<AutoOpen>]
 module Ev2PreludeModule =
-    open Dual.Common.Core.FS
-
     let addAsSet            (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item)
     let addRangeAsSet       (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items)
     let verifyAddAsSet      (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item, fun x -> failwith $"ERROR: {x} duplicated.")
