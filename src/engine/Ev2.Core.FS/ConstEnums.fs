@@ -6,6 +6,7 @@ open Dual.Common.Base
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
 open Dual.Common.Core.FS
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module ConstEnums =
@@ -32,6 +33,15 @@ module Ev2PreludeModule =
     let addRangeAsSet       (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items)
     let verifyAddAsSet      (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item, fun x -> failwith $"ERROR: {x} duplicated.")
     let verifyAddRangeAsSet (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items, fun x -> failwith $"ERROR: {x} duplicated.")
+
+    let [<Literal>] DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+
+    type DateTime with
+        [<Extension>]
+        member x.TruncateToSecond() =
+            DateTime(x.Year, x.Month, x.Day,
+                     x.Hour, x.Minute, x.Second,
+                     x.Kind)
 
 
 

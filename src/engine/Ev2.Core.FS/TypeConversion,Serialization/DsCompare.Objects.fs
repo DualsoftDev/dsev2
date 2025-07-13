@@ -122,7 +122,8 @@ module rec DsCompareObjects =
 
                 (* 기타 속성 비교 *)
                 if criteria.Author && x.Author <> y.Author then yield Diff("Author", x, y)
-                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then yield Diff("DateTime", x, y)
+                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
+                    yield Diff("DateTime", x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -143,7 +144,8 @@ module rec DsCompareObjects =
                 if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)
                 if x.LangVersion   <> y.LangVersion   then yield Diff("LangVersion", x, y)
                 if x.Description   <> y.Description   then yield Diff("Description", x, y)
-                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then yield Diff("DateTime", x, y)
+                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
+                    yield Diff("DateTime", x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 

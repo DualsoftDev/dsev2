@@ -13,6 +13,7 @@ open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 open Dual.Common.Db.FS
 open System.Diagnostics
+open System.Runtime.CompilerServices
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -652,8 +653,6 @@ module Ds2JsonModule =
         let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, fun z -> z :> Unique)
         rtObj.Validate(guidDic)
         rtObj
-
-    let [<Literal>] DateFormatString = "yyyy-MM-ddTHH:mm:ss"
 
 
     type NjProject with

@@ -17,7 +17,7 @@ module rec TmpCompatibility =
         ///
         /// project, system 만 date time 가지는 걸로 변경 고려 중..
         member x.UpdateDateTime(?dateTime:DateTime) =
-            let dateTime = dateTime |?? now
+            let dateTime = dateTime |?? (fun () -> now().TruncateToSecond())
             x.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- dateTime)
 
         (* see also EdUnique.EnumerateRtObjects *)

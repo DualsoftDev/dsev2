@@ -566,7 +566,8 @@ module Schema =
                 let diffs2 = dsProject2.ComputeDiff dsProject |> toArray
 
                 let dsSystem = dsProject2.Systems[0]
-                dsSystem.RTryCommitToDB dbApi ==== Ok NoChange
+                let r = dsSystem.RTryCommitToDB dbApi
+                r ==== Ok NoChange
             ) |> ignore
 
         [<Test>]
@@ -612,17 +613,19 @@ module Schema =
                     dsProject.Systems[0].RemoveWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
-                        // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 DateTime 이 변경됨
-                        diffs.Length === 3
+                        // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 DateTime 이 초단위 절삭에서 변경될 수도 있음
+                        diffs.Length.IsOneOf(2, 3) === true
                         match diffs[0] with
                         | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
                         | _ -> failwith "ERROR"
                         match diffs[1] with
                         | LeftOnly dbA when dbA.GetGuid() = sysArrow0.Guid -> ()
                         | _ -> failwith "ERROR"
-                        match diffs[2] with
-                        | Diff("DateTime", dbSys, newSys) when dbSys.GetGuid() = newSys.GetGuid() -> ()
-                        | _ -> failwith "ERROR"
+
+                        if diffs.Length = 3 then
+                            match diffs[2] with
+                            | Diff("DateTime", dbSys, newSys) when dbSys.GetGuid() = newSys.GetGuid() -> ()
+                            | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
 
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw - 1
