@@ -17,7 +17,7 @@ fi
 export PGPASSWORD
 
 function psql() {
-  "/c/Program Files/PostgreSQL/17/bin/psql.exe" -h localhost -p 5432 "$@"
+  /usr/bin/psql -h localhost -p 5432 "$@"
 }
 
 # PostgreSQL 명령 실행 함수
