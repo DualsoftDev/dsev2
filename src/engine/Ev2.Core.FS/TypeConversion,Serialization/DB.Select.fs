@@ -41,9 +41,9 @@ module internal Db2DsImpl =
     //    )
 
     // 사전 조건: ormSystem.RtObject 에 RtSystem 이 생성되어 있어야 한다.
-    let private rTryCheckoutSystemFromDBHelper(ormSystem:ORMSystem) (dbApi:AppDbApi): DbCheckoutResult<RtSystem> =
+    let private rTryCheckoutSystemFromDBHelper(ormSystem:ORMSystem) (dbApi:AppDbApi): DbCheckoutResult<DsSystem> =
         let helper(conn:IDbConnection, tr:IDbTransaction) =
-            let rtSystem = ormSystem.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR")
+            let rtSystem = ormSystem.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR")
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
             let rtFlows = [
@@ -56,12 +56,12 @@ module internal Db2DsImpl =
                     let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
                     let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
 
-                    let buttons    = ormButtons    |-> (fun z -> RtButton    () |> replicateProperties z) |> toArray
-                    let lamps      = ormLamps      |-> (fun z -> RtLamp      () |> replicateProperties z) |> toArray
-                    let conditions = ormConditions |-> (fun z -> RtCondition () |> replicateProperties z) |> toArray
-                    let actions    = ormActions    |-> (fun z -> RtAction    () |> replicateProperties z) |> toArray
+                    let buttons    = ormButtons    |-> (fun z -> DsButton    () |> replicateProperties z) |> toArray
+                    let lamps      = ormLamps      |-> (fun z -> Lamp      () |> replicateProperties z) |> toArray
+                    let conditions = ormConditions |-> (fun z -> DsCondition () |> replicateProperties z) |> toArray
+                    let actions    = ormActions    |-> (fun z -> DsAction    () |> replicateProperties z) |> toArray
 
-                    RtFlow(buttons, lamps, conditions, actions, RawParent = Some s)
+                    Flow(buttons, lamps, conditions, actions, RawParent = Some s)
                     |> replicateProperties ormFlow
             ]
 
@@ -71,7 +71,7 @@ module internal Db2DsImpl =
                 let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
 
                 for orm in orms do
-                    RtApiDef(orm.IsPush)
+                    ApiDef(orm.IsPush)
                     |> replicateProperties orm
             ]
             rtApiDefs |> s.addApiDefs
@@ -80,14 +80,14 @@ module internal Db2DsImpl =
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
 
                 /// orm.ApiDefId -> RtApiDef : rtSystem 하부의 RtApiDef 타입 객체들
-                let rtApiDefs = rtSystem.EnumerateRtObjects().OfType<RtApiDef>().ToArray()
+                let rtApiDefs = rtSystem.EnumerateRtObjects().OfType<ApiDef>().ToArray()
                 for orm in orms do
 
                     // orm.ApiDefId -> rtApiDef -> _.Guid
                     let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
 
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
-                    RtApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
+                    ApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
                                 orm.InSymbol, orm.OutSymbol, valueParam)
                     |> replicateProperties orm
             ]
@@ -99,7 +99,7 @@ module internal Db2DsImpl =
                 let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr)
 
                 for orm in orms do
-                    RtWork.Create()
+                    Work.Create()
                     |> setParent s
                     |> replicateProperties orm
                     |> tee(fun w ->
@@ -132,7 +132,7 @@ module internal Db2DsImpl =
 
                         let acs = orm.AutoConditions |> jsonDeserializeStrings
                         let ccs = orm.CommonConditions |> jsonDeserializeStrings
-                        RtCall(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
+                        Call(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
                         |> replicateProperties orm
                         |> setParent w
                         |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
@@ -151,7 +151,7 @@ module internal Db2DsImpl =
                         let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                        RtArrowBetweenCalls(src, tgt, arrowType)
+                        ArrowBetweenCalls(src, tgt, arrowType)
                         |> replicateProperties orm
                 ]
                 rtArrows |> w.addArrows
@@ -172,7 +172,7 @@ module internal Db2DsImpl =
                     let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
                     let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                    RtArrowBetweenWorks(src, tgt, arrowType)
+                    ArrowBetweenWorks(src, tgt, arrowType)
                     |> replicateProperties orm
             ]
             rtArrows |> s.addArrows
@@ -187,7 +187,7 @@ module internal Db2DsImpl =
 
 
 
-    let private rTryCheckoutProjectFromDBHelper(ormProject:ORMProject) (dbApi:AppDbApi): DbCheckoutResult<RtProject> =
+    let private rTryCheckoutProjectFromDBHelper(ormProject:ORMProject) (dbApi:AppDbApi): DbCheckoutResult<Project> =
         let helper(conn:IDbConnection, tr:IDbTransaction) =
             let projSysMaps =
                 conn.Query<ORMMapProjectSystem>(
@@ -196,7 +196,7 @@ module internal Db2DsImpl =
                 |> toArray
 
             let rtProj =
-                RtProject.Create()
+                Project.Create()
                 |> replicateProperties ormProject
 
 
@@ -218,14 +218,14 @@ module internal Db2DsImpl =
             let ormSystems =
                 ormActiveSystems @ ormPassiveSystems
                 |> tees (fun os ->
-                    RtSystem.Create()
+                    DsSystem.Create()
                     |> replicateProperties os
                     |> uniqParent (Some rtProj))
                 |> toArray
 
 
-            let rtActives = ormActiveSystems   |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
-            let rtPassives = ormPassiveSystems |-> (fun os -> os.RtObject >>= tryCast<RtSystem> |?? (fun () -> failwith "ERROR"))
+            let rtActives = ormActiveSystems   |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR"))
+            let rtPassives = ormPassiveSystems |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR"))
 
             rtActives  |> rtProj.RawActiveSystems.AddRange
             rtPassives |> rtProj.RawPassiveSystems.AddRange
@@ -243,7 +243,7 @@ module internal Db2DsImpl =
         conn.TryQuerySingle<'T>($"SELECT * FROM {tableName} WHERE id=@Id", {|Id = id|}, tr)
 
 
-    let rTryCheckoutProjectFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<RtProject> =
+    let rTryCheckoutProjectFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<Project> =
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowWithId<ORMProject> conn tr Tn.Project id with
             | None ->
@@ -251,7 +251,7 @@ module internal Db2DsImpl =
             | Some ormProject ->
                 rTryCheckoutProjectFromDBHelper ormProject dbApi)
 
-    let rTryCheckoutSystemFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<RtSystem> =
+    let rTryCheckoutSystemFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<DsSystem> =
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowWithId<ORMSystem> conn tr Tn.System id with
             | None ->
@@ -259,7 +259,7 @@ module internal Db2DsImpl =
             | Some ormSystem ->
                 ormSystem.RtObject <-
                     let rtSystem =
-                        RtSystem.Create()
+                        DsSystem.Create()
                         |> replicateProperties ormSystem
                     Some rtSystem
 

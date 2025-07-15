@@ -194,11 +194,11 @@ module ORMTypeConversionModule =
             let guid = uniq.Guid
 
             match uniq with
-            | :? RtProject as z ->
+            | :? Project as z ->
                 ORMProject(z.Author, z.Version, z.Description, z.DateTime)
                 |> ormReplicateProperties z
 
-            | :? RtSystem as rt ->
+            | :? DsSystem as rt ->
                 // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
                 let prototypeId:Id option = rt.Prototype >>= _.Id
 
@@ -222,21 +222,21 @@ module ORMTypeConversionModule =
                 ORMSystem(ownerProjectId, prototypeId, rt.IsPrototype, rt.OriginGuid, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
                 |> ormReplicateProperties rt
 
-            | :? RtFlow as rt ->
+            | :? Flow as rt ->
                 ORMFlow()
                 |> ormReplicateProperties rt
 
-            | :? RtWork as rt ->
+            | :? Work as rt ->
                 let flowId = (rt.Flow >>= _.Id)
                 let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
                 ORMWork  (pid, status4Id, flowId)
                 |> ormReplicateProperties rt
 
-            | :? RtCall as rt ->
+            | :? Call as rt ->
                 ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout)
                 |> ormReplicateProperties rt
 
-            | :? RtArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+            | :? ArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
                 let parentId = (rt.RawParent >>= _.Id).Value
                 let arrowTypeId =
@@ -246,7 +246,7 @@ module ORMTypeConversionModule =
                 ORMArrowWork(src, tgt, parentId, arrowTypeId)
                 |> ormReplicateProperties rt
 
-            | :? RtArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+            | :? ArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                 let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
                 let parentId = (rt.RawParent >>= _.Id).Value
                 let arrowTypeId =
@@ -256,18 +256,18 @@ module ORMTypeConversionModule =
                 ORMArrowCall(src, tgt, parentId, arrowTypeId)
                 |> ormReplicateProperties rt
 
-            | :? RtApiDef as rt ->
+            | :? ApiDef as rt ->
                 ORMApiDef(pid)
                 |> ormReplicateProperties rt
 
 
-            | :? RtButton    as rt -> ORMButton(pid)    |> ormReplicateProperties rt
-            | :? RtLamp      as rt -> ORMLamp(pid)      |> ormReplicateProperties rt
-            | :? RtCondition as rt -> ORMCondition(pid) |> ormReplicateProperties rt
-            | :? RtAction    as rt -> ORMAction(pid)    |> ormReplicateProperties rt
+            | :? DsButton    as rt -> ORMButton(pid)    |> ormReplicateProperties rt
+            | :? Lamp      as rt -> ORMLamp(pid)      |> ormReplicateProperties rt
+            | :? DsCondition as rt -> ORMCondition(pid) |> ormReplicateProperties rt
+            | :? DsAction    as rt -> ORMAction(pid)    |> ormReplicateProperties rt
 
 
-            | :? RtApiCall as rt ->
+            | :? ApiCall as rt ->
                 let apiDefId = rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
                 let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
                 ORMApiCall (pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
@@ -289,12 +289,12 @@ module ORMTypeConversionModule =
         member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi) =
             rt2Orm dbApi x :?> 'T
 
-    type RtProject with // ToORM
+    type Project with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
         member x.ToORM(dbApi:AppDbApi): ORMProject =
             rt2Orm dbApi x :?> ORMProject
 
-    type RtSystem with // ToORM
+    type DsSystem with // ToORM
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
         member x.ToORM(dbApi:AppDbApi): ORMSystem =
             rt2Orm dbApi x :?> ORMSystem

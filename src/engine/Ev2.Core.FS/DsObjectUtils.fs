@@ -27,26 +27,26 @@ module rec TmpCompatibility =
                 if includeMe then
                     yield x
                 match x with
-                | :? RtProject as prj ->
+                | :? Project as prj ->
                     yield! prj.MyPrototypeSystems >>= _.EnumerateRtObjects()
                     yield! prj.ImportedPrototypeSystems >>= _.EnumerateRtObjects()
                     yield! prj.Systems   >>= _.EnumerateRtObjects()
-                | :? RtSystem as sys ->
+                | :? DsSystem as sys ->
                     yield! sys.Works     >>= _.EnumerateRtObjects()
                     yield! sys.Flows     >>= _.EnumerateRtObjects()
                     yield! sys.Arrows    >>= _.EnumerateRtObjects()
                     yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
                     yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
-                | :? RtWork as work ->
+                | :? Work as work ->
                     yield! work.Calls    >>= _.EnumerateRtObjects()
                     yield! work.Arrows   >>= _.EnumerateRtObjects()
-                | :? RtFlow as flow ->
+                | :? Flow as flow ->
                     yield! flow.Buttons    >>= _.EnumerateRtObjects()
                     yield! flow.Lamps      >>= _.EnumerateRtObjects()
                     yield! flow.Conditions >>= _.EnumerateRtObjects()
                     yield! flow.Actions    >>= _.EnumerateRtObjects()
 
-                | (:? RtCall) | (:? RtApiCall) | (:? RtApiDef) | (:? RtArrowBetweenWorks) | (:? RtArrowBetweenCalls)  ->
+                | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls)  ->
                     ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
@@ -55,43 +55,43 @@ module rec TmpCompatibility =
 
 
 
-    type RtProject with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate
-        member x.AddMyPrototypeSystem(system:RtSystem) =
+    type Project with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate
+        member x.AddMyPrototypeSystem(system:DsSystem) =
             system
-            |> fwdReplicate :?> RtSystem
+            |> fwdReplicate :?> DsSystem
             |> tee(fun system ->
                 system.IsPrototype <- true
                 system |> setParent x |> x.RawMyPrototypeSystems.Add
                 system)
 
-        member x.AddImportedPrototypeSystem(system:RtSystem) =
+        member x.AddImportedPrototypeSystem(system:DsSystem) =
             system.IsPrototype <- true
             system |> setParent x |> x.RawImportedPrototypeSystems.Add
             system
 
-        member x.AddActiveSystem(system:RtSystem) =
+        member x.AddActiveSystem(system:DsSystem) =
             system |> setParent x |> x.RawActiveSystems.Add
 
-        member x.AddPassiveSystem(system:RtSystem) =
+        member x.AddPassiveSystem(system:DsSystem) =
             system |> setParent x |> x.RawPassiveSystems.Add
 
         /// project 내에 prototypeGuid 를 가진 prototype system 을 복사하여 instance 로 만들어 반환
-        member x.Instantiate(prototypeSystem:RtSystem): RtSystem =
+        member x.Instantiate(prototypeSystem:DsSystem): DsSystem =
             assert(x.MyPrototypeSystems.Contains prototypeSystem || x.ImportedPrototypeSystems.Contains prototypeSystem)
-            fwdDuplicate prototypeSystem :?> RtSystem
+            fwdDuplicate prototypeSystem :?> DsSystem
             |> tee (fun z ->
                 z.PrototypeSystemGuid <- Some prototypeSystem.Guid
                 z.IsPrototype <- false
                 z |> setParentI x
                 x.AddPassiveSystem z)
 
-    type RtSystem with
-        member internal x.addWorks(works:RtWork seq, ?byUI:bool) =
+    type DsSystem with
+        member internal x.addWorks(works:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             works |> iter (setParentI x)
             works |> verifyAddRangeAsSet x.RawWorks
 
-        member internal x.removeWorks(works:RtWork seq, ?byUI:bool) =
+        member internal x.removeWorks(works:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             let system = works |-> _.System.Value |> distinct |> exactlyOne
             let arrows = system.Arrows.Where(fun a -> works.Contains a.Source || works.Contains a.Target)
@@ -100,12 +100,12 @@ module rec TmpCompatibility =
             works |> iter (x.RawWorks.Remove >> ignore)
 
 
-        member internal x.addFlows(flows:RtFlow seq, ?byUI:bool) =
+        member internal x.addFlows(flows:Flow seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             flows |> iter (setParentI x)
             flows |> verifyAddRangeAsSet x.RawFlows
 
-        member internal x.removeFlows(flows:RtFlow seq, ?byUI:bool) =
+        member internal x.removeFlows(flows:Flow seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             let flowsDic = flows |> HashSet
             // 삭제 대상인 flows 를 쳐다보고 있는 works 들을 찾아서, 그들의 Flow 를 None 으로 설정
@@ -119,23 +119,23 @@ module rec TmpCompatibility =
             flows |> iter (x.RawFlows.Remove >> ignore)
 
 
-        member internal x.addArrows(arrows:RtArrowBetweenWorks seq, ?byUI:bool) =
+        member internal x.addArrows(arrows:ArrowBetweenWorks seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             arrows |> verifyAddRangeAsSet x.RawArrows
 
-        member internal x.removeArrows(arrows:RtArrowBetweenWorks seq, ?byUI:bool) =
+        member internal x.removeArrows(arrows:ArrowBetweenWorks seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
 
-        member internal x.addApiDefs(apiDefs:RtApiDef seq, ?byUI:bool) =
+        member internal x.addApiDefs(apiDefs:ApiDef seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiDefs |> iter (setParentI x)
             apiDefs |> verifyAddRangeAsSet x.RawApiDefs
 
-        member internal x.removeApiDefs(apiDefs:RtApiDef seq, ?byUI:bool) =
+        member internal x.removeApiDefs(apiDefs:ApiDef seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
 
             // 삭제 대상인 ApiDef 을 쳐다보고 있는 ApiCall 들을 삭제
@@ -151,94 +151,94 @@ module rec TmpCompatibility =
             apiDefs |> iter (x.RawApiDefs.Remove >> ignore)
 
 
-        member internal x.addApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
+        member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
             apiCalls |> verifyAddRangeAsSet x.RawApiCalls
 
-        member internal x.removeApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
+        member internal x.removeApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter clearParentI
             apiCalls |> iter (x.RawApiCalls.Remove >> ignore)
 
 
 
-        member x.AddWorks      (works:RtWork seq)               = x.addWorks(works, true)
-        member x.RemoveWorks   (works:RtWork seq)               = x.removeWorks(works, true)
+        member x.AddWorks      (works:Work seq)               = x.addWorks(works, true)
+        member x.RemoveWorks   (works:Work seq)               = x.removeWorks(works, true)
 
-        member x.AddFlows      (flows:RtFlow seq)               = x.addFlows(flows, true)
-        member x.RemoveFlows   (flows:RtFlow seq)               = x.removeFlows(flows, true)
+        member x.AddFlows      (flows:Flow seq)               = x.addFlows(flows, true)
+        member x.RemoveFlows   (flows:Flow seq)               = x.removeFlows(flows, true)
 
-        member x.AddArrows     (arrows:RtArrowBetweenWorks seq) = x.addArrows(arrows, true)
-        member x.RemoveArrows  (arrows:RtArrowBetweenWorks seq) = x.removeArrows(arrows, true)
+        member x.AddArrows     (arrows:ArrowBetweenWorks seq) = x.addArrows(arrows, true)
+        member x.RemoveArrows  (arrows:ArrowBetweenWorks seq) = x.removeArrows(arrows, true)
 
-        member x.AddApiDefs    (apiDefs:RtApiDef seq)           = x.addApiDefs(apiDefs, true)
-        member x.RemoveApiDefs (apiDefs:RtApiDef seq)           = x.removeApiDefs(apiDefs, true)
+        member x.AddApiDefs    (apiDefs:ApiDef seq)           = x.addApiDefs(apiDefs, true)
+        member x.RemoveApiDefs (apiDefs:ApiDef seq)           = x.removeApiDefs(apiDefs, true)
 
-        member x.AddApiCalls   (apiCalls:RtApiCall seq)         = x.addApiCalls(apiCalls, true)
-        member x.RemoveApiCalls(apiCalls:RtApiCall seq)         = x.removeApiCalls(apiCalls, true)
-
-
+        member x.AddApiCalls   (apiCalls:ApiCall seq)         = x.addApiCalls(apiCalls, true)
+        member x.RemoveApiCalls(apiCalls:ApiCall seq)         = x.removeApiCalls(apiCalls, true)
 
 
-    type RtFlow with    // {Add/Remove}{Works, Buttons, Lamps, Conditions, Actions}
+
+
+    type Flow with    // {Add/Remove}{Works, Buttons, Lamps, Conditions, Actions}
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
-        member internal x.addWorks(ws:RtWork seq, ?byUI:bool) =
+        member internal x.addWorks(ws:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- Some x)
 
-        member internal x.removeWorks(ws:RtWork seq, ?byUI:bool) =
+        member internal x.removeWorks(ws:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- None)
 
-        member internal x.addButtons(buttons:RtButton seq, ?byUI:bool) =
+        member internal x.addButtons(buttons:DsButton seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             buttons |> iter (setParentI x)
             buttons |> verifyAddRangeAsSet x.RawButtons
-        member internal x.removeButtons(buttons:RtButton seq, ?byUI:bool) =
+        member internal x.removeButtons(buttons:DsButton seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             buttons |> iter clearParentI
             buttons |> iter (x.RawButtons.Remove >> ignore)
 
 
-        member internal x.addLamps(lamps:RtLamp seq, ?byUI:bool) =
+        member internal x.addLamps(lamps:Lamp seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             lamps |> iter (setParentI x)
             lamps |> verifyAddRangeAsSet x.RawLamps
-        member internal x.removeLamps(lamps:RtLamp seq, ?byUI:bool) =
+        member internal x.removeLamps(lamps:Lamp seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             lamps |> iter clearParentI
             lamps |> iter (x.RawLamps.Remove >> ignore)
 
-        member internal x.addConditions(conditions:RtCondition seq, ?byUI:bool) =
+        member internal x.addConditions(conditions:DsCondition seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             conditions |> iter (setParentI x)
             conditions |> verifyAddRangeAsSet x.RawConditions
-        member internal x.removeConditions(conditions:RtCondition seq, ?byUI:bool) =
+        member internal x.removeConditions(conditions:DsCondition seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             conditions |> iter clearParentI
             conditions |> iter (x.RawConditions.Remove >> ignore)
 
-        member internal x.addActions(actions:RtAction seq, ?byUI:bool) =
+        member internal x.addActions(actions:DsAction seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             actions |> iter (setParentI x)
             actions |> verifyAddRangeAsSet x.RawActions
-        member internal x.removeActions(actions:RtAction seq, ?byUI:bool) =
+        member internal x.removeActions(actions:DsAction seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             actions |> iter clearParentI
             actions |> iter (x.RawActions.Remove >> ignore)
 
 
-        member x.AddWorks        (ws:RtWork seq)              = x.addWorks        (ws, true)
-        member x.RemoveWorks     (ws:RtWork seq)              = x.removeWorks     (ws, true)
-        member x.AddButtons      (buttons:RtButton seq)       = x.addButtons      (buttons, true)
-        member x.RemoveButtons   (buttons:RtButton seq)       = x.removeButtons   (buttons, true)
-        member x.AddLamps        (lamps:RtLamp seq)           = x.addLamps        (lamps, true)
-        member x.RemoveLamps     (lamps:RtLamp seq)           = x.removeLamps     (lamps, true)
-        member x.AddConditions   (conditions:RtCondition seq) = x.addConditions   (conditions, true)
-        member x.RemoveConditions(conditions:RtCondition seq) = x.removeConditions(conditions, true)
-        member x.AddActions      (actions:RtAction seq)       = x.addActions      (actions, true)
-        member x.RemoveActions   (actions:RtAction seq)       = x.removeActions   (actions, true)
+        member x.AddWorks        (ws:Work seq)              = x.addWorks        (ws, true)
+        member x.RemoveWorks     (ws:Work seq)              = x.removeWorks     (ws, true)
+        member x.AddButtons      (buttons:DsButton seq)       = x.addButtons      (buttons, true)
+        member x.RemoveButtons   (buttons:DsButton seq)       = x.removeButtons   (buttons, true)
+        member x.AddLamps        (lamps:Lamp seq)           = x.addLamps        (lamps, true)
+        member x.RemoveLamps     (lamps:Lamp seq)           = x.removeLamps     (lamps, true)
+        member x.AddConditions   (conditions:DsCondition seq) = x.addConditions   (conditions, true)
+        member x.RemoveConditions(conditions:DsCondition seq) = x.removeConditions(conditions, true)
+        member x.AddActions      (actions:DsAction seq)       = x.addActions      (actions, true)
+        member x.RemoveActions   (actions:DsAction seq)       = x.removeActions   (actions, true)
 
 
 
@@ -246,42 +246,42 @@ module rec TmpCompatibility =
 
 
 
-    type RtWork with    // AddCalls, RemoveCalls, AddArrows, RemoveArrows
-        member internal x.addCalls(calls:RtCall seq, ?byUI:bool) =
+    type Work with    // AddCalls, RemoveCalls, AddArrows, RemoveArrows
+        member internal x.addCalls(calls:Call seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             calls |> iter (setParentI x)
             calls |> verifyAddRangeAsSet x.RawCalls
-        member internal x.removeCalls(calls:RtCall seq, ?byUI:bool) =
+        member internal x.removeCalls(calls:Call seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
-            let work = calls |-> _.RawParent.Value |> distinct |> exactlyOne :?> RtWork
+            let work = calls |-> _.RawParent.Value |> distinct |> exactlyOne :?> Work
             let arrows = work.Arrows.Where(fun a -> calls.Contains a.Source || calls.Contains a.Target)
             work.removeArrows(arrows, ?byUI = byUI)
             calls |> iter clearParentI
             calls |> iter (x.RawCalls.Remove >> ignore)
 
-        member internal x.addArrows(arrows:RtArrowBetweenCalls seq, ?byUI:bool) =
+        member internal x.addArrows(arrows:ArrowBetweenCalls seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             arrows |> verifyAddRangeAsSet x.RawArrows
 
 
-        member internal x.removeArrows(arrows:RtArrowBetweenCalls seq, ?byUI:bool) =
+        member internal x.removeArrows(arrows:ArrowBetweenCalls seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
-        member x.AddCalls    (calls:RtCall seq)               = x.addCalls    (calls, true)
-        member x.RemoveCalls (calls:RtCall seq)               = x.removeCalls (calls, true)
-        member x.AddArrows   (arrows:RtArrowBetweenCalls seq) = x.addArrows   (arrows, true)
-        member x.RemoveArrows(arrows:RtArrowBetweenCalls seq) = x.removeArrows(arrows, true)
+        member x.AddCalls    (calls:Call seq)               = x.addCalls    (calls, true)
+        member x.RemoveCalls (calls:Call seq)               = x.removeCalls (calls, true)
+        member x.AddArrows   (arrows:ArrowBetweenCalls seq) = x.addArrows   (arrows, true)
+        member x.RemoveArrows(arrows:ArrowBetweenCalls seq) = x.removeArrows(arrows, true)
 
-    type RtCall with    // AddApiCalls
-        member internal x.addApiCalls(apiCalls:RtApiCall seq, ?byUI:bool) =
+    type Call with    // AddApiCalls
+        member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
             apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
 
-        member x.AddApiCalls (apiCalls:RtApiCall seq)         = x.addApiCalls (apiCalls, true)
+        member x.AddApiCalls (apiCalls:ApiCall seq)         = x.addApiCalls (apiCalls, true)
 
 
 
@@ -296,14 +296,14 @@ module rec TmpCompatibility =
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
-    type RtProject with
-        static member Create() = RtProject([], [], [], [])
+    type Project with
+        static member Create() = Project([], [], [], [])
 
-    type RtSystem with
-        static member Create(flows:RtFlow[], works:RtWork[],
-            arrows:RtArrowBetweenWorks[], apiDefs:RtApiDef[], apiCalls:RtApiCall[]
+    type DsSystem with
+        static member Create(flows:Flow[], works:Work[],
+            arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
         ) =
-            RtSystem(flows, works, arrows, apiDefs, apiCalls)
+            DsSystem(flows, works, arrows, apiDefs, apiCalls)
             |> tee (fun z ->
                 flows    |> iter (setParentI z)
                 works    |> iter (setParentI z)
@@ -311,61 +311,61 @@ module DsObjectUtilsModule =
                 apiDefs  |> iter (setParentI z)
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = RtSystem([||], [||], [||], [||], [||])
+        static member Create() = DsSystem([||], [||], [||], [||], [||])
 
-    type RtWork with
-        static member Create(calls:RtCall seq, arrows:RtArrowBetweenCalls seq, flow:RtFlow option) =
+    type Work with
+        static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
             let calls = calls |> toList
             let arrows = arrows |> toList
 
-            RtWork(calls, arrows, flow)
+            Work(calls, arrows, flow)
             |> tee (fun z ->
                 calls  |> iter (setParentI z)
                 arrows |> iter (setParentI z)
                 flow   |> iter (setParentI z) )
 
-        static member Create() = RtWork([], [], None)
+        static member Create() = Work([], [], None)
 
-    type RtCall with
-        static member Create(callType:DbCallType, apiCalls:RtApiCall seq,
+    type Call with
+        static member Create(callType:DbCallType, apiCalls:ApiCall seq,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
             let apiCallGuids = apiCalls |-> _.Guid
 
-            RtCall(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
+            Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = RtCall(DbCallType.Normal, [], [], [], false, None)
+        static member Create() = Call(DbCallType.Normal, [], [], [], false, None)
 
-    type RtFlow with
-        static member Create() = RtFlow([], [], [], [])
+    type Flow with
+        static member Create() = Flow([], [], [], [])
 
-    type RtApiDef with
-        static member Create() = RtApiDef(true)
+    type ApiDef with
+        static member Create() = ApiDef(true)
 
-    type RtApiCall with
+    type ApiCall with
         static member Create() =
-            RtApiCall(emptyGuid, nullString, nullString, nullString, nullString,
+            ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
                       Option<IValueSpec>.None)
 
     type IArrow with
         member x.GetSource(): Unique =
             match x with
-            | :? RtArrowBetweenCalls as a -> a.Source
-            | :? RtArrowBetweenWorks as a -> a.Source
+            | :? ArrowBetweenCalls as a -> a.Source
+            | :? ArrowBetweenWorks as a -> a.Source
             | _ -> failwith "ERROR"
 
         member x.GetTarget(): Unique =
             match x with
-            | :? RtArrowBetweenCalls as a -> a.Target
-            | :? RtArrowBetweenWorks as a -> a.Target
+            | :? ArrowBetweenCalls as a -> a.Target
+            | :? ArrowBetweenWorks as a -> a.Target
             | _ -> failwith "ERROR"
 
         member x.GetArrowType(): DbArrowType =
             match x with
-            | :? RtArrowBetweenCalls as a -> a.Type
-            | :? RtArrowBetweenWorks as a -> a.Type
+            | :? ArrowBetweenCalls as a -> a.Type
+            | :? ArrowBetweenWorks as a -> a.Type
             | _ -> failwith "ERROR"
 
     type Unique with
@@ -391,11 +391,11 @@ module DsObjectUtilsModule =
             verify (x.Guid <> emptyGuid)
             x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
             match x with
-            | :? RtProject | :? RtSystem | :? RtFlow  | :? RtWork  | :? RtCall -> verify (x.Name.NonNullAny())
+            | :? Project | :? DsSystem | :? Flow  | :? Work  | :? Call -> verify (x.Name.NonNullAny())
             | _ -> ()
 
             match x with
-            | :? RtProject as prj ->
+            | :? Project as prj ->
                 prj.Systems |> iter _.Validate(guidDicDebug)
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
@@ -410,7 +410,7 @@ module DsObjectUtilsModule =
 
                 prj.Systems |> iter (_.IsPrototype >> not >> verify)
 
-            | :? RtSystem as sys ->
+            | :? DsSystem as sys ->
                 sys.Works |> iter _.Validate(guidDicDebug)
 
 
@@ -437,14 +437,14 @@ module DsObjectUtilsModule =
                 for ac in sys.ApiCalls  do
                     verify (sys.Guid |> isParentGuid ac)
 
-            | :? RtFlow as flow ->
+            | :? Flow as flow ->
                 let works = flow.Works
                 works |> iter _.Validate(guidDicDebug)
                 for w in works  do
                     verify (w.Flow = Some flow)
 
 
-            | :? RtWork as work ->
+            | :? Work as work ->
                 work.Calls |> iter _.Validate(guidDicDebug)
                 for c in work.Calls do
                     verify (work.Guid |> isParentGuid c)
@@ -456,14 +456,14 @@ module DsObjectUtilsModule =
                     work.Calls |> contains a.Target |> verify
 
 
-            | :? RtCall as call ->
+            | :? Call as call ->
                 ()
 
-            | :? RtApiCall as ac ->
+            | :? ApiCall as ac ->
                 //verify (ac.ValueSpec.IsSome)
                 ()
 
-            | :? RtApiDef as ad ->
+            | :? ApiDef as ad ->
                 ()
 
 

@@ -141,29 +141,3 @@ module internal UniqueHelpers =
     let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
     let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
 
-    ////let uniqGD       guid dateTime                (dst:#Unique) = dst |> uniqGuid guid |> uniqDateTime dateTime
-    //let uniqNGA      name guid args               (dst:#Unique) = dst |> uniqName name |> uniqGuid guid |> uniqParameter args
-    //let uniqNGDA     name guid dateTime args      (dst:#Unique) = dst |> uniqNGA name guid args |> uniqDateTime dateTime
-    ///// src unique 속성 (Id, Name, Guid, DateTime) 들을 dst 에 복사
-    //let uniqINGA     id name guid args            (dst:#Unique) = dst |> uniqId id     |> uniqNGA name guid args
-    ////let uniqINGDA    id name guid dateTime args   (dst:#Unique) = dst |> uniqId id     |> uniqNGDA name guid dateTime args
-
-    //let private linkUniqNA (src:#Unique) (dst:#Unique): #Unique =
-    //    dst
-    //    |> linkUniq src
-    //    |> uniqName src.Name
-    //    |> uniqParameter src.Parameter
-
-    //let private linkUniqINA (src:#Unique) (dst:#Unique): #Unique =
-    //    dst
-    //    |> linkUniqNA src
-    //    |> uniqId src.Id
-
-
-    //let private linkUniqNGA (src:#Unique) (dst:#Unique):#Unique =
-    //    dst
-    //    |> linkUniqNA src
-    //    |> uniqGuid src.Guid
-
-
-

@@ -12,14 +12,14 @@ open Dual.Common.Db.FS
 [<AutoOpen>]
 module internal DbInsertModule =
 
-    type RtProject with
+    type Project with
         // project 하부에 연결된 passive system 을 DB 에 저장
         member x.InsertSystemMapToDB(dbApi:DbApi) =
 
             dbApi.With(fun (conn, tr) ->
 
 
-                let insertSystemMap (s:RtSystem) =
+                let insertSystemMap (s:DsSystem) =
                     // s.PrototypeSystemGuid 에 따라 다른 처리???
                     //assert(not s.PrototypeSystemGuid.Is)
 
@@ -54,7 +54,7 @@ module internal DbInsertModule =
             dbApi.With(fun (conn, tr) ->
 
                 match box x with
-                | :? RtProject as rt ->
+                | :? Project as rt ->
                     let orm = rt.ToORM(dbApi)
                     assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
@@ -76,7 +76,7 @@ module internal DbInsertModule =
                     rt.InsertSystemMapToDB(dbApi)
 
 
-                | :? RtSystem as rt ->
+                | :? DsSystem as rt ->
                     let ormSystem = rt.ToORM<ORMSystem>(dbApi)
 
                     let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
@@ -106,7 +106,7 @@ module internal DbInsertModule =
                     rt.Arrows |> iter _.InsertToDB(dbApi)
 
 
-                | :? RtApiDef as rt ->
+                | :? ApiDef as rt ->
                     let orm = rt.ToORM<ORMApiDef>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id
 
@@ -119,7 +119,7 @@ module internal DbInsertModule =
                     orm.Id <- Some apiDefId
                     assert(guidDicDebug[rt.Guid] = orm)
 
-                | :? RtApiCall as rt ->
+                | :? ApiCall as rt ->
                     let orm = rt.ToORM<ORMApiCall>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id
 
@@ -134,7 +134,7 @@ module internal DbInsertModule =
                     orm.Id <- Some apiCallId
                     assert(guidDicDebug[rt.Guid] = orm)
 
-                | :? RtFlow as rt ->
+                | :? Flow as rt ->
                     let orm = rt.ToORM<ORMFlow>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id
 
@@ -151,11 +151,11 @@ module internal DbInsertModule =
                     rt.Conditions |> iter _.InsertToDB(dbApi)
                     rt.Actions    |> iter _.InsertToDB(dbApi)
 
-                | :? RtFlowEntity as fe ->
+                | :? FlowEntity as fe ->
                     let flowId = fe.Flow |-> _.Id |??  (fun () -> failwith "ERROR: RtFlowEntity must have a FlowId set before inserting to DB.")
-                    let rtX = x :?> RtFlowEntity
+                    let rtX = x :?> FlowEntity
 
-                    let insertFlowElement (tableName:string) (rtX:#RtFlowEntity, ormX:#ORMFlowEntity) =
+                    let insertFlowElement (tableName:string) (rtX:#FlowEntity, ormX:#ORMFlowEntity) =
                             let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
                             ormX.FlowId <- flowId
                             dbApi.With(fun (conn, tr) ->
@@ -184,14 +184,14 @@ module internal DbInsertModule =
                     (* 간략 format .. *)
 
                     match box x with
-                    | :? RtButton    as rt -> let orm = rt.ToORM<ORMButton>    dbApi in insertFlowElement Tn.Button    (rtX, orm)
-                    | :? RtLamp      as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertFlowElement Tn.Lamp      (rtX, orm)
-                    | :? RtCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertFlowElement Tn.Condition (rtX, orm)
-                    | :? RtAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertFlowElement Tn.Action    (rtX, orm)
+                    | :? DsButton    as rt -> let orm = rt.ToORM<ORMButton>    dbApi in insertFlowElement Tn.Button    (rtX, orm)
+                    | :? Lamp      as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertFlowElement Tn.Lamp      (rtX, orm)
+                    | :? DsCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertFlowElement Tn.Condition (rtX, orm)
+                    | :? DsAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertFlowElement Tn.Action    (rtX, orm)
                     | _ -> failwith "ERROR"
 
 
-                | :? RtWork as rt ->
+                | :? Work as rt ->
                     let orm = rt.ToORM<ORMWork>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id
 
@@ -209,7 +209,7 @@ module internal DbInsertModule =
                     rt.Arrows |> iter _.InsertToDB(dbApi)
 
 
-                | :? RtCall as rt ->
+                | :? Call as rt ->
                     let orm = rt.ToORM<ORMCall>(dbApi)
                     orm.WorkId <- rt.RawParent >>= _.Id
 
@@ -245,7 +245,7 @@ module internal DbInsertModule =
                         ()
 
 
-                | :? RtArrowBetweenCalls as rt ->
+                | :? ArrowBetweenCalls as rt ->
                     let ormArrow = rt.ToORM<ORMArrowCall>(dbApi)
                     ormArrow.WorkId <- rt.RawParent >>= _.Id |?? (fun () -> failwith "ERROR: RtArrowBetweenCalls must have a WorkId set before inserting to DB.")
 
@@ -260,7 +260,7 @@ module internal DbInsertModule =
                     ormArrow.Id <- Some arrowCallId
                     assert(guidDicDebug[rt.Guid] = ormArrow)
 
-                | :? RtArrowBetweenWorks as rt ->
+                | :? ArrowBetweenWorks as rt ->
                     let orm = rt.ToORM<ORMArrowWork>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id |?? (fun () -> failwith "ERROR: RtArrowBetweenWorks must have a SystemId set before inserting to DB.")
 
@@ -293,7 +293,7 @@ module internal DbInsertModule =
             | _ -> failwith $"Unknown type {t.GetType()} in idUpdator"
 
 
-    let rTryCommitSystemToDBHelper (dbApi:AppDbApi) (s:RtSystem): DbCommitResult =
+    let rTryCommitSystemToDBHelper (dbApi:AppDbApi) (s:DsSystem): DbCommitResult =
         match s.Id with
         | Some id ->             // 이미 DB 에 저장된 system 이므로 update
             rTryCheckoutSystemFromDB id dbApi
@@ -314,7 +314,7 @@ module internal DbInsertModule =
 
 
     /// DsProject 을 database (sqlite or pgsql) 에 저장
-    let rTryInsertProjectToDB (proj:RtProject) (dbApi:AppDbApi): DbCommitResult =
+    let rTryInsertProjectToDB (proj:Project) (dbApi:AppDbApi): DbCommitResult =
         try
             proj.InsertToDB dbApi
             Ok Inserted
@@ -323,7 +323,7 @@ module internal DbInsertModule =
             Error <| sprintf "Failed to insert project to DB: %s" ex.Message
 
 
-    let rTryCommitSystemToDB (x:RtSystem) (dbApi:AppDbApi): DbCommitResult =
+    let rTryCommitSystemToDB (x:DsSystem) (dbApi:AppDbApi): DbCommitResult =
         dbApi.With(fun (conn, tr) ->
             Guid2UniqDic() |> dbApi.DDic.Set
             let ormSystem = x.ToORM(dbApi)

@@ -40,7 +40,7 @@ module ToAasTest =
             env.ToJson() === aasJson
 
 
-            let project = RtProject.FromJson(dsProject)
+            let project = Project.FromJson(dsProject)
             let json = project.ToJson()
             json =~= dsProject
 
@@ -119,12 +119,12 @@ module ToAasTest =
 
             let json2 = EmJson.ToJson(njSystem2)
 
-            let rtSystem = RtSystem.ImportFromJson(json2)
+            let rtSystem = DsSystem.ImportFromJson(json2)
 
             ()
         [<Test>]
         member _.``Project: instance -> Aas Test`` () =
-            let rtProject = dsProject |> RtProject.FromJson
+            let rtProject = dsProject |> Project.FromJson
             let xxx = rtProject.ToJson()
             let njProject = NjProject.FromJson dsProject
 
@@ -141,7 +141,7 @@ module ToAasTest =
 
             let json2 = EmJson.ToJson(njProject2)
 
-            let rtProject2 = RtProject.FromJson(json2)
+            let rtProject2 = Project.FromJson(json2)
 
             ()
 

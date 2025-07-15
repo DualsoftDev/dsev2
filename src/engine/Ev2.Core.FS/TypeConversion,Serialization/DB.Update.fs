@@ -12,24 +12,24 @@ module internal rec DbUpdateImpl =
     type IRtUnique with
         member x.getTableName() =
             match x with
-            | :? RtProject -> Tn.Project
-            | :? RtSystem  -> Tn.System
-            | :? RtFlow    -> Tn.Flow
-            | :? RtButton  -> Tn.Button
-            | :? RtLamp    -> Tn.Lamp
-            | :? RtCondition -> Tn.Condition
-            | :? RtAction -> Tn.Action
-            | :? RtApiDef -> Tn.ApiDef
-            | :? RtApiCall -> Tn.ApiCall
-            | :? RtWork -> Tn.Work
-            | :? RtCall -> Tn.Call
-            | :? RtArrowBetweenCalls -> Tn.ArrowCall
-            | :? RtArrowBetweenWorks -> Tn.ArrowWork
+            | :? Project -> Tn.Project
+            | :? DsSystem  -> Tn.System
+            | :? Flow    -> Tn.Flow
+            | :? DsButton  -> Tn.Button
+            | :? Lamp    -> Tn.Lamp
+            | :? DsCondition -> Tn.Condition
+            | :? DsAction -> Tn.Action
+            | :? ApiDef -> Tn.ApiDef
+            | :? ApiCall -> Tn.ApiCall
+            | :? Work -> Tn.Work
+            | :? Call -> Tn.Call
+            | :? ArrowBetweenCalls -> Tn.ArrowCall
+            | :? ArrowBetweenWorks -> Tn.ArrowWork
             | _ -> failwith $"Unknown RtUnique type: {x.GetType().Name}"
 
         member x.rTryUpdateProjectToDB (dbApi:AppDbApi, diffs:CompareResult []): DbCommitResult =
             assert (!! diffs.IsNullOrEmpty())
-            assert (x :? RtProject || x :? RtSystem)
+            assert (x :? Project || x :? DsSystem)
             dbApi.With(fun (conn, tr) ->
                 let firstError =
                     seq {

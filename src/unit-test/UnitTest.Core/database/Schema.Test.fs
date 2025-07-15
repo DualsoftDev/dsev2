@@ -160,7 +160,7 @@ module Schema =
 
             let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
             tracefn $"---------------------- json:\r\n{json}"
-            let dsProject2 = RtProject.FromJson json
+            let dsProject2 = Project.FromJson json
             validateRuntime dsProject2 |> ignore
             let json2 = dsProject2.ToJson(Path.Combine(testDataDir(), "json-deserialized-dssystem.json"))
 
@@ -200,7 +200,7 @@ module Schema =
                 dsProject3.Duplicate($"CC_{dsProject3.Name}")
                 |> tee(fun z ->
                     z.Name <- $"{z.Name}4"
-                    z.EnumerateRtObjects().OfType<RtApiCall>().First().ValueSpec <- Some <| Single 3.14156952
+                    z.EnumerateRtObjects().OfType<ApiCall>().First().ValueSpec <- Some <| Single 3.14156952
                     z.AddPassiveSystem dsSystem4)
 
             validateRuntime dsProject4 |> ignore
@@ -245,7 +245,7 @@ module Schema =
 
 
             let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
-            let dsProject = RtProject.CheckoutFromDB("MainProject", dbApi)
+            let dsProject = Project.CheckoutFromDB("MainProject", dbApi)
             use conn = dbApi.CreateConnection()
             ()
 
@@ -370,7 +370,7 @@ module Schema =
             let dsProject0 = NjProject.FromJson json
 
 
-            let dsProject1 = RtProject.FromJson json |> validateRuntime
+            let dsProject1 = Project.FromJson json |> validateRuntime
             noop()
             let dsProject2 = dsProject1 |> _.Duplicate($"CC_{dsProject1.Name}")
             let sys = dsProject2.ActiveSystems[0]
@@ -423,7 +423,7 @@ module Schema =
                 |> validateRuntime
                 |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
 
-            let rtProject2 = RtProject.FromJson json
+            let rtProject2 = Project.FromJson json
             rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
             // 설계 문서 위치에 drop
             let json2 =
@@ -562,7 +562,7 @@ module Schema =
                 let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
                 let json = dsProject.ToJson(jsonPath)
 
-                let dsProject2 = RtProject.FromJson json |> validateRuntime
+                let dsProject2 = Project.FromJson json |> validateRuntime
                 let diffs2 = dsProject2.ComputeDiff dsProject |> toArray
 
                 let dsSystem = dsProject2.Systems[0]
@@ -678,11 +678,11 @@ module Schema =
                 let dsProject2 = dsProject.Replicate() |> validateRuntime
                 let w = dsProject2.Systems[0].Works[0]
                 let c1, c2 = w.Calls[0], w.Calls[0]
-                let arrow = RtArrowBetweenCalls(c1, c2, DbArrowType.Start)
+                let arrow = ArrowBetweenCalls(c1, c2, DbArrowType.Start)
                 w.AddArrows([arrow])
 
                 let f = dsProject2.Systems[0].Flows[0]
-                let button = RtButton(Name="NewButton")
+                let button = DsButton(Name="NewButton")
                 f.AddButtons( [ button ])
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (RightOnly(arrow)) === true
@@ -738,20 +738,20 @@ module Schema =
                 diffs2
                 |> forall(fun d ->
                     match d with
-                    | Diff("Guid", x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                    | Diff("IRI",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                    | Diff("DateTime",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                    | Diff("Parent",  x, y) -> verify (x :? RtSystem && y :? RtSystem); true
-                    | (   LeftOnly (:? RtFlow)
-                        | LeftOnly (:? RtWork)
-                        | LeftOnly (:? RtArrowBetweenWorks)
-                        | LeftOnly (:? RtApiDef)
-                        | LeftOnly (:? RtApiCall)
-                        | RightOnly (:? RtFlow)
-                        | RightOnly (:? RtWork)
-                        | RightOnly (:? RtArrowBetweenWorks)
-                        | RightOnly (:? RtApiDef)
-                        | RightOnly (:? RtApiCall) ) -> true
+                    | Diff("Guid", x, y) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("IRI",  x, y) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("DateTime",  x, y) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Parent",  x, y) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | (   LeftOnly (:? Flow)
+                        | LeftOnly (:? Work)
+                        | LeftOnly (:? ArrowBetweenWorks)
+                        | LeftOnly (:? ApiDef)
+                        | LeftOnly (:? ApiCall)
+                        | RightOnly (:? Flow)
+                        | RightOnly (:? Work)
+                        | RightOnly (:? ArrowBetweenWorks)
+                        | RightOnly (:? ApiDef)
+                        | RightOnly (:? ApiCall) ) -> true
                     | _ -> false
                 ) === true
 

@@ -10,24 +10,24 @@ open Ev2.Core.FS
 
 module CreateSampleWithCylinderModule =
     (* Cylinder *)
-    let mutable edSystemCyl = getNull<RtSystem>()
-    let mutable edApiCall1aCyl = getNull<RtApiCall>()
-    let mutable edApiCall1bCyl = getNull<RtApiCall>()
-    let mutable edApiCall2aCyl = getNull<RtApiCall>()
-    let mutable edApiCall2bCyl = getNull<RtApiCall>()
-    let mutable edApiDef1Cyl  = getNull<RtApiDef>()
+    let mutable edSystemCyl = getNull<DsSystem>()
+    let mutable edApiCall1aCyl = getNull<ApiCall>()
+    let mutable edApiCall1bCyl = getNull<ApiCall>()
+    let mutable edApiCall2aCyl = getNull<ApiCall>()
+    let mutable edApiCall2bCyl = getNull<ApiCall>()
+    let mutable edApiDef1Cyl  = getNull<ApiDef>()
 
-    let mutable edFlowCyl     = getNull<RtFlow>()
-    let mutable edWork1Cyl    = getNull<RtWork>()
-    let mutable edWork2Cyl    = getNull<RtWork>()
-    let mutable edCall1aCyl   = getNull<RtCall>()
-    let mutable edCall1bCyl   = getNull<RtCall>()
+    let mutable edFlowCyl     = getNull<Flow>()
+    let mutable edWork1Cyl    = getNull<Work>()
+    let mutable edWork2Cyl    = getNull<Work>()
+    let mutable edCall1aCyl   = getNull<Call>()
+    let mutable edCall1bCyl   = getNull<Call>()
 
     let createEditableSystemCylinder() =
         if isItNull edSystemCyl then
-            edApiDef1Cyl <- RtApiDef.Create(Name = "ApiDef1Cyl")
+            edApiDef1Cyl <- ApiDef.Create(Name = "ApiDef1Cyl")
             edApiCall1aCyl <-
-                RtApiCall.Create()
+                ApiCall.Create()
                 |> tee (fun z ->
                     z.ApiDefGuid <- edApiDef1Cyl.Guid
                     z.Name       <- "ApiCall1aCyl"
@@ -39,24 +39,24 @@ module CreateSampleWithCylinderModule =
                         Some <| Multiple [1; 2; 3]
                     )
 
-            edSystemCyl  <- RtSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
-            edFlowCyl    <- RtFlow.Create(Name = "CylFlow")
-            edWork1Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
-            edWork2Cyl   <- RtWork.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlowCyl)
+            edSystemCyl  <- DsSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
+            edFlowCyl    <- Flow.Create(Name = "CylFlow")
+            edWork1Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
+            edWork2Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlowCyl)
 
             edSystemCyl.AddWorks [edWork1Cyl; edWork2Cyl;]
             edSystemCyl.AddFlows [edFlowCyl]
             edSystemCyl.AddApiDefs [edApiDef1Cyl]
             edSystemCyl.AddApiCalls [edApiCall1aCyl]
 
-            let edArrowW = RtArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+            let edArrowW = ArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
             edSystemCyl.AddArrows [edArrowW]
 
-            edApiDef1Cyl <- RtApiDef.Create(Name = "ApiDef1Cyl")
+            edApiDef1Cyl <- ApiDef.Create(Name = "ApiDef1Cyl")
             edSystemCyl.AddApiDefs [edApiDef1Cyl]
 
             edCall1aCyl  <-
-                RtCall.Create()
+                Call.Create()
                 |> tee(fun z ->
                     z.Name     <- "Call1a"
                     z.CallType <- DbCallType.Parallel
@@ -67,7 +67,7 @@ module CreateSampleWithCylinderModule =
 
 
             edCall1bCyl <-
-                RtCall.Create()
+                Call.Create()
                 |> tee (fun z ->
                     z.Name <- "Call1bCyl"
                     z.CallType <- DbCallType.Repeat)
@@ -75,7 +75,7 @@ module CreateSampleWithCylinderModule =
             edWork1Cyl.AddCalls [edCall1aCyl; edCall1bCyl]
             edFlowCyl.AddWorks([edWork1Cyl])
 
-            let edArrow1 = RtArrowBetweenCalls(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
+            let edArrow1 = ArrowBetweenCalls(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
             edWork1Cyl.AddArrows [edArrow1]
 
             edSystemCyl.EnumerateRtObjects()

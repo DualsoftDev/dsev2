@@ -11,7 +11,7 @@ module Ds2SqliteModule =
 
     open Db2DsImpl
 
-    type RtProject with // CommitToDB, CheckoutFromDB
+    type Project with // CommitToDB, CheckoutFromDB
         member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->
                 let dbProjs = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project} WHERE id = @Id OR guid = @Guid", x, tr) |> toList
@@ -22,7 +22,7 @@ module Ds2SqliteModule =
 
                 | [dbProj] when dbProj.Guid = x.Guid ->
                     // 이미 존재하는 프로젝트는 업데이트
-                    RtProject.RTryCheckoutFromDB(dbProj.Id.Value, dbApi)
+                    Project.RTryCheckoutFromDB(dbProj.Id.Value, dbApi)
                     >>= (fun dbProject ->
                         let diffs = dbProject.ComputeDiff(x) |> toArray
                         if diffs.IsEmpty() then
@@ -48,28 +48,28 @@ module Ds2SqliteModule =
                         Deleted)
                     ) |> Result.mapError _.Message
 
-        static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi):DbCheckoutResult<RtProject> =
+        static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi):DbCheckoutResult<Project> =
             rTryCheckoutProjectFromDB id dbApi
 
-        static member RTryCheckoutFromDB(projectName:string, dbApi:AppDbApi):DbCheckoutResult<RtProject> =
+        static member RTryCheckoutFromDB(projectName:string, dbApi:AppDbApi):DbCheckoutResult<Project> =
             dbApi.With(fun (conn, tr) ->
                 match conn.TryQuerySingle<int>($"SELECT id FROM {Tn.Project} WHERE name = @Name", {| Name = projectName |}, tr) with
                 | Some id ->
-                    RtProject.RTryCheckoutFromDB(id, dbApi)
+                    Project.RTryCheckoutFromDB(id, dbApi)
                 | None ->
                     Error $"Project not found: {projectName}" )
 
-        static member CheckoutFromDB(projectName:string, dbApi:AppDbApi): RtProject = RtProject.RTryCheckoutFromDB(projectName, dbApi) |> Result.toObj
-        static member CheckoutFromDB(id:Id, dbApi:AppDbApi): RtProject = RtProject.RTryCheckoutFromDB(id, dbApi) |> Result.toObj
+        static member CheckoutFromDB(projectName:string, dbApi:AppDbApi): Project = Project.RTryCheckoutFromDB(projectName, dbApi) |> Result.toObj
+        static member CheckoutFromDB(id:Id, dbApi:AppDbApi): Project = Project.RTryCheckoutFromDB(id, dbApi) |> Result.toObj
 
 
-    type RtSystem with  // CommitToDB, CheckoutFromDB
+    type DsSystem with  // CommitToDB, CheckoutFromDB
         member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             rTryCommitSystemToDB x dbApi
 
-        static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi): DbCheckoutResult<RtSystem> =
+        static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi): DbCheckoutResult<DsSystem> =
             rTryCheckoutSystemFromDB id dbApi
 
-        static member CheckoutFromDB(id:Id, dbApi:AppDbApi): RtSystem = RtSystem.RTryCheckoutFromDB(id, dbApi) |> Result.toObj
+        static member CheckoutFromDB(id:Id, dbApi:AppDbApi): DsSystem = DsSystem.RTryCheckoutFromDB(id, dbApi) |> Result.toObj
 
 

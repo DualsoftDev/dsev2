@@ -10,38 +10,38 @@ open Newtonsoft.Json
 [<AutoOpen>]
 module CreateSampleModule =
 
-    let mutable edProject  = getNull<RtProject>()
-    let mutable edSystem   = getNull<RtSystem>()
-    let mutable edApiCall1a = getNull<RtApiCall>()
-    let mutable edApiCall1b = getNull<RtApiCall>()
-    let mutable edApiDef1  = getNull<RtApiDef>()
-    let mutable edApiDef2  = getNull<RtApiDef>()
+    let mutable edProject  = getNull<Project>()
+    let mutable edSystem   = getNull<DsSystem>()
+    let mutable edApiCall1a = getNull<ApiCall>()
+    let mutable edApiCall1b = getNull<ApiCall>()
+    let mutable edApiDef1  = getNull<ApiDef>()
+    let mutable edApiDef2  = getNull<ApiDef>()
 
-    let mutable edFlow     = getNull<RtFlow>()
-    let mutable edWork1    = getNull<RtWork>()
-    let mutable edWork2    = getNull<RtWork>()
-    let mutable edWork3    = getNull<RtWork>()
-    let mutable edCall1a   = getNull<RtCall>()
-    let mutable edCall1b   = getNull<RtCall>()
-    let mutable edCall2a   = getNull<RtCall>()
-    let mutable edCall2b   = getNull<RtCall>()
+    let mutable edFlow     = getNull<Flow>()
+    let mutable edWork1    = getNull<Work>()
+    let mutable edWork2    = getNull<Work>()
+    let mutable edWork3    = getNull<Work>()
+    let mutable edCall1a   = getNull<Call>()
+    let mutable edCall1b   = getNull<Call>()
+    let mutable edCall2a   = getNull<Call>()
+    let mutable edCall2b   = getNull<Call>()
 
     let createEditableProject() =
         if isItNull edProject then
-            edProject <- RtProject.Create(Name = "MainProject")
+            edProject <- Project.Create(Name = "MainProject")
             edSystem  <-
-                RtSystem.Create()
+                DsSystem.Create()
                 |> tee (fun z ->
                     z.Name <- "MainSystem"(*, IsPrototype=true*)
                     z.IRI <- "http://example.com/ev2/system/main"
                     )
 
-            edApiDef1 <- RtApiDef.Create(Name = "ApiDef1a")
-            edApiDef2 <- RtApiDef.Create() |> tee (fun z -> z.Name <- "UnusedApi")
+            edApiDef1 <- ApiDef.Create(Name = "ApiDef1a")
+            edApiDef2 <- ApiDef.Create() |> tee (fun z -> z.Name <- "UnusedApi")
             [edApiDef1; edApiDef2;] |> edSystem.AddApiDefs
 
             edApiCall1a <-
-                RtApiCall.Create()
+                ApiCall.Create()
                 |> tee (fun z ->
                     z.ApiDefGuid <- edApiDef1.Guid
                     z.Name      <- "ApiCall1a"
@@ -57,7 +57,7 @@ module CreateSampleModule =
                         ]
                     )
             edApiCall1b <-
-                RtApiCall.Create()
+                ApiCall.Create()
                 |> tee (fun z ->
                     z.ApiDefGuid <- edApiDef2.Guid
                     z.Name      <- "ApiCall1b"
@@ -68,29 +68,29 @@ module CreateSampleModule =
             [edApiCall1a; edApiCall1b] |> edSystem.AddApiCalls
 
             edFlow <-
-                RtFlow.Create(Name = "MainFlow")
+                Flow.Create(Name = "MainFlow")
                 |> tee (fun z ->
-                    z.AddButtons    [ RtButton   (Name="MyButton1")]
-                    z.AddLamps      [ RtLamp     (Name="MyLamp1")]
-                    z.AddConditions [ RtCondition(Name="MyCondition1")]
-                    z.AddActions    [ RtAction   (Name="MyAction1")]
+                    z.AddButtons    [ DsButton   (Name="MyButton1")]
+                    z.AddLamps      [ Lamp     (Name="MyLamp1")]
+                    z.AddConditions [ DsCondition(Name="MyCondition1")]
+                    z.AddActions    [ DsAction   (Name="MyAction1")]
                     )
             edWork1 <-
-                RtWork.Create()
+                Work.Create()
                 |> tee (fun z ->
                     z.Name      <- "BoundedWork1"
                     z.Status4   <- Some DbStatus4.Ready
                     z.Motion    <- "Fast my motion"
                     z.Parameter <- {|Name="kwak"; Company="dualsoft"; Room=510|} |> JsonConvert.SerializeObject)
             edWork2 <-
-                RtWork.Create()
+                Work.Create()
                 |> tee (fun z ->
                     z.Name    <- "BoundedWork2"
                     z.Status4 <- Some DbStatus4.Going
                     z.Script  <- "My script"
                     z.Flow    <- Some edFlow)
             edWork3 <-
-                RtWork.Create()
+                Work.Create()
                 |> tee (fun z ->
                     z.Name <- "FreeWork1"
                     z.Status4 <- Some DbStatus4.Finished
@@ -100,14 +100,14 @@ module CreateSampleModule =
             [edFlow] |> edSystem.AddFlows
 
             let edArrowW =
-                RtArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
+                ArrowBetweenWorks(edWork1, edWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
                 |> tee (fun z ->
                     z.Parameter <- {| ArrowWidth=2.1; ArrowHead="Diamond"; ArrowTail="Rectangle" |} |> JsonConvert.SerializeObject)
             [edArrowW] |> edSystem.AddArrows
 
 
             edCall1a  <-
-                RtCall.Create()
+                Call.Create()
                 |> tee(fun z ->
                     z.Name     <- "Call1a"
                     z.Status4  <- Some DbStatus4.Ready
@@ -119,22 +119,22 @@ module CreateSampleModule =
                     z.ApiCallGuids.AddRange [edApiCall1a.Guid] )
 
             edCall1b  <-
-                RtCall.Create()
+                Call.Create()
                 |> tee (fun z ->
                     z.Name <- "Call1b"
                     z.Status4 <- Some DbStatus4.Finished
                     z.CallType <- DbCallType.Repeat)
 
             edWork1.AddCalls [edCall1a; edCall1b]
-            edCall2a  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
-            edCall2b  <- RtCall.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished)
+            edCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
+            edCall2b  <- Call.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished)
             edWork2.AddCalls [edCall2a; edCall2b]
             edProject.AddActiveSystem edSystem
             edFlow.AddWorks([edWork1])
 
-            let edArrow1 = RtArrowBetweenCalls(edCall1a, edCall1b, DbArrowType.Start)
+            let edArrow1 = ArrowBetweenCalls(edCall1a, edCall1b, DbArrowType.Start)
             edWork1.AddArrows [edArrow1]
-            let edArrow2 = RtArrowBetweenCalls(edCall2a, edCall2b, DbArrowType.Reset)
+            let edArrow2 = ArrowBetweenCalls(edCall2a, edCall2b, DbArrowType.Reset)
             edWork2.AddArrows [edArrow2]
 
             edProject.EnumerateRtObjects()

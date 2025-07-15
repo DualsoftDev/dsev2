@@ -109,8 +109,8 @@ module rec DsCompareObjects =
                 | _ -> ()
         }
 
-    type RtProject with // ComputeDiff
-        member x.ComputeDiff(y:RtProject, criteria:Cc): Cr seq =
+    type Project with // ComputeDiff
+        member x.ComputeDiff(y:Project, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
@@ -127,8 +127,8 @@ module rec DsCompareObjects =
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
-    type RtSystem with // ComputeDiff
-        member x.ComputeDiff(y:RtSystem, criteria:Cc): Cr seq =
+    type DsSystem with // ComputeDiff
+        member x.ComputeDiff(y:DsSystem, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
@@ -150,8 +150,8 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
 
-    type RtFlow with // ComputeDiff
-        member x.ComputeDiff(y:RtFlow, criteria:Cc): Cr seq =
+    type Flow with // ComputeDiff
+        member x.ComputeDiff(y:Flow, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y)
@@ -165,8 +165,8 @@ module rec DsCompareObjects =
                 yield! (x.Actions,     y.Actions,     criteria) |||> computeDiffRecursively
             }
 
-    type RtWork with // ComputeDiff
-        member x.ComputeDiff(y:RtWork, criteria:Cc): Cr seq =
+    type Work with // ComputeDiff
+        member x.ComputeDiff(y:Work, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
@@ -188,8 +188,8 @@ module rec DsCompareObjects =
                 yield! (x.Arrows, y.Arrows, criteria) |||> computeDiffRecursively
             }
 
-    type RtCall with // ComputeDiff
-        member x.ComputeDiff(y:RtCall, criteria:Cc): Cr seq =
+    type Call with // ComputeDiff
+        member x.ComputeDiff(y:Call, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
@@ -205,15 +205,15 @@ module rec DsCompareObjects =
                 if d1 then yield Diff("ApiCalls", x, y)
             }
 
-    type RtApiDef with // ComputeDiff
-        member x.ComputeDiff(y:RtApiDef, criteria:Cc): Cr seq =
+    type ApiDef with // ComputeDiff
+        member x.ComputeDiff(y:ApiDef, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if x.IsPush <> y.IsPush   then yield Diff("IsPush", x, y)
             }
 
-    type RtApiCall with // ComputeDiff
-        member x.ComputeDiff(y:RtApiCall, criteria:Cc): Cr seq =
+    type ApiCall with // ComputeDiff
+        member x.ComputeDiff(y:ApiCall, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if x.ApiDefGuid <> y.ApiDefGuid then yield Diff("ApiDefGuid", x, y)
@@ -224,8 +224,8 @@ module rec DsCompareObjects =
                 if x.ValueSpec  <> y.ValueSpec  then yield Diff("ValueSpec", x, y)
             }
 
-    type RtArrowBetweenWorks with // ComputeDiff
-        member x.ComputeDiff(y:RtArrowBetweenWorks, criteria:Cc): Cr seq =
+    type ArrowBetweenWorks with // ComputeDiff
+        member x.ComputeDiff(y:ArrowBetweenWorks, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
@@ -233,8 +233,8 @@ module rec DsCompareObjects =
                 if x.Type <> y.Type then yield Diff("Type", x, y)
             }
 
-    type RtArrowBetweenCalls with // ComputeDiff
-        member x.ComputeDiff(y:RtArrowBetweenCalls, criteria:Cc): Cr seq =
+    type ArrowBetweenCalls with // ComputeDiff
+        member x.ComputeDiff(y:ArrowBetweenCalls, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
@@ -242,23 +242,23 @@ module rec DsCompareObjects =
                 if x.Type <> y.Type then yield Diff("Type", x, y)
             }
 
-    type RtButton with // ComputeDiff
-        member x.ComputeDiff(y:RtButton, criteria:Cc): Cr seq =
+    type DsButton with // ComputeDiff
+        member x.ComputeDiff(y:DsButton, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
             }
-    type RtLamp with // ComputeDiff
-        member x.ComputeDiff(y:RtLamp, criteria:Cc): Cr seq =
+    type Lamp with // ComputeDiff
+        member x.ComputeDiff(y:Lamp, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
             }
-    type RtCondition with // ComputeDiff
-        member x.ComputeDiff(y:RtCondition, criteria:Cc): Cr seq =
+    type DsCondition with // ComputeDiff
+        member x.ComputeDiff(y:DsCondition, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
             }
-    type RtAction with // ComputeDiff
-        member x.ComputeDiff(y:RtAction, criteria:Cc): Cr seq =
+    type DsAction with // ComputeDiff
+        member x.ComputeDiff(y:DsAction, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
             }
@@ -268,25 +268,25 @@ module rec DsCompareObjects =
         member internal x.ComputeDiff(y:IRtUnique, criteria:Cc): Cr seq =
             seq {
                 match x, y with
-                | (:? RtProject as u), (:? RtProject as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtSystem  as u), (:? RtSystem  as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtFlow    as u), (:? RtFlow    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtWork    as u), (:? RtWork    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtCall    as u), (:? RtCall    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtApiDef  as u), (:? RtApiDef  as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtApiCall as u), (:? RtApiCall as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Project as u), (:? Project as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsSystem  as u), (:? DsSystem  as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Flow    as u), (:? Flow    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Work    as u), (:? Work    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Call    as u), (:? Call    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? ApiDef  as u), (:? ApiDef  as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? ApiCall as u), (:? ApiCall as v)  -> yield! u.ComputeDiff(v, criteria)
 
-                | (:? RtButton    as u), (:? RtButton    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtLamp      as u), (:? RtLamp      as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtCondition as u), (:? RtCondition as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtAction    as u), (:? RtAction    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsButton    as u), (:? DsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Lamp      as u), (:? Lamp      as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsCondition as u), (:? DsCondition as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsAction    as u), (:? DsAction    as v)  -> yield! u.ComputeDiff(v, criteria)
 
-                | (:? RtArrowBetweenWorks as u), (:? RtArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? RtArrowBetweenCalls as u), (:? RtArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? ArrowBetweenWorks as u), (:? ArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? ArrowBetweenCalls as u), (:? ArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)
 
                 | _ -> failwith "ERROR"
             }
-        member x.IsEqual(y:RtProject, ?criteria:Cc) =
+        member x.IsEqual(y:Project, ?criteria:Cc) =
             let criteria = criteria |? Cc()
             x.ComputeDiff(y, criteria)
             |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working
