@@ -37,14 +37,14 @@ module rec DsObjectModule =
         inherit Unique()
         interface IRtUnique
 
-    (* RtXXXEntity 들의 멤버는 serialize 대상 아님 *)
+    (* (Ds)XXXEntity 들의 멤버는 serialize 대상 아님 *)
 
     [<AbstractClass>]
     type ProjectEntity() =
         inherit RtUnique()
         member x.Project = x.RawParent >>= tryCast<Project>
 
-    /// RtSystem 객체에 포함되는 member 들이 상속할 base class.  e.g RtFlow, RtWork, RtArrowBetweenWorks, RtApiDef, RtApiCall
+    /// DsSystem 객체에 포함되는 member 들이 상속할 base class.  e.g RtFlow, RtWork, RtArrowBetweenWorks, RtApiDef, RtApiCall
     [<AbstractClass>]
     type DsSystemEntity() =
         inherit RtUnique()

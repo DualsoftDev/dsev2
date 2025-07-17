@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+
+		<IsPackable>false</IsPackable>
+		<GenerateProgramFile>false</GenerateProgramFile>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="CommonTest\**" />
+	  <EmbeddedResource Remove="database\**" />
+	  <EmbeddedResource Remove="Expression\**" />
+	  <EmbeddedResource Remove="Json\**" />
+	  <EmbeddedResource Remove="newtonsoft.json\**" />
+	  <EmbeddedResource Remove="Parser\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="RedisHash.Test.fs" />
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<PackageReference Include="FsUnit" Version="6.0.0" />
+		<PackageReference Include="FsUnit.xUnit" Version="6.0.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+		<PackageReference Include="StackExchange.Redis" Version="2.8.41" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Redis.FS\Dual.Common.Redis.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="nuget\" />
+	</ItemGroup>
+
+</Project>

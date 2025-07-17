@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTest.RedisBackend", "UnitTest.RedisBackend.fsproj", "{48B6443F-5136-C2EF-954C-F243A84B8A59}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.UnitTest.FS", "..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj", "{BF8787B7-2E66-3FB1-6F26-28B8D4C3AB59}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Base.FS", "..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj", "{CCC50247-5AE7-4AD8-C789-1C6BD4F25BFF}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Core.FS", "..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj", "{B7BF7F6E-90B8-6AA7-BA8E-B612CBF3C138}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Redis.FS", "..\..\..\submodules\nuget\Common\Dual.Common.Redis.FS\Dual.Common.Redis.FS.fsproj", "{218A8B26-C16D-EDC1-5479-9B596792D414}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48B6443F-5136-C2EF-954C-F243A84B8A59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48B6443F-5136-C2EF-954C-F243A84B8A59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48B6443F-5136-C2EF-954C-F243A84B8A59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48B6443F-5136-C2EF-954C-F243A84B8A59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF8787B7-2E66-3FB1-6F26-28B8D4C3AB59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF8787B7-2E66-3FB1-6F26-28B8D4C3AB59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF8787B7-2E66-3FB1-6F26-28B8D4C3AB59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF8787B7-2E66-3FB1-6F26-28B8D4C3AB59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CCC50247-5AE7-4AD8-C789-1C6BD4F25BFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CCC50247-5AE7-4AD8-C789-1C6BD4F25BFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CCC50247-5AE7-4AD8-C789-1C6BD4F25BFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CCC50247-5AE7-4AD8-C789-1C6BD4F25BFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7BF7F6E-90B8-6AA7-BA8E-B612CBF3C138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7BF7F6E-90B8-6AA7-BA8E-B612CBF3C138}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7BF7F6E-90B8-6AA7-BA8E-B612CBF3C138}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7BF7F6E-90B8-6AA7-BA8E-B612CBF3C138}.Release|Any CPU.Build.0 = Release|Any CPU
+		{218A8B26-C16D-EDC1-5479-9B596792D414}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{218A8B26-C16D-EDC1-5479-9B596792D414}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{218A8B26-C16D-EDC1-5479-9B596792D414}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{218A8B26-C16D-EDC1-5479-9B596792D414}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BF8787B7-2E66-3FB1-6F26-28B8D4C3AB59} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{CCC50247-5AE7-4AD8-C789-1C6BD4F25BFF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{B7BF7F6E-90B8-6AA7-BA8E-B612CBF3C138} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{218A8B26-C16D-EDC1-5479-9B596792D414} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2C622B63-4D87-44D7-AD97-4FB4BA85363E}
+	EndGlobalSection
+EndGlobal
