@@ -25,6 +25,7 @@ type JArr = System.Text.Json.Nodes.JsonArray
 module AasSemantics =
     let map : Map<string, string> =
         Map [
+            "Submodel",         "https://dualsoft.com/aas/submodel"
             "Project",          "https://dualsoft.com/aas/project"
             "System",           "https://dualsoft.com/aas/system"
             "Name",             "https://dualsoft.com/aas/unique/name"

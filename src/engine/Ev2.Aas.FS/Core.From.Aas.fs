@@ -20,7 +20,8 @@ module CoreFromAas =
 
     type NjProject with
         static member FromISubmodel(submodel:ISubmodel): NjProject =
-            let details = submodel.GetSMCWithSemanticKey "Details" |> head
+            let project = submodel.GetSMCWithSemanticKey "Project" |> head
+            let details = project.GetSMC "Details" |> head
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
 
             let database    = details.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider> |? Prelude.getNull<DbProvider>()
@@ -29,8 +30,8 @@ module CoreFromAas =
             let description = details.TryGetPropValue "Description" |? null
             let version     = details.TryGetPropValue "Version"     |-> Version.Parse |? Version(0, 0)
 
-            let activeSystems   = submodel.GetSMCWithSemanticKey "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
-            let passiveSystems  = submodel.GetSMCWithSemanticKey "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
+            let activeSystems   = project.GetSMC "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
+            let passiveSystems  = project.GetSMC "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
 
             NjProject(
                 Name=name, Guid=guid, Id=id, Parameter=parameter

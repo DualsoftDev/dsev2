@@ -520,4 +520,6 @@ src/engine/Ev2.Aas.FS/Json
 **/*.eds
 **/*.xgwx_*
 **/*.state
+**/.claude/
+**/.vscode/
 *.pgpass.*

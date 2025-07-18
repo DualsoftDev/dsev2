@@ -13,6 +13,9 @@ open Ev2.Core.FS
 open System.Globalization
 open System.Runtime.CompilerServices
 
+open System.Text.Json
+open System.Text.Json.Nodes
+
 [<AutoOpen>]
 module AasExtensions =
     /// SemanticId 키 매칭 유틸

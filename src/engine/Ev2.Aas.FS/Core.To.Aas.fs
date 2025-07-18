@@ -120,9 +120,17 @@ module CoreToAas =
             //        , semanticKey = "PassiveSystems"
             //    )
 
-            [| details; activeSystems; passiveSystems |]
+            //[| details; activeSystems; passiveSystems |]
 
-        /// To [S]ystem [J]son Submodel element (SME) 형태로 변환
+            let project =
+                JObj().AddProperties(
+                    modelType = A.smc
+                    , values = [| details; activeSystems; passiveSystems |]
+                    , semanticKey = "Project"
+                )
+            [| project |]
+
+        /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
             let sm =
                 JObj().AddProperties(
@@ -131,7 +139,7 @@ module CoreToAas =
                     , id = guid2str prj.Guid
                     , idShort = SubmodelIdShort
                     , kind = KindType.Instance
-                    , semanticKey = "Project"
+                    , semanticKey = "Submodel"
                     , smel = prj.collectChildren()
                 )
             sm
