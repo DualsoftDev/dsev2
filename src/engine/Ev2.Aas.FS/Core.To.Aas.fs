@@ -13,31 +13,86 @@ open System.Text.Json
 [<AutoOpen>]
 module CoreToAas =
     type NjUnique with
-        member x.CollectProperties(): JNode[] =
+        member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
                 JObj().TrySetProperty(x.Name,      "Name")
                 JObj().TrySetProperty(x.Parameter, "Parameter")
                 JObj().TrySetProperty(x.Guid,      "Guid")
                 if x.Id.IsSome then
                     JObj().TrySetProperty(x.Id.Value, "Id")
-            } |> choose id |> Seq.cast<JNode> |> toArray
+            } //|> choose id |> Seq.cast<JNode>
 
+        member x.CollectProperties(): JNode[] =
+            seq {
+                yield! x.tryCollectPropertiesNjUnique()
+
+                match x with
+                | :? NjProject as prj ->
+                    if isItNotNull prj.Database then
+                        JObj().TrySetProperty(prj.Database.ToString(), "Database")
+                    JObj().TrySetProperty(prj.Description,         "Description")
+                    JObj().TrySetProperty(prj.Author,              "Author")
+                    JObj().TrySetProperty(prj.Version.ToString(),  "Version")
+                    JObj().TrySetProperty(prj.DateTime,            "DateTime")
+
+                | :? NjSystem as sys ->
+                    JObj().TrySetProperty(sys.IRI,                      "IRI")
+                    JObj().TrySetProperty(sys.Author,                   "Author")
+                    JObj().TrySetProperty(sys.EngineVersion.ToString(), "EngineVersion")
+                    JObj().TrySetProperty(sys.LangVersion.ToString(),   "LangVersion")
+                    JObj().TrySetProperty(sys.Description,              "Description")
+                    JObj().TrySetProperty(sys.DateTime,                 "DateTime")
+
+                | :? NjApiCall as apiCall ->
+                    JObj().TrySetProperty(apiCall.ApiDef,     "ApiDef")       // Guid
+                    JObj().TrySetProperty(apiCall.InAddress,  "InAddress")
+                    JObj().TrySetProperty(apiCall.OutAddress, "OutAddress")
+                    JObj().TrySetProperty(apiCall.InSymbol,   "InSymbol")
+                    JObj().TrySetProperty(apiCall.OutSymbol,  "OutSymbol")
+                    JObj().TrySetProperty(apiCall.ValueSpec,  "ValueSpec")
+
+                | :? NjCall as call ->
+                    JObj().TrySetProperty(call.IsDisabled,       "IsDisabled")
+                    JObj().TrySetProperty(call.CommonConditions, "CommonConditions")
+                    JObj().TrySetProperty(call.AutoConditions,   "AutoConditions")
+                    if call.Timeout.IsSome then
+                        JObj().TrySetProperty(call.Timeout.Value,     "Timeout")
+                    JObj().TrySetProperty(call.CallType.ToString(),   "CallType")
+                    JObj().TrySetProperty(sprintf "%A" call.ApiCalls, "ApiCalls")      // Guid[] type
+
+                | :? NjArrow as arrow ->
+                    JObj().TrySetProperty(arrow.Source, "Source")
+                    JObj().TrySetProperty(arrow.Target, "Target")
+                    JObj().TrySetProperty(arrow.Type, "Type")
+
+                | :? NjWork as work ->
+                    JObj().TrySetProperty(work.FlowGuid,   "FlowGuid")
+                    JObj().TrySetProperty(work.Motion,     "Motion")
+                    JObj().TrySetProperty(work.Script,     "Script")
+                    JObj().TrySetProperty(work.IsFinished, "IsFinished")
+                    JObj().TrySetProperty(work.NumRepeat,  "NumRepeat")
+                    JObj().TrySetProperty(work.Period,     "Period")
+                    JObj().TrySetProperty(work.Delay,      "Delay")
+
+                | :? NjApiDef as apiDef ->
+                    JObj().TrySetProperty(apiDef.IsPush,   "IsPush")
+
+                | (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ->
+                    ()
+                | (:? NjFlow) ->
+                    ()
+                | xxx ->
+                    failwith "ERROR"
+
+
+
+            } |> choose id |> Seq.cast<JNode> |> toArray
 
     type NjProject with
         member private x.collectChildren(): JNode[] =
             let me = x
             let details =
-                let props = [|
-                    yield! x.CollectProperties()
-                    yield! seq {
-                        if isItNotNull x.Database then
-                            JObj().TrySetProperty(x.Database.ToString(), "Database")
-                        JObj().TrySetProperty(x.Description,         "Description")
-                        JObj().TrySetProperty(x.Author,              "Author")
-                        JObj().TrySetProperty(x.Version.ToString(),  "Version")
-                        JObj().TrySetProperty(x.DateTime,            "DateTime")
-                    } |> choose id |> Seq.cast<JNode>
-                |]
+                let props = x.CollectProperties()
                 JObj()
                     .ToSjSMC("Details", props)
 
@@ -86,17 +141,7 @@ module CoreToAas =
     type NjSystem with
         member private x.collectChildren(): JNode[] =
             let details =
-                let props = [|
-                    yield! x.CollectProperties()
-                    yield! seq {
-                        JObj().TrySetProperty(x.IRI,                      "IRI")
-                        JObj().TrySetProperty(x.Author,                   "Author")
-                        JObj().TrySetProperty(x.EngineVersion.ToString(), "EngineVersion")
-                        JObj().TrySetProperty(x.LangVersion.ToString(),   "LangVersion")
-                        JObj().TrySetProperty(x.Description,              "Description")
-                        JObj().TrySetProperty(x.DateTime,                 "DateTime")
-                    } |> choose id |> Seq.cast<JNode>
-                |]
+                let props = x.CollectProperties()
                 JObj().ToSjSMC("Details", props)
 
 
@@ -181,18 +226,7 @@ module CoreToAas =
     type NjApiCall with
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
-            let props = [|
-                yield! x.CollectProperties()
-                yield! seq {
-                    JObj().TrySetProperty(x.ApiDef,     "ApiDef")       // Guid
-                    JObj().TrySetProperty(x.InAddress,  "InAddress")
-                    JObj().TrySetProperty(x.OutAddress, "OutAddress")
-                    JObj().TrySetProperty(x.InSymbol,   "InSymbol")
-                    JObj().TrySetProperty(x.OutSymbol,  "OutSymbol")
-                    JObj().TrySetProperty(x.ValueSpec,  "ValueSpec")
-                } |> choose id |> Seq.cast<JNode>
-            |]
-
+            let props = x.CollectProperties()
             JObj().ToSjSMC("ApiCall", props)
 
 
@@ -233,36 +267,13 @@ module CoreToAas =
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let me = x
-            let props = [|
-                yield! x.CollectProperties()
-                yield! seq {
-                    JObj().TrySetProperty(x.IsDisabled,       "IsDisabled")
-                    JObj().TrySetProperty(x.CommonConditions, "CommonConditions")
-                    JObj().TrySetProperty(x.AutoConditions,   "AutoConditions")
-                    if x.Timeout.IsSome then
-                        JObj().TrySetProperty(x.Timeout.Value,     "Timeout")
-                    JObj().TrySetProperty(x.CallType.ToString(),   "CallType")
-
-                    JObj().TrySetProperty(sprintf "%A" x.ApiCalls, "ApiCalls")      // Guid[] type
-                    //JObj().TrySetProperty(x.ApiCalls |-> string |> box, "ApiCalls")
-                } |> choose id |> Seq.cast<JNode>
-            |]
-
+            let props = x.CollectProperties()
             JObj().ToSjSMC("Call", props)
 
     type NjArrow with
         /// Convert arrow to Aas Jons of SubmodelElementCollection
         member x.ToSjSMC(): JNode =
-            let props = [|
-                yield! x.CollectProperties()
-                yield! seq {
-                    JObj().TrySetProperty(x.Source, "Source")
-                    JObj().TrySetProperty(x.Target, "Target")
-                    JObj().TrySetProperty(x.Type, "Type")
-                } |> choose id |> Seq.cast<JNode>
-
-            |]
-
+            let props = x.CollectProperties()
             JObj().ToSjSMC("Arrow", props)
 
     let toSjSMC (semanticKey:string) (values:JNode[]) =
@@ -280,18 +291,6 @@ module CoreToAas =
         member x.ToSjSMC(): JNode =
             let arrows = x.Arrows |-> _.ToSjSMC() |> toSjSMC "Arrows"
             let calls  = x.Calls  |-> _.ToSjSMC() |> toSjSMC "Calls"
-            let props = [|
-                yield! x.CollectProperties()
-                yield! seq {
-                    JObj().TrySetProperty(x.FlowGuid,   "FlowGuid")
-                    JObj().TrySetProperty(x.Motion,     "Motion")
-                    JObj().TrySetProperty(x.Script,     "Script")
-                    JObj().TrySetProperty(x.IsFinished, "IsFinished")
-                    JObj().TrySetProperty(x.NumRepeat,  "NumRepeat")
-                    JObj().TrySetProperty(x.Period,     "Period")
-                    JObj().TrySetProperty(x.Delay,      "Delay")
-                } |> choose id |> Seq.cast<JNode>
-            |]
-
+            let props = x.CollectProperties()
             JObj().ToSjSMC("Work", props)
             |> _.AddValues([|arrows; calls|] |> choose id)

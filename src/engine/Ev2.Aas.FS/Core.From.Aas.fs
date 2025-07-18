@@ -56,7 +56,7 @@ module CoreFromAas =
 
 
         static member FromISubmodel(submodel:ISubmodel): NjSystem =
-            assert(submodel.IdShort.IsOneOf("Identification", "System"))
+            assert(submodel.IdShort.StartsWith("Identification") || submodel.IdShort.StartsWith("System"))
 
             let details = submodel.GetSMCWithSemanticKey "Details" |> head
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
