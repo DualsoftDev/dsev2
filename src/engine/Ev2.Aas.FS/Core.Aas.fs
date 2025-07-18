@@ -28,6 +28,7 @@ module AasSemantics =
             "Submodel",         "https://dualsoft.com/aas/submodel"
             "Project",          "https://dualsoft.com/aas/project"
             "System",           "https://dualsoft.com/aas/system"
+            "FakeSystemSubmodel", "https://dualsoft.com/aas/fakeSystemSubmodel"
             "Name",             "https://dualsoft.com/aas/unique/name"
             "Guid",             "https://dualsoft.com/aas/unique/guid"
             "Id",               "https://dualsoft.com/aas/unique/id"

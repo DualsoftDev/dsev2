@@ -2,13 +2,10 @@ namespace rec Dual.Ev2.Aas
 
 (* Core 를 AAS Json/Xml 로 변환하기 위한 실제 코드 *)
 
-open System
 
 open Dual.Common.Core.FS
-open Ev2.Core.FS
 open Dual.Common.Base
-open AasCore.Aas3_0
-open System.Text.Json
+open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreToAas =
@@ -20,7 +17,7 @@ module CoreToAas =
                 JObj().TrySetProperty(x.Guid,      "Guid")
                 if x.Id.IsSome then
                     JObj().TrySetProperty(x.Id.Value, "Id")
-            } //|> choose id |> Seq.cast<JNode>
+            }
 
         member x.CollectProperties(): JNode[] =
             seq {
@@ -63,7 +60,7 @@ module CoreToAas =
                 | :? NjArrow as arrow ->
                     JObj().TrySetProperty(arrow.Source, "Source")
                     JObj().TrySetProperty(arrow.Target, "Target")
-                    JObj().TrySetProperty(arrow.Type, "Type")
+                    JObj().TrySetProperty(arrow.Type,   "Type")
 
                 | :? NjWork as work ->
                     JObj().TrySetProperty(work.FlowGuid,   "FlowGuid")
@@ -89,13 +86,9 @@ module CoreToAas =
             } |> choose id |> Seq.cast<JNode> |> toArray
 
     type NjProject with
-        member private x.collectChildren(): JNode[] =
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
             let me = x
-            let details =
-                let props = x.CollectProperties()
-                JObj()
-                    .ToSjSMC("Details", props)
-
             let actives = x.ActiveSystems |-> _.ToSjSMC()
             let activeSystems =
                 JObj().AddProperties(
@@ -112,23 +105,12 @@ module CoreToAas =
                     , values = passives
                     , semanticKey = "PassiveSystems"
                 )
-            //let passives = x.PassiveSystems |-> _.ToString() |-> (fun z -> JObj().AddProperties(modelType=ModelType.Property, value=z)) |> Seq.cast<JNode> |> J.CreateJArr
-            //let passiveSystems =
-            //    JObj().AddProperties(
-            //        modelType = A.smc
-            //        , values = passives
-            //        , semanticKey = "PassiveSystems"
-            //    )
-
-            //[| details; activeSystems; passiveSystems |]
 
             let project =
-                JObj().AddProperties(
-                    modelType = A.smc
-                    , values = [| details; activeSystems; passiveSystems |]
-                    , semanticKey = "Project"
-                )
-            [| project |]
+                JObj().ToSjSMC("Project", x.CollectProperties())
+                |> _.AddValues([| activeSystems; passiveSystems |])
+            project
+
 
         /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
@@ -140,19 +122,15 @@ module CoreToAas =
                     , idShort = SubmodelIdShort
                     , kind = KindType.Instance
                     , semanticKey = "Submodel"
-                    , smel = prj.collectChildren()
+                    , smel = [| prj.ToSjSMC() |]
                 )
             sm
 
 
 
     type NjSystem with
-        member private x.collectChildren(): JNode[] =
-            let details =
-                let props = x.CollectProperties()
-                JObj().ToSjSMC("Details", props)
-
-
+        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
+        member x.ToSjSMC(): JNode =
             let fs = x.Flows |-> _.ToSjSMC()
             let flows =
                 JObj().AddProperties(
@@ -195,53 +173,35 @@ module CoreToAas =
                 )
 
 
-            [| details; apiDefs; apiCalls; flows; arrows; works |]
+            JObj().ToSjSMC("System", x.CollectProperties())
+            |> _.AddValues([| apiDefs; apiCalls; flows; arrows; works |])
 
-        /// To [S]ystem [J]son Submodel element (SME) 형태로 변환
-        member sys.ToSjSubmodel(): JNode =
-            let sm =
-                JObj().AddProperties(
-                    category = Category.CONSTANT,
-                    modelType = ModelType.Submodel,
-                    id = guid2str sys.Guid,
-                    kind = KindType.Instance,
-                    semanticKey = "System",
-                    smel = sys.collectChildren()
-                )
-            sm
+        //// To [S]ystem [J]son Submodel element (SME) 형태로 변환
+        //[<Obsolete("안씀")>]
+        //member sys.ToSjSubmodel(): JNode =
+        //    let sm =
+        //        JObj().AddProperties(
+        //            category = Category.CONSTANT,
+        //            modelType = ModelType.Submodel,
+        //            id = guid2str sys.Guid,
+        //            kind = KindType.Instance,
+        //            semanticKey = "FakeSystemSubmodel",
+        //            smel = [| sys.ToSjSMC() |]
+        //        )
+        //    sm
 
-        /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
-        member sys.ToSjSMC(): JNode =
-            let props = sys.CollectProperties()
-            JObj().ToSjSMC("System", props)
-            |> _.AddValues(sys.collectChildren())
-
-        [<Obsolete("TODO")>] member x.ToENV(): JObj = null
-        [<Obsolete("TODO")>] member x.ToAasJsonENV(): string = null
 
     type NjApiDef with
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
-        member x.ToSjSMC(): JNode =
-            let props = [|
-                yield! x.CollectProperties()
-                yield! seq {
-                    JObj().TrySetProperty(x.IsPush, "IsPush")
-                } |> choose id |> Seq.cast<JNode>
-            |]
-
-            JObj().ToSjSMC("ApiDef", props)
+        member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiDef", x.CollectProperties())
 
     type NjApiCall with
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
-        member x.ToSjSMC(): JNode =
-            let props = x.CollectProperties()
-            JObj().ToSjSMC("ApiCall", props)
+        member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiCall", x.CollectProperties())
 
 
     type NjButton with
-        member x.ToSjSMC(): JNode =
-            let props = x.CollectProperties()
-            JObj().ToSjSMC("Button", props)
+        member x.ToSjSMC(): JNode = JObj().ToSjSMC("Button", x.CollectProperties())
 
     type NjLamp with
         member x.ToSjSMC(): JNode =

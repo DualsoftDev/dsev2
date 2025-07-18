@@ -2,16 +2,15 @@ namespace rec Dual.Ev2.Aas
 
 (* AAS Json/Xml 로부터 Core 를 생성하기 위한 코드 *)
 
-open System.Linq
 open System
 
 open AasCore.Aas3_0
 
 open Dual.Common.Core.FS
-open Ev2.Core.FS
-open System.Globalization
 open Dual.Common.Db.FS
 open Dual.Common.Base
+
+open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreFromAas =
@@ -21,14 +20,13 @@ module CoreFromAas =
     type NjProject with
         static member FromISubmodel(submodel:ISubmodel): NjProject =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
-            let details = project.GetSMC "Details" |> head
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = project.ReadUniqueInfo()
 
-            let database    = details.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider> |? Prelude.getNull<DbProvider>()
-            let dateTime    = details.GetPropValue    "DateTime"    |> DateTime.Parse
-            let author      = details.TryGetPropValue "Author"      |? null
-            let description = details.TryGetPropValue "Description" |? null
-            let version     = details.TryGetPropValue "Version"     |-> Version.Parse |? Version(0, 0)
+            let database    = project.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider> |? Prelude.getNull<DbProvider>()
+            let dateTime    = project.GetPropValue    "DateTime"    |> DateTime.Parse
+            let author      = project.TryGetPropValue "Author"      |? null
+            let description = project.TryGetPropValue "Description" |? null
+            let version     = project.TryGetPropValue "Version"     |-> Version.Parse |? Version(0, 0)
 
             let activeSystems   = project.GetSMC "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
             let passiveSystems  = project.GetSMC "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
@@ -46,63 +44,14 @@ module CoreFromAas =
             )
 
     type NjSystem with
-        static member FromAasJsonStringENV(jsonEnv:string): NjSystem =
-            let env = J.CreateIClassFromJson<Environment>(jsonEnv)
-            let sm = env.Submodels.First()
-            NjSystem.FromISubmodel(sm)
-
-        static member FromAasXmlENV(xml:string): NjSystem =
-            let sm = J.CreateIClassFromXml<Environment>(xml).Submodels.First()
-            NjSystem.FromISubmodel(sm)
-
-
-        static member FromISubmodel(submodel:ISubmodel): NjSystem =
-            assert(submodel.IdShort.StartsWith("Identification") || submodel.IdShort.StartsWith("System"))
-
-            let details = submodel.GetSMCWithSemanticKey "Details" |> head
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
-            let dateTime      = details.GetPropValue "DateTime"  |> DateTime.Parse
-            let iri           = details.GetPropValue "IRI"
-            let engineVersion = details.TryGetPropValue "EngineVersion" |-> Version.Parse |? Version(0, 0)
-            let langVersion   = details.TryGetPropValue "LangVersion"   |-> Version.Parse |? Version(0, 0)
-            let author        = details.TryGetPropValue "Author" |? null
-            let description   = details.TryGetPropValue "Description" |? null
-
-            let apiDefs  = submodel.GetSMCWithSemanticKey "ApiDefs" >>= _.GetSMC("ApiDef")  |-> NjApiDef.FromSMC
-            let apiCalls = submodel.GetSMCWithSemanticKey "ApiCalls">>= _.GetSMC("ApiCall") |-> NjApiCall.FromSMC
-            let works    = submodel.GetSMCWithSemanticKey "Works"   >>= _.GetSMC("Work")    |-> NjWork.FromSMC
-            let flows    = submodel.GetSMCWithSemanticKey "Flows"   >>= _.GetSMC("Flow")    |-> NjFlow.FromSMC
-            let arrows   = submodel.GetSMCWithSemanticKey "Arrows"  >>= _.GetSMC("Arrow")   |-> NjArrow.FromSMC
-
-            NjSystem(
-                Name=name, Guid=guid, Id=id, Parameter=parameter
-
-                , DateTime = dateTime
-                , IRI = iri
-                , Author = author
-                , EngineVersion = engineVersion
-                , LangVersion = langVersion
-                , Description = description
-
-                , Flows = flows
-                , Works = works
-                , Arrows = arrows
-                , ApiDefs = apiDefs
-                , ApiCalls = apiCalls
-            )
-
         static member FromSMC(smc: SubmodelElementCollection): NjSystem =
-            let getSmc (semanticKey: string): SubmodelElementCollection [] =
-                smc.CollectChildrenSMCWithSemanticKey semanticKey
-
-            let details = getSmc "Details" |> head
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = details.ReadUniqueInfo()
-            let dateTime      = details.GetPropValue "DateTime"  |> DateTime.Parse
-            let iri           = details.TryGetPropValue "IRI" |?? (fun () -> logWarn $"No IRI on system {name}"; null)
-            let engineVersion = details.TryGetPropValue "EngineVersion" |-> Version.Parse |? Version(0, 0)
-            let langVersion   = details.TryGetPropValue "LangVersion"   |-> Version.Parse |? Version(0, 0)
-            let author        = details.TryGetPropValue "Author" |? null
-            let description   = details.TryGetPropValue "Description" |? null
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
+            let dateTime      = smc.GetPropValue "DateTime"  |> DateTime.Parse
+            let iri           = smc.TryGetPropValue "IRI" |?? (fun () -> logWarn $"No IRI on system {name}"; null)
+            let engineVersion = smc.TryGetPropValue "EngineVersion" |-> Version.Parse |? Version(0, 0)
+            let langVersion   = smc.TryGetPropValue "LangVersion"   |-> Version.Parse |? Version(0, 0)
+            let author        = smc.TryGetPropValue "Author" |? null
+            let description   = smc.TryGetPropValue "Description" |? null
 
 
             let apiDefs  = smc.GetSMC "ApiDefs"  >>= (_.GetSMC("ApiDef"))  |-> NjApiDef.FromSMC
@@ -174,13 +123,13 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjWork =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
-            let flowGuid   = smc.TryGetPropValue "FlowGuid" |? null
-            let motion     = smc.TryGetPropValue "Motion" |? null
-            let script     = smc.TryGetPropValue "Script" |? null
+            let flowGuid   = smc.TryGetPropValue       "FlowGuid"   |? null
+            let motion     = smc.TryGetPropValue       "Motion"     |? null
+            let script     = smc.TryGetPropValue       "Script"     |? null
             let isFinished = smc.TryGetPropValue<bool> "IsFinished" |? false
-            let numRepeat  = smc.TryGetPropValue<int> "NumRepeat" |? 0
-            let period     = smc.TryGetPropValue<int> "Period" |? 0
-            let delay      = smc.TryGetPropValue<int> "Delay" |? 0
+            let numRepeat  = smc.TryGetPropValue<int>  "NumRepeat"  |? 0
+            let period     = smc.TryGetPropValue<int>  "Period"     |? 0
+            let delay      = smc.TryGetPropValue<int>  "Delay"      |? 0
 
             (* AAS 구조상 Work/Calls/Call[], Work/Arrows/Arrow[] 형태로 존재 *)
             let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Call")  |? [||] |-> NjCall.FromSMC
@@ -239,7 +188,7 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjApiCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
-            let apiDef     = smc.GetPropValue "ApiDef" |> Guid.Parse
+            let apiDef     = smc.GetPropValue    "ApiDef"     |> Guid.Parse
             let inAddress  = smc.TryGetPropValue "InAddress"  |? null
             let outAddress = smc.TryGetPropValue "OutAddress" |? null
             let inSymbol   = smc.TryGetPropValue "InSymbol"   |? null

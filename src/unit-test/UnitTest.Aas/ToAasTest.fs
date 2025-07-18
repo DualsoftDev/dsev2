@@ -44,85 +44,10 @@ module ToAasTest =
             let project = Project.FromJson(dsProject)
             let json = project.ToJson()
             json =~= dsProject
-
-            //let json = project.ToJsonViaCode().Stringify()
             ()
-
-        //[<Test>]
-        //member _.``CoreToJsonViaCodeTest`` () =
-        //    let system2 = DsSystem.FromJson(dsJson)
-        //    let json = system2.ToJsonViaCode().Stringify()
-        //    ()
-
-
-
-        [<Test>]
-        member _.``Edge: instance -> JObj -> Json -> Xml ConversionTest`` () =
-            ()
-
-
-        [<Test>]
-        member _.``Action: instance -> JObj -> Json ConversionTest`` () =
-            ()
-
-
-
-        [<Test>]
-        member _.``Work: instance -> JObj -> Json ConversionTest`` () =
-            ()
-
-
-        [<Test>]
-        member _.``Flow: instance -> JObj -> Json ConversionTest`` () =
-            ()
-
-
-        [<Test>]
-        member _.``X System: instance -> JObj(SMC) -> Json ConversionTest`` () =
-            ()
-
-
-
-        [<Test>]
-        member _.``System: instance -> JObj(SM) -> Json ConversionTest`` () =
-
-            let njSystem = NjSystem.ImportFromJson dsJson
-            let json = njSystem.ToSjSubmodel().Stringify()
-            //writeClipboard(json)
-
-            let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-
-            ()
-
 
     /// Json Test
     type T2() =
-        [<Test>]
-        member _.``System: instance -> Aas Test`` () =
-            //let njSystem = dsJson |> RtSystem.ImportFromJson |> NjSystem.fromRuntime
-            let njSystem = NjSystem.ImportFromJson dsJson
-
-            let smCall = njSystem.Works[0].Calls[0].ToSjSMC()
-            let jsonCall = smCall.Stringify()
-            let submodelCall = J.CreateIClassFromJson<Aas.SubmodelElementCollection>(smCall.ToJsonString())
-            ()
-
-
-            let jSm:JNode = njSystem.ToSjSubmodel()
-            let aasJson = jSm.Stringify()
-            let submodel = J.CreateIClassFromJson<Aas.Submodel>(aasJson)
-            let aasXml = submodel.ToXml()
-
-            let njSystem2 = NjSystem.FromISubmodel(submodel)
-
-
-
-
-            let json2 = EmJson.ToJson(njSystem2)
-
-            let rtSystem = DsSystem.ImportFromJson(json2)
-
-            ()
         [<Test>]
         member _.``Project: instance -> Aas Test`` () =
             let rtProject = dsProject |> Project.FromJson
