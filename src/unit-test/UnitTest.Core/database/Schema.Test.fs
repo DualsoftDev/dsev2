@@ -416,7 +416,7 @@ module Schema =
             let projJson = edProject.ToJson(Path.Combine(testDataDir(), "project.json"))
 
             let curernt = now()
-            let rtProject = edProject.Replicate()
+            let rtProject = edProject.Replicate() |> validateRuntime
             rtProject |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
             let json =
                 rtProject

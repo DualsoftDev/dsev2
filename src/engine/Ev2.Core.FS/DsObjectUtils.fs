@@ -400,13 +400,14 @@ module DsObjectUtilsModule =
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
 
-                for p in prj.MyPrototypeSystems do
-                    p.IsPrototype |> verify
-                    p.RawParent.IsSome |> verify
+                for ps in prj.MyPrototypeSystems do
+                    ps.Project = Some prj |> verify
+                    ps.IsPrototype |> verify
+                    ps.RawParent.IsSome |> verify
 
-                for p in prj.ImportedPrototypeSystems do
-                    p.IsPrototype |> verify
-                    p.RawParent.IsSome |> verify
+                for ps in prj.ImportedPrototypeSystems do
+                    ps.IsPrototype |> verify
+                    ps.RawParent.IsSome |> verify
 
                 prj.Systems |> iter (_.IsPrototype >> not >> verify)
 

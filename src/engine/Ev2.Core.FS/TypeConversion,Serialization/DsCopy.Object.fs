@@ -17,18 +17,21 @@ module internal rec DsObjectCopyImpl =
 
     type Project with // replicate
         /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
-        member x.replicate(bag:ReplicateBag) =
+        member x.replicate(bag:ReplicateBag): Project =
             let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
             let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
 
+            // TODO: MyPrototypeSystems 및 ImportedPrototypeSystems 을 먼저 복사하고, 이들을 통해 instantiate 해야 한다.  또는 복사하고 관계를 맞춰주든지..
+            // Project.Instantiate  bag 이용해서 관계 찾아 낼 것.
+
             Project.Create()
+            |> uniqReplicateWithBag bag x
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:DsSystem) -> setParentI z s)
                 x.RawMyPrototypeSystems       |> z.RawMyPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 x.RawImportedPrototypeSystems |> z.RawImportedPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
-            |> uniqReplicateWithBag bag x
             |> validateRuntime
 
 

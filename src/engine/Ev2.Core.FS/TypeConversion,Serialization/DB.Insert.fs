@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 open System.Linq
+open System.Diagnostics
 open Dapper
 
 open Dual.Common.Base
@@ -65,7 +66,11 @@ module internal DbInsertModule =
 
                     rt.Id <- Some projId
 
-                    rt.MyPrototypeSystems |> iter _.InsertToDB(dbApi)  // Prototype system 을 따로 등록
+                    rt.MyPrototypeSystems
+                    |> iter (fun s ->
+                        Debug.Assert(s.Project = Some rt)
+                        s.InsertToDB(dbApi)  // Prototype system 을 따로 등록
+                    )
                     rt.ImportedPrototypeSystems |> iter _.InsertToDB(dbApi)  // Prototype system 을 따로 등록
                     rt.Systems |> iter _.InsertToDB(dbApi)  // 시스템 하부에 연결된 시스템들을 삽입 (재귀적 호출, prototype 은 제외됨)
                     //proj.Id <- Some projId
