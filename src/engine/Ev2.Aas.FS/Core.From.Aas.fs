@@ -54,7 +54,7 @@ module CoreFromAas =
             let sm = J.CreateIClassFromXml<Environment>(xml).Submodels.First()
             NjSystem.FromISubmodel(sm)
 
-        [<Obsolete("아마 불필요..")>]
+
         static member FromISubmodel(submodel:ISubmodel): NjSystem =
             assert(submodel.IdShort.IsOneOf("Identification", "System"))
 
@@ -67,12 +67,11 @@ module CoreFromAas =
             let author        = details.TryGetPropValue "Author" |? null
             let description   = details.TryGetPropValue "Description" |? null
 
-
-            let apiDefs  = submodel.GetSMCWithSemanticKey "ApiDefs" |-> NjApiDef.FromSMC
-            let apiCalls = submodel.GetSMCWithSemanticKey "ApiCalls"|-> NjApiCall.FromSMC
-            let works    = submodel.GetSMCWithSemanticKey "Works"   |-> NjWork.FromSMC
-            let flows    = submodel.GetSMCWithSemanticKey "Flows"   |-> NjFlow.FromSMC
-            let arrows   = submodel.GetSMCWithSemanticKey "Arrows"  |-> NjArrow.FromSMC
+            let apiDefs  = submodel.GetSMCWithSemanticKey "ApiDefs" >>= _.GetSMC("ApiDef")  |-> NjApiDef.FromSMC
+            let apiCalls = submodel.GetSMCWithSemanticKey "ApiCalls">>= _.GetSMC("ApiCall") |-> NjApiCall.FromSMC
+            let works    = submodel.GetSMCWithSemanticKey "Works"   >>= _.GetSMC("Work")    |-> NjWork.FromSMC
+            let flows    = submodel.GetSMCWithSemanticKey "Flows"   >>= _.GetSMC("Flow")    |-> NjFlow.FromSMC
+            let arrows   = submodel.GetSMCWithSemanticKey "Arrows"  >>= _.GetSMC("Arrow")   |-> NjArrow.FromSMC
 
             NjSystem(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
