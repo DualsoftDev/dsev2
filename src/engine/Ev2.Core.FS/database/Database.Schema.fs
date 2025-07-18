@@ -252,16 +252,12 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "ownerProjectId"}   {intKeyType}    -- 현재의 system 을 생성한 project 의 id.
-    , {k "isPrototype"}   {boolean} NOT NULL DEFAULT {falseValue}
-    , {k "prototypeId"}   {intKeyType}    -- 프로토타입의 Guid.  prototype 으로 만든 instance 는 prototype 의 Guid 를 갖고, prototype 자체는 NULL 을 갖는다.
     , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
     , {k "author"}        TEXT NOT NULL
     , {k "langVersion"}   TEXT NOT NULL   -- System.Version 형식의 문자열.  e.g. "1.0.0"  -- System 의 언어 버전
     , {k "engineVersion"} TEXT NOT NULL
-    , {k "originGuid"}    TEXT            -- 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null.  FOREIGN KEY 설정 안함.  db 에 원본삭제시 null 할당 가능
     , {k "description"}   TEXT
     , {k "dateTime"}      {datetime}
-    , FOREIGN KEY(prototypeId) REFERENCES {Tn.System}(id) ON DELETE SET NULL     -- prototype 삭제시, instance 의 prototype 참조만 삭제
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
 );
@@ -499,13 +495,10 @@ CREATE VIEW {k Vn.MapProject2System} AS
         , p.{k "name"}  AS projectName
         , s.{k "id"}    AS systemId
         , s.{k "name"}  AS systemName
-        , s2.{k "id"}   AS prototypeId
-        , s2.{k "name"} AS prototypeName
         , m.{k "loadedName"}
     FROM {k Tn.MapProject2System} m
     JOIN {k Tn.Project} p ON p.id = m.projectId
     JOIN {k Tn.System}  s ON s.id = m.systemId
-    LEFT JOIN {k Tn.System}  s2 ON s2.id = s.prototypeId
     ;
 
 

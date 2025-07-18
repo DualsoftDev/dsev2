@@ -101,13 +101,11 @@ module rec DsObjectModule =
         member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 
-    type Project(myPrototypeSystems:DsSystem seq, importedPrototypeSystems:DsSystem seq, activeSystems:DsSystem seq, passiveSystems:DsSystem seq) as this =
+    type Project(activeSystems:DsSystem seq, passiveSystems:DsSystem seq) as this =
         inherit RtUnique()
         do
             activeSystems  |> iter (setParentI this)
             passiveSystems |> iter (setParentI this)
-            myPrototypeSystems |> forall(_.IsPrototype) |> verify // prototypeSystems must be prototype systems
-            importedPrototypeSystems |> forall(_.IsPrototype) |> verify // prototypeSystems must be prototype systems
 
         interface IRtProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -128,11 +126,6 @@ module rec DsObjectModule =
 
         member val internal RawActiveSystems    = ResizeArray activeSystems
         member val internal RawPassiveSystems   = ResizeArray passiveSystems
-        member val internal RawMyPrototypeSystems       = ResizeArray myPrototypeSystems
-        member val internal RawImportedPrototypeSystems = ResizeArray importedPrototypeSystems
-
-        member x.MyPrototypeSystems       = x.RawMyPrototypeSystems       |> toList
-        member x.ImportedPrototypeSystems = x.RawImportedPrototypeSystems |> toList
         // { Runtime/DB 용
         member x.ActiveSystems  = x.RawActiveSystems  |> toList
         member x.PassiveSystems = x.RawPassiveSystems |> toList
@@ -158,19 +151,6 @@ module rec DsObjectModule =
         member val internal RawApiCalls = ResizeArray apiCalls
 
         member x.OwnerProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
-
-        /// Origin Guid: 복사 생성시 원본의 Guid.  최초 생성시에는 복사원본이 없으므로 null
-        member val OriginGuid = noneGuid with get, set
-
-
-        /// this system 이 prototype 으로 정의되었는지 여부
-        member val IsPrototype = false with get, set
-        /// this system 이 Instance 로 사용될 때에만 Some 값.
-        member val PrototypeSystemGuid = Option<Guid>.None with get, set
-
-
-        member x.Prototype = x.Project >>= (fun z -> (z.MyPrototypeSystems @ z.ImportedPrototypeSystems).TryFind(fun s -> Some s.Guid = x.PrototypeSystemGuid))
-
 
         member val IRI           = nullString with get, set
         member val Author        = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set

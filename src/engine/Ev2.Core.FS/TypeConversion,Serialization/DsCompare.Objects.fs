@@ -115,8 +115,6 @@ module rec DsCompareObjects =
                 yield! x.ComputeDiffUnique(y, criteria)
 
                 (* System 들 비교*)
-                yield! (x.MyPrototypeSystems, y.MyPrototypeSystems,  criteria) |||> computeDiffRecursively
-                yield! (x.ImportedPrototypeSystems, y.ImportedPrototypeSystems,  criteria) |||> computeDiffRecursively
                 yield! (x.ActiveSystems,    y.ActiveSystems,     criteria) |||> computeDiffRecursively
                 yield! (x.PassiveSystems,   y.PassiveSystems,    criteria) |||> computeDiffRecursively
 
@@ -138,7 +136,6 @@ module rec DsCompareObjects =
                 yield! (x.ApiDefs , y.ApiDefs , criteria) |||> computeDiffRecursively
                 yield! (x.ApiCalls, y.ApiCalls, criteria) |||> computeDiffRecursively
 
-                if x.PrototypeSystemGuid <> y.PrototypeSystemGuid then yield Diff("PrototypeSystemGuid", x, y)
                 if x.Author        <> y.Author        then yield Diff("Author", x, y)
                 if x.IRI           <> y.IRI           then yield Diff("IRI", x, y)
                 if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)

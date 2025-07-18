@@ -116,20 +116,6 @@ module rec NewtonsoftJsonObjects =
         [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
-
-
-
-    type ReferenceInstance = {
-        InstanceName: string
-        PrototypeGuid: Guid
-        InstanceGuid: Guid
-    }
-    /// project 를 Json serialize 시, system 저장 방식
-    type NjSystemLoadType = // do not inherit NjUnique
-        | LocalDefinition of NjSystem
-        | Reference of ReferenceInstance
-
-
     type NjProject() =
         inherit NjUnique()
         interface INjProject with
@@ -142,13 +128,8 @@ module rec NewtonsoftJsonObjects =
         member val Version     = Version()       with get, set
         member val DateTime    = minDate         with get, set
 
-        /// serialize 직전에 Runtime 으로부터 채워지고,
-        /// deserialize 직후에 Runtime 으로 변환시켜 채워 줌.
-        [<JsonProperty(Order =  99)>] member val MyPrototypeSystems = [||]:NjSystem[] with get, set
-        [<JsonProperty(Order = 100)>] member val ImportedPrototypeSystems = [||]:NjSystem[] with get, set
-
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
-        [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystemLoadType[]     with get, set
+        [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystem[] with get, set
 
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized x
@@ -387,32 +368,10 @@ module rec NewtonsoftJsonObjects =
             | :? NjProject as njp ->
                 let rtp = njp |> getRuntimeObject<Project>
 
-                njp.MyPrototypeSystems <-
-                    rtp.MyPrototypeSystems
-                    |> distinct
-                    |-> NjSystem.fromRuntime
-                    |> toArray
-
-                njp.ImportedPrototypeSystems <-
-                    rtp.ImportedPrototypeSystems
-                    |> distinct
-                    |-> NjSystem.fromRuntime
-                    |> toArray
-
-                let rtToSystemLoadType (rt:DsSystem) =
-                    match rt.PrototypeSystemGuid with
-                    | Some guid ->
-                        NjSystemLoadType.Reference { InstanceName=rt.Name; PrototypeGuid=guid; InstanceGuid=rt.Guid }
-                    | None ->
-                        let nj = rt |> NjSystem.fromRuntime
-                        NjSystemLoadType.LocalDefinition nj
-
                 njp.ActiveSystems  <- rtp.ActiveSystems  |-> NjSystem.fromRuntime |> toArray
-                njp.PassiveSystems <- rtp.PassiveSystems |-> rtToSystemLoadType |> toArray
+                njp.PassiveSystems <- rtp.PassiveSystems |-> NjSystem.fromRuntime |> toArray
 
                 njp.Database <- rtp.Database
-                njp.MyPrototypeSystems |> iter onNsJsonSerializing
-                njp.ImportedPrototypeSystems |> iter onNsJsonSerializing
 
             | :? NjSystem as njs ->
                 if isItNotNull njs.RuntimeObject then
@@ -453,48 +412,16 @@ module rec NewtonsoftJsonObjects =
         // 개별 처리
         match njObj with
         | :? NjProject as njp ->
-            let myProtos =
-                njp.MyPrototypeSystems
-                |-> getRuntimeObject<DsSystem>
-                |> tees (fun z ->
-                    z.IsPrototype <- true
-                    z.RawParent <- Some njp )
-
-            let importedProtos =
-                njp.ImportedPrototypeSystems
-                |-> getRuntimeObject<DsSystem>
-                |> tees (fun z ->
-                    z.IsPrototype <- true
-                    z.RawParent <- Some njp )
-
-            let load (loadType:NjSystemLoadType):DsSystem =
-                match loadType with
-                | NjSystemLoadType.LocalDefinition sys ->
-                    sys |> getRuntimeObject<DsSystem>
-                | NjSystemLoadType.Reference { InstanceName=name; PrototypeGuid=protoGuid; InstanceGuid=instanceGuid } ->
-                    myProtos @ importedProtos
-                    |> find (fun p -> p.Guid = protoGuid)
-                    |> (fun z -> fwdDuplicate z :?> DsSystem)
-                    |> tee(fun s ->
-                        s.Name <- name
-                        s.Guid <- instanceGuid
-                        s.PrototypeSystemGuid <- Some protoGuid )
-
-            njp.MyPrototypeSystems       |> iter onNsJsonDeserialized
-            njp.ImportedPrototypeSystems |> iter onNsJsonDeserialized
-
             njp.RuntimeObject <-
                 noop()
                 let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
-                let passives = njp.PassiveSystems |-> load
+                let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
 
-                Project(myProtos, importedProtos, actives, passives)
+                Project(actives, passives)
                 |> replicateProperties njp
                 |> tee (fun rtp ->
                     actives @ passives
-                    |> iter (fun rtSys ->
-                        rtSys.IsPrototype <- false
-                        setParentI rtp rtSys) )
+                    |> iter (setParentI rtp) )
 
         | :? NjSystem as njs ->
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정

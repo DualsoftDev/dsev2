@@ -41,22 +41,6 @@ module CoreToAas =
                 JObj()
                     .ToSjSMC("Details", props)
 
-            let myprotos = x.MyPrototypeSystems |-> _.ToSjSMC()
-            let myPrototypeSystems =
-                JObj().AddProperties(
-                    modelType = A.smc
-                    , values = myprotos
-                    , semanticKey = "MyPrototypeSystems"
-                )
-
-            let impprotos = x.ImportedPrototypeSystems |-> _.ToSjSMC()
-            let importedPrototypeSystems =
-                JObj().AddProperties(
-                    modelType = A.smc
-                    , values = impprotos
-                    , semanticKey = "ImportedPrototypeSystems"
-                )
-
             let actives = x.ActiveSystems |-> _.ToSjSMC()
             let activeSystems =
                 JObj().AddProperties(
@@ -81,7 +65,7 @@ module CoreToAas =
             //        , semanticKey = "PassiveSystems"
             //    )
 
-            [| details; myPrototypeSystems; importedPrototypeSystems; activeSystems; passiveSystems |]
+            [| details; activeSystems; passiveSystems |]
 
         /// To [S]ystem [J]son Submodel element (SME) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
@@ -311,20 +295,3 @@ module CoreToAas =
 
             JObj().ToSjSMC("Work", props)
             |> _.AddValues([|arrows; calls|] |> choose id)
-
-    type NjSystemLoadType with
-        member x.ToSjSMC(): JNode =
-            let props =
-                seq {
-                    match x with
-                    | LocalDefinition njSys ->
-                        JObj().TrySetProperty("LocalDefinition", "Type")
-                        JObj().TrySetProperty(guid2str njSys.Guid, "Guid")
-                    | Reference ref ->
-                        JObj().TrySetProperty("Reference", "Type")
-                        JObj().TrySetProperty(ref.InstanceName, "InstanceName")
-                        JObj().TrySetProperty(ref.PrototypeGuid, "PrototypeGuid")
-                        JObj().TrySetProperty(ref.InstanceGuid, "InstanceGuid")
-                } |> choose id |> Seq.cast<JNode>
-
-            JObj().ToSjSMC("PassiveSystem", props)

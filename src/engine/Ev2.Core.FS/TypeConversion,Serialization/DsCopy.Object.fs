@@ -28,8 +28,6 @@ module internal rec DsObjectCopyImpl =
             |> uniqReplicateWithBag bag x
             |> tee(fun z ->
                 (actives @ passives) |> iter (fun (s:DsSystem) -> setParentI z s)
-                x.RawMyPrototypeSystems       |> z.RawMyPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
-                x.RawImportedPrototypeSystems |> z.RawImportedPrototypeSystems.AddRange // 참조 공유 (shallow copy) 방식으로 복제됨.
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
             |> validateRuntime
@@ -153,7 +151,6 @@ module DsObjectCopyAPIModule =
             let replicas = replicaSys.EnumerateRtObjects()
             let newGuids = replicas.ToDictionary( _.Guid, (fun _ -> newGuid()))
 
-            replicaSys.OriginGuid <- Some x.Guid
             replicaSys.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
 
             replicas |> iter (fun repl ->
@@ -213,8 +210,5 @@ module DsObjectCopyAPIModule =
             |> tee (fun z ->
                 actives  |> z.RawActiveSystems.AddRange
                 passives |> z.RawPassiveSystems.AddRange
-                x.MyPrototypeSystems |> z.RawMyPrototypeSystems.AddRange
-                x.ImportedPrototypeSystems |> z.RawImportedPrototypeSystems.AddRange
-
                 actives @ passives |> iter (fun s -> s.RawParent <- Some z))
 

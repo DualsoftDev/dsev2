@@ -199,27 +199,10 @@ module ORMTypeConversionModule =
                 |> ormReplicateProperties z
 
             | :? DsSystem as rt ->
-                // Runtime system 의 prototype system Guid 에 해당하는 DB 의 ORMSystem 의 PK id 를 찾는다.
-                let prototypeId:Id option = rt.Prototype >>= _.Id
+                (* System 소유주 project 지정.  *)
+                let ownerProjectId = rt.Project >>= _.Id
 
-                (* System 소유주 project 지정.  1. system 이 project 에 active system 으로 사용된 경우.  또는 2. project 에 prototype 으로 등록된 경우. *)
-                let ownerProjectId =
-                    rt.Project
-                    >>= (fun p ->
-                        match rt.Project with
-                        | Some proj ->
-                            match rt.Prototype with
-                            | _ when rt.IsPrototype || proj.ActiveSystems.Contains(rt) ->
-                                proj.Id
-                                |> Option.orElseWith(fun () ->
-                                    dbApi.With(fun (conn, tr) ->
-                                        conn.TryExecuteScalar<Id>($"SELECT id FROM {Tn.Project} where guid = @Guid", {|Guid = proj.Guid|})))
-                            | _ -> None)
-
-                if ownerProjectId.IsNone then
-                    noop()
-
-                ORMSystem(ownerProjectId, prototypeId, rt.IsPrototype, rt.OriginGuid, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
                 |> ormReplicateProperties rt
 
             | :? Flow as rt ->

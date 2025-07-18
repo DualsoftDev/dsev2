@@ -29,24 +29,18 @@ module CoreFromAas =
             let description = details.TryGetPropValue "Description" |? null
             let version     = details.TryGetPropValue "Version"     |-> Version.Parse |? Version(0, 0)
 
-            let myProtosSystems = submodel.GetSMCWithSemanticKey "MyPrototypeSystems"       >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
-            let importsSystems  = submodel.GetSMCWithSemanticKey "ImportedPrototypeSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
-            let activeSystems   = submodel.GetSMCWithSemanticKey "ActiveSystems"            >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
-            let protos = myProtosSystems @ importsSystems
-            let passiveSystems  = submodel.GetSMCWithSemanticKey "PassiveSystems"           >>= (_.GetSMC("PassiveSystem")) |-> (fun smc -> NjSystemLoadType.FromSMC(smc, protos))
+            let activeSystems   = submodel.GetSMCWithSemanticKey "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
+            let passiveSystems  = submodel.GetSMCWithSemanticKey "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
 
             NjProject(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
 
-                , DateTime = dateTime
-                , Database = database
-                , Author = author
-                , Version = version
-                , Description = description
-
-                , MyPrototypeSystems = myProtosSystems
-                , ImportedPrototypeSystems = importsSystems
-                , ActiveSystems = activeSystems
+                , DateTime       = dateTime
+                , Database       = database
+                , Author         = author
+                , Version        = version
+                , Description    = description
+                , ActiveSystems  = activeSystems
                 , PassiveSystems = passiveSystems
             )
 
@@ -260,22 +254,3 @@ module CoreFromAas =
                 , OutSymbol = outSymbol
                 , ValueSpec = valueSpec
             )
-
-    type NjSystemLoadType with
-        static member FromSMC(smc: SubmodelElementCollection, systemProtos:NjSystem seq): NjSystemLoadType =
-            match smc.GetPropValue("Type") with
-            | "LocalDefinition" ->
-                let guid = smc.GetPropValue("Guid") |> s2guid
-                let system = systemProtos |> find (fun sys -> sys.Guid = guid)
-                LocalDefinition system
-            | "Reference" ->
-                let instanceName = smc.GetPropValue("InstanceName")
-                let protoGuid = smc.GetPropValue("PrototypeGuid") |> s2guid
-                let instanceGuid = smc.GetPropValue("InstanceGuid") |> s2guid
-                {
-                    InstanceName = instanceName
-                    PrototypeGuid = protoGuid
-                    InstanceGuid = instanceGuid
-                } |> Reference
-
-            | _ -> failwith "ERROR"

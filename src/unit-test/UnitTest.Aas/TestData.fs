@@ -9,7 +9,7 @@ let dsJson = """
   "Author": "dualk@KWAKPC",
   "EngineVersion": "0.0",
   "LangVersion": "0.0",
-  "DateTime": "2025-06-17T12:27:36.3647359+09:00",
+  "DateTime": "2025-06-17T12:27:36",
   "Flows": [
     {
       "RuntimeType": "Flow",
@@ -211,9 +211,7 @@ let dsProject = """
   },
   "Author": "dualk@KWAKPC",
   "Version": "0.0",
-  "DateTime": "2025-06-17T12:27:36.347475+09:00",
-  "MyPrototypeSystems": [],
-  "ImportedPrototypeSystems": [],
+  "DateTime": "2025-06-17T12:27:36",
   "ActiveSystems": [
     {
       "RuntimeType": "System",
@@ -224,7 +222,7 @@ let dsProject = """
       "Author": "dualk@KWAKPC",
       "EngineVersion": "0.0",
       "LangVersion": "0.0",
-      "DateTime": "2025-06-17T12:27:36.3647359+09:00",
+      "DateTime": "2025-06-17T12:27:36",
       "Flows": [
         {
           "RuntimeType": "Flow",

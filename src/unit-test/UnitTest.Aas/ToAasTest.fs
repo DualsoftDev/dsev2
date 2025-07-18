@@ -8,6 +8,7 @@ open Ev2.Core.FS
 open Dual.Common.Base
 open T
 open System.IO
+open Dual.Common.Core.FS
 
 
 module ToAasTest =
@@ -152,10 +153,10 @@ module ToAasTest =
             createEditableSystemCylinder()
             let originalEdProject = edProject
             let edProject = edProject.Replicate() |> validateRuntime
-            let prototype = edProject.AddMyPrototypeSystem edSystemCyl
-            let edSysCyl1 = edProject.Instantiate(prototype, Name="실린더 instance1")
-            let edSysCyl2 = edProject.Instantiate(prototype, Name="실린더 instance2")
-            let edSysCyl3 = edProject.Instantiate(prototype, Name="실린더 instance3")
+            let edSysCyl1 = edSystemCyl.Duplicate(Name="실린더 instance1")
+            let edSysCyl2 = edSystemCyl.Duplicate(Name="실린더 instance2")
+            let edSysCyl3 = edSystemCyl.Duplicate(Name="실린더 instance3")
+            [edSysCyl1; edSysCyl2; edSysCyl3] |> iter edProject.AddPassiveSystem
 
             let projJson = edProject.ToJson(Path.Combine(testDataDir(), "project.json"))
             let njProject1 = NjProject.FromJson(projJson)

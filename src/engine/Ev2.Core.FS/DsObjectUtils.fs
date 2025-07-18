@@ -28,8 +28,6 @@ module rec TmpCompatibility =
                     yield x
                 match x with
                 | :? Project as prj ->
-                    yield! prj.MyPrototypeSystems >>= _.EnumerateRtObjects()
-                    yield! prj.ImportedPrototypeSystems >>= _.EnumerateRtObjects()
                     yield! prj.Systems   >>= _.EnumerateRtObjects()
                 | :? DsSystem as sys ->
                     yield! sys.Works     >>= _.EnumerateRtObjects()
@@ -55,35 +53,12 @@ module rec TmpCompatibility =
 
 
 
-    type Project with // AddPrototypeSystem, AddActiveSystem, AddPassiveSystem, Instantiate
-        member x.AddMyPrototypeSystem(system:DsSystem) =
-            system
-            |> fwdReplicate :?> DsSystem
-            |> tee(fun system ->
-                system.IsPrototype <- true
-                system |> setParent x |> x.RawMyPrototypeSystems.Add
-                system)
-
-        member x.AddImportedPrototypeSystem(system:DsSystem) =
-            system.IsPrototype <- true
-            system |> setParent x |> x.RawImportedPrototypeSystems.Add
-            system
-
+    type Project with // AddActiveSystem, AddPassiveSystem, Instantiate
         member x.AddActiveSystem(system:DsSystem) =
             system |> setParent x |> x.RawActiveSystems.Add
 
         member x.AddPassiveSystem(system:DsSystem) =
             system |> setParent x |> x.RawPassiveSystems.Add
-
-        /// project 내에 prototypeGuid 를 가진 prototype system 을 복사하여 instance 로 만들어 반환
-        member x.Instantiate(prototypeSystem:DsSystem): DsSystem =
-            assert(x.MyPrototypeSystems.Contains prototypeSystem || x.ImportedPrototypeSystems.Contains prototypeSystem)
-            fwdDuplicate prototypeSystem :?> DsSystem
-            |> tee (fun z ->
-                z.PrototypeSystemGuid <- Some prototypeSystem.Guid
-                z.IsPrototype <- false
-                z |> setParentI x
-                x.AddPassiveSystem z)
 
     type DsSystem with
         member internal x.addWorks(works:Work seq, ?byUI:bool) =
@@ -297,7 +272,7 @@ module rec TmpCompatibility =
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type Project with
-        static member Create() = Project([], [], [], [])
+        static member Create() = Project([], [])
 
     type DsSystem with
         static member Create(flows:Flow[], works:Work[],
@@ -399,17 +374,6 @@ module DsObjectUtilsModule =
                 prj.Systems |> iter _.Validate(guidDicDebug)
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
-
-                for ps in prj.MyPrototypeSystems do
-                    ps.Project = Some prj |> verify
-                    ps.IsPrototype |> verify
-                    ps.RawParent.IsSome |> verify
-
-                for ps in prj.ImportedPrototypeSystems do
-                    ps.IsPrototype |> verify
-                    ps.RawParent.IsSome |> verify
-
-                prj.Systems |> iter (_.IsPrototype >> not >> verify)
 
             | :? DsSystem as sys ->
                 sys.Works |> iter _.Validate(guidDicDebug)

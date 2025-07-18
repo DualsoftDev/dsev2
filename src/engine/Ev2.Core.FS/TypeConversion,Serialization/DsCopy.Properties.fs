@@ -68,15 +68,15 @@ module internal DsCopyModule =
         | (:? DsSystem) | (:? NjSystem) | (:? ORMSystem) ->
             let s =
                 match sbx with
-                | :? DsSystem  as s -> {| IsPrototype=s.IsPrototype; PrototypeSystemGuid=s.PrototypeSystemGuid; IRI=s.IRI; OriginGuid=s.OriginGuid; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
-                | :? NjSystem  as s -> {| IsPrototype=s.IsPrototype; PrototypeSystemGuid=s.PrototypeSystemGuid; IRI=s.IRI; OriginGuid=s.OriginGuid; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
-                | :? ORMSystem as s -> {| IsPrototype=false;         PrototypeSystemGuid=None; IRI=s.IRI; OriginGuid=s.OriginGuid; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
+                | :? DsSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
+                | :? NjSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
+                | :? ORMSystem as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? DsSystem  as d -> d.IsPrototype<-s.IsPrototype; d.PrototypeSystemGuid<-s.PrototypeSystemGuid; d.IRI<-s.IRI; d.OriginGuid<-s.OriginGuid; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-            | :? NjSystem  as d -> d.IsPrototype<-s.IsPrototype; d.PrototypeSystemGuid<-s.PrototypeSystemGuid; d.IRI<-s.IRI; d.OriginGuid<-s.OriginGuid; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-            | :? ORMSystem as d ->                                                                             d.IRI<-s.IRI; d.OriginGuid<-s.OriginGuid; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+            | :? DsSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+            | :? NjSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+            | :? ORMSystem as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
             | _ -> failwith "ERROR"
 
 
