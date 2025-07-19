@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -23,8 +23,10 @@
 
 	<ItemGroup>
 		<Compile Include="newtonsoft.json\FSharpOption.Test.fs" />
-		<Compile Include="database\CreateSample.fs" />
-		<Compile Include="database\CreateSample.WithCylinders.fs" />
+		<Compile Include="model\CreateSample.fs" />
+		<Compile Include="model\CreateSample.WithCylinders.fs" />
+		<Compile Include="model\CreateSample.HelloDS.fs" />
+		<Compile Include="model\TestHelloDS.fs" />
 		<Compile Include="database\Schema.Test.fs" />
 		<Compile Include="database\ReadFromDB.Test.fs" />
 		<Compile Include="database\SystemImportExport.Test.fs" />
