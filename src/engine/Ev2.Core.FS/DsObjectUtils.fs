@@ -55,16 +55,18 @@ module rec TmpCompatibility =
 
     type Project with // AddActiveSystem, AddPassiveSystem, Instantiate
         member x.AddActiveSystem(system:DsSystem) =
-            system |> setParent x |> x.RawActiveSystems.Add
+            system |> setParent x |> ignore
+            x.RawActiveSystems.AddAsSet(system, Unique.isDuplicated)
 
         member x.AddPassiveSystem(system:DsSystem) =
-            system |> setParent x |> x.RawPassiveSystems.Add
+            system |> setParent x |> ignore
+            x.RawPassiveSystems.AddAsSet(system, Unique.isDuplicated)
 
     type DsSystem with
         member internal x.addWorks(works:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             works |> iter (setParentI x)
-            works |> verifyAddRangeAsSet x.RawWorks
+            x.RawWorks.VerifyAddRangeAsSet(works, Unique.isDuplicated)
 
         member internal x.removeWorks(works:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
@@ -78,7 +80,7 @@ module rec TmpCompatibility =
         member internal x.addFlows(flows:Flow seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             flows |> iter (setParentI x)
-            flows |> verifyAddRangeAsSet x.RawFlows
+            x.RawFlows.VerifyAddRangeAsSet(flows, Unique.isDuplicated)
 
         member internal x.removeFlows(flows:Flow seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
@@ -97,7 +99,7 @@ module rec TmpCompatibility =
         member internal x.addArrows(arrows:ArrowBetweenWorks seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
-            arrows |> verifyAddRangeAsSet x.RawArrows
+            x.RawArrows.VerifyAddRangeAsSet(arrows)
 
         member internal x.removeArrows(arrows:ArrowBetweenWorks seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
@@ -108,7 +110,7 @@ module rec TmpCompatibility =
         member internal x.addApiDefs(apiDefs:ApiDef seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiDefs |> iter (setParentI x)
-            apiDefs |> verifyAddRangeAsSet x.RawApiDefs
+            x.RawApiDefs.VerifyAddRangeAsSet(apiDefs, Unique.isDuplicated)
 
         member internal x.removeApiDefs(apiDefs:ApiDef seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
@@ -129,7 +131,7 @@ module rec TmpCompatibility =
         member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
-            apiCalls |> verifyAddRangeAsSet x.RawApiCalls
+            x.RawApiCalls.VerifyAddRangeAsSet(apiCalls, Unique.isDuplicated)
 
         member internal x.removeApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
@@ -169,7 +171,7 @@ module rec TmpCompatibility =
         member internal x.addButtons(buttons:DsButton seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             buttons |> iter (setParentI x)
-            buttons |> verifyAddRangeAsSet x.RawButtons
+            x.RawButtons.VerifyAddRangeAsSet(buttons)
         member internal x.removeButtons(buttons:DsButton seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             buttons |> iter clearParentI
@@ -179,7 +181,7 @@ module rec TmpCompatibility =
         member internal x.addLamps(lamps:Lamp seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             lamps |> iter (setParentI x)
-            lamps |> verifyAddRangeAsSet x.RawLamps
+            x.RawLamps.VerifyAddRangeAsSet(lamps)
         member internal x.removeLamps(lamps:Lamp seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             lamps |> iter clearParentI
@@ -188,7 +190,7 @@ module rec TmpCompatibility =
         member internal x.addConditions(conditions:DsCondition seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             conditions |> iter (setParentI x)
-            conditions |> verifyAddRangeAsSet x.RawConditions
+            x.RawConditions.VerifyAddRangeAsSet(conditions)
         member internal x.removeConditions(conditions:DsCondition seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             conditions |> iter clearParentI
@@ -197,7 +199,7 @@ module rec TmpCompatibility =
         member internal x.addActions(actions:DsAction seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             actions |> iter (setParentI x)
-            actions |> verifyAddRangeAsSet x.RawActions
+            x.RawActions.VerifyAddRangeAsSet(actions)
         member internal x.removeActions(actions:DsAction seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             actions |> iter clearParentI
@@ -225,7 +227,7 @@ module rec TmpCompatibility =
         member internal x.addCalls(calls:Call seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             calls |> iter (setParentI x)
-            calls |> verifyAddRangeAsSet x.RawCalls
+            x.RawCalls.VerifyAddRangeAsSet(calls)
         member internal x.removeCalls(calls:Call seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             let work = calls |-> _.RawParent.Value |> distinct |> exactlyOne :?> Work
@@ -237,7 +239,7 @@ module rec TmpCompatibility =
         member internal x.addArrows(arrows:ArrowBetweenCalls seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             arrows |> iter (setParentI x)
-            arrows |> verifyAddRangeAsSet x.RawArrows
+            x.RawArrows.VerifyAddRangeAsSet(arrows)
 
 
         member internal x.removeArrows(arrows:ArrowBetweenCalls seq, ?byUI:bool) =

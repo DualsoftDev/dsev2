@@ -180,9 +180,28 @@ module CreateSampleWithHelloDsModule =
                   call4Adv; call4Ret
                 ] |> hdsWork1.AddCalls
 
+            let createArrowsInWork1() =
+                let findCall name = hdsWork1.Calls.Find(fun x -> x.Name = name)
+                [
+                    ArrowBetweenCalls(findCall $"Device1_ADV", findCall $"Device2_ADV", DbArrowType.Start)
+                    ArrowBetweenCalls(findCall $"Device2_ADV", findCall $"Device3_ADV", DbArrowType.Start)
+                    ArrowBetweenCalls(findCall $"Device3_ADV", findCall $"Device4_ADV", DbArrowType.Start)
+
+                    ArrowBetweenCalls(findCall $"Device4_ADV", findCall $"Device1_RET", DbArrowType.Start)
+                    ArrowBetweenCalls(findCall $"Device4_ADV", findCall $"Device2_RET", DbArrowType.Start)
+                    ArrowBetweenCalls(findCall $"Device4_ADV", findCall $"Device3_RET", DbArrowType.Start)
+
+                    ArrowBetweenCalls(findCall $"Device3_RET", findCall $"Device4_RET", DbArrowType.Start)
+                ] |> hdsWork1.AddArrows
                 ()
+            let createArrowsInSystem() =
+                [
+                    ArrowBetweenWorks(hdsWork1, hdsWork2, DbArrowType.StartReset)
+                    ArrowBetweenWorks(hdsWork2, hdsWork3, DbArrowType.StartReset)
+                ] |> hdsSystem.AddArrows
 
             createApiCalls()
             createCalls()
+            createArrowsInWork1()
             hdsProject
         ()

@@ -20,6 +20,7 @@ module ConstEnums =
         | None = 0
         | Start = 1
         | Reset = 2
+        | StartReset = 3
 
     type DbStatus4 =
         | Ready = 1
@@ -31,8 +32,16 @@ module ConstEnums =
 module Ev2PreludeModule =
     let addAsSet            (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item)
     let addRangeAsSet       (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items)
-    let verifyAddAsSet      (arr: ResizeArray<'T>) (item: 'T)      = arr.AddAsSet(item, fun x -> failwith $"ERROR: {x} duplicated.")
-    let verifyAddRangeAsSet (arr: ResizeArray<'T>) (items: 'T seq) = arr.AddRangeAsSet(items, fun x -> failwith $"ERROR: {x} duplicated.")
+
+[<AutoOpen>]
+module ResizeArrayExtensions =
+
+    type System.Collections.Generic.List<'T> with
+        member xs.VerifyAddAsSet(item: 'T, ?isDuplicatedPredicate: ('T -> 'T -> bool)) =
+            xs.AddAsSet(item, ?isDuplicatedPredicate=isDuplicatedPredicate, onDuplicated=(fun x -> failwith $"ERROR: {x} duplicated."))
+
+        member xs.VerifyAddRangeAsSet(items: 'T seq, ?isDuplicatedPredicate: ('T -> 'T -> bool)) =
+            xs.AddRangeAsSet(items, ?isDuplicatedPredicate=isDuplicatedPredicate, onDuplicated=(fun x -> failwith $"ERROR: {x} duplicated."))
 
     let [<Literal>] DateFormatString = "yyyy-MM-ddTHH:mm:ss"
 

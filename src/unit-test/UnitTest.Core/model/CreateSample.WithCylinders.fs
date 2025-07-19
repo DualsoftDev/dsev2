@@ -52,8 +52,6 @@ module CreateSampleWithCylinderModule =
             let edArrowW = ArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
             edSystemCyl.AddArrows [edArrowW]
 
-            edApiDef1Cyl <- ApiDef.Create(Name = "ApiDef1Cyl")
-            edSystemCyl.AddApiDefs [edApiDef1Cyl]
 
             edCall1aCyl  <-
                 Call.Create()

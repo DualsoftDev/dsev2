@@ -17,7 +17,13 @@ fi
 export PGPASSWORD
 
 function psql() {
-  /usr/bin/psql -h localhost -p 5432 "$@"
+  if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null; then
+    #echo "Running in WSL .alias"
+    /usr/bin/psql -h localhost -p 5432 "$@"
+  else
+    #echo "Not in WSL, .alias"
+    "/c/Program Files/PostgreSQL/17/bin/psql.exe" -h localhost -p 5432 "$@"
+  fi
 }
 
 # PostgreSQL 명령 실행 함수

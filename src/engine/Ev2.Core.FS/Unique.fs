@@ -102,6 +102,15 @@ module Interfaces =
         member val internal DDic      = DynamicDictionary()
         // } 내부 구현 전용.  serialize 대상에서 제외됨
 
+        static member isDuplicated (x:Unique) (y:Unique) =
+            let dup =
+                x.Name.NonNullAny() && (x.Name = y.Name)
+                || x.Guid = y.Guid
+                || x.Id.IsSome && (x.Id = y.Id)
+            if dup then
+                noop()
+            dup
+
 
     let mutable fwdReplicateProperties: Unique -> Unique -> Unique = let dummy (src:Unique) (dst:Unique) = failwith "Should be reimplemented" in dummy
     let replicateProperties (src:#Unique) (dst:#Unique): #Unique =

@@ -633,7 +633,6 @@ module Ds2JsonModule =
 
 
 
-
     type NjSystem with
         /// DsSystem 를 JSON 문자열로 변환
         member x.ExportToJson():string =
