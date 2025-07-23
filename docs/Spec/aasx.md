@@ -1,0 +1,77 @@
+# AASX (SeqControl/Project submodel)
+
+- [SM] SequenceControlSubmodel
+  - [SMC] Details
+    - [Prop] Name: project 명
+    - [Prop] Guid: project 의 Guid
+    - [Prop] Id: project 의 id.  DB 상의 project table 의 PK id.  DB 에 저장된 적이 없으면 null 로, 표시되지 않는다.
+    - [Prop] Author: project 최종 수정자
+    - [Prop] DateTime: project 최종 수정일자
+    - [Prop] Version: project version
+  - [SMC] ActiveSystems: 현재 project 에서 직접 제어하는 시스템들 목록
+    - [SMC] System: 시스템
+      - [Prop] Name: system 명
+      - [Prop] Guid: system 의 Guid
+      - [SMC] Details
+        - [Prop] Name: system 명
+        - [Prop] Guid: system 의 Guid
+        - [Prop] Id: system 의 id.  DB 상의 system table 의 PK id.  DB 에 저장된 적이 없으면 null 로, 표시되지 않는다.
+        - [Prop] Author: system 최종 수정자
+        - [Prop] DateTime: system 최종 수정일자
+        - [Prop] EngineVersion: DS engine version
+        - [Prop] LangVersion: DS lang version
+      - [SMC] ApiDefs
+        - [SMC] ApiDef
+          - [Prop] Name: apiDef 의 이름
+          - [Prop] Guid: apiDef 의 Guid.  ApiCall 에서 호출 시, 이 Guid 를 통해서 지정
+          - [Prop] IsPush: push type API 여부.  종료 감지 신호가 발생할 때까지 계속 출력 신호를 줄지 말지 여부
+      - [SMC] ApiCalls
+        - [SMC] ApiCall
+          - [Prop] Name: apiCall 의 이름
+          - [Prop] Guid: apiCall 의 Guid.  ApiCall 에서 호출 시, 이 Guid 를 통해서 지정
+          - [Prop] ApiDef: 사용할 ApiDef 의 Guid
+          - [Prop] InAddress: Api 호출시 사용할 Input 주소
+          - [Prop] OutAddress: Api 호출시 사용할 Output 주소
+          - [Prop] InSymbol: 
+          - [Prop] OutSymbol: 
+          - [Prop] ValueSpec: 호출에 사용될 값 지정
+      - [SMC] Flows
+        - [SMC] Flow
+          - [Prop] Name: flow 의 이름
+          - [Prop] Guid: flow 의 Guid.  Work 가 속한 flow 를 지정할 때, 이 Guid 를 이용
+
+      - [SMC] Works
+        - [SMC] Work
+          - [Prop] Name: work 의 이름
+          - [Prop] Guid: work 의 Guid.  Arrow 의 source/target 지정시 이 Guid 이용
+          - [Prop] FlowGuid: work 가 속한 flow 의 Guid.  어느 flow 에도 소속되어 있지 않으면 null
+          - [Prop] IsFinished: 
+          - [Prop] NumRepeat: 
+          - [Prop] Period: 
+          - [Prop] Delay: 
+          - [SMC] Calls
+            - [SMC] Call
+              - [Prop] Name: call 의 이름
+              - [Prop] Guid: call 의 Guid.  Arrow 의 source/target 지정시 이 Guid 이용
+              - [Prop] IsDisabled: 
+              - [Prop] CommonPrecondition: 
+              - [Prop] AutoPrecondition: 
+              - [Prop] Timeout: 
+              - [Prop] CallType: 
+              - [Prop] ApiCalls: 호출하는 ApiCall 의 Guid 들.  [] 안에 복수개 입력
+          - [SMC] Arrows: Call 간 연결 arrow
+            - [SMC] Arrow
+              - [Prop] Name: arrow 의 이름
+              - [Prop] Guid: arrow 의 Guid.
+              - [Prop] Source: arrow 가 연결하는 연결 시작점(source) call 의 Guid.
+              - [Prop] Target: arrow 가 연결하는 연결 종점(target) call 의 Guid.
+              - [Prop] Type: arrow 의 인과 type.  (e.g Reset, Start, ..)
+
+      - [SMC] Arrows: Work 간 연결 arrow
+        - [SMC] Arrow
+          - [Prop] Name: arrow 의 이름
+          - [Prop] Guid: arrow 의 Guid.
+          - [Prop] Source: arrow 가 연결하는 연결 시작점(source) work 의 Guid.
+          - [Prop] Target: arrow 가 연결하는 연결 종점(target) work 의 Guid.
+          - [Prop] Type: arrow 의 인과 type.  (e.g Reset, Start, ..)
+          - 
