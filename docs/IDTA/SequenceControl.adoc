@@ -1,0 +1,528 @@
+:doctype: book
+
+//
+// 목차 생성
+//
+// :sectnums:
+:toc:
+:toclevels: 3
+
+:pdf-theme: custom-theme.yml
+:pdf-themesdir: .
+
+
+= IDTA 02XXX-1-0 Submodel Template "Sequence Control"
+// DualSoft
+// 2025-07-23
+
+
+////
+이거는 block 주석
+////
+
+== General
+
+*Document Number*: IDTA 02XXX-1-0 +
+*Version*: 1.0 +
+*Revision*: 0 +
+*Status*: Draft +
+*Date*: 2025-07-23 +
+*Category*: Template +
+*Classification*:
+
+[cols=",",options="header",]
+|===
+|*Property* |*Value*
+|ECLASS |
+|Standard |
+|Template Type |Unique
+|Base Template |
+|===
+
+'''''
+
+== About this document
+
+=== Purpose
+
+This document defines the Submodel Template "`Sequence Control`" for the
+Asset Administration Shell (AAS). The purpose of this document is to
+make selected specifications of Submodels in such manner that
+information about sequence control systems can be exchanged in a
+meaningful way between partners in a value creation network.
+
+=== Scope
+
+This Submodel Template targets the standardization of sequence control
+information within industrial automation systems. It provides a
+structured approach to represent project configurations, system
+hierarchies, workflow definitions, and execution control mechanisms.
+
+=== Target Audience
+
+* System integrators
+* Automation engineers
+* Software developers working with AAS
+* Industrial automation solution providers
+
+=== Document Structure
+
+This document is structured as follows: - General information and
+metadata - Submodel template specification - Property definitions and
+data types - Usage guidelines and examples - Compliance and conformance
+requirements
+
+=== Normative References
+
+* {blank}
++
+[verse]
+--
+++|++
+--
+* {blank}
++
+[verse]
+--
+++|++
+--
+* {blank}
++
+[verse]
+--
+++|++
+--
+
+=== Terms and Definitions
+
+[cols=",",options="header",]
+|===
+|*Term* |*Definition*
+|Sequence Control |
+|Active System |
+|Passive System |
+|Flow |
+|Work |
+|Call |
+|Arrow |
+|===
+
+// '''''
+
+// === Table of Contents
+
+// [arabic]
+// . link:#general[General]
+// . link:#about-this-document[About this document]
+// . link:#submodel-sequence-control[Submodel "`Sequence Control`"]
+// * 3.1 link:#introduction[Introduction]
+// * 3.2 link:#submodel-identification[Submodel Identification]
+// * 3.3 link:#submodel-elements[Submodel Elements]
+// ** 3.3.1 link:#project[Project]
+// ** 3.3.2 link:#activesystems[ActiveSystems]
+// ** 3.3.3 link:#passivesystems[PassiveSystems]
+// . link:#data-specification-templates[Data Specification Templates]
+// . link:#examples[Examples]
+// . link:#references[References]
+
+// '''''
+
+== Submodel "`Sequence Control`"
+
+=== Introduction
+
+The Sequence Control Submodel is designed to manage and control
+sequential operations within industrial automation systems. This
+submodel provides a comprehensive framework for representing project
+configurations, system hierarchies, workflow definitions, and execution
+control mechanisms.
+
+==== Key Features
+
+* Project-based organization structure
+* Active and passive system management
+* Workflow and execution control
+* API definition and call management
+* Hierarchical arrow-based connections
+
+==== Use Cases
+
+* Industrial automation sequence control
+* Process workflow management
+* System integration and coordination
+* API-based system communication
+
+=== Submodel Identification
+
+[width="100%",cols="58%,42%",options="header",]
+|===
+|*Attribute* |*Value*
+|*idShort* |SequenceControlSubmodel
+
+|*semanticId* |
+
+|*category* |CONSTANT
+
+|*description* |Submodel for managing sequence control operations and
+project configurations
+
+|*kind* |Instance
+|===
+
+=== Submodel Elements
+
+==== Project
+
+===== Identification
+
+[cols=",",options="header",]
+|===
+|*Attribute* |*Value*
+|*idShort* |Project
+|*semanticId* |
+|*category* |PARAMETER
+|*description* |Main project configuration container
+|===
+
+===== Properties
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |프로젝트 명칭 |1
+
+|Guid | |string |PARAMETER |Template |프로젝트 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 프로젝트 테이블 PK ID |0..1
+
+|Author | |string |PARAMETER |Template |프로젝트 최종 수정자 |0..1
+
+|DateTime | |dateTime |PARAMETER |Template |프로젝트 최종 수정일자 |0..1
+
+|Version | |string |PARAMETER |Template |프로젝트 버전 |0..1
+|===
+
+==== ActiveSystems
+
+===== Identification
+
+[cols=",",options="header",]
+|===
+|*Attribute* |*Value*
+|*idShort* |ActiveSystems
+|*semanticId* |
+|*category* |PARAMETER
+|*description* |CPU를 통해 직접 제어하는 시스템들의 목록
+|===
+
+===== System
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |시스템 명칭 |1
+
+|Guid | |string |PARAMETER |Template |시스템 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 시스템 테이블 PK ID |0..1
+
+|Author | |string |PARAMETER |Template |시스템 최종 수정자 |0..1
+
+|DateTime | |dateTime |PARAMETER |Template |시스템 최종 수정일자 |0..1
+
+|EngineVersion | |string |PARAMETER |Template |DS 엔진 버전 |0..1
+
+|LangVersion | |string |PARAMETER |Template |DS 언어 버전 |0..1
+|===
+
+===== ApiDefs
+
+====== ApiDef
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |API 정의 명칭 |1
+
+|Guid | |string |PARAMETER |Template |API 정의 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 ApiDef PK ID |0..1
+
+|IsPush | |boolean |PARAMETER |Template |Push 타입 API 여부 |0..1
+|===
+
+===== ApiCalls
+
+====== ApiCall
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |API 호출 명칭 |1
+
+|Guid | |string |PARAMETER |Template |API 호출 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 ApiCall PK ID |0..1
+
+|ApiDef | |string |PARAMETER |Template |사용할 ApiDef의 GUID |1
+
+|InAddress | |string |PARAMETER |Template |API 호출 시 사용할 입력 주소
+|0..1
+
+|OutAddress | |string |PARAMETER |Template |API 호출 시 사용할 출력 주소
+|0..1
+
+|InSymbol | |string |PARAMETER |Template |입력 심볼 정의 |0..1
+
+|OutSymbol | |string |PARAMETER |Template |출력 심볼 정의 |0..1
+
+|ValueSpec | |string |PARAMETER |Template |호출에 사용될 값 지정 |0..1
+|===
+
+===== Flows
+
+====== Flow
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |플로우 명칭 |1
+
+|Guid | |string |PARAMETER |Template |플로우 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 Flow PK ID |0..1
+|===
+
+===== Works
+
+====== Work
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |작업 명칭 |1
+
+|Guid | |string |PARAMETER |Template |작업 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 Work PK ID |0..1
+
+|FlowGuid | |string |PARAMETER |Template |소속 플로우의 GUID |0..1
+
+|IsFinished | |boolean |PARAMETER |Template |완료 상태 |0..1
+
+|NumRepeat | |integer |PARAMETER |Template |반복 횟수 |0..1
+
+|Period | |double |PARAMETER |Template |주기 설정 |0..1
+
+|Delay | |double |PARAMETER |Template |지연 설정 |0..1
+|===
+
+====== Calls
+
+======= Call
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |호출 명칭 |1
+
+|Guid | |string |PARAMETER |Template |호출 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 Call PK ID |0..1
+
+|IsDisabled | |boolean |PARAMETER |Template |비활성화 상태 |0..1
+
+|CommonPrecondition | |string |PARAMETER |Template |공통 사전조건 |0..1
+
+|AutoPrecondition | |string |PARAMETER |Template |자동 사전조건 |0..1
+
+|Timeout | |double |PARAMETER |Template |타임아웃 설정 |0..1
+
+|CallType | |string |PARAMETER |Template |호출 타입 |0..1
+
+|ApiCalls | |string |PARAMETER |Template |호출하는 ApiCall의 GUID 목록
+|0..1
+|===
+
+======= Arrows (Call Level)
+
+======== Arrow
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |화살표 명칭 |1
+
+|Guid | |string |PARAMETER |Template |화살표 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 Arrow PK ID |0..1
+
+|Source | |string |PARAMETER |Template |연결 시작점 Call의 GUID |1
+
+|Target | |string |PARAMETER |Template |연결 종점 Call의 GUID |1
+
+|Type | |string |PARAMETER |Template |화살표 인과 타입 |0..1
+|===
+
+====== Arrows (Work Level)
+
+======= Arrow
+
+[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+|===
+|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
+|*multiplicity*
+|Name | |langString |PARAMETER |Template |화살표 명칭 |1
+
+|Guid | |string |PARAMETER |Template |화살표 고유 식별자 |1
+
+|Id | |integer |PARAMETER |Template |DB상의 Arrow PK ID |0..1
+
+|Source | |string |PARAMETER |Template |연결 시작점 Work의 GUID |1
+
+|Target | |string |PARAMETER |Template |연결 종점 Work의 GUID |1
+
+|Type | |string |PARAMETER |Template |화살표 인과 타입 |0..1
+|===
+
+===== PassiveSystems
+
+====== Identification
+
+[cols=",",options="header",]
+|===
+|*Attribute* |*Value*
+|*idShort* |PassiveSystems
+|*semanticId* |
+|*category* |PARAMETER
+|*description* |간접 ApiCall을 통해 호출하는 시스템들
+|===
+
+====== System Elements
+
+구조는 ActiveSystems의 System과 동일한 형식을 따름
+
+'''''
+
+=== Data Specification Templates
+
+==== Data Types
+
+[cols=",,",options="header",]
+|===
+|*Data Type* |*Description* |*Format*
+|string |문자열 타입 |UTF-8
+|integer |정수 타입 |
+|double |실수 타입 |IEEE 754
+|boolean |불린 타입 |true/false
+|dateTime |날짜/시간 |ISO 8601
+|langString |다국어 문자열 |BCP 47
+|===
+
+==== Constraints
+
+[cols=",,",options="header",]
+|===
+|*Element* |*Constraint* |*Description*
+|GUID |Uniqueness |시스템 내 고유성 보장
+|ID |Database Key |DB 저장 후에만 값 존재
+|DateTime |ISO Format |ISO 8601 형식 준수
+|References |Integrity |참조 무결성 유지
+|===
+
+'''''
+
+=== Examples
+
+==== Example 1: Basic Project Structure
+
+[source,json]
+----
+{
+  "Project": {
+    "Name": "Sample Automation Project",
+    "Guid": "12345678-1234-1234-1234-123456789abc",
+    "Id": 1,
+    "Author": "Automation Engineer",
+    "DateTime": "2025-07-23T10:00:00Z",
+    "Version": "1.0.0"
+  }
+}
+----
+
+==== Example 2: ActiveSystem with ApiDef
+
+[source,json]
+----
+{
+  "ActiveSystems": {
+    "System": {
+      "Name": "Primary Control System",
+      "Guid": "87654321-4321-4321-4321-cba987654321",
+      "ApiDefs": {
+        "ApiDef": {
+          "Name": "Control API",
+          "Guid": "11111111-2222-3333-4444-555555555555",
+          "IsPush": true
+        }
+      }
+    }
+  }
+}
+----
+
+'''''
+
+=== References
+
+==== Normative References
+
+[cols=",,",options="header",]
+|===
+|*Reference* |*Title* |*Version*
+| | |
+| | |
+|===
+
+==== Informative References
+
+[cols=",,",options="header",]
+|===
+|*Reference* |*Title* |*Version*
+|IDTA-02060-1-0 |AI Model Nameplate Submodel |1.0
+|IDTA-02063-1-0 |Intelligent Information For Use Submodel |1.0
+|IDTA-02067 |Production Calendar Submodel |
+|===
+
+'''''
+
+=== Annex
+
+==== Change History
+
+[cols=",,,",options="header",]
+|===
+|*Version* |*Date* |*Changes* |*Author*
+|1.0 |2025-07-23 |Initial version based on aasx.md |
+|===
+
+==== Contact Information
+
+*Dualsoft* +
+*E-Mail*: help@dualsoft.com +
+*Internet*: http://dualsoft.com
+
+'''''
+
+*Note*: This document template follows IDTA standard format with
+sections left blank where specific content needs to be filled based on
+detailed requirements and semantic identifiers from the corresponding
+IDTA registry.

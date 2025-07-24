@@ -1,0 +1,17 @@
+extends: default
+
+title-page:
+  background-image: image:cover.png[]
+  background-image-fit: contain
+  background-image-vertical-align: top
+  background-image-horizontal-align: center
+
+  align: center
+  text-align: center
+  font-color: "#FFFFFF"   # ← 문제 발생 가능성 제거: 따옴표 + HEX
+
+  title:
+    top: 55%
+    font-size: 36
+  subtitle:
+    font-size: 20
