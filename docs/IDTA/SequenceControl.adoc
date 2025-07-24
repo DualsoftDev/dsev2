@@ -3,47 +3,72 @@
 //
 // 목차 생성
 //
-// :sectnums:
+:sectnums:
 :toc:
 :toclevels: 3
+:chapter-label: 
+:section-refsig:
 
 :pdf-theme: custom-theme.yml
 :pdf-themesdir: .
 
-
 = IDTA 02XXX-1-0 Submodel Template "Sequence Control"
 // DualSoft
 // 2025-07-23
+
+[#index:::]
+== Submodel Template for "Sequence Control"
+
+[discrete#index:::_imprint]
+=== Imprint
+
+[discrete#index:::_publisher]
+==== Publisher
+
+[listing]
+경기 군포시 공단로140번길 46, 510호  
+https://dualsoft.com
+
+// Industrial Digital Twin Association
+// Lyoner Strasse 18
+// 60528 Frankfurt am Main
+// Germany
+// https://www.industrialdigitaltwin.org/
+
+[discrete#index:::_version_history]
+==== Version history
+
+[cols=",,",]
+|===
+|*Date* |*Version* |*Comment*
+
+|07.24.2025 |1.0 |Release of the draft Submodel template published by Dualsoft.
+|===
 
 
 ////
 이거는 block 주석
 ////
 
+
+// ifdef::ko[]
+// 이건 한국어입니다.
+// endif::[]
+
+[discrete#index:::_general]
 == General
 
-*Document Number*: IDTA 02XXX-1-0 +
-*Version*: 1.0 +
-*Revision*: 0 +
-*Status*: Draft +
-*Date*: 2025-07-23 +
-*Category*: Template +
-*Classification*:
+// *Document Number*: IDTA 02XXX-1-0 +
+// *Version*: 1.0 +
+// *Revision*: 0 +
+// *Status*: Draft +
+// *Date*: 2025-07-23 +
+// *Category*: Template +
+// *Classification*:
 
-[cols=",",options="header",]
-|===
-|*Property* |*Value*
-|ECLASS |
-|Standard |
-|Template Type |Unique
-|Base Template |
-|===
 
-'''''
-
-== About this document
-
-=== Purpose
+[discrete#index:::_about_this_document]
+==== About this document
 
 This document defines the Submodel Template "`Sequence Control`" for the
 Asset Administration Shell (AAS). The purpose of this document is to
@@ -51,60 +76,36 @@ make selected specifications of Submodels in such manner that
 information about sequence control systems can be exchanged in a
 meaningful way between partners in a value creation network.
 
-=== Scope
+[discrete#index:::_scope_of_the_submodel]
+==== Scope of the Submodel
 
 This Submodel Template targets the standardization of sequence control
 information within industrial automation systems. It provides a
 structured approach to represent project configurations, system
 hierarchies, workflow definitions, and execution control mechanisms.
 
-=== Target Audience
+[discrete#index:::_target_audience]
+==== Target Audience
 
 * System integrators
 * Automation engineers
 * Software developers working with AAS
 * Industrial automation solution providers
 
-=== Document Structure
-
-This document is structured as follows: - General information and
-metadata - Submodel template specification - Property definitions and
-data types - Usage guidelines and examples - Compliance and conformance
-requirements
-
-=== Normative References
-
-* {blank}
-+
-[verse]
---
-++|++
---
-* {blank}
-+
-[verse]
---
-++|++
---
-* {blank}
-+
-[verse]
---
-++|++
---
-
 === Terms and Definitions
 
-[cols=",",options="header",]
+[cols="20%,80%",options="header",]
 |===
 |*Term* |*Definition*
-|Sequence Control |
-|Active System |
-|Passive System |
-|Flow |
-|Work |
-|Call |
-|Arrow |
+|Sequence Control | A systematic approach to controlling, monitoring, and simulating sequential operations in industrial automation systems.
+|Active System | A system that is directly controlled by a CPU or similar processing unit.
+|Passive System | A system that is not directly controlled by a CPU but may be monitored or influenced by my active systems.
+|Project | 시스템 묶음 단위로, system 에는 active system 과 passive systems 이 포함될 수 있다.  하나의 CPU 에 의해 제어되는 단위.
+|System | A collection of components or devices that work together to perform specific tasks or functions within an industrial automation context.
+|Flow | Work의 grouping 단위.  work의 묶음으로, HMI 등에서 button 등을 하나의 단위로 묶어서 동일 지령이 적용 되는 범위를 지정하기 위한 용도.
+|Work | 조건에 의해서 실행되는 작업 단위.  종료 후에도 조건만 만족하면 계속 실행될 수 있는 작업 단위.  내부에 Call 을 포함할 수 있다.
+|Call | 조건 및 순차 실행 작업 단위.  Work 내에 배치되며, work 내에서 조건이 맞을 때 순차적으로 한번만 실행된다.  내부에 ApiCall 을 포함할 수 있다.
+|Arrow | Work 간 연결 또는 Call 간 연결을 나타내는 화살표.  work 와 call 혼용된 연결은 불가능.  인과 관계를 표현하며, Source 와 Target 을 통해 연결된 Work 또는 Call 간의 관계를 정의한다.
 |===
 
 // '''''
