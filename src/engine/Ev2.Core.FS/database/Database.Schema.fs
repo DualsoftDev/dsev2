@@ -259,7 +259,8 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "description"}   TEXT
     , {k "dateTime"}      {datetime}
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
-    , CONSTRAINT {Tn.System}_uniq UNIQUE (iri)
+    , CONSTRAINT {Tn.System}_iri_uniq UNIQUE (iri)
+    , CONSTRAINT {Tn.System}_name_uniq UNIQUE (name)    -- system 이름 전체적으로 고유해야 함.
 );
 
 
@@ -309,27 +310,32 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
     , {k "systemId"}      {intKeyType} NOT NULL
     , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.Flow}_uniq UNIQUE (systemId, name)
 );
 
 
 CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
     , {k "flowId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.Button}_uniq UNIQUE (flowId, name)
 );
 
 CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
     , {k "flowId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.Lamp}_uniq UNIQUE (flowId, name)
 );
 
 CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
     , {k "flowId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.Condition}_uniq UNIQUE (flowId, name)
 );
 
 CREATE TABLE {k Tn.Action}( {sqlUniqWithName()}
     , {k "flowId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.Action}_uniq UNIQUE (flowId, name)
 );
 
 CREATE TABLE {k Tn.Enum}(
@@ -354,6 +360,7 @@ CREATE TABLE {k Tn.Work}( {sqlUniqWithName()}
     , FOREIGN KEY(systemId)  REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)    REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
     , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
+    , CONSTRAINT {Tn.Work}_uniq UNIQUE (systemId, name)
 );
 
 
@@ -373,12 +380,14 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
     , {k "valueSpecHint"}   TEXT
     , {k "apiDefId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
+    , CONSTRAINT {Tn.ApiCall}_uniq UNIQUE (systemId, name)
 );
 
 CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "isPush"}          {boolean} NOT NULL DEFAULT {falseValue}
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , CONSTRAINT {Tn.ApiDef}_uniq UNIQUE (systemId, name)
 );
 
 
@@ -393,6 +402,7 @@ CREATE TABLE {k Tn.Call}( {sqlUniqWithName()}
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
     , FOREIGN KEY(callTypeId) REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
     , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
+    , CONSTRAINT {Tn.Call}_uniq UNIQUE (workId, name)
     -- , {k "apiCallId"}     {intKeyType} NOT NULL  -- call 이 복수개의 apiCall 을 가지므로, {Tn.MapCall2ApiCall} 에 저장
     -- , FOREIGN KEY(apiCallId) REFERENCES {Tn.ApiCall}(id)
 );
