@@ -15,4 +15,8 @@ pdf:
 	-a pdf-themesdir=. \
 	-a pdf-fontsdir="$(FONTS_DIR)/fonts" \
 	-a chapter-label="" \
+	-a chapter-refsig="" \
+	-a section-refsig="" \
+	-a chapter-signifier="" \
+	-a untitled-label="" \
 	SequenceControl.adoc

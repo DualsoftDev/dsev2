@@ -6,8 +6,8 @@
 :sectnums:
 :toc:
 :toclevels: 3
-:chapter-label: 
-:section-refsig:
+:chapter-signifier: 
+:appendix-caption:
 
 :pdf-theme: custom-theme.yml
 :pdf-themesdir: .
@@ -38,7 +38,7 @@ https://dualsoft.com
 [discrete#index:::_version_history]
 ==== Version history
 
-[cols=",,",]
+[cols="20%,20%,60%",]
 |===
 |*Date* |*Version* |*Comment*
 
@@ -108,25 +108,6 @@ hierarchies, workflow definitions, and execution control mechanisms.
 |Arrow | Work 간 연결 또는 Call 간 연결을 나타내는 화살표.  work 와 call 혼용된 연결은 불가능.  인과 관계를 표현하며, Source 와 Target 을 통해 연결된 Work 또는 Call 간의 관계를 정의한다.
 |===
 
-// '''''
-
-// === Table of Contents
-
-// [arabic]
-// . link:#general[General]
-// . link:#about-this-document[About this document]
-// . link:#submodel-sequence-control[Submodel "`Sequence Control`"]
-// * 3.1 link:#introduction[Introduction]
-// * 3.2 link:#submodel-identification[Submodel Identification]
-// * 3.3 link:#submodel-elements[Submodel Elements]
-// ** 3.3.1 link:#project[Project]
-// ** 3.3.2 link:#activesystems[ActiveSystems]
-// ** 3.3.3 link:#passivesystems[PassiveSystems]
-// . link:#data-specification-templates[Data Specification Templates]
-// . link:#examples[Examples]
-// . link:#references[References]
-
-// '''''
 
 == Submodel "`Sequence Control`"
 
@@ -155,12 +136,12 @@ control mechanisms.
 
 === Submodel Identification
 
-[width="100%",cols="58%,42%",options="header",]
+[width="100%",cols="30%,70%",options="header",]
 |===
 |*Attribute* |*Value*
 |*idShort* |SequenceControlSubmodel
 
-|*semanticId* |
+|*semanticId* |"https://dualsoft.com/aas/submodel"
 
 |*category* |CONSTANT
 
@@ -176,32 +157,26 @@ project configurations
 
 ===== Identification
 
-[cols=",",options="header",]
+[cols="30%,70%",options="header",]
 |===
 |*Attribute* |*Value*
 |*idShort* |Project
-|*semanticId* |
+|*semanticId* |"https://dualsoft.com/aas/project"
 |*category* |PARAMETER
 |*description* |Main project configuration container
 |===
 
 ===== Properties
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |프로젝트 명칭 |1
-
-|Guid | |string |PARAMETER |Template |프로젝트 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 프로젝트 테이블 PK ID |0..1
-
-|Author | |string |PARAMETER |Template |프로젝트 최종 수정자 |0..1
-
-|DateTime | |dateTime |PARAMETER |Template |프로젝트 최종 수정일자 |0..1
-
-|Version | |string |PARAMETER |Template |프로젝트 버전 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |프로젝트 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |프로젝트 고유 식별자 |1
+|Id   |"https://dualsoft.com/aas/unique/id" |integer |DB상의 프로젝트 테이블 PK ID |0..1
+|Author |"https://dualsoft.com/aas/system/author" |string |프로젝트 최종 수정자 |0..1
+|DateTime |"https://dualsoft.com/aas/system/dateTime" |dateTime |프로젝트 최종 수정일자 |0..1
+|Version | "https://dualsoft.com/aas/project/version"|string |프로젝트 버전 |0..1
 |===
 
 ==== ActiveSystems
@@ -212,186 +187,131 @@ project configurations
 |===
 |*Attribute* |*Value*
 |*idShort* |ActiveSystems
-|*semanticId* |
+|*semanticId* |"https://dualsoft.com/aas/project/activeSystems"
 |*category* |PARAMETER
 |*description* |CPU를 통해 직접 제어하는 시스템들의 목록
 |===
 
 ===== System
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |시스템 명칭 |1
-
-|Guid | |string |PARAMETER |Template |시스템 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 시스템 테이블 PK ID |0..1
-
-|Author | |string |PARAMETER |Template |시스템 최종 수정자 |0..1
-
-|DateTime | |dateTime |PARAMETER |Template |시스템 최종 수정일자 |0..1
-
-|EngineVersion | |string |PARAMETER |Template |DS 엔진 버전 |0..1
-
-|LangVersion | |string |PARAMETER |Template |DS 언어 버전 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |시스템 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |시스템 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 시스템 테이블 PK ID |0..1
+|Author |"https://dualsoft.com/aas/system/author" |string |시스템 최종 수정자 |0..1
+|DateTime |"https://dualsoft.com/aas/system/dateTime" |dateTime |시스템 최종 수정일자 |0..1
+|EngineVersion |"https://dualsoft.com/aas/system/engineVersion" |string |DS 엔진 버전 |0..1
+|LangVersion |"https://dualsoft.com/aas/system/langVersion" |string |DS 언어 버전 |0..1
 |===
 
 ===== ApiDefs
 
 ====== ApiDef
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |API 정의 명칭 |1
-
-|Guid | |string |PARAMETER |Template |API 정의 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 ApiDef PK ID |0..1
-
-|IsPush | |boolean |PARAMETER |Template |Push 타입 API 여부 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |API 정의 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |API 정의 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 ApiDef PK ID |0..1
+|IsPush |"https://dualsoft.com/aas/apiDef/isPush" |boolean |Push 타입 API 여부 |0..1
 |===
 
 ===== ApiCalls
 
 ====== ApiCall
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |API 호출 명칭 |1
-
-|Guid | |string |PARAMETER |Template |API 호출 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 ApiCall PK ID |0..1
-
-|ApiDef | |string |PARAMETER |Template |사용할 ApiDef의 GUID |1
-
-|InAddress | |string |PARAMETER |Template |API 호출 시 사용할 입력 주소
-|0..1
-
-|OutAddress | |string |PARAMETER |Template |API 호출 시 사용할 출력 주소
-|0..1
-
-|InSymbol | |string |PARAMETER |Template |입력 심볼 정의 |0..1
-
-|OutSymbol | |string |PARAMETER |Template |출력 심볼 정의 |0..1
-
-|ValueSpec | |string |PARAMETER |Template |호출에 사용될 값 지정 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |API 호출 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |API 호출 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 ApiCall PK ID |0..1
+|ApiDef |"https://dualsoft.com/aas/singular/apiDef" |string |사용할 ApiDef의 GUID |1
+|InAddress |"https://dualsoft.com/aas/apiCall/inAddress" |string |API 호출 시 사용할 입력 주소 |0..1
+|OutAddress |"https://dualsoft.com/aas/apiCall/outAddress" |string |API 호출 시 사용할 출력 주소 |0..1
+|InSymbol |"https://dualsoft.com/aas/apiCall/inSymbol" |string |입력 심볼 정의 |0..1
+|OutSymbol |"https://dualsoft.com/aas/apiCall/outSymbol" |string |출력 심볼 정의 |0..1
+|ValueSpec |"https://dualsoft.com/aas/apiCall/valueSpec" |string |호출에 사용될 값 지정 |0..1
 |===
 
 ===== Flows
 
 ====== Flow
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |플로우 명칭 |1
-
-|Guid | |string |PARAMETER |Template |플로우 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 Flow PK ID |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |플로우 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |플로우 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Flow PK ID |0..1
 |===
 
 ===== Works
 
 ====== Work
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |작업 명칭 |1
-
-|Guid | |string |PARAMETER |Template |작업 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 Work PK ID |0..1
-
-|FlowGuid | |string |PARAMETER |Template |소속 플로우의 GUID |0..1
-
-|IsFinished | |boolean |PARAMETER |Template |완료 상태 |0..1
-
-|NumRepeat | |integer |PARAMETER |Template |반복 횟수 |0..1
-
-|Period | |double |PARAMETER |Template |주기 설정 |0..1
-
-|Delay | |double |PARAMETER |Template |지연 설정 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |작업 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |작업 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Work PK ID |0..1
+|FlowGuid |"https://dualsoft.com/aas/work/flowGuid" |string |소속 플로우의 GUID |0..1
+|IsFinished |"https://dualsoft.com/aas/work/isFinished" |boolean |완료 상태 |0..1
+|NumRepeat |"https://dualsoft.com/aas/work/numRepeat" |integer |반복 횟수 |0..1
+|Period |"https://dualsoft.com/aas/work/period" |double |주기 설정 |0..1
+|Delay |"https://dualsoft.com/aas/work/delay" |double |지연 설정 |0..1
 |===
 
 ====== Calls
 
 ======= Call
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |호출 명칭 |1
-
-|Guid | |string |PARAMETER |Template |호출 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 Call PK ID |0..1
-
-|IsDisabled | |boolean |PARAMETER |Template |비활성화 상태 |0..1
-
-|CommonPrecondition | |string |PARAMETER |Template |공통 사전조건 |0..1
-
-|AutoPrecondition | |string |PARAMETER |Template |자동 사전조건 |0..1
-
-|Timeout | |double |PARAMETER |Template |타임아웃 설정 |0..1
-
-|CallType | |string |PARAMETER |Template |호출 타입 |0..1
-
-|ApiCalls | |string |PARAMETER |Template |호출하는 ApiCall의 GUID 목록
-|0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |호출 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |호출 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Call PK ID |0..1
+|IsDisabled |"https://dualsoft.com/aas/call/isDisabled" |boolean |비활성화 상태 |0..1
+|CommonPrecondition |"https://dualsoft.com/aas/call/commonConditions" |string |공통 사전조건 |0..1
+|AutoPrecondition |"https://dualsoft.com/aas/call/autoConditions" |string |자동 사전조건 |0..1
+|Timeout |"https://dualsoft.com/aas/call/timeout" |double |타임아웃 설정 |0..1
+|CallType |"https://dualsoft.com/aas/call/callType" |string |호출 타입 |0..1
+|ApiCalls |"https://dualsoft.com/aas/plural/apiCalls" |string |호출하는 ApiCall의 GUID 목록 |0..1
 |===
 
 ======= Arrows (Call Level)
 
 ======== Arrow
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |화살표 명칭 |1
-
-|Guid | |string |PARAMETER |Template |화살표 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 Arrow PK ID |0..1
-
-|Source | |string |PARAMETER |Template |연결 시작점 Call의 GUID |1
-
-|Target | |string |PARAMETER |Template |연결 종점 Call의 GUID |1
-
-|Type | |string |PARAMETER |Template |화살표 인과 타입 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |화살표 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |화살표 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Arrow PK ID |0..1
+|Source |"https://dualsoft.com/aas/arrow/source" |string |연결 시작점 Call의 GUID |1
+|Target |"https://dualsoft.com/aas/arrow/target" |string |연결 종점 Call의 GUID |1
+|Type |"https://dualsoft.com/aas/arrow/type" |string |화살표 인과 타입 |0..1
 |===
 
 ====== Arrows (Work Level)
 
 ======= Arrow
 
-[width="100%",cols="16%,15%,14%,13%,9%,16%,17%",options="header",]
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*category* |*kind* |*description*
-|*multiplicity*
-|Name | |langString |PARAMETER |Template |화살표 명칭 |1
-
-|Guid | |string |PARAMETER |Template |화살표 고유 식별자 |1
-
-|Id | |integer |PARAMETER |Template |DB상의 Arrow PK ID |0..1
-
-|Source | |string |PARAMETER |Template |연결 시작점 Work의 GUID |1
-
-|Target | |string |PARAMETER |Template |연결 종점 Work의 GUID |1
-
-|Type | |string |PARAMETER |Template |화살표 인과 타입 |0..1
+|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
+|Name |"https://dualsoft.com/aas/unique/name" |string |화살표 명칭 |1
+|Guid |"https://dualsoft.com/aas/unique/guid" |string |화살표 고유 식별자 |1
+|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Arrow PK ID |0..1
+|Source |"https://dualsoft.com/aas/arrow/source" |string |연결 시작점 Work의 GUID |1
+|Target |"https://dualsoft.com/aas/arrow/target" |string |연결 종점 Work의 GUID |1
+|Type |"https://dualsoft.com/aas/arrow/type" |string |화살표 인과 타입 |0..1
 |===
 
 ===== PassiveSystems
@@ -402,7 +322,7 @@ project configurations
 |===
 |*Attribute* |*Value*
 |*idShort* |PassiveSystems
-|*semanticId* |
+|*semanticId* |"https://dualsoft.com/aas/project/passiveSystems"
 |*category* |PARAMETER
 |*description* |간접 ApiCall을 통해 호출하는 시스템들
 |===
@@ -425,7 +345,7 @@ project configurations
 |double |실수 타입 |IEEE 754
 |boolean |불린 타입 |true/false
 |dateTime |날짜/시간 |ISO 8601
-|langString |다국어 문자열 |BCP 47
+|string |다국어 문자열 |BCP 47
 |===
 
 ==== Constraints

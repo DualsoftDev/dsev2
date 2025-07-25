@@ -1,7 +1,7 @@
 extends: default
 
 title-page:
-  background-image: image:cover.png[]
+  background-image: image:cover-empty.png[]
   background-image-fit: contain
   background-image-vertical-align: top
   background-image-horizontal-align: center
@@ -23,10 +23,11 @@ heading:
   font-family: Helvetica
   line-height: 1.2
   margin-bottom: 10
-  h1:
-    chapter-label: ""
-  h2:
-    chapter-label: ""
+
+section:
+  indent: 0
+  title:
+    content: "{sectnum} {title}"
 link:
   font-color: #17418a
 list:
