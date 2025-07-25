@@ -40,9 +40,9 @@ https://dualsoft.com
 
 [cols="20%,20%,60%",]
 |===
-|*Date* |*Version* |*Comment*
+|*Date*      |*Version* |*Comment*
 
-|07.24.2025 |1.0 |Release of the draft Submodel template published by Dualsoft.
+|07.24.2025  |1.0       |Release of the draft Submodel template published by Dualsoft.
 |===
 
 
@@ -68,7 +68,7 @@ https://dualsoft.com
 
 
 [discrete#index:::_about_this_document]
-==== About this document
+=== About this document
 
 This document defines the Submodel Template "`Sequence Control`" for the
 Asset Administration Shell (AAS). The purpose of this document is to
@@ -77,7 +77,7 @@ information about sequence control systems can be exchanged in a
 meaningful way between partners in a value creation network.
 
 [discrete#index:::_scope_of_the_submodel]
-==== Scope of the Submodel
+=== Scope of the Submodel
 
 This Submodel Template targets the standardization of sequence control
 information within industrial automation systems. It provides a
@@ -85,27 +85,29 @@ structured approach to represent project configurations, system
 hierarchies, workflow definitions, and execution control mechanisms.
 
 [discrete#index:::_target_audience]
-==== Target Audience
+=== Target Audience
 
 * System integrators
 * Automation engineers
 * Software developers working with AAS
 * Industrial automation solution providers
 
-=== Terms and Definitions
+== Terms and Definitions
 
 [cols="20%,80%",options="header",]
 |===
-|*Term* |*Definition*
-|Sequence Control | A systematic approach to controlling, monitoring, and simulating sequential operations in industrial automation systems.
-|Active System | A system that is directly controlled by a CPU or similar processing unit.
-|Passive System | A system that is not directly controlled by a CPU but may be monitored or influenced by my active systems.
-|Project | 시스템 묶음 단위로, system 에는 active system 과 passive systems 이 포함될 수 있다.  하나의 CPU 에 의해 제어되는 단위.
-|System | A collection of components or devices that work together to perform specific tasks or functions within an industrial automation context.
-|Flow | Work의 grouping 단위.  work의 묶음으로, HMI 등에서 button 등을 하나의 단위로 묶어서 동일 지령이 적용 되는 범위를 지정하기 위한 용도.
-|Work | 조건에 의해서 실행되는 작업 단위.  종료 후에도 조건만 만족하면 계속 실행될 수 있는 작업 단위.  내부에 Call 을 포함할 수 있다.
-|Call | 조건 및 순차 실행 작업 단위.  Work 내에 배치되며, work 내에서 조건이 맞을 때 순차적으로 한번만 실행된다.  내부에 ApiCall 을 포함할 수 있다.
-|Arrow | Work 간 연결 또는 Call 간 연결을 나타내는 화살표.  work 와 call 혼용된 연결은 불가능.  인과 관계를 표현하며, Source 와 Target 을 통해 연결된 Work 또는 Call 간의 관계를 정의한다.
+|*Term*            |*Definition*
+|Sequence Control  |A systematic approach to controlling, monitoring, and simulating sequential operations in industrial automation systems.
+|Active System     |A system that is directly controlled by a CPU or similar processing unit.
+|Passive System    |A system that is not directly controlled by a CPU but may be monitored or influenced by my active systems.
+|Project           |시스템 묶음 단위로, system 에는 active system 과 passive systems 이 포함될 수 있다.  하나의 CPU 에 의해 제어되는 단위.
+|System            |A collection of components or devices that work together to perform specific tasks or functions within an industrial automation context.
+|Flow              |Work의 grouping 단위.  work의 묶음으로, HMI 등에서 button 등을 하나의 단위로 묶어서 동일 지령이 적용 되는 범위를 지정하기 위한 용도.
+|Work              |조건에 의해서 실행되는 작업 단위.  종료 후에도 조건만 만족하면 계속 실행될 수 있는 작업 단위.  내부에 Call 을 포함할 수 있다.
+|Call              |조건 및 순차 실행 작업 단위.  Work 내에 배치되며, work 내에서 조건이 맞을 때 순차적으로 한번만 실행된다.  내부에 ApiCall 을 포함할 수 있다.
+|Arrow             |Work 간 연결 또는 Call 간 연결을 나타내는 화살표.  work 와 call 혼용된 연결은 불가능.  인과 관계를 표현하며, Source 와 Target 을 통해 연결된 Work 또는 Call 간의 관계를 정의한다.
+|ApiDef            |ApiDef 가 정의된 시스템에서, 외부에 제공하는 API 정의.  ApiCall 에서 사용되며, API 호출의 메타데이터를 포함한다.
+|ApiCall           |Call 내에서 정의되며, 해당 Call 이 수행될 때 호출할 외부 시스템의 API 에 parameter 를 적용하여 호출하는 역할을 한다.  ApiDef 를 이용하여 API 호출을 정의한다.
 |===
 
 
@@ -138,17 +140,12 @@ control mechanisms.
 
 [width="100%",cols="30%,70%",options="header",]
 |===
-|*Attribute* |*Value*
-|*idShort* |SequenceControlSubmodel
-
-|*semanticId* |"https://dualsoft.com/aas/submodel"
-
-|*category* |CONSTANT
-
-|*description* |Submodel for managing sequence control operations and
-project configurations
-
-|*kind* |Instance
+|*Attribute*     |*Value*
+|*idShort*       |SequenceControlSubmodel
+|*semanticId*    |"https://dualsoft.com/aas/submodel"
+|*category*      |CONSTANT
+|*description*   |Submodel for managing sequence control operations and project configurations
+|*kind*          |Instance
 |===
 
 === Submodel Elements
@@ -159,24 +156,24 @@ project configurations
 
 [cols="30%,70%",options="header",]
 |===
-|*Attribute* |*Value*
-|*idShort* |Project
-|*semanticId* |"https://dualsoft.com/aas/project"
-|*category* |PARAMETER
-|*description* |Main project configuration container
+|*Attribute*     |*Value*
+|*idShort*       |Project
+|*semanticId*    |"https://dualsoft.com/aas/project"
+|*category*      |PARAMETER
+|*description*   |Main project configuration container
 |===
 
 ===== Properties
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |프로젝트 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |프로젝트 고유 식별자 |1
-|Id   |"https://dualsoft.com/aas/unique/id" |integer |DB상의 프로젝트 테이블 PK ID |0..1
-|Author |"https://dualsoft.com/aas/system/author" |string |프로젝트 최종 수정자 |0..1
-|DateTime |"https://dualsoft.com/aas/system/dateTime" |dateTime |프로젝트 최종 수정일자 |0..1
-|Version | "https://dualsoft.com/aas/project/version"|string |프로젝트 버전 |0..1
+|*idShort* |*semanticId*                              |*valueType* |*description*              |*multiplicity*
+|Name      |"https://dualsoft.com/aas/unique/name"    |string      |프로젝트 명칭              |1
+|Guid      |"https://dualsoft.com/aas/unique/guid"    |string      |프로젝트 고유 식별자       |1
+|Id        |"https://dualsoft.com/aas/unique/id"      |integer     |DB상의 프로젝트 테이블 PK ID |0..1
+|Author    |"https://dualsoft.com/aas/system/author"  |string      |프로젝트 최종 수정자       |0..1
+|DateTime  |"https://dualsoft.com/aas/system/dateTime" |dateTime   |프로젝트 최종 수정일자     |0..1
+|Version   |"https://dualsoft.com/aas/project/version" |string     |프로젝트 버전              |0..1
 |===
 
 ==== ActiveSystems
@@ -185,133 +182,138 @@ project configurations
 
 [cols=",",options="header",]
 |===
-|*Attribute* |*Value*
-|*idShort* |ActiveSystems
-|*semanticId* |"https://dualsoft.com/aas/project/activeSystems"
-|*category* |PARAMETER
-|*description* |CPU를 통해 직접 제어하는 시스템들의 목록
+|*Attribute*     |*Value*
+|*idShort*       |ActiveSystems
+|*semanticId*    |"https://dualsoft.com/aas/project/activeSystems"
+|*category*      |PARAMETER
+|*description*   |CPU를 통해 직접 제어하는 시스템들의 목록
 |===
 
-===== System
+==== System
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |시스템 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |시스템 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 시스템 테이블 PK ID |0..1
-|Author |"https://dualsoft.com/aas/system/author" |string |시스템 최종 수정자 |0..1
-|DateTime |"https://dualsoft.com/aas/system/dateTime" |dateTime |시스템 최종 수정일자 |0..1
-|EngineVersion |"https://dualsoft.com/aas/system/engineVersion" |string |DS 엔진 버전 |0..1
-|LangVersion |"https://dualsoft.com/aas/system/langVersion" |string |DS 언어 버전 |0..1
+|*idShort*       |*semanticId*                                   |*valueType* |*description*              |*multiplicity*
+|Name            |"https://dualsoft.com/aas/unique/name"         |string      |시스템 명칭              |1
+|Guid            |"https://dualsoft.com/aas/unique/guid"         |string      |시스템 고유 식별자       |1
+|Id              |"https://dualsoft.com/aas/unique/id"           |integer     |DB상의 시스템 테이블 PK ID |0..1
+|Author          |"https://dualsoft.com/aas/system/author"       |string      |시스템 최종 수정자       |0..1
+|DateTime        |"https://dualsoft.com/aas/system/dateTime"     |dateTime    |시스템 최종 수정일자     |0..1
+|EngineVersion   |"https://dualsoft.com/aas/system/engineVersion" |string      |DS 엔진 버전              |0..1
+|LangVersion     |"https://dualsoft.com/aas/system/langVersion"   |string      |DS 언어 버전              |0..1
 |===
 
-===== ApiDefs
+==== ApiDefs
 
-====== ApiDef
+==== ApiDef
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |API 정의 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |API 정의 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 ApiDef PK ID |0..1
-|IsPush |"https://dualsoft.com/aas/apiDef/isPush" |boolean |Push 타입 API 여부 |0..1
+|*idShort* |*semanticId*                             |*valueType* |*description*            |*multiplicity*
+|Name      |"https://dualsoft.com/aas/unique/name"   |string      |API 정의 명칭            |1
+|Guid      |"https://dualsoft.com/aas/unique/guid"   |string      |API 정의 고유 식별자     |1
+|Id        |"https://dualsoft.com/aas/unique/id"     |integer     |DB상의 ApiDef PK ID       |0..1
+|IsPush    |"https://dualsoft.com/aas/apiDef/isPush" |boolean     |Push 타입 API 여부        |0..1
 |===
 
-===== ApiCalls
+==== ApiCalls
 
-====== ApiCall
+===== ApiCall
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |API 호출 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |API 호출 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 ApiCall PK ID |0..1
-|ApiDef |"https://dualsoft.com/aas/singular/apiDef" |string |사용할 ApiDef의 GUID |1
-|InAddress |"https://dualsoft.com/aas/apiCall/inAddress" |string |API 호출 시 사용할 입력 주소 |0..1
-|OutAddress |"https://dualsoft.com/aas/apiCall/outAddress" |string |API 호출 시 사용할 출력 주소 |0..1
-|InSymbol |"https://dualsoft.com/aas/apiCall/inSymbol" |string |입력 심볼 정의 |0..1
-|OutSymbol |"https://dualsoft.com/aas/apiCall/outSymbol" |string |출력 심볼 정의 |0..1
-|ValueSpec |"https://dualsoft.com/aas/apiCall/valueSpec" |string |호출에 사용될 값 지정 |0..1
+|*idShort*   |*semanticId*                                   |*valueType* |*description*                  |*multiplicity*
+|Name        |"https://dualsoft.com/aas/unique/name"         |string      |API 호출 명칭                  |1
+|Guid        |"https://dualsoft.com/aas/unique/guid"         |string      |API 호출 고유 식별자           |1
+|Id          |"https://dualsoft.com/aas/unique/id"           |integer     |DB상의 ApiCall PK ID             |0..1
+|ApiDef      |"https://dualsoft.com/aas/singular/apiDef"     |string      |사용할 ApiDef의 GUID             |1
+|InAddress   |"https://dualsoft.com/aas/apiCall/inAddress"   |string      |API 호출 시 사용할 입력 주소   |0..1
+|OutAddress  |"https://dualsoft.com/aas/apiCall/outAddress"  |string      |API 호출 시 사용할 출력 주소   |0..1
+|InSymbol    |"https://dualsoft.com/aas/apiCall/inSymbol"    |string      |입력 심볼 정의                |0..1
+|OutSymbol   |"https://dualsoft.com/aas/apiCall/outSymbol"   |string      |출력 심볼 정의                |0..1
+|ValueSpec   |"https://dualsoft.com/aas/apiCall/valueSpec"   |string      |호출에 사용될 값 지정          |0..1
 |===
 
-===== Flows
+==== Flows
 
-====== Flow
+===== Flow
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |플로우 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |플로우 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Flow PK ID |0..1
+|*idShort* |*semanticId*                           |*valueType* |*description*            |*multiplicity*
+|Name      |"https://dualsoft.com/aas/unique/name" |string      |플로우 명칭            |1
+|Guid      |"https://dualsoft.com/aas/unique/guid" |string      |플로우 고유 식별자     |1
+|Id        |"https://dualsoft.com/aas/unique/id"   |integer     |DB상의 Flow PK ID       |0..1
 |===
 
-===== Works
+==== Works
 
-====== Work
+===== Work
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |작업 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |작업 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Work PK ID |0..1
-|FlowGuid |"https://dualsoft.com/aas/work/flowGuid" |string |소속 플로우의 GUID |0..1
-|IsFinished |"https://dualsoft.com/aas/work/isFinished" |boolean |완료 상태 |0..1
-|NumRepeat |"https://dualsoft.com/aas/work/numRepeat" |integer |반복 횟수 |0..1
-|Period |"https://dualsoft.com/aas/work/period" |double |주기 설정 |0..1
-|Delay |"https://dualsoft.com/aas/work/delay" |double |지연 설정 |0..1
+|*idShort*   |*semanticId*                              |*valueType* |*description*           |*multiplicity*
+|Name        |"https://dualsoft.com/aas/unique/name"    |string      |작업 명칭             |1
+|Guid        |"https://dualsoft.com/aas/unique/guid"    |string      |작업 고유 식별자      |1
+|Id          |"https://dualsoft.com/aas/unique/id"      |integer     |DB상의 Work PK ID      |0..1
+|FlowGuid    |"https://dualsoft.com/aas/work/flowGuid"  |string      |소속 플로우의 GUID     |0..1
+|IsFinished  |"https://dualsoft.com/aas/work/isFinished" |boolean     |완료 상태             |0..1
+|NumRepeat   |"https://dualsoft.com/aas/work/numRepeat" |integer     |반복 횟수             |0..1
+|Period      |"https://dualsoft.com/aas/work/period"    |double      |주기 설정             |0..1
+|Delay       |"https://dualsoft.com/aas/work/delay"     |double      |지연 설정             |0..1
 |===
 
-====== Calls
+===== Calls
 
-======= Call
+===== Call
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |호출 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |호출 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Call PK ID |0..1
-|IsDisabled |"https://dualsoft.com/aas/call/isDisabled" |boolean |비활성화 상태 |0..1
-|CommonPrecondition |"https://dualsoft.com/aas/call/commonConditions" |string |공통 사전조건 |0..1
-|AutoPrecondition |"https://dualsoft.com/aas/call/autoConditions" |string |자동 사전조건 |0..1
-|Timeout |"https://dualsoft.com/aas/call/timeout" |double |타임아웃 설정 |0..1
-|CallType |"https://dualsoft.com/aas/call/callType" |string |호출 타입 |0..1
-|ApiCalls |"https://dualsoft.com/aas/plural/apiCalls" |string |호출하는 ApiCall의 GUID 목록 |0..1
+|*idShort*            |*semanticId*                                      |*valueType* |*description*                 |*multiplicity*
+|Name                 |"https://dualsoft.com/aas/unique/name"            |string      |호출 명칭                     |1
+|Guid                 |"https://dualsoft.com/aas/unique/guid"            |string      |호출 고유 식별자              |1
+|Id                   |"https://dualsoft.com/aas/unique/id"              |integer     |DB상의 Call PK ID              |0..1
+|IsDisabled           |"https://dualsoft.com/aas/call/isDisabled"        |boolean     |비활성화 상태                 |0..1
+|CommonPrecondition   |"https://dualsoft.com/aas/call/commonConditions" |string      |공통 사전조건                 |0..1
+|AutoPrecondition     |"https://dualsoft.com/aas/call/autoConditions"   |string      |자동 사전조건                 |0..1
+|Timeout              |"https://dualsoft.com/aas/call/timeout"           |double      |타임아웃 설정                 |0..1
+|CallType             |"https://dualsoft.com/aas/call/callType"          |string      |호출 타입                     |0..1
+|ApiCalls             |"https://dualsoft.com/aas/plural/apiCalls"        |string      |호출하는 ApiCall의 GUID 목록 |0..1
 |===
 
-======= Arrows (Call Level)
+===== Arrows (Call Level)
 
-======== Arrow
+===== Arrow
+Call 간 연결을 나타내는 화살표로, Source와 Target을 통해 연결된 Call 간의 인과 관계를 정의한다.
+Type 은 화살표의 인과 타입을 나타내며, 시작 인과, 리셋 인과가 있다.
+Source 및 Target 은 화살표에 연결된 시작 및 끝 Call의 GUID를 나타낸다.
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
+|===
+|*idShort* |*semanticId*                             |*valueType* |*description*               |*multiplicity*
+|Name      |"https://dualsoft.com/aas/unique/name"   |string      |화살표 명칭                |1
+|Guid      |"https://dualsoft.com/aas/unique/guid"   |string      |화살표 고유 식별자         |1
+|Id        |"https://dualsoft.com/aas/unique/id"     |integer     |DB상의 Arrow PK ID          |0..1
+|Source    |"https://dualsoft.com/aas/arrow/source" |string      |연결 시작점 Call의 GUID     |1
+|Target    |"https://dualsoft.com/aas/arrow/target" |string      |연결 종점 Call의 GUID       |1
+|Type      |"https://dualsoft.com/aas/arrow/type"   |string      |화살표 인과 타입           |0..1
+|===
+
+===== Arrows (Work Level)
+
+===== Arrow
+Work 간 연결을 나타내는 화살표로, Source와 Target을 통해 연결된 Work 간의 인과 관계를 정의한다.
+Type 은 화살표의 인과 타입을 나타내며, 시작 인과, 리셋 인과가 있다.
+Source 및 Target 은 화살표에 연결된 시작 및 끝 Work의 GUID를 나타낸다.
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |화살표 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |화살표 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Arrow PK ID |0..1
-|Source |"https://dualsoft.com/aas/arrow/source" |string |연결 시작점 Call의 GUID |1
-|Target |"https://dualsoft.com/aas/arrow/target" |string |연결 종점 Call의 GUID |1
-|Type |"https://dualsoft.com/aas/arrow/type" |string |화살표 인과 타입 |0..1
-|===
-
-====== Arrows (Work Level)
-
-======= Arrow
-
-[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
-|===
-|*idShort* |*semanticId* |*valueType* |*description* |*multiplicity*
-|Name |"https://dualsoft.com/aas/unique/name" |string |화살표 명칭 |1
-|Guid |"https://dualsoft.com/aas/unique/guid" |string |화살표 고유 식별자 |1
-|Id |"https://dualsoft.com/aas/unique/id" |integer |DB상의 Arrow PK ID |0..1
-|Source |"https://dualsoft.com/aas/arrow/source" |string |연결 시작점 Work의 GUID |1
-|Target |"https://dualsoft.com/aas/arrow/target" |string |연결 종점 Work의 GUID |1
-|Type |"https://dualsoft.com/aas/arrow/type" |string |화살표 인과 타입 |0..1
+|*idShort* |*semanticId*                             |*valueType* |*description*               |*multiplicity*
+|Name      |"https://dualsoft.com/aas/unique/name"   |string      |화살표 명칭                |1
+|Guid      |"https://dualsoft.com/aas/unique/guid"   |string      |화살표 고유 식별자         |1
+|Id        |"https://dualsoft.com/aas/unique/id"     |integer     |DB상의 Arrow PK ID          |0..1
+|Source    |"https://dualsoft.com/aas/arrow/source" |string      |연결 시작점 Work의 GUID     |1
+|Target    |"https://dualsoft.com/aas/arrow/target" |string      |연결 종점 Work의 GUID       |1
+|Type      |"https://dualsoft.com/aas/arrow/type"   |string      |화살표 인과 타입           |0..1
 |===
 
 ===== PassiveSystems
@@ -320,11 +322,11 @@ project configurations
 
 [cols=",",options="header",]
 |===
-|*Attribute* |*Value*
-|*idShort* |PassiveSystems
-|*semanticId* |"https://dualsoft.com/aas/project/passiveSystems"
-|*category* |PARAMETER
-|*description* |간접 ApiCall을 통해 호출하는 시스템들
+|*Attribute*     |*Value*
+|*idShort*       |PassiveSystems
+|*semanticId*    |"https://dualsoft.com/aas/project/passiveSystems"
+|*category*      |PARAMETER
+|*description*   |간접 ApiCall을 통해 호출하는 시스템들
 |===
 
 ====== System Elements
@@ -339,24 +341,24 @@ project configurations
 
 [cols=",,",options="header",]
 |===
-|*Data Type* |*Description* |*Format*
-|string |문자열 타입 |UTF-8
-|integer |정수 타입 |
-|double |실수 타입 |IEEE 754
-|boolean |불린 타입 |true/false
-|dateTime |날짜/시간 |ISO 8601
-|string |다국어 문자열 |BCP 47
+|*Data Type* |*Description*   |*Format*
+|string      |문자열 타입       |UTF-8
+|integer     |정수 타입         |
+|double      |실수 타입         |IEEE 754
+|boolean     |불린 타입         |true/false
+|dateTime    |날짜/시간        |ISO 8601
+|string      |다국어 문자열     |BCP 47
 |===
 
 ==== Constraints
 
 [cols=",,",options="header",]
 |===
-|*Element* |*Constraint* |*Description*
-|GUID |Uniqueness |시스템 내 고유성 보장
-|ID |Database Key |DB 저장 후에만 값 존재
-|DateTime |ISO Format |ISO 8601 형식 준수
-|References |Integrity |참조 무결성 유지
+|*Element*   |*Constraint*   |*Description*
+|GUID        |Uniqueness      |시스템 내 고유성 보장
+|ID          |Database Key    |DB 저장 후에만 값 존재
+|DateTime    |ISO Format      |ISO 8601 형식 준수
+|References  |Integrity       |참조 무결성 유지
 |===
 
 '''''
@@ -408,19 +410,19 @@ project configurations
 
 [cols=",,",options="header",]
 |===
-|*Reference* |*Title* |*Version*
-| | |
-| | |
+|*Reference* |*Title*   |*Version*
+|            |          |
+|            |          |
 |===
 
 ==== Informative References
 
 [cols=",,",options="header",]
 |===
-|*Reference* |*Title* |*Version*
-|IDTA-02060-1-0 |AI Model Nameplate Submodel |1.0
-|IDTA-02063-1-0 |Intelligent Information For Use Submodel |1.0
-|IDTA-02067 |Production Calendar Submodel |
+|*Reference*     |*Title*                                   |*Version*
+|IDTA-02060-1-0  |AI Model Nameplate Submodel              |1.0
+|IDTA-02063-1-0  |Intelligent Information For Use Submodel  |1.0
+|IDTA-02067      |Production Calendar Submodel             |
 |===
 
 '''''
@@ -431,8 +433,8 @@ project configurations
 
 [cols=",,,",options="header",]
 |===
-|*Version* |*Date* |*Changes* |*Author*
-|1.0 |2025-07-23 |Initial version based on aasx.md |
+|*Version* |*Date*      |*Changes*                         |*Author*
+|1.0       |2025-07-23  |Initial version based on aasx.md |
 |===
 
 ==== Contact Information
