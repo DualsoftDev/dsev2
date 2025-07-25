@@ -1,28 +1,74 @@
 :doctype: book
+:lang: en
+:encoding: utf-8
 
 //
-// 목차 생성
+// Document metadata
+//
+:author: Dualsoft
+:email: help@dualsoft.com
+:revnumber: 1.0
+:revdate: 2025-07-25
+:version-label: Version
+:idta-number: IDTA 02XXX-1-0
+:document-status: Draft
+:document-type: Submodel Template
+:classification: Public
+
+//
+// Table of contents configuration
 //
 :sectnums:
-:toc:
-:toclevels: 3
+:toc: left
+:toclevels: 4
+:toc-title: Table of Contents
 :chapter-signifier: 
-:appendix-caption:
+:appendix-caption: Appendix
 
+//
+// PDF theme configuration
+//
 :pdf-theme: custom-theme.yml
 :pdf-themesdir: .
 
-= IDTA 02XXX-1-0 Submodel Template "Sequence Control"
-// DualSoft
-// 2025-07-23
+//
+// Cross-reference settings
+//
+:xrefstyle: short
+:section-refsig: Section
 
-[#index:::]
+//
+// Source code highlighting
+//
+:source-highlighter: rouge
+:rouge-style: github
+
+= {idta-number} Submodel Template "Sequence Control"
+
+[.lead]
+*Status*: {document-status} +
+*Version*: {revnumber} +
+*Date*: {revdate} +
+*Type*: {document-type} +
+*Classification*: {classification} +
+*Publisher*: Industrial Digital Twin Association e.V. +
+*Contact*: Dualsoft ({email})
+
+[#_abstract]
+== Abstract
+
+This document specifies the Submodel Template "Sequence Control" for the Asset Administration Shell (AAS). The template provides a standardized approach to represent and exchange sequence control information in industrial automation systems, enabling interoperability between different automation platforms and tools. It defines the structure for project configurations, system hierarchies, workflow definitions, execution control mechanisms, and API-based system communication within the context of sequential process automation.
+
+The template supports both active systems (directly controlled by CPU) and passive systems (monitored or influenced indirectly), providing comprehensive coverage for complex automation scenarios involving multiple interconnected systems and processes.
+
+[#_sequence_control]
 == Submodel Template for "Sequence Control"
 
-[discrete#index:::_imprint]
+
+[discrete#_imprint]
 === Imprint
 
-[discrete#index:::_publisher]
+[discrete#_publisher]
 ==== Publisher
 
 [listing]
@@ -35,7 +81,7 @@ https://dualsoft.com
 // Germany
 // https://www.industrialdigitaltwin.org/
 
-[discrete#index:::_version_history]
+[discrete#_version_history]
 ==== Version history
 
 [cols="20%,20%,60%",]
@@ -46,28 +92,38 @@ https://dualsoft.com
 |===
 
 
-////
-이거는 block 주석
-////
-
-
 // ifdef::ko[]
 // 이건 한국어입니다.
 // endif::[]
 
-[discrete#index:::_general]
+////
+[discrete#_legal_disclaimer]
+== Legal Disclaimer
+
+This document has been prepared by Dualsoft. The content is provided "as is" and without warranties of any kind, either express or implied. The Industrial Digital Twin Association (IDTA) and Dualsoft disclaim all warranties, express or implied, including but not limited to implied warranties of merchantability and fitness for a particular purpose.
+
+In no event shall IDTA or Dualsoft be liable for any direct, indirect, incidental, special, exemplary, or consequential damages arising out of or in connection with the use of this document or the information contained herein.
+
+This document is subject to change without notice. Users are advised to check for the latest version before implementation.
+////
+
+
+[discrete#_general]
 == General
 
-// *Document Number*: IDTA 02XXX-1-0 +
-// *Version*: 1.0 +
-// *Revision*: 0 +
-// *Status*: Draft +
-// *Date*: 2025-07-23 +
-// *Category*: Template +
-// *Classification*:
+*Document Number*: IDTA 02XXX-1-0 +
+*Version*: 1.0 +
+*Revision*: 0 +
+*Status*: Draft +
+*Date*: 2025-07-23 +
+*Category*: Submodel Template +
+*Classification*: Public +
+*Template Type*: Unique +
+*Base Template*: None +
+*Language*: English
 
 
-[discrete#index:::_about_this_document]
+[discrete#_about_this_document]
 === About this document
 
 This document defines the Submodel Template "`Sequence Control`" for the
@@ -76,7 +132,7 @@ make selected specifications of Submodels in such manner that
 information about sequence control systems can be exchanged in a
 meaningful way between partners in a value creation network.
 
-[discrete#index:::_scope_of_the_submodel]
+[discrete#_scope_of_the_submodel]
 === Scope of the Submodel
 
 This Submodel Template targets the standardization of sequence control
@@ -84,7 +140,7 @@ information within industrial automation systems. It provides a
 structured approach to represent project configurations, system
 hierarchies, workflow definitions, and execution control mechanisms.
 
-[discrete#index:::_target_audience]
+[discrete#_target_audience]
 === Target Audience
 
 * System integrators
@@ -99,15 +155,18 @@ hierarchies, workflow definitions, and execution control mechanisms.
 |*Term*            |*Definition*
 |Sequence Control  |A systematic approach to controlling, monitoring, and simulating sequential operations in industrial automation systems.
 |Active System     |A system that is directly controlled by a CPU or similar processing unit.
-|Passive System    |A system that is not directly controlled by a CPU but may be monitored or influenced by my active systems.
-|Project           |시스템 묶음 단위로, system 에는 active system 과 passive systems 이 포함될 수 있다.  하나의 CPU 에 의해 제어되는 단위.
+|Passive System    |A system that is not directly controlled by a CPU but may be monitored or influenced by active systems through API calls and external control mechanisms.
+|Project           |A system collection unit that includes both active and passive systems. It represents the top-level organizational structure controlled by a single CPU or control unit, encompassing all related automation components and their configurations.
 |System            |A collection of components or devices that work together to perform specific tasks or functions within an industrial automation context.
-|Flow              |Work의 grouping 단위.  work의 묶음으로, HMI 등에서 button 등을 하나의 단위로 묶어서 동일 지령이 적용 되는 범위를 지정하기 위한 용도.
-|Work              |조건에 의해서 실행되는 작업 단위.  종료 후에도 조건만 만족하면 계속 실행될 수 있는 작업 단위.  내부에 Call 을 포함할 수 있다.
-|Call              |조건 및 순차 실행 작업 단위.  Work 내에 배치되며, work 내에서 조건이 맞을 때 순차적으로 한번만 실행된다.  내부에 ApiCall 을 포함할 수 있다.
-|Arrow             |Work 간 연결 또는 Call 간 연결을 나타내는 화살표.  work 와 call 혼용된 연결은 불가능.  인과 관계를 표현하며, Source 와 Target 을 통해 연결된 Work 또는 Call 간의 관계를 정의한다.
-|ApiDef            |ApiDef 가 정의된 시스템에서, 외부에 제공하는 API 정의.  ApiCall 에서 사용되며, API 호출의 메타데이터를 포함한다.
-|ApiCall           |Call 내에서 정의되며, 해당 Call 이 수행될 때 호출할 외부 시스템의 API 에 parameter 를 적용하여 호출하는 역할을 한다.  ApiDef 를 이용하여 API 호출을 정의한다.
+|Flow              |A grouping unit for Work elements that defines the scope of common operations. Flows enable unified command application across multiple Work elements, typically used in HMI interfaces to group related operations under a single control button or command interface.
+|Work              |A conditional execution unit that represents a specific task or operation. Works can be repeatedly executed as long as their conditions are satisfied and may contain multiple Call elements for sequential execution of sub-tasks.
+|Call              |A conditional and sequential execution unit placed within Work elements. Calls execute sequentially within their parent Work when conditions are met, and each Call executes only once per Work cycle. Calls may contain ApiCall elements for external system communication.
+|Arrow             |A connection element representing causal relationships between Work elements or between Call elements (but not mixed connections). Arrows define execution dependencies through Source and Target references, enabling workflow orchestration and execution sequencing.
+|ApiDef            |An API definition element that specifies the interface contract for external system communication. ApiDefs contain metadata for API operations including input/output specifications, communication protocols, and operation characteristics such as push/pull mechanisms.
+|ApiCall           |An API invocation element defined within Call elements that executes external system API operations when the parent Call is performed. ApiCalls apply parameters to ApiDef specifications and handle the actual communication with external systems.
+|Execution Engine  |The runtime environment responsible for interpreting and executing sequence control definitions, managing state transitions, and coordinating API communications between systems.
+|Workflow          |A complete sequence of interconnected Work and Call elements that defines the execution path for a specific automation process or operation scenario.
+|GUID              |Globally Unique Identifier used throughout the system to uniquely identify and reference elements across different system boundaries and databases.
 |===
 
 
@@ -129,12 +188,67 @@ control mechanisms.
 * API definition and call management
 * Hierarchical arrow-based connections
 
-==== Use Cases
+// ==== Use Case Scenarios
 
-* Industrial automation sequence control
-* Process workflow management
-* System integration and coordination
-* API-based system communication
+// ===== UC01: Manufacturing Assembly Line Control
+
+// **Description**: A manufacturing facility needs to coordinate multiple assembly stations in a sequential process where each station must complete its task before the next can begin.
+
+// **Actors**: Assembly line controller, Station controllers, Quality control system
+// **Preconditions**: All stations are operational and connected
+// **Flow**:
+// 1. Project defines assembly line with 5 ActiveSystems (stations)
+// 2. Each station has Work elements for processing tasks
+// 3. Arrow connections define sequential dependencies between stations
+// 4. Quality control system (PassiveSystem) receives status via ApiCalls
+// 5. Emergency stop Flow can halt all operations
+
+// **Benefits**: Standardized representation of complex assembly sequences, enabling interoperability between different automation systems.
+
+// ===== UC02: Chemical Process Batch Control
+
+// **Description**: A chemical plant manages batch processing where multiple reactors, mixers, and heating systems must execute in specific sequences with precise timing.
+
+// **Actors**: Process controller, Reactor systems, Safety monitoring system
+// **Preconditions**: Process equipment is calibrated and safe
+// **Flow**:
+// 1. Project contains ActiveSystems for each process unit
+// 2. Work elements define process steps with timing constraints (Period, Delay)
+// 3. Call elements execute ApiCalls to control valves, heaters, etc.
+// 4. Safety system monitors through passive ApiDefs
+// 5. Arrows ensure proper sequencing and error handling
+
+// **Benefits**: Enables safe, repeatable batch processes with full traceability and emergency response capabilities.
+
+// ===== UC03: Warehouse Automation Coordination
+
+// **Description**: An automated warehouse coordinates robots, conveyors, sorting systems, and inventory management to fulfill orders efficiently.
+
+// **Actors**: Warehouse management system, Robot controllers, Conveyor systems, Inventory system
+// **Preconditions**: Warehouse layout is mapped, all systems are connected
+// **Flow**:
+// 1. Project organizes warehouse systems into logical Flows (receiving, sorting, shipping)
+// 2. Robot controllers are ActiveSystems with Work elements for pick/place operations
+// 3. Conveyor systems use PassiveSystems controlled via ApiCalls
+// 4. Inventory system receives updates through dedicated ApiDefs
+// 5. Order fulfillment workflows use Arrows to coordinate system interactions
+
+// **Benefits**: Standardized interface for heterogeneous warehouse automation systems, enabling flexible reconfiguration and optimization.
+
+// ===== UC04: Building Management System Integration
+
+// **Description**: A smart building integrates HVAC, lighting, security, and energy management systems for optimal comfort and efficiency.
+
+// **Actors**: Building management system, HVAC controllers, Lighting systems, Security system, Energy management
+// **Preconditions**: Building systems are networked and operational
+// **Flow**:
+// 1. Project represents building zones as different Systems
+// 2. HVAC and lighting are ActiveSystems with autonomous control
+// 3. Security is PassiveSystem monitored via ApiCalls
+// 4. Energy management receives data through dedicated ApiDefs
+// 5. Time-based and occupancy-triggered workflows coordinate system responses
+
+// **Benefits**: Unified representation of building automation enabling intelligent coordination and energy optimization across diverse systems.
 
 === Submodel Identification
 
@@ -150,20 +264,122 @@ control mechanisms.
 
 === Submodel Elements
 
-==== Project
+[#_element_hierarchy]
+==== Element Hierarchy
 
-===== Identification
+The Sequence Control Submodel follows a hierarchical structure as shown below:
+
+[source]
+----
+SequenceControlSubmodel
+└── Project
+    ├── Name (1)
+    ├── Guid (1)
+    ├── Id (0..1)
+    ├── Author (0..1)
+    ├── DateTime (0..1)
+    ├── Version (0..1)
+    ├── ActiveSystems (0..1)
+    │   └── System (1..*)
+    │       ├── Name (1)
+    │       ├── Guid (1)
+    │       ├── Id (0..1)
+    │       ├── Author (0..1)
+    │       ├── DateTime (0..1)
+    │       ├── EngineVersion (0..1)
+    │       ├── LangVersion (0..1)
+    │       ├── ApiDefs (0..1)
+    │       │   └── ApiDef (1..*)
+    │       │       ├── Name (1)
+    │       │       ├── Guid (1)
+    │       │       ├── Id (0..1)
+    │       │       └── IsPush (0..1)
+    │       ├── Flows (0..1)
+    │       │   └── Flow (1..*)
+    │       │       ├── Name (1)
+    │       │       ├── Guid (1)
+    │       │       └── Id (0..1)
+    │       └── Works (0..1)
+    │           └── Work (1..*)
+    │               ├── Name (1)
+    │               ├── Guid (1)
+    │               ├── Id (0..1)
+    │               ├── FlowGuid (0..1)
+    │               ├── IsFinished (0..1)
+    │               ├── NumRepeat (0..1)
+    │               ├── Period (0..1)
+    │               ├── Delay (0..1)
+    │               ├── Calls (0..1)
+    │               │   └── Call (1..*)
+    │               │       ├── Name (1)
+    │               │       ├── Guid (1)
+    │               │       ├── Id (0..1)
+    │               │       ├── IsDisabled (0..1)
+    │               │       ├── CommonPrecondition (0..1)
+    │               │       ├── AutoPrecondition (0..1)
+    │               │       ├── Timeout (0..1)
+    │               │       ├── CallType (0..1)
+    │               │       ├── ApiCalls (0..1)
+    │               │       │   └── ApiCall (1..*)
+    │               │       │       ├── Name (1)
+    │               │       │       ├── Guid (1)
+    │               │       │       ├── Id (0..1)
+    │               │       │       ├── ApiDef (1)
+    │               │       │       ├── InAddress (0..1)
+    │               │       │       ├── OutAddress (0..1)
+    │               │       │       ├── InSymbol (0..1)
+    │               │       │       ├── OutSymbol (0..1)
+    │               │       │       └── ValueSpec (0..1)
+    │               │       └── Arrows (Call Level) (0..1)
+    │               │           └── Arrow (1..*)
+    │               │               ├── Name (1)
+    │               │               ├── Guid (1)
+    │               │               ├── Id (0..1)
+    │               │               ├── Source (1)
+    │               │               ├── Target (1)
+    │               │               └── Type (0..1)
+    │               └── Arrows (Work Level) (0..1)
+    │                   └── Arrow (1..*)
+    │                       ├── Name (1)
+    │                       ├── Guid (1)
+    │                       ├── Id (0..1)
+    │                       ├── Source (1)
+    │                       ├── Target (1)
+    │                       └── Type (0..1)
+    └── PassiveSystems (0..1)
+        └── System (1..*)
+            └── **System 구조는 Active system 에 포함된 system 과 동일**
+----
+
+**Legend:**
+- `(1)` = Mandatory, exactly one
+- `(0..1)` = Optional, zero or one
+- `(1..*)` = Mandatory, one or more
+- `(0..*)` = Optional, zero or more
+
+**Key Relationships:**
+- **Work.FlowGuid** → references **Flow.Guid**
+- **ApiCall.ApiDef** → references **ApiDef.Guid**
+- **Arrow.Source/Target** → references **Work.Guid** or **Call.Guid** (same level)
+- **Call-level Arrows** connect **Call** elements only
+- **Work-level Arrows** connect **Work** elements only
+
+[#_sqeunce_control_submodel]
+==== Sequence Control Submodel
 
 [cols="30%,70%",options="header",]
 |===
 |*Attribute*     |*Value*
-|*idShort*       |Project
-|*semanticId*    |"https://dualsoft.com/aas/project"
-|*category*      |PARAMETER
-|*description*   |Main project configuration container
+|*idShort*       |SequenceControlSubmodel
+|*semanticId*    |"https://dualsoft.com/aas/submodel"
+|*category*      |CONSTANT
+|*description*   |AAS Submodel for managing sequence control operations and project configurations
 |===
 
-===== Properties
+
+[#_project]
+==== Project
+
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
@@ -174,8 +390,13 @@ control mechanisms.
 |Author    |"https://dualsoft.com/aas/system/author"  |string      |프로젝트 최종 수정자       |0..1
 |DateTime  |"https://dualsoft.com/aas/system/dateTime" |dateTime   |프로젝트 최종 수정일자     |0..1
 |Version   |"https://dualsoft.com/aas/project/version" |string     |프로젝트 버전              |0..1
+
+|ActiveSystems   |"https://dualsoft.com/aas/plural/activeSystems" |SMC     |Active systems               |0..1
+|PassiveSystems   |"https://dualsoft.com/aas/plural/passiveSystems" |SMC     |프로젝트 버전              |0..1
+
 |===
 
+[#_active_systems]
 ==== ActiveSystems
 
 ===== Identification
@@ -189,8 +410,10 @@ control mechanisms.
 |*description*   |CPU를 통해 직접 제어하는 시스템들의 목록
 |===
 
+[#_systems]
 ==== System
-
+System 은 외부와 API 를 통하여 연동되는 구성 단위로, CPU 에 의해서 제어되는 ActiveSystem 과 자연 법칙에 의해서 제어되는 device 성격의 PassiveSystem 으로 나뉜다.
+System 하부에는 <<_element_hierarchy>> 에서 정의한 System 구조가 포함된다.
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
 |*idShort*       |*semanticId*                                   |*valueType* |*description*              |*multiplicity*
@@ -201,6 +424,10 @@ control mechanisms.
 |DateTime        |"https://dualsoft.com/aas/system/dateTime"     |dateTime    |시스템 최종 수정일자     |0..1
 |EngineVersion   |"https://dualsoft.com/aas/system/engineVersion" |string      |DS 엔진 버전              |0..1
 |LangVersion     |"https://dualsoft.com/aas/system/langVersion"   |string      |DS 언어 버전              |0..1
+|Flows           |"https://dualsoft.com/aas/plural/flows"         |SMC        |하부 flows                |0..1
+|Works           |"https://dualsoft.com/aas/plural/works"         |SMC        |하부 works                |0..1
+|ApiDefs         |"https://dualsoft.com/aas/plural/apiDefs"       |SMC        |하부 ApiDefs                |0..1
+|ApiCalls        |"https://dualsoft.com/aas/plural/apiCalls"      |SMC        |하부 ApiCalls                |0..1
 |===
 
 ==== ApiDefs
@@ -350,7 +577,44 @@ Source 및 Target 은 화살표에 연결된 시작 및 끝 Work의 GUID를 나�
 |string      |다국어 문자열     |BCP 47
 |===
 
-==== Constraints
+==== Value Enumerations
+
+==== ArrowType Enumeration
+
+[cols="30%,70%",options="header"]
+|===
+|*Value* |*Description*
+|start |Indicates a start trigger relationship
+|reset |Indicates a reset trigger relationship
+|complete |Indicates a completion dependency
+|error |Indicates an error handling relationship
+|===
+
+==== CallType Enumeration
+
+[cols="30%,70%",options="header"]
+|===
+|*Value* |*Description*
+|sequential |Call executes in sequential order
+|parallel |Call can execute in parallel with others
+|conditional |Call executes only when specific conditions are met
+|manual |Call requires manual intervention
+|automatic |Call executes automatically when triggered
+|===
+
+==== SystemStatus Enumeration
+
+[cols="30%,70%",options="header"]
+|===
+|*Value* |*Description*
+|active |System is currently active and operational
+|inactive |System is inactive but available
+|error |System is in error state
+|maintenance |System is under maintenance
+|unknown |System status cannot be determined
+|===
+
+=== Constraints
 
 [cols=",,",options="header",]
 |===
@@ -359,9 +623,358 @@ Source 및 Target 은 화살표에 연결된 시작 및 끝 Work의 GUID를 나�
 |ID          |Database Key    |DB 저장 후에만 값 존재
 |DateTime    |ISO Format      |ISO 8601 형식 준수
 |References  |Integrity       |참조 무결성 유지
+|ArrowType   |Enumeration     |Must be one of: start, reset, complete, error
+|CallType    |Enumeration     |Must be one of: sequential, parallel, conditional, manual, automatic
 |===
 
 '''''
+
+=== Compliance Requirements
+
+==== Mandatory Elements
+
+All implementations of this Submodel Template MUST include:
+
+* Project element with Name and Guid properties
+* At least one ActiveSystem or PassiveSystem  
+* Valid semantic identifiers using the specified URN format
+* Proper GUID format for all unique identifiers (RFC 4122)
+
+==== Data Integrity Rules
+
+[cols="30%,70%",options="header"]
+|===
+|*Rule* |*Description*
+|GUID Uniqueness |All GUID values MUST be unique within the scope of the AAS instance
+|Reference Validity |All GUID references (e.g., FlowGuid, ApiDef) MUST reference existing elements
+|Multiplicity Compliance |Element multiplicity constraints MUST be enforced (1, 0..1, 0..*)
+|Data Type Validation |All property values MUST conform to their specified valueType
+|===
+
+==== Semantic Compliance
+
+* Semantic identifiers MUST use the URN format: `urn:samm:org.idtwin.sequencecontrol:2.0.0#<ElementName>`
+* Common properties MUST use the shared namespace: `urn:samm:org.idtwin.common:2.0.0#<PropertyName>`
+* Custom extensions MUST follow the same URN pattern with appropriate namespace
+
+==== Validation Requirements
+
+Implementations MUST validate:
+
+1. **Structural Integrity**: All mandatory elements and properties are present
+2. **Data Type Compliance**: All values match their specified data types  
+3. **Reference Integrity**: All GUID references resolve to valid elements
+4. **Constraint Adherence**: All multiplicity and format constraints are satisfied
+5. **Semantic Correctness**: All semantic identifiers are valid and resolvable
+
+=== Implementation Guidelines
+
+==== Step-by-Step Implementation
+
+===== Phase 1: Project Setup
+1. **Create Project Structure**
+   - Define main Project element with mandatory Name and Guid
+   - Set initial Version, Author, and DateTime
+   - Establish project-level semantic identification
+
+2. **System Architecture Planning**
+   - Identify all active systems (CPU-controlled)
+   - Identify all passive systems (externally controlled)
+   - Map system dependencies and communication requirements
+
+===== Phase 2: System Definition
+1. **ActiveSystems Implementation**
+   - Create System elements for each CPU-controlled component
+   - Define system-specific properties (EngineVersion, LangVersion)
+   - Establish system-level ApiDefs for external communication
+
+2. **PassiveSystems Implementation**
+   - Create System elements for externally controlled components
+   - Define monitoring and control interfaces via ApiDefs
+   - Establish communication protocols and data formats
+
+===== Phase 3: Workflow Design
+1. **Flow Organization**
+   - Group related Work elements into logical Flows
+   - Design HMI groupings and command interfaces
+   - Plan user interaction patterns
+
+2. **Work Element Definition**
+   - Define conditional execution logic
+   - Set timing parameters (Period, Delay, NumRepeat)
+   - Plan Work-to-Work dependencies
+
+3. **Call Sequence Design**
+   - Create Call elements within Work elements
+   - Define preconditions (Common, Auto)
+   - Set timeout and call type parameters
+   - Associate ApiCall elements for external communication
+
+===== Phase 4: Connection Mapping
+1. **Arrow Definition**
+   - Map causal relationships between Work elements
+   - Map causal relationships between Call elements
+   - Define arrow types (start, reset, complete, error)
+   - Validate connection integrity
+
+2. **API Integration**
+   - Connect ApiCall elements to appropriate ApiDef elements
+   - Configure address mappings and symbol definitions
+   - Set value specifications and parameter passing
+
+==== Best Practices
+
+===== Design Principles
+* **Modularity**: Design systems and workflows as independent, reusable modules
+* **Scalability**: Plan for system expansion and modification
+* **Maintainability**: Use clear naming conventions and documentation
+* **Reliability**: Implement proper error handling and recovery mechanisms
+
+===== Naming Conventions
+* **GUIDs**: Use RFC 4122 compliant UUIDs for all unique identifiers
+* **Names**: Use descriptive, human-readable names following organizational standards
+* **Semantic IDs**: Follow consistent URL patterns for semantic identification
+
+===== Error Handling
+* **Timeout Management**: Set appropriate timeout values for all Calls
+* **Error Flows**: Design error handling workflows with reset capabilities
+* **Recovery Procedures**: Implement automated and manual recovery mechanisms
+* **Logging**: Ensure comprehensive logging for debugging and maintenance
+
+===== Performance Considerations
+* **Workflow Optimization**: Minimize unnecessary dependencies and delays
+* **API Efficiency**: Optimize API call frequency and data payload sizes
+* **Resource Management**: Monitor system resource usage and constraints
+* **Concurrency**: Design for safe parallel execution where appropriate
+
+==== Integration Guidelines
+
+===== AAS Integration
+* Ensure submodel integrates properly with parent AAS structure
+* Maintain semantic compatibility with other submodels
+* Follow AAS metamodel constraints and relationships
+
+===== Tool Integration
+* Design for compatibility with standard AAS tools and viewers
+* Ensure proper serialization/deserialization support
+* Validate against AAS compliance tools
+
+===== System Integration
+* Plan for integration with existing automation systems
+* Ensure proper security and authentication mechanisms
+* Design for network reliability and fault tolerance
+
+=== Security Considerations
+
+==== Data Protection
+
+===== Sensitive Information Handling
+* **Credentials**: Never store passwords, API keys, or certificates in submodel data
+* **Personal Data**: Ensure compliance with GDPR and other privacy regulations
+* **Proprietary Information**: Protect trade secrets and intellectual property
+* **System Configuration**: Secure sensitive configuration parameters
+
+===== Data Encryption
+* Use encrypted communication channels for all API calls
+* Implement end-to-end encryption for sensitive data transmission
+* Apply encryption at rest for stored configuration data
+* Follow industry-standard encryption protocols (TLS 1.3, AES-256)
+
+==== Access Control
+
+===== Authentication
+* Implement strong authentication mechanisms for system access
+* Use multi-factor authentication where appropriate
+* Ensure proper user identity verification before granting access
+* Implement session management and timeout controls
+
+===== Authorization
+* Apply principle of least privilege for all system access
+* Implement role-based access control (RBAC) for different user types
+* Restrict API access based on user permissions and system requirements
+* Regularly review and update access permissions
+
+===== Audit Logging
+* Log all access attempts and system modifications
+* Maintain comprehensive audit trails for compliance
+* Implement tamper-proof logging mechanisms
+* Regular log review and analysis for security incidents
+
+==== Network Security
+
+===== Communication Protection
+* Use secure communication protocols (HTTPS, WSS, MQTT with TLS)
+* Implement proper certificate management and validation
+* Apply network segmentation to isolate critical systems
+* Use VPNs or similar technologies for remote access
+
+===== API Security
+* Implement API rate limiting to prevent abuse
+* Use proper input validation and sanitization
+* Apply OAuth 2.0 or similar standards for API authentication
+* Implement API versioning and deprecation policies
+
+===== Firewall and Network Controls
+* Configure firewalls to restrict unnecessary network access
+* Implement intrusion detection and prevention systems
+* Regular security scanning and vulnerability assessment
+* Network traffic monitoring and analysis
+
+==== System Security
+
+===== Secure Development
+* Follow secure coding practices and guidelines
+* Conduct regular security code reviews
+* Implement proper error handling without information disclosure
+* Use secure development lifecycle (SDLC) processes
+
+===== Vulnerability Management
+* Regular security updates and patch management
+* Vulnerability scanning and assessment
+* Incident response planning and procedures
+* Security testing and penetration testing
+
+===== System Hardening
+* Remove unnecessary services and components
+* Configure systems with security best practices
+* Implement proper backup and recovery procedures
+* Regular security configuration reviews
+
+==== Compliance and Standards
+
+===== Regulatory Compliance
+* Ensure compliance with relevant industry regulations (IEC 62443, NIST, etc.)
+* Follow data protection regulations (GDPR, CCPA, etc.)
+* Implement required security controls and documentation
+* Regular compliance audits and assessments
+
+===== Industry Standards
+* Follow IEC 62443 for industrial automation security
+* Implement ISO 27001 information security management
+* Apply NIST Cybersecurity Framework guidelines
+* Follow AAS security specifications and recommendations
+
+=== Validation Rules
+
+==== Structural Validation
+
+===== Mandatory Element Validation
+[cols="40%,60%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-001 |Project element MUST be present with valid Name and Guid properties
+|VR-002 |At least one ActiveSystem or PassiveSystem MUST be defined
+|VR-003 |All System elements MUST have Name and Guid properties
+|VR-004 |All Work elements MUST have Name and Guid properties
+|VR-005 |All Call elements MUST have Name and Guid properties
+|VR-006 |All Flow elements MUST have Name and Guid properties
+|VR-007 |All ApiDef elements MUST have Name and Guid properties
+|VR-008 |All ApiCall elements MUST have Name, Guid, and ApiDef properties
+|VR-009 |All Arrow elements MUST have Name, Guid, Source, and Target properties
+|===
+
+===== Multiplicity Validation
+[cols="40%,60%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-010 |Project element multiplicity MUST be exactly 1
+|VR-011 |ActiveSystems element multiplicity MUST be 0..1
+|VR-012 |PassiveSystems element multiplicity MUST be 0..1
+|VR-013 |System elements within ActiveSystems/PassiveSystems MUST be 1..*
+|VR-014 |Work elements multiplicity MUST be 0..*
+|VR-015 |Call elements within Work MUST be 0..*
+|VR-016 |ApiCall elements within Call MUST be 0..*
+|VR-017 |Arrow elements MUST be 0..*
+|===
+
+==== Data Type Validation
+
+===== Basic Data Types
+[cols="30%,70%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-020 |All string properties MUST be valid UTF-8 strings
+|VR-021 |All integer properties MUST be valid 32-bit signed integers
+|VR-022 |All double properties MUST be valid IEEE 754 double-precision numbers
+|VR-023 |All boolean properties MUST be either true or false
+|VR-024 |All dateTime properties MUST follow ISO 8601 format
+|===
+
+===== GUID Validation
+[cols="30%,70%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-025 |All GUID values MUST follow RFC 4122 format
+|VR-026 |All GUID values MUST be unique within the AAS instance
+|VR-027 |GUID values MUST not be null or empty strings
+|VR-028 |GUID values MUST use lowercase hexadecimal notation
+|===
+
+==== Reference Integrity Validation
+
+===== Internal References
+[cols="40%,60%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-030 |FlowGuid references MUST point to existing Flow elements
+|VR-031 |ApiDef references in ApiCall MUST point to existing ApiDef elements
+|VR-032 |Source references in Arrow MUST point to existing Work or Call elements
+|VR-033 |Target references in Arrow MUST point to existing Work or Call elements
+|VR-034 |Arrow Source and Target MUST be of the same type (both Work or both Call)
+|===
+
+===== Semantic Reference Validation
+[cols="40%,60%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-035 |All semanticId values MUST be valid URLs or URNs
+|VR-036 |semanticId values MUST follow the defined namespace pattern
+|VR-037 |semanticId references MUST be resolvable (if network accessible)
+|===
+
+==== Business Logic Validation
+
+===== Workflow Validation
+[cols="40%,60%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-040 |Work elements MUST not create circular dependencies through Arrows
+|VR-041 |Call elements MUST not create circular dependencies through Arrows
+|VR-042 |Timeout values MUST be positive numbers or zero
+|VR-043 |Period values MUST be positive numbers
+|VR-044 |Delay values MUST be non-negative numbers
+|VR-045 |NumRepeat values MUST be positive integers or zero (infinite)
+|===
+
+===== Enumeration Validation
+[cols="40%,60%",options="header"]
+|===
+|*Rule* |*Description*
+|VR-046 |ArrowType values MUST be one of: start, reset, complete, error
+|VR-047 |CallType values MUST be one of: sequential, parallel, conditional, manual, automatic
+|VR-048 |SystemStatus values MUST be one of: active, inactive, error, maintenance, unknown
+|===
+
+==== Validation Implementation
+
+===== Validation Sequence
+1. **Structure Validation**: Verify all mandatory elements and properties exist
+2. **Data Type Validation**: Confirm all values match their specified types
+3. **Reference Validation**: Ensure all GUID references resolve to valid elements
+4. **Business Logic Validation**: Check workflow logic and constraints
+5. **Semantic Validation**: Verify semantic identifier correctness
+
+===== Error Handling
+* Report all validation errors with specific rule identifiers
+* Provide clear error messages indicating the location and nature of violations
+* Support both strict validation (fail on any error) and permissive validation (warnings only)
+* Generate validation reports for compliance documentation
+
+===== Validation Tools
+* Implement automated validation in AAS tools and editors
+* Provide command-line validation utilities
+* Support batch validation for multiple submodel instances
+* Enable real-time validation during editing
 
 === Examples
 
@@ -381,24 +994,207 @@ Source 및 Target 은 화살표에 연결된 시작 및 끝 Work의 GUID를 나�
 }
 ----
 
-==== Example 2: ActiveSystem with ApiDef
+==== Example 2: Complete Automation System
+*Note*: 이하 예제에서 보인 guid 는 가독성 향상을 위해서 guid 앞에 entity 의 이름을 prefix 로 붙여 표시하였으나, 실제 data 에서는 GUID 만 사용하여야 함
 
 [source,json]
 ----
 {
+  "Project": {
+    "Name": "Assembly Line Control System",
+    "Guid": "project-12345678-1234-1234-1234-123456789abc",
+    "Author": "System Engineer",
+    "DateTime": "2025-07-25T14:30:00Z",
+    "Version": "2.1.0"
+  },
   "ActiveSystems": {
-    "System": {
-      "Name": "Primary Control System",
-      "Guid": "87654321-4321-4321-4321-cba987654321",
-      "ApiDefs": {
-        "ApiDef": {
-          "Name": "Control API",
-          "Guid": "11111111-2222-3333-4444-555555555555",
-          "IsPush": true
-        }
+    "System": [
+      {
+        "Name": "Station 1 Controller",
+        "Guid": "station1-87654321-4321-4321-4321-cba987654321",
+        "EngineVersion": "DS Engine 3.2.1",
+        "LangVersion": "DSL 2.0",
+        "ApiDefs": [
+          {
+            "Name": "Station Control API",
+            "Guid": "api-def-11111111-2222-3333-4444-555555555555",
+            "IsPush": false
+          }
+        ],
+        "Flows": [
+          {
+            "Name": "Production Flow",
+            "Guid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          }
+        ],
+        "Works": [
+          {
+            "Name": "Part Processing",
+            "Guid": "work-12121212-3434-5656-7878-909090909090",
+            "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "Period": 30.0,
+            "NumRepeat": 0,
+            "Calls": [
+              {
+                "Name": "Start Processing",
+                "Guid": "call-abcdefab-1234-5678-9012-123456789012",
+                "CommonPrecondition": "part_present == true",
+                "Timeout": 10.0,
+                "CallType": "automatic",
+                "ApiCalls": [
+                  {
+                    "Name": "Start Command",
+                    "Guid": "apicall-fedcbadc-4321-8765-2109-876543210987",
+                    "ApiDef": "api-def-11111111-2222-3333-4444-555555555555",
+                    "InAddress": "station1/start",
+                    "ValueSpec": "{ \"operation\": \"start\", \"speed\": 100 }"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
+    ]
+  },
+  "PassiveSystems": {
+    "System": [
+      {
+        "Name": "Quality Control Camera",
+        "Guid": "camera-99999999-8888-7777-6666-555555555555",
+        "ApiDefs": [
+          {
+            "Name": "Vision API",
+            "Guid": "vision-api-11223344-5566-7788-9900-aabbccddeeff",
+            "IsPush": true
+          }
+        ]
+      }
+    ]
+  },
+  "Arrows": [
+    {
+      "Name": "Start Trigger",
+      "Guid": "arrow-trigger-1111-2222-3333-4444-555566667777",
+      "Source": "work-12121212-3434-5656-7878-909090909090",
+      "Target": "work-next-station-guid",
+      "Type": "complete"
     }
-  }
+  ]
+}
+----
+
+==== Example 3: Error Handling Workflow
+
+[source,json]
+----
+{
+  "Works": [
+    {
+      "Name": "Main Operation",
+      "Guid": "main-operation-1234-5678-9012-345678901234",
+      "Calls": [
+        {
+          "Name": "Execute Operation",
+          "Guid": "execute-call-abcd-efgh-ijkl-mnopqrstuvwx",
+          "Timeout": 30.0,
+          "CallType": "sequential"
+        }
+      ]
+    },
+    {
+      "Name": "Error Recovery",
+      "Guid": "error-recovery-9876-5432-1098-765432109876",
+      "Calls": [
+        {
+          "Name": "Reset System",
+          "Guid": "reset-call-zyxw-vuts-rqpo-nmlkjihgfedc",
+          "CallType": "manual"
+        }
+      ]
+    }
+  ],
+  "Arrows": [
+    {
+      "Name": "Error Trigger",
+      "Guid": "error-arrow-1111-2222-3333-4444-555566667777",
+      "Source": "execute-call-abcd-efgh-ijkl-mnopqrstuvwx",
+      "Target": "reset-call-zyxw-vuts-rqpo-nmlkjihgfedc",
+      "Type": "error"
+    },
+    {
+      "Name": "Recovery Complete",
+      "Guid": "recovery-arrow-2222-3333-4444-5555-666677778888",
+      "Source": "reset-call-zyxw-vuts-rqpo-nmlkjihgfedc",
+      "Target": "execute-call-abcd-efgh-ijkl-mnopqrstuvwx",
+      "Type": "reset"
+    }
+  ]
+}
+----
+
+==== Example 4: Multi-System Coordination
+
+[source,json]
+----
+{
+  "Project": {
+    "Name": "Multi-Cell Manufacturing",
+    "Guid": "multicell-proj-1234-5678-9abc-def012345678"
+  },
+  "ActiveSystems": {
+    "System": [
+      {
+        "Name": "Cell A Controller",
+        "Guid": "cell-a-ctrl-1111-2222-3333-444455556666"
+      },
+      {
+        "Name": "Cell B Controller", 
+        "Guid": "cell-b-ctrl-2222-3333-4444-555566667777"
+      }
+    ]
+  },
+  "Flows": [
+    {
+      "Name": "Coordinated Production",
+      "Guid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff"
+    }
+  ],
+  "Works": [
+    {
+      "Name": "Cell A Processing",
+      "Guid": "cell-a-work-1234-abcd-5678-efgh901234567",
+      "FlowGuid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff",
+      "Period": 45.0
+    },
+    {
+      "Name": "Cell B Processing", 
+      "Guid": "cell-b-work-5678-efgh-9012-ijkl345678901",
+      "FlowGuid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff",
+      "Period": 60.0
+    },
+    {
+      "Name": "Quality Check",
+      "Guid": "quality-work-9012-ijkl-3456-mnop789012345",
+      "FlowGuid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff"
+    }
+  ],
+  "Arrows": [
+    {
+      "Name": "A to Quality",
+      "Guid": "arrow-a-qual-1111-2222-3333-444455556666",
+      "Source": "cell-a-work-1234-abcd-5678-efgh901234567",
+      "Target": "quality-work-9012-ijkl-3456-mnop789012345",
+      "Type": "complete"
+    },
+    {
+      "Name": "B to Quality", 
+      "Guid": "arrow-b-qual-2222-3333-4444-555566667777",
+      "Source": "cell-b-work-5678-efgh-9012-ijkl345678901",
+      "Target": "quality-work-9012-ijkl-3456-mnop789012345",
+      "Type": "complete"
+    }
+  ]
 }
 ----
 
@@ -408,21 +1204,33 @@ Source 및 Target 은 화살표에 연결된 시작 및 끝 Work의 GUID를 나�
 
 ==== Normative References
 
-[cols=",,",options="header",]
+[cols="30%,50%,20%",options="header"]
 |===
-|*Reference* |*Title*   |*Version*
-|            |          |
-|            |          |
+|*Reference* |*Title* |*Version*
+|IDTA-01001-3-0 |Details of the Asset Administration Shell - Part 1: The exchange of information between partners in the value chain of Industrie 4.0 |3.0
+|IDTA-01002-3-0 |Details of the Asset Administration Shell - Part 2: Application Programming Interfaces |3.0
+|IDTA-01003-3-0 |Details of the Asset Administration Shell - Part 3: Data Specification IEC 61360 |3.0
+|RFC 4122 |A Universally Unique IDentifier (UUID) URN Namespace |2005
+|ISO 8601 |Data elements and interchange formats — Information interchange — Representation of dates and times |2019
+|IEC 62443 |Industrial communication networks - Network and system security |2018
 |===
 
 ==== Informative References
 
-[cols=",,",options="header",]
+[cols="30%,50%,20%",options="header"]
 |===
-|*Reference*     |*Title*                                   |*Version*
-|IDTA-02060-1-0  |AI Model Nameplate Submodel              |1.0
-|IDTA-02063-1-0  |Intelligent Information For Use Submodel  |1.0
-|IDTA-02067      |Production Calendar Submodel             |
+|*Reference* |*Title* |*Version*
+|IDTA-02060-1-0 |AI Model Nameplate Submodel |1.0
+|IDTA-02063-1-0 |Intelligent Information For Use Submodel |1.0
+|IDTA-02067-1-0 |Production Calendar Submodel |1.0
+|IDTA-02004-1-2 |Handover Documentation Submodel |1.2
+|IDTA-02005-1-0 |Nameplate for Industrial Equipment Submodel |1.0
+|IEC 61131-3 |Programmable controllers - Part 3: Programming languages |2013
+|IEC 61499 |Function blocks for industrial-process measurement and control systems |2012
+|ISO/IEC 27001 |Information security management systems — Requirements |2022
+|NIST Framework |Framework for Improving Critical Infrastructure Cybersecurity |1.1
+|OAuth 2.0 |The OAuth 2.0 Authorization Framework (RFC 6749) |2012
+|TLS 1.3 |The Transport Layer Security (TLS) Protocol Version 1.3 (RFC 8446) |2018
 |===
 
 '''''
