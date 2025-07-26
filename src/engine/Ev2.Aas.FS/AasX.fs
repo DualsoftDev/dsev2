@@ -388,7 +388,12 @@ module AasXModule =
             // 5. 파일 교체 (백업 포함)
             replaceFileWithBackup aasxPath tempPath
 
-    type Project with
+    type Project with   // ExportToAasxFile
         member x.ExportToAasxFile(outputPath: string): unit =
             let njProj = x.ToJson() |> NjProject.FromJson
             njProj.ExportToAasxFile(outputPath)
+
+        /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
+        member x.InjectToExistingAasxFile(aasxPath: string) =
+            let njProj = x.ToJson() |> NjProject.FromJson
+            njProj.InjectToExistingAasxFile(aasxPath)

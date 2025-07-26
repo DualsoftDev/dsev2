@@ -94,7 +94,7 @@ module ToAasTest =
             projJson =~= json2
 
 
-            njProject1.InjectToExistingAasxFile("test.aasx") |> ignore
+            njProject1.InjectToExistingAasxFile("projectWithCylinders.aasx") |> ignore
             //njProject1.InjectToExistingAasxFile("04_PLC_통신_r5.aasx") |> ignore
             ()
 

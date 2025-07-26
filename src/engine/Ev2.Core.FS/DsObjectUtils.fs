@@ -273,10 +273,10 @@ module rec TmpCompatibility =
 
 [<AutoOpen>]
 module DsObjectUtilsModule =
-    type Project with
+    type Project with   // Create
         static member Create() = Project([], [])
 
-    type DsSystem with
+    type DsSystem with   // Create
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
         ) =
@@ -290,7 +290,7 @@ module DsObjectUtilsModule =
 
         static member Create() = DsSystem([||], [||], [||], [||], [||])
 
-    type Work with
+    type Work with   // Create
         static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
             let calls = calls |> toList
             let arrows = arrows |> toList
@@ -303,7 +303,7 @@ module DsObjectUtilsModule =
 
         static member Create() = Work([], [], None)
 
-    type Call with
+    type Call with   // Create
         static member Create(callType:DbCallType, apiCalls:ApiCall seq,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
@@ -315,13 +315,13 @@ module DsObjectUtilsModule =
 
         static member Create() = Call(DbCallType.Normal, [], [], [], false, None)
 
-    type Flow with
+    type Flow with   // Create
         static member Create() = Flow([], [], [], [])
 
-    type ApiDef with
+    type ApiDef with   // Create
         static member Create() = ApiDef(true)
 
-    type ApiCall with
+    type ApiCall with   // Create
         static member Create() =
             ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
                       Option<IValueSpec>.None)

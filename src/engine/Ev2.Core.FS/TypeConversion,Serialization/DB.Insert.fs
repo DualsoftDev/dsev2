@@ -13,7 +13,7 @@ open Dual.Common.Db.FS
 [<AutoOpen>]
 module internal DbInsertModule =
 
-    type Project with
+    type Project with   // InsertSystemMapToDB
         // project 하부에 연결된 passive system 을 DB 에 저장
         member x.InsertSystemMapToDB(dbApi:DbApi) =
 

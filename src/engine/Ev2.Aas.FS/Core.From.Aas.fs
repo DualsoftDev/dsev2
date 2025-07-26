@@ -17,7 +17,7 @@ module CoreFromAas =
     //type Environment = AasCore.Aas3_0.Environment
     //type ISubmodel = AasCore.Aas3_0.ISubmodel
 
-    type NjProject with
+    type NjProject with // FromISubmodel
         static member FromISubmodel(submodel:ISubmodel): NjProject =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = project.ReadUniqueInfo()
@@ -43,7 +43,7 @@ module CoreFromAas =
                 , PassiveSystems = passiveSystems
             )
 
-    type NjSystem with
+    type NjSystem with  // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjSystem =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let dateTime      = smc.GetPropValue "DateTime"  |> DateTime.Parse
