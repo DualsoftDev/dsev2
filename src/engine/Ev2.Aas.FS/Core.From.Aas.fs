@@ -30,9 +30,6 @@ module CoreFromAas =
                     | None -> failwith $"Project Submodel with IdShort '{PreludeModule.SubmodelIdShort}' not found in AASX file: {aasxPath}"
 
             let project = NjProject.FromISubmodel(projectSubmodel)
-
-            // AASX 파일에서 읽은 원본 XML을 AasXml 멤버에 저장
-            project.AasXml <- aasFileInfo.OriginalXml
             project
 
         static member FromISubmodel(submodel:ISubmodel): NjProject =

@@ -41,7 +41,6 @@ module rec DsCompareObjects =
         member val LastConnectionString = true with get, set
         member val EngineVersion        = true with get, set
         member val LangVersion          = true with get, set
-        member val AasXml               = true with get, set
 
     /// 객체 비교 결과 반환용....
     [<DebuggerDisplay("{ToString()}")>]
@@ -120,7 +119,7 @@ module rec DsCompareObjects =
                 yield! (x.PassiveSystems,   y.PassiveSystems,    criteria) |||> computeDiffRecursively
 
                 (* 기타 속성 비교 *)
-                if criteria.AasXml && x.AasXml <> y.AasXml then yield Diff("AasXml", x, y)
+                // AasXml 멤버 제거됨
                 if criteria.Author && x.Author <> y.Author then yield Diff("Author", x, y)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
                     yield Diff("DateTime", x, y)

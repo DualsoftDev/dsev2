@@ -10,7 +10,7 @@ open System.Xml
 open AasCore.Aas3_0
 open Dual.Common.Core.FS
 
-open System
+open Dapper
 open Ev2.Core.FS
 
 
@@ -18,15 +18,6 @@ open Ev2.Core.FS
 module AasXModule2 =
 
     type NjProject with
-        member x.ToAasXmlString(): string =
-            // 기존 AasXml이 있으면 우선 반환
-            if not (String.IsNullOrEmpty(x.AasXml)) then
-                x.AasXml
-            else
-                // 없으면 현재 상태에서 XML 생성
-                let env = x.ToENV()
-                serializeEnvironmentToXml env
-
         member x.ToSjENV() : JObj =
 
             (* https://github.com/aas-core-works/aas-package3-csharp.git : AAS 비공식 인 듯..*)
@@ -70,9 +61,6 @@ module AasXModule2 =
 
         member prj.ExportToAasxFile(outputPath: string): unit =
             let env: Aas.Environment = prj.ToENV()
-
-            // AAS XML을 직렬화하여 AasXml 멤버에 저장
-            prj.AasXml <- serializeEnvironmentToXml env
 
             use fileStream = new FileStream(outputPath, FileMode.Create)
             use archive = new ZipArchive(fileStream, ZipArchiveMode.Create)
@@ -177,28 +165,32 @@ module AasXModule2 =
                     conceptDescriptions = existingEnv.ConceptDescriptions
                 )
 
-            // AAS XML을 직렬화하여 AasXml 멤버에 저장
-            prj.AasXml <- serializeEnvironmentToXml updatedEnv
-
             // 4. 업데이트된 AASX 파일 생성
             let tempPath = createUpdatedAasxFile aasxPath aasFileInfo.FilePath updatedEnv
 
             // 5. 파일 교체 (백업 포함)
             replaceFileWithBackup aasxPath tempPath
 
-    type Project with   // ExportToAasxFile, FromAasxFile, ToAasXmlString
-        member x.ToAasXmlString(): string =
-            let njProj = x.ToJson() |> NjProject.FromJson
-            // Project의 AasXml을 NjProject로 전달
-            njProj.AasXml <- x.AasXml
-            njProj.ToAasXmlString()
+    type Project with   // ExportToAasxFile, FromAasxFile, ToAasXmlString, UpdateDbAasXml
+        static member UpdateDbAasXml(project: Project, aasxPath: string, dbApi: AppDbApi): unit =
+            // 1. AASX 파일에서 원본 XML 읽기
+            let aasFileInfo = readEnvironmentFromAasx aasxPath
+            let originalXml = aasFileInfo.OriginalXml
+
+            // 2. 프로젝트 ID 확인
+            let projectId = project.Id |? failwith "Project Id is not set"
+
+            // 3. 데이터베이스에서 aasXml 컬럼만 업데이트
+            dbApi.With(fun (conn, tr) ->
+                let affectedRows = conn.Execute($"UPDATE {Tn.Project} SET aasXml = @AasXml WHERE id = @Id",
+                    {| AasXml = originalXml; Id = projectId |}, tr)
+                if affectedRows = 0 then
+                    failwith $"Project with Id {projectId} not found for AasXml update"
+            )
 
         static member FromAasxFile(aasxPath: string): Project =
             let njProj = NjProject.FromAasxFile(aasxPath)
-            let project = njProj.ToJson() |> Project.FromJson
-            // NjProject의 AasXml을 Project로 전달
-            project.AasXml <- njProj.AasXml
-            project
+            njProj.ToJson() |> Project.FromJson
 
         member x.ExportToAasxFile(outputPath: string): unit =
             let njProj = x.ToJson() |> NjProject.FromJson

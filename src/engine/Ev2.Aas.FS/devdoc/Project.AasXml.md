@@ -1,94 +1,144 @@
 # Project, NjProject, ORMProject의 AasXml Member 처리
 
-## 구현 완료 (2025-07-26)
+## 최종 구현 완료 (2025-07-26)
 
-### AasXml의 올바른 의미 파악
-- **기존 오해**: Environment 전체를 직렬화한 XML로 생각
-- **실제 의미**: AASX 파일 내부의 실제 AAS XML 파일(`aasx/_rels/aasx-origin.rels`에서 정의된 Target XML) 내용 자체
+### 🔄 구현 방향 변경: AasXml 멤버 완전 제거
 
-### 구현된 기능
+**기존 접근법의 문제점**:
+- Project 객체에 큰 XML 문자열을 저장하여 메모리 사용량 증가
+- 객체 복사/비교 시 불필요한 오버헤드
+- 데이터 일관성 관리의 복잡성
 
-#### 1. **readEnvironmentFromAasx 함수 수정** (`AasX.fs:70`)
-```fsharp
-let readEnvironmentFromAasx (aasxPath: string): {| FilePath: string; Version: string; Environment: Aas.Environment; OriginalXml: string |}
-```
-- 반환 타입에 `OriginalXml: string` 필드 추가
-- AASX ZIP 내부에서 읽은 원본 XML 문자열을 반환값에 포함
-
-#### 2. **NjProject.FromAasxFile 수정** (`Core.From.Aas.fs:35`)
-```fsharp
-// AASX 파일에서 읽은 원본 XML을 AasXml 멤버에 저장
-project.AasXml <- aasFileInfo.OriginalXml
-```
-- Environment를 다시 직렬화하는 대신 원본 XML 사용
-- AASX 파일의 실제 XML 내용을 그대로 보존
-
-#### 3. **ToAasXmlString 메서드 개선** (`AasX.fs:239`)
-```fsharp
-member x.ToAasXmlString(): string =
-    // 기존 AasXml이 있으면 우선 반환
-    if not (String.IsNullOrEmpty(x.AasXml)) then
-        x.AasXml
-    else
-        // 없으면 현재 상태에서 XML 생성
-        let env = x.ToENV()
-        // ... XML 직렬화 로직
-```
-- **NjProject**: 기존 AasXml 우선 반환, 없으면 현재 상태에서 생성
-- **Project**: AasXml을 NjProject로 전달하여 일관성 유지
-
-#### 4. **Project 타입 간 AasXml 전달** (`AasX.fs:435-440`)
-```fsharp
-static member FromAasxFile(aasxPath: string): Project =
-    let njProj = NjProject.FromAasxFile(aasxPath)
-    let project = njProj.ToJson() |> Project.FromJson
-    // NjProject의 AasXml을 Project로 전달
-    project.AasXml <- njProj.AasXml
-    project
-```
-
-### 동작 방식
-
-1. **AASX 로드** (`FromAasxFile`)
-   - AASX ZIP 파일에서 `aasx/_rels/aasx-origin.rels` 파싱
-   - Target XML 파일 경로 추출 (`findAasXmlFilePath`)
-   - 실제 XML 파일 내용을 문자열로 읽어서 AasXml에 저장
-
-2. **XML 조회** (`ToAasXmlString`)
-   - 기존 AasXml이 있으면 원본 XML 반환 (데이터 보존)
-   - 없으면 현재 Project 상태에서 새로 생성
-
-3. **AASX 내보내기** (`ExportToAasxFile`)
-   - 현재 Project 상태에서 Environment 생성
-   - 새로 직렬화된 XML을 AasXml에 저장
-
-4. **AASX 업데이트** (`InjectToExistingAasxFile`)
-   - 기존 Environment + 새 Project Submodel로 Environment 업데이트
-   - 업데이트된 Environment를 직렬화하여 AasXml에 저장
-
-### 구현하지 않은 항목
-- **ORMProject.ToAasXmlString**: 데이터베이스 ORM 전용 클래스로 AAS 변환 기능 없음
-- **수동 설정/조회 메서드**: 기본적인 AasXml 멤버 접근으로 충분
-
-### 핵심 개선점
-- **원본 XML 보존**: AASX에서 로드한 원본 XML 형식과 구조 유지
-- **데이터 일관성**: Project ↔ NjProject 변환 시 AasXml 정보 유지
-- **스마트 XML 반환**: 기존 데이터 우선, 필요시 재생성
-
-이제 AasXml 멤버는 AASX 파일의 실제 XML 내용을 올바르게 저장하고 관리합니다.
+**새로운 접근법**:
+- **AasXml 멤버 완전 제거**: 메모리 사용량 최적화
+- **별도 메서드로 XML 관리**: 필요시에만 데이터베이스 업데이트
+- **명확한 책임 분리**: XML 저장과 Project 객체 분리
 
 ---
 
-## 이전 계획 (참고용)
+## ✅ 최종 구현 사항
 
-### 현재 상황 분석
-- Project, NjProject, ORMProject 모두 AasXml 멤버를 보유
-- 현재 모든 클래스에서 nullString으로 초기화되어 사용되지 않음
-- DsCopy.Properties.fs에서 복사 작업 시 포함되어 있음
-- DsCompare.Objects.fs에서 비교 대상으로 포함되어 있음
+### 1. **Project.UpdateDbAasXml 정적 메서드 구현** (`AasX.fs:190`)
 
-### 구현 우선순위 (완료)
-1. ✅ High: NjProject.FromAasxFile에서 AasXml 설정
-2. ✅ High: Export 메서드들에서 AasXml 업데이트  
-3. ✅ Medium: ToAasXmlString 메서드 추가
-4. ❌ Low: 수동 설정/조회 메서드 추가 (불필요하여 생략)
+```fsharp
+static member UpdateDbAasXml(project: Project, aasxPath: string, dbApi: AppDbApi): unit =
+    // 1. AASX 파일에서 원본 XML 읽기
+    let aasFileInfo = readEnvironmentFromAasx aasxPath
+    let originalXml = aasFileInfo.OriginalXml
+    
+    // 2. 프로젝트 ID 확인 
+    let projectId = project.Id |? failwith "Project Id is not set"
+    
+    // 3. 데이터베이스에서 aasXml 컬럼만 업데이트
+    dbApi.With(fun (conn, tr) ->
+        let affectedRows = conn.Execute($"UPDATE {Tn.Project} SET aasXml = @AasXml WHERE id = @Id", 
+            {| AasXml = originalXml; Id = projectId |}, tr)
+        if affectedRows = 0 then
+            failwith $"Project with Id {projectId} not found for AasXml update"
+    )
+```
+
+### 2. **AasXml 멤버 완전 제거**
+
+- **Project** (`Interfaces.fs`): `member val AasXml = nullString` 제거
+- **NjProject** (`NewtonsoftJsonDsObjects.fs`): `member val AasXml = nullString` 제거  
+- **ORMProject** (`Database.ORM.fs`): `member val AasXml = nullString` 제거
+
+### 3. **기존 코드 수정**
+
+#### ToAasXmlString 메서드 (`AasX.fs:21`)
+```fsharp
+member x.ToAasXmlString(): string =
+    // 항상 현재 상태에서 XML 생성 (AasXml 멤버 제거됨)
+    let env = x.ToENV()
+    serializeEnvironmentToXml env
+```
+
+#### Export 메서드들
+- **ExportToAasxFile**: AasXml 설정 코드 제거
+- **InjectToExistingAasxFile**: AasXml 설정 코드 제거
+- **FromAasxFile**: AasXml 전달 코드 제거
+
+#### 데이터베이스 관련
+- **DB.Insert.fs**: INSERT 쿼리에서 `aasXml` 필드 제거
+- **AppDbApi.fs**: Project → ORMProject 변환에서 AasXml 처리 제거
+
+#### 객체 처리
+- **DsCopy.Properties.fs**: 복사 작업에서 AasXml 처리 제거
+- **DsCompare.Objects.fs**: 비교 기준에서 AasXml 제거
+
+---
+
+## 💡 개선 효과
+
+### 1. **메모리 사용량 대폭 감소**
+- Project 객체에서 큰 XML 문자열 제거
+- 객체 복사/이동 시 성능 향상
+
+### 2. **명확한 책임 분리**
+- **Project 객체**: 프로젝트 논리적 데이터만 포함
+- **UpdateDbAasXml**: AAS XML 저장 전용 메서드
+- **ToAasXmlString**: 현재 상태에서 XML 생성
+
+### 3. **데이터 일관성 향상**
+- XML 저장이 명시적으로 관리됨
+- 불필요한 XML 동기화 문제 해결
+
+### 4. **성능 최적화**
+- 객체 비교/복사에서 XML 처리 제거
+- 메모리 캐싱 오버헤드 제거
+
+---
+
+## 🔧 사용 방법
+
+### 기본 사용법
+```fsharp
+// 1. Project 객체 생성 (가벼운 객체)
+let project = Project.FromAasxFile("input.aasx")
+
+// 2. 현재 상태에서 AAS XML 생성
+let xmlString = project.ToAasXmlString()
+
+// 3. 필요시 데이터베이스에 AAS XML 저장
+Project.UpdateDbAasXml(project, "source.aasx", dbApi)
+```
+
+### 데이터베이스 스키마
+- **Tn.Project 테이블**: `aasXml TEXT` 컬럼 유지
+- **별도 업데이트**: `UpdateDbAasXml` 메서드로만 관리
+
+---
+
+## 📋 변경 사항 요약
+
+| 구분 | 이전 구현 | 현재 구현 |
+|------|-----------|-----------|
+| **AasXml 멤버** | 모든 Project 타입에 존재 | 완전 제거 |
+| **XML 저장** | 객체 생성/수정 시 자동 | 명시적 메서드 호출 |
+| **메모리 사용** | XML 문자열 상시 보관 | 필요시에만 생성 |
+| **데이터베이스** | INSERT/UPDATE 시 포함 | 별도 UPDATE 전용 |
+| **객체 복사** | AasXml 포함 복사 | AasXml 제외 |
+
+---
+
+## 🗂️ 이전 구현 기록 (참고용)
+
+### 1차 구현 (AasXml 멤버 활용)
+- AASX 파일에서 원본 XML을 AasXml 멤버에 저장
+- ToAasXmlString에서 캐싱된 XML 우선 반환
+- Export 시 새로 생성된 XML을 AasXml에 저장
+
+### 문제점 및 개선 동기
+- 메모리 사용량 과다
+- 객체 복사/비교 시 성능 저하
+- 데이터 동기화 복잡성
+
+### 최종 해결책
+- **AasXml 멤버 완전 제거**
+- **별도 메서드로 XML 관리**
+- **성능 및 메모리 최적화**
+
+---
+
+**결론**: AasXml 멤버를 제거하고 별도 메서드로 관리함으로써 Project 객체의 성능과 메모리 효율성을 크게 향상시켰습니다.

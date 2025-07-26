@@ -113,7 +113,6 @@ module ORMTypesModule =
         member val Version     = version     with get, set
         member val Description = description with get, set
         member val DateTime    = dateTime    with get, set
-        member val AasXml      = nullString  with get, set
 
 
     type ORMSystem(ownerProjectId:Id option

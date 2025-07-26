@@ -127,7 +127,6 @@ module rec NewtonsoftJsonObjects =
         member val Author      = null:string with get, set
         member val Version     = Version()   with get, set
         member val DateTime    = minDate     with get, set
-        member val AasXml      = nullString  with get, set
 
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystem[] with get, set

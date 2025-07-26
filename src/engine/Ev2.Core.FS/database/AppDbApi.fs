@@ -197,9 +197,8 @@ module ORMTypeConversionModule =
 
             match uniq with
             | :? Project as z ->
-                let ormProject = ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                ormProject.AasXml <- z.AasXml
-                ormProject |> ormReplicateProperties z
+                ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                |> ormReplicateProperties z
 
             | :? DsSystem as rt ->
                 (* System 소유주 project 지정.  *)
