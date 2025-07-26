@@ -48,11 +48,13 @@ module DbApiModule =
         let conn() =
             venderDb.CreateConnection()
             |> tee (fun conn ->
+                noop()
                 if conn.State <> ConnectionState.Open then
                     conn.Open()
 
                 let connStr = conn.ConnectionString
                 if not <| checkedConnections.Contains(connStr) then
+                    noop()
                     logInfo $"Database Version: {dbProvider.VendorName} {conn.GetVersion()}..."
                     checkedConnections.Add connStr |> ignore
                     //initialized <- true
@@ -195,8 +197,9 @@ module ORMTypeConversionModule =
 
             match uniq with
             | :? Project as z ->
-                ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                |> ormReplicateProperties z
+                let ormProject = ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                ormProject.AasXml <- z.AasXml
+                ormProject |> ormReplicateProperties z
 
             | :? DsSystem as rt ->
                 (* System 소유주 project 지정.  *)

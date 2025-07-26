@@ -261,7 +261,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "dateTime"}      {datetime}
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_iri_uniq UNIQUE (iri)
-    , CONSTRAINT {Tn.System}_name_uniq UNIQUE (name)    -- system 이름 전체적으로 고유해야 함.
+    -- , CONSTRAINT {Tn.System}_name_uniq UNIQUE (name)    -- system 이름 전체적으로 고유해야 함.
 );
 
 

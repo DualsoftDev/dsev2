@@ -15,17 +15,6 @@ open Ev2.Core.FS
 
 
 [<AutoOpen>]
-module AasXModule =
-    /// Environment를 XML 문자열로 직렬화하는 공통 함수
-    let serializeEnvironmentToXml (env: Aas.Environment): string =
-        use stringWriter = new System.IO.StringWriter()
-        let settings = XmlWriterSettings(Indent = true, Encoding = Encoding.UTF8)
-        use xmlWriter = System.Xml.XmlWriter.Create(stringWriter, settings)
-        Xmlization.Serialize.To(env, xmlWriter)
-        xmlWriter.Flush()
-        stringWriter.ToString()
-
-[<AutoOpen>]
 module AasXModule2 =
 
     type NjProject with
