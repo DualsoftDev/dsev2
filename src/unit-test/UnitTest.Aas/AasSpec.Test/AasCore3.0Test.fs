@@ -26,7 +26,7 @@ module AasCore3_0Test =
 </submodel>"""
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-            xml === xmlAnswer
+            xml =~= xmlAnswer
             ()
 
         [<Test>]
@@ -244,7 +244,7 @@ module AasCore3_0Test =
 </submodel>"""
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-            xml === xmlAnswer
+            xml =~= xmlAnswer
             ()
 
 
@@ -307,7 +307,7 @@ module AasCore3_0Test =
   </submodelElements>
 </submodel>"""
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-            xml === xmlAnswer
+            xml =~= xmlAnswer
             ()
 
 

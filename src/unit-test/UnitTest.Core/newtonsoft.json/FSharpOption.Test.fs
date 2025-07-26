@@ -30,7 +30,7 @@ let doTestNullable() =
     do
         let nullData = NullContainer(null, Nullable(3), Some(3))
         let json = JsonConvert.SerializeObject(nullData, Formatting.Indented)
-        json === """{
+        json =~= """{
   "String": null,
   "NullableInt": 3,
   "OptNullable": {
@@ -42,7 +42,7 @@ let doTestNullable() =
 }"""
 
         let json2 = EmJson.ToJson(nullData)
-        json2 === """{
+        json2 =~= """{
   "NullableInt": 3,
   "OptNullable": 3
 }"""

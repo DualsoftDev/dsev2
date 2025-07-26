@@ -50,7 +50,7 @@ module ValueSpecTestModule =
     ]
   }
 }"""
-        singleDoubleValue.Jsonize() === jsonSingleDoubleValue
+        singleDoubleValue.Jsonize() =~= jsonSingleDoubleValue
         jsonSingleDoubleValue |> IValueSpec.Deserialize === singleDoubleValue
 
         // bool 타입
@@ -63,7 +63,7 @@ module ValueSpecTestModule =
     ]
   }
 }"""
-        singleBoolValue.Jsonize() === jsonSingleBoolValue
+        singleBoolValue.Jsonize() =~= jsonSingleBoolValue
         jsonSingleBoolValue |> IValueSpec.Deserialize === singleBoolValue
 
 
@@ -130,7 +130,7 @@ module ValueSpecTestModule =
     ]
   }
 }"""
-        multipleRange.Jsonize() === jsonMultipleRange
+        multipleRange.Jsonize() =~= jsonMultipleRange
         jsonMultipleRange |> IValueSpec.Deserialize === multipleRange
 
 

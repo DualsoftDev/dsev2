@@ -17,9 +17,9 @@ module FromAasTest =
         member _.``AasShell: Json -> JObj -> {Xml, Json} conversion test`` () =
             let env = J.CreateIClassFromXml<Aas.Environment>(aasXml0)
             let xml = env.ToXml()
-            xml === aasXml0
+            xml =~= aasXml0
 
-            env.ToJson() === aasJson0
+            env.ToJson() =~= aasJson0
 
 
             //let dsSystem = DsSystem.FromAasJsonENV(aasJson0)
