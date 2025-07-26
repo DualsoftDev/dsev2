@@ -17,7 +17,24 @@ module CoreFromAas =
     //type Environment = AasCore.Aas3_0.Environment
     //type ISubmodel = AasCore.Aas3_0.ISubmodel
 
-    type NjProject with // FromISubmodel
+    type NjProject with // FromISubmodel, FromAasxFile
+        static member FromAasxFile(aasxPath: string): NjProject =
+            let aasFileInfo = AasXModule.readEnvironmentFromAasx aasxPath
+            let env = aasFileInfo.Environment
+
+            let projectSubmodel =
+                env.Submodels
+                |> Seq.tryFind (fun sm -> sm.IdShort = PreludeModule.SubmodelIdShort)
+                |> function
+                    | Some sm -> sm
+                    | None -> failwith $"Project Submodel with IdShort '{PreludeModule.SubmodelIdShort}' not found in AASX file: {aasxPath}"
+
+            let project = NjProject.FromISubmodel(projectSubmodel)
+
+            // AASX 파일에서 읽은 원본 XML을 AasXml 멤버에 저장
+            project.AasXml <- aasFileInfo.OriginalXml
+            project
+
         static member FromISubmodel(submodel:ISubmodel): NjProject =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = project.ReadUniqueInfo()

@@ -21,6 +21,7 @@
 		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.From.Aas.fs" />
 		<Compile Include="AasX.fs" />
+		<None Include="devdoc\Project.AasXml.md" />
 		<None Include="devdoc\AAS 검증.md" />
 		<None Include="devdoc\AAS type 정의.md" />
 		<Content Include="devdoc\SampleAASFolder\aasx\aas\aas.aas.xml" />

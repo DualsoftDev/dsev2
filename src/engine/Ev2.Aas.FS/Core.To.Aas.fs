@@ -85,7 +85,7 @@ module CoreToAas =
 
             } |> choose id |> Seq.cast<JNode> |> toArray
 
-    type NjProject with
+    type NjProject with // ToSjSMC, ToSjSubmodel
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let me = x
