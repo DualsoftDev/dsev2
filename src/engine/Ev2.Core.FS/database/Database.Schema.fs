@@ -247,6 +247,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
     , {k "version"}      TEXT NOT NULL
     , {k "description"}  TEXT
     , {k "dateTime"}     {datetime}
+    , {k "aasXml"}       TEXT                       -- aasx file 내의 모든 submodel xml 파일 내용.  text 이므로 BLOB 일 필요가 없음.
     , CONSTRAINT {Tn.Project}_uniq UNIQUE (name)    -- Project 의 이름은 유일해야 함
 );
 

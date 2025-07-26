@@ -123,10 +123,11 @@ module rec NewtonsoftJsonObjects =
 
 
         member val Database    = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
-        member val Description = null:string     with get, set
-        member val Author      = null:string     with get, set
-        member val Version     = Version()       with get, set
-        member val DateTime    = minDate         with get, set
+        member val Description = null:string with get, set
+        member val Author      = null:string with get, set
+        member val Version     = Version()   with get, set
+        member val DateTime    = minDate     with get, set
+        member val AasXml      = nullString  with get, set
 
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystem[] with get, set

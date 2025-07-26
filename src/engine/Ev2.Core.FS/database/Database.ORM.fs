@@ -109,10 +109,11 @@ module ORMTypesModule =
         interface IORMProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
-        member val Author = author with get, set
-        member val Version       = version     with get, set
-        member val Description   = description with get, set
-        member val DateTime      = dateTime with get, set
+        member val Author      = author      with get, set
+        member val Version     = version     with get, set
+        member val Description = description with get, set
+        member val DateTime    = dateTime    with get, set
+        member val AasXml      = nullString  with get, set
 
 
     type ORMSystem(ownerProjectId:Id option

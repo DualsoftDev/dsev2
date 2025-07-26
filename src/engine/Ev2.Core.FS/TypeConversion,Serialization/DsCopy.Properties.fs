@@ -55,14 +55,14 @@ module internal DsCopyModule =
         | (:? Project) | (:? NjProject) | (:? ORMProject) ->
             let s =
                 match sbx with
-                | :? Project  as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; Database=s.Database; DateTime=s.DateTime |}
-                | :? NjProject  as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; Database=s.Database; DateTime=s.DateTime |}
-                | :? ORMProject as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; Database=getNull<DbProvider>(); DateTime=s.DateTime |}
+                | :? Project    as s -> {| Author=s.Author; Version=s.Version; AasXml=s.AasXml; Description=s.Description; Database=s.Database; DateTime=s.DateTime |}
+                | :? NjProject  as s -> {| Author=s.Author; Version=s.Version; AasXml=s.AasXml; Description=s.Description; Database=s.Database; DateTime=s.DateTime |}
+                | :? ORMProject as s -> {| Author=s.Author; Version=s.Version; AasXml=s.AasXml; Description=s.Description; Database=getNull<DbProvider>(); DateTime=s.DateTime |}
                 | _ -> failwith "ERROR"
             match dbx with
-            | :? Project  as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.Database<-s.Database; d.DateTime<-s.DateTime
-            | :? NjProject  as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.Database<-s.Database; d.DateTime<-s.DateTime
-            | :? ORMProject as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; (*d.Database<-s.Database;*) d.DateTime<-s.DateTime
+            | :? Project    as d -> d.Author<-s.Author; d.Version<-s.Version; d.AasXml<-s.AasXml; d.Description<-s.Description; d.Database<-s.Database; d.DateTime<-s.DateTime
+            | :? NjProject  as d -> d.Author<-s.Author; d.Version<-s.Version; d.AasXml<-s.AasXml; d.Description<-s.Description; d.Database<-s.Database; d.DateTime<-s.DateTime
+            | :? ORMProject as d -> d.Author<-s.Author; d.Version<-s.Version; d.AasXml<-s.AasXml; d.Description<-s.Description; (*d.Database<-s.Database;*) d.DateTime<-s.DateTime
             | _ -> failwith "ERROR"
 
         | (:? DsSystem) | (:? NjSystem) | (:? ORMSystem) ->

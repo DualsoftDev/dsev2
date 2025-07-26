@@ -120,6 +120,7 @@ module rec DsObjectModule =
         //member val LangVersion   = langVersion   |? Version()  with get, set
         //member val EngineVersion = engineVersion |? Version()  with get, set
         member val Description   = nullString with get, set
+        member val AasXml        = nullString with get, set
 
         /// DateTime: 메모리에 최초 객체 생성시 생성
         member val DateTime = now().TruncateToSecond() with get, set
