@@ -345,10 +345,11 @@ module rec NewtonsoftJsonObjects =
         interface INjApiDef
 
         member val IsPush = false with get, set
+        member val TopicIndex = 0 with get, set
 
         static member internal fromRuntime(rt:ApiDef) =
             assert(isItNotNull rt)
-            NjApiDef(IsPush=rt.IsPush)
+            NjApiDef(IsPush=rt.IsPush, TopicIndex=rt.TopicIndex)
             |> fromNjUniqINGD rt
 
 
@@ -556,7 +557,7 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
-                ApiDef(njad.IsPush)
+                ApiDef(njad.IsPush, njad.TopicIndex)
                 |> replicateProperties njad
             ()
 

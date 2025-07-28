@@ -207,7 +207,8 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:ApiDef, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.IsPush <> y.IsPush   then yield Diff("IsPush", x, y)
+                if x.IsPush <> y.IsPush then yield Diff("IsPush", x, y)
+                if x.TopicIndex <> y.TopicIndex then yield Diff("TopicIndex", x, y)
             }
 
     type ApiCall with // ComputeDiff

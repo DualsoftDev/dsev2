@@ -114,7 +114,7 @@ module internal rec DsObjectCopyImpl =
 
     type ApiDef with // replicate
         member x.replicate(bag:ReplicateBag) =
-            ApiDef(x.IsPush)
+            ApiDef(x.IsPush, x.TopicIndex)
             |> uniqReplicateWithBag bag x
 
 

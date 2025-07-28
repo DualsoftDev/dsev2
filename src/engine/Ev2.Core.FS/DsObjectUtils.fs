@@ -319,7 +319,7 @@ module DsObjectUtilsModule =
         static member Create() = Flow([], [], [], [])
 
     type ApiDef with   // Create
-        static member Create() = ApiDef(true)
+        static member Create() = ApiDef(true, 0)
 
     type ApiCall with   // Create
         static member Create() =
@@ -399,6 +399,9 @@ module DsObjectUtilsModule =
                 sys.ApiDefs |> iter _.Validate(guidDicDebug)
                 for w in sys.ApiDefs do
                     verify (sys.Guid |> isParentGuid w)
+
+                // ApiDef 의 TopicIndex 점검
+                // 1. 동일 TopicIndex 를 가진 ApiDef 의 갯수는 항상 2가 되어야 함
 
                 sys.ApiCalls |> iter _.Validate(guidDicDebug)
                 for ac in sys.ApiCalls  do

@@ -73,6 +73,7 @@ module CoreToAas =
 
                 | :? NjApiDef as apiDef ->
                     JObj().TrySetProperty(apiDef.IsPush,   "IsPush")
+                    JObj().TrySetProperty(apiDef.TopicIndex, "TopicIndex")
 
                 | (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ->
                     ()

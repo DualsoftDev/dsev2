@@ -30,6 +30,7 @@ module ORMTypesModule =
     type IORMApiDef     = inherit IORMUnique
     type IORMParamWork  = inherit IORMUnique
     type IORMParamCall  = inherit IORMUnique
+    type IORMProgress   = inherit IORMUnique
     type IORMEnum       = inherit IORMUnique
     type IORMMeta       = inherit IORMUnique
     type IORMLog        = inherit IORMUnique
@@ -244,6 +245,18 @@ module ORMTypesModule =
         new() = ORMApiDef(-1)
         interface IORMApiDef
         member val IsPush = false with get, set
+        member val TopicIndex = 0 with get, set
+
+
+    type ORMProgress(systemId:Id, topicIndex:int, ?progress:int, ?description:string) =
+        inherit ORMSystemEntity(systemId)
+
+        new() = ORMProgress(-1, 0)
+        interface IORMProgress
+
+        member val TopicIndex = topicIndex with get, set
+        member val Description = description with get, set
+        member val Progress = progress with get, set
 
 
     type ORMEnum(name, category, value) =

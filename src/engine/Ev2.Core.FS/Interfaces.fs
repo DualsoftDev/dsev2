@@ -295,11 +295,12 @@ module rec DsObjectModule =
             and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-    type ApiDef(isPush:bool) =
+    type ApiDef(isPush:bool, topicIndex:int) =
         inherit DsSystemEntity()
         interface IRtApiDef
 
         member val IsPush = isPush with get, set
+        member val TopicIndex = topicIndex with get, set
         member x.System   = x.RawParent >>= tryCast<DsSystem>
 
         // system 에서 현재 ApiDef 을 사용하는 ApiCall 들

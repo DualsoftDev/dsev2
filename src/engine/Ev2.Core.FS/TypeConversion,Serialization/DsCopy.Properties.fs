@@ -124,13 +124,13 @@ module internal DsCopyModule =
         | (:? ApiCall) | (:? NjApiCall) | (:? ORMApiCall) ->   // 미처리 : ApiDefGuid, Status4
             let s =
                 match sbx with
-                | :? ApiCall  as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; (*ApiDef;*) |}
+                | :? ApiCall    as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; (*ApiDef;*) |}
                 | :? NjApiCall  as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; (*ApiDef;*) |}
                 | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; (*ApiDef;*) |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType
+            | :? ApiCall    as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType
             | :? NjApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec
             | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec
             | _ -> failwith "ERROR"
@@ -139,15 +139,15 @@ module internal DsCopyModule =
         | (:? ApiDef) | (:? NjApiDef) | (:? ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
-                | :? ApiDef  as s -> {| IsPush=s.IsPush |}
-                | :? NjApiDef  as s -> {| IsPush=s.IsPush |}
-                | :? ORMApiDef as s -> {| IsPush=s.IsPush |}
+                | :? ApiDef    as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex |}
+                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex |}
+                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ApiDef  as d -> d.IsPush<-s.IsPush
-            | :? NjApiDef  as d -> d.IsPush<-s.IsPush
-            | :? ORMApiDef as d -> d.IsPush<-s.IsPush
+            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex
+            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex
+            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex
             | _ -> failwith "ERROR"
 
 

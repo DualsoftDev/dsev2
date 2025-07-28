@@ -22,6 +22,7 @@ module DatabaseSchemaModule =
         let [<Literal>] ArrowCall    = "arrowCall"
         let [<Literal>] ApiCall      = "apiCall"
         let [<Literal>] ApiDef       = "apiDef"
+        let [<Literal>] Progress     = "progress"
 
         // { Flow 하부 정의 용
         let [<Literal>] Button       = "button"
@@ -386,6 +387,7 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
 
 CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "isPush"}          {boolean} NOT NULL DEFAULT {falseValue}
+    , {k "topicIndex"}      {int32} NOT NULL
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.ApiDef}_uniq UNIQUE (systemId, name)
@@ -449,6 +451,16 @@ CREATE TABLE {k Tn.ArrowCall}( {sqlUniq()}
     , FOREIGN KEY(workId)   REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Arrow 도 삭제
 );
 
+
+
+CREATE TABLE {k Tn.Progress}( {sqlUniq()}
+    , {k "systemId"}        {intKeyType} NOT NULL
+    , {k "topicIndex"}      {int32} NOT NULL
+    , {k "progress"}        {int32}
+    , {k "description"}     TEXT
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- System 삭제시 Topic 도 삭제
+    , CONSTRAINT {Tn.Progress}_uniq UNIQUE (systemId, topicIndex)
+);
 
 
 CREATE TABLE {k Tn.Meta} (
@@ -588,6 +600,7 @@ CREATE VIEW {k Vn.ApiDef} AS
         , x.{k "name"}
         , x.{k "parameter"}
         , x.{k "isPush"}
+        , x.{k "topicIndex"}
         , s.{k "id"}    AS systemId
         , s.{k "name"}  AS systemName
     FROM {k Tn.ApiDef} x
