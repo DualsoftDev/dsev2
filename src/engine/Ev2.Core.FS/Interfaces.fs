@@ -300,6 +300,7 @@ module rec DsObjectModule =
         interface IRtApiDef
 
         member val IsPush = isPush with get, set
+        /// Joint 에 해당. topic index 는 0 부터 시작
         member val TopicIndex = topicIndex with get, set
         member x.System   = x.RawParent >>= tryCast<DsSystem>
 
