@@ -171,11 +171,10 @@ module AasXModule2 =
             // 5. 파일 교체 (백업 포함)
             replaceFileWithBackup aasxPath tempPath
 
-    type Project with   // ExportToAasxFile, FromAasxFile, ToAasXmlString, UpdateDbAasXml
+    type Project with   // UpdateDbAasXml, FromAasxFile, ExportToAasxFile, InjectToExistingAasxFile
         static member UpdateDbAasXml(project: Project, aasxPath: string, dbApi: AppDbApi): unit =
             // 1. AASX 파일에서 원본 XML 읽기
-            let aasFileInfo = readEnvironmentFromAasx aasxPath
-            let originalXml = aasFileInfo.OriginalXml
+            let originalXml = getAasXmlFromAasxFile aasxPath
 
             // 2. 프로젝트 ID 확인
             let projectId = project.Id |? failwith "Project Id is not set"

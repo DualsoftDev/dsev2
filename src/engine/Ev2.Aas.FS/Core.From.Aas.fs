@@ -14,6 +14,17 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreFromAas =
+
+    // 공통 FromSMC 헬퍼 함수 - UniqueInfo만 필요한 단순한 객체들을 위함
+    let internal createSimpleFromSMC<'T when 'T :> Unique> (constructor: unit -> 'T)
+                                                           (smc: SubmodelElementCollection) : 'T =
+        let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
+        let obj = constructor()
+        obj.Name <- name
+        obj.Guid <- guid
+        obj.Id <- id
+        obj.Parameter <- parameter
+        obj
     //type Environment = AasCore.Aas3_0.Environment
     //type ISubmodel = AasCore.Aas3_0.ISubmodel
 
@@ -103,23 +114,19 @@ module CoreFromAas =
 
     type NjButton with
         static member FromSMC(smc: SubmodelElementCollection): NjButton =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-            NjButton(Name=name, Guid=guid, Id=id, Parameter=parameter)
+            createSimpleFromSMC (fun () -> NjButton()) smc
 
     type NjLamp with
         static member FromSMC(smc: SubmodelElementCollection): NjLamp =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-            NjLamp(Name=name, Guid=guid, Id=id, Parameter=parameter)
+            createSimpleFromSMC (fun () -> NjLamp()) smc
 
     type NjCondition with
         static member FromSMC(smc: SubmodelElementCollection): NjCondition =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-            NjCondition(Name=name, Guid=guid, Id=id, Parameter=parameter)
+            createSimpleFromSMC (fun () -> NjCondition()) smc
 
     type NjAction with
         static member FromSMC(smc: SubmodelElementCollection): NjAction =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-            NjAction(Name=name, Guid=guid, Id=id, Parameter=parameter)
+            createSimpleFromSMC (fun () -> NjAction()) smc
 
     type NjFlow with
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =

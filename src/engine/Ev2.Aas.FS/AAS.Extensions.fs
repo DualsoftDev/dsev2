@@ -221,6 +221,12 @@ module AasXModule =
             OriginalXml = xml
         |}
 
+    /// AASX 파일에서 submodel xml 파일 읽어서 문자열로 반환
+    let getAasXmlFromAasxFile(aasxPath: string): string =
+        let aasFileInfo = readEnvironmentFromAasx aasxPath
+        aasFileInfo.OriginalXml
+
+
         /// Submodel을 업데이트하는 함수
     let updateSubmodels (existingEnv: Aas.Environment) (newProjectSubmodel: Aas.Submodel): ResizeArray<ISubmodel> =
         // IdShort 기반 비교 - SequenceControlSubmodel 상수 사용
