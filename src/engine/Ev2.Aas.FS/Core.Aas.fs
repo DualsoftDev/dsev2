@@ -76,6 +76,7 @@ module AasSemantics =
 
             "IsPush",           "https://dualsoft.com/aas/apiDef/isPush"
             "TopicIndex",       "https://dualsoft.com/aas/apiDef/topicIndex"
+            "IsTopicOrigin",    "https://dualsoft.com/aas/apiDef/isTopicOrigin"
             "FlowGuid",         "https://dualsoft.com/aas/work/flowGuid"
             "Motion",           "https://dualsoft.com/aas/work/motion"
             "Script",           "https://dualsoft.com/aas/work/script"

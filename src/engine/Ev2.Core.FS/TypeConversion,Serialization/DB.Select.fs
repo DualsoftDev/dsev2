@@ -71,7 +71,7 @@ module internal Db2DsImpl =
                 let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
 
                 for orm in orms do
-                    ApiDef(orm.IsPush, orm.TopicIndex)
+                    ApiDef(orm.IsPush, ?topicIndex=orm.TopicIndex, ?isTopicOrigin=orm.IsTopicOrigin)
                     |> replicateProperties orm
             ]
             rtApiDefs |> s.addApiDefs

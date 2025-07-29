@@ -319,7 +319,7 @@ module DsObjectUtilsModule =
         static member Create() = Flow([], [], [], [])
 
     type ApiDef with   // Create
-        static member Create() = ApiDef(true, 0)
+        static member Create() = ApiDef(true)
 
     type ApiCall with   // Create
         static member Create() =
@@ -403,6 +403,7 @@ module DsObjectUtilsModule =
                 // ApiDef 의 TopicIndex 점검
                 // 1. 동일 TopicIndex 를 가진 ApiDef 의 갯수는 항상 2가 되어야 함
                 sys.ApiDefs
+                |> filter (_.TopicIndex.IsSome)
                 |> groupBy (_.TopicIndex)
                 |> iter (fun (topicIndex, apiDefs) ->
                     let count = apiDefs |> List.length

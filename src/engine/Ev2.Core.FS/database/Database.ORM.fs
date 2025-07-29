@@ -245,7 +245,8 @@ module ORMTypesModule =
         new() = ORMApiDef(-1)
         interface IORMApiDef
         member val IsPush = false with get, set
-        member val TopicIndex = 0 with get, set
+        member val TopicIndex = Option<int>.None with get, set
+        member val IsTopicOrigin = Option<bool>.None with get, set
 
 
     type ORMProgress(systemId:Id, topicIndex:int, ?progress:int, ?description:string) =

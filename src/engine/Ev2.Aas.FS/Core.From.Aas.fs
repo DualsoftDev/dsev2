@@ -201,9 +201,10 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjApiDef =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
-            let topicIndex = smc.TryGetPropValue<int> "TopicIndex" |? 0
+            let topicIndex = smc.TryGetPropValue<int> "TopicIndex"
+            let isTopicOrigin = smc.TryGetPropValue<bool> "IsTopicOrigin"
             NjApiDef(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , IsPush = isPush, TopicIndex = topicIndex
+                , IsPush = isPush, TopicIndex = topicIndex, IsTopicOrigin = isTopicOrigin
             )
 
     type NjApiCall with
