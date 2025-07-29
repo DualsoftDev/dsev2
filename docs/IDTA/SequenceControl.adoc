@@ -311,6 +311,7 @@ SequenceControlSubmodel
     │               ├── NumRepeat (0..1)
     │               ├── Period (0..1)
     │               ├── Delay (0..1)
+    │               ├── Status (0..1)
     │               ├── Calls (0..1)
     │               │   └── Call (1..*)
     │               │       ├── Name (1)
@@ -320,6 +321,7 @@ SequenceControlSubmodel
     │               │       ├── CommonPrecondition (0..1)
     │               │       ├── AutoPrecondition (0..1)
     │               │       ├── Timeout (0..1)
+    │               │       ├── Status (0..1)
     │               │       ├── CallType (0..1)
     │               │       ├── ApiCalls (0..1)
     │               │       │   └── ApiCall (1..*)
@@ -490,6 +492,7 @@ System 하부에는 <<_element_hierarchy>> 에서 정의한 System 구조가 포
 |NumRepeat   |"https://dualsoft.com/aas/work/numRepeat" |integer     |반복 횟수             |0..1
 |Period      |"https://dualsoft.com/aas/work/period"    |double      |주기 설정             |0..1
 |Delay       |"https://dualsoft.com/aas/work/delay"     |double      |지연 설정             |0..1
+|Status      |"https://dualsoft.com/aas/common/status"    |string      |작업 상태             |0..1
 |===
 
 ===== Calls
@@ -506,6 +509,7 @@ System 하부에는 <<_element_hierarchy>> 에서 정의한 System 구조가 포
 |CommonPrecondition   |"https://dualsoft.com/aas/call/commonConditions" |string      |공통 사전조건                 |0..1
 |AutoPrecondition     |"https://dualsoft.com/aas/call/autoConditions"   |string      |자동 사전조건                 |0..1
 |Timeout              |"https://dualsoft.com/aas/call/timeout"           |double      |타임아웃 설정                 |0..1
+|Status               |"https://dualsoft.com/aas/common/status"          |string      |작업 상태             |0..1
 |CallType             |"https://dualsoft.com/aas/call/callType"          |string      |호출 타입                     |0..1
 |ApiCalls             |"https://dualsoft.com/aas/plural/apiCalls"        |string      |호출하는 ApiCall의 GUID 목록 |0..1
 |===

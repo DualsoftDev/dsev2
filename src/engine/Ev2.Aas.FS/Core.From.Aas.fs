@@ -151,6 +151,7 @@ module CoreFromAas =
             let numRepeat  = smc.TryGetPropValue<int>  "NumRepeat"  |? 0
             let period     = smc.TryGetPropValue<int>  "Period"     |? 0
             let delay      = smc.TryGetPropValue<int>  "Delay"      |? 0
+            let status4    = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
 
             (* AAS 구조상 Work/Calls/Call[], Work/Arrows/Arrow[] 형태로 존재 *)
             let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Call")  |? [||] |-> NjCall.FromSMC
@@ -164,7 +165,9 @@ module CoreFromAas =
                 , NumRepeat = numRepeat
                 , Period = period
                 , Delay = delay
-                , Calls = calls, Arrows = arrows)
+                , Calls = calls
+                , Status4 = status4
+                , Arrows = arrows)
 
     type NjCall with
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
@@ -174,6 +177,7 @@ module CoreFromAas =
             let autoConditions   = smc.TryGetPropValue       "AutoConditions"   |? null
             let timeout          = smc.TryGetPropValue<int>  "Timeout"
             let callType         = smc.TryGetPropValue       "CallType"         |? null
+            let status4          = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
 
 
             let apiCalls =
@@ -193,6 +197,7 @@ module CoreFromAas =
                 , AutoConditions = autoConditions
                 , Timeout = timeout
                 , CallType = callType
+                , Status4 = status4
                 , ApiCalls = apiCalls     // Guid[] type
                 )
 

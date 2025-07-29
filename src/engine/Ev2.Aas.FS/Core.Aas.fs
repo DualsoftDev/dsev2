@@ -95,7 +95,8 @@ module AasSemantics =
             "IsDisabled",       "https://dualsoft.com/aas/call/isDisabled"
             "CommonConditions", "https://dualsoft.com/aas/call/commonConditions"
             "AutoConditions",   "https://dualsoft.com/aas/call/autoConditions"
-            "Status4",          "https://dualsoft.com/aas/call/status4"
+            "Status4",          "https://dualsoft.com/aas/common/status4"     // work or call
+            "Status",           "https://dualsoft.com/aas/common/status"     // work or call
 
 
             "InAddress",        "https://dualsoft.com/aas/apiCall/inAddress"

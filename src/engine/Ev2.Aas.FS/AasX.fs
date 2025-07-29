@@ -5,6 +5,7 @@ open System.IO.Compression
 open System.Text
 open System.Text.Json
 open System.Xml
+open System.Linq
 
 
 open AasCore.Aas3_0
@@ -12,6 +13,7 @@ open Dual.Common.Core.FS
 
 open Dapper
 open Ev2.Core.FS
+open Dual.Common.Base
 
 
 [<AutoOpen>]
@@ -172,7 +174,8 @@ module AasXModule2 =
             replaceFileWithBackup aasxPath tempPath
 
     type Project with   // UpdateDbAasXml, FromAasxFile, ExportToAasxFile, InjectToExistingAasxFile
-        static member UpdateDbAasXml(project: Project, aasxPath: string, dbApi: AppDbApi): unit =
+        /// AASX 파일에서 aas submodel xml 파일을 읽어서 database 의 project table 의 aasXml column 을 update
+        member project.UpdateDbAasXml(aasxPath: string, dbApi: AppDbApi): unit =
             // 1. AASX 파일에서 원본 XML 읽기
             let originalXml = getAasXmlFromAasxFile aasxPath
 
@@ -191,7 +194,38 @@ module AasXModule2 =
             let njProj = NjProject.FromAasxFile(aasxPath)
             njProj.ToJson() |> Project.FromJson
 
-        member x.ExportToAasxFile(outputPath: string): unit =
+
+        member x.ReadRuntimeDataFromDatabase(dbApi: AppDbApi): unit =
+            let rtObjs = x.EnumerateRtObjects()
+            let works = rtObjs.OfType<Work>().ToArray()
+            let calls = rtObjs.OfType<Call>().ToArray()
+            let workDict = works.Where(fun w -> w.Id.IsSome).ToDictionary((fun w -> w.Id.Value), id)
+            let callDict = calls.Where(fun c -> c.Id.IsSome).ToDictionary((fun c -> c.Id.Value), id)
+            dbApi.With(fun (conn, tr) ->
+                // 1. works 에 대해 work 테이블에서 데이터 읽어서 Status4 update (Status4Id 에 해당하는 Work 객체의 Status4 속성 업데이트)
+                let workIds = works |> Array.choose (_.Id) |> Array.map int
+                if workIds.Length > 0 then
+                    let ormWorks = conn.QueryRows<ORMWork>(Tn.Work, "id", workIds, tr)
+                    for ormWork in ormWorks do
+                        match workDict.TryGetValue(ormWork.Id.Value) with
+                        | true, work -> work.Status4 <- ormWork.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                        | false, _ -> ()
+
+                // 2. calls 에 대해 call 테이블에서 데이터 읽어서 Status4 update (Status4Id 에 해당하는 Call 객체의 Status4 속성 업데이트)
+                let callIds = calls |> Array.choose (_.Id) |> Array.map int
+                if callIds.Length > 0 then
+                    let ormCalls = conn.QueryRows<ORMCall>(Tn.Call, "id", callIds, tr)
+                    for ormCall in ormCalls do
+                        match callDict.TryGetValue(ormCall.Id.Value) with
+                        | true, call -> call.Status4 <- ormCall.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                        | false, _ -> ()
+            )
+
+
+        member x.ExportToAasxFile(outputPath: string, ?dbApi: AppDbApi): unit =
+            dbApi |> iter x.ReadRuntimeDataFromDatabase
+
+
             let njProj = x.ToJson() |> NjProject.FromJson
             njProj.ExportToAasxFile(outputPath)
 

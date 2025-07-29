@@ -56,6 +56,8 @@ module CoreToAas =
                         JObj().TrySetProperty(call.Timeout.Value,     "Timeout")
                     JObj().TrySetProperty(call.CallType.ToString(),   "CallType")
                     JObj().TrySetProperty(sprintf "%A" call.ApiCalls, "ApiCalls")      // Guid[] type
+                    if call.Status.NonNullAny() then
+                        JObj().TrySetProperty(call.Status, "Status")
 
                 | :? NjArrow as arrow ->
                     JObj().TrySetProperty(arrow.Source, "Source")
@@ -70,6 +72,8 @@ module CoreToAas =
                     JObj().TrySetProperty(work.NumRepeat,  "NumRepeat")
                     JObj().TrySetProperty(work.Period,     "Period")
                     JObj().TrySetProperty(work.Delay,      "Delay")
+                    if work.Status.NonNullAny() then
+                        JObj().TrySetProperty(work.Status, "Status")
 
                 | :? NjApiDef as apiDef ->
                     JObj().TrySetProperty(apiDef.IsPush,   "IsPush")

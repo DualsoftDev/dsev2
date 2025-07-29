@@ -72,7 +72,8 @@ let dsJson = """
           ],
           "AutoConditions": "[\r\n  \"AutoPre 테스트 1\",\r\n  \"AutoConditions 테스트 2\"\r\n]",
           "CommonConditions": "[\r\n  \"CommonCondition1\",\r\n  \"안전조건2\"\r\n]",
-          "Timeout": 30
+          "Timeout": 30,
+          "Status": "Ready"
         },
         {
           "RuntimeType": "Call",
@@ -81,7 +82,8 @@ let dsJson = """
           "Guid": "4d785edb-d468-46d3-a549-e4d661c131b5",
           "CallType": "Repeat",
           "AutoConditions": "[]",
-          "CommonConditions": "[]"
+          "CommonConditions": "[]",
+          "Status": "Finished"
         }
       ],
       "Arrows": [
@@ -109,7 +111,8 @@ let dsJson = """
           "Name": "Call2a",
           "Guid": "4a6b3937-6008-41f6-91fb-46a0f656a061",
           "AutoConditions": "[]",
-          "CommonConditions": "[]"
+          "CommonConditions": "[]",
+          "Status": "Homing"
         },
         {
           "RuntimeType": "Call",
@@ -117,7 +120,8 @@ let dsJson = """
           "Name": "Call2b",
           "Guid": "d04d2f47-ac2d-4ed2-adc2-d9590b5e7e6f",
           "AutoConditions": "[]",
-          "CommonConditions": "[]"
+          "CommonConditions": "[]",
+          "Status": "Finished"
         }
       ],
       "Arrows": [

@@ -258,12 +258,20 @@ module rec NewtonsoftJsonObjects =
         member val Calls: NjCall[] = [||] with get, set
         member val Arrows:NjArrow[] = [||] with get, set
 
+        [<JsonIgnore>]
+        member val Status4 = Option<DbStatus4>.None with get, set
+
+        member x.Status
+            with get() = x.Status4 |> Option.map (_.ToString()) |> Option.toObj
+            and set v = x.Status4 <- if isNull v then None else Enum.TryParse<DbStatus4>(v) |> tryParseToOption
+
         member x.ShouldSerializeCalls()      = x.Calls.NonNullAny()
         member x.ShouldSerializeArrows()     = x.Arrows.NonNullAny()
         member x.ShouldSerializeIsFinished() = x.IsFinished
         member x.ShouldSerializeNumRepeat()  = x.NumRepeat > 0
         member x.ShouldSerializePeriod()     = x.Period > 0
         member x.ShouldSerializeDelay()      = x.Period > 0
+        member x.ShouldSerializeStatus()     = x.Status4.IsSome
 
         static member internal fromRuntime(rt:Work) =
             NjWork()
@@ -272,6 +280,7 @@ module rec NewtonsoftJsonObjects =
                 z.Calls    <- rt.Calls   |-> NjCall.fromRuntime  |> toArray
                 z.Arrows   <- rt.Arrows  |-> NjArrow.fromRuntime |> toArray
                 z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
+                z.Status4 <- rt.Status4
             )
 
     type NjArrow() =
@@ -307,10 +316,18 @@ module rec NewtonsoftJsonObjects =
         member val IsDisabled = false            with get, set
         member val Timeout    = Option<int>.None with get, set
 
+        [<JsonIgnore>]
+        member val Status4 = Option<DbStatus4>.None with get, set
+
+        member x.Status
+            with get() = x.Status4 |> Option.map (_.ToString()) |> Option.toObj
+            and set v = x.Status4 <- if isNull v then None else Enum.TryParse<DbStatus4>(v) |> tryParseToOption
+
         (* 특별한 조건일 때에만 json 표출 *)
         member x.ShouldSerializeApiCalls()   = x.ApiCalls.NonNullAny()
         member x.ShouldSerializeIsDisabled() = x.IsDisabled
         member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
+        member x.ShouldSerializeStatus()     = x.Status4.IsSome
 
         static member internal fromRuntime(rt:Call) =
             let ac = rt.AutoConditions |> jsonSerializeStrings
@@ -319,6 +336,7 @@ module rec NewtonsoftJsonObjects =
             |> fromNjUniqINGD rt
             |> tee (fun z ->
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
+                z.Status4 <- rt.Status4
             )
 
 

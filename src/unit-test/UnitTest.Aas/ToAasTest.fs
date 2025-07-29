@@ -71,6 +71,14 @@ module ToAasTest =
 
             ()
 
+        [<Test>]
+        member _.``Project: instance -> Aas Test2`` () =
+            let rtProject = dsProject |> Project.FromJson
+            let dbApi = pgsqlDbApi()
+            rtProject.ExportToAasxFile("test.aasx", dbApi) |> ignore
+
+            ()
+
 
         [<Test>]
         member _.``Project with cylinder: instance -> Aas Test`` () =
