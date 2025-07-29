@@ -293,7 +293,9 @@ SequenceControlSubmodel
     │       │       ├── Name (1)
     │       │       ├── Guid (1)
     │       │       ├── Id (0..1)
-    │       │       └── IsPush (0..1)
+    │       │       ├── IsPush (0..1)
+    │       │       ├── TopicIndex (0..1)
+    │       │       └── IsTopicOrigin (0..1)
     │       ├── Flows (0..1)
     │       │   └── Flow (1..*)
     │       │       ├── Name (1)
@@ -869,8 +871,10 @@ Implementations MUST validate:
 |VR-005 |All Call elements MUST have Name and Guid properties
 |VR-006 |All Flow elements MUST have Name and Guid properties
 |VR-007 |All ApiDef elements MUST have Name and Guid properties
-|VR-008 |All ApiCall elements MUST have Name, Guid, and ApiDef properties
-|VR-009 |All Arrow elements MUST have Name, Guid, Source, and Target properties
+|VR-008 |All ApiDef elements 의 TopicIndex 와 IsTopicOrigin 은 둘다 null 이거나 둘다 non-null 이어야 함
+|VR-009 |System 하부의 모든 ApiDef elements 에서 TopicIndex 와 IsTopicOrigin 가 non-null 인 요소는 TopicIndex 하나에 대해 IsTopicOrigin 가 true 인 것과 false 인 것 두개가 쌍으로 존재해야 함.  e.g Cylinder system 의 ADV 와 RET 은 동일한 TopicIndex 를 사용하고 IsTopicOrigin 는 각각 true, false 로 설정되어야 함
+|VR-010 |All ApiCall elements MUST have Name, Guid, and ApiDef properties
+|VR-011 |All Arrow elements MUST have Name, Guid, Source, and Target properties
 |===
 
 ===== Multiplicity Validation

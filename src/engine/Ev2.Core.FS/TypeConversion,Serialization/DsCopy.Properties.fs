@@ -88,13 +88,13 @@ module internal DsCopyModule =
         | (:? Work) | (:? NjWork) | (:? ORMWork) ->
             let s =
                 match sbx with
-                | :? Work  as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
+                | :? Work    as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
                 | :? NjWork  as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
                 | :? ORMWork as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? Work  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
+            | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
             | :? NjWork  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
             | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
             | _ -> failwith "ERROR"
@@ -107,13 +107,13 @@ module internal DsCopyModule =
             let tj obj = EmJson.ToJson obj
             let s =
                 match sbx with
-                | :? Call  as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; (*ApiCall=s.ApiCall; Status4*) |}
+                | :? Call    as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; (*ApiCall=s.ApiCall; Status4*) |}
                 | :? NjCall  as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     (*ApiCall=s.ApiCall; Status4*) |}
                 | :? ORMCall as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     (*ApiCall=s.ApiCall; Status4*) |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? Call  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions|>fj; d.CommonConditions<-s.CommonConditions|>fj;
+            | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions|>fj; d.CommonConditions<-s.CommonConditions|>fj;
             | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;
             | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;
             | _ -> failwith "ERROR"
@@ -139,15 +139,15 @@ module internal DsCopyModule =
         | (:? ApiDef) | (:? NjApiDef) | (:? ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
-                | :? ApiDef    as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex |}
-                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex |}
-                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex |}
+                | :? ApiDef    as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex; IsTopicOrigin=s.IsTopicOrigin |}
+                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex; IsTopicOrigin=s.IsTopicOrigin |}
+                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TopicIndex=s.TopicIndex; IsTopicOrigin=s.IsTopicOrigin |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex
-            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex
-            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex
+            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex; d.IsTopicOrigin<-s.IsTopicOrigin
+            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex; d.IsTopicOrigin<-s.IsTopicOrigin
+            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.TopicIndex<-s.TopicIndex; d.IsTopicOrigin<-s.IsTopicOrigin
             | _ -> failwith "ERROR"
 
 

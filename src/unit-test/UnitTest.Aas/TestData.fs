@@ -157,16 +157,14 @@ let dsJson = """
       "Id": 1,
       "Name": "ApiDef1a",
       "Guid": "62663164-6c91-4768-9855-548cf3be74db",
-      "IsPush": true,
-      "TopicIndex": 0
+      "IsPush": true
     },
     {
       "RuntimeType": "ApiDef",
       "Id": 2,
       "Name": "UnusedApi",
       "Guid": "7904be5c-98c6-47e3-b922-de468b6183b8",
-      "IsPush": true,
-      "TopicIndex": 0
+      "IsPush": true
     }
   ],
   "ApiCalls": [
@@ -372,16 +370,14 @@ let dsProject = """
           "Id": 9,
           "Name": "ApiDef1a",
           "Guid": "62663164-6c91-4768-9855-548cf3be74db",
-          "IsPush": true,
-          "TopicIndex": 0
+          "IsPush": true
         },
         {
           "RuntimeType": "ApiDef",
           "Id": 10,
           "Name": "UnusedApi",
           "Guid": "7904be5c-98c6-47e3-b922-de468b6183b8",
-          "IsPush": true,
-          "TopicIndex": 0
+          "IsPush": true
         }
       ],
       "ApiCalls": [
