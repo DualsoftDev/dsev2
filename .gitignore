@@ -523,3 +523,4 @@ src/engine/Ev2.Aas.FS/Json
 **/.claude/
 **/.vscode/
 *.pgpass.*
+submodules/aas-core3.0-csharp/
