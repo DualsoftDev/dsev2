@@ -1,0 +1,2 @@
+co:
+	git clone https://github.com/aas-core-works/aas-core3.0-csharp
