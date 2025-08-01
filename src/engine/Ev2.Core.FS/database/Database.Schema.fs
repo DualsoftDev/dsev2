@@ -243,6 +243,11 @@ CREATE VIEW {k Vn.ApiCall} AS
         let sqlCreateIndex =
             match dbProvider with
             | DbProvider.Sqlite _ | DbProvider.Postgres _ -> $"""
+--
+-- Table 수준에서 지정하기 힘든 constraint 를 index 로 지정
+--
+
+-- ApiDef table 의 topicIndex, isTopicOrigin 조합이 유일함을 보장하는 인덱스
 CREATE UNIQUE INDEX IF NOT EXISTS idx_apidef_topic_uniq
 ON {k Tn.ApiDef}({k "systemId"}, {k "topicIndex"}, {k "isTopicOrigin"})
 WHERE {k "topicIndex"} IS NOT NULL AND {k "isTopicOrigin"} IS NOT NULL;
