@@ -13,6 +13,7 @@
 		<Compile Include="AppSettings.fs" />
 		<Compile Include="ConstEnums.fs" />
 		<Compile Include="Unique.fs" />
+		<Compile Include="TypeFactory.fs" />
 		<Compile Include="Interfaces.fs" />
 		<Compile Include="DsObjectUtils.fs" />
 		<Compile Include="database\Database.Schema.fs" />

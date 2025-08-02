@@ -274,12 +274,14 @@ module rec TmpCompatibility =
 [<AutoOpen>]
 module DsObjectUtilsModule =
     type Project with   // Create
-        static member Create() = Project([], [])
+        static member Create() = 
+            createExtensible (fun () -> Project([], []))
 
     type DsSystem with   // Create
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
         ) =
+            // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
             DsSystem(flows, works, arrows, apiDefs, apiCalls)
             |> tee (fun z ->
                 flows    |> iter (setParentI z)
@@ -288,10 +290,12 @@ module DsObjectUtilsModule =
                 apiDefs  |> iter (setParentI z)
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = DsSystem([||], [||], [||], [||], [||])
+        static member Create() = 
+            createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
 
     type Work with   // Create
         static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
+            // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
             let calls = calls |> toList
             let arrows = arrows |> toList
 
@@ -301,30 +305,36 @@ module DsObjectUtilsModule =
                 arrows |> iter (setParentI z)
                 flow   |> iter (setParentI z) )
 
-        static member Create() = Work([], [], None)
+        static member Create() = 
+            createExtensible (fun () -> Work([], [], None))
 
     type Call with   // Create
         static member Create(callType:DbCallType, apiCalls:ApiCall seq,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
+            // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
             let apiCallGuids = apiCalls |-> _.Guid
 
             Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
             |> tee (fun z ->
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = Call(DbCallType.Normal, [], [], [], false, None)
+        static member Create() = 
+            createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
 
     type Flow with   // Create
-        static member Create() = Flow([], [], [], [])
+        static member Create() = 
+            createExtensible (fun () -> Flow([], [], [], []))
 
     type ApiDef with   // Create
-        static member Create() = ApiDef(true)
+        static member Create() = 
+            createExtensible (fun () -> ApiDef(true))
 
     type ApiCall with   // Create
         static member Create() =
-            ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-                      Option<IValueSpec>.None)
+            createExtensible (fun () ->
+                ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
+                          Option<IValueSpec>.None))
 
     type IArrow with
         member x.GetSource(): Unique =

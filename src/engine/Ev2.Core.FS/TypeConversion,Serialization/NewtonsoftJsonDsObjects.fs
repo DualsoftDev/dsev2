@@ -630,18 +630,30 @@ module Ds2JsonModule =
             EmJson.FromJson<NjProject>(json, settings)
 
         static member internal fromRuntime(rt:Project) =
-            NjProject(Database=rt.Database
-                , Author=rt.Author
-                , Version=rt.Version
-                , Description=rt.Description)
-            |> fromNjUniqINGD rt
-            |> tee(fun nj -> verify (nj.RuntimeObject = rt)) // serialization 연결 고리
+            // 확장 타입 지원을 위한 factory 사용
+            let njProject = createJsonFromRuntime<Project, NjProject> rt (fun runtime ->
+                NjProject(Database=runtime.Database
+                    , Author=runtime.Author
+                    , Version=runtime.Version
+                    , Description=runtime.Description)
+                |> fromNjUniqINGD runtime
+            )
+            match njProject with
+            | :? NjProject as nj -> 
+                nj |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
+            | _ -> 
+                // fallback에서 반환된 경우
+                njProject :?> NjProject |> tee(fun nj -> verify (nj.RuntimeObject = rt))
 
 
     type Project with // // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
-        member x.ToJson():string = NjProject.fromRuntime(x).ToJson()
-        member x.ToJson(jsonFilePath:string) = NjProject.fromRuntime(x).ToJsonFile(jsonFilePath)
+        member x.ToJson():string = 
+            let njProject = NjProject.fromRuntime(x)
+            njProject.ToJson()
+        member x.ToJson(jsonFilePath:string) = 
+            let njProject = NjProject.fromRuntime(x)
+            njProject.ToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): Project =
@@ -667,18 +679,30 @@ module Ds2JsonModule =
         static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
 
         static member internal fromRuntime(rt:DsSystem) =
-            NjSystem(IRI=rt.IRI
-                , Author=rt.Author
-                , LangVersion=rt.LangVersion
-                , EngineVersion=rt.EngineVersion
-                , Description=rt.Description)
-            |> fromNjUniqINGD rt
-            |> tee(fun nj -> verify (nj.RuntimeObject = rt)) // serialization 연결 고리
+            // 확장 타입 지원을 위한 factory 사용
+            let njSystem = createJsonFromRuntime<DsSystem, NjSystem> rt (fun runtime ->
+                NjSystem(IRI=runtime.IRI
+                    , Author=runtime.Author
+                    , LangVersion=runtime.LangVersion
+                    , EngineVersion=runtime.EngineVersion
+                    , Description=runtime.Description)
+                |> fromNjUniqINGD runtime
+            )
+            match njSystem with
+            | :? NjSystem as nj -> 
+                nj |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
+            | _ -> 
+                // fallback에서 반환된 경우
+                njSystem :?> NjSystem |> tee(fun nj -> verify (nj.RuntimeObject = rt))
 
     type DsSystem with // // ToJson, FromJson
         /// DsSystem 를 JSON 문자열로 변환
-        member x.ExportToJson():string = NjSystem.fromRuntime(x).ExportToJson()
-        member x.ExportToJson(jsonFilePath:string) = NjSystem.fromRuntime(x).ExportToJsonFile(jsonFilePath)
+        member x.ExportToJson():string = 
+            let njSystem = NjSystem.fromRuntime(x)
+            njSystem.ExportToJson()
+        member x.ExportToJson(jsonFilePath:string) = 
+            let njSystem = NjSystem.fromRuntime(x)
+            njSystem.ExportToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsSystem 로 변환
         static member ImportFromJson(json:string): DsSystem =

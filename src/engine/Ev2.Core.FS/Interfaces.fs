@@ -133,7 +133,7 @@ module rec DsObjectModule =
         // } Runtime/DB 용
 
 
-    type DsSystem internal(flows:Flow seq, works:Work seq,
+    type DsSystem(flows:Flow seq, works:Work seq,
             arrows:ArrowBetweenWorks seq, apiDefs:ApiDef seq, apiCalls:ApiCall seq
     ) =
         inherit ProjectEntity()
@@ -220,7 +220,7 @@ module rec DsObjectModule =
 
 
     // see static member Create
-    type Work internal(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) as this =
+    type Work(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) as this =
         inherit DsSystemEntity()
         do
             calls  |> iter (setParentI this)
