@@ -7,7 +7,7 @@ type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> obj
     /// 런타임 객체로부터 JSON 직렬화 객체 생성
-    abstract CreateJson : runtimeType:Type * runtimeObj:obj -> obj  
+    abstract CreateJson : runtimeType:Type * runtimeObj:obj -> obj
     /// 지정된 런타임 타입에 해당하는 ORM 객체 생성
     abstract CreateOrm : runtimeType:Type -> obj
     /// 런타임 타입에 매핑되는 JSON 타입 해결
@@ -23,20 +23,20 @@ module TypeFactoryModule =
 /// Third Party 확장 지원을 위한 Generic Helper 함수들
 [<AutoOpen>]
 module TypeFactoryHelper =
-    
+
     /// 확장 타입 생성을 지원하는 helper 함수 (fallback 포함)
     let createWithFallback<'T> (fallbackFactory: unit -> 'T) : 'T =
         match TypeFactory with
-        | Some factory -> 
+        | Some factory ->
             let obj = factory.CreateRuntime(typeof<'T>)
-            if obj <> null then obj :?> 'T 
+            if obj <> null then obj :?> 'T
             else fallbackFactory()
         | None -> fallbackFactory()
 
     /// inline 최적화 버전 - 성능 최적화
     let inline createExtensible<'T> (defaultFactory: unit -> 'T) =
         match TypeFactory with
-        | Some factory -> 
+        | Some factory ->
             let obj = factory.CreateRuntime(typeof<'T>)
             if obj <> null then obj :?> 'T else defaultFactory()
         | None -> defaultFactory()

@@ -271,10 +271,82 @@ module rec TmpCompatibility =
 
 
 
+
+// C# 친화적인 정적 팩토리 클래스 - C#에서 직접 접근 가능
+type DsObjectFactory() =
+
+    /// C#에서 AppSettings 초기화를 위한 헬퍼 메서드
+    static member InitializeAppSettings() =
+        try
+            // AppSettings 인스턴스가 존재하지 않으면 새로 생성
+            AppSettings() |> ignore
+            "AppSettings initialized successfully"
+        with
+        | ex -> $"AppSettings initialization failed: {ex.Message}"
+
+    static member CreateProject() =
+        createExtensible (fun () -> Project([], []))
+
+    static member CreateDsSystem(flows:Flow[], works:Work[],
+        arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
+    ) =
+        // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
+        DsSystem(flows, works, arrows, apiDefs, apiCalls)
+        |> tee (fun z ->
+            flows    |> iter (setParentI z)
+            works    |> iter (setParentI z)
+            arrows   |> iter (setParentI z)
+            apiDefs  |> iter (setParentI z)
+            apiCalls |> iter (setParentI z) )
+
+    static member CreateDsSystem() =
+        createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
+
+    static member CreateWork(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
+        // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
+        let calls = calls |> toList
+        let arrows = arrows |> toList
+
+        Work(calls, arrows, flow)
+        |> tee (fun z ->
+            calls  |> iter (setParentI z)
+            arrows |> iter (setParentI z)
+            flow   |> iter (setParentI z) )
+
+    static member CreateWork() =
+        createExtensible (fun () -> Work([], [], None))
+
+    static member CreateCall(callType:DbCallType, apiCalls:ApiCall seq,
+        autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
+    ) =
+        // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
+        let apiCallGuids = apiCalls |-> _.Guid
+
+        Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
+        |> tee (fun z ->
+            apiCalls |> iter (setParentI z) )
+
+    static member CreateCall() =
+        createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
+
+    static member CreateFlow() =
+        createExtensible (fun () -> Flow([], [], [], []))
+
+    static member CreateApiDef() =
+        createExtensible (fun () -> ApiDef(true))
+
+    static member CreateApiCall() =
+        createExtensible (fun () ->
+            ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
+                      Option<IValueSpec>.None))
+
+// 남은 extension들을 module로 유지 (helper functions)
 [<AutoOpen>]
 module DsObjectUtilsModule =
+
+    // 기존 코드 호환성을 위해 AutoOpen 모듈에도 Create 확장 추가
     type Project with   // Create
-        static member Create() = 
+        static member Create() =
             createExtensible (fun () -> Project([], []))
 
     type DsSystem with   // Create
@@ -290,7 +362,7 @@ module DsObjectUtilsModule =
                 apiDefs  |> iter (setParentI z)
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = 
+        static member Create() =
             createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
 
     type Work with   // Create
@@ -305,7 +377,7 @@ module DsObjectUtilsModule =
                 arrows |> iter (setParentI z)
                 flow   |> iter (setParentI z) )
 
-        static member Create() = 
+        static member Create() =
             createExtensible (fun () -> Work([], [], None))
 
     type Call with   // Create
@@ -319,15 +391,15 @@ module DsObjectUtilsModule =
             |> tee (fun z ->
                 apiCalls |> iter (setParentI z) )
 
-        static member Create() = 
+        static member Create() =
             createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
 
     type Flow with   // Create
-        static member Create() = 
+        static member Create() =
             createExtensible (fun () -> Flow([], [], [], []))
 
     type ApiDef with   // Create
-        static member Create() = 
+        static member Create() =
             createExtensible (fun () -> ApiDef(true))
 
     type ApiCall with   // Create
