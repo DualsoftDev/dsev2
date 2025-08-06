@@ -178,7 +178,9 @@ module internal Db2DsImpl =
             rtArrows |> s.addArrows
             assert(setEqual s.Arrows rtArrows)
 
-            rtSystem
+            // 확장 복원 훅
+            let finalSystem = ExtensionDbHandler |> Option.map (fun h -> h.HandleAfterSelect(rtSystem, conn, tr)) |> Option.defaultValue (box rtSystem)
+            finalSystem :?> DsSystem
 
         try
             Ok (dbApi.With helper)
@@ -232,7 +234,9 @@ module internal Db2DsImpl =
 
             ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
 
-            rtProj
+            // 확장 복원 훅
+            let finalProject = ExtensionDbHandler |> Option.map (fun h -> h.HandleAfterSelect(rtProj, conn, tr)) |> Option.defaultValue (box rtProj)
+            finalProject :?> Project
 
         try
             Ok (dbApi.With helper)

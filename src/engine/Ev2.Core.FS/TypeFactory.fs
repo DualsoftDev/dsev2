@@ -1,6 +1,7 @@
 namespace Ev2.Core.FS
 
 open System
+open System.Data
 
 /// Third Party 확장을 위한 C# 호환 타입 팩토리 인터페이스
 type ITypeFactory =
@@ -15,10 +16,23 @@ type ITypeFactory =
     /// 런타임 타입에 매핑되는 ORM 타입 해결
     abstract GetOrmType : runtimeType:Type -> Type
 
+/// Third Party 확장을 위한 Database CRUD 훅 인터페이스
+type IExtensionDbHandler =
+    /// Insert 완료 후 확장 처리
+    abstract HandleAfterInsert : obj * IDbConnection * IDbTransaction -> unit
+    /// Update 완료 후 확장 처리
+    abstract HandleAfterUpdate : obj * IDbConnection * IDbTransaction -> unit
+    /// Delete 완료 후 확장 처리
+    abstract HandleAfterDelete : obj * IDbConnection * IDbTransaction -> unit
+    /// Select 완료 후 확장 복원
+    abstract HandleAfterSelect : baseObj:obj * IDbConnection * IDbTransaction -> obj
+
 [<AutoOpen>]
 module TypeFactoryModule =
     /// Global factory instance (외부에서 구현체 주입)
     let mutable TypeFactory : ITypeFactory option = None
+    /// Global extension db handler instance (외부에서 구현체 주입)
+    let mutable ExtensionDbHandler : IExtensionDbHandler option = None
 
 /// Third Party 확장 지원을 위한 Generic Helper 함수들
 [<AutoOpen>]
