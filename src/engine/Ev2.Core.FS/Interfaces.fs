@@ -107,6 +107,8 @@ module rec DsObjectModule =
             activeSystems  |> iter (setParentI this)
             passiveSystems |> iter (setParentI this)
 
+        new() = Project(Seq.empty, Seq.empty)
+
         interface IRtProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
         interface IParameterContainer
@@ -138,7 +140,7 @@ module rec DsObjectModule =
     ) =
         inherit ProjectEntity()
 
-        //internal new() = RtSystem(Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq.empty)
+        new() = DsSystem(Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq.empty)
 
         (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
         interface IParameterContainer
@@ -176,6 +178,8 @@ module rec DsObjectModule =
             lamps      |> iter (fun z -> z.RawParent <- Some this)
             conditions |> iter (fun z -> z.RawParent <- Some this)
             actions    |> iter (fun z -> z.RawParent <- Some this)
+
+        new() = Flow(Seq.empty, Seq.empty, Seq.empty, Seq.empty)
 
         interface IRtFlow
         member val internal RawButtons    = ResizeArray buttons
@@ -226,6 +230,8 @@ module rec DsObjectModule =
             calls  |> iter (setParentI this)
             arrows |> iter (setParentI this)
 
+        new() = Work(Seq.empty, Seq.empty, None)
+
         interface IRtWork
         member val internal RawCalls  = ResizeArray calls
         member val internal RawArrows = ResizeArray arrows
@@ -247,6 +253,9 @@ module rec DsObjectModule =
     // see static member Create
     type Call(callType:DbCallType, apiCallGuids:Guid seq, autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option) =
         inherit WorkEntity()
+        
+        new() = Call(DbCallType.Normal, Seq.empty, Seq.empty, Seq.empty, false, None)
+        
         interface IRtCall
         member val CallType   = callType   with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
         member val IsDisabled = isDisabled with get, set
@@ -268,6 +277,9 @@ module rec DsObjectModule =
                    valueSpec:IValueSpec option
     ) =
         inherit DsSystemEntity()
+        
+        new() = ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
+        
         interface IRtApiCall
         member val ApiDefGuid = apiDefGuid  with get, set
         member val InAddress  = inAddress   with get, set
@@ -297,6 +309,9 @@ module rec DsObjectModule =
 
     type ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =
         inherit DsSystemEntity()
+        
+        new() = ApiDef(true)
+        
         interface IRtApiDef
 
         member val IsPush = isPush with get, set

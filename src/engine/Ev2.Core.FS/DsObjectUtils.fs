@@ -273,7 +273,7 @@ module rec TmpCompatibility =
 
 
 // C# 친화적인 정적 팩토리 클래스 - C#에서 직접 접근 가능
-type DsObjectFactory() =
+type DsObjectFactory =
 
     /// C#에서 AppSettings 초기화를 위한 헬퍼 메서드
     static member InitializeAppSettings() =
@@ -285,72 +285,82 @@ type DsObjectFactory() =
         | ex -> $"AppSettings initialization failed: {ex.Message}"
 
     static member CreateProject() =
-        createExtensible (fun () -> Project([], []))
+        createExtended<Project>()
+
+    /// 새로운 패턴: createExtended 사용
+    static member CreateDsSystemExtended() =
+        createExtended<DsSystem>()
 
     static member CreateDsSystem(flows:Flow[], works:Work[],
         arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
     ) =
-        // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
-        DsSystem(flows, works, arrows, apiDefs, apiCalls)
-        |> tee (fun z ->
-            flows    |> iter (setParentI z)
-            works    |> iter (setParentI z)
-            arrows   |> iter (setParentI z)
-            apiDefs  |> iter (setParentI z)
-            apiCalls |> iter (setParentI z) )
+        createExtensible (fun () ->
+            DsSystem(flows, works, arrows, apiDefs, apiCalls)
+            |> tee (fun z ->
+                flows    |> iter (setParentI z)
+                works    |> iter (setParentI z)
+                arrows   |> iter (setParentI z)
+                apiDefs  |> iter (setParentI z)
+                apiCalls |> iter (setParentI z) ) )
 
     static member CreateDsSystem() =
-        createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
+        createExtended<DsSystem>()
+
+    /// 새로운 패턴: createExtended 사용
+    static member CreateWorkExtended() =
+        createExtended<Work>()
 
     static member CreateWork(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
-        // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
         let calls = calls |> toList
         let arrows = arrows |> toList
 
-        Work(calls, arrows, flow)
-        |> tee (fun z ->
-            calls  |> iter (setParentI z)
-            arrows |> iter (setParentI z)
-            flow   |> iter (setParentI z) )
+        createExtensible (fun () ->
+            Work(calls, arrows, flow)
+            |> tee (fun z ->
+                calls  |> iter (setParentI z)
+                arrows |> iter (setParentI z)
+                flow   |> iter (setParentI z) ) )
 
     static member CreateWork() =
-        createExtensible (fun () -> Work([], [], None))
+        createExtended<Work>()
+
+    /// 새로운 패턴: createExtended 사용
+    static member CreateCallExtended() =
+        createExtended<Call>()
 
     static member CreateCall(callType:DbCallType, apiCalls:ApiCall seq,
         autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
     ) =
-        // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
         let apiCallGuids = apiCalls |-> _.Guid
 
-        Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
-        |> tee (fun z ->
-            apiCalls |> iter (setParentI z) )
+        createExtensible (fun () ->
+            Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
+            |> tee (fun z ->
+                apiCalls |> iter (setParentI z) ) )
 
     static member CreateCall() =
-        createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
+        createExtended<Call>()
 
     static member CreateFlow() =
-        createExtensible (fun () -> Flow([], [], [], []))
+        createExtended<Flow>()
 
     static member CreateApiDef() =
-        createExtensible (fun () -> ApiDef(true))
+        createExtended<ApiDef>()
 
     static member CreateApiCall() =
-        createExtensible (fun () ->
-            ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-                      Option<IValueSpec>.None))
+        createExtended<ApiCall>()
 
-// C#에서 직접 호출 가능한 static factory methods
-module DsObjectCreate =
-    let createProject() = createExtensible (fun () -> Project([], []))
-    let createDsSystem() = createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
-    let createWork() = createExtensible (fun () -> Work([], [], None))
-    let createCall() = createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
-    let createFlow() = createExtensible (fun () -> Flow([], [], [], []))
-    let createApiDef() = createExtensible (fun () -> ApiDef(true))
-    let createApiCall() = createExtensible (fun () ->
-        ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-                  Option<IValueSpec>.None))
+//// C#에서 직접 호출 가능한 static factory methods
+//module DsObjectCreate =
+//    let createProject() = createExtensible (fun () -> Project([], []))
+//    let createDsSystem() = createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
+//    let createWork() = createExtensible (fun () -> Work([], [], None))
+//    let createCall() = createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
+//    let createFlow() = createExtensible (fun () -> Flow([], [], [], []))
+//    let createApiDef() = createExtensible (fun () -> ApiDef(true))
+//    let createApiCall() = createExtensible (fun () ->
+//        ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
+//                  Option<IValueSpec>.None))
 
 // 남은 extension들을 module로 유지 (helper functions)
 [<AutoOpen>]
@@ -359,9 +369,9 @@ module DsObjectUtilsModule =
     // 기존 코드 호환성을 위해 AutoOpen 모듈에도 Create 확장 추가
     type Project with   // Create
         static member Create() =
-            createExtensible (fun () -> Project([], []))
+            createExtended<Project>()
 
-    type DsSystem with   // Create
+    type DsSystem with   // Create, Initialize
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
         ) =
@@ -375,9 +385,34 @@ module DsObjectUtilsModule =
                 apiCalls |> iter (setParentI z) )
 
         static member Create() =
-            createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
+            createExtended<DsSystem>()
 
-    type Work with   // Create
+        /// 새로운 디자인 패턴: Initialize 메서드
+        member x.Initialize(flows:Flow[], works:Work[], arrows:ArrowBetweenWorks[],
+                           apiDefs:ApiDef[], apiCalls:ApiCall[]) =
+            // 기존 컬렉션 초기화
+            x.RawFlows.Clear()
+            x.RawWorks.Clear()
+            x.RawArrows.Clear()
+            x.RawApiDefs.Clear()
+            x.RawApiCalls.Clear()
+
+            // 새로운 데이터로 초기화
+            flows    |> iter (setParentI x)
+            works    |> iter (setParentI x)
+            arrows   |> iter (setParentI x)
+            apiDefs  |> iter (setParentI x)
+            apiCalls |> iter (setParentI x)
+
+            x.RawFlows.AddRange(flows)
+            x.RawWorks.AddRange(works)
+            x.RawArrows.AddRange(arrows)
+            x.RawApiDefs.AddRange(apiDefs)
+            x.RawApiCalls.AddRange(apiCalls)
+
+            x
+
+    type Work with   // Create, Initialize
         static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
             // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
             let calls = calls |> toList
@@ -390,9 +425,30 @@ module DsObjectUtilsModule =
                 flow   |> iter (setParentI z) )
 
         static member Create() =
-            createExtensible (fun () -> Work([], [], None))
+            createExtended<Work>()
 
-    type Call with   // Create
+        /// 새로운 디자인 패턴: Initialize 메서드
+        member x.Initialize(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
+            let calls = calls |> toList
+            let arrows = arrows |> toList
+
+            // 기존 컬렉션 초기화
+            x.RawCalls.Clear()
+            x.RawArrows.Clear()
+            x.Flow <- None
+
+            // 새로운 데이터로 초기화
+            calls  |> iter (setParentI x)
+            arrows |> iter (setParentI x)
+            flow   |> iter (setParentI x)
+
+            x.RawCalls.AddRange(calls)
+            x.RawArrows.AddRange(arrows)
+            x.Flow <- flow
+
+            x
+
+    type Call with   // Create, Initialize
         static member Create(callType:DbCallType, apiCalls:ApiCall seq,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
@@ -404,21 +460,38 @@ module DsObjectUtilsModule =
                 apiCalls |> iter (setParentI z) )
 
         static member Create() =
-            createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
+            createExtended<Call>()
+
+        /// 새로운 디자인 패턴: Initialize 메서드
+        member x.Initialize(callType:DbCallType, apiCalls:ApiCall seq,
+                           autoConditions:string seq, commonConditions:string seq,
+                           isDisabled:bool, timeout:int option) =
+            let apiCallGuids = apiCalls |-> _.Guid
+
+            // 기존 데이터 초기화
+            x.ApiCallGuids.Clear()
+
+            // 새로운 데이터로 초기화
+            x.CallType <- callType
+            x.IsDisabled <- isDisabled
+            x.Timeout <- timeout
+
+            x.ApiCallGuids.AddRange(apiCallGuids)
+            apiCalls |> iter (setParentI x)
+
+            x
 
     type Flow with   // Create
         static member Create() =
-            createExtensible (fun () -> Flow([], [], [], []))
+            createExtended<Flow>()
 
     type ApiDef with   // Create
         static member Create() =
-            createExtensible (fun () -> ApiDef(true))
+            createExtended<ApiDef>()
 
     type ApiCall with   // Create
         static member Create() =
-            createExtensible (fun () ->
-                ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-                          Option<IValueSpec>.None))
+            createExtended<ApiCall>()
 
     type IArrow with
         member x.GetSource(): Unique =
