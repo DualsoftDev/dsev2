@@ -340,6 +340,18 @@ type DsObjectFactory() =
             ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
                       Option<IValueSpec>.None))
 
+// C#에서 직접 호출 가능한 static factory methods
+module DsObjectCreate =
+    let createProject() = createExtensible (fun () -> Project([], []))
+    let createDsSystem() = createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
+    let createWork() = createExtensible (fun () -> Work([], [], None))
+    let createCall() = createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
+    let createFlow() = createExtensible (fun () -> Flow([], [], [], []))
+    let createApiDef() = createExtensible (fun () -> ApiDef(true))
+    let createApiCall() = createExtensible (fun () ->
+        ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
+                  Option<IValueSpec>.None))
+
 // 남은 extension들을 module로 유지 (helper functions)
 [<AutoOpen>]
 module DsObjectUtilsModule =
