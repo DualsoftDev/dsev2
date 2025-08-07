@@ -284,9 +284,6 @@ type DsObjectFactory =
         with
         | ex -> $"AppSettings initialization failed: {ex.Message}"
 
-    [<System.Obsolete("Use TypeFactory.CreateProject() or Project.Create() instead")>]
-    static member CreateProject() =
-        createExtended<Project>()
 
     /// 새로운 패턴: createExtended 사용
     static member CreateDsSystemExtended() =
@@ -304,9 +301,6 @@ type DsObjectFactory =
                 apiDefs  |> iter (setParentI z)
                 apiCalls |> iter (setParentI z) ) )
 
-    [<System.Obsolete("Use TypeFactory.CreateDsSystem() or DsSystem.Create() instead")>]
-    static member CreateDsSystem() =
-        createExtended<DsSystem>()
 
     /// 새로운 패턴: createExtended 사용
     static member CreateWorkExtended() =
@@ -323,9 +317,6 @@ type DsObjectFactory =
                 arrows |> iter (setParentI z)
                 flow   |> iter (setParentI z) ) )
 
-    [<System.Obsolete("Use TypeFactory.CreateWork() or Work.Create() instead")>]
-    static member CreateWork() =
-        createExtended<Work>()
 
     /// 새로운 패턴: createExtended 사용
     static member CreateCallExtended() =
@@ -341,21 +332,9 @@ type DsObjectFactory =
             |> tee (fun z ->
                 apiCalls |> iter (setParentI z) ) )
 
-    [<System.Obsolete("Use TypeFactory.CreateCall() or Call.Create() instead")>]
-    static member CreateCall() =
-        createExtended<Call>()
 
-    [<System.Obsolete("Use TypeFactory.CreateFlow() or Flow.Create() instead")>]
-    static member CreateFlow() =
-        createExtended<Flow>()
 
-    [<System.Obsolete("Use TypeFactory.CreateApiDef() or ApiDef.Create() instead")>]
-    static member CreateApiDef() =
-        createExtended<ApiDef>()
 
-    [<System.Obsolete("Use TypeFactory.CreateApiCall() or ApiCall.Create() instead")>]
-    static member CreateApiCall() =
-        createExtended<ApiCall>()
 
 //// C#에서 직접 호출 가능한 static factory methods
 //module DsObjectCreate =
