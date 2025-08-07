@@ -29,13 +29,13 @@ module internal rec DsObjectCopyImpl =
             let newProject =
                 if targetType = typeof<Project> then
                     // 기본 타입인 경우
-                    new Project([], []) :> Project
+                    Project.Create([], []) :> Project
                 else
                     // 확장 타입인 경우 - 복제 전용 생성자 사용
                     try
                         System.Activator.CreateInstance(targetType, true) :?> Project
                     with
-                    | _ -> new Project([], []) :> Project
+                    | _ -> Project.Create([], []) :> Project
 
             newProject
             |> uniqReplicateWithBag bag x
@@ -65,7 +65,7 @@ module internal rec DsObjectCopyImpl =
             let newSystem =
                 if targetType = typeof<DsSystem> then
                     // 기본 타입인 경우
-                    new DsSystem(flows, works, arrows, apiDefs, apiCalls) :> DsSystem
+                    DsSystem.Create(flows, works, arrows, apiDefs, apiCalls) :> DsSystem
                 else
                     // 확장 타입인 경우 - 복제 전용 생성자 사용
                     try
@@ -79,7 +79,7 @@ module internal rec DsObjectCopyImpl =
 
                         instance
                     with
-                    | _ -> new DsSystem(flows, works, arrows, apiDefs, apiCalls) :> DsSystem
+                    | _ -> DsSystem.Create(flows, works, arrows, apiDefs, apiCalls) :> DsSystem
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
             let replicatedSystem = newSystem |> uniqReplicateWithBag bag x
@@ -116,7 +116,7 @@ module internal rec DsObjectCopyImpl =
             let newWork =
                 if targetType = typeof<Work> then
                     // 기본 타입인 경우
-                    new Work(calls, arrows, flow) :> Work
+                    Work.Create(calls, arrows, flow) :> Work
                 else
                     // 확장 타입인 경우 - 복제 전용 생성자 사용
                     try
@@ -128,7 +128,7 @@ module internal rec DsObjectCopyImpl =
 
                         instance
                     with
-                    | _ -> new Work(calls, arrows, flow) :> Work
+                    | _ -> Work.Create(calls, arrows, flow) :> Work
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
             let replicatedWork = newWork |> uniqReplicateWithBag bag x
@@ -153,7 +153,7 @@ module internal rec DsObjectCopyImpl =
             let newFlow =
                 if targetType = typeof<Flow> then
                     // 기본 타입인 경우
-                    new Flow(buttons, lamps, conditions, actions) :> Flow
+                    Flow.Create(buttons, lamps, conditions, actions) :> Flow
                 else
                     // 확장 타입인 경우 - 복제 전용 생성자 사용
                     try
@@ -166,7 +166,7 @@ module internal rec DsObjectCopyImpl =
 
                         instance
                     with
-                    | _ -> new Flow(buttons, lamps, conditions, actions) :> Flow
+                    | _ -> Flow.Create(buttons, lamps, conditions, actions) :> Flow
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
             let replicatedFlow = newFlow |> uniqReplicateWithBag bag x
@@ -206,7 +206,7 @@ module internal rec DsObjectCopyImpl =
             let newCall =
                 if targetType = typeof<Call> then
                     // 기본 타입인 경우
-                    new Call(x.CallType, apiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout) :> Call
+                    Call.Create(x.CallType, apiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout) :> Call
                 else
                     // 확장 타입인 경우 - 복제 전용 생성자 사용
                     try
@@ -223,7 +223,7 @@ module internal rec DsObjectCopyImpl =
                         instance.ApiCallGuids.AddRange(apiCallGuids)
                         instance
                     with
-                    | _ -> new Call(x.CallType, apiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout) :> Call
+                    | _ -> Call.Create(x.CallType, apiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout) :> Call
 
             newCall
             |> uniqReplicateWithBag bag x

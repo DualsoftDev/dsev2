@@ -499,7 +499,7 @@ module rec NewtonsoftJsonObjects =
                 let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
                 let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
 
-                Project(actives, passives)
+                Project.Create(actives, passives)
                 |> replicateProperties njp
                 |> tee (fun rtp ->
                     actives @ passives
@@ -576,7 +576,7 @@ module rec NewtonsoftJsonObjects =
             let conditions = njf.Conditions |-> getRuntimeObject<DsCondition>
             let actions    = njf.Actions    |-> getRuntimeObject<DsAction>
 
-            let rtFlow = Flow(buttons, lamps, conditions, actions) |> replicateProperties njf
+            let rtFlow = Flow.Create(buttons, lamps, conditions, actions) |> replicateProperties njf
             let all:NjUnique seq =
                 njf.Buttons     .Cast<NjUnique>()
                 @ njf.Lamps     .Cast<NjUnique>()
@@ -621,7 +621,7 @@ module rec NewtonsoftJsonObjects =
             njc.RuntimeObject <-
                 let acs = njc.AutoConditions |> jsonDeserializeStrings
                 let ccs = njc.CommonConditions |> jsonDeserializeStrings
-                Call(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
+                Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
             ()
 

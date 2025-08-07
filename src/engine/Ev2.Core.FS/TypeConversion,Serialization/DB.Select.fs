@@ -61,8 +61,9 @@ module internal Db2DsImpl =
                     let conditions = ormConditions |-> (fun z -> DsCondition () |> replicateProperties z) |> toArray
                     let actions    = ormActions    |-> (fun z -> DsAction    () |> replicateProperties z) |> toArray
 
-                    Flow(buttons, lamps, conditions, actions, RawParent = Some s)
-                    |> replicateProperties ormFlow
+                    let flow = Flow.Create(buttons, lamps, conditions, actions)
+                    setParentI s flow
+                    flow |> replicateProperties ormFlow
             ]
 
             rtFlows |> s.addFlows
@@ -71,7 +72,11 @@ module internal Db2DsImpl =
                 let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
 
                 for orm in orms do
-                    ApiDef(orm.IsPush, ?topicIndex=orm.TopicIndex, ?isTopicOrigin=orm.IsTopicOrigin)
+                    let apiDef = ApiDef.Create()
+                    apiDef.IsPush <- orm.IsPush
+                    apiDef.TopicIndex <- orm.TopicIndex
+                    apiDef.IsTopicOrigin <- orm.IsTopicOrigin
+                    apiDef
                     |> replicateProperties orm
             ]
             rtApiDefs |> s.addApiDefs
@@ -87,8 +92,14 @@ module internal Db2DsImpl =
                     let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
 
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
-                    ApiCall(apiDefGuid, orm.InAddress, orm.OutAddress,
-                                orm.InSymbol, orm.OutSymbol, valueParam)
+                    let apiCall = ApiCall.Create()
+                    apiCall.ApiDefGuid <- apiDefGuid
+                    apiCall.InAddress <- orm.InAddress
+                    apiCall.OutAddress <- orm.OutAddress
+                    apiCall.InSymbol <- orm.InSymbol
+                    apiCall.OutSymbol <- orm.OutSymbol
+                    apiCall.ValueSpec <- valueParam
+                    apiCall
                     |> replicateProperties orm
             ]
             rtApiCalls |> s.addApiCalls
@@ -132,7 +143,7 @@ module internal Db2DsImpl =
 
                         let acs = orm.AutoConditions |> jsonDeserializeStrings
                         let ccs = orm.CommonConditions |> jsonDeserializeStrings
-                        Call(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
+                        Call.Create(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
                         |> replicateProperties orm
                         |> setParent w
                         |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
@@ -151,7 +162,7 @@ module internal Db2DsImpl =
                         let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                        ArrowBetweenCalls(src, tgt, arrowType)
+                        new ArrowBetweenCalls(src, tgt, arrowType)
                         |> replicateProperties orm
                 ]
                 rtArrows |> w.addArrows
@@ -172,7 +183,7 @@ module internal Db2DsImpl =
                     let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
                     let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                    ArrowBetweenWorks(src, tgt, arrowType)
+                    new ArrowBetweenWorks(src, tgt, arrowType)
                     |> replicateProperties orm
             ]
             rtArrows |> s.addArrows
