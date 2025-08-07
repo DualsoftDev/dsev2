@@ -134,6 +134,13 @@ module rec NewtonsoftJsonObjects =
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized x
 
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : activeSystems:NjSystem[] * passiveSystems:NjSystem[] -> NjProject
+        default x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
+            x.ActiveSystems <- activeSystems
+            x.PassiveSystems <- passiveSystems
+            x
+
 
     type NjSystem() =
         inherit NjProjectEntity()
@@ -174,15 +181,30 @@ module rec NewtonsoftJsonObjects =
             fwdOnNsJsonDeserialized x
 
         static member internal fromRuntime(rt:DsSystem) =
-            NjSystem()
+            // 기본 NjSystem 생성 - TypeFactory 사용 제거 (JSON 타입은 확장 불필요)
+            let njSystem = NjSystem()
+
+            njSystem
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                z.Flows    <- rt.Flows    |-> NjFlow   .fromRuntime |> toArray
-                z.Arrows   <- rt.Arrows   |-> NjArrow  .fromRuntime |> toArray
-                z.Works    <- rt.Works    |-> NjWork   .fromRuntime |> toArray
-                z.ApiDefs  <- rt.ApiDefs  |-> NjApiDef .fromRuntime |> toArray
-                z.ApiCalls <- rt.ApiCalls |-> NjApiCall.fromRuntime |> toArray
+                let flows = rt.Flows |-> NjFlow.fromRuntime |> toArray
+                let works = rt.Works |-> NjWork.fromRuntime |> toArray
+                let arrows = rt.Arrows |-> NjArrow.fromRuntime |> toArray
+                let apiDefs = rt.ApiDefs |-> NjApiDef.fromRuntime |> toArray
+                let apiCalls = rt.ApiCalls |-> NjApiCall.fromRuntime |> toArray
+                z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
             )
+
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : flows:NjFlow[] * works:NjWork[] * arrows:NjArrow[] * apiDefs:NjApiDef[] * apiCalls:NjApiCall[] -> NjSystem
+        default x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[],
+                           apiDefs:NjApiDef[], apiCalls:NjApiCall[]) =
+            x.Flows <- flows
+            x.Works <- works
+            x.Arrows <- arrows
+            x.ApiDefs <- apiDefs
+            x.ApiCalls <- apiCalls
+            x
 
     type NjFlow () =
         inherit NjSystemEntity()
@@ -208,6 +230,16 @@ module rec NewtonsoftJsonObjects =
                 z.Conditions <- rt.Conditions |-> NjCondition.fromRuntime |> toArray
                 z.Actions    <- rt.Actions    |-> NjAction   .fromRuntime |> toArray
             )
+
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : buttons:NjButton[] * lamps:NjLamp[] * conditions:NjCondition[] * actions:NjAction[] -> NjFlow
+        default x.Initialize(buttons:NjButton[], lamps:NjLamp[],
+                           conditions:NjCondition[], actions:NjAction[]) =
+            x.Buttons <- buttons
+            x.Lamps <- lamps
+            x.Conditions <- conditions
+            x.Actions <- actions
+            x
 
     type NjButton() =
         inherit NjFlowEntity()
@@ -283,6 +315,14 @@ module rec NewtonsoftJsonObjects =
                 z.Status4 <- rt.Status4
             )
 
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : calls:NjCall[] * arrows:NjArrow[] * flowGuid:string -> NjWork
+        default x.Initialize(calls:NjCall[], arrows:NjArrow[], flowGuid:string) =
+            x.Calls <- calls
+            x.Arrows <- arrows
+            x.FlowGuid <- flowGuid
+            x
+
     type NjArrow() =
         inherit NjUnique()
 
@@ -305,15 +345,21 @@ module rec NewtonsoftJsonObjects =
         inherit NjWorkEntity()
 
         interface INjCall
+        [<JsonProperty(Order = 101)>]
         member val CallType = DbCallType.Normal.ToString() with get, set
         /// Json serialize 용 API call 에 대한 Guid
+        [<JsonProperty(Order = 102)>]
         member val ApiCalls   = [||]:Guid[]     with get, set
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
+        [<JsonProperty(Order = 103)>]
         member val AutoConditions   = nullString with get, set
+        [<JsonProperty(Order = 104)>]
         member val CommonConditions = nullString with get, set
+        [<JsonProperty(Order = 105)>]
         member val IsDisabled = false            with get, set
+        [<JsonProperty(Order = 106)>]
         member val Timeout    = Option<int>.None with get, set
 
         [<JsonIgnore>]
@@ -328,6 +374,9 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeIsDisabled() = x.IsDisabled
         member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
+        member x.ShouldSerializeAutoConditions() = not (String.IsNullOrEmpty(x.AutoConditions))
+        member x.ShouldSerializeCommonConditions() = not (String.IsNullOrEmpty(x.CommonConditions))
+        member x.ShouldSerializeTimeout()    = x.Timeout.IsSome
 
         static member internal fromRuntime(rt:Call) =
             let ac = rt.AutoConditions |> jsonSerializeStrings
@@ -338,6 +387,19 @@ module rec NewtonsoftJsonObjects =
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
                 z.Status4 <- rt.Status4
             )
+
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : callType:string * apiCalls:Guid[] * autoConditions:string * commonConditions:string * isDisabled:bool * timeout:int option -> NjCall
+        default x.Initialize(callType:string, apiCalls:Guid[],
+                           autoConditions:string, commonConditions:string,
+                           isDisabled:bool, timeout:int option) =
+            x.CallType <- callType
+            x.ApiCalls <- apiCalls
+            x.AutoConditions <- autoConditions
+            x.CommonConditions <- commonConditions
+            x.IsDisabled <- isDisabled
+            x.Timeout <- timeout
+            x
 
 
     type NjApiCall() =
@@ -630,28 +692,23 @@ module Ds2JsonModule =
             EmJson.FromJson<NjProject>(json, settings)
 
         static member internal fromRuntime(rt:Project) =
-            // 확장 타입 지원을 위한 factory 사용
-            let njProject = createJsonFromRuntime<Project, NjProject> rt (fun runtime ->
-                NjProject(Database=runtime.Database
-                    , Author=runtime.Author
-                    , Version=runtime.Version
-                    , Description=runtime.Description)
-                |> fromNjUniqINGD runtime
-            )
-            match njProject with
-            | :? NjProject as nj -> 
-                nj |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
-            | _ -> 
-                // fallback에서 반환된 경우
-                njProject :?> NjProject |> tee(fun nj -> verify (nj.RuntimeObject = rt))
+            // 기본 NjProject 생성 - TypeFactory 사용 제거 (JSON 타입은 확장 불필요)
+            let njProject =
+                NjProject(Database=rt.Database
+                    , Author=rt.Author
+                    , Version=rt.Version
+                    , Description=rt.Description)
+                |> fromNjUniqINGD rt
+
+            njProject |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
 
 
     type Project with // // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
-        member x.ToJson():string = 
+        member x.ToJson():string =
             let njProject = NjProject.fromRuntime(x)
             njProject.ToJson()
-        member x.ToJson(jsonFilePath:string) = 
+        member x.ToJson(jsonFilePath:string) =
             let njProject = NjProject.fromRuntime(x)
             njProject.ToJsonFile(jsonFilePath)
 
@@ -679,28 +736,23 @@ module Ds2JsonModule =
         static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
 
         static member internal fromRuntime(rt:DsSystem) =
-            // 확장 타입 지원을 위한 factory 사용
-            let njSystem = createJsonFromRuntime<DsSystem, NjSystem> rt (fun runtime ->
-                NjSystem(IRI=runtime.IRI
-                    , Author=runtime.Author
-                    , LangVersion=runtime.LangVersion
-                    , EngineVersion=runtime.EngineVersion
-                    , Description=runtime.Description)
-                |> fromNjUniqINGD runtime
-            )
-            match njSystem with
-            | :? NjSystem as nj -> 
-                nj |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
-            | _ -> 
-                // fallback에서 반환된 경우
-                njSystem :?> NjSystem |> tee(fun nj -> verify (nj.RuntimeObject = rt))
+            // 기본 NjSystem 생성 - TypeFactory 사용 제거 (JSON 타입은 확장 불필요)
+            let njSystem =
+                NjSystem(IRI=rt.IRI
+                    , Author=rt.Author
+                    , LangVersion=rt.LangVersion
+                    , EngineVersion=rt.EngineVersion
+                    , Description=rt.Description)
+                |> fromNjUniqINGD rt
+
+            njSystem |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
 
     type DsSystem with // // ToJson, FromJson
         /// DsSystem 를 JSON 문자열로 변환
-        member x.ExportToJson():string = 
+        member x.ExportToJson():string =
             let njSystem = NjSystem.fromRuntime(x)
             njSystem.ExportToJson()
-        member x.ExportToJson(jsonFilePath:string) = 
+        member x.ExportToJson(jsonFilePath:string) =
             let njSystem = NjSystem.fromRuntime(x)
             njSystem.ExportToJsonFile(jsonFilePath)
 

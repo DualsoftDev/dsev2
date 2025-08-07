@@ -115,6 +115,18 @@ module ORMTypesModule =
         member val Description = description with get, set
         member val DateTime    = dateTime    with get, set
 
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : runtime:Project -> ORMProject
+        default x.Initialize(runtime:Project) =
+            x.Name <- runtime.Name
+            x.Guid <- runtime.Guid
+            x.Id <- runtime.Id
+            x.DateTime <- runtime.DateTime
+            x.Author <- runtime.Author
+            x.Version <- runtime.Version
+            x.Description <- runtime.Description
+            x
+
 
     type ORMSystem(ownerProjectId:Id option
         , iri:string, author:string, langVersion:Version, engineVersion:Version
@@ -135,12 +147,36 @@ module ORMTypesModule =
         member val Description   = description   with get, set
         member val DateTime      = dateTime      with get, set
 
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : runtime:DsSystem -> ORMSystem
+        default x.Initialize(runtime:DsSystem) =
+            x.Name <- runtime.Name
+            x.Guid <- runtime.Guid
+            x.Id <- runtime.Id
+            x.DateTime <- runtime.DateTime
+            x.IRI <- runtime.IRI
+            x.Author <- runtime.Author
+            x.EngineVersion <- runtime.EngineVersion
+            x.LangVersion <- runtime.LangVersion
+            x.Description <- runtime.Description
+            x.OwnerProjectId <- runtime.OwnerProjectId
+            x
+
     type ORMFlow(systemId:Id) =
         inherit ORMWorkEntity(systemId)
 
         new() = ORMFlow(-1)
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
+
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : runtime:Flow -> ORMFlow
+        default x.Initialize(runtime:Flow) =
+            x.Name <- runtime.Name
+            x.Guid <- runtime.Guid
+            x.Id <- runtime.Id
+            x.SystemId <- runtime.System |-> _.Id |? None
+            x
 
 
     type ORMButton(flowId:Id) =
@@ -183,6 +219,22 @@ module ORMTypesModule =
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
 
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : runtime:Work -> ORMWork
+        default x.Initialize(runtime:Work) =
+            x.Name <- runtime.Name
+            x.Guid <- runtime.Guid
+            x.Id <- runtime.Id
+            x.Motion <- runtime.Motion
+            x.Script <- runtime.Script
+            x.IsFinished <- runtime.IsFinished
+            x.NumRepeat <- runtime.NumRepeat
+            x.Period <- runtime.Period
+            x.Delay <- runtime.Delay
+            x.FlowId <- runtime.Flow |-> _.Id |? None
+            x.Status4Id <- runtime.Status4 |-> int64
+            x
+
     type ORMCall(workId:Id, status4Id:Id option
         , callTypeId:Id option, autoConditions:string seq
         , commonConditions:string seq, isDisabled:bool, timeout:int option
@@ -198,6 +250,20 @@ module ORMTypesModule =
         member val Timeout    = timeout    with get, set
         member val AutoConditions   = autoConditions   |> jsonSerializeStrings with get, set
         member val CommonConditions = commonConditions |> jsonSerializeStrings with get, set
+
+        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
+        abstract Initialize : runtime:Call -> ORMCall
+        default x.Initialize(runtime:Call) =
+            x.Name <- runtime.Name
+            x.Guid <- runtime.Guid
+            x.Id <- runtime.Id
+            x.CallTypeId <- runtime.CallType |> int64 |> Some
+            x.IsDisabled <- runtime.IsDisabled
+            x.Timeout <- runtime.Timeout
+            x.AutoConditions <- runtime.AutoConditions |> jsonSerializeStrings
+            x.CommonConditions <- runtime.CommonConditions |> jsonSerializeStrings
+            x.Status4Id <- runtime.Status4 |-> int64
+            x
 
 
 

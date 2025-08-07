@@ -31,10 +31,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "솔루션 항목", "솔루�
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTest.Aas", "unit-test\UnitTest.Aas\UnitTest.Aas.fsproj", "{95EF490D-78A4-E995-DCB6-F0E4EF344003}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasCore.Aas3_0", "..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj", "{E9F759C8-63A5-3364-008E-CDCA44DE7965}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AasCore.Aas3_0.Tests", "..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0.Tests\AasCore.Aas3_0.Tests.csproj", "{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,18 +86,6 @@ Global
 		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.DebugSlow|Any CPU.Build.0 = Debug|Any CPU
 		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95EF490D-78A4-E995-DCB6-F0E4EF344003}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965}.DebugSlow|Any CPU.ActiveCfg = DebugSlow|Any CPU
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965}.DebugSlow|Any CPU.Build.0 = DebugSlow|Any CPU
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}.DebugSlow|Any CPU.ActiveCfg = DebugSlow|Any CPU
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}.DebugSlow|Any CPU.Build.0 = DebugSlow|Any CPU
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -115,8 +99,6 @@ Global
 		{90A555CB-59D0-5341-2DB0-E81AC20FD9AC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{B1D07720-375B-4EC5-3F88-211D4AD3B715} = {8B7346C4-33AD-44AB-A6CB-7990A20AFD54}
 		{95EF490D-78A4-E995-DCB6-F0E4EF344003} = {D73FE292-67C0-4C2F-B669-ED6B0EF46205}
-		{E9F759C8-63A5-3364-008E-CDCA44DE7965} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{0DDFA1C8-FF18-AF86-B4E5-A66B6C4D181F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {ECA6317A-9AE4-4081-9DBE-DE379EDD6040}

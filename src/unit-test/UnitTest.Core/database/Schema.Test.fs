@@ -3,9 +3,7 @@ namespace T
 open System
 open System.Linq
 open System.IO
-open System.Data.SQLite
 
-open Xunit
 open NUnit.Framework
 open Dapper
 
@@ -16,12 +14,8 @@ open Dual.Common.Core.FS
 
 open Ev2.Core.FS
 open Newtonsoft.Json
-open System.Reactive.Concurrency
 
 
-open NUnit.Framework
-open NUnit.Framework.Interfaces
-open System.Collections.Concurrent
 
 
 [<AutoOpen>]
@@ -425,11 +419,30 @@ module Schema =
 
             let rtProject2 = Project.FromJson json
             rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
+
+            // 디버깅: GUID 비교
+            printfn "rtProject GUID: %A" rtProject.Guid
+            printfn "rtProject2 GUID: %A" rtProject2.Guid
+            printfn "rtProject Type: %s" (rtProject.GetType().FullName)
+            printfn "rtProject2 Type: %s" (rtProject2.GetType().FullName)
+
             // 설계 문서 위치에 drop
             let json2 =
                 rtProject2
                 |> validateRuntime
                 |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder2.json"))
+
+            // 디버깅: JSON 차이 확인
+            if json <> json2 then
+                printfn "JSON mismatch!"
+                let lines1 = json.Split('\n')
+                let lines2 = json2.Split('\n')
+                for i in 0 .. min lines1.Length lines2.Length - 1 do
+                    if lines1.[i] <> lines2.[i] then
+                        printfn "Line %d differs:" i
+                        printfn "  json1: %s" lines1.[i]
+                        printfn "  json2: %s" lines2.[i]
+                        if i < 5 then () else failwith "First difference found"
 
             json === json2
 
@@ -705,6 +718,8 @@ module Schema =
         member x.``복제 비교`` () =
             let dsProject = edProject.Replicate() |> validateRuntime
             let diffs = dsProject.ComputeDiff edProject
+            printfn "Differences found: %d" (diffs |> Seq.length)
+            diffs |> Seq.iteri (fun i diff -> printfn "[%d] %A" i diff)
             edProject.IsEqual dsProject === true
 
         [<Test>]

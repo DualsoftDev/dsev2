@@ -7,6 +7,8 @@ open System.Data
 type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> obj
+    /// 복제 전용 런타임 인스턴스 생성 (확장 속성 초기화 건너뜀)
+    abstract CreateRuntimeForReplication : runtimeType:Type -> obj
     /// 런타임 객체로부터 JSON 직렬화 객체 생성
     abstract CreateJson : runtimeType:Type * runtimeObj:obj -> obj
     /// 지정된 런타임 타입에 해당하는 ORM 객체 생성
@@ -62,6 +64,20 @@ module TypeFactoryHelper =
             let obj = factory.CreateRuntime(typeof<'T>)
             if obj <> null then obj :?> 'T else new 'T()
         | None -> new 'T()
+
+    /// 복제 전용 생성 - 확장 속성 초기화 건너뜀
+    let inline createExtendedForReplication<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
+        match TypeFactory with
+        | Some factory ->
+            let obj = factory.CreateRuntimeForReplication(typeof<'T>)
+            if obj <> null then
+                obj :?> 'T
+            else
+                // 확장 타입이 등록되지 않았으므로 기본 타입 사용
+                new 'T()
+        | None ->
+            // 팩토리가 없으므로 기본 타입 사용
+            new 'T()
 
     /// JSON 객체 생성을 위한 helper 함수
     let createJsonFromRuntime<'TRuntime, 'TJson when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TJson) : 'TJson =

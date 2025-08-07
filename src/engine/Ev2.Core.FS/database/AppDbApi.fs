@@ -253,7 +253,10 @@ module ORMTypeConversionModule =
 
 
             | :? ApiCall as rt ->
-                let apiDefId = rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+                let apiDefId =
+                    try
+                        rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+                    with _ -> failwith "ERROR: ApiDef not accessible"
                 let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
                 ORMApiCall (pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
                 |> ormReplicateProperties rt

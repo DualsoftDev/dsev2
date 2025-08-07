@@ -103,6 +103,8 @@ and Project(activeSystems:DsSystem seq, passiveSystems:DsSystem seq) as this =
 
     new() = Project(Seq.empty, Seq.empty)
 
+    static member Create() = createExtended<Project>()
+
     interface IRtProject with
         member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
     interface IParameterContainer
@@ -135,6 +137,8 @@ and DsSystem(flows:Flow seq, works:Work seq,
     inherit ProjectEntity()
 
     new() = DsSystem(Seq.empty, Seq.empty, Seq.empty, Seq.empty, Seq.empty)
+
+    static member Create() = createExtended<DsSystem>()
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
@@ -174,6 +178,8 @@ and Flow(buttons:DsButton seq, lamps:Lamp seq, conditions:DsCondition seq, actio
         actions    |> iter (fun z -> z.RawParent <- Some this)
 
     new() = Flow(Seq.empty, Seq.empty, Seq.empty, Seq.empty)
+
+    static member Create() = createExtended<Flow>()
 
     interface IRtFlow
     member val internal RawButtons    = ResizeArray buttons
@@ -226,6 +232,8 @@ and Work(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) as this
 
     new() = Work(Seq.empty, Seq.empty, None)
 
+    static member Create() = createExtended<Work>()
+
     interface IRtWork
     member val internal RawCalls  = ResizeArray calls
     member val internal RawArrows = ResizeArray arrows
@@ -250,6 +258,8 @@ and Call(callType:DbCallType, apiCallGuids:Guid seq, autoConditions:string seq, 
 
     new() = Call(DbCallType.Normal, Seq.empty, Seq.empty, Seq.empty, false, None)
 
+    static member Create() = createExtended<Call>()
+
     interface IRtCall
     member val CallType   = callType   with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
     member val IsDisabled = isDisabled with get, set
@@ -260,8 +270,13 @@ and Call(callType:DbCallType, apiCallGuids:Guid seq, autoConditions:string seq, 
     member val Status4 = Option<DbStatus4>.None with get, set
 
     member x.ApiCalls =
-        let sys = (x.RawParent >>= _.RawParent).Value :?> DsSystem
-        sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList    // DB 저장시에는 callId 로 저장
+        match (x.RawParent >>= _.RawParent) with
+        | Some parent ->
+            match parent with
+            | :? DsSystem as sys ->
+                sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList
+            | _ -> []  // NjSystem 등 다른 타입인 경우 빈 리스트 반환
+        | None -> []
 
 
 
@@ -273,6 +288,8 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
     inherit DsSystemEntity()
 
     new() = ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
+
+    static member Create() = createExtended<ApiCall>()
 
     interface IRtApiCall
     member val ApiDefGuid = apiDefGuid  with get, set
@@ -296,8 +313,12 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
 
     member x.ApiDef
         with get() =
-            let sys = x.RawParent.Value :?> DsSystem
-            sys.ApiDefs |> find (fun ad -> ad.Guid = x.ApiDefGuid )
+            match x.RawParent with
+            | Some (:? DsSystem as sys) ->
+                sys.ApiDefs
+                |> List.tryFind (fun ad -> ad.Guid = x.ApiDefGuid )
+                |> Option.defaultWith (fun () -> failwith $"ApiDef with Guid {x.ApiDefGuid} not found in System")
+            | _ -> failwith "Parent is not DsSystem type"
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
@@ -305,6 +326,8 @@ and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =
     inherit DsSystemEntity()
 
     new() = ApiDef(true)
+
+    static member Create() = createExtended<ApiDef>()
 
     interface IRtApiDef
 
@@ -320,6 +343,8 @@ and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =
         x.System
         |-> (fun s ->
             s.ApiCalls
-            |> filter (fun c -> c.ApiDef = x)
+            |> filter (fun c ->
+                try c.ApiDef = x
+                with _ -> false)  // ApiDef 접근 실패 시 false
             |> toArray)
         |? [||]

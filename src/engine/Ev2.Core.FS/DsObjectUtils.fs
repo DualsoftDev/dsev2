@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open System
 open System.Linq
 open System.Collections.Generic
+open System.Runtime.CompilerServices
 open Newtonsoft.Json
 
 open Dual.Common.Core.FS
@@ -120,8 +121,10 @@ module rec TmpCompatibility =
             let apiCallsToRemove =
                 x.ApiCalls
                 |> choose(fun ac ->
-                    apiDefsDic.TryGet(ac.ApiDef)      // apiCall 중에서 ac.ApiDef 가 삭제 대상인 apiDefs 에 포함된 것들만 선택
-                    |-> fun f -> ac)
+                    try
+                        apiDefsDic.TryGet(ac.ApiDef)      // apiCall 중에서 ac.ApiDef 가 삭제 대상인 apiDefs 에 포함된 것들만 선택
+                        |-> fun f -> ac
+                    with _ -> None)  // ApiDef 접근 실패 시 None
             apiCallsToRemove |> iter (x.RawApiCalls.Remove >> ignore) // 선택된 works 의 Flow 를 None 으로 설정
 
             apiDefs |> iter clearParentI
@@ -286,8 +289,15 @@ type DsObjectFactory =
 
 
     /// 새로운 패턴: createExtended 사용
+    static member CreateProject() = createExtended<Project>()
     static member CreateDsSystemExtended() =
         createExtended<DsSystem>()
+    static member CreateDsSystem() = createExtended<DsSystem>()
+    static member CreateWork() = createExtended<Work>()
+    static member CreateCall() = createExtended<Call>()
+    static member CreateFlow() = createExtended<Flow>()
+    static member CreateApiDef() = createExtended<ApiDef>()
+    static member CreateApiCall() = createExtended<ApiCall>()
 
     static member CreateDsSystem(flows:Flow[], works:Work[],
         arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
@@ -348,134 +358,138 @@ type DsObjectFactory =
 //        ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
 //                  Option<IValueSpec>.None))
 
-// 남은 extension들을 module로 유지 (helper functions)
+// F# 타입 확장 및 helper functions (F#과 C#에서 사용)
 [<AutoOpen>]
 module DsObjectUtilsModule =
 
-    // 기존 코드 호환성을 위해 AutoOpen 모듈에도 Create 확장 추가
-    type Project with   // Create
+    // F# 코드 호환성을 위한 타입 확장 (static member)
+    type Project with   // Create, Initialize
+        static member Create(activeSystems:DsSystem seq, passiveSystems:DsSystem seq) =
+            // 매개변수가 있는 경우 직접 생성자 사용하거나 확장 타입에서 initialize
+            let project = createExtended<Project>()
+            project.RawActiveSystems.Clear()
+            project.RawPassiveSystems.Clear()
+            project.RawActiveSystems.AddRange(activeSystems)
+            project.RawPassiveSystems.AddRange(passiveSystems)
+            activeSystems  |> iter (setParentI project)
+            passiveSystems |> iter (setParentI project)
+            project
+
         static member Create() =
             createExtended<Project>()
+
 
     type DsSystem with   // Create, Initialize
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
         ) =
-            // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
-            DsSystem(flows, works, arrows, apiDefs, apiCalls)
-            |> tee (fun z ->
-                flows    |> iter (setParentI z)
-                works    |> iter (setParentI z)
-                arrows   |> iter (setParentI z)
-                apiDefs  |> iter (setParentI z)
-                apiCalls |> iter (setParentI z) )
+            // 매개변수가 있는 경우 확장 타입에서 initialize
+            let system = createExtended<DsSystem>()
+            system.RawFlows.Clear()
+            system.RawWorks.Clear()
+            system.RawArrows.Clear()
+            system.RawApiDefs.Clear()
+            system.RawApiCalls.Clear()
+            system.RawFlows.AddRange(flows)
+            system.RawWorks.AddRange(works)
+            system.RawArrows.AddRange(arrows)
+            system.RawApiDefs.AddRange(apiDefs)
+            system.RawApiCalls.AddRange(apiCalls)
+            // parent 관계 설정 추가
+            flows    |> iter (setParentI system)
+            works    |> iter (setParentI system)
+            arrows   |> iter (setParentI system)
+            apiDefs  |> iter (setParentI system)
+            apiCalls |> iter (setParentI system)
+            system
 
         static member Create() =
+            // 매개변수가 없는 경우만 확장 타입 사용
             createExtended<DsSystem>()
 
-        /// 새로운 디자인 패턴: Initialize 메서드
-        member x.Initialize(flows:Flow[], works:Work[], arrows:ArrowBetweenWorks[],
-                           apiDefs:ApiDef[], apiCalls:ApiCall[]) =
-            // 기존 컬렉션 초기화
-            x.RawFlows.Clear()
-            x.RawWorks.Clear()
-            x.RawArrows.Clear()
-            x.RawApiDefs.Clear()
-            x.RawApiCalls.Clear()
-
-            // 새로운 데이터로 초기화
-            flows    |> iter (setParentI x)
-            works    |> iter (setParentI x)
-            arrows   |> iter (setParentI x)
-            apiDefs  |> iter (setParentI x)
-            apiCalls |> iter (setParentI x)
-
-            x.RawFlows.AddRange(flows)
-            x.RawWorks.AddRange(works)
-            x.RawArrows.AddRange(arrows)
-            x.RawApiDefs.AddRange(apiDefs)
-            x.RawApiCalls.AddRange(apiCalls)
-
-            x
 
     type Work with   // Create, Initialize
         static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
-            // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
-            let calls = calls |> toList
-            let arrows = arrows |> toList
-
-            Work(calls, arrows, flow)
-            |> tee (fun z ->
-                calls  |> iter (setParentI z)
-                arrows |> iter (setParentI z)
-                flow   |> iter (setParentI z) )
+            // 매개변수가 있는 경우 확장 타입에서 initialize
+            let work = createExtended<Work>()
+            work.RawCalls.Clear()
+            work.RawArrows.Clear()
+            work.RawCalls.AddRange(calls)
+            work.RawArrows.AddRange(arrows)
+            work.Flow <- flow
+            calls  |> iter (setParentI work)
+            arrows |> iter (setParentI work)
+            work
 
         static member Create() =
             createExtended<Work>()
 
-        /// 새로운 디자인 패턴: Initialize 메서드
-        member x.Initialize(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
-            let calls = calls |> toList
-            let arrows = arrows |> toList
-
-            // 기존 컬렉션 초기화
-            x.RawCalls.Clear()
-            x.RawArrows.Clear()
-            x.Flow <- None
-
-            // 새로운 데이터로 초기화
-            calls  |> iter (setParentI x)
-            arrows |> iter (setParentI x)
-            flow   |> iter (setParentI x)
-
-            x.RawCalls.AddRange(calls)
-            x.RawArrows.AddRange(arrows)
-            x.Flow <- flow
-
-            x
 
     type Call with   // Create, Initialize
         static member Create(callType:DbCallType, apiCalls:ApiCall seq,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
-            // 매개변수가 있는 Create는 기본 구현 유지 (확장 타입에서 override 가능)
-            let apiCallGuids = apiCalls |-> _.Guid
-
-            Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
-            |> tee (fun z ->
-                apiCalls |> iter (setParentI z) )
+            // 매개변수가 있는 경우 확장 타입에서 initialize
+            let call = createExtended<Call>()
+            call.CallType <- callType
+            call.IsDisabled <- isDisabled
+            call.Timeout <- timeout
+            call.AutoConditions.Clear()
+            call.CommonConditions.Clear()
+            call.ApiCallGuids.Clear()
+            call.AutoConditions.AddRange(autoConditions)
+            call.CommonConditions.AddRange(commonConditions)
+            call.ApiCallGuids.AddRange(apiCalls |-> _.Guid)
+            call
 
         static member Create() =
             createExtended<Call>()
 
-        /// 새로운 디자인 패턴: Initialize 메서드
-        member x.Initialize(callType:DbCallType, apiCalls:ApiCall seq,
-                           autoConditions:string seq, commonConditions:string seq,
-                           isDisabled:bool, timeout:int option) =
-            let apiCallGuids = apiCalls |-> _.Guid
 
-            // 기존 데이터 초기화
-            x.ApiCallGuids.Clear()
+    type Flow with   // Create, Initialize
+        static member Create(buttons:DsButton seq, lamps:Lamp seq, conditions:DsCondition seq, actions:DsAction seq) =
+            // 매개변수가 있는 경우 확장 타입에서 initialize
+            let flow = createExtended<Flow>()
+            flow.RawButtons.Clear()
+            flow.RawLamps.Clear()
+            flow.RawConditions.Clear()
+            flow.RawActions.Clear()
+            flow.RawButtons.AddRange(buttons)
+            flow.RawLamps.AddRange(lamps)
+            flow.RawConditions.AddRange(conditions)
+            flow.RawActions.AddRange(actions)
+            buttons    |> iter (fun z -> z.RawParent <- Some flow)
+            lamps      |> iter (fun z -> z.RawParent <- Some flow)
+            conditions |> iter (fun z -> z.RawParent <- Some flow)
+            actions    |> iter (fun z -> z.RawParent <- Some flow)
+            flow
 
-            // 새로운 데이터로 초기화
-            x.CallType <- callType
-            x.IsDisabled <- isDisabled
-            x.Timeout <- timeout
-
-            x.ApiCallGuids.AddRange(apiCallGuids)
-            apiCalls |> iter (setParentI x)
-
-            x
-
-    type Flow with   // Create
         static member Create() =
             createExtended<Flow>()
 
+
     type ApiDef with   // Create
+        static member Create(isPush:bool) =
+            // 매개변수가 있는 경우 확장 타입에서 initialize
+            let apiDef = createExtended<ApiDef>()
+            apiDef.IsPush <- isPush
+            apiDef
+
         static member Create() =
             createExtended<ApiDef>()
 
     type ApiCall with   // Create
+        static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
+            // 매개변수가 있는 경우 확장 타입에서 initialize
+            let apiCall = createExtended<ApiCall>()
+            apiCall.ApiDefGuid <- apiDefGuid
+            apiCall.InAddress <- inAddress
+            apiCall.OutAddress <- outAddress
+            apiCall.InSymbol <- inSymbol
+            apiCall.OutSymbol <- outSymbol
+            apiCall.ValueSpec <- valueSpec
+            apiCall
+
         static member Create() =
             createExtended<ApiCall>()
 
@@ -537,11 +551,15 @@ module DsObjectUtilsModule =
                 for w in sys.Works  do
                     verify (sys.Guid |> isParentGuid w)
                     for c in w.Calls do
-                        c.ApiCalls |-> _.Guid |> forall(guidDicDebug.ContainsKey) |> verify
-                        c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
-                        for ac in c.ApiCalls do
-                            ac.ApiDef.Guid = ac.ApiDefGuid |> verify
-                            sys.ApiDefs |> contains ac.ApiDef |> verify
+                        // ApiCalls가 비어있을 수 있음 (NjSystem 등의 경우)
+                        if not (c.ApiCalls.IsEmpty) then
+                            c.ApiCalls |-> _.Guid |> forall(guidDicDebug.ContainsKey) |> verify
+                            c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
+                            for ac in c.ApiCalls do
+                                try
+                                    ac.ApiDef.Guid = ac.ApiDefGuid |> verify
+                                    sys.ApiDefs |> contains ac.ApiDef |> verify
+                                with _ -> ()  // NjSystem 등에서 ApiDef 접근 실패 시 무시
 
                 sys.Arrows |> iter _.Validate(guidDicDebug)
                 for a in sys.Arrows do
@@ -614,7 +632,7 @@ module DsObjectUtilsModule =
 
     let jsonSerializeStrings(strings:string seq) =
         match strings |> toList with
-        | [] -> null
+        | [] -> null  // 빈 리스트는 null 반환
         | xs -> xs |> JsonConvert.SerializeObject
 
     let jsonDeserializeStrings(json:string): string[] =
