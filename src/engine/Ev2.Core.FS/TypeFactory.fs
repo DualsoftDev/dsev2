@@ -49,13 +49,6 @@ module TypeFactoryHelper =
             else fallbackFactory()
         | None -> fallbackFactory()
 
-    /// 기존 버전 - 람다 버전 (호환성 유지)
-    let inline createExtensible<'T> (defaultFactory: unit -> 'T) =
-        match TypeFactory with
-        | Some factory ->
-            let obj = factory.CreateRuntime(typeof<'T>)
-            if obj <> null then obj :?> 'T else defaultFactory()
-        | None -> defaultFactory()
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
     let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =

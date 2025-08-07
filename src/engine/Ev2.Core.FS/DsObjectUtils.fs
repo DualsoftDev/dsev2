@@ -302,14 +302,23 @@ type DsObjectFactory =
     static member CreateDsSystem(flows:Flow[], works:Work[],
         arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
     ) =
-        createExtensible (fun () ->
-            DsSystem(flows, works, arrows, apiDefs, apiCalls)
-            |> tee (fun z ->
-                flows    |> iter (setParentI z)
-                works    |> iter (setParentI z)
-                arrows   |> iter (setParentI z)
-                apiDefs  |> iter (setParentI z)
-                apiCalls |> iter (setParentI z) ) )
+        let system = createExtended<DsSystem>()
+        system.RawFlows.Clear()
+        system.RawWorks.Clear()
+        system.RawArrows.Clear()
+        system.RawApiDefs.Clear()
+        system.RawApiCalls.Clear()
+        system.RawFlows.AddRange(flows)
+        system.RawWorks.AddRange(works)
+        system.RawArrows.AddRange(arrows)
+        system.RawApiDefs.AddRange(apiDefs)
+        system.RawApiCalls.AddRange(apiCalls)
+        flows    |> iter (setParentI system)
+        works    |> iter (setParentI system)
+        arrows   |> iter (setParentI system)
+        apiDefs  |> iter (setParentI system)
+        apiCalls |> iter (setParentI system)
+        system
 
 
     /// 새로운 패턴: createExtended 사용
@@ -320,12 +329,15 @@ type DsObjectFactory =
         let calls = calls |> toList
         let arrows = arrows |> toList
 
-        createExtensible (fun () ->
-            Work(calls, arrows, flow)
-            |> tee (fun z ->
-                calls  |> iter (setParentI z)
-                arrows |> iter (setParentI z)
-                flow   |> iter (setParentI z) ) )
+        let work = createExtended<Work>()
+        work.RawCalls.Clear()
+        work.RawArrows.Clear()
+        work.RawCalls.AddRange(calls)
+        work.RawArrows.AddRange(arrows)
+        work.Flow <- flow
+        calls  |> iter (setParentI work)
+        arrows |> iter (setParentI work)
+        work
 
 
     /// 새로운 패턴: createExtended 사용
@@ -337,26 +349,21 @@ type DsObjectFactory =
     ) =
         let apiCallGuids = apiCalls |-> _.Guid
 
-        createExtensible (fun () ->
-            Call(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
-            |> tee (fun z ->
-                apiCalls |> iter (setParentI z) ) )
+        let call = createExtended<Call>()
+        call.CallType <- callType
+        call.IsDisabled <- isDisabled
+        call.Timeout <- timeout
+        call.AutoConditions.Clear()
+        call.CommonConditions.Clear()
+        call.ApiCallGuids.Clear()
+        call.AutoConditions.AddRange(autoConditions)
+        call.CommonConditions.AddRange(commonConditions)
+        call.ApiCallGuids.AddRange(apiCallGuids)
+        apiCalls |> iter (setParentI call)
+        call
 
 
 
-
-
-//// C#에서 직접 호출 가능한 static factory methods
-//module DsObjectCreate =
-//    let createProject() = createExtensible (fun () -> Project([], []))
-//    let createDsSystem() = createExtensible (fun () -> DsSystem([||], [||], [||], [||], [||]))
-//    let createWork() = createExtensible (fun () -> Work([], [], None))
-//    let createCall() = createExtensible (fun () -> Call(DbCallType.Normal, [], [], [], false, None))
-//    let createFlow() = createExtensible (fun () -> Flow([], [], [], []))
-//    let createApiDef() = createExtensible (fun () -> ApiDef(true))
-//    let createApiCall() = createExtensible (fun () ->
-//        ApiCall(emptyGuid, nullString, nullString, nullString, nullString,
-//                  Option<IValueSpec>.None))
 
 // F# 타입 확장 및 helper functions (F#과 C#에서 사용)
 [<AutoOpen>]
