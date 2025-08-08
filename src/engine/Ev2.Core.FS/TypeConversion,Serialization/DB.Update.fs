@@ -48,7 +48,6 @@ module internal rec DbUpdateImpl =
 
 
     type CompareResult with
-        [<Obsolete("구현 중..")>]
         member x.rTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->
                 match x with

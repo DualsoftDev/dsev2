@@ -11,6 +11,6 @@ module DuplicateTestModule =
     [<Test>]
     let ``duplicate test`` () =
         createEditableProject()
-        let sys0 = edProject.Systems[0].Duplicate() |> validateRuntime
+        let sys0 = rtProject.Systems[0].Duplicate() |> validateRuntime
         ()
 

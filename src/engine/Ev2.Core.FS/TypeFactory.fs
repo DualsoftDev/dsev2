@@ -3,6 +3,20 @@ namespace Ev2.Core.FS
 open System
 open System.Data
 
+/// Third Party 확장을 위한 SQL 스키마 확장 인터페이스 (C# 친화적)
+[<AllowNullLiteral>]
+type ISchemaExtension =
+    /// 테이블별 추가 컬럼 정의 (테이블명을 받아서 추가 컬럼 SQL 반환, null 가능)
+    abstract GetAdditionalColumns : tableName:string -> string
+    /// 테이블 생성 SQL 확장 (기본 테이블 SQL을 받아서 확장된 SQL 반환)
+    abstract ExtendTableSchema : tableName:string * baseSchema:string -> string
+    /// 확장된 테이블 목록 반환 (C# 친화적 - IEnumerable)
+    abstract GetExtendedTables : unit -> System.Collections.Generic.IEnumerable<string>
+    /// 전체 스키마를 받아서 수정된 스키마 반환 (추가 테이블, 인덱스 등)
+    abstract ModifySchema : baseSchema:string -> string
+    /// DB 생성 후 추가 작업 수행 (초기 데이터 삽입, 추가 설정 등)
+    abstract PostCreateDatabase : conn:IDbConnection * tr:IDbTransaction -> unit
+
 /// Third Party 확장을 위한 C# 호환 타입 팩토리 인터페이스
 type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
@@ -17,6 +31,8 @@ type ITypeFactory =
     abstract GetJsonType : runtimeType:Type -> Type
     /// 런타임 타입에 매핑되는 ORM 타입 해결
     abstract GetOrmType : runtimeType:Type -> Type
+    /// SQL 스키마 확장 제공자 반환 (C# 친화적 - null 가능)
+    abstract GetSchemaExtension : unit -> ISchemaExtension
 
 /// Third Party 확장을 위한 Database CRUD 훅 인터페이스
 type IExtensionDbHandler =
