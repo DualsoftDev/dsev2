@@ -59,7 +59,7 @@ module TypeFactoryHelper =
 
     /// 확장 타입 생성을 지원하는 helper 함수 (fallback 포함)
     let createWithFallback<'T> (fallbackFactory: unit -> 'T) : 'T =
-        if not (obj.ReferenceEquals(TypeFactory, null)) then
+        if isItNotNull TypeFactory then
             let obj = TypeFactory.CreateRuntime(typeof<'T>)
             if obj <> null then obj :?> 'T
             else fallbackFactory()
@@ -68,14 +68,14 @@ module TypeFactoryHelper =
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
     let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
-        if not (obj.ReferenceEquals(TypeFactory, null)) then
+        if isItNotNull TypeFactory then
             let obj = TypeFactory.CreateRuntime(typeof<'T>)
             if obj <> null then obj :?> 'T else new 'T()
         else new 'T()
 
     /// 복제 전용 생성 - 확장 속성 초기화 건너뜀
     let inline createExtendedForReplication<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
-        if not (obj.ReferenceEquals(TypeFactory, null)) then
+        if isItNotNull TypeFactory then
             let obj = TypeFactory.CreateRuntimeForReplication(typeof<'T>)
             if obj <> null then
                 obj :?> 'T
@@ -88,7 +88,7 @@ module TypeFactoryHelper =
 
     /// JSON 객체 생성을 위한 helper 함수
     let createJsonFromRuntime<'TRuntime, 'TJson when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TJson) : 'TJson =
-        if not (obj.ReferenceEquals(TypeFactory, null)) then
+        if isItNotNull TypeFactory then
             let obj = TypeFactory.CreateJson(typeof<'TRuntime>, runtime)
             if obj <> null then obj :?> 'TJson
             else defaultFactory runtime
@@ -96,7 +96,7 @@ module TypeFactoryHelper =
 
     /// ORM 객체 생성을 위한 helper 함수
     let createOrmFromRuntime<'TRuntime, 'TOrm when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TOrm) : 'TOrm =
-        if not (obj.ReferenceEquals(TypeFactory, null)) then
+        if isItNotNull TypeFactory then
             let obj = TypeFactory.CreateOrm(typeof<'TRuntime>)
             if obj <> null then obj :?> 'TOrm
             else defaultFactory runtime

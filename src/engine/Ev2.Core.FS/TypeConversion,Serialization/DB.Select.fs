@@ -191,7 +191,7 @@ module internal Db2DsImpl =
 
             // 확장 복원 훅
             let finalSystem = 
-                if not (obj.ReferenceEquals(ExtensionDbHandler, null)) then
+                if isItNotNull ExtensionDbHandler then
                     ExtensionDbHandler.HandleAfterSelect(rtSystem, conn, tr)
                 else
                     box rtSystem
@@ -251,7 +251,7 @@ module internal Db2DsImpl =
 
             // 확장 복원 훅
             let finalProject = 
-                if not (obj.ReferenceEquals(ExtensionDbHandler, null)) then
+                if isItNotNull ExtensionDbHandler then
                     ExtensionDbHandler.HandleAfterSelect(rtProj, conn, tr)
                 else
                     box rtProj

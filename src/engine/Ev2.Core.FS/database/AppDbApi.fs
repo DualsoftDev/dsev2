@@ -63,12 +63,12 @@ module DbApiModule =
                         let withTrigger = false
                         let mutable schema = getSqlCreateSchema dbProvider withTrigger
 
-                        // 스키마 확장 적용 (C# 친화적 null check)
+                        // 스키마 확장 적용
                         schema <-
-                            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+                            if isItNotNull TypeFactoryModule.TypeFactory then
                                 let factory = TypeFactoryModule.TypeFactory
                                 let ext = factory.GetSchemaExtension()
-                                if not (isItNull ext) then ext.ModifySchema(schema) else schema
+                                if isItNotNull ext then ext.ModifySchema(schema) else schema
                             else
                                 schema
 
@@ -89,11 +89,11 @@ module DbApiModule =
                         try
                             conn.Execute(schema, null, tr) |> ignore
 
-                            // DB 생성 후 추가 작업 수행 (C# 친화적 null check)
-                            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+                            // DB 생성 후 추가 작업 수행
+                            if isItNotNull TypeFactoryModule.TypeFactory then
                                 let factory = TypeFactoryModule.TypeFactory
                                 let ext = factory.GetSchemaExtension()
-                                if not (isItNull ext) then ext.PostCreateDatabase(conn, tr)
+                                if isItNotNull ext then ext.PostCreateDatabase(conn, tr)
                             else
                                 ()
 
@@ -210,7 +210,7 @@ module ORMTypeConversionModule =
 
         /// TypeFactory를 통해 확장 ORM 타입 생성 시도
         let createOrmWithFactory (runtimeType: Type) (defaultFactory: unit -> ORMUnique) : ORMUnique =
-            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+            if isItNotNull TypeFactoryModule.TypeFactory then
                 let factory = TypeFactoryModule.TypeFactory
                 let obj = factory.CreateOrm(runtimeType)
                 if obj <> null then obj :?> ORMUnique

@@ -259,10 +259,10 @@ WHERE {k "topicIndex"} IS NOT NULL AND {k "isTopicOrigin"} IS NOT NULL;
 
         // 확장 스키마 가져오기
         let schemaExtension = 
-            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+            if isItNotNull TypeFactoryModule.TypeFactory then
                 let factory = TypeFactoryModule.TypeFactory
                 let ext = factory.GetSchemaExtension()
-                if not (isItNull ext) then Some ext else None
+                if isItNotNull ext then Some ext else None
             else
                 None
         

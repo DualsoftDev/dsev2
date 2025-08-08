@@ -81,13 +81,6 @@ module rec NewtonsoftJsonObjects =
             replicateProperties src dst |> ignore
         dst
     
-    /// TypeFactory를 통해 JSON 타입 생성 (확장 타입 지원)
-    let internal createJsonViaFactory<'T> (runtimeObj:obj) (defaultFactory: unit -> 'T) : 'T =
-        match TypeFactoryModule.TypeFactory with
-        | Some factory -> 
-            let obj = factory.CreateJson(runtimeObj.GetType(), runtimeObj)
-            if isItNotNull obj then obj :?> 'T else defaultFactory()
-        | None -> defaultFactory()
 
 
     [<AbstractClass>]
@@ -190,10 +183,15 @@ module rec NewtonsoftJsonObjects =
 
         static member internal fromRuntime(rt:DsSystem) =
             // TypeFactory를 통한 확장 타입 지원
-            let njSystem = createJsonViaFactory rt (fun () -> 
-                NjSystem()
-                |> fromNjUniqINGD rt
-            )
+            let njSystem = 
+                if isItNotNull TypeFactoryModule.TypeFactory then
+                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
+                    if isItNotNull jsonObj then 
+                        jsonObj :?> NjSystem 
+                    else 
+                        NjSystem() |> fromNjUniqINGD rt
+                else 
+                    NjSystem() |> fromNjUniqINGD rt
 
             njSystem
             |> tee (fun z ->
@@ -233,10 +231,15 @@ module rec NewtonsoftJsonObjects =
 
         static member internal fromRuntime(rt:Flow) =
             // TypeFactory를 통한 확장 타입 지원
-            let njFlow = createJsonViaFactory rt (fun () -> 
-                NjFlow()
-                |> fromNjUniqINGD rt
-            )
+            let njFlow = 
+                if isItNotNull TypeFactoryModule.TypeFactory then
+                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
+                    if isItNotNull jsonObj then 
+                        jsonObj :?> NjFlow 
+                    else 
+                        NjFlow() |> fromNjUniqINGD rt
+                else 
+                    NjFlow() |> fromNjUniqINGD rt
             
             njFlow
             |> tee(fun z ->
@@ -322,10 +325,15 @@ module rec NewtonsoftJsonObjects =
 
         static member internal fromRuntime(rt:Work) =
             // TypeFactory를 통한 확장 타입 지원
-            let njWork = createJsonViaFactory rt (fun () -> 
-                NjWork()
-                |> fromNjUniqINGD rt
-            )
+            let njWork = 
+                if isItNotNull TypeFactoryModule.TypeFactory then
+                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
+                    if isItNotNull jsonObj then 
+                        jsonObj :?> NjWork 
+                    else 
+                        NjWork() |> fromNjUniqINGD rt
+                else 
+                    NjWork() |> fromNjUniqINGD rt
             
             njWork
             |> tee (fun z ->
@@ -402,10 +410,17 @@ module rec NewtonsoftJsonObjects =
             let ac = rt.AutoConditions |> jsonSerializeStrings
             let cc = rt.CommonConditions |> jsonSerializeStrings
             // TypeFactory를 통한 확장 타입 지원
-            let njCall = createJsonViaFactory rt (fun () ->
-                NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
-                |> fromNjUniqINGD rt
-            )
+            let njCall = 
+                if isItNotNull TypeFactoryModule.TypeFactory then
+                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
+                    if isItNotNull jsonObj then 
+                        jsonObj :?> NjCall 
+                    else 
+                        NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
+                        |> fromNjUniqINGD rt
+                else 
+                    NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
+                    |> fromNjUniqINGD rt
             
             njCall
             |> tee (fun z ->
@@ -719,13 +734,22 @@ module Ds2JsonModule =
         static member internal fromRuntime(rt:Project) =
             // TypeFactory를 통한 확장 타입 지원
             let njProject =
-                createJsonViaFactory rt (fun () ->
+                if isItNotNull TypeFactoryModule.TypeFactory then
+                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
+                    if isItNotNull jsonObj then 
+                        jsonObj :?> NjProject 
+                    else 
+                        NjProject(Database=rt.Database
+                            , Author=rt.Author
+                            , Version=rt.Version
+                            , Description=rt.Description)
+                        |> fromNjUniqINGD rt
+                else 
                     NjProject(Database=rt.Database
                         , Author=rt.Author
                         , Version=rt.Version
                         , Description=rt.Description)
                     |> fromNjUniqINGD rt
-                )
 
             njProject |> tee(fun n -> 
                 // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
@@ -803,13 +827,14 @@ module Ds2JsonModule =
 /// C#에서 사용하기 위한 JSON 변환 헬퍼 모듈
 module NewtonsoftJsonObjectsModule =
     /// Runtime 객체를 JSON 타입으로 변환
-    let fromRuntime (runtime: obj) : obj =
+    /// 반환 타입을 NjUnique로 통일하여 타입 안전성 향상
+    let fromRuntime (runtime: obj) : NjUnique =
         match runtime with
-        | :? Project as p -> NjProject.fromRuntime(p) :> obj
-        | :? DsSystem as s -> NjSystem.fromRuntime(s) :> obj
-        | :? Flow as f -> NjFlow.fromRuntime(f) :> obj
-        | :? Work as w -> NjWork.fromRuntime(w) :> obj
-        | :? Call as c -> NjCall.fromRuntime(c) :> obj
+        | :? Project as p -> NjProject.fromRuntime(p) :> NjUnique
+        | :? DsSystem as s -> NjSystem.fromRuntime(s) :> NjUnique
+        | :? Flow as f -> NjFlow.fromRuntime(f) :> NjUnique
+        | :? Work as w -> NjWork.fromRuntime(w) :> NjUnique
+        | :? Call as c -> NjCall.fromRuntime(c) :> NjUnique
         | _ -> failwith $"Unsupported runtime type: {runtime.GetType().Name}"
     
     /// NjUnique 객체에서 Runtime 객체 추출

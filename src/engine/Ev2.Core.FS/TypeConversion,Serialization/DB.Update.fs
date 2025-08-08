@@ -42,7 +42,7 @@ module internal rec DbUpdateImpl =
                     Error e
                 | None ->
                     // 확장 처리 훅
-                    if not (obj.ReferenceEquals(ExtensionDbHandler, null)) then
+                    if isItNotNull ExtensionDbHandler then
                         ExtensionDbHandler.HandleAfterUpdate(x, conn, tr)
                     Ok (Updated diffs)
             )
