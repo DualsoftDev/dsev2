@@ -61,7 +61,16 @@ module DbApiModule =
                     DcLogger.EnableTrace <- true        // TODO: 삭제 필요
                     let createDb() =
                         let withTrigger = false
-                        let schema = getSqlCreateSchema dbProvider withTrigger
+                        let mutable schema = getSqlCreateSchema dbProvider withTrigger
+
+                        // 스키마 확장 적용 (C# 친화적 null check)
+                        schema <-
+                            match TypeFactoryModule.TypeFactory with
+                            | Some factory ->
+                                let ext = factory.GetSchemaExtension()
+                                if not (isItNull ext) then ext.ModifySchema(schema) else schema
+                            | None -> schema
+
                         logInfo $"Creating database schema on {connStr}..."
                         logInfo $"CreateSchema:\r\n{schema}"
 #if DEBUG
@@ -78,6 +87,14 @@ module DbApiModule =
                         use tr = conn.BeginTransaction()
                         try
                             conn.Execute(schema, null, tr) |> ignore
+
+                            // DB 생성 후 추가 작업 수행 (C# 친화적 null check)
+                            match TypeFactoryModule.TypeFactory with
+                            | Some factory ->
+                                let ext = factory.GetSchemaExtension()
+                                if not (isItNull ext) then ext.PostCreateDatabase(conn, tr)
+                            | None -> ()
+
                             insertEnumValues<DbStatus4>   conn tr Tn.Enum
                             insertEnumValues<DbCallType>  conn tr Tn.Enum
                             insertEnumValues<DbArrowType> conn tr Tn.Enum
@@ -189,6 +206,15 @@ module ORMTypeConversionModule =
             |> replicateProperties src
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
 
+        /// TypeFactory를 통해 확장 ORM 타입 생성 시도
+        let createOrmWithFactory (runtimeType: Type) (defaultFactory: unit -> ORMUnique) : ORMUnique =
+            match TypeFactoryModule.TypeFactory with
+            | Some factory ->
+                let obj = factory.CreateOrm(runtimeType)
+                if obj <> null then obj :?> ORMUnique
+                else defaultFactory()
+            | None -> defaultFactory()
+
         match x |> tryCast<Unique> with
         | Some uniq ->
             let id = uniq.Id |? -1
@@ -197,15 +223,42 @@ module ORMTypeConversionModule =
 
             match uniq with
             | :? Project as z ->
-                ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                |> ormReplicateProperties z
+                // TypeFactory를 통해 확장 타입 생성 시도
+                let ormProject =
+                    createOrmWithFactory (z.GetType()) (fun () ->
+                        ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                    )
+                // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
+                match ormProject with
+                | :? ORMProject as orm ->
+                    orm.Author <- z.Author
+                    orm.Version <- z.Version
+                    orm.Description <- z.Description
+                    orm.DateTime <- z.DateTime
+                | _ -> ()
+                ormProject |> ormReplicateProperties z
 
             | :? DsSystem as rt ->
                 (* System 소유주 project 지정.  *)
                 let ownerProjectId = rt.Project >>= _.Id
 
-                ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
-                |> ormReplicateProperties rt
+                // TypeFactory를 통해 확장 타입 생성 시도
+                let ormSystem =
+                    createOrmWithFactory (rt.GetType()) (fun () ->
+                        ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                    )
+                // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
+                match ormSystem with
+                | :? ORMSystem as orm ->
+                    orm.OwnerProjectId <- ownerProjectId
+                    orm.IRI <- rt.IRI
+                    orm.Author <- rt.Author
+                    orm.LangVersion <- rt.LangVersion
+                    orm.EngineVersion <- rt.EngineVersion
+                    orm.Description <- rt.Description
+                    orm.DateTime <- rt.DateTime
+                | _ -> ()
+                ormSystem |> ormReplicateProperties rt
 
             | :? Flow as rt ->
                 ORMFlow()
