@@ -1,13 +1,9 @@
 namespace Ev2.Core.FS
 
 open System
-open System.Linq
 
 open Dual.Common.Base
-open Dual.Common.Core.FS
-open System.Collections.Generic
 open Dual.Common.Db.FS
-open Newtonsoft.Json
 
 [<AutoOpen>]
 module InterfaceModule =
@@ -30,6 +26,7 @@ module InterfaceModule =
 
     (* Project > System > Work > Call > ApiCall > ApiDef *)
 
+    (* IDsXXX 는 IRt, INj, IORM 전체의 base 의미로 사용함 *)
     type IDsProject = inherit IDs1stClass
     type IDsSystem  = inherit IDs1stClass
     type IDsFlow    = inherit IDs2ndClass
@@ -74,6 +71,48 @@ module InterfaceModule =
     type IRtLamp      = inherit IRtUnique inherit IDsLamp
     type IRtCondition = inherit IRtUnique inherit IDsCondition
     type IRtAction    = inherit IRtUnique inherit IDsAction
+
+
+    type INjProject = inherit INjUnique inherit IDsProject inherit IWithDateTime
+    type INjSystem  = inherit INjUnique inherit IDsSystem inherit IWithDateTime
+    type INjFlow    = inherit INjUnique inherit IDsFlow
+    type INjWork    = inherit INjUnique inherit IDsWork
+    type INjCall    = inherit INjUnique inherit IDsCall
+    type INjApiCall = inherit INjUnique inherit IDsApiCall
+    type INjApiDef  = inherit INjUnique inherit IDsApiDef
+    type INjArrow   = inherit INjUnique inherit IArrow
+
+    type INjButton    = inherit INjUnique inherit IDsButton
+    type INjLamp      = inherit INjUnique inherit IDsLamp
+    type INjCondition = inherit INjUnique inherit IDsCondition
+    type INjAction    = inherit INjUnique inherit IDsAction
+
+
+    type RowId = int
+    type IORMProject    = inherit IORMUnique inherit IWithDateTime
+    type IORMSystem     = inherit IORMUnique inherit IWithDateTime
+    type IORMFlow       = inherit IORMUnique
+    type IORMWork       = inherit IORMUnique
+    type IORMCall       = inherit IORMUnique
+    type IORMArrow      = inherit IORMUnique
+    type IORMArrowWork  = inherit IORMArrow
+    type IORMArrowCall  = inherit IORMArrow
+
+    type IORMButton     = inherit IORMUnique
+    type IORMLamp       = inherit IORMUnique
+    type IORMCondition  = inherit IORMUnique
+    type IORMAction     = inherit IORMUnique
+
+
+
+    type IORMApiCall    = inherit IORMUnique
+    type IORMApiDef     = inherit IORMUnique
+    type IORMParamWork  = inherit IORMUnique
+    type IORMParamCall  = inherit IORMUnique
+    type IORMProgress   = inherit IORMUnique
+    type IORMEnum       = inherit IORMUnique
+    type IORMMeta       = inherit IORMUnique
+    type IORMLog        = inherit IORMUnique
 
 
     let internal minDate      = DateTime.MinValue

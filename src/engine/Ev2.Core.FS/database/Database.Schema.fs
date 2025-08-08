@@ -256,31 +256,13 @@ WHERE {k "topicIndex"} IS NOT NULL AND {k "isTopicOrigin"} IS NOT NULL;
 
         (* ----------------------- [sqlTables] ----------------------- *)
 
-
-        // 확장 스키마 가져오기
-        let schemaExtension = 
-            if isItNotNull TypeFactoryModule.TypeFactory then
-                let factory = TypeFactoryModule.TypeFactory
-                let ext = factory.GetSchemaExtension()
-                if isItNotNull ext then Some ext else None
-            else
-                None
-        
-        // 테이블별 확장 컬럼 적용 함수 (C# 친화적)
-        let applyExtension (tableName: string) (baseColumns: string) =
-            match schemaExtension with
-            | Some ext ->
-                let columns = ext.GetAdditionalColumns(tableName)
-                if not (isItNull columns) then baseColumns + columns else baseColumns
-            | None -> baseColumns
-
         let sqlTables = $"""
 CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
     , {k "author"}       TEXT NOT NULL
     , {k "version"}      TEXT NOT NULL
     , {k "description"}  TEXT
     , {k "dateTime"}     {datetime}
-    , {k "aasXml"}       TEXT                       -- aasx file 내의 모든 submodel xml 파일 내용.  text 이므로 BLOB 일 필요가 없음.{applyExtension "project" ""}
+    , {k "aasXml"}       TEXT                       -- aasx file 내의 모든 submodel xml 파일 내용.  text 이므로 BLOB 일 필요가 없음.
     , CONSTRAINT {Tn.Project}_uniq UNIQUE (name)    -- Project 의 이름은 유일해야 함
 );
 
@@ -291,7 +273,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "langVersion"}   TEXT NOT NULL   -- System.Version 형식의 문자열.  e.g. "1.0.0"  -- System 의 언어 버전
     , {k "engineVersion"} TEXT NOT NULL
     , {k "description"}   TEXT
-    , {k "dateTime"}      {datetime}{applyExtension "system" ""}
+    , {k "dateTime"}      {datetime}
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_iri_uniq UNIQUE (iri)
     -- , CONSTRAINT {Tn.System}_name_uniq UNIQUE (name)    -- system 이름 전체적으로 고유해야 함.
@@ -342,7 +324,7 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 
 
 CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
-    , {k "systemId"}      {intKeyType} NOT NULL{applyExtension "flow" ""}
+    , {k "systemId"}      {intKeyType} NOT NULL
     , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.Flow}_uniq UNIQUE (systemId, name)
 );
@@ -390,7 +372,7 @@ CREATE TABLE {k Tn.Work}( {sqlUniqWithName()}
     , {k "numRepeat"}   {int32} NOT NULL DEFAULT 0  -- 반복 횟수
     , {k "period"}      {int32} NOT NULL DEFAULT 0  -- 주기
     , {k "delay"}       {int32} NOT NULL DEFAULT 0  -- 지연
-    , {k "status4Id"}   {intKeyType} DEFAULT NULL{applyExtension "work" ""}
+    , {k "status4Id"}   {intKeyType} DEFAULT NULL
     , FOREIGN KEY(systemId)  REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)    REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
     , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
@@ -440,7 +422,7 @@ CREATE TABLE {k Tn.Call}( {sqlUniqWithName()}
     , {k "autoConditions"}   TEXT
     , {k "commonConditions"} TEXT
     , {k "isDisabled"}    {boolean} NOT NULL DEFAULT {falseValue}   -- 0: 활성화, 1: 비활성화
-    , {k "workId"}        {intKeyType} NOT NULL{applyExtension "call" ""}
+    , {k "workId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
     , FOREIGN KEY(callTypeId) REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
     , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL

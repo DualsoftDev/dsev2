@@ -8,33 +8,6 @@ open Dual.Common.Base
 
 [<AutoOpen>]
 module ORMTypesModule =
-
-    type RowId = int
-    type IORMProject    = inherit IORMUnique inherit IWithDateTime
-    type IORMSystem     = inherit IORMUnique inherit IWithDateTime
-    type IORMFlow       = inherit IORMUnique
-    type IORMWork       = inherit IORMUnique
-    type IORMCall       = inherit IORMUnique
-    type IORMArrow      = inherit IORMUnique
-    type IORMArrowWork  = inherit IORMArrow
-    type IORMArrowCall  = inherit IORMArrow
-
-    type IORMButton     = inherit IORMUnique
-    type IORMLamp       = inherit IORMUnique
-    type IORMCondition  = inherit IORMUnique
-    type IORMAction     = inherit IORMUnique
-
-
-
-    type IORMApiCall    = inherit IORMUnique
-    type IORMApiDef     = inherit IORMUnique
-    type IORMParamWork  = inherit IORMUnique
-    type IORMParamCall  = inherit IORMUnique
-    type IORMProgress   = inherit IORMUnique
-    type IORMEnum       = inherit IORMUnique
-    type IORMMeta       = inherit IORMUnique
-    type IORMLog        = inherit IORMUnique
-
     [<AbstractClass>]
     type ORMUnique(name:string, guid:Guid, id:Id option, parameter:string, dateTime:DateTime) =
         inherit Unique()

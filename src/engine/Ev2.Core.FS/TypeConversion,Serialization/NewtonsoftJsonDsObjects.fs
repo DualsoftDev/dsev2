@@ -18,22 +18,6 @@ open System.Runtime.CompilerServices
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
 module NewtonsoftJsonModules =
-    type INjProject = inherit INjUnique inherit IDsProject inherit IWithDateTime
-    type INjSystem  = inherit INjUnique inherit IDsSystem inherit IWithDateTime
-    type INjFlow    = inherit INjUnique inherit IDsFlow
-    type INjWork    = inherit INjUnique inherit IDsWork
-    type INjCall    = inherit INjUnique inherit IDsCall
-    type INjApiCall = inherit INjUnique inherit IDsApiCall
-    type INjApiDef  = inherit INjUnique inherit IDsApiDef
-    type INjArrow   = inherit INjUnique inherit IArrow
-
-    type INjButton    = inherit INjUnique inherit IDsButton
-    type INjLamp      = inherit INjUnique inherit IDsLamp
-    type INjCondition = inherit INjUnique inherit IDsCondition
-    type INjAction    = inherit INjUnique inherit IDsAction
-
-
-
     [<AbstractClass>]
     type NjUnique() as this =
         inherit Unique()
