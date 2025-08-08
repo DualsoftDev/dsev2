@@ -131,7 +131,8 @@ and Project() =
     // } Runtime/DB 용
 
     /// Initialize method for parameterless constructor + Initialize pattern
-    member this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
+    abstract Initialize : activeSystems: DsSystem seq * passiveSystems: DsSystem seq -> Project
+    default this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
         // Clear existing systems
         this.RawActiveSystems.Clear()
         this.RawPassiveSystems.Clear()
@@ -183,8 +184,9 @@ and DsSystem() =
     member x.ApiDefs  = x.RawApiDefs  |> toList
     member x.ApiCalls = x.RawApiCalls |> toList
 
-    /// Initialize method for parameterless constructor + Initialize pattern
-    member this.Initialize(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
+    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
+    abstract member Initialize : Flow seq * Work seq * ArrowBetweenWorks seq * ApiDef seq * ApiCall seq -> DsSystem
+    default this.Initialize(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
         // Clear existing components
         this.RawFlows.Clear()
         this.RawWorks.Clear()
@@ -243,8 +245,9 @@ and Flow() =
             |> toArray)
         |? [||]
 
-    /// Initialize method for parameterless constructor + Initialize pattern
-    member this.Initialize(buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
+    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
+    abstract member Initialize : DsButton seq * Lamp seq * DsCondition seq * DsAction seq -> Flow
+    default this.Initialize(buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
         // Clear existing UI components
         this.RawButtons.Clear()
         this.RawLamps.Clear()
@@ -316,8 +319,9 @@ and Work() =
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
 
-    /// Initialize method for parameterless constructor + Initialize pattern
-    member this.Initialize(calls: Call seq, arrows: ArrowBetweenCalls seq, flow: Flow option) =
+    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
+    abstract member Initialize : Call seq * ArrowBetweenCalls seq * Flow option -> Work
+    default this.Initialize(calls: Call seq, arrows: ArrowBetweenCalls seq, flow: Flow option) =
         // Clear existing components
         this.RawCalls.Clear()
         this.RawArrows.Clear()
@@ -365,7 +369,9 @@ and Call() =
         | None -> []
 
     /// Initialize method for parameterless constructor + Initialize pattern
-    member this.Initialize(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
+    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
+    abstract member Initialize : DbCallType * Guid seq * string seq * string seq * bool * int option -> Call
+    default this.Initialize(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
         // Set call properties
         this.CallType <- callType
         this.IsDisabled <- isDisabled
