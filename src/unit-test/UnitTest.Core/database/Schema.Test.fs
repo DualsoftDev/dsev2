@@ -82,7 +82,7 @@ module Schema =
     let ``basic_test`` (dbApi:AppDbApi) =
         createEditableProject()
 
-        let dsProject = edProject.Replicate() |> validateRuntime
+        let dsProject = rtProject.Replicate() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
         let rtObjs = dsProject.EnumerateRtObjects()
@@ -115,42 +115,42 @@ module Schema =
                 dsobj.Id.IsSome === true
             )
 
-            let edProject = edProject
+            let edProject = rtProject
             let diffProj = edProject.ComputeDiff dsProject |> toArray
             let diffSys = edProject.Systems[0].ComputeDiff dsProject.Systems[0] |> toArray
 
             let dsSystem = dsProject.Systems[0]
             let dsFlow = dsSystem.Flows[0]
-            dsFlow.Guid === edFlow.Guid
+            dsFlow.Guid === rtFlow.Guid
             dsFlow.Works.Length === 2
             dsSystem.Works.Length === 3
             let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
             let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
             let dsWork3 = dsSystem.Works |> Seq.find(fun w -> w.Name = "FreeWork1")
-            dsWork1.Guid === edWork1.Guid
-            dsWork2.Guid === edWork2.Guid
-            dsWork3.Guid === edWork3.Guid
-            dsWork1.Name === edWork1.Name
-            dsWork2.Name === edWork2.Name
-            dsWork3.Name === edWork3.Name
+            dsWork1.Guid === rtWork1.Guid
+            dsWork2.Guid === rtWork2.Guid
+            dsWork3.Guid === rtWork3.Guid
+            dsWork1.Name === rtWork1.Name
+            dsWork2.Name === rtWork2.Name
+            dsWork3.Name === rtWork3.Name
 
             let flowWors = dsFlow.Works
             flowWors.Length === 2
-            flowWors[0].Guid === edWork1.Guid
-            flowWors[1].Guid === edWork2.Guid
-            dsFlow.Name === edFlow.Name
+            flowWors[0].Guid === rtWork1.Guid
+            flowWors[1].Guid === rtWork2.Guid
+            dsFlow.Name === rtFlow.Name
 
-            edWork1.Calls.Length === 2
-            edWork2.Calls.Length === 2
+            rtWork1.Calls.Length === 2
+            rtWork2.Calls.Length === 2
             let dsCall1 = dsWork1.Calls[0]
             let dsCall2 = dsWork2.Calls[0]
-            dsCall1.Guid === edCall1a.Guid
-            dsCall2.Guid === edCall2a.Guid
+            dsCall1.Guid === rtCall1a.Guid
+            dsCall2.Guid === rtCall2a.Guid
             dsCall1.RawParent |->_.Guid === Some dsWork1.Guid
             dsCall2.RawParent |->_.Guid === Some dsWork2.Guid
 
-            dsCall1.Name === edCall1a.Name
-            dsCall2.Name === edCall2a.Name
+            dsCall1.Name === rtCall1a.Name
+            dsCall2.Name === rtCall2a.Name
 
             let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
             tracefn $"---------------------- json:\r\n{json}"
@@ -357,7 +357,7 @@ module Schema =
             //let jsonPath = Path.Combine(testDataDir(), "db-inserted-dssystem.json")
             let jsonPath = Path.Combine(testDataDir(), "dssystem.json")
             if not (File.Exists jsonPath) then
-                edProject.ToJson(jsonPath) |> ignore
+                rtProject.ToJson(jsonPath) |> ignore
 
             let json = File.ReadAllText(jsonPath)
             let dsProject0 = NjProject.FromJson json
@@ -398,8 +398,8 @@ module Schema =
         member x.``Cylinder 추가 test`` () =
             createEditableProject()
             createEditableSystemCylinder()
-            let originalEdProject = edProject
-            let edProject = edProject.Replicate() |> validateRuntime
+            let originalEdProject = rtProject
+            let edProject = rtProject.Replicate() |> validateRuntime
 
             let edSysCyl1 = edSystemCyl.Duplicate(Name="실린더 instance1")
             let edSysCyl2 = edSystemCyl.Duplicate(Name="실린더 instance2")
@@ -542,7 +542,7 @@ module Schema =
 
         [<Test>]
         member x.``설계 문서 위치에 샘플 생성`` () =
-            let dsProject = edProject |> validateRuntime
+            let dsProject = rtProject |> validateRuntime
             let jsonPath = Path.Combine(testDataDir(), $"{getFuncName(1)}.json")
             dsProject.ToJson jsonPath |> ignore
 
@@ -563,8 +563,8 @@ module Schema =
 
         [<Test>]
         member x.``[Sqlite] DB System 수정 commit`` () =
-            let dsProject = edProject.Replicate() |> validateRuntime
-            let diffs = dsProject.ComputeDiff edProject |> toArray
+            let dsProject = rtProject.Replicate() |> validateRuntime
+            let diffs = dsProject.ComputeDiff rtProject |> toArray
 
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->
@@ -585,8 +585,8 @@ module Schema =
 
         [<Test>]
         member x.``[Sqlite] DB Project 수정 commit`` () =
-            let xxx = edProject
-            let dsProject = edProject.Replicate() |> validateRuntime
+            let xxx = rtProject
+            let dsProject = rtProject.Replicate() |> validateRuntime
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->
 
@@ -667,7 +667,7 @@ module Schema =
     type IndependantTest() =
         [<Test>]
         member x.``비교`` () =
-            let dsProject = edProject |> validateRuntime
+            let dsProject = rtProject |> validateRuntime
 
 
             do
@@ -716,11 +716,11 @@ module Schema =
 
         [<Test>]
         member x.``복제 비교`` () =
-            let dsProject = edProject.Replicate() |> validateRuntime
-            let diffs = dsProject.ComputeDiff edProject
+            let dsProject = rtProject.Replicate() |> validateRuntime
+            let diffs = dsProject.ComputeDiff rtProject
             printfn "Differences found: %d" (diffs |> Seq.length)
             diffs |> Seq.iteri (fun i diff -> printfn "[%d] %A" i diff)
-            edProject.IsEqual dsProject === true
+            rtProject.IsEqual dsProject === true
 
         [<Test>]
         member x.``복사 비교`` () =
@@ -728,15 +728,15 @@ module Schema =
                 - Active/Passive system 들의 Guid 변경되어야 함.
                 - Parent 및 OwnerSystem member 변경되어야 함.
             *)
-            let dsProject = edProject.Duplicate($"CC_{edProject.Name}") |> validateRuntime
-            edProject.IsEqual dsProject === false
+            let dsProject = rtProject.Duplicate($"CC_{rtProject.Name}") |> validateRuntime
+            rtProject.IsEqual dsProject === false
 
-            let diffs = edProject.ComputeDiff(dsProject) |> toList
+            let diffs = rtProject.ComputeDiff(dsProject) |> toList
             diffs.Length === 5
-            diffs |> contains (Diff ("Guid", edProject, dsProject)) === true
-            diffs |> contains (Diff ("DateTime", edProject, dsProject)) === true
-            diffs |> contains (Diff ("Name", edProject, dsProject)) === true
-            diffs |> contains (LeftOnly edProject.Systems[0]) === true
+            diffs |> contains (Diff ("Guid", rtProject, dsProject)) === true
+            diffs |> contains (Diff ("DateTime", rtProject, dsProject)) === true
+            diffs |> contains (Diff ("Name", rtProject, dsProject)) === true
+            diffs |> contains (LeftOnly rtProject.Systems[0]) === true
             diffs |> contains (RightOnly dsProject.Systems[0]) === true
 
             do
@@ -744,7 +744,7 @@ module Schema =
                     - 복사로 인해 System 의 Guid 는 새로 생성, IRI 는 초기화되어 다름
                     - 시스템 하부에 존재하는 Work, Flow, ApiDef, ApiCall 은 모두 다른 객체로 생성.
                 *)
-                let src = edProject.Systems[0]
+                let src = rtProject.Systems[0]
                 let cc = dsProject.Systems[0]
                 diffs |> contains (LeftOnly src) === true
                 diffs |> contains (RightOnly cc) === true

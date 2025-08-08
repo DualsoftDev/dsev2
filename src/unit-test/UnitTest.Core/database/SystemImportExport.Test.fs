@@ -11,7 +11,7 @@ module SystemImportExportModule =
     [<Test>]
     let systemExportTest() =
         let jsonPath = Path.Combine(testDataDir(), "dssystem-export.system.json")
-        edSystem.ExportToJson(jsonPath) |> ignore
+        rtSystem.ExportToJson(jsonPath) |> ignore
 
         let system = DsSystem.ImportFromJson(File.ReadAllText jsonPath)
         ()

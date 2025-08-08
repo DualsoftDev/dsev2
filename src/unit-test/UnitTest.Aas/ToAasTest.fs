@@ -84,8 +84,8 @@ module ToAasTest =
         member _.``Project with cylinder: instance -> Aas Test`` () =
             createEditableProject()
             createEditableSystemCylinder()
-            let originalEdProject = edProject
-            let edProject = edProject.Replicate() |> validateRuntime
+            let originalEdProject = rtProject
+            let edProject = rtProject.Replicate() |> validateRuntime
             let edSysCyl1 = edSystemCyl.Duplicate(Name="실린더 instance1")
             let edSysCyl2 = edSystemCyl.Duplicate(Name="실린더 instance2")
             let edSysCyl3 = edSystemCyl.Duplicate(Name="실린더 instance3")
