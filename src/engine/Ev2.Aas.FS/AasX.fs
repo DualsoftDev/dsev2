@@ -224,8 +224,6 @@ module AasXModule2 =
 
         member x.ExportToAasxFile(outputPath: string, ?dbApi: AppDbApi): unit =
             dbApi |> iter x.ReadRuntimeDataFromDatabase
-
-
             let njProj = x.ToJson() |> NjProject.FromJson
             njProj.ExportToAasxFile(outputPath)
 
