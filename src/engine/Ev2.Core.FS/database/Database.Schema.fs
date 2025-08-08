@@ -259,11 +259,12 @@ WHERE {k "topicIndex"} IS NOT NULL AND {k "isTopicOrigin"} IS NOT NULL;
 
         // 확장 스키마 가져오기
         let schemaExtension = 
-            match TypeFactoryModule.TypeFactory with
-            | Some factory -> 
+            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+                let factory = TypeFactoryModule.TypeFactory
                 let ext = factory.GetSchemaExtension()
                 if not (isItNull ext) then Some ext else None
-            | None -> None
+            else
+                None
         
         // 테이블별 확장 컬럼 적용 함수 (C# 친화적)
         let applyExtension (tableName: string) (baseColumns: string) =

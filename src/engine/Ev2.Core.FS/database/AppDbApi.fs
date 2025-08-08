@@ -65,11 +65,12 @@ module DbApiModule =
 
                         // 스키마 확장 적용 (C# 친화적 null check)
                         schema <-
-                            match TypeFactoryModule.TypeFactory with
-                            | Some factory ->
+                            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+                                let factory = TypeFactoryModule.TypeFactory
                                 let ext = factory.GetSchemaExtension()
                                 if not (isItNull ext) then ext.ModifySchema(schema) else schema
-                            | None -> schema
+                            else
+                                schema
 
                         logInfo $"Creating database schema on {connStr}..."
                         logInfo $"CreateSchema:\r\n{schema}"
@@ -89,11 +90,12 @@ module DbApiModule =
                             conn.Execute(schema, null, tr) |> ignore
 
                             // DB 생성 후 추가 작업 수행 (C# 친화적 null check)
-                            match TypeFactoryModule.TypeFactory with
-                            | Some factory ->
+                            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+                                let factory = TypeFactoryModule.TypeFactory
                                 let ext = factory.GetSchemaExtension()
                                 if not (isItNull ext) then ext.PostCreateDatabase(conn, tr)
-                            | None -> ()
+                            else
+                                ()
 
                             insertEnumValues<DbStatus4>   conn tr Tn.Enum
                             insertEnumValues<DbCallType>  conn tr Tn.Enum
@@ -208,12 +210,13 @@ module ORMTypeConversionModule =
 
         /// TypeFactory를 통해 확장 ORM 타입 생성 시도
         let createOrmWithFactory (runtimeType: Type) (defaultFactory: unit -> ORMUnique) : ORMUnique =
-            match TypeFactoryModule.TypeFactory with
-            | Some factory ->
+            if not (obj.ReferenceEquals(TypeFactoryModule.TypeFactory, null)) then
+                let factory = TypeFactoryModule.TypeFactory
                 let obj = factory.CreateOrm(runtimeType)
                 if obj <> null then obj :?> ORMUnique
                 else defaultFactory()
-            | None -> defaultFactory()
+            else
+                defaultFactory()
 
         match x |> tryCast<Unique> with
         | Some uniq ->

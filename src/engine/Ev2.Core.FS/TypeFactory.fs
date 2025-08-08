@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 open System.Data
+open Dual.Common.Base
 
 /// Third Party 확장을 위한 SQL 스키마 확장 인터페이스 (C# 친화적)
 [<AllowNullLiteral>]
@@ -47,10 +48,10 @@ type IExtensionDbHandler =
 
 [<AutoOpen>]
 module TypeFactoryModule =
-    /// Global factory instance (외부에서 구현체 주입)
-    let mutable TypeFactory : ITypeFactory option = None
-    /// Global extension db handler instance (외부에서 구현체 주입)
-    let mutable ExtensionDbHandler : IExtensionDbHandler option = None
+    /// Global factory instance (외부에서 구현체 주입) - C# 친화적으로 null 사용
+    let mutable TypeFactory : ITypeFactory = getNull<ITypeFactory>()
+    /// Global extension db handler instance (외부에서 구현체 주입) - C# 친화적으로 null 사용
+    let mutable ExtensionDbHandler : IExtensionDbHandler = getNull<IExtensionDbHandler>()
 
 /// Third Party 확장 지원을 위한 Generic Helper 함수들
 [<AutoOpen>]
@@ -58,50 +59,45 @@ module TypeFactoryHelper =
 
     /// 확장 타입 생성을 지원하는 helper 함수 (fallback 포함)
     let createWithFallback<'T> (fallbackFactory: unit -> 'T) : 'T =
-        match TypeFactory with
-        | Some factory ->
-            let obj = factory.CreateRuntime(typeof<'T>)
+        if not (obj.ReferenceEquals(TypeFactory, null)) then
+            let obj = TypeFactory.CreateRuntime(typeof<'T>)
             if obj <> null then obj :?> 'T
             else fallbackFactory()
-        | None -> fallbackFactory()
+        else fallbackFactory()
 
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
     let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
-        match TypeFactory with
-        | Some factory ->
-            let obj = factory.CreateRuntime(typeof<'T>)
+        if not (obj.ReferenceEquals(TypeFactory, null)) then
+            let obj = TypeFactory.CreateRuntime(typeof<'T>)
             if obj <> null then obj :?> 'T else new 'T()
-        | None -> new 'T()
+        else new 'T()
 
     /// 복제 전용 생성 - 확장 속성 초기화 건너뜀
     let inline createExtendedForReplication<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
-        match TypeFactory with
-        | Some factory ->
-            let obj = factory.CreateRuntimeForReplication(typeof<'T>)
+        if not (obj.ReferenceEquals(TypeFactory, null)) then
+            let obj = TypeFactory.CreateRuntimeForReplication(typeof<'T>)
             if obj <> null then
                 obj :?> 'T
             else
                 // 확장 타입이 등록되지 않았으므로 기본 타입 사용
                 new 'T()
-        | None ->
+        else
             // 팩토리가 없으므로 기본 타입 사용
             new 'T()
 
     /// JSON 객체 생성을 위한 helper 함수
     let createJsonFromRuntime<'TRuntime, 'TJson when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TJson) : 'TJson =
-        match TypeFactory with
-        | Some factory ->
-            let obj = factory.CreateJson(typeof<'TRuntime>, runtime)
+        if not (obj.ReferenceEquals(TypeFactory, null)) then
+            let obj = TypeFactory.CreateJson(typeof<'TRuntime>, runtime)
             if obj <> null then obj :?> 'TJson
             else defaultFactory runtime
-        | None -> defaultFactory runtime
+        else defaultFactory runtime
 
     /// ORM 객체 생성을 위한 helper 함수
     let createOrmFromRuntime<'TRuntime, 'TOrm when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TOrm) : 'TOrm =
-        match TypeFactory with
-        | Some factory ->
-            let obj = factory.CreateOrm(typeof<'TRuntime>)
+        if not (obj.ReferenceEquals(TypeFactory, null)) then
+            let obj = TypeFactory.CreateOrm(typeof<'TRuntime>)
             if obj <> null then obj :?> 'TOrm
             else defaultFactory runtime
-        | None -> defaultFactory runtime
+        else defaultFactory runtime

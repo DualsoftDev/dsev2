@@ -73,9 +73,10 @@ module internal DbInsertModule =
 
 
                     rt.InsertSystemMapToDB(dbApi)
-                    
+
                     // 확장 처리 훅
-                    ExtensionDbHandler |> Option.iter (fun h -> h.HandleAfterInsert(rt, conn, tr))
+                    if isItNotNull ExtensionDbHandler then
+                        ExtensionDbHandler.HandleAfterInsert(rt, conn, tr)
 
 
                 | :? DsSystem as rt ->
@@ -106,9 +107,10 @@ module internal DbInsertModule =
 
                     // system 의 arrows 를 삽입 (works 간 연결)
                     rt.Arrows |> iter _.InsertToDB(dbApi)
-                    
+
                     // 확장 처리 훅
-                    ExtensionDbHandler |> Option.iter (fun h -> h.HandleAfterInsert(rt, conn, tr))
+                    if isItNotNull ExtensionDbHandler then
+                        ExtensionDbHandler.HandleAfterInsert(rt, conn, tr)
 
 
                 | :? ApiDef as rt ->
