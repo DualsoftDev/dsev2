@@ -80,6 +80,14 @@ module rec NewtonsoftJsonObjects =
         if isItNotNull src then
             replicateProperties src dst |> ignore
         dst
+    
+    /// TypeFactory를 통해 JSON 타입 생성 (확장 타입 지원)
+    let internal createJsonViaFactory<'T> (runtimeObj:obj) (defaultFactory: unit -> 'T) : 'T =
+        match TypeFactoryModule.TypeFactory with
+        | Some factory -> 
+            let obj = factory.CreateJson(runtimeObj.GetType(), runtimeObj)
+            if isItNotNull obj then obj :?> 'T else defaultFactory()
+        | None -> defaultFactory()
 
 
     [<AbstractClass>]
@@ -181,11 +189,13 @@ module rec NewtonsoftJsonObjects =
             fwdOnNsJsonDeserialized x
 
         static member internal fromRuntime(rt:DsSystem) =
-            // 기본 NjSystem 생성 - TypeFactory 사용 제거 (JSON 타입은 확장 불필요)
-            let njSystem = NjSystem()
+            // TypeFactory를 통한 확장 타입 지원
+            let njSystem = createJsonViaFactory rt (fun () -> 
+                NjSystem()
+                |> fromNjUniqINGD rt
+            )
 
             njSystem
-            |> fromNjUniqINGD rt
             |> tee (fun z ->
                 let flows = rt.Flows |-> NjFlow.fromRuntime |> toArray
                 let works = rt.Works |-> NjWork.fromRuntime |> toArray
@@ -222,8 +232,13 @@ module rec NewtonsoftJsonObjects =
 
 
         static member internal fromRuntime(rt:Flow) =
-            NjFlow()
-            |> fromNjUniqINGD rt
+            // TypeFactory를 통한 확장 타입 지원
+            let njFlow = createJsonViaFactory rt (fun () -> 
+                NjFlow()
+                |> fromNjUniqINGD rt
+            )
+            
+            njFlow
             |> tee(fun z ->
                 z.Buttons    <- rt.Buttons    |-> NjButton   .fromRuntime |> toArray
                 z.Lamps      <- rt.Lamps      |-> NjLamp     .fromRuntime |> toArray
@@ -306,8 +321,13 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
 
         static member internal fromRuntime(rt:Work) =
-            NjWork()
-            |> fromNjUniqINGD rt
+            // TypeFactory를 통한 확장 타입 지원
+            let njWork = createJsonViaFactory rt (fun () -> 
+                NjWork()
+                |> fromNjUniqINGD rt
+            )
+            
+            njWork
             |> tee (fun z ->
                 z.Calls    <- rt.Calls   |-> NjCall.fromRuntime  |> toArray
                 z.Arrows   <- rt.Arrows  |-> NjArrow.fromRuntime |> toArray
@@ -381,8 +401,13 @@ module rec NewtonsoftJsonObjects =
         static member internal fromRuntime(rt:Call) =
             let ac = rt.AutoConditions |> jsonSerializeStrings
             let cc = rt.CommonConditions |> jsonSerializeStrings
-            NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
-            |> fromNjUniqINGD rt
+            // TypeFactory를 통한 확장 타입 지원
+            let njCall = createJsonViaFactory rt (fun () ->
+                NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
+                |> fromNjUniqINGD rt
+            )
+            
+            njCall
             |> tee (fun z ->
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
                 z.Status4 <- rt.Status4
@@ -692,15 +717,20 @@ module Ds2JsonModule =
             EmJson.FromJson<NjProject>(json, settings)
 
         static member internal fromRuntime(rt:Project) =
-            // 기본 NjProject 생성 - TypeFactory 사용 제거 (JSON 타입은 확장 불필요)
+            // TypeFactory를 통한 확장 타입 지원
             let njProject =
-                NjProject(Database=rt.Database
-                    , Author=rt.Author
-                    , Version=rt.Version
-                    , Description=rt.Description)
-                |> fromNjUniqINGD rt
+                createJsonViaFactory rt (fun () ->
+                    NjProject(Database=rt.Database
+                        , Author=rt.Author
+                        , Version=rt.Version
+                        , Description=rt.Description)
+                    |> fromNjUniqINGD rt
+                )
 
-            njProject |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
+            njProject |> tee(fun n -> 
+                // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
+                if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
+                verify (n.RuntimeObject = rt)) // serialization 연결 고리
 
 
     type Project with // // ToJson, FromJson
@@ -770,4 +800,19 @@ module Ds2JsonModule =
         static member FromJson(json) = DsSystem.ImportFromJson(json)
 
 
+/// C#에서 사용하기 위한 JSON 변환 헬퍼 모듈
+module NewtonsoftJsonObjectsModule =
+    /// Runtime 객체를 JSON 타입으로 변환
+    let fromRuntime (runtime: obj) : obj =
+        match runtime with
+        | :? Project as p -> NjProject.fromRuntime(p) :> obj
+        | :? DsSystem as s -> NjSystem.fromRuntime(s) :> obj
+        | :? Flow as f -> NjFlow.fromRuntime(f) :> obj
+        | :? Work as w -> NjWork.fromRuntime(w) :> obj
+        | :? Call as c -> NjCall.fromRuntime(c) :> obj
+        | _ -> failwith $"Unsupported runtime type: {runtime.GetType().Name}"
+    
+    /// NjUnique 객체에서 Runtime 객체 추출
+    let getRuntimeObject<'T when 'T :> RtUnique and 'T : not struct> (njObj: NjUnique) : 'T =
+        NewtonsoftJsonModules.getRuntimeObject<'T> njObj
 
