@@ -29,6 +29,7 @@
 		<Compile Include="TypeConversion,Serialization\DB.Update.fs" />
 		<Compile Include="TypeConversion,Serialization\DB.API.fs" />
 		<Compile Include="TypeConversion,Serialization\Ds2Aas.fs" />
+		<Compile Include="TypeConversion,Serialization\Ev2CoreExtensionForCSharp.fs" />
 		<Compile Include="MiniSample.fs" />
 		<Compile Include="EntryPoint.fs" />
 	</ItemGroup>

@@ -120,11 +120,15 @@ module rec NewtonsoftJsonObjects =
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized x
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : activeSystems:NjSystem[] * passiveSystems:NjSystem[] -> NjProject
-        default x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
+        abstract Initialize : activeSystems:NjSystem[] * passiveSystems:NjSystem[] * isDeserialization:bool -> NjProject
+        default x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[], isDeserialization:bool) =
             x.ActiveSystems <- activeSystems
             x.PassiveSystems <- passiveSystems
             x
+        
+        /// Overload for backward compatibility
+        member x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
+            x.Initialize(activeSystems, passiveSystems, false)
 
 
     type NjSystem() =
@@ -412,9 +416,12 @@ module rec NewtonsoftJsonObjects =
                 let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
                 let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
 
-                Project.Create(actives, passives)
+                Project.CreateForDeserialization(actives, passives)
                 |> replicateProperties njp
                 |> tee (fun rtp ->
+                    // TypeFactory가 있으면 확장 속성 복사
+                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njp, rtp))
+                    
                     actives @ passives
                     |> iter (setParentI rtp) )
 
@@ -447,6 +454,9 @@ module rec NewtonsoftJsonObjects =
                     let dsWork =
                         Work.Create(calls, arrows, optFlow)
                         |> replicateProperties njw
+                        |> tee (fun rtw ->
+                            // TypeFactory가 있으면 확장 속성 복사
+                            getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njw, rtw)))
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork
@@ -475,6 +485,9 @@ module rec NewtonsoftJsonObjects =
             njs.RuntimeObject <-
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls)
                 |> replicateProperties njs
+                |> tee (fun rts ->
+                    // TypeFactory가 있으면 확장 속성 복사
+                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njs, rts)))
 
         | :? NjFlow as njf ->
             njf.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton()     |> replicateProperties z)
@@ -489,7 +502,13 @@ module rec NewtonsoftJsonObjects =
             let conditions = njf.Conditions |-> getRuntimeObject<DsCondition>
             let actions    = njf.Actions    |-> getRuntimeObject<DsAction>
 
-            let rtFlow = Flow.Create(buttons, lamps, conditions, actions) |> replicateProperties njf
+            let rtFlow = 
+                Flow.Create(buttons, lamps, conditions, actions) 
+                |> replicateProperties njf
+                |> tee (fun rtf ->
+                    // TypeFactory가 있으면 확장 속성 복사
+                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njf, rtf)))
+            
             let all:NjUnique seq =
                 njf.Buttons     .Cast<NjUnique>()
                 @ njf.Lamps     .Cast<NjUnique>()
@@ -536,6 +555,9 @@ module rec NewtonsoftJsonObjects =
                 let ccs = njc.CommonConditions |> jsonDeserializeStrings
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
+                |> tee (fun rtc ->
+                    // TypeFactory가 있으면 확장 속성 복사
+                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njc, rtc)))
             ()
 
         | :? NjApiCall as njac ->
@@ -548,11 +570,17 @@ module rec NewtonsoftJsonObjects =
                 ApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
                 |> replicateProperties njac
+                |> tee (fun rtac ->
+                    // TypeFactory가 있으면 확장 속성 복사
+                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njac, rtac)))
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
                 ApiDef(njad.IsPush, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin)
                 |> replicateProperties njad
+                |> tee (fun rtad ->
+                    // TypeFactory가 있으면 확장 속성 복사
+                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njad, rtad)))
             ()
 
 

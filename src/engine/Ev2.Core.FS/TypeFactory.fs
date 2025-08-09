@@ -23,6 +23,10 @@ type ITypeFactory =
     abstract CreateOrm : runtimeType:Type -> obj
     /// SQL 스키마 확장 제공자 반환 (C# 친화적 - null 가능)
     abstract GetSchemaExtension : unit -> ISchemaExtension
+    /// RuntimeType 문자열로 JSON 타입 찾기 (역직렬화용)
+    abstract FindJsonTypeByName : typeName:string -> Type
+    /// JSON 객체에서 런타임 객체로 확장 속성 복사
+    abstract CopyExtensionProperties : njObj:obj * rtObj:obj -> unit
 
 /// Third Party 확장을 위한 Database CRUD 훅 인터페이스
 type IExtensionDbHandler =

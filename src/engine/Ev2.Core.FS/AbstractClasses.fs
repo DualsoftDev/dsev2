@@ -87,7 +87,12 @@ and Project() =
     /// Creates a Project with the specified systems using parameterless constructor + Initialize pattern
     static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
         let project = createExtended<Project>()
-        project.Initialize(activeSystems, passiveSystems)
+        project.Initialize(activeSystems, passiveSystems, false)
+    
+    /// Creates a Project for deserialization (doesn't initialize extension properties)
+    static member CreateForDeserialization(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
+        let project = createExtended<Project>()
+        project.Initialize(activeSystems, passiveSystems, true)
 
     interface IRtProject with
         member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -115,8 +120,8 @@ and Project() =
     // } Runtime/DB 용
 
     /// Initialize method for parameterless constructor + Initialize pattern
-    abstract Initialize : activeSystems: DsSystem seq * passiveSystems: DsSystem seq -> Project
-    default this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
+    abstract Initialize : activeSystems: DsSystem seq * passiveSystems: DsSystem seq * isDeserialization: bool -> Project
+    default this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, isDeserialization: bool) =
         // Clear existing systems
         this.RawActiveSystems.Clear()
         this.RawPassiveSystems.Clear()
@@ -130,6 +135,10 @@ and Project() =
             setParentI this s)
 
         this
+    
+    /// Overload for backward compatibility
+    member this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
+        this.Initialize(activeSystems, passiveSystems, false)
 
 
 and DsSystem() =
