@@ -10,25 +10,25 @@ open Ev2.Core.FS.NewtonsoftJsonObjects
 
 //    /// Project를 NjProject로 변환하는 extension method
 //    [<Extension>]
-//    static member ToNj(project: Project) : NjProject =
+//    static member ToNjObj(project: Project) : NjProject =
 //        NjProject.fromRuntime(project)
 
 //    /// DsSystem을 NjSystem으로 변환하는 extension method
 //    [<Extension>]
-//    static member ToNj(system: DsSystem) : NjSystem =
+//    static member ToNjObj(system: DsSystem) : NjSystem =
 //        NjSystem.fromRuntime(system)
 
 //    /// Flow를 NjFlow로 변환하는 extension method
 //    [<Extension>]
-//    static member ToNj(flow: Flow) : NjFlow =
+//    static member ToNjObj(flow: Flow) : NjFlow =
 //        NjFlow.fromRuntime(flow)
 
 //    /// Work를 NjWork로 변환하는 extension method
 //    [<Extension>]
-//    static member ToNj(work: Work) : NjWork =
+//    static member ToNjObj(work: Work) : NjWork =
 //        NjWork.fromRuntime(work)
 
 //    /// Call을 NjCall로 변환하는 extension method
 //    [<Extension>]
-//    static member ToNj(call: Call) : NjCall =
+//    static member ToNjObj(call: Call) : NjCall =
 //        NjCall.fromRuntime(call)

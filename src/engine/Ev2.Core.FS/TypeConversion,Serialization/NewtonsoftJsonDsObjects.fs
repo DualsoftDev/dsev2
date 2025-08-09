@@ -715,39 +715,39 @@ module Ds2JsonModule =
 
             EmJson.FromJson<NjProject>(json, settings)
 
-        static member internal fromRuntime(rt:Project) =
-            // TypeFactory를 통한 확장 타입 지원
-            let njProject =
-                if isItNotNull TypeFactoryModule.TypeFactory then
-                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then
-                        jsonObj :?> NjProject
-                    else
-                        NjProject(Database=rt.Database
-                            , Author=rt.Author
-                            , Version=rt.Version
-                            , Description=rt.Description)
-                        |> fromNjUniqINGD rt
-                else
-                    NjProject(Database=rt.Database
-                        , Author=rt.Author
-                        , Version=rt.Version
-                        , Description=rt.Description)
-                    |> fromNjUniqINGD rt
+        //static member internal fromRuntime(rt:Project) =
+        //    // TypeFactory를 통한 확장 타입 지원
+        //    let njProject =
+        //        if isItNotNull TypeFactoryModule.TypeFactory then
+        //            let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
+        //            if isItNotNull jsonObj then
+        //                jsonObj :?> NjProject
+        //            else
+        //                NjProject(Database=rt.Database
+        //                    , Author=rt.Author
+        //                    , Version=rt.Version
+        //                    , Description=rt.Description)
+        //                |> fromNjUniqINGD rt
+        //        else
+        //            NjProject(Database=rt.Database
+        //                , Author=rt.Author
+        //                , Version=rt.Version
+        //                , Description=rt.Description)
+        //            |> fromNjUniqINGD rt
 
-            njProject |> tee(fun n ->
-                // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
-                if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
-                verify (n.RuntimeObject = rt)) // serialization 연결 고리
+        //    njProject |> tee(fun n ->
+        //        // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
+        //        if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
+        //        verify (n.RuntimeObject = rt)) // serialization 연결 고리
 
 
     type Project with // // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
-            let njProject = NjProject.fromRuntime(x)
+            let njProject = x.ToNjObj() :?> NjProject // NjProject.fromRuntime(x)
             njProject.ToJson()
         member x.ToJson(jsonFilePath:string) =
-            let njProject = NjProject.fromRuntime(x)
+            let njProject = x.ToNjObj() :?> NjProject // NjProject.fromRuntime(x)
             njProject.ToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsProject 로 변환
@@ -772,18 +772,6 @@ module Ds2JsonModule =
 
         /// JSON 문자열을 DsSystem 로 변환
         static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
-
-        static member internal fromRuntime(rt:DsSystem) =
-            // 기본 NjSystem 생성 - TypeFactory 사용 제거 (JSON 타입은 확장 불필요)
-            let njSystem =
-                NjSystem(IRI=rt.IRI
-                    , Author=rt.Author
-                    , LangVersion=rt.LangVersion
-                    , EngineVersion=rt.EngineVersion
-                    , Description=rt.Description)
-                |> fromNjUniqINGD rt
-
-            njSystem |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
 
     type DsSystem with // // ToJson, FromJson
         /// DsSystem 를 JSON 문자열로 변환
@@ -810,24 +798,87 @@ module Ds2JsonModule =
 
     /// IRtUnique 전용 Runtime 객체를 JSON 타입으로 변환
     let rtObj2NjObj (rtObj:IRtUnique): INjUnique =
+        let rtObj = rtObj :?> RtUnique
         /// TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
-        let createWithTypeFactory (rtObj: IRtUnique) (fallbackFactory: 'T -> INjUnique) : INjUnique =
-            let xxx =
-                if isItNotNull TypeFactory then
-                    let jsonObj = TypeFactory.CreateJson(rtObj.GetType(), rtObj)
-                    if isItNotNull jsonObj then jsonObj :?> INjUnique
-                    else fallbackFactory (rtObj :?> 'T)
-                else fallbackFactory (rtObj :?> 'T)
-            xxx
+        let createWithTypeFactory (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
+            getTypeFactory() |-> (fun factory -> factory.CreateJson(rtObj.GetType(), rtObj) :?> INjUnique) |? fallbackFactory()
+
+        let createFallbackNjProject() =
+            let rt = rtObj :?> Project
+            NjProject(Database=rt.Database
+                , Author=rt.Author
+                , Version=rt.Version
+                , Description=rt.Description)
+            |> fromNjUniqINGD rt
+            |> tee (fun z ->
+                let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
+                let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
+                z.Initialize(activeSystems, passiveSystems) |> ignore)
+            |> tee(fun n ->
+                // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
+                if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
+                verify (n.RuntimeObject = rt)) // serialization 연결 고리
+            :> INjUnique
+
+        let createFallbackNjSystem() =
+            let rt = rtObj :?> DsSystem
+            NjSystem(IRI=rt.IRI
+                , Author=rt.Author
+                , LangVersion=rt.LangVersion
+                , EngineVersion=rt.EngineVersion
+                , Description=rt.Description)
+            |> fromNjUniqINGD rt
+            |> tee (fun z ->
+                let flows    = rt.Flows    |-> NjFlow   .fromRuntime  |> toArray
+                let works    = rt.Works    |-> NjWork   .fromRuntime  |> toArray
+                let arrows   = rt.Arrows   |-> NjArrow  .fromRuntime  |> toArray
+                let apiDefs  = rt.ApiDefs  |-> NjApiDef .fromRuntime  |> toArray
+                let apiCalls = rt.ApiCalls |-> NjApiCall.fromRuntime  |> toArray
+                z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
+            ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
+            :> INjUnique
+
+        let createFallbackNjFlow() =
+            let rt = rtObj :?> Flow
+            NjFlow()
+            |> fromNjUniqINGD rt
+            |> tee(fun z ->
+                z.Buttons    <- rt.Buttons    |-> NjButton   .fromRuntime |> toArray
+                z.Lamps      <- rt.Lamps      |-> NjLamp     .fromRuntime |> toArray
+                z.Conditions <- rt.Conditions |-> NjCondition.fromRuntime |> toArray
+                z.Actions    <- rt.Actions    |-> NjAction   .fromRuntime |> toArray)
+            :> INjUnique
+
+        let createFallbackNjWork() =
+            let rt = rtObj :?> Work
+            NjWork()
+            |> fromNjUniqINGD rt
+            |> tee (fun z ->
+                z.Calls    <- rt.Calls   |-> NjCall.fromRuntime  |> toArray
+                z.Arrows   <- rt.Arrows  |-> NjArrow.fromRuntime |> toArray
+                z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
+                z.Status4 <- rt.Status4)
+            :> INjUnique
+
+        let createFallbackNjCall() =
+            let rt = rtObj :?> Call
+            let ac = rt.AutoConditions |> jsonSerializeStrings
+            let cc = rt.CommonConditions |> jsonSerializeStrings
+            NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
+            |> fromNjUniqINGD rt
+            |> tee (fun z ->
+                z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
+                z.Status4 <- rt.Status4)
+            :> INjUnique
 
         if isItNull rtObj then
             getNull<NjUnique>()
         else
             match rtObj with
-            | :? Project  as p -> createWithTypeFactory rtObj (NjProject.fromRuntime >> fun x -> x :> INjUnique)
-            | :? DsSystem as s -> createWithTypeFactory rtObj (NjSystem.fromRuntime  >> fun x -> x :> INjUnique)
-            | :? Flow     as f -> createWithTypeFactory rtObj (NjFlow.fromRuntime    >> fun x -> x :> INjUnique)
-            | :? Work     as w -> createWithTypeFactory rtObj (NjWork.fromRuntime    >> fun x -> x :> INjUnique)
-            | :? Call     as c -> createWithTypeFactory rtObj (NjCall.fromRuntime    >> fun x -> x :> INjUnique)
+            | :? Project  as p -> createWithTypeFactory rtObj createFallbackNjProject
+            | :? DsSystem as s -> createWithTypeFactory rtObj createFallbackNjSystem
+            | :? Flow     as f -> createWithTypeFactory rtObj createFallbackNjFlow
+            | :? Work     as w -> createWithTypeFactory rtObj createFallbackNjWork
+            | :? Call     as c -> createWithTypeFactory rtObj createFallbackNjCall
             | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
 

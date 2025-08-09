@@ -15,9 +15,11 @@ type RtUnique() =
     inherit Unique()
     interface IRtUnique
 
-    abstract member ToNj : unit -> INjUnique
+    abstract member ToNjObj : unit -> INjUnique
     /// Runtime 객체를 Newtonsoft JSON 객체로 변환
-    default x.ToNj() = fwdRtObj2NjObj x
+    default x.ToNjObj() = fwdRtObj2NjObj x
+
+    member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
 // Entity base classes
 [<AbstractClass>]
