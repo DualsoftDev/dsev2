@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open System
 open System.Data
 open Dual.Common.Base
+open Dual.Common.Core.FS
 
 /// Third Party 확장을 위한 SQL 스키마 확장 인터페이스 (C# 친화적)
 [<AllowNullLiteral>]
@@ -42,22 +43,32 @@ type IExtensionDbHandler =
 
 [<AutoOpen>]
 module TypeFactoryModule =
-    /// Global factory instance (외부에서 구현체 주입) - C# 친화적으로 null 사용
+    /// Global factory instance (외부에서 구현체 주입) - C# 친화적으로 null 사용.  설정은 C# 에서 수행
     let mutable TypeFactory : ITypeFactory = getNull<ITypeFactory>()
     /// Global extension db handler instance (외부에서 구현체 주입) - C# 친화적으로 null 사용
     let mutable ExtensionDbHandler : IExtensionDbHandler = getNull<IExtensionDbHandler>()
+
+    let getTypeFactory() : ITypeFactory option = TypeFactory |> Option.ofObj
+
 
 /// Third Party 확장 지원을 위한 Generic Helper 함수들
 [<AutoOpen>]
 module TypeFactoryHelper =
 
     /// 확장 타입 생성을 지원하는 helper 함수 (fallback 포함)
-    let createWithFallback<'T> (fallbackFactory: unit -> 'T) : 'T =
-        if isItNotNull TypeFactory then
-            let obj = TypeFactory.CreateRuntime(typeof<'T>)
-            if obj <> null then obj :?> 'T
-            else fallbackFactory()
-        else fallbackFactory()
+    let createWithFallback<'T when 'T : not struct> (fallbackFactory: unit -> 'T) : 'T =
+        let xxx =
+            getTypeFactory() |-> (fun factory -> factory.CreateRuntime(typeof<'T>) :?> 'T) |? fallbackFactory()
+
+        //let yyy =
+        //    if isItNotNull TypeFactory then
+        //        let obj = TypeFactory.CreateRuntime(typeof<'T>)
+        //        if obj <> null then obj :?> 'T
+        //        else fallbackFactory()
+        //    else fallbackFactory()
+
+        //assert (isItNull xxx = isItNull yyy)
+        xxx
 
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성

@@ -64,7 +64,7 @@ module rec NewtonsoftJsonObjects =
         if isItNotNull src then
             replicateProperties src dst |> ignore
         dst
-    
+
 
 
     [<AbstractClass>]
@@ -167,14 +167,14 @@ module rec NewtonsoftJsonObjects =
 
         static member internal fromRuntime(rt:DsSystem) =
             // TypeFactory를 통한 확장 타입 지원
-            let njSystem = 
+            let njSystem =
                 if isItNotNull TypeFactoryModule.TypeFactory then
                     let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then 
-                        jsonObj :?> NjSystem 
-                    else 
+                    if isItNotNull jsonObj then
+                        jsonObj :?> NjSystem
+                    else
                         NjSystem() |> fromNjUniqINGD rt
-                else 
+                else
                     NjSystem() |> fromNjUniqINGD rt
 
             njSystem
@@ -215,16 +215,16 @@ module rec NewtonsoftJsonObjects =
 
         static member internal fromRuntime(rt:Flow) =
             // TypeFactory를 통한 확장 타입 지원
-            let njFlow = 
+            let njFlow =
                 if isItNotNull TypeFactoryModule.TypeFactory then
                     let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then 
-                        jsonObj :?> NjFlow 
-                    else 
+                    if isItNotNull jsonObj then
+                        jsonObj :?> NjFlow
+                    else
                         NjFlow() |> fromNjUniqINGD rt
-                else 
+                else
                     NjFlow() |> fromNjUniqINGD rt
-            
+
             njFlow
             |> tee(fun z ->
                 z.Buttons    <- rt.Buttons    |-> NjButton   .fromRuntime |> toArray
@@ -309,16 +309,16 @@ module rec NewtonsoftJsonObjects =
 
         static member internal fromRuntime(rt:Work) =
             // TypeFactory를 통한 확장 타입 지원
-            let njWork = 
+            let njWork =
                 if isItNotNull TypeFactoryModule.TypeFactory then
                     let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then 
-                        jsonObj :?> NjWork 
-                    else 
+                    if isItNotNull jsonObj then
+                        jsonObj :?> NjWork
+                    else
                         NjWork() |> fromNjUniqINGD rt
-                else 
+                else
                     NjWork() |> fromNjUniqINGD rt
-            
+
             njWork
             |> tee (fun z ->
                 z.Calls    <- rt.Calls   |-> NjCall.fromRuntime  |> toArray
@@ -394,18 +394,18 @@ module rec NewtonsoftJsonObjects =
             let ac = rt.AutoConditions |> jsonSerializeStrings
             let cc = rt.CommonConditions |> jsonSerializeStrings
             // TypeFactory를 통한 확장 타입 지원
-            let njCall = 
+            let njCall =
                 if isItNotNull TypeFactoryModule.TypeFactory then
                     let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then 
-                        jsonObj :?> NjCall 
-                    else 
+                    if isItNotNull jsonObj then
+                        jsonObj :?> NjCall
+                    else
                         NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
                         |> fromNjUniqINGD rt
-                else 
+                else
                     NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
                     |> fromNjUniqINGD rt
-            
+
             njCall
             |> tee (fun z ->
                 z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
@@ -720,22 +720,22 @@ module Ds2JsonModule =
             let njProject =
                 if isItNotNull TypeFactoryModule.TypeFactory then
                     let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then 
-                        jsonObj :?> NjProject 
-                    else 
+                    if isItNotNull jsonObj then
+                        jsonObj :?> NjProject
+                    else
                         NjProject(Database=rt.Database
                             , Author=rt.Author
                             , Version=rt.Version
                             , Description=rt.Description)
                         |> fromNjUniqINGD rt
-                else 
+                else
                     NjProject(Database=rt.Database
                         , Author=rt.Author
                         , Version=rt.Version
                         , Description=rt.Description)
                     |> fromNjUniqINGD rt
 
-            njProject |> tee(fun n -> 
+            njProject |> tee(fun n ->
                 // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
                 if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
                 verify (n.RuntimeObject = rt)) // serialization 연결 고리
@@ -820,7 +820,7 @@ module NewtonsoftJsonObjectsModule =
         | :? Work as w -> NjWork.fromRuntime(w) :> NjUnique
         | :? Call as c -> NjCall.fromRuntime(c) :> NjUnique
         | _ -> failwith $"Unsupported runtime type: {runtime.GetType().Name}"
-    
+
     /// NjUnique 객체에서 Runtime 객체 추출
     let getRuntimeObject<'T when 'T :> RtUnique and 'T : not struct> (njObj: NjUnique) : 'T =
         NewtonsoftJsonModules.getRuntimeObject<'T> njObj

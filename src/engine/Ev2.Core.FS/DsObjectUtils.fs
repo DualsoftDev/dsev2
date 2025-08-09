@@ -650,37 +650,3 @@ module DsObjectUtilsModule =
 
     let isStringsEqual (xs:string seq) (ys:string seq) =
         Set.ofSeq xs = Set.ofSeq ys
-
-
-// =========================================================
-// C# 친화적 Type Aliases - 짧은 네임스페이스로 접근 가능
-// =========================================================
-
-// NOTE: F# type abbreviation으로는 멤버 추가가 안되므로
-// TypeFactory 클래스만 사용하여 C# 친화적 접근 제공
-
-/// C# 친화적인 새로운 Factory 클래스
-/// DsObjectFactory를 대체하여 더 간결한 네임스페이스 사용
-/// 타입들이 namespace 최상위로 이동되어 더욱 간결해짐
-type TypeFactory() =
-
-    /// Project 인스턴스 생성 (확장 타입 지원)
-    static member CreateProject() = createExtended<Project>()
-
-    /// DsSystem 인스턴스 생성 (확장 타입 지원)
-    static member CreateDsSystem() = createExtended<DsSystem>()
-
-    /// Flow 인스턴스 생성 (확장 타입 지원)
-    static member CreateFlow() = createExtended<Flow>()
-
-    /// Work 인스턴스 생성 (확장 타입 지원)
-    static member CreateWork() = createExtended<Work>()
-
-    /// Call 인스턴스 생성 (확장 타입 지원)
-    static member CreateCall() = createExtended<Call>()
-
-    /// ApiDef 인스턴스 생성 (확장 타입 지원)
-    static member CreateApiDef() = createExtended<ApiDef>()
-
-    /// ApiCall 인스턴스 생성 (확장 타입 지원)
-    static member CreateApiCall() = createExtended<ApiCall>()
