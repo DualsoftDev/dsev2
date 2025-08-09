@@ -60,17 +60,19 @@ module DbApiModule =
                     //initialized <- true
                     DcLogger.EnableTrace <- true        // TODO: 삭제 필요
                     let createDb() =
-                        let withTrigger = false
-                        let mutable schema = getSqlCreateSchema dbProvider withTrigger
+                        let schemaExtension =
+                            TypeFactoryModule.TypeFactory
+                            |> Option.ofObj
+                            |-> _.GetSchemaExtension()
 
-                        // 스키마 확장 적용
-                        schema <-
-                            if isItNotNull TypeFactoryModule.TypeFactory then
-                                let factory = TypeFactoryModule.TypeFactory
-                                let ext = factory.GetSchemaExtension()
-                                if isItNotNull ext then ext.ModifySchema(schema) else schema
-                            else
-                                schema
+                        let withTrigger = false
+                        let schema =
+                            getSqlCreateSchema dbProvider withTrigger
+                            |> (fun schema ->
+                                // 스키마 확장 적용
+                                schemaExtension
+                                |-> _.ModifySchema(schema)
+                                |? schema)
 
                         logInfo $"Creating database schema on {connStr}..."
                         logInfo $"CreateSchema:\r\n{schema}"
@@ -90,12 +92,7 @@ module DbApiModule =
                             conn.Execute(schema, null, tr) |> ignore
 
                             // DB 생성 후 추가 작업 수행
-                            if isItNotNull TypeFactoryModule.TypeFactory then
-                                let factory = TypeFactoryModule.TypeFactory
-                                let ext = factory.GetSchemaExtension()
-                                if isItNotNull ext then ext.PostCreateDatabase(conn, tr)
-                            else
-                                ()
+                            schemaExtension |> iter _.PostCreateDatabase(conn, tr)
 
                             insertEnumValues<DbStatus4>   conn tr Tn.Enum
                             insertEnumValues<DbCallType>  conn tr Tn.Enum
