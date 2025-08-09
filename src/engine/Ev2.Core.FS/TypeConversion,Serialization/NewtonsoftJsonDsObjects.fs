@@ -165,27 +165,6 @@ module rec NewtonsoftJsonObjects =
         member x.OnDeserializedMethod(ctx: StreamingContext) =
             fwdOnNsJsonDeserialized x
 
-        static member internal fromRuntime(rt:DsSystem) =
-            // TypeFactory를 통한 확장 타입 지원
-            let njSystem =
-                if isItNotNull TypeFactoryModule.TypeFactory then
-                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then
-                        jsonObj :?> NjSystem
-                    else
-                        NjSystem() |> fromNjUniqINGD rt
-                else
-                    NjSystem() |> fromNjUniqINGD rt
-
-            njSystem
-            |> tee (fun z ->
-                let flows = rt.Flows |-> _.ToNj<NjFlow>() |> toArray
-                let works = rt.Works |-> _.ToNj<NjWork>() |> toArray
-                let arrows = rt.Arrows |-> _.ToNj<NjArrow>() |> toArray
-                let apiDefs = rt.ApiDefs |-> _.ToNj<NjApiDef>() |> toArray
-                let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
-                z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
-            )
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : flows:NjFlow[] * works:NjWork[] * arrows:NjArrow[] * apiDefs:NjApiDef[] * apiCalls:NjApiCall[] -> NjSystem
@@ -213,25 +192,6 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeActions    () = x.Actions   .NonNullAny()
 
 
-        static member internal fromRuntime(rt:Flow) =
-            // TypeFactory를 통한 확장 타입 지원
-            let njFlow =
-                if isItNotNull TypeFactoryModule.TypeFactory then
-                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then
-                        jsonObj :?> NjFlow
-                    else
-                        NjFlow() |> fromNjUniqINGD rt
-                else
-                    NjFlow() |> fromNjUniqINGD rt
-
-            njFlow
-            |> tee(fun z ->
-                z.Buttons    <- rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
-                z.Lamps      <- rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
-                z.Conditions <- rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                z.Actions    <- rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
-            )
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : buttons:NjButton[] * lamps:NjLamp[] * conditions:NjCondition[] * actions:NjAction[] -> NjFlow
@@ -247,33 +207,21 @@ module rec NewtonsoftJsonObjects =
         inherit NjFlowEntity()
 
         interface INjButton
-        static member internal fromRuntime(rt:DsButton) =
-            NjButton()
-            |> fromNjUniqINGD rt
 
     type NjLamp() =
         inherit NjFlowEntity()
 
         interface INjLamp
-        static member internal fromRuntime(rt:Lamp) =
-            NjLamp()
-            |> fromNjUniqINGD rt
 
     type NjCondition() =
         inherit NjFlowEntity()
 
         interface INjCondition
-        static member internal fromRuntime(rt:DsCondition) =
-            NjCondition()
-            |> fromNjUniqINGD rt
 
     type NjAction() =
         inherit NjFlowEntity()
 
         interface INjAction
-        static member internal fromRuntime(rt:DsAction) =
-            NjAction()
-            |> fromNjUniqINGD rt
 
 
     type NjWork () =
@@ -307,25 +255,6 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeDelay()      = x.Period > 0
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
 
-        static member internal fromRuntime(rt:Work) =
-            // TypeFactory를 통한 확장 타입 지원
-            let njWork =
-                if isItNotNull TypeFactoryModule.TypeFactory then
-                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then
-                        jsonObj :?> NjWork
-                    else
-                        NjWork() |> fromNjUniqINGD rt
-                else
-                    NjWork() |> fromNjUniqINGD rt
-
-            njWork
-            |> tee (fun z ->
-                z.Calls    <- rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
-                z.Arrows   <- rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
-                z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
-                z.Status4 <- rt.Status4
-            )
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : calls:NjCall[] * arrows:NjArrow[] * flowGuid:string -> NjWork
@@ -343,15 +272,6 @@ module rec NewtonsoftJsonObjects =
         member val Target = null:string with get, set
         member val Type = DbArrowType.None.ToString() with get, set
 
-        static member internal fromRuntime(rt:IArrow) =
-            assert(isItNotNull rt)
-            NjArrow()
-            |> fromNjUniqINGD (rt :?> Unique)
-            |> tee (fun z ->
-                z.Source <- guid2str (rt.GetSource().Guid)
-                z.Target <- guid2str (rt.GetTarget().Guid)
-                z.Type <- rt.GetArrowType().ToString()
-            )
 
     type NjCall() =
         inherit NjWorkEntity()
@@ -390,27 +310,6 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeCommonConditions() = not (String.IsNullOrEmpty(x.CommonConditions))
         member x.ShouldSerializeTimeout()    = x.Timeout.IsSome
 
-        static member internal fromRuntime(rt:Call) =
-            let ac = rt.AutoConditions |> jsonSerializeStrings
-            let cc = rt.CommonConditions |> jsonSerializeStrings
-            // TypeFactory를 통한 확장 타입 지원
-            let njCall =
-                if isItNotNull TypeFactoryModule.TypeFactory then
-                    let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-                    if isItNotNull jsonObj then
-                        jsonObj :?> NjCall
-                    else
-                        NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
-                        |> fromNjUniqINGD rt
-                else
-                    NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
-                    |> fromNjUniqINGD rt
-
-            njCall
-            |> tee (fun z ->
-                z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
-                z.Status4 <- rt.Status4
-            )
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : callType:string * apiCalls:Guid[] * autoConditions:string * commonConditions:string * isDisabled:bool * timeout:int option -> NjCall
@@ -437,12 +336,6 @@ module rec NewtonsoftJsonObjects =
         member val OutSymbol  = nullString with get, set
         member val ValueSpec  = nullString with get, set
 
-        static member internal fromRuntime(rt:ApiCall) =
-            let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
-            NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
-                InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
-                ValueSpec=valueSpec )
-            |> fromNjUniqINGD rt
 
     type NjApiDef() =
         inherit NjSystemEntity()
@@ -452,10 +345,6 @@ module rec NewtonsoftJsonObjects =
         member val TopicIndex = Option<int>.None with get, set
         member val IsTopicOrigin = Option<bool>.None with get, set
 
-        static member internal fromRuntime(rt:ApiDef) =
-            assert(isItNotNull rt)
-            NjApiDef(IsPush=rt.IsPush, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin)
-            |> fromNjUniqINGD rt
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
@@ -817,10 +706,11 @@ module Ds2JsonModule =
             NjFlow()
             |> fromNjUniqINGD rt
             |> tee(fun z ->
-                z.Buttons    <- rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
-                z.Lamps      <- rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
-                z.Conditions <- rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                z.Actions    <- rt.Actions    |-> _.ToNj<NjAction>()   |> toArray)
+                let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
+                let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
+                let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
+                let actions    = rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
+                z.Initialize(buttons, lamps, conditions, actions) |> ignore)
             :> INjUnique
 
         let createFallbackNjWork() =
@@ -828,9 +718,10 @@ module Ds2JsonModule =
             NjWork()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                z.Calls    <- rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
-                z.Arrows   <- rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
-                z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
+                let calls    = rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
+                let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
+                let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
+                z.Initialize(calls, arrows, flowGuid) |> ignore
                 z.Status4 <- rt.Status4)
             :> INjUnique
 
@@ -838,21 +729,87 @@ module Ds2JsonModule =
             let rt = rtObj :?> Call
             let ac = rt.AutoConditions |> jsonSerializeStrings
             let cc = rt.CommonConditions |> jsonSerializeStrings
-            NjCall(CallType = rt.CallType.ToString(), AutoConditions=ac, CommonConditions=cc, Timeout=rt.Timeout)
+            NjCall()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                z.ApiCalls <- rt.ApiCalls |-> _.Guid |> toArray
+                let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
+                z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
                 z.Status4 <- rt.Status4)
+            :> INjUnique
+
+        let createFallbackNjButton() =
+            let rt = rtObj :?> DsButton
+            NjButton()
+            |> fromNjUniqINGD rt
+            :> INjUnique
+
+        let createFallbackNjLamp() =
+            let rt = rtObj :?> Lamp
+            NjLamp()
+            |> fromNjUniqINGD rt
+            :> INjUnique
+
+        let createFallbackNjCondition() =
+            let rt = rtObj :?> DsCondition
+            NjCondition()
+            |> fromNjUniqINGD rt
+            :> INjUnique
+
+        let createFallbackNjAction() =
+            let rt = rtObj :?> DsAction
+            NjAction()
+            |> fromNjUniqINGD rt
+            :> INjUnique
+
+        let createFallbackNjArrow() =
+            let rt = rtObj :?> RtUnique
+            NjArrow()
+            |> fromNjUniqINGD rt
+            |> tee (fun z ->
+                match rt with
+                | :? ArrowBetweenWorks as arrow ->
+                    z.Source <- guid2str (arrow.GetSource().Guid)
+                    z.Target <- guid2str (arrow.GetTarget().Guid)
+                    z.Type <- arrow.GetArrowType().ToString()
+                | :? ArrowBetweenCalls as arrow ->
+                    z.Source <- guid2str (arrow.GetSource().Guid)
+                    z.Target <- guid2str (arrow.GetTarget().Guid)
+                    z.Type <- arrow.GetArrowType().ToString()
+                | _ -> ()
+            )
+            :> INjUnique
+
+        let createFallbackNjApiCall() =
+            let rt = rtObj :?> ApiCall
+            let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
+            NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
+                InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
+                ValueSpec=valueSpec )
+            |> fromNjUniqINGD rt
+            :> INjUnique
+
+        let createFallbackNjApiDef() =
+            let rt = rtObj :?> ApiDef
+            NjApiDef(IsPush=rt.IsPush, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin)
+            |> fromNjUniqINGD rt
             :> INjUnique
 
         if isItNull rtObj then
             getNull<NjUnique>()
         else
             match rtObj with
-            | :? Project  as p -> createWithTypeFactory rtObj createFallbackNjProject
-            | :? DsSystem as s -> createWithTypeFactory rtObj createFallbackNjSystem
-            | :? Flow     as f -> createWithTypeFactory rtObj createFallbackNjFlow
-            | :? Work     as w -> createWithTypeFactory rtObj createFallbackNjWork
-            | :? Call     as c -> createWithTypeFactory rtObj createFallbackNjCall
+            | :? Project               as p -> createWithTypeFactory rtObj createFallbackNjProject
+            | :? DsSystem              as s -> createWithTypeFactory rtObj createFallbackNjSystem
+            | :? Flow                  as f -> createWithTypeFactory rtObj createFallbackNjFlow
+            | :? Work                  as w -> createWithTypeFactory rtObj createFallbackNjWork
+            | :? Call                  as c -> createWithTypeFactory rtObj createFallbackNjCall
+            | :? DsButton              as b -> createWithTypeFactory rtObj createFallbackNjButton
+            | :? Lamp                  as l -> createWithTypeFactory rtObj createFallbackNjLamp
+            | :? DsCondition           as d -> createWithTypeFactory rtObj createFallbackNjCondition
+            | :? DsAction              as a -> createWithTypeFactory rtObj createFallbackNjAction
+            | :? ArrowBetweenWorks     as r -> createWithTypeFactory rtObj createFallbackNjArrow
+            | :? ArrowBetweenCalls     as r -> createWithTypeFactory rtObj createFallbackNjArrow
+            | :? ApiCall               as ac -> createWithTypeFactory rtObj createFallbackNjApiCall
+            | :? ApiDef                as ad -> createWithTypeFactory rtObj createFallbackNjApiDef
             | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
 

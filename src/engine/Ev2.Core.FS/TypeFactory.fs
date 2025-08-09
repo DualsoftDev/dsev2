@@ -57,19 +57,9 @@ module TypeFactoryHelper =
 
     /// 확장 타입 생성을 지원하는 helper 함수 (fallback 포함)
     let createWithFallback<'T when 'T : not struct> (fallbackFactory: unit -> 'T) : 'T =
-        let xxx =
-            getTypeFactory() |-> (fun factory -> factory.CreateRuntime(typeof<'T>) :?> 'T) |? fallbackFactory()
-
-        //let yyy =
-        //    if isItNotNull TypeFactory then
-        //        let obj = TypeFactory.CreateRuntime(typeof<'T>)
-        //        if obj <> null then obj :?> 'T
-        //        else fallbackFactory()
-        //    else fallbackFactory()
-
-        //assert (isItNull xxx = isItNull yyy)
-        xxx
-
+        getTypeFactory()
+        |-> (fun factory -> factory.CreateRuntime(typeof<'T>) :?> 'T)
+        |? fallbackFactory()
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
     let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
@@ -78,31 +68,3 @@ module TypeFactoryHelper =
             if obj <> null then obj :?> 'T else new 'T()
         else new 'T()
 
-    /// 복제 전용 생성 - 확장 속성 초기화 건너뜀
-    let inline createExtendedForReplication<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
-        if isItNotNull TypeFactory then
-            let obj = TypeFactory.CreateRuntimeForReplication(typeof<'T>)
-            if obj <> null then
-                obj :?> 'T
-            else
-                // 확장 타입이 등록되지 않았으므로 기본 타입 사용
-                new 'T()
-        else
-            // 팩토리가 없으므로 기본 타입 사용
-            new 'T()
-
-    /// JSON 객체 생성을 위한 helper 함수
-    let createJsonFromRuntime<'TRuntime, 'TJson when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TJson) : 'TJson =
-        if isItNotNull TypeFactory then
-            let obj = TypeFactory.CreateJson(typeof<'TRuntime>, runtime)
-            if obj <> null then obj :?> 'TJson
-            else defaultFactory runtime
-        else defaultFactory runtime
-
-    /// ORM 객체 생성을 위한 helper 함수
-    let createOrmFromRuntime<'TRuntime, 'TOrm when 'TRuntime :> Unique> (runtime: 'TRuntime) (defaultFactory: 'TRuntime -> 'TOrm) : 'TOrm =
-        if isItNotNull TypeFactory then
-            let obj = TypeFactory.CreateOrm(typeof<'TRuntime>)
-            if obj <> null then obj :?> 'TOrm
-            else defaultFactory runtime
-        else defaultFactory runtime
