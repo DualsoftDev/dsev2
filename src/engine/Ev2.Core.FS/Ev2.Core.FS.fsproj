@@ -21,7 +21,6 @@
 		<Compile Include="database\Database.ORM.fs" />
 		<Compile Include="database\AppDbApi.fs" />
 		<Compile Include="TypeConversion,Serialization\NewtonsoftJsonDsObjects.fs" />
-		<Compile Include="TypeConversion,Serialization\JsonExtensions.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopy.Object.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopy.Properties.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCompare.Objects.fs" />

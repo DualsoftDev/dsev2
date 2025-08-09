@@ -179,11 +179,11 @@ module rec NewtonsoftJsonObjects =
 
             njSystem
             |> tee (fun z ->
-                let flows = rt.Flows |-> NjFlow.fromRuntime |> toArray
-                let works = rt.Works |-> NjWork.fromRuntime |> toArray
-                let arrows = rt.Arrows |-> NjArrow.fromRuntime |> toArray
-                let apiDefs = rt.ApiDefs |-> NjApiDef.fromRuntime |> toArray
-                let apiCalls = rt.ApiCalls |-> NjApiCall.fromRuntime |> toArray
+                let flows = rt.Flows |-> _.ToNj<NjFlow>() |> toArray
+                let works = rt.Works |-> _.ToNj<NjWork>() |> toArray
+                let arrows = rt.Arrows |-> _.ToNj<NjArrow>() |> toArray
+                let apiDefs = rt.ApiDefs |-> _.ToNj<NjApiDef>() |> toArray
+                let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
                 z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
             )
 
@@ -227,10 +227,10 @@ module rec NewtonsoftJsonObjects =
 
             njFlow
             |> tee(fun z ->
-                z.Buttons    <- rt.Buttons    |-> NjButton   .fromRuntime |> toArray
-                z.Lamps      <- rt.Lamps      |-> NjLamp     .fromRuntime |> toArray
-                z.Conditions <- rt.Conditions |-> NjCondition.fromRuntime |> toArray
-                z.Actions    <- rt.Actions    |-> NjAction   .fromRuntime |> toArray
+                z.Buttons    <- rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
+                z.Lamps      <- rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
+                z.Conditions <- rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
+                z.Actions    <- rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
             )
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
@@ -321,8 +321,8 @@ module rec NewtonsoftJsonObjects =
 
             njWork
             |> tee (fun z ->
-                z.Calls    <- rt.Calls   |-> NjCall.fromRuntime  |> toArray
-                z.Arrows   <- rt.Arrows  |-> NjArrow.fromRuntime |> toArray
+                z.Calls    <- rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
+                z.Arrows   <- rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
                 z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
                 z.Status4 <- rt.Status4
             )
@@ -474,8 +474,8 @@ module rec NewtonsoftJsonObjects =
             | :? NjProject as njp ->
                 let rtp = njp |> getRuntimeObject<Project>
 
-                njp.ActiveSystems  <- rtp.ActiveSystems  |-> NjSystem.fromRuntime |> toArray
-                njp.PassiveSystems <- rtp.PassiveSystems |-> NjSystem.fromRuntime |> toArray
+                njp.ActiveSystems  <- rtp.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
+                njp.PassiveSystems <- rtp.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
 
                 njp.Database <- rtp.Database
 
@@ -715,39 +715,13 @@ module Ds2JsonModule =
 
             EmJson.FromJson<NjProject>(json, settings)
 
-        //static member internal fromRuntime(rt:Project) =
-        //    // TypeFactory를 통한 확장 타입 지원
-        //    let njProject =
-        //        if isItNotNull TypeFactoryModule.TypeFactory then
-        //            let jsonObj = TypeFactoryModule.TypeFactory.CreateJson(rt.GetType(), rt)
-        //            if isItNotNull jsonObj then
-        //                jsonObj :?> NjProject
-        //            else
-        //                NjProject(Database=rt.Database
-        //                    , Author=rt.Author
-        //                    , Version=rt.Version
-        //                    , Description=rt.Description)
-        //                |> fromNjUniqINGD rt
-        //        else
-        //            NjProject(Database=rt.Database
-        //                , Author=rt.Author
-        //                , Version=rt.Version
-        //                , Description=rt.Description)
-        //            |> fromNjUniqINGD rt
-
-        //    njProject |> tee(fun n ->
-        //        // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
-        //        if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
-        //        verify (n.RuntimeObject = rt)) // serialization 연결 고리
-
-
     type Project with // // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
-            let njProject = x.ToNjObj() :?> NjProject // NjProject.fromRuntime(x)
+            let njProject = x.ToNjObj() :?> NjProject
             njProject.ToJson()
         member x.ToJson(jsonFilePath:string) =
-            let njProject = x.ToNjObj() :?> NjProject // NjProject.fromRuntime(x)
+            let njProject = x.ToNjObj() :?> NjProject
             njProject.ToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsProject 로 변환
@@ -776,10 +750,10 @@ module Ds2JsonModule =
     type DsSystem with // // ToJson, FromJson
         /// DsSystem 를 JSON 문자열로 변환
         member x.ExportToJson():string =
-            let njSystem = NjSystem.fromRuntime(x)
+            let njSystem = x.ToNj<NjSystem>()
             njSystem.ExportToJson()
         member x.ExportToJson(jsonFilePath:string) =
-            let njSystem = NjSystem.fromRuntime(x)
+            let njSystem = x.ToNj<NjSystem>()
             njSystem.ExportToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsSystem 로 변환
@@ -829,11 +803,11 @@ module Ds2JsonModule =
                 , Description=rt.Description)
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                let flows    = rt.Flows    |-> NjFlow   .fromRuntime  |> toArray
-                let works    = rt.Works    |-> NjWork   .fromRuntime  |> toArray
-                let arrows   = rt.Arrows   |-> NjArrow  .fromRuntime  |> toArray
-                let apiDefs  = rt.ApiDefs  |-> NjApiDef .fromRuntime  |> toArray
-                let apiCalls = rt.ApiCalls |-> NjApiCall.fromRuntime  |> toArray
+                let flows    = rt.Flows    |-> _.ToNj<NjFlow>()   |> toArray
+                let works    = rt.Works    |-> _.ToNj<NjWork>()   |> toArray
+                let arrows   = rt.Arrows   |-> _.ToNj<NjArrow>()  |> toArray
+                let apiDefs  = rt.ApiDefs  |-> _.ToNj<NjApiDef>() |> toArray
+                let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
                 z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
             ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
             :> INjUnique
@@ -843,10 +817,10 @@ module Ds2JsonModule =
             NjFlow()
             |> fromNjUniqINGD rt
             |> tee(fun z ->
-                z.Buttons    <- rt.Buttons    |-> NjButton   .fromRuntime |> toArray
-                z.Lamps      <- rt.Lamps      |-> NjLamp     .fromRuntime |> toArray
-                z.Conditions <- rt.Conditions |-> NjCondition.fromRuntime |> toArray
-                z.Actions    <- rt.Actions    |-> NjAction   .fromRuntime |> toArray)
+                z.Buttons    <- rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
+                z.Lamps      <- rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
+                z.Conditions <- rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
+                z.Actions    <- rt.Actions    |-> _.ToNj<NjAction>()   |> toArray)
             :> INjUnique
 
         let createFallbackNjWork() =
@@ -854,8 +828,8 @@ module Ds2JsonModule =
             NjWork()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
-                z.Calls    <- rt.Calls   |-> NjCall.fromRuntime  |> toArray
-                z.Arrows   <- rt.Arrows  |-> NjArrow.fromRuntime |> toArray
+                z.Calls    <- rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
+                z.Arrows   <- rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
                 z.FlowGuid <- rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
                 z.Status4 <- rt.Status4)
             :> INjUnique
