@@ -808,20 +808,26 @@ module Ds2JsonModule =
         static member FromJson(json) = DsSystem.ImportFromJson(json)
 
 
-/// C#에서 사용하기 위한 JSON 변환 헬퍼 모듈
-module NewtonsoftJsonObjectsModule =
-    /// Runtime 객체를 JSON 타입으로 변환
-    /// 반환 타입을 NjUnique로 통일하여 타입 안전성 향상
-    let fromRuntime (runtime: obj) : NjUnique =
-        match runtime with
-        | :? Project as p -> NjProject.fromRuntime(p) :> NjUnique
-        | :? DsSystem as s -> NjSystem.fromRuntime(s) :> NjUnique
-        | :? Flow as f -> NjFlow.fromRuntime(f) :> NjUnique
-        | :? Work as w -> NjWork.fromRuntime(w) :> NjUnique
-        | :? Call as c -> NjCall.fromRuntime(c) :> NjUnique
-        | _ -> failwith $"Unsupported runtime type: {runtime.GetType().Name}"
+    /// IRtUnique 전용 Runtime 객체를 JSON 타입으로 변환
+    let rtObj2NjObj (rtObj:IRtUnique): INjUnique =
+        /// TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
+        let createWithTypeFactory (rtObj: IRtUnique) (fallbackFactory: 'T -> INjUnique) : INjUnique =
+            let xxx =
+                if isItNotNull TypeFactory then
+                    let jsonObj = TypeFactory.CreateJson(rtObj.GetType(), rtObj)
+                    if isItNotNull jsonObj then jsonObj :?> INjUnique
+                    else fallbackFactory (rtObj :?> 'T)
+                else fallbackFactory (rtObj :?> 'T)
+            xxx
 
-    /// NjUnique 객체에서 Runtime 객체 추출
-    let getRuntimeObject<'T when 'T :> RtUnique and 'T : not struct> (njObj: NjUnique) : 'T =
-        NewtonsoftJsonModules.getRuntimeObject<'T> njObj
+        if isItNull rtObj then
+            getNull<NjUnique>()
+        else
+            match rtObj with
+            | :? Project  as p -> createWithTypeFactory rtObj (NjProject.fromRuntime >> fun x -> x :> INjUnique)
+            | :? DsSystem as s -> createWithTypeFactory rtObj (NjSystem.fromRuntime  >> fun x -> x :> INjUnique)
+            | :? Flow     as f -> createWithTypeFactory rtObj (NjFlow.fromRuntime    >> fun x -> x :> INjUnique)
+            | :? Work     as w -> createWithTypeFactory rtObj (NjWork.fromRuntime    >> fun x -> x :> INjUnique)
+            | :? Call     as c -> createWithTypeFactory rtObj (NjCall.fromRuntime    >> fun x -> x :> INjUnique)
+            | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
 

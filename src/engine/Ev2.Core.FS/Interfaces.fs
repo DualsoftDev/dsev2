@@ -134,5 +134,11 @@ module InterfaceModule =
         if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
 
+    /// Unique 객체의 복사.  Id, Guid 및 DateTime 은 새로운 값으로 치환
     let mutable internal fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
+
+    /// Unique 객체의 복제.  Id, Guid 및 DateTime 모두 동일하게 복제
     let mutable internal fwdReplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
+
+    /// runtime object to Newtonsoft JSON object
+    let mutable internal fwdRtObj2NjObj:  IRtUnique->INjUnique = let dummy (src:IRtUnique) = failwithlog "Should be reimplemented." in dummy

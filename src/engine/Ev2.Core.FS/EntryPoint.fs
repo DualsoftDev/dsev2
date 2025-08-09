@@ -21,6 +21,8 @@ module ModuleInitializer =
             fwdDuplicate <- duplicateUnique
             fwdReplicate <- replicateUnique
 
+            fwdRtObj2NjObj <- rtObj2NjObj
+
             fwdReplicateProperties <- replicatePropertiesImpl
 
             let appSettings =
