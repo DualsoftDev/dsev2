@@ -57,14 +57,18 @@ module TypeFactoryHelper =
 
     /// 확장 타입 생성을 지원하는 helper 함수 (fallback 포함)
     let createWithFallback<'T when 'T : not struct> (fallbackFactory: unit -> 'T) : 'T =
-        getTypeFactory()
-        |-> (fun factory -> factory.CreateRuntime(typeof<'T>) :?> 'T)
-        |? fallbackFactory()
+       getTypeFactory()
+       >>= (fun factory ->
+            factory.CreateRuntime(typeof<'T>)
+            |> tee(fun z ->
+                if isNull z then
+                    failwith $"[TypeFactory] No extension type registered for {typeof<'T>.Name}. Using default." )
+            |> Option.ofObj)
+       >>= tryCast<'T> // (fun obj -> obj :?> 'T)
+       |? fallbackFactory()
+
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
-    let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> Unique>() : 'T =
-        if isItNotNull TypeFactory then
-            let obj = TypeFactory.CreateRuntime(typeof<'T>)
-            if obj <> null then obj :?> 'T else new 'T()
-        else new 'T()
+    let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> Unique and 'T : not struct>() : 'T =
+        createWithFallback<'T>(fun () -> new 'T())
 
