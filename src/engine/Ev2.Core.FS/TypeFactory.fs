@@ -17,16 +17,10 @@ type ISchemaExtension =
 type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> obj
-    /// 복제 전용 런타임 인스턴스 생성 (확장 속성 초기화 건너뜀)
-    abstract CreateRuntimeForReplication : runtimeType:Type -> obj
     /// 런타임 객체로부터 JSON 직렬화 객체 생성
     abstract CreateJson : runtimeType:Type * runtimeObj:obj -> obj
     /// 지정된 런타임 타입에 해당하는 ORM 객체 생성
     abstract CreateOrm : runtimeType:Type -> obj
-    /// 런타임 타입에 매핑되는 JSON 타입 해결
-    abstract GetJsonType : runtimeType:Type -> Type
-    /// 런타임 타입에 매핑되는 ORM 타입 해결
-    abstract GetOrmType : runtimeType:Type -> Type
     /// SQL 스키마 확장 제공자 반환 (C# 친화적 - null 가능)
     abstract GetSchemaExtension : unit -> ISchemaExtension
 
