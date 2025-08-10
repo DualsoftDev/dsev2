@@ -15,7 +15,7 @@ open System.Collections.Generic
 [<AutoOpen>]
 module DbApiModule =
     /// 공용 캐시 초기화 함수
-    let private createCache<'T> (venderDb:DcDbBase, tableName: string) =
+    let createCache<'T> (venderDb:DcDbBase, tableName: string) =
         ResettableLazy<'T[]>(fun () ->
             use conn = venderDb.CreateConnection()
             conn.Query<'T>($"SELECT * FROM {tableName}") |> toArray)
@@ -40,127 +40,133 @@ module DbApiModule =
             conn.Query<'T> ($"SELECT * FROM {tableName} {filter};", null, tr)
 
 
-    /// Database API
-    type AppDbApi(dbProvider:DbProvider) =
-        inherit DbApi(dbProvider)
+/// Database API - C#에서 직접 접근 가능하도록 namespace 레벨로 이동
+type AppDbApi(dbProvider:DbProvider) =
+    inherit DbApi(dbProvider)
 
-        let venderDb = base.VendorDB
-        let conn() =
-            venderDb.CreateConnection()
-            |> tee (fun conn ->
+    let venderDb = base.VendorDB
+
+    let conn() =
+        venderDb.CreateConnection()
+        |> tee (fun conn ->
+            noop()
+            if conn.State <> ConnectionState.Open then
+                conn.Open()
+
+            let connStr = conn.ConnectionString
+            if not <| checkedConnections.Contains(connStr) then
                 noop()
-                if conn.State <> ConnectionState.Open then
-                    conn.Open()
+                logInfo $"Database Version: {dbProvider.VendorName} {conn.GetVersion()}..."
+                checkedConnections.Add connStr |> ignore
+                //initialized <- true
+                DcLogger.EnableTrace <- true        // TODO: 삭제 필요
+                let createDb() =
+                    let schemaExtension =
+                        TypeFactoryModule.TypeFactory
+                        |> Option.ofObj
+                        |-> _.GetSchemaExtension()
 
-                let connStr = conn.ConnectionString
-                if not <| checkedConnections.Contains(connStr) then
-                    noop()
-                    logInfo $"Database Version: {dbProvider.VendorName} {conn.GetVersion()}..."
-                    checkedConnections.Add connStr |> ignore
-                    //initialized <- true
-                    DcLogger.EnableTrace <- true        // TODO: 삭제 필요
-                    let createDb() =
-                        let schemaExtension =
-                            TypeFactoryModule.TypeFactory
-                            |> Option.ofObj
-                            |-> _.GetSchemaExtension()
+                    let withTrigger = false
+                    let schema =
+                        getSqlCreateSchema dbProvider withTrigger
+                        |> (fun schema ->
+                            // 스키마 확장 적용
+                            schemaExtension
+                            |-> _.ModifySchema(schema)
+                            |? schema)
 
-                        let withTrigger = false
-                        let schema =
-                            getSqlCreateSchema dbProvider withTrigger
-                            |> (fun schema ->
-                                // 스키마 확장 적용
-                                schemaExtension
-                                |-> _.ModifySchema(schema)
-                                |? schema)
-
-                        logInfo $"Creating database schema on {connStr}..."
-                        logInfo $"CreateSchema:\r\n{schema}"
+                    logInfo $"Creating database schema on {connStr}..."
+                    logInfo $"CreateSchema:\r\n{schema}"
 #if DEBUG
-                        let sqlSpecFile = Path.Combine(specDir, "sqlite-schema.sql")
-                        let header = $"""
+                    let sqlSpecFile = Path.Combine(specDir, "sqlite-schema.sql")
+                    let header = $"""
 --
 -- Auto-generated DS schema for {dbProvider.VendorName}.
 -- Date: {DateTime.Now}
 -- Do *NOT* Edit.
 --
 """
-                        File.WriteAllText(sqlSpecFile, header + schema)
+                    File.WriteAllText(sqlSpecFile, header + schema)
 #endif
-                        use tr = conn.BeginTransaction()
-                        try
-                            conn.Execute(schema, null, tr) |> ignore
-
-                            // DB 생성 후 추가 작업 수행
-                            schemaExtension |> iter _.PostCreateDatabase(conn, tr)
-
-                            insertEnumValues<DbStatus4>   conn tr Tn.Enum
-                            insertEnumValues<DbCallType>  conn tr Tn.Enum
-                            insertEnumValues<DbArrowType> conn tr Tn.Enum
-                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database vendor name', '{dbProvider.VendorName}')", null, tr) |> ignore
-                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database version',     '{conn.GetVersion()}')",     null, tr) |> ignore
-                            conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('engine version',       '{Version(0, 9, 99)}')",     null, tr) |> ignore
-                            tr.Commit()
-                        with ex ->
-                            logError $"Failed to create database schema: {ex.Message}"
-                            tr.Rollback()
-                            raise ex
+                    use tr = conn.BeginTransaction()
                     try
-                        let dic = conn.ParseConnectionString()
-                        let schemaName = dic.TryGet("Search Path")// |? "tia"
-                        if not <| conn.IsTableExists(Tn.TableDescription, ?schemaName=schemaName) then
-                            createDb()
-                    with exn ->
+                        conn.Execute(schema, null, tr) |> ignore
+
+                        // DB 생성 후 추가 작업 수행
+                        schemaExtension |> iter _.PostCreateDatabase(conn, tr)
+
+                        insertEnumValues<DbStatus4>   conn tr Tn.Enum
+                        insertEnumValues<DbCallType>  conn tr Tn.Enum
+                        insertEnumValues<DbArrowType> conn tr Tn.Enum
+                        conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database vendor name', '{dbProvider.VendorName}')", null, tr) |> ignore
+                        conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('database version',     '{conn.GetVersion()}')",     null, tr) |> ignore
+                        conn.Execute($"INSERT INTO {Tn.Meta} (key, val) VALUES ('engine version',       '{Version(0, 9, 99)}')",     null, tr) |> ignore
+                        tr.Commit()
+                    with ex ->
+                        logError $"Failed to create database schema: {ex.Message}"
+                        tr.Rollback()
+                        raise ex
+                try
+                    let dic = conn.ParseConnectionString()
+                    let schemaName = dic.TryGet("Search Path")// |? "tia"
+                    if not <| conn.IsTableExists(Tn.TableDescription, ?schemaName=schemaName) then
                         createDb()
-            )
-            //:?> SQLiteConnection
-        do
-            // 강제 초기화 실행
-            conn() |> dispose
+                with exn ->
+                    createDb()
+        )
+        //:?> SQLiteConnection
+    // createCache 함수를 사용한 캐시 초기화
+    let workCache = createCache<ORMWork>(venderDb, Tn.Work)
+    let callCache = createCache<ORMCall>(venderDb, Tn.Call)
+    let enumCache = createCache<ORMEnum>(venderDb, Tn.Enum)
 
-        /// DB 의 ORMWork[] 에 대한 cache
-        member val WorkCache = createCache<ORMWork>(venderDb, Tn.Work)
+    do
+        // 강제 초기화 실행
+        conn() |> dispose
 
-        /// DB 의 ORMCall[] 에 대한 cache
-        member val CallCache = createCache<ORMCall>(venderDb, Tn.Call)
+    /// DB 의 ORMWork[] 에 대한 cache
+    member x.WorkCache = workCache
 
-        /// DB 의 ORMEnum[] 에 대한 cache
-        member val EnumCache = createCache<ORMEnum>(venderDb, Tn.Enum)
+    /// DB 의 ORMCall[] 에 대한 cache
+    member x.CallCache = callCache
+
+    /// DB 의 ORMEnum[] 에 대한 cache
+    member x.EnumCache = enumCache
 
 
-        member x.ClearAllCaches() =
-            x.WorkCache.Reset() |> ignore
-            x.CallCache.Reset() |> ignore
-            x.EnumCache.Reset() |> ignore
+    member x.ClearAllCaches() =
+        x.WorkCache.Reset() |> ignore
+        x.CallCache.Reset() |> ignore
+        x.EnumCache.Reset() |> ignore
 
-        member x.CreateConnection() = conn()
+    member x.CreateConnection() = conn()
 
-        member private x.EnumerateRows<'T>(tableName:string, criteriaName:string, criteriaIds:int[]) =
-            use conn = x.CreateConnection()
-            conn.QueryRows<'T>(tableName, criteriaName, criteriaIds, tr=null) |> toArray
+    member private x.EnumerateRows<'T>(tableName:string, criteriaName:string, criteriaIds:int[]) =
+        use conn = x.CreateConnection()
+        conn.QueryRows<'T>(tableName, criteriaName, criteriaIds, tr=null) |> toArray
 
-        member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
-        member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId",   flowIds   |? [||])
-        member x.EnumerateCalls       (?workIds:int[])   = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds   |? [||])
+    member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
+    member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId",   flowIds   |? [||])
+    member x.EnumerateCalls       (?workIds:int[])   = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds   |? [||])
 
-        // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
-        // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
-        member x.CheckDatabaseChange() =
-            x.With(fun (conn, tr) ->
-                // 변경 내역 없는 경우, transaction 없이 return
-                if conn.QuerySingle<int>($"SELECT COUNT (*) FROM {Tn.TableHistory}") > 0 then
-                    let sql = $"SELECT * FROM {Tn.TableHistory}"
-                    let rows = conn.Query<ORMTableHistory>(sql, tr) |> toArray
-                    for kv in rows |> groupByToDictionary (fun row -> row.Name) do
-                        let name, rows = kv.Key, kv.Value
-                        tracefn $"Updating database change: {name}, numChangedRows={rows.Length}"
-                        match name with
-                        | Tn.Work -> x.WorkCache.Reset() |> ignore
-                        | Tn.Call -> x.CallCache.Reset() |> ignore
-                        | _ -> ()
-                    conn.Execute($"DELETE FROM {Tn.TableHistory}", null, tr) |> ignore
-                    conn.ResetSequence(Tn.TableHistory, tr) |> ignore  // auto increment id 초기화
-            , optOnError = fun ex -> logError $"CheckDatabaseChange failed: {ex.Message}")
+    // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
+    // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
+    member x.CheckDatabaseChange() =
+        x.With(fun (conn, tr) ->
+            // 변경 내역 없는 경우, transaction 없이 return
+            if conn.QuerySingle<int>($"SELECT COUNT (*) FROM {Tn.TableHistory}") > 0 then
+                let sql = $"SELECT * FROM {Tn.TableHistory}"
+                let rows = conn.Query<ORMTableHistory>(sql, tr) |> toArray
+                for kv in rows |> groupByToDictionary (fun row -> row.Name) do
+                    let name, rows = kv.Key, kv.Value
+                    tracefn $"Updating database change: {name}, numChangedRows={rows.Length}"
+                    match name with
+                    | Tn.Work -> x.WorkCache.Reset() |> ignore
+                    | Tn.Call -> x.CallCache.Reset() |> ignore
+                    | _ -> ()
+                conn.Execute($"DELETE FROM {Tn.TableHistory}", null, tr) |> ignore
+                conn.ResetSequence(Tn.TableHistory, tr) |> ignore  // auto increment id 초기화
+        , optOnError = fun ex -> logError $"CheckDatabaseChange failed: {ex.Message}")
 
 
 
