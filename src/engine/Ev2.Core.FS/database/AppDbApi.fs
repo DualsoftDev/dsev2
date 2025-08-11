@@ -124,6 +124,9 @@ type AppDbApi(dbProvider:DbProvider) =
         // 강제 초기화 실행
         conn() |> dispose
 
+    static member TheAppDbApi:AppDbApi = if isItNull DbApi.TheDbApi then getNull<AppDbApi>() else DbApi.TheDbApi :?> AppDbApi
+
+
     /// DB 의 ORMWork[] 에 대한 cache
     member x.WorkCache = workCache
 
