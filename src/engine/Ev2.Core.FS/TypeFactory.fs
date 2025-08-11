@@ -30,14 +30,16 @@ type ITypeFactory =
 
 /// Third Party 확장을 위한 Database CRUD 훅 인터페이스
 type IExtensionDbHandler =
-    /// Insert 완료 후 확장 처리
-    abstract HandleAfterInsert : obj * IDbConnection * IDbTransaction -> unit
-    /// Update 완료 후 확장 처리
-    abstract HandleAfterUpdate : obj * IDbConnection * IDbTransaction -> unit
-    /// Delete 완료 후 확장 처리
-    abstract HandleAfterDelete : obj * IDbConnection * IDbTransaction -> unit
-    /// Select 완료 후 확장 복원
-    abstract HandleAfterSelect : baseObj:obj * IDbConnection * IDbTransaction -> obj
+    /// Insert 완료 후 확장 처리 (런타임 타입 전달)
+    abstract HandleAfterInsert : IRtUnique * IDbConnection * IDbTransaction -> unit
+    /// Update 완료 후 확장 처리 (런타임 타입 전달)
+    abstract HandleAfterUpdate : IRtUnique * IDbConnection * IDbTransaction -> unit
+    /// Delete 완료 후 확장 처리 (런타임 타입 전달)
+    abstract HandleAfterDelete : IRtUnique * IDbConnection * IDbTransaction -> unit
+    /// Select 완료 후 확장 복원 (런타임 타입 전달, 확장 타입 반환)
+    abstract HandleAfterSelect : baseObj:IRtUnique * IDbConnection * IDbTransaction -> IRtUnique
+    /// 확장 속성의 diff 계산 (두 객체의 확장 속성 비교)
+    abstract ComputeExtensionDiff : obj1:IRtUnique * obj2:IRtUnique -> seq<obj>
 
 [<AutoOpen>]
 module TypeFactoryModule =

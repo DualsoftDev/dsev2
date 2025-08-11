@@ -190,12 +190,10 @@ module internal Db2DsImpl =
             assert(setEqual s.Arrows rtArrows)
 
             // 확장 복원 훅
-            let finalSystem = 
-                if isItNotNull ExtensionDbHandler then
-                    ExtensionDbHandler.HandleAfterSelect(rtSystem, conn, tr)
-                else
-                    box rtSystem
-            finalSystem :?> DsSystem
+            if isItNotNull ExtensionDbHandler then
+                ExtensionDbHandler.HandleAfterSelect(rtSystem, conn, tr) :?> DsSystem
+            else
+                rtSystem
 
         try
             Ok (dbApi.With helper)
@@ -235,9 +233,10 @@ module internal Db2DsImpl =
             let ormSystems =
                 ormActiveSystems @ ormPassiveSystems
                 |> tees (fun os ->
-                    DsSystem.Create()
-                    |> replicateProperties os
-                    |> uniqParent (Some rtProj))
+                    let sys = createExtended<DsSystem>()
+                    sys |> replicateProperties os |> ignore
+                    sys |> uniqParent (Some rtProj) |> ignore
+                    os.RtObject <- Some (sys :> IRtUnique))
                 |> toArray
 
 
@@ -250,12 +249,10 @@ module internal Db2DsImpl =
             ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
 
             // 확장 복원 훅
-            let finalProject = 
-                if isItNotNull ExtensionDbHandler then
-                    ExtensionDbHandler.HandleAfterSelect(rtProj, conn, tr)
-                else
-                    box rtProj
-            finalProject :?> Project
+            if isItNotNull ExtensionDbHandler then
+                ExtensionDbHandler.HandleAfterSelect(rtProj, conn, tr) :?> Project
+            else
+                rtProj
 
         try
             Ok (dbApi.With helper)
@@ -282,9 +279,9 @@ module internal Db2DsImpl =
             | Some ormSystem ->
                 ormSystem.RtObject <-
                     let rtSystem =
-                        DsSystem.Create()
+                        createExtended<DsSystem>()
                         |> replicateProperties ormSystem
-                    Some rtSystem
+                    Some (rtSystem :> IRtUnique)
 
                 rTryCheckoutSystemFromDBHelper ormSystem dbApi
         )

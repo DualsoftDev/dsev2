@@ -304,14 +304,37 @@ module internal DbInsertModule =
         match s.Id with
         | Some id ->             // 이미 DB 에 저장된 system 이므로 update
             rTryCheckoutSystemFromDB id dbApi
-            |-> (fun system ->
+            |-> (fun dbSystem ->
                 let criteria = Cc(parentGuid=false)
-                let diffs = system.ComputeDiff(s, criteria) |> toArray
+                let mutable diffs = dbSystem.ComputeDiff(s, criteria) |> toArray
+                
+                // 확장 속성 diff도 추가
+                if isItNotNull ExtensionDbHandler then
+                    let extensionDiffs = 
+                        ExtensionDbHandler.ComputeExtensionDiff(dbSystem, s)
+                        |> Seq.cast<CompareResult>
+                        |> toArray
+                    if not (extensionDiffs.IsEmpty()) then
+                        diffs <- Array.append diffs extensionDiffs
 
                 match diffs with
                 | [||] ->   // DB 에 저장된 system 과 동일하므로 변경 없음
                     NoChange
                 | _ ->   // DB 에 저장된 system 과 다르므로 update
+                    // CompareResult에 대한 CRUD 작업 수행
+                    for d in diffs do
+                        match d with
+                        | Diff (cat, dbEntity, newEntity) ->
+                            // diff에 대한 update 로직은 이미 DB.Update.fs에 구현되어 있음
+                            // 여기서는 확장 훅만 호출
+                            ()
+                        | _ -> ()
+                    
+                    // 확장 처리 훅
+                    if isItNotNull ExtensionDbHandler then
+                        dbApi.With(fun (conn, tr) ->
+                            ExtensionDbHandler.HandleAfterUpdate(s, conn, tr))
+                    
                     Updated diffs
                 )
         | None ->   // DB 에 저장되지 않은 system 이므로 insert

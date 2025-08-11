@@ -175,7 +175,9 @@ module internal DsCopyModule =
            "IRI"; "OriginGuid"; "EngineVersion"; "LangVersion"; "OwnerProjectId"
            "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay"; "Status4"
            "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
-           "ValueSpec" |]
+           "ValueSpec";
+           // 확장 속성 추가
+           "Location"; "Area" |]
         |> Set.ofArray
 
     let tryGetDBColumnName(dbApi:DbApi, propertyName: string) : string option =

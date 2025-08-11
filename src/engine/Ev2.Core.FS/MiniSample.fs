@@ -75,6 +75,8 @@ module MiniSample =
                 a.ApiDefGuid <- apiDef.Guid
                 a.InAddress <- "X0"
                 a.OutAddress <- "Y0"
+                a.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
+                a.OutSymbol <- "Y0" // OutSymbol 추가 (NOT NULL constraint)
             )
         
         // System에 요소들 추가

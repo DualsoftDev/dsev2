@@ -41,7 +41,7 @@ module internal rec DbUpdateImpl =
                 | Some e ->
                     Error e
                 | None ->
-                    // 확장 처리 훅
+                    // 확장 처리 훅 - 확장 속성이 변경된 경우에도 UPDATE 수행
                     if isItNotNull ExtensionDbHandler then
                         ExtensionDbHandler.HandleAfterUpdate(x, conn, tr)
                     Ok (Updated diffs)
