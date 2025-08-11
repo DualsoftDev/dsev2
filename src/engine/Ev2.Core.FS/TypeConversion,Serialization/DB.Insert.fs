@@ -321,14 +321,7 @@ module internal DbInsertModule =
                 | [||] ->   // DB 에 저장된 system 과 동일하므로 변경 없음
                     NoChange
                 | _ ->   // DB 에 저장된 system 과 다르므로 update
-                    // CompareResult에 대한 CRUD 작업 수행
-                    for d in diffs do
-                        match d with
-                        | Diff (cat, dbEntity, newEntity) ->
-                            // diff에 대한 update 로직은 이미 DB.Update.fs에 구현되어 있음
-                            // 여기서는 확장 훅만 호출
-                            ()
-                        | _ -> ()
+                    // 확장 처리 훅만 호출 (실제 업데이트는 DB.Update.fs에서 처리)
                     
                     // 확장 처리 훅
                     if isItNotNull ExtensionDbHandler then
