@@ -219,8 +219,7 @@ module ORMTypeConversionModule =
             if isItNotNull TypeFactoryModule.TypeFactory then
                 let factory = TypeFactoryModule.TypeFactory
                 let obj = factory.CreateOrm(runtimeType)
-                if obj <> null then obj :?> ORMUnique
-                else defaultFactory()
+                if isItNotNull obj then obj :?> ORMUnique else defaultFactory()
             else
                 defaultFactory()
 

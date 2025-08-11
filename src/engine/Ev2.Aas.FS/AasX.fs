@@ -224,10 +224,37 @@ module AasXModule2 =
 
         member x.ExportToAasxFile(outputPath: string, ?dbApi: AppDbApi): unit =
             dbApi |> iter x.ReadRuntimeDataFromDatabase
-            let njProj = x.ToJson() |> NjProject.FromJson
+
+            // 개선: TypeFactory를 통한 확장 타입 인식
+            let njProj =
+                match getTypeFactory() with
+                | Some factory ->
+                    // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
+                    match factory.CreateNjFromRuntime(x :> IRtUnique) |> Option.ofObj with
+                    | None ->
+                        // 2) JSON을 통한 기본 변환 사용
+                        x.ToJson() |> NjProject.FromJson
+                    | Some njObj -> njObj :?> NjProject
+                | None ->
+                    // Fallback: 기존 방식
+                    x.ToJson() |> NjProject.FromJson
+
             njProj.ExportToAasxFile(outputPath)
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
         member x.InjectToExistingAasxFile(aasxPath: string) =
-            let njProj = x.ToJson() |> NjProject.FromJson
+            // 개선: TypeFactory를 통한 확장 타입 인식
+            let njProj =
+                match getTypeFactory() with
+                | Some factory ->
+                    // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
+                    match factory.CreateNjFromRuntime(x :> IRtUnique) |> Option.ofObj with
+                    | None ->
+                        // 2) JSON을 통한 기본 변환 사용
+                        x.ToJson() |> NjProject.FromJson
+                    | Some njObj -> njObj :?> NjProject
+                | None ->
+                    // Fallback: 기존 방식
+                    x.ToJson() |> NjProject.FromJson
+
             njProj.InjectToExistingAasxFile(aasxPath)

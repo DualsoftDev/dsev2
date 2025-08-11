@@ -67,7 +67,7 @@ type ProjectExtensions =
             match getTypeFactory() with
             | Some factory ->
                 // RuntimeType 문자열로 JSON 타입 찾기
-                match factory.FindJsonTypeByName(runtimeTypeName) with
+                match factory.FindNjTypeByName(runtimeTypeName) with
                 | null ->
                     // 타입을 찾지 못하면 기본 NjProject로 역직렬화
                     EmJson.FromJson<NjProject>(json)
@@ -79,9 +79,17 @@ type ProjectExtensions =
                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
                 EmJson.FromJson<NjProject>(json)
 
-        njProject
-        |> NewtonsoftJsonModules.getRuntimeObject<Project>
-        |> validateRuntime
+        let runtimeProject = njProject
+                            |> NewtonsoftJsonModules.getRuntimeObject<Project>
+                            |> validateRuntime
+
+        // 확장 속성 복사 수행
+        match getTypeFactory() with
+        | Some factory ->
+            factory.CopyExtensionProperties(njProject, runtimeProject)
+        | None -> ()
+
+        runtimeProject
 
     // =====================
     // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)

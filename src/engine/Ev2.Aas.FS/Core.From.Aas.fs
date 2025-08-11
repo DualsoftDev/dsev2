@@ -15,6 +15,24 @@ open Ev2.Core.FS
 [<AutoOpen>]
 module CoreFromAas =
 
+    /// AASX에서 확장 타입 정보 추출 (ExtensionTypeInfo semantic으로 저장된 타입 이름)
+    let tryGetExtensionTypeInfo (submodel: ISubmodel): string option =
+        submodel.SubmodelElements
+        |> Seq.tryFind (fun elem ->
+            match elem with
+            | :? Property as prop ->
+                match prop.SemanticId with
+                | null -> false
+                | semanticId when semanticId.Keys.Count > 0 ->
+                    let keyValue = semanticId.Keys.[0].Value
+                    keyValue = AasSemantics.map.["ExtensionTypeInfo"]
+                | _ -> false
+            | _ -> false)
+        |> Option.bind (fun elem ->
+            match elem with
+            | :? Property as prop -> Some prop.Value
+            | _ -> None)
+
     // 공통 FromSMC 헬퍼 함수 - UniqueInfo만 필요한 단순한 객체들을 위함
     let internal createSimpleFromSMC<'T when 'T :> Unique> (constructor: unit -> 'T)
                                                            (smc: SubmodelElementCollection) : 'T =
@@ -40,7 +58,36 @@ module CoreFromAas =
                     | Some sm -> sm
                     | None -> failwith $"Project Submodel with IdShort '{PreludeModule.SubmodelIdShort}' not found in AASX file: {aasxPath}"
 
-            let project = NjProject.FromISubmodel(projectSubmodel)
+            // 확장 타입 정보를 사용하여 적절한 NjProject 생성
+            let project =
+                match tryGetExtensionTypeInfo projectSubmodel, getTypeFactory() with
+                | Some typeName, Some factory ->
+                    // 확장 타입 정보가 있고 TypeFactory가 등록된 경우
+                    match factory.FindNjTypeByName(typeName) with
+                    | null ->
+                        // 확장 타입을 찾을 수 없으면 기본 타입 사용
+                        NjProject.FromISubmodel(projectSubmodel)
+                    | extType ->
+                        // 확장 타입 인스턴스 생성 및 데이터 로드
+                        let extInstance = System.Activator.CreateInstance(extType) :?> NjProject
+                        let baseProject = NjProject.FromISubmodel(projectSubmodel)
+                        // 기본 프로젝트 데이터를 확장 인스턴스에 복사
+                        extInstance.Name <- baseProject.Name
+                        extInstance.Guid <- baseProject.Guid
+                        extInstance.Id <- baseProject.Id
+                        extInstance.Parameter <- baseProject.Parameter
+                        extInstance.DateTime <- baseProject.DateTime
+                        extInstance.Database <- baseProject.Database
+                        extInstance.Author <- baseProject.Author
+                        extInstance.Version <- baseProject.Version
+                        extInstance.Description <- baseProject.Description
+                        extInstance.ActiveSystems <- baseProject.ActiveSystems
+                        extInstance.PassiveSystems <- baseProject.PassiveSystems
+                        extInstance
+                | _, _ ->
+                    // 확장 타입 정보가 없거나 TypeFactory가 없으면 기본 동작
+                    NjProject.FromISubmodel(projectSubmodel)
+
             project
 
         static member FromISubmodel(submodel:ISubmodel): NjProject =

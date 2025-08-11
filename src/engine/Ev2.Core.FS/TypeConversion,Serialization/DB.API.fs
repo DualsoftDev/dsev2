@@ -25,16 +25,16 @@ module Ds2SqliteModule =
                     Project.RTryCheckoutFromDB(dbProj.Id.Value, dbApi)
                     >>= (fun dbProject ->
                         let mutable diffs = dbProject.ComputeDiff(x) |> toArray
-                        
+
                         // 확장 속성 diff도 추가
                         if isItNotNull ExtensionDbHandler then
-                            let extensionDiffs = 
+                            let extensionDiffs =
                                 ExtensionDbHandler.ComputeExtensionDiff(dbProject, x)
                                 |> Seq.cast<CompareResult>
                                 |> toArray
                             if not (extensionDiffs.IsEmpty()) then
                                 diffs <- Array.append diffs extensionDiffs
-                        
+
                         if diffs.IsEmpty() then
                             Ok NoChange
                         else

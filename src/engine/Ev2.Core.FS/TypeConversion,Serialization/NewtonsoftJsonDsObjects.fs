@@ -26,6 +26,11 @@ module NewtonsoftJsonModules =
         /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
         [<JsonProperty(Order = -101)>] member val private RuntimeType = let name = this.GetType().Name in Regex.Replace(name, "^Nj", "")
 
+        /// 확장 타입에서 override하여 추가 속성을 AAS serialize에 포함시킬 수 있는 확장점
+        /// AAS 변환 시에는 이 메서드를 호출하지 않고 별도 처리함
+        abstract member CollectExtensionProperties : unit -> JToken[]
+        default x.CollectExtensionProperties() = [||]
+
         // RtUnique     -> NjUnique -> json 저장 시, RuntimeObject Some 값 이어야 함.
         // AAS Submodel -> NjUnique -> json 저장 시, RuntimeObject None 값 허용
         [<JsonIgnore>]
@@ -125,7 +130,7 @@ module rec NewtonsoftJsonObjects =
             x.ActiveSystems <- activeSystems
             x.PassiveSystems <- passiveSystems
             x
-        
+
         /// Overload for backward compatibility
         member x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
             x.Initialize(activeSystems, passiveSystems, false)
@@ -421,7 +426,7 @@ module rec NewtonsoftJsonObjects =
                 |> tee (fun rtp ->
                     // TypeFactory가 있으면 확장 속성 복사
                     getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njp, rtp))
-                    
+
                     actives @ passives
                     |> iter (setParentI rtp) )
 
@@ -502,13 +507,13 @@ module rec NewtonsoftJsonObjects =
             let conditions = njf.Conditions |-> getRuntimeObject<DsCondition>
             let actions    = njf.Actions    |-> getRuntimeObject<DsAction>
 
-            let rtFlow = 
-                Flow.Create(buttons, lamps, conditions, actions) 
+            let rtFlow =
+                Flow.Create(buttons, lamps, conditions, actions)
                 |> replicateProperties njf
                 |> tee (fun rtf ->
                     // TypeFactory가 있으면 확장 속성 복사
                     getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njf, rtf)))
-            
+
             let all:NjUnique seq =
                 njf.Buttons     .Cast<NjUnique>()
                 @ njf.Lamps     .Cast<NjUnique>()

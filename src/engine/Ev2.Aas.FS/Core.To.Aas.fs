@@ -19,9 +19,46 @@ module CoreToAas =
                     JObj().TrySetProperty(x.Id.Value, "Id")
             }
 
+        /// 확장 타입별 특수 속성 수집 (AAS용)
+        /// Generic reflection 기반으로 확장 속성을 동적으로 수집
+        member x.tryCollectExtensionProperties(): JObj option seq =
+            seq {
+                let objType = x.GetType()
+                let baseTypeName = objType.BaseType.Name
+
+                // 기본 NjXXX 타입이 아닌 확장 타입만 처리
+                if baseTypeName = "NjProject" || baseTypeName = "NjSystem" then
+                    let baseType = objType.BaseType
+                    let allProps = objType.GetProperties()
+                    let basePropNames = baseType.GetProperties() |> Array.map (fun p -> p.Name) |> Set.ofArray
+
+                    // 확장 타입에서만 정의된 속성들 찾기
+                    for prop in allProps do
+                        if not (basePropNames.Contains(prop.Name)) && prop.CanRead then
+                            try
+                                let value = prop.GetValue(x)
+                                if value <> null then
+                                    // 문자열: 빈 값이 아닌 경우만
+                                    if prop.PropertyType = typeof<string> &&
+                                       not (System.String.IsNullOrEmpty(value :?> string)) then
+                                        JObj().TrySetProperty(value, prop.Name)
+                                    // 숫자: 0이 아닌 경우만 (int)
+                                    elif prop.PropertyType = typeof<int> && (value :?> int) <> 0 then
+                                        JObj().TrySetProperty(value, prop.Name)
+                                    // 기타 값 타입들에 대해서도 기본값이 아닌 경우
+                                    elif prop.PropertyType.IsValueType &&
+                                         not (value.Equals(System.Activator.CreateInstance(prop.PropertyType))) then
+                                        JObj().TrySetProperty(value, prop.Name)
+                            with
+                            | _ -> () // 예외 발생시 무시
+            }
+
         member x.CollectProperties(): JNode[] =
             seq {
                 yield! x.tryCollectPropertiesNjUnique()
+
+                // 확장점: 확장 타입별 특별 처리
+                yield! x.tryCollectExtensionProperties()
 
                 match x with
                 | :? NjProject as prj ->
@@ -124,6 +161,14 @@ module CoreToAas =
 
         /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
+            // 확장 타입 정보 생성 - AASX에서 타입 복원을 위해 저장
+            let extensionTypeInfo =
+                JObj().AddProperties(
+                    semanticKey = "ExtensionTypeInfo"
+                    , value = prj.GetType().FullName  // 확장 타입 이름 저장
+                    , modelType = ModelType.Property
+                )
+
             let sm =
                 JObj().AddProperties(
                     category = Category.CONSTANT
@@ -132,7 +177,7 @@ module CoreToAas =
                     , idShort = SubmodelIdShort
                     , kind = KindType.Instance
                     , semanticKey = "Submodel"
-                    , smel = [| prj.ToSjSMC() |]
+                    , smel = [| prj.ToSjSMC(); extensionTypeInfo |]
                 )
             sm
 
