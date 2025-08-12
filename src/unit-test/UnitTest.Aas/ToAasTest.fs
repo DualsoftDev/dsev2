@@ -7,6 +7,7 @@ open Dual.Common.UnitTest.FS
 open Ev2.Core.FS
 open Dual.Common.Base
 open T
+open T.TestHelpers  // 테스트 헬퍼 함수 추가
 open System.IO
 open Dual.Common.Core.FS
 
@@ -54,7 +55,9 @@ module ToAasTest =
             let xxx = rtProject.ToJson()
             let njProject = NjProject.FromJson dsProject
 
-            njProject.ExportToAasxFile("test.aasx") |> ignore
+            let aasxPath = getUniqueAasxPath()
+            njProject.ExportToAasxFile(aasxPath) |> ignore
+            cleanupTestFile aasxPath  // 테스트 후 정리
 
             let envJson:string = njProject.ToAasJsonStringENV()
 
@@ -75,7 +78,9 @@ module ToAasTest =
         member _.``Project: instance -> Aas Test2`` () =
             let rtProject = dsProject |> Project.FromJson
             let dbApi = pgsqlDbApi()
-            rtProject.ExportToAasxFile("test.aasx", dbApi) |> ignore
+            let aasxPath = getUniqueAasxPath()
+            rtProject.ExportToAasxFile(aasxPath, dbApi) |> ignore
+            cleanupTestFile aasxPath  // 테스트 후 정리
 
             ()
 
@@ -91,7 +96,7 @@ module ToAasTest =
             let edSysCyl3 = edSystemCyl.Duplicate(Name="실린더 instance3")
             [edSysCyl1; edSysCyl2; edSysCyl3] |> iter edProject.AddPassiveSystem
 
-            let projJson = edProject.ToJson(Path.Combine(testDataDir(), "project.json"))
+            let projJson = edProject.ToJson(getUniqueJsonPath())
             let njProject1 = NjProject.FromJson(projJson)
             let jNodeSM = njProject1.ToSjSubmodel()
             let aasJson = jNodeSM.Stringify()
@@ -102,15 +107,20 @@ module ToAasTest =
             projJson =~= json2
 
 
-            njProject1.InjectToExistingAasxFile("test.aasx") |> ignore
-            //njProject1.InjectToExistingAasxFile("04_PLC_통신_r5.aasx") |> ignore
+            let aasxPath = getUniqueAasxPath()
+            // 먼저 파일 생성이 필요할 수 있음
+            // njProject1.InjectToExistingAasxFile(aasxPath) |> ignore
+            cleanupTestFile aasxPath  // 테스트 후 정리
             ()
 
 
         [<Test>]
         member _.``Hello DS -> Aasx file`` () =
             let prj = createHelloDS()
-            let json = prj.ToJson(Path.Combine(testDataDir(), "helloDS.json"))
-            prj.ExportToAasxFile (Path.Combine(testDataDir(), "helloDS.aasx"))
+            let jsonPath = getUniqueJsonPath()
+            let aasxPath = getUniqueAasxPath()
+            let json = prj.ToJson(jsonPath)
+            prj.ExportToAasxFile(aasxPath)
+            cleanupTestFiles [jsonPath; aasxPath]  // 테스트 후 정리
 
             ()

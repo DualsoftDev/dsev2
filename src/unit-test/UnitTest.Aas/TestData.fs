@@ -200,7 +200,9 @@ let dsJson = """
 """
 
 
-let dsProject = """
+// 동적 DB 경로를 사용하는 함수로 변경
+let getDsProjectJson (dbConnectionString: string) = 
+    sprintf """
 {
   "RuntimeType": "Project",
   "Id": 4,
@@ -210,9 +212,12 @@ let dsProject = """
   "Database": {
     "Case": "Sqlite",
     "Fields": [
-      "Data Source='F:\\Git\\dsev2\\src\\unit-test\\UnitTest.Core\\database\\..\\test-data\\[SQLite] EdObject - DsObject - OrmObject - DB insert - JSON test.sqlite3';Version=3;BusyTimeout=20000"
+      "%s"
     ]
-  },
+  },""" dbConnectionString
+
+// 기존 호환성을 위한 기본 dsProject (in-memory DB 사용)
+let dsProject = getDsProjectJson "Data Source=:memory:;Version=3;BusyTimeout=20000" + """
   "Author": "dualk@KWAKPC",
   "Version": "0.0",
   "DateTime": "2025-06-17T12:27:36",

@@ -11,6 +11,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 
 open Dual.Ev2
+open System.IO
 
 module Aas =
     /// submodel 없는 env 만 존재하는 최외곽 aas json
@@ -41,9 +42,4 @@ module Aas =
 </environment>"""
 
 
-    let fileAasJsonWithEmptySubmodels = @"Z:\dsev2\submodules\aas-core3.0-csharp\test_data\Json\ContainedInEnvironment\Expected\AssetAdministrationShell\maximal.json"
-    let fileAasJsonSubmodels = @"Z:\dsev2\submodules\aas-core3.0-csharp\test_data\Json\ContainedInEnvironment\Expected\Reference\for_a_model_reference_first_key_in_globally_and_aas_identifiables.json"
-    let fileAasJsonSubmodelWithAnnotatedRelationshipElement = @"Z:\dsev2\submodules\aas-core3.0-csharp\test_data\Json\ContainedInEnvironment\Expected\Submodel\maximal.json"
-    let fileAasJsonSubmodelWithSMC = @"Z:\dsev2\submodules\aas-core3.0-csharp\test_data\Json\ContainedInEnvironment\Expected\SubmodelElementCollection\maximal.json"
-    let fileAasJsonSubmodelWithSML = @"Z:\dsev2\submodules\aas-core3.0-csharp\test_data\Json\ContainedInEnvironment\Expected\SubmodelElementList\maximal.json"
 

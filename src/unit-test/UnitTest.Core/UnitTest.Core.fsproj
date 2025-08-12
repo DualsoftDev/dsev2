@@ -22,6 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="TestHelpers.fs" />
 		<Compile Include="newtonsoft.json\FSharpOption.Test.fs" />
 		<Compile Include="model\CreateSample.fs" />
 		<Compile Include="model\CreateSample.WithCylinders.fs" />
