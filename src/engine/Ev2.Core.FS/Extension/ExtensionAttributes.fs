@@ -19,6 +19,12 @@ type ExtensionPropertyAttribute() =
     
     /// JSON 직렬화에 포함할지 여부
     member val IncludeInJson : bool = true with get, set
+    
+    /// 데이터베이스 컬럼 이름 (null이면 속성 이름 사용)
+    member val ColumnName : string = null with get, set
+    
+    /// 데이터베이스 컬럼이 Nullable인지 여부
+    member val IsNullable : bool = true with get, set
 
 /// 확장 타입을 표시하는 Attribute
 /// Third Party에서 확장 타입을 정의할 때 사용

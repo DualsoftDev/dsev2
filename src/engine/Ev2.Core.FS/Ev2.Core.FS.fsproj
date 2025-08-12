@@ -20,6 +20,7 @@
 		<Compile Include="Extension\TypeScanner.fs" />
 		<Compile Include="Extension\TypeRegistry.fs" />
 		<Compile Include="Extension\ExtensionHelpers.fs" />
+		<Compile Include="Extension\OrmExtension.fs" />
 		<!-- TypeFactory는 Extension 모듈 이후에 위치 -->
 		<Compile Include="TypeFactory.fs" />
 		<Compile Include="AbstractClasses.fs" />
