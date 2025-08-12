@@ -72,6 +72,31 @@ module TypeFactoryHelper =
 
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
+    /// TypeRegistry 통합 버전
     let inline createExtended<'T when 'T : (new : unit -> 'T) and 'T :> IRtUnique and 'T : not struct>() : 'T =
-        createWithFallback<'T>(fun () -> new 'T())
+        // 먼저 TypeFactory 확인
+        if isItNull TypeFactory then
+            // TypeFactory 없으면 Registry 확인
+            match Extension.TypeRegistryModule.getRegistry().CreateInstance(typeof<'T>) with
+            | Some obj -> obj :?> 'T
+            | None -> new 'T()
+        else
+            let result = TypeFactory.CreateRuntime(typeof<'T>)
+            if isItNull result then
+                // Factory에서 못 찾으면 Registry 확인
+                match Extension.TypeRegistryModule.getRegistry().CreateInstance(typeof<'T>) with
+                | Some obj -> obj :?> 'T
+                | None -> new 'T()
+            else
+                result :?> 'T
+    
+    /// 확장 시스템 초기화 (자동 스캔 포함)
+    let initializeExtensionSystem() =
+        Extension.ExtensionSystem.initialize()
+    
+    /// ITypeFactory 인터페이스에 자동 속성 복사 메서드 추가
+    type ITypeFactory with
+        /// 리플렉션 기반 자동 속성 복사
+        member x.AutoCopyProperties(source: obj, target: obj) =
+            Extension.PropertyMapper.copyExtensionProperties source target
 
