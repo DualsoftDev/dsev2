@@ -15,6 +15,58 @@ open Ev2.Core.FS
 [<AutoOpen>]
 module CoreFromAas =
 
+    /// 확장 속성 semantic URL 파싱
+    let tryParseExtensionSemanticUrl (semanticUrl: string) =
+        let pattern = @"https://dualsoft\.com/aas/extension/([^/]+)/([^/]+)"
+        let regex = System.Text.RegularExpressions.Regex(pattern)
+        let match' = regex.Match(semanticUrl)
+        if match'.Success then
+            Some (match'.Groups.[1].Value, match'.Groups.[2].Value) // (typeName, propName)
+        else None
+
+    /// 확장 속성 여부 확인
+    let isExtensionProperty (semanticUrl: string) =
+        semanticUrl.Contains("/extension/")
+
+    /// 확장 속성 수집
+    let collectExtensionProperties (submodel: ISubmodel) =
+        submodel.SubmodelElements
+        |> Seq.choose (fun elem ->
+            match elem with
+            | :? Property as prop ->
+                match prop.SemanticId with
+                | null -> None
+                | semanticId when semanticId.Keys.Count > 0 ->
+                    let keyValue = semanticId.Keys.[0].Value
+                    tryParseExtensionSemanticUrl keyValue
+                    |> Option.map (fun (typeName, propName) -> (propName, prop.Value))
+                | _ -> None
+            | _ -> None)
+        |> Seq.toArray
+
+    /// 확장 속성을 객체에 적용
+    let applyExtensionProperties (project: NjProject) (extensionProps: (string * string)[]) =
+        for (propName, propValue) in extensionProps do
+            try
+                let propInfo = project.GetType().GetProperty(propName)
+                if propInfo <> null && propInfo.CanWrite then
+                    // 타입에 따른 변환 처리
+                    let convertedValue =
+                        if propInfo.PropertyType = typeof<string> then
+                            propValue :> obj
+                        elif propInfo.PropertyType = typeof<int> then
+                            System.Int32.Parse(propValue) :> obj
+                        elif propInfo.PropertyType = typeof<bool> then
+                            System.Boolean.Parse(propValue) :> obj
+                        elif propInfo.PropertyType = typeof<float> then
+                            System.Double.Parse(propValue) :> obj
+                        else
+                            propValue :> obj // 기본적으로 문자열로 처리
+                    
+                    propInfo.SetValue(project, convertedValue)
+            with
+            | ex -> eprintfn "[ApplyExtensionProperties] Failed to set extension property %s: %s" propName ex.Message
+
     /// AASX에서 확장 타입 정보 추출 (ExtensionTypeInfo semantic으로 저장된 타입 이름)
     let tryGetExtensionTypeInfo (submodel: ISubmodel): string option =
         submodel.SubmodelElements
@@ -83,10 +135,20 @@ module CoreFromAas =
                         extInstance.Description <- baseProject.Description
                         extInstance.ActiveSystems <- baseProject.ActiveSystems
                         extInstance.PassiveSystems <- baseProject.PassiveSystems
+                        
+                        // 확장 속성 복원
+                        let extensionProps = collectExtensionProperties projectSubmodel
+                        applyExtensionProperties extInstance extensionProps
+                        
                         extInstance
                 | _, _ ->
                     // 확장 타입 정보가 없거나 TypeFactory가 없으면 기본 동작
-                    NjProject.FromISubmodel(projectSubmodel)
+                    let baseProject = NjProject.FromISubmodel(projectSubmodel)
+                    // 기본 타입의 경우에도 확장 속성이 있으면 복원 시도
+                    let extensionProps = collectExtensionProperties projectSubmodel
+                    if extensionProps.Length > 0 then
+                        applyExtensionProperties baseProject extensionProps
+                    baseProject
 
             project
 

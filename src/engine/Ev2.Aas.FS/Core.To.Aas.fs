@@ -185,6 +185,15 @@ module CoreToAas =
             project
 
 
+        /// 확장 속성용 semantic URL 생성
+        static member CreateExtensionSemanticUrl(typeName: string, propName: string): string =
+            let lowerTypeName = 
+                typeName.Split('.')
+                |> Array.last 
+                |> (fun name -> name.ToLowerInvariant())
+            let lowerPropName = propName.ToLowerInvariant()
+            sprintf "https://dualsoft.com/aas/extension/%s/%s" lowerTypeName lowerPropName
+
         /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
             // 확장 타입 정보 생성 - AASX에서 타입 복원을 위해 저장
@@ -209,27 +218,7 @@ module CoreToAas =
                                     .Set(N.ModelType, ModelType.Property.ToString())
                                     .Set(N.ValueType, "xs:string")
                                     .Set(N.Value, jprop.Value.ToString())
-
-                                    // .SetSemantic(sprintf "https://dualsoft.com/aas/extension/%s" jprop.Name)  // <-- 이 라인이 제거됨
-
-                                    // TODO: 향후 확장 속성에 대한 Semantic ID 설정 방안 논의 필요
-
-                                    (*
-                                      대안 방안 (향후 개선)
-
-                                      1. 표준 semantic ID 활용
-                                      // 표준 AAS semantic ID 사용 (예시)
-                                      .SetSemantic("0173-1#02-AAO057#002")  // 표준 위치 semantic ID
-                                      2. SubmodelElementCollection 구조 활용
-                                      // 확장 속성들을 별도 컬렉션으로 그룹화
-                                      let extensionCollection =
-                                          JObj()
-                                              .Set(N.IdShort, "ExtensionProperties")
-                                              .Set(N.ModelType, ModelType.SubmodelElementCollection.ToString())
-                                      3. Qualifier 메커니즘 사용
-                                      // AAS Qualifier를 통한 메타데이터 추가
-                                      .AddQualifier("ExtensionType", "CustomProperty")
-                                    *)
+                                    .SetSemantic(NjProject.CreateExtensionSemanticUrl(prj.GetType().FullName, jprop.Name))
 
                             Some(propertyNode :> JNode)
                         | _ ->
