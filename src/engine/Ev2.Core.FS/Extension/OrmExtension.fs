@@ -26,7 +26,7 @@ type DatabaseVendor =
 
 /// ORM 확장 모듈
 module OrmExtension =
-    
+
     /// 데이터베이스 벤더별 타입 매핑
     let private getSqlType (vendor: DatabaseVendor) (clrType: Type) =
         match vendor, clrType with
@@ -39,7 +39,7 @@ module OrmExtension =
         | SQLite, t when t = typeof<DateTime> -> "TEXT"
         | SQLite, t when t = typeof<Guid> -> "TEXT"
         | SQLite, t when t = typeof<decimal> -> "REAL"
-        
+
         // PostgreSQL
         | PostgreSQL, t when t = typeof<string> -> "TEXT"
         | PostgreSQL, t when t = typeof<int> || t = typeof<int32> -> "INTEGER"
@@ -50,82 +50,82 @@ module OrmExtension =
         | PostgreSQL, t when t = typeof<DateTime> -> "TIMESTAMP"
         | PostgreSQL, t when t = typeof<Guid> -> "UUID"
         | PostgreSQL, t when t = typeof<decimal> -> "DECIMAL"
-        
+
         // 기본값
         | _, _ -> "TEXT"
-    
+
     /// 확장 속성 스캔
     let scanExtensionProperties (extensionType: Type) (baseType: Type) =
-        let baseProps = 
-            baseType.GetProperties() 
-            |> Array.map (fun p -> p.Name) 
+        let baseProps =
+            baseType.GetProperties()
+            |> Array.map (fun p -> p.Name)
             |> Set.ofArray
-        
-        let extProps = 
+
+        let extProps =
             extensionType.GetProperties()
-            |> Array.filter (fun p -> 
-                p.CanRead && p.CanWrite && 
+            |> Array.filter (fun p ->
+                p.CanRead && p.CanWrite &&
                 not (baseProps.Contains p.Name))
-        
+
         extProps
         |> Array.map (fun p ->
             let attr = p.GetCustomAttribute<ExtensionPropertyAttribute>()
-            let columnName = 
+            let columnName =
                 if isItNotNull attr && not (String.IsNullOrEmpty(attr.ColumnName)) then
                     attr.ColumnName
                 else
                     p.Name
-            
+
             {
                 PropertyName = p.Name
                 ColumnName = columnName
                 SqlType = getSqlType SQLite p.PropertyType  // 기본값으로 SQLite 사용
-                IsNullable = 
+                IsNullable =
                     if isItNotNull attr then attr.IsNullable
                     else not p.PropertyType.IsValueType
-                DefaultValue = 
+                DefaultValue =
                     if isItNotNull attr then Option.ofObj attr.DefaultValue
                     else None
             })
-    
+
     /// ALTER TABLE 문 생성 (컬럼 추가)
     let generateAlterTableSql (vendor: DatabaseVendor) (tableName: string) (property: OrmExtensionProperty) =
-        let quotedColumnName = 
+        let quotedColumnName =
             match vendor with
             | PostgreSQL -> sprintf "\"%s\"" property.ColumnName
             | _ -> sprintf "\"%s\"" property.ColumnName
-        
+
         let sqlType = getSqlType vendor (property.GetType())
         let nullable = if property.IsNullable then "" else " NOT NULL"
-        let defaultValue = 
+        let defaultValue =
             match property.DefaultValue with
             | Some v -> sprintf " DEFAULT %A" v
             | None -> ""
-        
-        sprintf "ALTER TABLE %s ADD COLUMN %s %s%s%s" 
+
+        sprintf "ALTER TABLE %s ADD COLUMN %s %s%s%s"
             tableName quotedColumnName sqlType nullable defaultValue
-    
+
     /// 확장 속성 값 읽기
-    let readExtensionProperties (conn: IDbConnection) (tr: IDbTransaction option) 
-                                (tableName: string) (idColumn: string) (id: int64) 
+    let readExtensionProperties (conn: IDbConnection) (tr: IDbTransaction option)
+                                (tableName: string) (idColumn: string) (id: int64)
                                 (properties: OrmExtensionProperty[]) =
         if Array.isEmpty properties then
             Map.empty
         else
-            let columns = 
-                properties 
+            let columns =
+                properties
                 |> Array.map (fun p -> sprintf "\"%s\"" p.ColumnName)
                 |> String.concat ", "
-            
+
             let sql = sprintf "SELECT %s FROM \"%s\" WHERE \"%s\" = @Id" columns tableName idColumn
-            
+
             let parameters = dict ["Id", box id]
-            
+
             let result =
                 match tr with
                 | Some transaction -> conn.QuerySingleOrDefault(sql, parameters, transaction)
                 | None -> conn.QuerySingleOrDefault(sql, parameters)
-            
+
             if isItNull result then
                 Map.empty
             else
@@ -133,7 +133,7 @@ module OrmExtension =
                 |> Array.fold (fun acc prop ->
                     let value = (result :?> IDictionary<string, obj>).[prop.ColumnName]
                     Map.add prop.PropertyName value acc) Map.empty
-    
+
     /// 확장 속성 값 쓰기
     let writeExtensionProperties (conn: IDbConnection) (tr: IDbTransaction option)
                                  (tableName: string) (idColumn: string) (id: int64)
@@ -144,24 +144,24 @@ module OrmExtension =
             let setClauses = ResizeArray<string>()
             let parameters = Dictionary<string, obj>()
             parameters.["Id"] <- box id
-            
+
             for prop in properties do
                 match Map.tryFind prop.PropertyName values with
                 | Some value ->
                     setClauses.Add(sprintf "\"%s\" = @%s" prop.ColumnName prop.PropertyName)
                     parameters.[prop.PropertyName] <- value
                 | None -> ()
-            
+
             if setClauses.Count > 0 then
-                let sql = sprintf "UPDATE \"%s\" SET %s WHERE \"%s\" = @Id" 
+                let sql = sprintf "UPDATE \"%s\" SET %s WHERE \"%s\" = @Id"
                             tableName (String.Join(", ", setClauses)) idColumn
-                
+
                 match tr with
                 | Some transaction -> conn.Execute(sql, parameters, transaction) |> ignore
                 | None -> conn.Execute(sql, parameters) |> ignore
-    
+
     /// 테이블에 확장 컬럼이 존재하는지 확인
-    let checkColumnExists (conn: IDbConnection) (vendor: DatabaseVendor) 
+    let checkColumnExists (conn: IDbConnection) (vendor: DatabaseVendor)
                          (tableName: string) (columnName: string) =
         let sql =
             match vendor with
@@ -169,26 +169,26 @@ module OrmExtension =
                 sprintf "SELECT COUNT(*) FROM pragma_table_info('%s') WHERE name = @ColumnName" tableName
             | PostgreSQL ->
                 sprintf """
-                    SELECT COUNT(*) 
-                    FROM information_schema.columns 
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
                     WHERE table_name = @TableName AND column_name = @ColumnName
                 """
             | _ ->
                 // 다른 DB는 일단 PostgreSQL과 동일하게
                 sprintf """
-                    SELECT COUNT(*) 
-                    FROM information_schema.columns 
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
                     WHERE table_name = @TableName AND column_name = @ColumnName
                 """
-        
-        let parameters = 
+
+        let parameters =
             match vendor with
             | SQLite -> dict ["ColumnName", box columnName]
             | _ -> dict ["TableName", box tableName; "ColumnName", box columnName]
-        
+
         let count = conn.QuerySingle<int>(sql, parameters)
         count > 0
-    
+
     /// 자동으로 누락된 확장 컬럼 추가
     let ensureExtensionColumns (conn: IDbConnection) (vendor: DatabaseVendor)
                               (tableName: string) (properties: OrmExtensionProperty[]) =
@@ -202,11 +202,11 @@ module OrmExtension =
                     logWarn $"Failed to add column {prop.ColumnName} to table {tableName}: {ex.Message}"
 
 /// 확장 가능한 DB 핸들러 인터페이스
-type IExtensionDbHandlerV2 =
+type IAutoExtensionDbHandler =
     abstract member GetExtensionProperties: extensionType:Type * baseType:Type -> OrmExtensionProperty[]
-    abstract member ReadExtensions: conn:IDbConnection * tr:IDbTransaction option * 
+    abstract member ReadExtensions: conn:IDbConnection * tr:IDbTransaction option *
                                    tableName:string * id:int64 * obj:obj -> unit
-    abstract member WriteExtensions: conn:IDbConnection * tr:IDbTransaction option * 
+    abstract member WriteExtensions: conn:IDbConnection * tr:IDbTransaction option *
                                     tableName:string * id:int64 * obj:obj -> unit
     abstract member EnsureSchema: conn:IDbConnection * vendor:DatabaseVendor -> unit
 
@@ -214,10 +214,10 @@ type IExtensionDbHandlerV2 =
 type AutoExtensionDbHandler() =
     let mutable vendor = DatabaseVendor.SQLite
     let extensionPropertiesCache = Dictionary<Type * Type, OrmExtensionProperty[]>()
-    
+
     /// 데이터베이스 벤더 설정
     member _.SetVendor(v: DatabaseVendor) = vendor <- v
-    
+
     /// 캐시된 확장 속성 가져오기
     member private _.GetCachedProperties(extensionType: Type, baseType: Type) =
         let key = (extensionType, baseType)
@@ -227,16 +227,16 @@ type AutoExtensionDbHandler() =
             let props = OrmExtension.scanExtensionProperties extensionType baseType
             extensionPropertiesCache.[key] <- props
             props
-    
-    interface IExtensionDbHandlerV2 with
+
+    interface IAutoExtensionDbHandler with
         member this.GetExtensionProperties(extensionType, baseType) =
             this.GetCachedProperties(extensionType, baseType)
-        
+
         member this.ReadExtensions(conn, tr, tableName, id, obj) =
             let objType = obj.GetType()
             let baseType = objType.BaseType
-            
-            
+
+
             if isItNotNull baseType && baseType <> typeof<obj> then
                 let props = this.GetCachedProperties(objType, baseType)
                 if not (Array.isEmpty props) then
@@ -249,7 +249,7 @@ type AutoExtensionDbHandler() =
                             if isItNotNull propInfo && propInfo.CanWrite then
                                 try
                                     // 타입 변환 처리
-                                    let convertedValue = 
+                                    let convertedValue =
                                         if propInfo.PropertyType = typeof<int> && value.GetType() = typeof<int64> then
                                             Convert.ToInt32(value) :> obj
                                         elif propInfo.PropertyType = typeof<int64> && value.GetType() = typeof<int> then
@@ -268,11 +268,11 @@ type AutoExtensionDbHandler() =
                                 with ex ->
                                     logWarn $"Failed to set property {prop.PropertyName}: {ex.Message}"
                         | None -> ()
-        
+
         member this.WriteExtensions(conn, tr, tableName, id, obj) =
             let objType = obj.GetType()
             let baseType = objType.BaseType
-            
+
             if isItNotNull baseType && baseType <> typeof<obj> then
                 let props = this.GetCachedProperties(objType, baseType)
                 if not (Array.isEmpty props) then
@@ -287,18 +287,18 @@ type AutoExtensionDbHandler() =
                                     Map.add prop.PropertyName value acc
                                 with _ -> acc
                             else acc) Map.empty
-                    
+
                     OrmExtension.writeExtensionProperties conn tr tableName "id" id props values
-        
+
         member this.EnsureSchema(conn, v) =
             vendor <- v
-            
+
             // 등록된 모든 확장 타입에 대해 스키마 확인
             let registry = TypeRegistryModule.getRegistry()
             let registrations = registry.GetAllRegistrations()
-            
+
             for reg in registrations do
-                let tableName = 
+                let tableName =
                     // 테이블 이름 매핑 (실제 테이블 이름과 일치하도록)
                     match reg.BaseType.Name with
                     | "Project" -> "project"
@@ -309,22 +309,22 @@ type AutoExtensionDbHandler() =
                     | "ApiDef" -> "apiDef"
                     | "ApiCall" -> "apiCall"
                     | _ -> reg.BaseType.Name.ToLower()
-                
+
                 let props = this.GetCachedProperties(reg.ExtensionType, reg.BaseType)
                 if not (Array.isEmpty props) then
                     OrmExtension.ensureExtensionColumns conn vendor tableName props
 
-/// 전역 확장 DB 핸들러
-module ExtensionDbHandlerV2 =
-    let mutable private handler : IExtensionDbHandlerV2 option = None
-    
-    let getHandler() =
-        match handler with
-        | Some h -> h
-        | None ->
-            let h = AutoExtensionDbHandler() :> IExtensionDbHandlerV2
-            handler <- Some h
-            h
-    
-    let setHandler(h: IExtensionDbHandlerV2) =
-        handler <- Some h
+///// 전역 확장 DB 핸들러
+//module AutoExtensionDbHandlerModule =
+//    let mutable private handler : IAutoExtensionDbHandler option = None
+
+//    let getHandler() =
+//        match handler with
+//        | Some h -> h
+//        | None ->
+//            let h = AutoExtensionDbHandler() :> IAutoExtensionDbHandler
+//            handler <- Some h
+//            h
+
+//    let setHandler(h: IAutoExtensionDbHandler) =
+//        handler <- Some h
