@@ -27,7 +27,7 @@ module FromAasTest =
             ()
 
         [<Test>]
-        member _.``Aasx xml submode xml fetch test`` () =
+        member _.``Aasx xml submodel xml fetch test`` () =
             // 1. AASX 파일에서 원본 XML 읽기
             let testAasxFile = "test.aasx"
             let submodelXml = getAasXmlFromAasxFile testAasxFile

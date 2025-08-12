@@ -21,6 +21,7 @@
 		<Compile Include="Core.To.Aas.fs" />
 		<Compile Include="Core.From.Aas.fs" />
 		<Compile Include="AasX.fs" />
+		<Compile Include="Ev2AasExtensionForCSharp.fs" />
 		<None Include="devdoc\**\*.md" />
 		<Content Include="devdoc\SampleAASFolder\aasx\aas\aas.aas.xml" />
 		<None Include="devdoc\SampleAASFolder\aasx\aasx-origin" />

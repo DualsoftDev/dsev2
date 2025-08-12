@@ -226,19 +226,26 @@ module AasXModule2 =
             dbApi |> iter x.ReadRuntimeDataFromDatabase
 
             // 개선: TypeFactory를 통한 확장 타입 인식
+            eprintfn "[ExportToAasxFile] Runtime Project type: %s" (x.GetType().FullName)
             let njProj =
                 match getTypeFactory() with
                 | Some factory ->
+                    eprintfn "[ExportToAasxFile] TypeFactory found"
                     // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
                     match factory.CreateNjFromRuntime(x :> IRtUnique) |> Option.ofObj with
                     | None ->
+                        eprintfn "[ExportToAasxFile] CreateNjFromRuntime returned None, using JSON fallback"
                         // 2) JSON을 통한 기본 변환 사용
                         x.ToJson() |> NjProject.FromJson
-                    | Some njObj -> njObj :?> NjProject
+                    | Some njObj ->
+                        eprintfn "[ExportToAasxFile] CreateNjFromRuntime created type: %s" (njObj.GetType().FullName)
+                        njObj :?> NjProject
                 | None ->
+                    eprintfn "[ExportToAasxFile] No TypeFactory, using fallback"
                     // Fallback: 기존 방식
                     x.ToJson() |> NjProject.FromJson
 
+            eprintfn "[ExportToAasxFile] NjProject type created: %s" (njProj.GetType().FullName)
             njProj.ExportToAasxFile(outputPath)
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장

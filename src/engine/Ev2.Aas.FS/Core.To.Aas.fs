@@ -23,6 +23,30 @@ module CoreToAas =
         /// Generic reflection 기반으로 확장 속성을 동적으로 수집
         member x.tryCollectExtensionProperties(): JObj option seq =
             seq {
+                // 1. 먼저 가상 메서드 CollectExtensionProperties 호출 (C# 확장 타입 지원)
+                try
+                    let extensionProps = x.CollectExtensionProperties()
+
+
+                    for prop in extensionProps do
+                        match prop with
+                        | :? Newtonsoft.Json.Linq.JProperty as jprop ->
+                            // JProperty의 값을 적절한 타입으로 변환하여 저장
+                            let value =
+                                match jprop.Value.Type with
+                                | Newtonsoft.Json.Linq.JTokenType.String -> jprop.Value.ToString() :> obj
+                                | Newtonsoft.Json.Linq.JTokenType.Integer -> jprop.Value.ToObject<int>() :> obj
+                                | Newtonsoft.Json.Linq.JTokenType.Float -> jprop.Value.ToObject<float>() :> obj
+                                | Newtonsoft.Json.Linq.JTokenType.Boolean -> jprop.Value.ToObject<bool>() :> obj
+                                | _ -> jprop.Value.ToString() :> obj
+
+                            yield JObj().TrySetProperty(value, jprop.Name)
+                        | _ -> ()
+                with
+                | ex ->
+                    eprintfn "[tryCollectExtensionProperties] Error calling CollectExtensionProperties: %s" ex.Message
+
+                // 2. 기존 reflection 기반 로직도 유지 (F# 확장 타입 지원)
                 let objType = x.GetType()
                 let baseTypeName = objType.BaseType.Name
 
@@ -41,16 +65,18 @@ module CoreToAas =
                                     // 문자열: 빈 값이 아닌 경우만
                                     if prop.PropertyType = typeof<string> &&
                                        not (System.String.IsNullOrEmpty(value :?> string)) then
-                                        JObj().TrySetProperty(value, prop.Name)
+                                        yield JObj().TrySetProperty(value, prop.Name)
                                     // 숫자: 0이 아닌 경우만 (int)
                                     elif prop.PropertyType = typeof<int> && (value :?> int) <> 0 then
-                                        JObj().TrySetProperty(value, prop.Name)
+                                        yield JObj().TrySetProperty(value, prop.Name)
                                     // 기타 값 타입들에 대해서도 기본값이 아닌 경우
                                     elif prop.PropertyType.IsValueType &&
                                          not (value.Equals(System.Activator.CreateInstance(prop.PropertyType))) then
-                                        JObj().TrySetProperty(value, prop.Name)
+                                        yield JObj().TrySetProperty(value, prop.Name)
                             with
-                            | _ -> () // 예외 발생시 무시
+                            | ex ->
+                                eprintfn "[tryCollectExtensionProperties] Error collecting property '%s' from type '%s': %s"
+                                    prop.Name objType.Name ex.Message
             }
 
         member x.CollectProperties(): JNode[] =
@@ -169,6 +195,60 @@ module CoreToAas =
                     , modelType = ModelType.Property
                 )
 
+            // 확장 속성들을 별도의 Property로 수집
+            let extensionProperties =
+                try
+                    let extensionProps = prj.CollectExtensionProperties()
+                    extensionProps
+                    |> Array.choose (fun token ->
+                        match token with
+                        | :? Newtonsoft.Json.Linq.JProperty as jprop ->
+                            let propertyNode =
+                                JObj()
+                                    .Set(N.IdShort, jprop.Name)
+                                    .Set(N.ModelType, ModelType.Property.ToString())
+                                    .Set(N.ValueType, "xs:string")
+                                    .Set(N.Value, jprop.Value.ToString())
+
+                                    // .SetSemantic(sprintf "https://dualsoft.com/aas/extension/%s" jprop.Name)  // <-- 이 라인이 제거됨
+
+                                    // TODO: 향후 확장 속성에 대한 Semantic ID 설정 방안 논의 필요
+
+                                    (*
+                                      대안 방안 (향후 개선)
+
+                                      1. 표준 semantic ID 활용
+                                      // 표준 AAS semantic ID 사용 (예시)
+                                      .SetSemantic("0173-1#02-AAO057#002")  // 표준 위치 semantic ID
+                                      2. SubmodelElementCollection 구조 활용
+                                      // 확장 속성들을 별도 컬렉션으로 그룹화
+                                      let extensionCollection =
+                                          JObj()
+                                              .Set(N.IdShort, "ExtensionProperties")
+                                              .Set(N.ModelType, ModelType.SubmodelElementCollection.ToString())
+                                      3. Qualifier 메커니즘 사용
+                                      // AAS Qualifier를 통한 메타데이터 추가
+                                      .AddQualifier("ExtensionType", "CustomProperty")
+                                    *)
+
+                            Some(propertyNode :> JNode)
+                        | _ ->
+                            None
+                    )
+                with
+                | ex ->
+                    eprintfn "[ToSjSubmodel] Error collecting extension properties: %s" ex.Message
+                    [||]
+
+            // 모든 SubmodelElements 결합
+            let allElements =
+                [|
+                    yield prj.ToSjSMC()
+                    yield extensionTypeInfo
+                    yield! extensionProperties
+                |]
+
+
             let sm =
                 JObj().AddProperties(
                     category = Category.CONSTANT
@@ -177,7 +257,7 @@ module CoreToAas =
                     , idShort = SubmodelIdShort
                     , kind = KindType.Instance
                     , semanticKey = "Submodel"
-                    , smel = [| prj.ToSjSMC(); extensionTypeInfo |]
+                    , smel = allElements
                 )
             sm
 
