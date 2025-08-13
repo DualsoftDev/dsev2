@@ -697,7 +697,7 @@ module Ds2JsonModule =
         let rtObj = rtObj :?> RtUnique
         /// TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
         let createWithTypeFactory (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
-            getTypeFactory() |-> (fun factory -> factory.CreateJson(rtObj.GetType(), rtObj) :?> INjUnique) |? fallbackFactory()
+            getTypeFactory() |-> (fun factory -> factory.CreateJson(rtObj.GetType(), rtObj)) |? fallbackFactory()
 
         let createFallbackNjProject() =
             let rt = rtObj :?> Project
@@ -795,11 +795,10 @@ module Ds2JsonModule =
             :> INjUnique
 
         let createFallbackNjArrow() =
-            let rt = rtObj :?> RtUnique
             NjArrow()
-            |> fromNjUniqINGD rt
+            |> fromNjUniqINGD rtObj
             |> tee (fun z ->
-                match rt with
+                match rtObj with
                 | :? ArrowBetweenWorks as arrow ->
                     z.Source <- guid2str (arrow.GetSource().Guid)
                     z.Target <- guid2str (arrow.GetTarget().Guid)
