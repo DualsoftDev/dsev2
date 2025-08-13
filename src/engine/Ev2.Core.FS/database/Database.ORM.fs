@@ -91,9 +91,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Project -> ORMProject
         default x.Initialize(runtime:Project) =
-            x.Name <- runtime.Name
-            x.Guid <- runtime.Guid
-            x.Id <- runtime.Id
+            runtime.CopyUniqueProperties(x) |> ignore
             x.DateTime <- runtime.DateTime
             x.Author <- runtime.Author
             x.Version <- runtime.Version
@@ -123,9 +121,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:DsSystem -> ORMSystem
         default x.Initialize(runtime:DsSystem) =
-            x.Name <- runtime.Name
-            x.Guid <- runtime.Guid
-            x.Id <- runtime.Id
+            runtime.CopyUniqueProperties(x) |> ignore
             x.DateTime <- runtime.DateTime
             x.IRI <- runtime.IRI
             x.Author <- runtime.Author
@@ -145,9 +141,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Flow -> ORMFlow
         default x.Initialize(runtime:Flow) =
-            x.Name <- runtime.Name
-            x.Guid <- runtime.Guid
-            x.Id <- runtime.Id
+            runtime.CopyUniqueProperties(x) |> ignore
             x.SystemId <- runtime.System |-> _.Id |? None
             x
 
@@ -195,9 +189,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Work -> ORMWork
         default x.Initialize(runtime:Work) =
-            x.Name <- runtime.Name
-            x.Guid <- runtime.Guid
-            x.Id <- runtime.Id
+            runtime.CopyUniqueProperties(x) |> ignore
             x.Motion <- runtime.Motion
             x.Script <- runtime.Script
             x.IsFinished <- runtime.IsFinished
@@ -227,9 +219,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Call -> ORMCall
         default x.Initialize(runtime:Call) =
-            x.Name <- runtime.Name
-            x.Guid <- runtime.Guid
-            x.Id <- runtime.Id
+            runtime.CopyUniqueProperties(x) |> ignore
             x.CallTypeId <- runtime.CallType |> int64 |> Some
             x.IsDisabled <- runtime.IsDisabled
             x.Timeout <- runtime.Timeout

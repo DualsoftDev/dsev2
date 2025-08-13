@@ -43,11 +43,7 @@ module internal DsCopyModule =
 
         linkUniq src dst |> ignore
 
-        dst.Id <- src.Id
-        dst.Name <- src.Name
-        dst.Guid <- src.Guid
-        dst.Parameter <- src.Parameter
-        dst.RawParent <- src.RawParent
+        src.CopyUniqueProperties(dst) |> ignore
 
         let sbx, dbx = box src, box dst
 
