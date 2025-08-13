@@ -125,15 +125,15 @@ module rec NewtonsoftJsonObjects =
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized x
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : activeSystems:NjSystem[] * passiveSystems:NjSystem[] * isDeserialization:bool -> NjProject
-        default x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[], isDeserialization:bool) =
+        abstract Initialize : activeSystems:NjSystem[] * passiveSystems:NjSystem[] * project:Project * isDeserialization:bool -> NjProject
+        default x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[], project:Project, isDeserialization:bool) =
             x.ActiveSystems <- activeSystems
             x.PassiveSystems <- passiveSystems
             x
 
-        /// Overload for backward compatibility
-        member x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
-            x.Initialize(activeSystems, passiveSystems, false)
+        ///// Overload for backward compatibility
+        //member x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
+        //    x.Initialize(activeSystems, passiveSystems, false)
 
 
     type NjSystem() =
@@ -709,7 +709,7 @@ module Ds2JsonModule =
             |> tee (fun z ->
                 let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                 let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
-                z.Initialize(activeSystems, passiveSystems) |> ignore)
+                z.Initialize(activeSystems, passiveSystems, rt, isDeserialization=false) |> ignore)
             |> tee(fun n ->
                 // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
                 if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt

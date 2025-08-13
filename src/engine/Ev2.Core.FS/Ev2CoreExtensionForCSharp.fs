@@ -9,7 +9,35 @@ open System.Data
 open System.Runtime.CompilerServices
 open System.IO
 
-[<Extension>]
+
+[<AutoOpen>]
+module ExtCopyModule =
+    type Project with
+        member x.CopyTo(nj:NjProject) =
+            replicateProperties x nj |> ignore
+
+open DsObjectCopyImpl
+
+type CopyExtensionForCSharp =
+    [<Extension>]
+    static member CsCopyTo(src:Unique, dst:Unique) =
+        match src, dst with
+        | (:? Project as src), (:? Project as dst) -> src.replicateTo(dst)
+        | (:? DsSystem as src), (:? DsSystem as dst) -> src.replicateTo(dst)
+        | (:? Flow as src), (:? Flow as dst) -> src.replicateTo(dst)
+        | (:? Work as src), (:? Work as dst) -> src.replicateTo(dst)
+        | (:? Call as src), (:? Call as dst) -> src.replicateTo(dst)
+
+
+        | (:? Project as src), (:? NjProject as dst) -> replicateProperties src dst |> ignore
+        | (:? DsSystem as src), (:? NjSystem as dst) -> replicateProperties src dst |> ignore
+        | (:? Flow as src), (:? NjFlow as dst) -> replicateProperties src dst |> ignore
+        | (:? Work as src), (:? NjWork as dst) -> replicateProperties src dst |> ignore
+        | (:? Call as src), (:? NjCall as dst) -> replicateProperties src dst |> ignore
+        | _ -> failwith "ERROR"
+
+
+
 type Ev2CoreExtensionForCSharp =
 
     // Project 확장 메서드 - C# 전용

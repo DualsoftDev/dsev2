@@ -134,6 +134,7 @@ module PropertyMapper =
                 | _ -> ())
 
     /// 모든 속성 복사 (기본 + 확장)
+    [<Obsolete("삭제 예정")>]
     let copyAllProperties (source: obj) (target: obj) =
         if isItNull source || isItNull target then ()
         else

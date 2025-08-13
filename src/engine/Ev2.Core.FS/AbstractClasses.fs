@@ -88,7 +88,7 @@ and Project() =
     static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
         let project = createExtended<Project>()
         project.Initialize(activeSystems, passiveSystems, false)
-    
+
     /// Creates a Project for deserialization (doesn't initialize extension properties)
     static member CreateForDeserialization(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
         let project = createExtended<Project>()
@@ -135,7 +135,7 @@ and Project() =
             setParentI this s)
 
         this
-    
+
     /// Overload for backward compatibility
     member this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
         this.Initialize(activeSystems, passiveSystems, false)

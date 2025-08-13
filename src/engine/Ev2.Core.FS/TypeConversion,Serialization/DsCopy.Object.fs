@@ -17,25 +17,10 @@ module internal rec DsObjectCopyImpl =
 
     type Project with // replicate
         /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
-        member x.replicate(bag:ReplicateBag): Project =
+        member x.replicateTo(newProject:Project, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
             let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
             let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
-
-            // TODO: MyPrototypeSystems 및 ImportedPrototypeSystems 을 먼저 복사하고, 이들을 통해 instantiate 해야 한다.  또는 복사하고 관계를 맞춰주든지..
-            // Project.Instantiate  bag 이용해서 관계 찾아 낼 것.
-
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let targetType = x.GetType()
-            let newProject =
-                if targetType = typeof<Project> then
-                    // 기본 타입인 경우
-                    Project.Create([], [])
-                else
-                    // 확장 타입인 경우 - 복제 전용 생성자 사용
-                    try
-                        System.Activator.CreateInstance(targetType, true) :?> Project
-                    with
-                    | _ -> Project.Create([], [])
 
             newProject
             |> uniqReplicateWithBag bag x
@@ -44,10 +29,18 @@ module internal rec DsObjectCopyImpl =
                 actives    |> z.RawActiveSystems   .AddRange
                 passives   |> z.RawPassiveSystems  .AddRange)
             |> validateRuntime
+            |> ignore
 
+
+        /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
+        member x.replicate(bag:ReplicateBag): Project =
+            Project.Create([], [])
+            |> tee(fun z -> x.replicateTo(z, bag))
 
     type DsSystem with // replicate
-        member x.replicate(bag:ReplicateBag) =
+        /// DsSystem 복제. 지정된 newSystem 객체에 현재 시스템의 내용을 복사
+        member x.replicateTo(newSystem:DsSystem, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
             let apiDefs  = x.ApiDefs  |-> _.replicate(bag)  |> toArray
             let apiCalls = x.ApiCalls |-> _.replicate(bag)  |> toArray
@@ -60,42 +53,35 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Source |> verify
                 works |> contains a.Target |> verify)
 
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let targetType = x.GetType()
-            let newSystem =
-                if targetType = typeof<DsSystem> then
-                    // 기본 타입인 경우
-                    DsSystem.Create(flows, works, arrows, apiDefs, apiCalls)
-                else
-                    // 확장 타입인 경우 - 복제 전용 생성자 사용
-                    try
-                        let instance = System.Activator.CreateInstance(targetType, true) :?> DsSystem
-                        // 복제된 데이터 설정
-                        flows |> instance.RawFlows.AddRange
-                        works |> instance.RawWorks.AddRange
-                        arrows |> instance.RawArrows.AddRange
-                        apiDefs |> instance.RawApiDefs.AddRange
-                        apiCalls |> instance.RawApiCalls.AddRange
-
-                        instance
-                    with
-                    | _ -> DsSystem.Create(flows, works, arrows, apiDefs, apiCalls)
+            // 복제된 데이터를 newSystem에 설정
+            flows |> newSystem.RawFlows.AddRange
+            works |> newSystem.RawWorks.AddRange
+            arrows |> newSystem.RawArrows.AddRange
+            apiDefs |> newSystem.RawApiDefs.AddRange
+            apiCalls |> newSystem.RawApiCalls.AddRange
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
-            let replicatedSystem = newSystem |> uniqReplicateWithBag bag x
+            newSystem |> uniqReplicateWithBag bag x |> ignore
 
             // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
-            flows |> iter (setParentI replicatedSystem)
-            works |> iter (setParentI replicatedSystem)
-            arrows |> iter (setParentI replicatedSystem)
-            apiDefs |> iter (setParentI replicatedSystem)
-            apiCalls |> iter (setParentI replicatedSystem)
+            flows |> iter (setParentI newSystem)
+            works |> iter (setParentI newSystem)
+            arrows |> iter (setParentI newSystem)
+            apiDefs |> iter (setParentI newSystem)
+            apiCalls |> iter (setParentI newSystem)
 
-            replicatedSystem
+
+        member x.replicate(bag:ReplicateBag) =
+            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
+            let targetType = x.GetType()
+            DsSystem.Create([], [], [], [], [])
+            |> tee(fun newSystem -> x.replicateTo(newSystem, bag))
 
 
     type Work with // replicate
-        member x.replicate(bag:ReplicateBag) =
+        /// Work 복제. 지정된 newWork 객체에 현재 작업의 내용을 복사
+        member x.replicateTo(newWork:Work, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
             let calls =
                 x.Calls |> Seq.map(fun z -> z.replicate bag) |> List.ofSeq
 
@@ -111,154 +97,170 @@ module internal rec DsObjectCopyImpl =
                 x.Flow
                 |-> (fun f -> bag.Newbies[f.Guid] :?> Flow)
 
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let targetType = x.GetType()
-            let newWork =
-                if targetType = typeof<Work> then
-                    // 기본 타입인 경우
-                    Work.Create(calls, arrows, flow)
-                else
-                    // 확장 타입인 경우 - 복제 전용 생성자 사용
-                    try
-                        let instance = System.Activator.CreateInstance(targetType, true) :?> Work
-                        // 복제된 데이터 설정
-                        calls |> instance.RawCalls.AddRange
-                        arrows |> instance.RawArrows.AddRange
-                        instance.Flow <- flow
-
-                        instance
-                    with
-                    | _ -> Work.Create(calls, arrows, flow)
+            // 복제된 데이터를 newWork에 설정
+            calls |> newWork.RawCalls.AddRange
+            arrows |> newWork.RawArrows.AddRange
+            newWork.Flow <- flow
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
-            let replicatedWork = newWork |> uniqReplicateWithBag bag x
+            newWork |> uniqReplicateWithBag bag x |> ignore
 
             // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
-            calls |> iter (setParentI replicatedWork)
-            arrows |> iter (setParentI replicatedWork)
+            calls |> iter (setParentI newWork)
+            arrows |> iter (setParentI newWork)
 
-            replicatedWork
+        member x.replicate(bag:ReplicateBag) =
+            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
+            let targetType = x.GetType()
+            Work.Create([], [], None)
+            |> tee(fun newWork -> x.replicateTo(newWork, bag))
 
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
     type Flow with // replicate
-        member x.replicate(bag:ReplicateBag) =
+        /// Flow 복제. 지정된 newFlow 객체에 현재 플로우의 내용을 복사
+        member x.replicateTo(newFlow:Flow, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
             let buttons    = x.Buttons    |-> _.replicate(bag) |> toArray
             let lamps      = x.Lamps      |-> _.replicate(bag) |> toArray
             let conditions = x.Conditions |-> _.replicate(bag) |> toArray
             let actions    = x.Actions    |-> _.replicate(bag) |> toArray
 
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let targetType = x.GetType()
-            let newFlow =
-                if targetType = typeof<Flow> then
-                    // 기본 타입인 경우
-                    Flow.Create(buttons, lamps, conditions, actions)
-                else
-                    // 확장 타입인 경우 - 복제 전용 생성자 사용
-                    try
-                        let instance = System.Activator.CreateInstance(targetType, true) :?> Flow
-                        // 복제된 데이터 설정
-                        buttons |> instance.RawButtons.AddRange
-                        lamps |> instance.RawLamps.AddRange
-                        conditions |> instance.RawConditions.AddRange
-                        actions |> instance.RawActions.AddRange
-
-                        instance
-                    with
-                    | _ -> Flow.Create(buttons, lamps, conditions, actions)
+            // 복제된 데이터를 newFlow에 설정
+            buttons    |> newFlow.RawButtons.AddRange
+            lamps      |> newFlow.RawLamps.AddRange
+            conditions |> newFlow.RawConditions.AddRange
+            actions    |> newFlow.RawActions.AddRange
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
-            let replicatedFlow = newFlow |> uniqReplicateWithBag bag x
+            newFlow |> uniqReplicateWithBag bag x |> ignore
 
             // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
-            buttons    |> iter (fun z -> z.RawParent <- Some replicatedFlow)
-            lamps      |> iter (fun z -> z.RawParent <- Some replicatedFlow)
-            conditions |> iter (fun z -> z.RawParent <- Some replicatedFlow)
-            actions    |> iter (fun z -> z.RawParent <- Some replicatedFlow)
+            buttons    |> iter (fun z -> z.RawParent <- Some newFlow)
+            lamps      |> iter (fun z -> z.RawParent <- Some newFlow)
+            conditions |> iter (fun z -> z.RawParent <- Some newFlow)
+            actions    |> iter (fun z -> z.RawParent <- Some newFlow)
 
-            replicatedFlow
+        member x.replicate(bag:ReplicateBag) =
+            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
+            Flow.Create([], [], [], [])
+            |> tee(fun newFlow -> x.replicateTo(newFlow, bag))
 
 
     type DsButton with // replicate
-        member x.replicate(bag:ReplicateBag) = new DsButton() |> uniqReplicateWithBag bag x
+        member x.replicateTo(newButton:DsButton, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newButton |> uniqReplicateWithBag bag x |> ignore
+
+        member x.replicate(bag:ReplicateBag) =
+            new DsButton()
+            |> tee(fun newButton -> x.replicateTo(newButton, bag))
 
 
     type Lamp with // replicate
-        member x.replicate(bag:ReplicateBag) = new Lamp() |> uniqReplicateWithBag bag x
+        member x.replicateTo(newLamp:Lamp, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newLamp |> uniqReplicateWithBag bag x |> ignore
+
+        member x.replicate(bag:ReplicateBag) =
+            new Lamp()
+            |> tee(fun newLamp -> x.replicateTo(newLamp, bag))
 
 
     type DsCondition with // replicate
-        member x.replicate(bag:ReplicateBag) = new DsCondition() |> uniqReplicateWithBag bag x
+        member x.replicateTo(newCondition:DsCondition, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newCondition |> uniqReplicateWithBag bag x |> ignore
+
+        member x.replicate(bag:ReplicateBag) =
+            new DsCondition()
+            |> tee(fun newCondition -> x.replicateTo(newCondition, bag))
 
 
     type DsAction with // replicate
-        member x.replicate(bag:ReplicateBag) = new DsAction() |> uniqReplicateWithBag bag x
+        member x.replicateTo(newAction:DsAction, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newAction |> uniqReplicateWithBag bag x |> ignore
+
+        member x.replicate(bag:ReplicateBag) =
+            new DsAction()
+            |> tee(fun newAction -> x.replicateTo(newAction, bag))
 
 
     type Call with // replicate
-        member x.replicate(bag:ReplicateBag) =
+        /// Call 복제. 지정된 newCall 객체에 현재 호출의 내용을 복사
+        member x.replicateTo(newCall:Call, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
             // ApiCall들은 시스템 레벨에서 복제되므로 그대로 유지
             let apiCallGuids = x.ApiCallGuids |> toList
 
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let targetType = x.GetType()
-            let newCall =
-                if targetType = typeof<Call> then
-                    // 기본 타입인 경우
-                    Call.Create(x.CallType, apiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
-                else
-                    // 확장 타입인 경우 - 복제 전용 생성자 사용
-                    try
-                        let instance = System.Activator.CreateInstance(targetType, true) :?> Call
-                        // 복제된 데이터 설정
-                        instance.CallType <- x.CallType
-                        instance.IsDisabled <- x.IsDisabled
-                        instance.Timeout <- x.Timeout
-                        instance.AutoConditions.Clear()
-                        instance.CommonConditions.Clear()
-                        instance.ApiCallGuids.Clear()
-                        instance.AutoConditions.AddRange(x.AutoConditions)
-                        instance.CommonConditions.AddRange(x.CommonConditions)
-                        instance.ApiCallGuids.AddRange(apiCallGuids)
-                        instance
-                    with
-                    | _ -> Call.Create(x.CallType, apiCallGuids, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
+            // 복제된 데이터를 newCall에 설정
+            newCall.CallType <- x.CallType
+            newCall.IsDisabled <- x.IsDisabled
+            newCall.Timeout <- x.Timeout
+            newCall.AutoConditions.Clear()
+            newCall.CommonConditions.Clear()
+            newCall.ApiCallGuids.Clear()
+            newCall.AutoConditions.AddRange(x.AutoConditions)
+            newCall.CommonConditions.AddRange(x.CommonConditions)
+            newCall.ApiCallGuids.AddRange(apiCallGuids)
 
             newCall
             |> uniqReplicateWithBag bag x
             |> tee(fun c ->
                 c.Status4 <- x.Status4
-            )
+            ) |> ignore
+
+        member x.replicate(bag:ReplicateBag) =
+            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
+            let targetType = x.GetType()
+            Call.Create(x.CallType, x.ApiCallGuids |> toList, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
+            |> tee(fun newCall -> x.replicateTo(newCall, bag))
 
     type ApiCall with // replicate
+        member x.replicateTo(newApiCall:ApiCall, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newApiCall |> uniqReplicateWithBag bag x |> ignore
+
         member x.replicate(bag:ReplicateBag) =
             new ApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
-            |> uniqReplicateWithBag bag x
+            |> tee(fun newApiCall -> x.replicateTo(newApiCall, bag))
 
     type ApiDef with // replicate
-        member x.replicate(bag:ReplicateBag) =
-            new ApiDef(x.IsPush)
+        member x.replicateTo(newApiDef:ApiDef, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newApiDef
             |> uniqReplicateWithBag bag x
             |> tee(fun a ->
                 a.TopicIndex <- x.TopicIndex
                 a.IsTopicOrigin <- x.IsTopicOrigin
-            )
+            ) |> ignore
 
+        member x.replicate(bag:ReplicateBag) =
+            new ApiDef(x.IsPush)
+            |> tee(fun newApiDef -> x.replicateTo(newApiDef, bag))
 
     type ArrowBetweenWorks with // replicate
+        member x.replicateTo(newArrow:ArrowBetweenWorks, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newArrow |> uniqReplicateWithBag bag x |> ignore
+
         member x.replicate(bag:ReplicateBag) =
             let source = bag.Newbies[x.Source.Guid] :?> Work
             let target = bag.Newbies[x.Target.Guid] :?> Work
             ArrowBetweenWorks(source, target, x.Type)
-            |> uniqReplicateWithBag bag x
+            |> tee(fun newArrow -> x.replicateTo(newArrow, bag))
 
     type ArrowBetweenCalls with // replicate
+        member x.replicateTo(newArrow:ArrowBetweenCalls, ?bag:ReplicateBag) =
+            let bag = bag |? ReplicateBag()
+            newArrow |> uniqReplicateWithBag bag x |> ignore
+
         member x.replicate(bag:ReplicateBag) =
             let source = bag.Newbies[x.Source.Guid] :?> Call
             let target = bag.Newbies[x.Target.Guid] :?> Call
             ArrowBetweenCalls(source, target, x.Type)
-            |> uniqReplicateWithBag bag x
+            |> tee(fun newArrow -> x.replicateTo(newArrow, bag))
 
 [<AutoOpen>]
 module DsObjectCopyAPIModule =
