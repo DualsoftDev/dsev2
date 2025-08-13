@@ -331,15 +331,26 @@ module JsonExtensionModule =
         member x.SetModelType(modelType:ModelType) = x.Set(N.ModelType, modelType.ToString())
 
         member this.SetSemantic(semanticKey:string): JObj =
+            // IdShort 설정 (없는 경우에만)
             match this.TryGetPropertyValue(N.IdShort.ToString()) with
             | true, _ -> ()
             | _ ->
                 let idShort = getCountedName semanticKey
-                this.Set(N.IdShort, idShort) |> ignore // idShort 가 없으면 semanticKey 를 idShort 로 사용
+                this.Set(N.IdShort, idShort) |> ignore
 
-            match AasSemantics.map |> Map.tryFind semanticKey with
-            | Some semanticId -> this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
-            | None -> failwithf "Not supported semantic name: %s" semanticKey
+            // Semantic ID 설정
+            let isExtensionProperty = semanticKey.Contains("/extension/")
+            
+            if isExtensionProperty then
+                // 확장 속성: URL을 그대로 사용
+                this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticKey)
+            else
+                // 일반 속성: 매핑된 semantic ID 사용
+                match AasSemantics.map |> Map.tryFind semanticKey with
+                | Some semanticId -> 
+                    this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
+                | None -> 
+                    failwithf "Not supported semantic name: %s" semanticKey
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
         member this.TrySetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =

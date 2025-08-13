@@ -9,6 +9,16 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreToAas =
+    /// 확장 속성용 JObj 생성 헬퍼 함수
+    let private createExtensionPropertyJObj (value: obj) (propName: string) (typeName: string) =
+        let extensionSemantic = NjProject.CreateExtensionSemanticUrl(typeName, propName)
+        let jobj = JObj()
+        jobj.SetTypedValue(value) |> ignore
+        jobj.Set(N.IdShort, propName) |> ignore
+        jobj.Set(N.ModelType, ModelType.Property.ToString()) |> ignore
+        jobj.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, extensionSemantic) |> ignore
+        Some jobj
+
     type NjUnique with
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
@@ -40,7 +50,8 @@ module CoreToAas =
                                 | Newtonsoft.Json.Linq.JTokenType.Boolean -> jprop.Value.ToObject<bool>() :> obj
                                 | _ -> jprop.Value.ToString() :> obj
 
-                            yield JObj().TrySetProperty(value, jprop.Name)
+                            // 헬퍼 함수를 사용하여 확장 속성 JObj 생성
+                            yield createExtensionPropertyJObj value jprop.Name (x.GetType().FullName)
                         | _ -> ()
                 with
                 | ex ->
@@ -48,11 +59,16 @@ module CoreToAas =
 
                 // 2. 기존 reflection 기반 로직도 유지 (F# 확장 타입 지원)
                 let objType = x.GetType()
-                let baseTypeName = objType.BaseType.Name
-
-                // 기본 NjXXX 타입이 아닌 확장 타입만 처리
-                if baseTypeName = "NjProject" || baseTypeName = "NjSystem" then
-                    let baseType = objType.BaseType
+                let baseType = objType.BaseType
+                
+                // 확장 가능한 타입 목록
+                let extensibleTypes = 
+                    [ "NjProject"; "NjSystem"; "NjFlow"; "NjWork"; "NjCall"; 
+                      "NjApiDef"; "NjApiCall"; "NjButton"; "NjLamp"; 
+                      "NjCondition"; "NjAction"; "NjArrow" ]
+                
+                // 기본 타입이 확장 가능한 타입인지 확인
+                if baseType <> null && extensibleTypes |> List.contains baseType.Name then
                     let allProps = objType.GetProperties()
                     let basePropNames = baseType.GetProperties() |> Array.map (fun p -> p.Name) |> Set.ofArray
 
@@ -62,17 +78,8 @@ module CoreToAas =
                             try
                                 let value = prop.GetValue(x)
                                 if value <> null then
-                                    // 문자열: 빈 값이 아닌 경우만
-                                    if prop.PropertyType = typeof<string> &&
-                                       not (System.String.IsNullOrEmpty(value :?> string)) then
-                                        yield JObj().TrySetProperty(value, prop.Name)
-                                    // 숫자: 0이 아닌 경우만 (int)
-                                    elif prop.PropertyType = typeof<int> && (value :?> int) <> 0 then
-                                        yield JObj().TrySetProperty(value, prop.Name)
-                                    // 기타 값 타입들에 대해서도 기본값이 아닌 경우
-                                    elif prop.PropertyType.IsValueType &&
-                                         not (value.Equals(System.Activator.CreateInstance(prop.PropertyType))) then
-                                        yield JObj().TrySetProperty(value, prop.Name)
+                                    // 모든 타입의 값을 직렬화 (기본값 포함)
+                                    yield createExtensionPropertyJObj value prop.Name objType.FullName
                             with
                             | ex ->
                                 eprintfn "[tryCollectExtensionProperties] Error collecting property '%s' from type '%s': %s"
@@ -187,9 +194,9 @@ module CoreToAas =
 
         /// 확장 속성용 semantic URL 생성
         static member CreateExtensionSemanticUrl(typeName: string, propName: string): string =
-            let lowerTypeName = 
+            let lowerTypeName =
                 typeName.Split('.')
-                |> Array.last 
+                |> Array.last
                 |> (fun name -> name.ToLowerInvariant())
             let lowerPropName = propName.ToLowerInvariant()
             sprintf "https://dualsoft.com/aas/extension/%s/%s" lowerTypeName lowerPropName
