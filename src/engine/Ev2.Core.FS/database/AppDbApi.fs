@@ -86,6 +86,7 @@ type AppDbApi(dbProvider:DbProvider) =
 -- Do *NOT* Edit.
 --
 """
+                    Directory.CreateDirectory(Path.GetDirectoryName(sqlSpecFile)) |> ignore;
                     File.WriteAllText(sqlSpecFile, header + schema)
 #endif
                     use tr = conn.BeginTransaction()
