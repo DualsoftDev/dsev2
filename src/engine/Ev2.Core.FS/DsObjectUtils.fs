@@ -280,12 +280,9 @@ type DsObjectFactory =
 
     /// C#에서 AppSettings 초기화를 위한 헬퍼 메서드
     static member InitializeAppSettings() =
-        try
-            // AppSettings 인스턴스가 존재하지 않으면 새로 생성
-            AppSettings() |> ignore
-            "AppSettings initialized successfully"
-        with
-        | ex -> $"AppSettings initialization failed: {ex.Message}"
+        // AppSettings 인스턴스가 존재하지 않으면 새로 생성
+        AppSettings() |> ignore
+        "AppSettings initialized successfully"
 
 
     /// 새로운 패턴: createExtended 사용
@@ -566,7 +563,9 @@ module DsObjectUtilsModule =
                                 try
                                     ac.ApiDef.Guid = ac.ApiDefGuid |> verify
                                     sys.ApiDefs |> contains ac.ApiDef |> verify
-                                with _ -> ()  // NjSystem 등에서 ApiDef 접근 실패 시 무시
+                                with ex ->
+                                    logWarn $"Exception while validating ApiCall: {ex.Message}"
+                                    ()  // NjSystem 등에서 ApiDef 접근 실패 시 무시
 
                 sys.Arrows |> iter _.Validate(guidDicDebug)
                 for a in sys.Arrows do

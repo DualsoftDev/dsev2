@@ -195,11 +195,8 @@ module OrmExtension =
         for prop in properties do
             if not (checkColumnExists conn vendor tableName prop.ColumnName) then
                 let alterSql = generateAlterTableSql vendor tableName prop
-                try
-                    conn.Execute(alterSql) |> ignore
-                    logInfo $"Added extension column {prop.ColumnName} to table {tableName}"
-                with ex ->
-                    logWarn $"Failed to add column {prop.ColumnName} to table {tableName}: {ex.Message}"
+                conn.Execute(alterSql) |> ignore
+                logInfo $"Added extension column {prop.ColumnName} to table {tableName}"
 
 /// 확장 가능한 DB 핸들러 인터페이스
 type IAutoExtensionDbHandler =
@@ -247,26 +244,23 @@ type AutoExtensionDbHandler() =
                         | Some value ->
                             let propInfo = objType.GetProperty(prop.PropertyName)
                             if isItNotNull propInfo && propInfo.CanWrite then
-                                try
-                                    // 타입 변환 처리
-                                    let convertedValue =
-                                        if propInfo.PropertyType = typeof<int> && value.GetType() = typeof<int64> then
-                                            Convert.ToInt32(value) :> obj
-                                        elif propInfo.PropertyType = typeof<int64> && value.GetType() = typeof<int> then
-                                            Convert.ToInt64(value) :> obj
-                                        elif propInfo.PropertyType = typeof<float> && value.GetType() = typeof<double> then
-                                            Convert.ToSingle(value) :> obj
-                                        elif propInfo.PropertyType = typeof<double> && value.GetType() = typeof<float> then
-                                            Convert.ToDouble(value) :> obj
-                                        elif propInfo.PropertyType = typeof<bool> && value.GetType() = typeof<int64> then
-                                            (unbox<int64> value) <> 0L :> obj
-                                        elif propInfo.PropertyType = typeof<bool> && value.GetType() = typeof<int> then
-                                            (unbox<int> value) <> 0 :> obj
-                                        else
-                                            value
-                                    propInfo.SetValue(obj, convertedValue)
-                                with ex ->
-                                    logWarn $"Failed to set property {prop.PropertyName}: {ex.Message}"
+                                // 타입 변환 처리
+                                let convertedValue =
+                                    if propInfo.PropertyType = typeof<int> && value.GetType() = typeof<int64> then
+                                        Convert.ToInt32(value) :> obj
+                                    elif propInfo.PropertyType = typeof<int64> && value.GetType() = typeof<int> then
+                                        Convert.ToInt64(value) :> obj
+                                    elif propInfo.PropertyType = typeof<float> && value.GetType() = typeof<double> then
+                                        Convert.ToSingle(value) :> obj
+                                    elif propInfo.PropertyType = typeof<double> && value.GetType() = typeof<float> then
+                                        Convert.ToDouble(value) :> obj
+                                    elif propInfo.PropertyType = typeof<bool> && value.GetType() = typeof<int64> then
+                                        (unbox<int64> value) <> 0L :> obj
+                                    elif propInfo.PropertyType = typeof<bool> && value.GetType() = typeof<int> then
+                                        (unbox<int> value) <> 0 :> obj
+                                    else
+                                        value
+                                propInfo.SetValue(obj, convertedValue)
                         | None -> ()
 
         member this.WriteExtensions(conn, tr, tableName, id, obj) =
@@ -282,10 +276,8 @@ type AutoExtensionDbHandler() =
                         |> Array.fold (fun acc prop ->
                             let propInfo = objType.GetProperty(prop.PropertyName)
                             if isItNotNull propInfo && propInfo.CanRead then
-                                try
-                                    let value = propInfo.GetValue(obj)
-                                    Map.add prop.PropertyName value acc
-                                with _ -> acc
+                                let value = propInfo.GetValue(obj)
+                                Map.add prop.PropertyName value acc
                             else acc) Map.empty
 
                     OrmExtension.writeExtensionProperties conn tr tableName "id" id props values

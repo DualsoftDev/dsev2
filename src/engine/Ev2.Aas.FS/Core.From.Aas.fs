@@ -47,25 +47,22 @@ module CoreFromAas =
     /// 확장 속성을 객체에 적용
     let applyExtensionProperties (project: NjProject) (extensionProps: (string * string)[]) =
         for (propName, propValue) in extensionProps do
-            try
-                let propInfo = project.GetType().GetProperty(propName)
-                if propInfo <> null && propInfo.CanWrite then
-                    // 타입에 따른 변환 처리
-                    let convertedValue =
-                        if propInfo.PropertyType = typeof<string> then
-                            propValue :> obj
-                        elif propInfo.PropertyType = typeof<int> then
-                            System.Int32.Parse(propValue) :> obj
-                        elif propInfo.PropertyType = typeof<bool> then
-                            System.Boolean.Parse(propValue) :> obj
-                        elif propInfo.PropertyType = typeof<float> then
-                            System.Double.Parse(propValue) :> obj
-                        else
-                            propValue :> obj // 기본적으로 문자열로 처리
-                    
-                    propInfo.SetValue(project, convertedValue)
-            with
-            | ex -> eprintfn "[ApplyExtensionProperties] Failed to set extension property %s: %s" propName ex.Message
+            let propInfo = project.GetType().GetProperty(propName)
+            if propInfo <> null && propInfo.CanWrite then
+                // 타입에 따른 변환 처리
+                let convertedValue =
+                    if propInfo.PropertyType = typeof<string> then
+                        propValue :> obj
+                    elif propInfo.PropertyType = typeof<int> then
+                        System.Int32.Parse(propValue) :> obj
+                    elif propInfo.PropertyType = typeof<bool> then
+                        System.Boolean.Parse(propValue) :> obj
+                    elif propInfo.PropertyType = typeof<float> then
+                        System.Double.Parse(propValue) :> obj
+                    else
+                        propValue :> obj // 기본적으로 문자열로 처리
+
+                propInfo.SetValue(project, convertedValue)
 
     /// AASX에서 확장 타입 정보 추출 (ExtensionTypeInfo semantic으로 저장된 타입 이름)
     let tryGetExtensionTypeInfo (submodel: ISubmodel): string option =
@@ -135,11 +132,11 @@ module CoreFromAas =
                         extInstance.Description <- baseProject.Description
                         extInstance.ActiveSystems <- baseProject.ActiveSystems
                         extInstance.PassiveSystems <- baseProject.PassiveSystems
-                        
+
                         // 확장 속성 복원
                         let extensionProps = collectExtensionProperties projectSubmodel
                         applyExtensionProperties extInstance extensionProps
-                        
+
                         extInstance
                 | _, _ ->
                     // 확장 타입 정보가 없거나 TypeFactory가 없으면 기본 동작

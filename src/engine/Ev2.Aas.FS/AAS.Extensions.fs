@@ -15,6 +15,7 @@ open System.Runtime.CompilerServices
 
 open System.Text.Json
 open System.Text.Json.Nodes
+open Dual.Common.Base
 
 [<AutoOpen>]
 module rec AasExtensions =
@@ -76,7 +77,9 @@ module rec AasExtensions =
                             // 일반적인 Convert.ChangeType 사용
                             Convert.ChangeType(str, typeof<'T>, CultureInfo.InvariantCulture)
                     Some (value :?> 'T)
-                with _ -> None)
+                with _ ->
+                    logWarn $"Failed to convert '{str}' to type '{typeof<'T>.Name}'"
+                    None)
 
         [<Extension>]
         static member GetPropValue(smc:ISubmodelElement seq, propName) =
@@ -139,20 +142,17 @@ open Ev2.Core.FS
 module AasXModule =
     /// XML에서 AAS 버전을 감지하는 헬퍼 함수 (System.Version 사용)
     let detectAasVersionFromXml(xmlContent: string): System.Version option =
-        try
-            let doc = XmlDocument()
-            doc.LoadXml(xmlContent)
-            let rootElement = doc.DocumentElement
-            if rootElement <> null then
-                match rootElement.NamespaceURI with
-                | "http://www.admin-shell.io/aas/1/0" -> Some (Version(1,0))
-                | "http://www.admin-shell.io/aas/2/0" -> Some (Version(2,0))
-                | "https://admin-shell.io/aas/3/0"    -> Some (Version(3,0))
-                | _ -> None
-            else
-                None
-        with
-        | _ -> None
+        let doc = XmlDocument()
+        doc.LoadXml(xmlContent)
+        let rootElement = doc.DocumentElement
+        if rootElement <> null then
+            match rootElement.NamespaceURI with
+            | "http://www.admin-shell.io/aas/1/0" -> Some (Version(1,0))
+            | "http://www.admin-shell.io/aas/2/0" -> Some (Version(2,0))
+            | "https://admin-shell.io/aas/3/0"    -> Some (Version(3,0))
+            | _ -> None
+        else
+            None
 
     /// AASX 파일에서 AAS XML 파일 경로를 찾는 함수
     let findAasXmlFilePath (archive: ZipArchive): string =

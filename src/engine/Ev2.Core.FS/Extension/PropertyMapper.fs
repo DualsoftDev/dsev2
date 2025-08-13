@@ -66,13 +66,14 @@ module PropertyMapper =
             try Enum.Parse(targetType, value.ToString())
             with _ -> Enum.ToObject(targetType, 0)
         | _ ->
-            try Convert.ChangeType(value, targetType)
-            with _ ->
-                // 변환 실패 시 기본값 반환
-                if targetType.IsValueType then
-                    Activator.CreateInstance(targetType)
-                else
-                    null
+            Convert.ChangeType(value, targetType)
+            //try Convert.ChangeType(value, targetType)
+            //with _ ->
+            //    // 변환 실패 시 기본값 반환
+            //    if targetType.IsValueType then
+            //        Activator.CreateInstance(targetType)
+            //    else
+            //        null
 
     /// 확장 속성 복사 (캐싱 사용)
     let copyExtensionProperties (source: obj) (target: obj) =
@@ -88,23 +89,19 @@ module PropertyMapper =
 
             mapping
             |> Array.iter (fun map ->
-                try
-                    let value = map.SourceProperty.GetValue(source)
-                    let finalValue =
-                        if map.RequiresConversion && isItNotNull value then
-                            convertValue value map.TargetProperty.PropertyType
-                        else
-                            value
+                let value = map.SourceProperty.GetValue(source)
+                let finalValue =
+                    if map.RequiresConversion && isItNotNull value then
+                        convertValue value map.TargetProperty.PropertyType
+                    else
+                        value
 
-                    let valueToSet =
-                        match finalValue, map.DefaultValue with
-                        | null, Some def -> def
-                        | v, _ -> v
+                let valueToSet =
+                    match finalValue, map.DefaultValue with
+                    | null, Some def -> def
+                    | v, _ -> v
 
-                    map.TargetProperty.SetValue(target, valueToSet)
-                with ex ->
-                    // 속성 복사 실패 시 로그만 남기고 계속 진행
-                    logWarn $"Failed to copy property {map.SourceProperty.Name}: {ex.Message}")
+                map.TargetProperty.SetValue(target, valueToSet))
 
     /// 기본 타입과 확장 타입 간 차이 속성만 복사
     let copyOnlyExtensionProperties (source: obj) (target: obj) (baseType: Type) =
@@ -149,16 +146,13 @@ module PropertyMapper =
                 match targetType.GetProperty(sourceProp.Name) with
                 | null -> ()
                 | targetProp when targetProp.CanWrite ->
-                    try
-                        let value = sourceProp.GetValue(source)
-                        let finalValue =
-                            if sourceProp.PropertyType <> targetProp.PropertyType && isItNotNull value then
-                                convertValue value targetProp.PropertyType
-                            else
-                                value
-                        targetProp.SetValue(target, finalValue)
-                    with ex ->
-                        logWarn $"Failed to copy property {sourceProp.Name}: {ex.Message}"
+                    let value = sourceProp.GetValue(source)
+                    let finalValue =
+                        if sourceProp.PropertyType <> targetProp.PropertyType && isItNotNull value then
+                            convertValue value targetProp.PropertyType
+                        else
+                            value
+                    targetProp.SetValue(target, finalValue)
                 | _ -> ())
 
     /// 특정 속성만 복사
@@ -173,16 +167,13 @@ module PropertyMapper =
                 match sourceType.GetProperty(propName), targetType.GetProperty(propName) with
                 | null, _ | _, null -> ()
                 | sourceProp, targetProp when sourceProp.CanRead && targetProp.CanWrite ->
-                    try
-                        let value = sourceProp.GetValue(source)
-                        let finalValue =
-                            if sourceProp.PropertyType <> targetProp.PropertyType && isItNotNull value then
-                                convertValue value targetProp.PropertyType
-                            else
-                                value
-                        targetProp.SetValue(target, finalValue)
-                    with ex ->
-                        logWarn $"Failed to copy property {propName}: {ex.Message}"
+                    let value = sourceProp.GetValue(source)
+                    let finalValue =
+                        if sourceProp.PropertyType <> targetProp.PropertyType && isItNotNull value then
+                            convertValue value targetProp.PropertyType
+                        else
+                            value
+                    targetProp.SetValue(target, finalValue)
                 | _ -> ())
 
     /// 캐시 초기화

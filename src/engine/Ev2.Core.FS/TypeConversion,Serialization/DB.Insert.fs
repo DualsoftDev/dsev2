@@ -307,10 +307,10 @@ module internal DbInsertModule =
             |-> (fun dbSystem ->
                 let criteria = Cc(parentGuid=false)
                 let mutable diffs = dbSystem.ComputeDiff(s, criteria) |> toArray
-                
+
                 // 확장 속성 diff도 추가
                 if isItNotNull ExtensionDbHandler then
-                    let extensionDiffs = 
+                    let extensionDiffs =
                         ExtensionDbHandler.ComputeExtensionDiff(dbSystem, s)
                         |> Seq.cast<CompareResult>
                         |> toArray
@@ -322,12 +322,12 @@ module internal DbInsertModule =
                     NoChange
                 | _ ->   // DB 에 저장된 system 과 다르므로 update
                     // 확장 처리 훅만 호출 (실제 업데이트는 DB.Update.fs에서 처리)
-                    
+
                     // 확장 처리 훅
                     if isItNotNull ExtensionDbHandler then
                         dbApi.With(fun (conn, tr) ->
                             ExtensionDbHandler.HandleAfterUpdate(s, conn, tr))
-                    
+
                     Updated diffs
                 )
         | None ->   // DB 에 저장되지 않은 system 이므로 insert

@@ -34,39 +34,35 @@ module CoreToAas =
         member x.tryCollectExtensionProperties(): JObj option seq =
             seq {
                 // 1. 먼저 가상 메서드 CollectExtensionProperties 호출 (C# 확장 타입 지원)
-                try
-                    let extensionProps = x.CollectExtensionProperties()
+                let extensionProps = x.CollectExtensionProperties()
 
 
-                    for prop in extensionProps do
-                        match prop with
-                        | :? Newtonsoft.Json.Linq.JProperty as jprop ->
-                            // JProperty의 값을 적절한 타입으로 변환하여 저장
-                            let value =
-                                match jprop.Value.Type with
-                                | Newtonsoft.Json.Linq.JTokenType.String -> jprop.Value.ToString() :> obj
-                                | Newtonsoft.Json.Linq.JTokenType.Integer -> jprop.Value.ToObject<int>() :> obj
-                                | Newtonsoft.Json.Linq.JTokenType.Float -> jprop.Value.ToObject<float>() :> obj
-                                | Newtonsoft.Json.Linq.JTokenType.Boolean -> jprop.Value.ToObject<bool>() :> obj
-                                | _ -> jprop.Value.ToString() :> obj
+                for prop in extensionProps do
+                    match prop with
+                    | :? Newtonsoft.Json.Linq.JProperty as jprop ->
+                        // JProperty의 값을 적절한 타입으로 변환하여 저장
+                        let value =
+                            match jprop.Value.Type with
+                            | Newtonsoft.Json.Linq.JTokenType.String -> jprop.Value.ToString() :> obj
+                            | Newtonsoft.Json.Linq.JTokenType.Integer -> jprop.Value.ToObject<int>() :> obj
+                            | Newtonsoft.Json.Linq.JTokenType.Float -> jprop.Value.ToObject<float>() :> obj
+                            | Newtonsoft.Json.Linq.JTokenType.Boolean -> jprop.Value.ToObject<bool>() :> obj
+                            | _ -> jprop.Value.ToString() :> obj
 
-                            // 헬퍼 함수를 사용하여 확장 속성 JObj 생성
-                            yield createExtensionPropertyJObj value jprop.Name (x.GetType().FullName)
-                        | _ -> ()
-                with
-                | ex ->
-                    eprintfn "[tryCollectExtensionProperties] Error calling CollectExtensionProperties: %s" ex.Message
+                        // 헬퍼 함수를 사용하여 확장 속성 JObj 생성
+                        yield createExtensionPropertyJObj value jprop.Name (x.GetType().FullName)
+                    | _ -> ()
 
                 // 2. 기존 reflection 기반 로직도 유지 (F# 확장 타입 지원)
                 let objType = x.GetType()
                 let baseType = objType.BaseType
-                
+
                 // 확장 가능한 타입 목록
-                let extensibleTypes = 
-                    [ "NjProject"; "NjSystem"; "NjFlow"; "NjWork"; "NjCall"; 
-                      "NjApiDef"; "NjApiCall"; "NjButton"; "NjLamp"; 
+                let extensibleTypes =
+                    [ "NjProject"; "NjSystem"; "NjFlow"; "NjWork"; "NjCall";
+                      "NjApiDef"; "NjApiCall"; "NjButton"; "NjLamp";
                       "NjCondition"; "NjAction"; "NjArrow" ]
-                
+
                 // 기본 타입이 확장 가능한 타입인지 확인
                 if baseType <> null && extensibleTypes |> List.contains baseType.Name then
                     let allProps = objType.GetProperties()
@@ -75,15 +71,10 @@ module CoreToAas =
                     // 확장 타입에서만 정의된 속성들 찾기
                     for prop in allProps do
                         if not (basePropNames.Contains(prop.Name)) && prop.CanRead then
-                            try
-                                let value = prop.GetValue(x)
-                                if value <> null then
-                                    // 모든 타입의 값을 직렬화 (기본값 포함)
-                                    yield createExtensionPropertyJObj value prop.Name objType.FullName
-                            with
-                            | ex ->
-                                eprintfn "[tryCollectExtensionProperties] Error collecting property '%s' from type '%s': %s"
-                                    prop.Name objType.Name ex.Message
+                            let value = prop.GetValue(x)
+                            if value <> null then
+                                // 모든 타입의 값을 직렬화 (기본값 포함)
+                                yield createExtensionPropertyJObj value prop.Name objType.FullName
             }
 
         member x.CollectProperties(): JNode[] =
@@ -213,28 +204,23 @@ module CoreToAas =
 
             // 확장 속성들을 별도의 Property로 수집
             let extensionProperties =
-                try
-                    let extensionProps = prj.CollectExtensionProperties()
-                    extensionProps
-                    |> Array.choose (fun token ->
-                        match token with
-                        | :? Newtonsoft.Json.Linq.JProperty as jprop ->
-                            let propertyNode =
-                                JObj()
-                                    .Set(N.IdShort, jprop.Name)
-                                    .Set(N.ModelType, ModelType.Property.ToString())
-                                    .Set(N.ValueType, "xs:string")
-                                    .Set(N.Value, jprop.Value.ToString())
-                                    .SetSemantic(NjProject.CreateExtensionSemanticUrl(prj.GetType().FullName, jprop.Name))
+                let extensionProps = prj.CollectExtensionProperties()
+                extensionProps
+                |> Array.choose (fun token ->
+                    match token with
+                    | :? Newtonsoft.Json.Linq.JProperty as jprop ->
+                        let propertyNode =
+                            JObj()
+                                .Set(N.IdShort, jprop.Name)
+                                .Set(N.ModelType, ModelType.Property.ToString())
+                                .Set(N.ValueType, "xs:string")
+                                .Set(N.Value, jprop.Value.ToString())
+                                .SetSemantic(NjProject.CreateExtensionSemanticUrl(prj.GetType().FullName, jprop.Name))
 
-                            Some(propertyNode :> JNode)
-                        | _ ->
-                            None
-                    )
-                with
-                | ex ->
-                    eprintfn "[ToSjSubmodel] Error collecting extension properties: %s" ex.Message
-                    [||]
+                        Some(propertyNode :> JNode)
+                    | _ ->
+                        None
+                )
 
             // 모든 SubmodelElements 결합
             let allElements =
