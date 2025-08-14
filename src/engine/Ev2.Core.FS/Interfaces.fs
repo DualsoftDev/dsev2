@@ -115,6 +115,9 @@ module InterfaceModule =
     type IORMLog        = inherit IORMUnique
 
 
+    type ICompareResult = interface end
+
+
     let internal minDate      = DateTime.MinValue
     let internal nullableId   = Nullable<Id>()
     let internal nullVersion  = null:Version

@@ -162,6 +162,8 @@ module internal DsCopyModule =
 
         | _ -> failwith "ERROR"
 
+        getTypeFactory()
+        |> iter(fun factory -> factory.CopyProperties(src, dst))
 
         dst
 

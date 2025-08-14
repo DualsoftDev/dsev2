@@ -75,8 +75,8 @@ module internal DbInsertModule =
                     rt.InsertSystemMapToDB(dbApi)
 
                     // 확장 처리 훅
-                    if isItNotNull ExtensionDbHandler then
-                        ExtensionDbHandler.HandleAfterInsert(rt, conn, tr)
+                    if isItNotNull TypeFactory then
+                        TypeFactory.HandleAfterInsert(rt, conn, tr)
 
 
                 | :? DsSystem as rt ->
@@ -109,8 +109,8 @@ module internal DbInsertModule =
                     rt.Arrows |> iter _.InsertToDB(dbApi)
 
                     // 확장 처리 훅
-                    if isItNotNull ExtensionDbHandler then
-                        ExtensionDbHandler.HandleAfterInsert(rt, conn, tr)
+                    if isItNotNull TypeFactory then
+                        TypeFactory.HandleAfterInsert(rt, conn, tr)
 
 
                 | :? ApiDef as rt ->
@@ -309,9 +309,9 @@ module internal DbInsertModule =
                 let mutable diffs = dbSystem.ComputeDiff(s, criteria) |> toArray
 
                 // 확장 속성 diff도 추가
-                if isItNotNull ExtensionDbHandler then
+                if isItNotNull TypeFactory then
                     let extensionDiffs =
-                        ExtensionDbHandler.ComputeExtensionDiff(dbSystem, s)
+                        TypeFactory.ComputeExtensionDiff(dbSystem, s)
                         |> Seq.cast<CompareResult>
                         |> toArray
                     if not (extensionDiffs.IsEmpty()) then
@@ -324,9 +324,9 @@ module internal DbInsertModule =
                     // 확장 처리 훅만 호출 (실제 업데이트는 DB.Update.fs에서 처리)
 
                     // 확장 처리 훅
-                    if isItNotNull ExtensionDbHandler then
+                    if isItNotNull TypeFactory then
                         dbApi.With(fun (conn, tr) ->
-                            ExtensionDbHandler.HandleAfterUpdate(s, conn, tr))
+                            TypeFactory.HandleAfterUpdate(s, conn, tr))
 
                     Updated diffs
                 )

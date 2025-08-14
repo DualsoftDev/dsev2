@@ -190,10 +190,10 @@ module internal Db2DsImpl =
             assert(setEqual s.Arrows rtArrows)
 
             // 확장 복원 훅
-            if isItNotNull ExtensionDbHandler then
-                ExtensionDbHandler.HandleAfterSelect(rtSystem, conn, tr) :?> DsSystem
-            else
-                rtSystem
+            if isItNotNull TypeFactory then
+                TypeFactory.HandleAfterSelect(rtSystem, conn, tr)
+
+            rtSystem
 
         try
             Ok (dbApi.With helper)
@@ -249,10 +249,10 @@ module internal Db2DsImpl =
             ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
 
             // 확장 복원 훅
-            if isItNotNull ExtensionDbHandler then
-                ExtensionDbHandler.HandleAfterSelect(rtProj, conn, tr) :?> Project
-            else
-                rtProj
+            if isItNotNull TypeFactory then
+                TypeFactory.HandleAfterSelect(rtProj, conn, tr)
+
+            rtProj
 
         try
             Ok (dbApi.With helper)

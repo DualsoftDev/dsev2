@@ -26,11 +26,6 @@ module NewtonsoftJsonModules =
         /// JSON 파일에 대한 comment.  눈으로 debugging 용도.  code 에서 사용하지 말 것.
         [<JsonProperty(Order = -101)>] member val private RuntimeType = let name = this.GetType().Name in Regex.Replace(name, "^Nj", "")
 
-        /// 확장 타입에서 override하여 추가 속성을 AAS serialize에 포함시킬 수 있는 확장점
-        /// AAS 변환 시에는 이 메서드를 호출하지 않고 별도 처리함
-        abstract member CollectExtensionProperties : unit -> JToken[]
-        default x.CollectExtensionProperties() = [||]
-
         // RtUnique     -> NjUnique -> json 저장 시, RuntimeObject Some 값 이어야 함.
         // AAS Submodel -> NjUnique -> json 저장 시, RuntimeObject None 값 허용
         [<JsonIgnore>]
@@ -426,8 +421,6 @@ module rec NewtonsoftJsonObjects =
             let rtp =
                 Project.Create(actives, passives, njp)
                 |> replicateProperties njp
-            // TypeFactory가 있으면 확장 속성 복사
-            getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njp, rtp))
 
             actives @ passives |> iter (setParentI rtp)
             njp.RuntimeObject <- rtp
@@ -461,9 +454,6 @@ module rec NewtonsoftJsonObjects =
                     let dsWork =
                         Work.Create(calls, arrows, optFlow)
                         |> replicateProperties njw
-                        |> tee (fun rtw ->
-                            // TypeFactory가 있으면 확장 속성 복사
-                            getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njw, rtw)))
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork
@@ -491,7 +481,6 @@ module rec NewtonsoftJsonObjects =
             let rts =
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls)
                 |> replicateProperties njs
-            getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njs, rts))
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
@@ -510,9 +499,6 @@ module rec NewtonsoftJsonObjects =
             let rtFlow =
                 Flow.Create(buttons, lamps, conditions, actions)
                 |> replicateProperties njf
-                |> tee (fun rtf ->
-                    // TypeFactory가 있으면 확장 속성 복사
-                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njf, rtf)))
 
             let all:NjUnique seq =
                 njf.Buttons     .Cast<NjUnique>()
@@ -560,9 +546,6 @@ module rec NewtonsoftJsonObjects =
                 let ccs = njc.CommonConditions |> jsonDeserializeStrings
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
-                |> tee (fun rtc ->
-                    // TypeFactory가 있으면 확장 속성 복사
-                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njc, rtc)))
             ()
 
         | :? NjApiCall as njac ->
@@ -575,17 +558,11 @@ module rec NewtonsoftJsonObjects =
                 ApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
                 |> replicateProperties njac
-                |> tee (fun rtac ->
-                    // TypeFactory가 있으면 확장 속성 복사
-                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njac, rtac)))
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
                 ApiDef(njad.IsPush, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin)
                 |> replicateProperties njad
-                |> tee (fun rtad ->
-                    // TypeFactory가 있으면 확장 속성 복사
-                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njad, rtad)))
             ()
 
 

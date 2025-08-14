@@ -27,9 +27,9 @@ module Ds2SqliteModule =
                         let mutable diffs = dbProject.ComputeDiff(x) |> toArray
 
                         // 확장 속성 diff도 추가
-                        if isItNotNull ExtensionDbHandler then
+                        if isItNotNull TypeFactory then
                             let extensionDiffs =
-                                ExtensionDbHandler.ComputeExtensionDiff(dbProject, x)
+                                TypeFactory.ComputeExtensionDiff(dbProject, x)
                                 |> Seq.cast<CompareResult>
                                 |> toArray
                             if not (extensionDiffs.IsEmpty()) then

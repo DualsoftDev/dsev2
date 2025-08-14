@@ -51,6 +51,7 @@ module rec DsCompareObjects =
         /// (diff property name) * left * right
         | Diff of Name * IRtUnique * IRtUnique
     with
+        interface ICompareResult
         override x.ToString() =
             match x with
             | Equal -> "Equal"

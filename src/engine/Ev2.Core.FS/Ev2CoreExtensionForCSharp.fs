@@ -5,6 +5,7 @@ open System
 open System.Data
 open System.Runtime.CompilerServices
 open System.IO
+open Newtonsoft.Json
 
 
 [<AutoOpen>]
@@ -110,9 +111,8 @@ type ProjectExtensions =
                     // 타입을 찾지 못하면 기본 NjProject로 역직렬화
                     EmJson.FromJson<NjProject>(json)
                 | jsonType ->
-                    // 찾은 타입으로 동적 역직렬화
-                    let genericMethod = typeof<EmJson>.GetMethod("FromJson", [| typeof<string> |]).MakeGenericMethod([|jsonType|])
-                    genericMethod.Invoke(null, [|json|]) :?> NjProject
+                    JsonConvert.DeserializeObject(json, jsonType, EmJson.DefaultSettings) :?> NjProject
+
             | None ->
                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
                 EmJson.FromJson<NjProject>(json)
@@ -120,12 +120,6 @@ type ProjectExtensions =
         let runtimeProject = njProject
                             |> NewtonsoftJsonModules.getRuntimeObject<Project>
                             |> validateRuntime
-
-        // 확장 속성 복사 수행
-        match getTypeFactory() with
-        | Some factory ->
-            factory.CopyExtensionProperties(njProject, runtimeProject)
-        | None -> ()
 
         runtimeProject
 

@@ -17,7 +17,6 @@
 		<!-- Extension System (새로 추가) -->
 		<Compile Include="Extension\ExtensionAttributes.fs" />
 		<Compile Include="Extension\PropertyMapper.fs" />
-		<Compile Include="Extension\TypeScanner.fs" />
 		<Compile Include="Extension\TypeRegistry.fs" />
 		<Compile Include="Extension\ExtensionHelpers.fs" />
 		<Compile Include="Extension\OrmExtension.fs" />
@@ -29,7 +28,6 @@
 		<Compile Include="database\Database.ORM.fs" />
 		<Compile Include="database\AppDbApi.fs" />
 		<Compile Include="TypeConversion,Serialization\NewtonsoftJsonDsObjects.fs" />
-		<Compile Include="TypeConversion,Serialization\ExtensionPropertyCollector.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopy.Object.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCopy.Properties.fs" />
 		<Compile Include="TypeConversion,Serialization\DsCompare.Objects.fs" />

@@ -340,16 +340,16 @@ module JsonExtensionModule =
 
             // Semantic ID 설정
             let isExtensionProperty = semanticKey.Contains("/extension/")
-            
+
             if isExtensionProperty then
                 // 확장 속성: URL을 그대로 사용
                 this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticKey)
             else
                 // 일반 속성: 매핑된 semantic ID 사용
                 match AasSemantics.map |> Map.tryFind semanticKey with
-                | Some semanticId -> 
+                | Some semanticId ->
                     this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
-                | None -> 
+                | None ->
                     failwithf "Not supported semantic name: %s" semanticKey
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정

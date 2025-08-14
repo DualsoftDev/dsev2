@@ -141,13 +141,6 @@ and Project() =
 and DsSystem() =
     inherit ProjectEntity()
 
-    static member Create() = createExtended<DsSystem>()
-
-    /// Creates a DsSystem with the specified components using parameterless constructor + Initialize pattern
-    static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
-        let system = createExtended<DsSystem>()
-        system.Initialize(flows, works, arrows, apiDefs, apiCalls)
-
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
     interface IRtSystem with
@@ -174,45 +167,49 @@ and DsSystem() =
     member x.ApiDefs  = x.RawApiDefs  |> toList
     member x.ApiCalls = x.RawApiCalls |> toList
 
-    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
-    abstract member Initialize : Flow seq * Work seq * ArrowBetweenWorks seq * ApiDef seq * ApiCall seq -> DsSystem
-    default this.Initialize(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
+    static member Create() = createExtended<DsSystem>()
+
+    /// Creates a DsSystem with the specified components using parameterless constructor + Initialize pattern
+    static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
+        let system = createExtended<DsSystem>()
         // Clear existing components
-        this.RawFlows.Clear()
-        this.RawWorks.Clear()
-        this.RawArrows.Clear()
-        this.RawApiDefs.Clear()
-        this.RawApiCalls.Clear()
+        system.RawFlows.Clear()
+        system.RawWorks.Clear()
+        system.RawArrows.Clear()
+        system.RawApiDefs.Clear()
+        system.RawApiCalls.Clear()
 
         // Add new components and set parent relationships
-        flows |> iter (fun f ->
-            this.RawFlows.Add(f)
-            setParentI this f)
-        works |> iter (fun w ->
-            this.RawWorks.Add(w)
-            setParentI this w)
-        arrows |> iter (fun a ->
-            this.RawArrows.Add(a)
-            setParentI this a)
-        apiDefs |> iter (fun d ->
-            this.RawApiDefs.Add(d)
-            setParentI this d)
-        apiCalls |> iter (fun c ->
-            this.RawApiCalls.Add(c)
-            setParentI this c)
+        flows |> iter (fun f -> system.RawFlows.Add(f); setParentI system f)
+        works |> iter (fun w -> system.RawWorks.Add(w); setParentI system w)
+        arrows |> iter (fun a -> system.RawArrows.Add(a); setParentI system a)
+        apiDefs |> iter (fun d -> system.RawApiDefs.Add(d); setParentI system d)
+        apiCalls |> iter (fun c -> system.RawApiCalls.Add(c); setParentI system c)
 
-        this
+        system
+
+    ///// Initialize method for parameterless constructor + Initialize pattern (virtual)
+    //abstract member Initialize : Flow seq * Work seq * ArrowBetweenWorks seq * ApiDef seq * ApiCall seq -> DsSystem
+    //default this.Initialize(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
+    //    // Clear existing components
+    //    this.RawFlows.Clear()
+    //    this.RawWorks.Clear()
+    //    this.RawArrows.Clear()
+    //    this.RawApiDefs.Clear()
+    //    this.RawApiCalls.Clear()
+
+    //    // Add new components and set parent relationships
+    //    flows |> iter (fun f -> this.RawFlows.Add(f); setParentI this f)
+    //    works |> iter (fun w -> this.RawWorks.Add(w); setParentI this w)
+    //    arrows |> iter (fun a -> this.RawArrows.Add(a); setParentI this a)
+    //    apiDefs |> iter (fun d -> this.RawApiDefs.Add(d); setParentI this d)
+    //    apiCalls |> iter (fun c -> this.RawApiCalls.Add(c); setParentI this c)
+
+    //    this
 
 
 and Flow() =
     inherit DsSystemEntity()
-
-    static member Create() = createExtended<Flow>()
-
-    /// Creates a Flow with the specified UI components using parameterless constructor + Initialize pattern
-    static member Create(buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
-        let flow = createExtended<Flow>()
-        flow.Initialize(buttons, lamps, conditions, actions)
 
     interface IRtFlow
     member val internal RawButtons    = ResizeArray<DsButton>() with get, set
@@ -235,30 +232,16 @@ and Flow() =
             |> toArray)
         |? [||]
 
-    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
-    abstract member Initialize : DsButton seq * Lamp seq * DsCondition seq * DsAction seq -> Flow
-    default this.Initialize(buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
-        // Clear existing UI components
-        this.RawButtons.Clear()
-        this.RawLamps.Clear()
-        this.RawConditions.Clear()
-        this.RawActions.Clear()
-
+    static member Create() = createExtended<Flow>()
+    static member Create(buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
+        let flow = createExtended<Flow>()
         // Add new components and set parent relationships
-        buttons |> iter (fun z ->
-            this.RawButtons.Add(z)
-            z.RawParent <- Some this)
-        lamps |> iter (fun z ->
-            this.RawLamps.Add(z)
-            z.RawParent <- Some this)
-        conditions |> iter (fun z ->
-            this.RawConditions.Add(z)
-            z.RawParent <- Some this)
-        actions |> iter (fun z ->
-            this.RawActions.Add(z)
-            z.RawParent <- Some this)
+        buttons    |> iter (fun z -> flow.RawButtons   .Add(z); z.RawParent <- Some flow)
+        lamps      |> iter (fun z -> flow.RawLamps     .Add(z); z.RawParent <- Some flow)
+        conditions |> iter (fun z -> flow.RawConditions.Add(z); z.RawParent <- Some flow)
+        actions    |> iter (fun z -> flow.RawActions   .Add(z); z.RawParent <- Some flow)
 
-        this
+        flow
 
 and DsButton() =
     inherit FlowEntity()
@@ -285,13 +268,6 @@ and DsAction() =
 and Work() =
     inherit DsSystemEntity()
 
-    static member Create() = createExtended<Work>()
-
-    /// Creates a Work with the specified calls and arrows using parameterless constructor + Initialize pattern
-    static member Create(calls: Call seq, arrows: ArrowBetweenCalls seq, flow: Flow option) =
-        let work = createExtended<Work>()
-        work.Initialize(calls, arrows, flow)
-
     interface IRtWork
     member val internal RawCalls  = ResizeArray<Call>() with get, set
     member val internal RawArrows = ResizeArray<ArrowBetweenCalls>() with get, set
@@ -309,36 +285,21 @@ and Work() =
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
 
-    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
-    abstract member Initialize : Call seq * ArrowBetweenCalls seq * Flow option -> Work
-    default this.Initialize(calls: Call seq, arrows: ArrowBetweenCalls seq, flow: Flow option) =
-        // Clear existing components
-        this.RawCalls.Clear()
-        this.RawArrows.Clear()
-
+    static member Create() = createExtended<Work>()
+    static member Create(calls: Call seq, arrows: ArrowBetweenCalls seq, flow: Flow option) =
+        let work = createExtended<Work>()
         // Set flow
-        this.Flow <- flow
+        work.Flow <- flow
 
         // Add new components and set parent relationships
-        calls |> iter (fun c ->
-            this.RawCalls.Add(c)
-            setParentI this c)
-        arrows |> iter (fun a ->
-            this.RawArrows.Add(a)
-            setParentI this a)
+        calls  |> iter (fun c -> work.RawCalls. Add(c); setParentI work c)
+        arrows |> iter (fun a -> work.RawArrows.Add(a); setParentI work a)
 
-        this
+        work
 
 // see static member Create
 and Call() =
     inherit WorkEntity()
-
-    static member Create() = createExtended<Call>()
-
-    /// Creates a Call with the specified parameters using parameterless constructor + Initialize pattern
-    static member Create(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
-        let call = createExtended<Call>()
-        call.Initialize(callType, apiCallGuids, autoConditions, commonConditions, isDisabled, timeout)
 
     interface IRtCall
     member val CallType   = DbCallType.Normal with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
@@ -358,25 +319,21 @@ and Call() =
             | _ -> []  // NjSystem 등 다른 타입인 경우 빈 리스트 반환
         | None -> []
 
-    /// Initialize method for parameterless constructor + Initialize pattern
-    /// Initialize method for parameterless constructor + Initialize pattern (virtual)
-    abstract member Initialize : DbCallType * Guid seq * string seq * string seq * bool * int option -> Call
-    default this.Initialize(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
+    static member Create() = createExtended<Call>()
+
+    /// Creates a Call with the specified parameters using parameterless constructor + Initialize pattern
+    static member Create(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
+        let call = createExtended<Call>()
         // Set call properties
-        this.CallType <- callType
-        this.IsDisabled <- isDisabled
-        this.Timeout <- timeout
+        call.CallType <- callType
+        call.IsDisabled <- isDisabled
+        call.Timeout <- timeout
 
-        // Clear and set collections
-        this.AutoConditions.Clear()
-        this.CommonConditions.Clear()
-        this.ApiCallGuids.Clear()
+        autoConditions |> iter call.AutoConditions.Add
+        commonConditions |> iter call.CommonConditions.Add
+        apiCallGuids |> iter call.ApiCallGuids.Add
 
-        autoConditions |> iter this.AutoConditions.Add
-        commonConditions |> iter this.CommonConditions.Add
-        apiCallGuids |> iter this.ApiCallGuids.Add
-
-        this
+        call
 
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,

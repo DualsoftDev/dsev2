@@ -20,8 +20,6 @@ type TypeRegistration = {
 type ITypeRegistry =
     /// 타입 등록
     abstract RegisterType: baseType:Type * extensionType:Type * njType:Type option * ormType:Type option -> unit
-    /// Assembly 스캔 및 등록
-    abstract RegisterAssembly: assembly:Assembly -> unit
     /// 기본 타입으로 등록 정보 조회
     abstract GetRegistration: baseType:Type -> TypeRegistration option
     /// 모든 등록 정보 조회
@@ -98,19 +96,6 @@ type TypeRegistry() =
 
             logDebug $"Registered extension: {baseType.Name} -> {extensionType.Name}"
 
-        member this.RegisterAssembly(assembly) =
-            // TypeScanner를 사용하여 assembly 스캔
-            let registrations = TypeScanner.scanAssembly(assembly)
-
-            registrations
-            |> Seq.iter (fun info ->
-                (this :> ITypeRegistry).RegisterType(
-                    info.BaseType,
-                    info.ExtensionType,
-                    info.NjType,
-                    info.OrmType))
-
-            logDebug $"Scanned assembly {assembly.GetName().Name}: {registrations |> Seq.length} types registered"
 
         member _.GetRegistration(baseType) =
             match registrations.TryGetValue(baseType) with
@@ -164,44 +149,44 @@ type TypeRegistry() =
             typeNameMap.Clear()
             logDebug "TypeRegistry cleared"
 
-// TypeScanner와 TypeRegistrationInfo는 TypeScanner.fs에 정의됨
+//// TypeScanner와 TypeRegistrationInfo는 TypeScanner.fs에 정의됨
 
-/// Global registry 모듈
-module TypeRegistryModule =
-    let mutable private globalRegistry : ITypeRegistry option = None
+///// Global registry 모듈
+//module TypeRegistryModule =
+//    let mutable private globalRegistry : ITypeRegistry option = None
 
-    /// Global registry 가져오기 (없으면 생성)
-    let getRegistry() =
-        match globalRegistry with
-        | Some r -> r
-        | None ->
-            let r = TypeRegistry() :> ITypeRegistry
-            globalRegistry <- Some r
-            logDebug "TypeRegistry initialized"
-            r
+//    /// Global registry 가져오기 (없으면 생성)
+//    let getRegistry() =
+//        match globalRegistry with
+//        | Some r -> r
+//        | None ->
+//            let r = TypeRegistry() :> ITypeRegistry
+//            globalRegistry <- Some r
+//            logDebug "TypeRegistry initialized"
+//            r
 
-    /// Global registry 설정
-    let setRegistry (registry: ITypeRegistry) =
-        globalRegistry <- Some registry
-        logDebug "TypeRegistry replaced"
+//    /// Global registry 설정
+//    let setRegistry (registry: ITypeRegistry) =
+//        globalRegistry <- Some registry
+//        logDebug "TypeRegistry replaced"
 
-    /// Registry 초기화
-    let reset() =
-        match globalRegistry with
-        | Some r -> r.Clear()
-        | None -> ()
-        globalRegistry <- None
-        logDebug "TypeRegistry reset"
+//    /// Registry 초기화
+//    let reset() =
+//        match globalRegistry with
+//        | Some r -> r.Clear()
+//        | None -> ()
+//        globalRegistry <- None
+//        logDebug "TypeRegistry reset"
 
-    /// 통계 정보
-    let getStats() =
-        match globalRegistry with
-        | Some r ->
-            let registrations = r.GetAllRegistrations() |> Seq.toList
-            {|
-                RegisteredTypes = registrations.Length
-                BaseTypes = registrations |> List.map (fun r -> r.BaseType.Name) |> List.distinct
-                ExtensionTypes = registrations |> List.map (fun r -> r.ExtensionType.Name)
-            |}
-        | None ->
-            {| RegisteredTypes = 0; BaseTypes = []; ExtensionTypes = [] |}
+//    /// 통계 정보
+//    let getStats() =
+//        match globalRegistry with
+//        | Some r ->
+//            let registrations = r.GetAllRegistrations() |> Seq.toList
+//            {|
+//                RegisteredTypes = registrations.Length
+//                BaseTypes = registrations |> List.map (fun r -> r.BaseType.Name) |> List.distinct
+//                ExtensionTypes = registrations |> List.map (fun r -> r.ExtensionType.Name)
+//            |}
+//        | None ->
+//            {| RegisteredTypes = 0; BaseTypes = []; ExtensionTypes = [] |}
