@@ -377,6 +377,10 @@ module rec NewtonsoftJsonObjects =
                 if isItNotNull njs.RuntimeObject then
                     njs.RuntimeObject |> replicateProperties njs |> ignore
 
+                let rts = njs |> getRuntimeObject<DsSystem>
+                njs.Works <- rts.Works |-> _.ToNj<NjWork>() |> toArray
+                njs.Flows <- rts.Flows |-> _.ToNj<NjFlow>() |> toArray
+
                 njs.Arrows   |> iter onNsJsonSerializing
                 njs.Flows    |> iter onNsJsonSerializing
                 njs.Works    |> iter onNsJsonSerializing
@@ -385,6 +389,9 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjWork as njw ->
                 let rtw = njw |> getRuntimeObject<Work>
+                njw.Calls <- rtw.Calls |-> _.ToNj<NjCall>() |> toArray
+
+
                 njw.Arrows |> iter onNsJsonSerializing
                 njw.Calls  |> iter onNsJsonSerializing
 
@@ -392,7 +399,8 @@ module rec NewtonsoftJsonObjects =
                 let rtc = njc |> getRuntimeObject<Call>
                 ()
 
-            | (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) ->
+            | ( (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall)
+            |   (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
                 ()
 
@@ -602,7 +610,7 @@ module Ds2JsonModule =
         rtObj
 
 
-    type NjProject with
+    type NjProject with // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             (* Withh context version *)
@@ -689,7 +697,11 @@ module Ds2JsonModule =
         let rtObj = rtObj :?> RtUnique
         /// TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
         let createWithTypeFactory (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
-            getTypeFactory() |-> (fun factory -> factory.CreateJson(rtObj.GetType(), rtObj)) |? fallbackFactory()
+            let njObj =
+                getTypeFactory()
+                >>= (fun factory -> factory.CreateJson(rtObj.GetType(), rtObj) |> Option.ofObj)
+            njObj
+            |?? (fun () -> fallbackFactory())
 
         let createFallbackNjProject() =
             let rt = rtObj :?> Project
@@ -840,4 +852,5 @@ module Ds2JsonModule =
                 :?> NjUnique
             replicateProperties rtObj njObj |> ignore
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
+            onNsJsonSerializing njObj
             njObj

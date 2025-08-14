@@ -9,7 +9,7 @@ open System.IO
 
 [<AutoOpen>]
 module ExtCopyModule =
-    type Project with
+    type Project with   // CopyTo
         member x.CopyTo(nj:NjProject) =
             replicateProperties x nj |> ignore
 
