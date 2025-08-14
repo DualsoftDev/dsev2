@@ -23,98 +23,93 @@ type JObj = System.Text.Json.Nodes.JsonObject
 type JArr = System.Text.Json.Nodes.JsonArray
 
 module AasSemantics =
-    let map : Map<string, string> =
-        Map [
-            "Submodel",         "https://dualsoft.com/aas/submodel"
-            "Project",          "https://dualsoft.com/aas/project"
-            "System",           "https://dualsoft.com/aas/system"
-            "FakeSystemSubmodel", "https://dualsoft.com/aas/fakeSystemSubmodel"
-            "Name",             "https://dualsoft.com/aas/unique/name"
-            "Guid",             "https://dualsoft.com/aas/unique/guid"
-            "Id",               "https://dualsoft.com/aas/unique/id"
-            "Parameter",        "https://dualsoft.com/aas/unique/parameter"
+    let map : Dictionary<string, string> =
+        [
+            ("Submodel",         "https://dualsoft.com/aas/submodel")
+            ("Project",          "https://dualsoft.com/aas/project")
+            ("System",           "https://dualsoft.com/aas/system")
+            ("FakeSystemSubmodel", "https://dualsoft.com/aas/fakeSystemSubmodel")
+            ("Name",             "https://dualsoft.com/aas/unique/name")
+            ("Guid",             "https://dualsoft.com/aas/unique/guid")
+            ("Id",               "https://dualsoft.com/aas/unique/id")
+            ("Parameter",        "https://dualsoft.com/aas/unique/parameter")
 
-            "IRI",              "https://dualsoft.com/aas/system/iri"
-            "Author",           "https://dualsoft.com/aas/system/author"
-            "EngineVersion",    "https://dualsoft.com/aas/system/engineVersion"
-            "LangVersion",      "https://dualsoft.com/aas/system/langVersion"
-            "Description",      "https://dualsoft.com/aas/system/description"
-            "DateTime",         "https://dualsoft.com/aas/system/dateTime"
+            ("IRI",              "https://dualsoft.com/aas/system/iri")
+            ("Author",           "https://dualsoft.com/aas/system/author")
+            ("EngineVersion",    "https://dualsoft.com/aas/system/engineVersion")
+            ("LangVersion",      "https://dualsoft.com/aas/system/langVersion")
+            ("Description",      "https://dualsoft.com/aas/system/description")
+            ("DateTime",         "https://dualsoft.com/aas/system/dateTime")
 
+            ("ApiDefs",          "https://dualsoft.com/aas/plural/apiDefs")
+            ("ApiCalls",         "https://dualsoft.com/aas/plural/apiCalls")
+            ("Works",            "https://dualsoft.com/aas/plural/works")
+            ("Arrows",           "https://dualsoft.com/aas/plural/arrows")
+            ("Calls",            "https://dualsoft.com/aas/plural/calls")
+            ("Flows",            "https://dualsoft.com/aas/plural/flows")
+            ("Buttons",          "https://dualsoft.com/aas/plural/buttons")
+            ("Lamps",            "https://dualsoft.com/aas/plural/lamps")
+            ("Conditions",       "https://dualsoft.com/aas/plural/conditions")
+            ("Actions",          "https://dualsoft.com/aas/plural/actions")
+            ("Details",          "https://dualsoft.com/aas/singular/details")
 
-            "ApiDefs",          "https://dualsoft.com/aas/plural/apiDefs"
-            "ApiCalls",         "https://dualsoft.com/aas/plural/apiCalls"
-            "Works",            "https://dualsoft.com/aas/plural/works"
-            "Arrows",           "https://dualsoft.com/aas/plural/arrows"
-            "Calls",            "https://dualsoft.com/aas/plural/calls"
-            "Flows",            "https://dualsoft.com/aas/plural/flows"
-            "Buttons",          "https://dualsoft.com/aas/plural/buttons"
-            "Lamps",            "https://dualsoft.com/aas/plural/lamps"
-            "Conditions",       "https://dualsoft.com/aas/plural/conditions"
-            "Actions",          "https://dualsoft.com/aas/plural/actions"
-            "Details",          "https://dualsoft.com/aas/singular/details"
+            ("ApiDef",           "https://dualsoft.com/aas/singular/apiDef")
+            ("ApiCall",          "https://dualsoft.com/aas/singular/apiCall")
+            ("Work",             "https://dualsoft.com/aas/singular/work")
+            ("Arrow",            "https://dualsoft.com/aas/singular/arrow")
+            ("Call",             "https://dualsoft.com/aas/singular/call")
+            ("Flow",             "https://dualsoft.com/aas/singular/flow")
+            ("Button",           "https://dualsoft.com/aas/singular/button")
+            ("Lamp",             "https://dualsoft.com/aas/singular/lamp")
+            ("Condition",        "https://dualsoft.com/aas/singular/condition")
+            ("Action",           "https://dualsoft.com/aas/singular/action")
 
-            "ApiDef",           "https://dualsoft.com/aas/singular/apiDef"
-            "ApiCall",          "https://dualsoft.com/aas/singular/apiCall"
-            "Work",             "https://dualsoft.com/aas/singular/work"
-            "Arrow",            "https://dualsoft.com/aas/singular/arrow"
-            "Call",             "https://dualsoft.com/aas/singular/call"
-            "Flow",             "https://dualsoft.com/aas/singular/flow"
-            "Button",           "https://dualsoft.com/aas/singular/button"
-            "Lamp",             "https://dualsoft.com/aas/singular/lamp"
-            "Condition",        "https://dualsoft.com/aas/singular/condition"
-            "Action",           "https://dualsoft.com/aas/singular/action"
+            ("Version",          "https://dualsoft.com/aas/project/version")
+            ("Database",         "https://dualsoft.com/aas/project/database")
+            ("ActiveSystems",    "https://dualsoft.com/aas/project/activeSystems")
+            ("PassiveSystem",    "https://dualsoft.com/aas/project/passiveSystem")
+            ("PassiveSystems",   "https://dualsoft.com/aas/project/passiveSystems")
+            ("MyPrototypeSystems",   "https://dualsoft.com/aas/project/myPrototypeSystems")
+            ("ImportedPrototypeSystems",   "https://dualsoft.com/aas/project/importedPrototypeSystems")
 
+            ("IsPush",           "https://dualsoft.com/aas/apiDef/isPush")
+            ("TopicIndex",       "https://dualsoft.com/aas/apiDef/topicIndex")
+            ("IsTopicOrigin",    "https://dualsoft.com/aas/apiDef/isTopicOrigin")
+            ("FlowGuid",         "https://dualsoft.com/aas/work/flowGuid")
+            ("Motion",           "https://dualsoft.com/aas/work/motion")
+            ("Script",           "https://dualsoft.com/aas/work/script")
+            ("IsFinished",       "https://dualsoft.com/aas/work/isFinished")
+            ("NumRepeat",        "https://dualsoft.com/aas/work/numRepeat")
+            ("Period",           "https://dualsoft.com/aas/work/period")
+            ("Delay",            "https://dualsoft.com/aas/work/delay")
 
-            "Version",          "https://dualsoft.com/aas/project/version"
-            "Database",         "https://dualsoft.com/aas/project/database"
-            "ActiveSystems",    "https://dualsoft.com/aas/project/activeSystems"
-            "PassiveSystem",    "https://dualsoft.com/aas/project/passiveSystem"
-            "PassiveSystems",   "https://dualsoft.com/aas/project/passiveSystems"
-            "MyPrototypeSystems",   "https://dualsoft.com/aas/project/myPrototypeSystems"
-            "ImportedPrototypeSystems",   "https://dualsoft.com/aas/project/importedPrototypeSystems"
+            ("Type",             "https://dualsoft.com/aas/arrow/type")
+            ("Source",           "https://dualsoft.com/aas/arrow/source")
+            ("Target",           "https://dualsoft.com/aas/arrow/target")
+            ("Call",             "https://dualsoft.com/aas/call/call")
+            ("CallType",         "https://dualsoft.com/aas/call/callType")
+            ("Timeout",          "https://dualsoft.com/aas/call/timeout")
+            ("IsDisabled",       "https://dualsoft.com/aas/call/isDisabled")
+            ("CommonConditions", "https://dualsoft.com/aas/call/commonConditions")
+            ("AutoConditions",   "https://dualsoft.com/aas/call/autoConditions")
+            ("Status4",          "https://dualsoft.com/aas/common/status4")
+            ("Status",           "https://dualsoft.com/aas/common/status")
 
-            "IsPush",           "https://dualsoft.com/aas/apiDef/isPush"
-            "TopicIndex",       "https://dualsoft.com/aas/apiDef/topicIndex"
-            "IsTopicOrigin",    "https://dualsoft.com/aas/apiDef/isTopicOrigin"
-            "FlowGuid",         "https://dualsoft.com/aas/work/flowGuid"
-            "Motion",           "https://dualsoft.com/aas/work/motion"
-            "Script",           "https://dualsoft.com/aas/work/script"
-            "IsFinished",       "https://dualsoft.com/aas/work/isFinished"
-            "NumRepeat",        "https://dualsoft.com/aas/work/numRepeat"
-            "Period",           "https://dualsoft.com/aas/work/period"
-            "Delay",            "https://dualsoft.com/aas/work/delay"
+            ("InAddress",        "https://dualsoft.com/aas/apiCall/inAddress")
+            ("OutAddress",       "https://dualsoft.com/aas/apiCall/outAddress")
+            ("InSymbol",         "https://dualsoft.com/aas/apiCall/inSymbol")
+            ("OutSymbol",        "https://dualsoft.com/aas/apiCall/outSymbol")
+            ("ValueSpec",        "https://dualsoft.com/aas/apiCall/valueSpec")
 
-            "Type",             "https://dualsoft.com/aas/arrow/type"
-            "Source",           "https://dualsoft.com/aas/arrow/source"
-            "Target",           "https://dualsoft.com/aas/arrow/target"
-            "Call",             "https://dualsoft.com/aas/call/call"
-            "CallType",         "https://dualsoft.com/aas/call/callType"
-            //"ApiCall",          "https://dualsoft.com/aas/call/apiCall"
-            "Timeout",          "https://dualsoft.com/aas/call/timeout"
-            "IsDisabled",       "https://dualsoft.com/aas/call/isDisabled"
-            "CommonConditions", "https://dualsoft.com/aas/call/commonConditions"
-            "AutoConditions",   "https://dualsoft.com/aas/call/autoConditions"
-            "Status4",          "https://dualsoft.com/aas/common/status4"     // work or call
-            "Status",           "https://dualsoft.com/aas/common/status"     // work or call
+            ("LocalDefinition",  "https://dualsoft.com/aas/passiveSystemLoadType/localDefinition")
+            ("InstanceName",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceName")
+            ("PrototypeGuid",    "https://dualsoft.com/aas/passiveSystemLoadType/prototypeGuid")
+            ("InstanceGuid",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceGuid")
 
+            ("ExtensionTypeInfo", "https://dualsoft.com/aas/extension/typeInfo")
 
-            "InAddress",        "https://dualsoft.com/aas/apiCall/inAddress"
-            "OutAddress",       "https://dualsoft.com/aas/apiCall/outAddress"
-            "InSymbol",         "https://dualsoft.com/aas/apiCall/inSymbol"
-            "OutSymbol",        "https://dualsoft.com/aas/apiCall/outSymbol"
-            "ValueSpec",        "https://dualsoft.com/aas/apiCall/valueSpec"
-
-
-            "LocalDefinition",  "https://dualsoft.com/aas/passiveSystemLoadType/localDefinition"
-            "InstanceName",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceName"
-            "PrototypeGuid",    "https://dualsoft.com/aas/passiveSystemLoadType/prototypeGuid"
-            "InstanceGuid",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceGuid"
-
-            "ExtensionTypeInfo", "https://dualsoft.com/aas/extension/typeInfo"
-
-            "__RidIdentification",   "https://www.hsu-hh.de/aut/aas/identification"
-        ]
+            ("__RidIdentification",   "https://www.hsu-hh.de/aut/aas/identification")
+        ] |> Tuple.toDictionary
 
 module Aas =
     open AasCore.Aas3_0
@@ -346,10 +341,10 @@ module JsonExtensionModule =
                 this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticKey)
             else
                 // 일반 속성: 매핑된 semantic ID 사용
-                match AasSemantics.map |> Map.tryFind semanticKey with
-                | Some semanticId ->
+                match AasSemantics.map.TryGetValue(semanticKey) with
+                | true, semanticId ->
                     this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
-                | None ->
+                | false, _ ->
                     failwithf "Not supported semantic name: %s" semanticKey
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
