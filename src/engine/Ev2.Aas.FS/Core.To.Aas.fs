@@ -291,7 +291,7 @@ module CoreToAas =
                     , semanticKey = "ApiCalls"
                 )
 
-
+            let me = x
             JObj().ToSjSMC("System", x.CollectProperties())
             |> _.AddValues([| apiDefs; apiCalls; flows; arrows; works |])
 

@@ -162,7 +162,7 @@ module CoreFromAas =
             let activeSystems   = project.GetSMC "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
             let passiveSystems  = project.GetSMC "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
 
-            NjProject(
+            NjProject.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
 
                 , DateTime       = dateTime
@@ -173,6 +173,7 @@ module CoreFromAas =
                 , ActiveSystems  = activeSystems
                 , PassiveSystems = passiveSystems
             )
+
 
     type NjSystem with  // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjSystem =
@@ -191,7 +192,7 @@ module CoreFromAas =
             let flows    = smc.GetSMC "Flows"    >>= (_.GetSMC("Flow"))    |-> NjFlow.FromSMC
             let arrows   = smc.GetSMC "Arrows"   >>= (_.GetSMC("Arrow"))   |-> NjArrow.FromSMC
 
-            NjSystem(
+            NjSystem.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
 
                 , DateTime = dateTime
@@ -214,25 +215,25 @@ module CoreFromAas =
             let src = smc.GetPropValue "Source"
             let tgt = smc.GetPropValue "Target"
             let typ = smc.GetPropValue "Type"
-            NjArrow(Name=name, Guid=guid, Id=id, Parameter=parameter
+            NjArrow.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                     , Source=src, Target=tgt, Type=typ)
 
 
     type NjButton with
         static member FromSMC(smc: SubmodelElementCollection): NjButton =
-            createSimpleFromSMC (fun () -> NjButton()) smc
+            createSimpleFromSMC (fun () -> NjButton.Create()) smc
 
     type NjLamp with
         static member FromSMC(smc: SubmodelElementCollection): NjLamp =
-            createSimpleFromSMC (fun () -> NjLamp()) smc
+            createSimpleFromSMC (fun () -> NjLamp.Create()) smc
 
     type NjCondition with
         static member FromSMC(smc: SubmodelElementCollection): NjCondition =
-            createSimpleFromSMC (fun () -> NjCondition()) smc
+            createSimpleFromSMC (fun () -> NjCondition.Create()) smc
 
     type NjAction with
         static member FromSMC(smc: SubmodelElementCollection): NjAction =
-            createSimpleFromSMC (fun () -> NjAction()) smc
+            createSimpleFromSMC (fun () -> NjAction.Create()) smc
 
     type NjFlow with
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
@@ -243,7 +244,7 @@ module CoreFromAas =
             let conditions  = smc.TryFindChildSMC "Conditions"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Condition")  |? [||] |-> NjCondition.FromSMC
             let actions     = smc.TryFindChildSMC "Actions"     |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Action")     |? [||] |-> NjAction.FromSMC
 
-            NjFlow( Name=name, Guid=guid, Id=id, Parameter=parameter, Buttons = buttons, Lamps = lamps, Conditions = conditions, Actions = actions)
+            NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter, Buttons = buttons, Lamps = lamps, Conditions = conditions, Actions = actions)
 
 
     type NjWork with
@@ -263,7 +264,7 @@ module CoreFromAas =
             let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Call")  |? [||] |-> NjCall.FromSMC
             let arrows = smc.TryFindChildSMC "Arrows" |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Arrow") |? [||] |-> NjArrow.FromSMC
 
-            NjWork(Name=name, Guid=guid, Id=id, Parameter=parameter
+            NjWork.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , FlowGuid = flowGuid
                 , Motion = motion
                 , Script = script
@@ -297,7 +298,7 @@ module CoreFromAas =
 
             // Status4 는 저장 안함.  DB 전용
 
-            NjCall(Name=name, Guid=guid, Id=id, Parameter=parameter
+            NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , IsDisabled = isDisabled
                 , CommonConditions = commonConditions
                 , AutoConditions = autoConditions
@@ -314,7 +315,7 @@ module CoreFromAas =
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
             let topicIndex = smc.TryGetPropValue<int> "TopicIndex"
             let isTopicOrigin = smc.TryGetPropValue<bool> "IsTopicOrigin"
-            NjApiDef(Name=name, Guid=guid, Id=id, Parameter=parameter
+            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , IsPush = isPush, TopicIndex = topicIndex, IsTopicOrigin = isTopicOrigin
             )
 
@@ -329,7 +330,7 @@ module CoreFromAas =
             let outSymbol  = smc.TryGetPropValue "OutSymbol"  |? null
             let valueSpec  = smc.TryGetPropValue "ValueSpec"  |? null
 
-            NjApiCall(Name=name, Guid=guid, Id=id, Parameter=parameter
+            NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , ApiDef = apiDef
                 , InAddress = inAddress
                 , OutAddress = outAddress

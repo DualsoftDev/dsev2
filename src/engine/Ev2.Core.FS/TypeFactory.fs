@@ -4,6 +4,7 @@ open System
 open System.Data
 open Dual.Common.Base
 open Dual.Common.Core.FS
+open Newtonsoft.Json
 
 /// Third Party 확장을 위한 SQL 스키마 확장 인터페이스 (C# 친화적)
 [<AllowNullLiteral>]
@@ -17,6 +18,7 @@ type ISchemaExtension =
 type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> IRtUnique
+    abstract CreateNj : njType:Type -> INjUnique
     /// 런타임 객체로부터 JSON 직렬화 객체 생성
     abstract CreateJson : runtimeType:Type * runtimeObj:IRtUnique -> INjUnique
     /// 지정된 런타임 타입에 해당하는 ORM 객체 생성
@@ -31,6 +33,7 @@ type ITypeFactory =
     abstract GetSchemaExtension : unit -> ISchemaExtension
 
     abstract CopyProperties: source:IUnique * target:IUnique -> unit
+    abstract DeserializeJson: typ:Type * jsonString:string * settings:JsonSerializerSettings -> INjUnique
 
 ///// Third Party 확장을 위한 Database CRUD 훅 인터페이스
 //type IExtensionDbHandler =
@@ -71,21 +74,18 @@ module TypeFactoryHelper =
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
     /// TypeRegistry 통합 버전
-    let createExtended<'T when 'T : (new : unit -> 'T) and 'T :> IRtUnique and 'T : not struct>() : 'T =
-        getTypeFactory() |-> (fun factory -> factory.CreateRuntime(typeof<'T>) :?> 'T) |?? (fun () -> new 'T())
-        //// 먼저 TypeFactory 확인
-        //if isItNull TypeFactory then
-        //    // TypeFactory 없으면 Registry 확인
-        //    match Extension.TypeRegistryModule.getRegistry().CreateInstance(typeof<'T>) with
-        //    | Some obj -> obj :?> 'T
-        //    | None -> new 'T()
-        //else
-        //    let result = TypeFactory.CreateRuntime(typeof<'T>)
-        //    if isItNull result then
-        //        // Factory에서 못 찾으면 Registry 확인
-        //        match Extension.TypeRegistryModule.getRegistry().CreateInstance(typeof<'T>) with
-        //        | Some obj -> obj :?> 'T
-        //        | None -> new 'T()
-        //    else
-        //        result :?> 'T
+    let createExtended<'T when 'T : (new : unit -> 'T) and 'T :> IUnique and 'T : not struct>() : 'T =
+        getTypeFactory()
+        |-> (fun factory ->
+                let isRuntimeType = typeof<IRtUnique>.IsAssignableFrom(typeof<'T>)
+                let isNjType = typeof<INjUnique>.IsAssignableFrom(typeof<'T>)
+                let obj =
+                    if isRuntimeType then
+                        factory.CreateRuntime(typeof<'T>) :> IUnique
+                    elif isNjType then
+                        factory.CreateNj(typeof<'T>) :> IUnique
+                    else
+                        failwith "ERROR"
+                obj :?> 'T)
+        |?? (fun () -> new 'T())
 

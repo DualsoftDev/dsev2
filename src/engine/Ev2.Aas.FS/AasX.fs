@@ -62,6 +62,8 @@ module AasXModule2 =
 
 
         member prj.ExportToAasxFile(outputPath: string): unit =
+
+            (* AAS Export 핵심 로직 *)
             let env: Aas.Environment = prj.ToENV()
 
             use fileStream = new FileStream(outputPath, FileMode.Create)

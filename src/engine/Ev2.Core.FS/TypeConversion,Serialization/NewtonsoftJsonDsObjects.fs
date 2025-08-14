@@ -106,6 +106,7 @@ module rec NewtonsoftJsonObjects =
         interface INjProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
+        static member Create() = createExtended<NjProject>()
 
         member val Database    = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
         member val Description = null:string with get, set
@@ -137,6 +138,8 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 104)>] member val ApiCalls = [||]:NjApiCall[] with get, set
+
+        static member Create() = createExtended<NjSystem>()
 
         /// this system 이 prototype 으로 정의되었는지 여부
         member val internal IsPrototype = false with get, set
@@ -186,6 +189,8 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Conditions = [||]:NjCondition []    with get, set
         [<JsonProperty(Order = 104)>] member val Actions    = [||]:NjAction    []    with get, set
 
+        static member Create() = createExtended<NjFlow>()
+
         member x.ShouldSerializeButtons    () = x.Buttons   .NonNullAny()
         member x.ShouldSerializeLamps      () = x.Lamps     .NonNullAny()
         member x.ShouldSerializeConditions () = x.Conditions.NonNullAny()
@@ -207,21 +212,25 @@ module rec NewtonsoftJsonObjects =
         inherit NjFlowEntity()
 
         interface INjButton
+        static member Create() = createExtended<NjButton>()
 
     type NjLamp() =
         inherit NjFlowEntity()
 
         interface INjLamp
+        static member Create() = createExtended<NjLamp>()
 
     type NjCondition() =
         inherit NjFlowEntity()
 
         interface INjCondition
+        static member Create() = createExtended<NjCondition>()
 
     type NjAction() =
         inherit NjFlowEntity()
 
         interface INjAction
+        static member Create() = createExtended<NjAction>()
 
 
     type NjWork () =
@@ -247,6 +256,8 @@ module rec NewtonsoftJsonObjects =
             with get() = x.Status4 |> Option.map (_.ToString()) |> Option.toObj
             and set v = x.Status4 <- if isNull v then None else Enum.TryParse<DbStatus4>(v) |> tryParseToOption
 
+        static member Create() = createExtended<NjWork>()
+
         member x.ShouldSerializeCalls()      = x.Calls.NonNullAny()
         member x.ShouldSerializeArrows()     = x.Arrows.NonNullAny()
         member x.ShouldSerializeIsFinished() = x.IsFinished
@@ -271,6 +282,7 @@ module rec NewtonsoftJsonObjects =
         member val Source = null:string with get, set
         member val Target = null:string with get, set
         member val Type = DbArrowType.None.ToString() with get, set
+        static member Create() = createExtended<NjArrow>()
 
 
     type NjCall() =
@@ -300,6 +312,8 @@ module rec NewtonsoftJsonObjects =
         member x.Status
             with get() = x.Status4 |> Option.map (_.ToString()) |> Option.toObj
             and set v = x.Status4 <- if isNull v then None else Enum.TryParse<DbStatus4>(v) |> tryParseToOption
+
+        static member Create() = createExtended<NjCall>()
 
         (* 특별한 조건일 때에만 json 표출 *)
         member x.ShouldSerializeApiCalls()   = x.ApiCalls.NonNullAny()
@@ -335,6 +349,7 @@ module rec NewtonsoftJsonObjects =
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
         member val ValueSpec  = nullString with get, set
+        static member Create() = createExtended<NjApiCall>()
 
 
     type NjApiDef() =
@@ -344,6 +359,7 @@ module rec NewtonsoftJsonObjects =
         member val IsPush = false with get, set
         member val TopicIndex = Option<int>.None with get, set
         member val IsTopicOrigin = Option<bool>.None with get, set
+        static member Create() = createExtended<NjApiDef>()
 
 
 

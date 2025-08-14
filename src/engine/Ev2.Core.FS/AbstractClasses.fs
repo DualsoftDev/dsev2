@@ -89,10 +89,6 @@ and Project() =
         let project = createExtended<Project>()
         project.Initialize(activeSystems, passiveSystems, njProject)
 
-    ///// Creates a Project for deserialization (doesn't initialize extension properties)
-    //static member CreateForDeserialization(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
-    //    let project = createExtended<Project>()
-    //    project.Initialize(activeSystems, passiveSystems, getNull<INjProject>())
 
     interface IRtProject with
         member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v

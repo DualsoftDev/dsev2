@@ -1,6 +1,7 @@
 namespace Ev2.Core.FS
 
 open Dual.Common.Base
+open Dual.Common.Core.FS
 open System
 open System.Data
 open System.Runtime.CompilerServices
@@ -103,23 +104,18 @@ type ProjectExtensions =
 
         // TypeFactory를 통해 RuntimeType에 맞는 JSON 타입 찾기
         let njProject =
-            match getTypeFactory() with
-            | Some factory ->
-                // RuntimeType 문자열로 JSON 타입 찾기
-                match factory.FindNjTypeByName(runtimeTypeName) with
-                | null ->
-                    // 타입을 찾지 못하면 기본 NjProject로 역직렬화
-                    EmJson.FromJson<NjProject>(json)
-                | jsonType ->
-                    JsonConvert.DeserializeObject(json, jsonType, EmJson.DefaultSettings) :?> NjProject
+            getTypeFactory()
+            |-> (fun factory ->
+                    let t = factory.FindNjTypeByName(runtimeTypeName)
+                    let njObj = factory.DeserializeJson(t, json, EmJson.DefaultSettings)
+                    njObj :?> NjUnique)
+            |?? (fun () ->                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
+                EmJson.FromJson<NjProject>(json))
 
-            | None ->
-                // TypeFactory가 없으면 기본 NjProject로 역직렬화
-                EmJson.FromJson<NjProject>(json)
-
-        let runtimeProject = njProject
-                            |> NewtonsoftJsonModules.getRuntimeObject<Project>
-                            |> validateRuntime
+        let runtimeProject =
+            njProject
+            |> getRuntimeObject<Project>
+            |> validateRuntime
 
         runtimeProject
 
