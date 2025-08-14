@@ -1,9 +1,6 @@
 namespace Ev2.Core.FS
 
 open Dual.Common.Base
-open Dual.Common.Core.FS
-open Dual.Common.Db.FS
-open Newtonsoft.Json
 open System
 open System.Data
 open System.Runtime.CompilerServices
@@ -16,25 +13,38 @@ module ExtCopyModule =
         member x.CopyTo(nj:NjProject) =
             replicateProperties x nj |> ignore
 
-open DsObjectCopyImpl
 
 type CopyExtensionForCSharp =
     [<Extension>]
     static member CsCopyTo(src:Unique, dst:Unique) =
         match src, dst with
-        | (:? Project as src), (:? Project as dst) -> src.replicateTo(dst)
-        | (:? DsSystem as src), (:? DsSystem as dst) -> src.replicateTo(dst)
-        | (:? Flow as src), (:? Flow as dst) -> src.replicateTo(dst)
-        | (:? Work as src), (:? Work as dst) -> src.replicateTo(dst)
-        | (:? Call as src), (:? Call as dst) -> src.replicateTo(dst)
+        | (:? NjProject), (:? Project)
+        | (:? NjSystem),  (:? DsSystem)
+        | (:? NjFlow),    (:? Flow)
+        | (:? NjWork),    (:? Work)
+        | (:? NjCall),    (:? Call)
+        | (:? NjButton),  (:? DsButton)
+        | (:? NjLamp),    (:? Lamp)
+        | (:? NjCondition), (:? DsCondition)
+        | (:? NjAction),  (:? DsAction)
+        | (:? NjApiDef),  (:? ApiDef)
+        | (:? NjApiCall),  (:? ApiCall)
 
 
-        | (:? Project as src), (:? NjProject as dst) -> replicateProperties src dst |> ignore
-        | (:? DsSystem as src), (:? NjSystem as dst) -> replicateProperties src dst |> ignore
-        | (:? Flow as src), (:? NjFlow as dst) -> replicateProperties src dst |> ignore
-        | (:? Work as src), (:? NjWork as dst) -> replicateProperties src dst |> ignore
-        | (:? Call as src), (:? NjCall as dst) -> replicateProperties src dst |> ignore
-        | _ -> failwith "ERROR"
+        | (:? Project),  (:? NjProject)
+        | (:? DsSystem), (:? NjSystem)
+        | (:? Flow),     (:? NjFlow)
+        | (:? Work),     (:? NjWork)
+        | (:? Call),     (:? NjCall)
+        | (:? DsButton), (:? NjButton)
+        | (:? Lamp),     (:? NjLamp)
+        | (:? DsCondition), (:? NjCondition)
+        | (:? DsAction), (:? NjAction)
+        | (:? ApiDef),  (:? NjApiDef)
+        | (:? ApiCall),  (:? NjApiCall)
+            -> replicateProperties src dst |> ignore
+        | _
+            -> failwith "ERROR"
 
 
 

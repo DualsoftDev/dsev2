@@ -246,6 +246,9 @@ module AasXModule2 =
                     x.ToJson() |> NjProject.FromJson
 
             eprintfn "[ExportToAasxFile] NjProject type created: %s" (njProj.GetType().FullName)
+
+            njProj.RuntimeObject <- x // Runtime 객체들을 NjProject에 복사
+            NewtonsoftJsonObjects.onNsJsonSerializing njProj
             njProj.ExportToAasxFile(outputPath)
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장

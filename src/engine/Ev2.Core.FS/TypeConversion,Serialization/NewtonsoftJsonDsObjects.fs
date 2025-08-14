@@ -34,7 +34,7 @@ module NewtonsoftJsonModules =
         // RtUnique     -> NjUnique -> json 저장 시, RuntimeObject Some 값 이어야 함.
         // AAS Submodel -> NjUnique -> json 저장 시, RuntimeObject None 값 허용
         [<JsonIgnore>]
-        member internal x.RuntimeObject
+        member (*internal*) x.RuntimeObject
             with get():Unique =
                 x.RtObject
                 >>= tryCast<Unique>
@@ -130,10 +130,6 @@ module rec NewtonsoftJsonObjects =
             x.ActiveSystems <- activeSystems
             x.PassiveSystems <- passiveSystems
             x
-
-        ///// Overload for backward compatibility
-        //member x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[]) =
-        //    x.Initialize(activeSystems, passiveSystems, false)
 
 
     type NjSystem() =
@@ -357,7 +353,7 @@ module rec NewtonsoftJsonObjects =
 
 
     /// JSON 쓰기 전에 메모리 구조에 전처리 작업
-    let rec internal onNsJsonSerializing (njObj:INjObject) =
+    let rec (*internal*) onNsJsonSerializing (njObj:INjObject) =
         let njUnique = njObj |> tryCast<NjUnique>
         match njUnique |-> _.RuntimeObject with
         // RuntimeObject 가 없는 경우는 AAS Submodel 에서 생성한 경우임.
@@ -416,19 +412,17 @@ module rec NewtonsoftJsonObjects =
         // 개별 처리
         match njObj with
         | :? NjProject as njp ->
-            njp.RuntimeObject <-
-                noop()
-                let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
-                let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
+            let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
+            let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
 
-                Project.CreateForDeserialization(actives, passives)
+            let rtp =
+                Project.Create(actives, passives, njp)
                 |> replicateProperties njp
-                |> tee (fun rtp ->
-                    // TypeFactory가 있으면 확장 속성 복사
-                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njp, rtp))
+            // TypeFactory가 있으면 확장 속성 복사
+            getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njp, rtp))
 
-                    actives @ passives
-                    |> iter (setParentI rtp) )
+            actives @ passives |> iter (setParentI rtp)
+            njp.RuntimeObject <- rtp
 
         | :? NjSystem as njs ->
             // flows, works, arrows 의 Parent 를 this(system) 으로 설정
@@ -486,13 +480,11 @@ module rec NewtonsoftJsonObjects =
             let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
             let apiDefs  = njs.ApiDefs  |-> getRuntimeObject<ApiDef>
             let apiCalls = njs.ApiCalls |-> getRuntimeObject<ApiCall>
-
-            njs.RuntimeObject <-
+            let rts =
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls)
                 |> replicateProperties njs
-                |> tee (fun rts ->
-                    // TypeFactory가 있으면 확장 속성 복사
-                    getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njs, rts)))
+            getTypeFactory() |> Option.iter (fun factory -> factory.CopyExtensionProperties(njs, rts))
+            njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
             njf.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton()     |> replicateProperties z)
@@ -829,19 +821,23 @@ module Ds2JsonModule =
         if isItNull rtObj then
             getNull<NjUnique>()
         else
-            match rtObj with
-            | :? Project               as p -> createWithTypeFactory rtObj createFallbackNjProject
-            | :? DsSystem              as s -> createWithTypeFactory rtObj createFallbackNjSystem
-            | :? Flow                  as f -> createWithTypeFactory rtObj createFallbackNjFlow
-            | :? Work                  as w -> createWithTypeFactory rtObj createFallbackNjWork
-            | :? Call                  as c -> createWithTypeFactory rtObj createFallbackNjCall
-            | :? DsButton              as b -> createWithTypeFactory rtObj createFallbackNjButton
-            | :? Lamp                  as l -> createWithTypeFactory rtObj createFallbackNjLamp
-            | :? DsCondition           as d -> createWithTypeFactory rtObj createFallbackNjCondition
-            | :? DsAction              as a -> createWithTypeFactory rtObj createFallbackNjAction
-            | :? ArrowBetweenWorks     as r -> createWithTypeFactory rtObj createFallbackNjArrow
-            | :? ArrowBetweenCalls     as r -> createWithTypeFactory rtObj createFallbackNjArrow
-            | :? ApiCall               as ac -> createWithTypeFactory rtObj createFallbackNjApiCall
-            | :? ApiDef                as ad -> createWithTypeFactory rtObj createFallbackNjApiDef
-            | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
-
+            let njObj =
+                match rtObj with
+                | :? Project               as p  -> createWithTypeFactory rtObj createFallbackNjProject
+                | :? DsSystem              as s  -> createWithTypeFactory rtObj createFallbackNjSystem
+                | :? Flow                  as f  -> createWithTypeFactory rtObj createFallbackNjFlow
+                | :? Work                  as w  -> createWithTypeFactory rtObj createFallbackNjWork
+                | :? Call                  as c  -> createWithTypeFactory rtObj createFallbackNjCall
+                | :? DsButton              as b  -> createWithTypeFactory rtObj createFallbackNjButton
+                | :? Lamp                  as l  -> createWithTypeFactory rtObj createFallbackNjLamp
+                | :? DsCondition           as d  -> createWithTypeFactory rtObj createFallbackNjCondition
+                | :? DsAction              as a  -> createWithTypeFactory rtObj createFallbackNjAction
+                | :? ArrowBetweenWorks     as r  -> createWithTypeFactory rtObj createFallbackNjArrow
+                | :? ArrowBetweenCalls     as r  -> createWithTypeFactory rtObj createFallbackNjArrow
+                | :? ApiCall               as ac -> createWithTypeFactory rtObj createFallbackNjApiCall
+                | :? ApiDef                as ad -> createWithTypeFactory rtObj createFallbackNjApiDef
+                | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
+                :?> NjUnique
+            replicateProperties rtObj njObj |> ignore
+            njObj.RuntimeObject <- rtObj // serialization 연결 고리
+            njObj

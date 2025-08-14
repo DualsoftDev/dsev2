@@ -32,15 +32,15 @@ type Ev2AasExtensionForCSharp =
     // NjProject AASX Export 메서드 - C# 전용
     // =====================
 
-    /// NjProject를 AASX 파일로 내보내기
-    [<Extension>]
-    static member CsExportToAasxFile(njProject:NjProject, outputPath:string) : unit =
-        njProject.ExportToAasxFile(outputPath)
+    ///// NjProject를 AASX 파일로 내보내기
+    //[<Extension>]
+    //static member CsExportToAasxFile(njProject:NjProject, outputPath:string) : unit =
+    //    njProject.ExportToAasxFile(outputPath)
 
-    /// 기존 AASX 파일에 NjProject submodel 주입
-    [<Extension>]
-    static member CsInjectToExistingAasxFile(njProject:NjProject, aasxPath:string) : unit =
-        njProject.InjectToExistingAasxFile(aasxPath)
+    ///// 기존 AASX 파일에 NjProject submodel 주입
+    //[<Extension>]
+    //static member CsInjectToExistingAasxFile(njProject:NjProject, aasxPath:string) : unit =
+    //    njProject.InjectToExistingAasxFile(aasxPath)
 
     // =====================
     // Helper 메서드들
@@ -70,7 +70,8 @@ type ProjectAasxExtensions =
     /// AASX 파일에서 Project 읽기
     static member FromAasxFile(aasxPath:string) : Project =
         let njProj = NjProject.FromAasxFile(aasxPath)
-        njProj.ToJson() |> Project.FromJson
+        //njProj.ToJson() |> Project.FromJson
+        njProj.ToJson() |> ProjectExtensions.CsFromJson
 
 /// NjProject static 메서드 래퍼
 type NjProjectAasxExtensions =

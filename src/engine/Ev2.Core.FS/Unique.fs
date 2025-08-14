@@ -29,13 +29,13 @@ module Interfaces =
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
 
-        member x.CopyUniqueProperties (dst:#Unique) : #Unique =
+        abstract member CopyUniqueProperties : Unique -> unit
+        default x.CopyUniqueProperties (dst:Unique) : unit =
             dst.Id        <- x.Id
             dst.Name      <- x.Name
             dst.Parameter <- x.Parameter
             dst.Guid      <- x.Guid
             dst.RawParent <- x.RawParent
-            dst
 
         // { 내부 구현 전용.  serialize 대상에서 제외됨
         member val internal ORMObject = Option<IORMUnique>.None with get, set

@@ -246,22 +246,25 @@ type AutoExtensionDbHandler() =
                             if isItNotNull propInfo && propInfo.CanWrite then
                                 // 타입 변환 처리
                                 let convertedValue =
-                                    if propInfo.PropertyType = typeof<int> && value.GetType() = typeof<int64> then
+                                    let vt = value.GetType()
+                                    if propInfo.PropertyType = typeof<int> && vt = typeof<int64> then
                                         Convert.ToInt32(value) :> obj
-                                    elif propInfo.PropertyType = typeof<int64> && value.GetType() = typeof<int> then
+                                    elif propInfo.PropertyType = typeof<int64> && vt = typeof<int> then
                                         Convert.ToInt64(value) :> obj
-                                    elif propInfo.PropertyType = typeof<float> && value.GetType() = typeof<double> then
+                                    elif propInfo.PropertyType = typeof<float> && vt = typeof<double> then
                                         Convert.ToSingle(value) :> obj
-                                    elif propInfo.PropertyType = typeof<double> && value.GetType() = typeof<float> then
+                                    elif propInfo.PropertyType = typeof<double> && vt = typeof<float> then
                                         Convert.ToDouble(value) :> obj
-                                    elif propInfo.PropertyType = typeof<bool> && value.GetType() = typeof<int64> then
+                                    elif propInfo.PropertyType = typeof<bool> && vt = typeof<int64> then
                                         (unbox<int64> value) <> 0L :> obj
-                                    elif propInfo.PropertyType = typeof<bool> && value.GetType() = typeof<int> then
+                                    elif propInfo.PropertyType = typeof<bool> && vt = typeof<int> then
                                         (unbox<int> value) <> 0 :> obj
                                     else
                                         value
                                 propInfo.SetValue(obj, convertedValue)
-                        | None -> ()
+                        | None ->
+                            failwith "ERROR"
+                            ()
 
         member this.WriteExtensions(conn, tr, tableName, id, obj) =
             let objType = obj.GetType()

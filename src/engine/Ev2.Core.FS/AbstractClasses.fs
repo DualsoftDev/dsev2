@@ -85,14 +85,14 @@ and Project() =
     static member Create() = createExtended<Project>()
 
     /// Creates a Project with the specified systems using parameterless constructor + Initialize pattern
-    static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
+    static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProject:INjProject) =
         let project = createExtended<Project>()
-        project.Initialize(activeSystems, passiveSystems, false)
+        project.Initialize(activeSystems, passiveSystems, njProject)
 
-    /// Creates a Project for deserialization (doesn't initialize extension properties)
-    static member CreateForDeserialization(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
-        let project = createExtended<Project>()
-        project.Initialize(activeSystems, passiveSystems, true)
+    ///// Creates a Project for deserialization (doesn't initialize extension properties)
+    //static member CreateForDeserialization(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
+    //    let project = createExtended<Project>()
+    //    project.Initialize(activeSystems, passiveSystems, getNull<INjProject>())
 
     interface IRtProject with
         member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -120,8 +120,8 @@ and Project() =
     // } Runtime/DB 용
 
     /// Initialize method for parameterless constructor + Initialize pattern
-    abstract Initialize : activeSystems: DsSystem seq * passiveSystems: DsSystem seq * isDeserialization: bool -> Project
-    default this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, isDeserialization: bool) =
+    abstract Initialize : activeSystems: DsSystem seq * passiveSystems: DsSystem seq * njProj:INjProject  -> Project
+    default this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProj:INjProject): Project =
         // Clear existing systems
         this.RawActiveSystems.Clear()
         this.RawPassiveSystems.Clear()
@@ -136,9 +136,6 @@ and Project() =
 
         this
 
-    /// Overload for backward compatibility
-    member this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
-        this.Initialize(activeSystems, passiveSystems, false)
 
 
 and DsSystem() =

@@ -91,7 +91,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Project -> ORMProject
         default x.Initialize(runtime:Project) =
-            runtime.CopyUniqueProperties(x) |> ignore
+            runtime.CopyUniqueProperties(x)
             x.DateTime <- runtime.DateTime
             x.Author <- runtime.Author
             x.Version <- runtime.Version
@@ -121,7 +121,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:DsSystem -> ORMSystem
         default x.Initialize(runtime:DsSystem) =
-            runtime.CopyUniqueProperties(x) |> ignore
+            runtime.CopyUniqueProperties(x)
             x.DateTime <- runtime.DateTime
             x.IRI <- runtime.IRI
             x.Author <- runtime.Author
@@ -141,7 +141,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Flow -> ORMFlow
         default x.Initialize(runtime:Flow) =
-            runtime.CopyUniqueProperties(x) |> ignore
+            runtime.CopyUniqueProperties(x)
             x.SystemId <- runtime.System |-> _.Id |? None
             x
 
@@ -189,7 +189,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Work -> ORMWork
         default x.Initialize(runtime:Work) =
-            runtime.CopyUniqueProperties(x) |> ignore
+            runtime.CopyUniqueProperties(x)
             x.Motion <- runtime.Motion
             x.Script <- runtime.Script
             x.IsFinished <- runtime.IsFinished
@@ -219,7 +219,7 @@ module ORMTypesModule =
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : runtime:Call -> ORMCall
         default x.Initialize(runtime:Call) =
-            runtime.CopyUniqueProperties(x) |> ignore
+            runtime.CopyUniqueProperties(x)
             x.CallTypeId <- runtime.CallType |> int64 |> Some
             x.IsDisabled <- runtime.IsDisabled
             x.Timeout <- runtime.Timeout
