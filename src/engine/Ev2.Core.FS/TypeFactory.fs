@@ -48,6 +48,9 @@ type ITypeFactory =
     /// 확장 속성의 diff 계산 (두 객체의 확장 속성 비교)
     abstract ComputeExtensionDiff : obj1:IRtUnique * obj2:IRtUnique -> seq<ICompareResult>
 
+    abstract GetSemanticId : semanticKey:string -> string
+    abstract WriteAasExtensionProperties : njObj:INjUnique -> seq<System.Text.Json.Nodes.JsonObject option>
+
 [<AutoOpen>]
 module TypeFactoryModule =
     /// Global factory instance (외부에서 구현체 주입) - C# 친화적으로 null 사용.  설정은 C# 에서 수행

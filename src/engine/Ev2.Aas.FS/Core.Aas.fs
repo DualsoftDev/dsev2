@@ -11,6 +11,7 @@ open System.Diagnostics
 open System.Globalization
 open Newtonsoft.Json.Linq
 open System.Text.Json.Nodes
+open Ev2.Core.FS
 
 
 /// System.Text.Json.Nodes.JsonNode 의 축약
@@ -334,18 +335,30 @@ module JsonExtensionModule =
                 this.Set(N.IdShort, idShort) |> ignore
 
             // Semantic ID 설정
-            let isExtensionProperty = semanticKey.Contains("/extension/")
+            let semanticId =
+                match AasSemantics.map.TryGet(semanticKey) with
+                | Some semanticId -> semanticId
+                | None ->
+                    getTypeFactory()
+                    |-> (fun factory -> factory.GetSemanticId(semanticKey))
+                    |?? (fun () -> failwithf "Not supported semantic name: %s" semanticKey)
 
-            if isExtensionProperty then
-                // 확장 속성: URL을 그대로 사용
-                this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticKey)
-            else
-                // 일반 속성: 매핑된 semantic ID 사용
-                match AasSemantics.map.TryGetValue(semanticKey) with
-                | true, semanticId ->
-                    this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
-                | false, _ ->
-                    failwithf "Not supported semantic name: %s" semanticKey
+            this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
+
+
+            //let valid = AasSemantics.map.ContainsKey semanticKey
+            //let isExtensionProperty = semanticKey.Contains("/extension/")
+
+            //if isExtensionProperty then
+            //    // 확장 속성: URL을 그대로 사용
+            //    this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticKey)
+            //else
+            //    // 일반 속성: 매핑된 semantic ID 사용
+            //    match AasSemantics.map.TryGetValue(semanticKey) with
+            //    | true, semanticId ->
+            //        this.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, semanticId)
+            //    | false, _ ->
+            //        failwithf "Not supported semantic name: %s" semanticKey
 
         /// value 와 name 만 넘기면 자동으로 idShort, semanticId, modelType 설정
         member this.TrySetProperty<'T>(value:'T, name:string, ?counters: PropertyCounter): JObj option =

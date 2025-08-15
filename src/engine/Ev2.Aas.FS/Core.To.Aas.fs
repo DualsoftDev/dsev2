@@ -9,15 +9,15 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreToAas =
-    /// 확장 속성용 JObj 생성 헬퍼 함수
-    let private createExtensionPropertyJObj (value: obj) (propName: string) (typeName: string) =
-        let extensionSemantic = NjProject.CreateExtensionSemanticUrl(typeName, propName)
-        let jobj = JObj()
-        jobj.SetTypedValue(value) |> ignore
-        jobj.Set(N.IdShort, propName) |> ignore
-        jobj.Set(N.ModelType, ModelType.Property.ToString()) |> ignore
-        jobj.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, extensionSemantic) |> ignore
-        Some jobj
+    ///// 확장 속성용 JObj 생성 헬퍼 함수
+    //let private createExtensionPropertyJObj (value: obj) (propName: string) (typeName: string) =
+    //    let extensionSemantic = NjProject.CreateExtensionSemanticUrl(typeName, propName)
+    //    let jobj = JObj()
+    //    jobj.SetTypedValue(value) |> ignore
+    //    jobj.Set(N.IdShort, propName) |> ignore
+    //    jobj.Set(N.ModelType, ModelType.Property.ToString()) |> ignore
+    //    jobj.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, extensionSemantic) |> ignore
+    //    Some jobj
 
     type NjUnique with
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
@@ -34,50 +34,8 @@ module CoreToAas =
         /// 확장 타입별 특수 속성 수집 (AAS용)
         /// Generic reflection 기반으로 확장 속성을 동적으로 수집
         member x.tryCollectExtensionProperties(): JObj option seq =
-            seq {
-                //// 1. 먼저 가상 메서드 CollectExtensionProperties 호출 (C# 확장 타입 지원)
-                //let extensionProps = x.CollectExtensionProperties()
+            getTypeFactory() |-> (fun factory -> factory.WriteAasExtensionProperties x) |? Seq.empty
 
-
-                //for prop in extensionProps do
-                //    match prop with
-                //    | :? Newtonsoft.Json.Linq.JProperty as jprop ->
-                //        // JProperty의 값을 적절한 타입으로 변환하여 저장
-                //        let value =
-                //            match jprop.Value.Type with
-                //            | Newtonsoft.Json.Linq.JTokenType.String -> jprop.Value.ToString() :> obj
-                //            | Newtonsoft.Json.Linq.JTokenType.Integer -> jprop.Value.ToObject<int>() :> obj
-                //            | Newtonsoft.Json.Linq.JTokenType.Float -> jprop.Value.ToObject<float>() :> obj
-                //            | Newtonsoft.Json.Linq.JTokenType.Boolean -> jprop.Value.ToObject<bool>() :> obj
-                //            | _ -> jprop.Value.ToString() :> obj
-
-                //        // 헬퍼 함수를 사용하여 확장 속성 JObj 생성
-                //        yield createExtensionPropertyJObj value jprop.Name (x.GetType().FullName)
-                //    | _ -> ()
-
-                //// 2. 기존 reflection 기반 로직도 유지 (F# 확장 타입 지원)
-                //let objType = x.GetType()
-                //let baseType = objType.BaseType
-
-                //// 확장 가능한 타입 목록
-                //let extensibleTypes =
-                //    [ "NjProject"; "NjSystem"; "NjFlow"; "NjWork"; "NjCall";
-                //      "NjApiDef"; "NjApiCall"; "NjButton"; "NjLamp";
-                //      "NjCondition"; "NjAction"; "NjArrow" ]
-
-                //// 기본 타입이 확장 가능한 타입인지 확인
-                //if baseType <> null && extensibleTypes |> List.contains baseType.Name then
-                //    let allProps = objType.GetProperties()
-                //    let basePropNames = baseType.GetProperties() |> Array.map (fun p -> p.Name) |> Set.ofArray
-
-                //    // 확장 타입에서만 정의된 속성들 찾기
-                //    for prop in allProps do
-                //        if not (basePropNames.Contains(prop.Name)) && prop.CanRead then
-                //            let value = prop.GetValue(x)
-                //            if value <> null then
-                //                // 모든 타입의 값을 직렬화 (기본값 포함)
-                //                yield createExtensionPropertyJObj value prop.Name objType.FullName
-            }
 
         member x.CollectProperties(): JNode[] =
             seq {
@@ -185,14 +143,14 @@ module CoreToAas =
             project
 
 
-        /// 확장 속성용 semantic URL 생성
-        static member CreateExtensionSemanticUrl(typeName: string, propName: string): string =
-            let lowerTypeName =
-                typeName.Split('.')
-                |> Array.last
-                |> (fun name -> name.ToLowerInvariant())
-            let lowerPropName = propName.ToLowerInvariant()
-            sprintf "https://dualsoft.com/aas/extension/%s/%s" lowerTypeName lowerPropName
+        ///// 확장 속성용 semantic URL 생성
+        //static member CreateExtensionSemanticUrl(typeName: string, propName: string): string =
+        //    let lowerTypeName =
+        //        typeName.Split('.')
+        //        |> Array.last
+        //        |> (fun name -> name.ToLowerInvariant())
+        //    let lowerPropName = propName.ToLowerInvariant()
+        //    sprintf "https://dualsoft.com/aas/extension/%s/%s" lowerTypeName lowerPropName
 
         /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
