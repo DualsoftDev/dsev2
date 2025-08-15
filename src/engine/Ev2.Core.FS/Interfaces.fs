@@ -129,7 +129,8 @@ module InterfaceModule =
     let internal newGuid()    = Guid.NewGuid()
     let s2guid (s:string) = Guid.Parse s
     let guid2str (g:Guid) = g.ToString("D")
-    let formatDateTime(dt:DateTime) = dt.ToString("yyyy-MM-ddTHH:mm:ss")
+    // formatDateTime 함수는 사용되지 않으므로 제거됨 - DateFormatString 상수 사용
+    // let formatDateTime(dt:DateTime) = dt.ToString("yyyy-MM-ddTHH:mm:ss")
 
     let internal now() =
         let x = AppSettings.TheAppSettings

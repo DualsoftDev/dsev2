@@ -55,14 +55,14 @@ type Ev2CoreExtensionForCSharp =
     // Project 확장 메서드 - C# 전용
     [<Extension>]
     static member CsToJson(project:Project): string =
-        // EmJson을 사용하여 $type 정보 포함
+        // NjProject.ToJson()을 사용하여 일관된 DateFormatString 적용
         let njProject = project.ToNjObj() :?> NjProject
-        EmJson.ToJson(njProject)
+        njProject.ToJson()
 
     [<Extension>]
     static member CsToJson(project:Project, filePath:string): string =
         let njProject = project.ToNjObj() :?> NjProject
-        let json = EmJson.ToJson(njProject)
+        let json = njProject.ToJson()
         File.WriteAllText(filePath, json)
         json
 

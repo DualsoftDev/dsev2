@@ -302,7 +302,7 @@ module JsonExtensionModule =
                 | :? single   as v -> x.Set(N.ValueType, "xs:float")   .Set(N.Value, v.ToString())
                 | :? bool     as v -> x.Set(N.ValueType, "xs:boolean") .Set(N.Value, v.ToString())
                 | :? Guid     as v -> x.Set(N.ValueType, "xs:string")  .Set(N.Value, v.ToString())
-                | :? DateTime as v -> x.Set(N.ValueType, "xs:dateTime").Set(N.Value, v.ToString(CultureInfo("en-US")))
+                | :? DateTime as v -> x.Set(N.ValueType, "xs:dateTime").Set(N.Value, v.ToString("O"))
 
                 //// --- Array 처리 ---
                 //| :? (Guid[]) as arr ->
