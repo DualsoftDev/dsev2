@@ -234,13 +234,13 @@ module AasXModule2 =
                 | Some factory ->
                     eprintfn "[ExportToAasxFile] TypeFactory found"
                     // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
-                    match factory.CreateNjFromRuntime(x :> IRtUnique) |> Option.ofObj with
+                    match factory.CreateNj(x.GetType()) |> Option.ofObj with
                     | None ->
-                        eprintfn "[ExportToAasxFile] CreateNjFromRuntime returned None, using JSON fallback"
+                        eprintfn "[ExportToAasxFile] CreateNj returned None, using JSON fallback"
                         // 2) JSON을 통한 기본 변환 사용
                         x.ToJson() |> NjProject.FromJson
                     | Some njObj ->
-                        eprintfn "[ExportToAasxFile] CreateNjFromRuntime created type: %s" (njObj.GetType().FullName)
+                        eprintfn "[ExportToAasxFile] CreateNj created type: %s" (njObj.GetType().FullName)
                         njObj :?> NjProject
                 | None ->
                     eprintfn "[ExportToAasxFile] No TypeFactory, using fallback"
@@ -260,7 +260,7 @@ module AasXModule2 =
                 match getTypeFactory() with
                 | Some factory ->
                     // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
-                    match factory.CreateNjFromRuntime(x :> IRtUnique) |> Option.ofObj with
+                    match factory.CreateNj(x.GetType()) |> Option.ofObj with
                     | None ->
                         // 2) JSON을 통한 기본 변환 사용
                         x.ToJson() |> NjProject.FromJson

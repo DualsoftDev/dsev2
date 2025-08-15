@@ -97,17 +97,15 @@ type ProjectExtensions =
     static member CsFromJson(json:string): Project =
         // JSON을 JObject로 파싱하여 RuntimeType 확인
         let jObj = Newtonsoft.Json.Linq.JObject.Parse(json)
-        let runtimeTypeName =
-            match jObj.["RuntimeType"] with
-            | null -> "NjProject"
-            | token -> token.ToString()
-
         // TypeFactory를 통해 RuntimeType에 맞는 JSON 타입 찾기
         let njProject =
             getTypeFactory()
             |-> (fun factory ->
-                    let t = factory.FindNjTypeByName(runtimeTypeName)
-                    let njObj = factory.DeserializeJson(t, json, EmJson.DefaultSettings)
+                    let runtimeTypeName =
+                        match jObj.["RuntimeType"] with
+                        | null -> "NjProject"
+                        | token -> token.ToString()
+                    let njObj = factory.DeserializeJson(runtimeTypeName, json, EmJson.DefaultSettings)
                     njObj :?> NjUnique)
             |?? (fun () ->                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
                 EmJson.FromJson<NjProject>(json))

@@ -692,7 +692,7 @@ module Ds2JsonModule =
         let createWithTypeFactory (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
             let njObj =
                 getTypeFactory()
-                >>= (fun factory -> factory.CreateJson(rtObj.GetType(), rtObj) |> Option.ofObj)
+                >>= (fun factory -> factory.CreateNj(rtObj.GetType()) |> Option.ofObj)
             njObj
             |?? (fun () -> fallbackFactory())
 

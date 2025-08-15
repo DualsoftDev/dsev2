@@ -19,21 +19,13 @@ type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> IRtUnique
     abstract CreateNj : njType:Type -> INjUnique
-    /// 런타임 객체로부터 JSON 직렬화 객체 생성
-    abstract CreateJson : runtimeType:Type * runtimeObj:IRtUnique -> INjUnique
     /// 지정된 런타임 타입에 해당하는 ORM 객체 생성
     abstract CreateOrm : runtimeType:Type -> IORMUnique
-    /// 런타임 객체로부터 AAS JSON 직렬화 객체 생성 (AASX serialize용)
-    abstract CreateNjFromRuntime : runtimeObj:IRtUnique -> INjUnique
-    /// JSON 문자열로부터 적절한 확장 NjXXX 타입 생성
-    abstract CreateNjFromJson : jsonString:string * baseType:Type -> INjUnique
-    /// RuntimeType 문자열로 NjXXX 타입 찾기 (AASX 역직렬화용)
-    abstract FindNjTypeByName : typeName:string -> Type
     /// SQL 스키마 확장 제공자 반환 (C# 친화적 - null 가능)
     abstract GetSchemaExtension : unit -> ISchemaExtension
 
     abstract CopyProperties: source:IUnique * target:IUnique -> unit
-    abstract DeserializeJson: typ:Type * jsonString:string * settings:JsonSerializerSettings -> INjUnique
+    abstract DeserializeJson: typeName:string * jsonString:string * settings:JsonSerializerSettings -> INjUnique
 
 ///// Third Party 확장을 위한 Database CRUD 훅 인터페이스
 //type IExtensionDbHandler =
