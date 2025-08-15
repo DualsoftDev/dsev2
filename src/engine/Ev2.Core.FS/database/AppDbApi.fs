@@ -27,7 +27,7 @@ module DbApiModule =
     let checkedConnections = HashSet<string>()
 
 
-    type IDbConnection with
+    type IDbConnection with     // QueryRows
         /// DB 의 table 에서 특정 column 의 id 를 기준으로 row 를 가져온다.
         // e.g x.QueryRows<ORMAction>(Tn.Action, "assetId", assetIds |? [||])
         member conn.QueryRows<'T>(tableName:string, criteriaColumnName:string, criteriaIds:int[], tr:IDbTransaction) =
@@ -41,7 +41,7 @@ module DbApiModule =
 
 
 /// Database API - C#에서 직접 접근 가능하도록 namespace 레벨로 이동
-type AppDbApi(dbProvider:DbProvider) =
+type AppDbApi(dbProvider:DbProvider) =     // With, WithNew, WithConn, TryFindEnumValueId, TryFindEnumValue
     inherit DbApi(dbProvider)
 
     let venderDb = base.VendorDB

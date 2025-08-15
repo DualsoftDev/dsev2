@@ -11,7 +11,7 @@ module Ds2SqliteModule =
 
     open Db2DsImpl
 
-    type Project with // CommitToDB, CheckoutFromDB
+    type Project with     // RTryCommitToDB, RTryRemoveFromDB, RTryCheckoutFromDB
         member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->
                 let dbProjs = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project} WHERE id = @Id OR guid = @Guid", x, tr) |> toList

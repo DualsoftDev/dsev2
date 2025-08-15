@@ -13,7 +13,7 @@ open Dual.Common.Base
 module rec TmpCompatibility =
     type Guid2UniqDic = Dictionary<Guid, Unique>
 
-    type RtUnique with  // UpdateDateTime, EnumerateRtObjects
+    type RtUnique with     // UpdateDateTime, EnumerateRtObjects
         /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
         ///
         /// project, system 만 date time 가지는 걸로 변경 고려 중..
@@ -54,7 +54,7 @@ module rec TmpCompatibility =
 
 
 
-    type Project with // AddActiveSystem, AddPassiveSystem, Instantiate
+    type Project with     // AddActiveSystem, AddPassiveSystem
         member x.AddActiveSystem(system:DsSystem) =
             system |> setParent x |> ignore
             x.RawActiveSystems.AddAsSet(system, Unique.isDuplicated)
@@ -63,7 +63,7 @@ module rec TmpCompatibility =
             system |> setParent x |> ignore
             x.RawPassiveSystems.AddAsSet(system, Unique.isDuplicated)
 
-    type DsSystem with
+    type DsSystem with     // AddWorks, RemoveWorks, AddFlows, RemoveFlows, AddArrows, RemoveArrows, AddApiDefs, RemoveApiDefs, AddApiCalls, RemoveApiCalls
         member internal x.addWorks(works:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             works |> iter (setParentI x)

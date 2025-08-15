@@ -7,7 +7,7 @@ open System.Runtime.InteropServices
 
 /// C#에서 F# AASX 메서드에 접근하기 위한 Extension 메서드들
 /// F#의 type extension은 C#에서 직접 접근이 불가능하므로 wrapper 제공
-type Ev2AasExtensionForCSharp =
+type Ev2AasExtensionForCSharp =     // CsExportToAasxFile, CsInjectToExistingAasxFile, CsUpdateDbAasXml, CsToAasJsonString, CsToENV
 
     // =====================
     // Project AASX Export 메서드 - C# 전용
@@ -45,7 +45,7 @@ type Ev2AasExtensionForCSharp =
         njProject.ToENV()
 
 /// Project static 메서드 래퍼
-type AasxExtensions =
+type AasxExtensions =     // FromAasxFile, CsTrySetProperty
     /// AASX 파일에서 Project 읽기
     static member FromAasxFile(aasxPath:string) : Project =
         let njProj = NjProject.FromAasxFile(aasxPath)

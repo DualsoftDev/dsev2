@@ -16,7 +16,7 @@ module FromAasTest =
     let aasXml0 = Aas.aasXml0
     ()
     /// Json Test
-    type T() =
+    type T() =     // ``AasShell: Json -> JObj -> {Xml, Json} conversion test``, ``Aasx xml submodel xml fetch test``
         [<Test>]
         member _.``AasShell: Json -> JObj -> {Xml, Json} conversion test`` () =
             let env = J.CreateIClassFromXml<Aas.Environment>(aasXml0)

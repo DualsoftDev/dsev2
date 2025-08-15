@@ -11,12 +11,12 @@ open Newtonsoft.Json
 
 [<AutoOpen>]
 module ExtCopyModule =
-    type Project with   // CopyTo
+    type Project with     // CopyTo
         member x.CopyTo(nj:NjProject) =
             replicateProperties x nj |> ignore
 
 
-type CopyExtensionForCSharp =
+type CopyExtensionForCSharp =     // CsCopyTo
     [<Extension>]
     static member CsCopyTo(src:Unique, dst:Unique) =
         match src, dst with

@@ -19,7 +19,7 @@ open System.Runtime.CompilerServices
 [<AutoOpen>]
 module NewtonsoftJsonModules =
     [<AbstractClass>]
-    type NjUnique() as this =
+    type NjUnique() as this =     // RuntimeObject
         inherit Unique()
         interface INjUnique
 
@@ -101,7 +101,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
-    type NjProject() =
+    type NjProject() =     // Create, Initialize, OnSerializingMethod, OnDeserializedMethod
         inherit NjUnique()
         interface INjProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -128,7 +128,7 @@ module rec NewtonsoftJsonObjects =
             x
 
 
-    type NjSystem() =
+    type NjSystem() =     // Create
         inherit NjProjectEntity()
         interface INjSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -630,7 +630,7 @@ module Ds2JsonModule =
 
             EmJson.FromJson<NjProject>(json, settings)
 
-    type Project with // // ToJson, FromJson
+    type Project with     // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             let njProject = x.ToNjObj() :?> NjProject
@@ -662,7 +662,7 @@ module Ds2JsonModule =
         /// JSON 문자열을 DsSystem 로 변환
         static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
 
-    type DsSystem with // // ToJson, FromJson
+    type DsSystem with     // ToJson, FromJson
         /// DsSystem 를 JSON 문자열로 변환
         member x.ExportToJson():string =
             let njSystem = x.ToNj<NjSystem>()

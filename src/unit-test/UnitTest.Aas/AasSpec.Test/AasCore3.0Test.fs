@@ -11,7 +11,7 @@ open Dual.Common.UnitTest.FS
 
 
 module AasCore3_0Test =
-    type T() =
+    type T() =     // ``AasCore: submodel min test``, ``AasCore: submodels min test``, ``AasCore: 상상 submodels min test``, ``AasCore: submodel with property element test``, ``AasCore: submodel with value element test``, ``AasCore: submodel test``
 
         [<Test>]
         member _.``AasCore: submodel min test`` () =

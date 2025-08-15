@@ -95,7 +95,7 @@ module CoreFromAas =
     //type Environment = AasCore.Aas3_0.Environment
     //type ISubmodel = AasCore.Aas3_0.ISubmodel
 
-    type NjProject with // FromISubmodel, FromAasxFile
+    type NjProject with     // FromISubmodel, FromAasxFile
         static member FromAasxFile(aasxPath: string): NjProject =
             let aasFileInfo = AasXModule.readEnvironmentFromAasx aasxPath
             let env = aasFileInfo.Environment
@@ -175,7 +175,7 @@ module CoreFromAas =
             )
 
 
-    type NjSystem with  // FromSMC
+    type NjSystem with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjSystem =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let dateTime      = smc.GetPropValue "DateTime"  |> DateTime.Parse
@@ -209,7 +209,7 @@ module CoreFromAas =
                 , ApiCalls = apiCalls
             )
 
-    type NjArrow with
+    type NjArrow with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let src = smc.GetPropValue "Source"
@@ -219,23 +219,23 @@ module CoreFromAas =
                     , Source=src, Target=tgt, Type=typ)
 
 
-    type NjButton with
+    type NjButton with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjButton =
             createSimpleFromSMC (fun () -> NjButton.Create()) smc
 
-    type NjLamp with
+    type NjLamp with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjLamp =
             createSimpleFromSMC (fun () -> NjLamp.Create()) smc
 
-    type NjCondition with
+    type NjCondition with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCondition =
             createSimpleFromSMC (fun () -> NjCondition.Create()) smc
 
-    type NjAction with
+    type NjAction with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjAction =
             createSimpleFromSMC (fun () -> NjAction.Create()) smc
 
-    type NjFlow with
+    type NjFlow with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
@@ -247,7 +247,7 @@ module CoreFromAas =
             NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter, Buttons = buttons, Lamps = lamps, Conditions = conditions, Actions = actions)
 
 
-    type NjWork with
+    type NjWork with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjWork =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
@@ -276,7 +276,7 @@ module CoreFromAas =
                 , Status4 = status4
                 , Arrows = arrows)
 
-    type NjCall with
+    type NjCall with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
@@ -309,7 +309,7 @@ module CoreFromAas =
                 )
 
 
-    type NjApiDef with
+    type NjApiDef with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjApiDef =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
@@ -319,7 +319,7 @@ module CoreFromAas =
                 , IsPush = isPush, TopicIndex = topicIndex, IsTopicOrigin = isTopicOrigin
             )
 
-    type NjApiCall with
+    type NjApiCall with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjApiCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 

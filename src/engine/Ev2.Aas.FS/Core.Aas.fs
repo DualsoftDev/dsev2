@@ -166,7 +166,7 @@ module JsonExtensionModule =
         | SubmodelElementList
 
 
-    type ModelType =
+    type ModelType =     // ToString
         | AnnotatedRelationshipElement
         | AssetAdministrationShell
         | BasicEventElement
@@ -196,7 +196,7 @@ module JsonExtensionModule =
 
 
     /// Json/Xml node type.  속성 이름 혹은 node 이름
-    type N =
+    type N =     // ToString
         | AssetKind
         | AssetInformation
         | AssetAdministrationShells
@@ -226,7 +226,7 @@ module JsonExtensionModule =
             s[0..0].ToLower() + s[1..]  // 첫 글자만 소문자로 변환
 
 
-    type AasCore.Aas3_0.IClass with
+    type AasCore.Aas3_0.IClass with     // ToJson, ToXml
         member x.ToJson(): string =
             let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(x);
             jsonObject.Stringify()
@@ -264,7 +264,7 @@ module JsonExtensionModule =
         let json = node.ToJsonString()
         JsonNode.Parse(json)
 
-    type System.Text.Json.Nodes.JsonObject with
+    type System.Text.Json.Nodes.JsonObject with     // Set, SetValues, AddValues, SetTypedValue, SetModelType, SetSemantic, TrySetProperty, SetKeys, AddProperties, ToSjSMC
         member x.Set(key:N, value:string):  JObj = x |> tee(fun x -> if value.NonNullAny() then x[key.ToString()] <- value)
         member x.Set(key:N, ja:JArr):       JObj = x |> tee(fun x -> if ja.NonNullAny()    then x[key.ToString()] <- ja)
         member x.Set(key:N, jn:JNode):      JObj = x |> tee(fun x -> if isItNotNull jn     then x[key.ToString()] <- jn)
@@ -458,7 +458,7 @@ module JsonExtensionModule =
                 , values = values
             )
 
-    type System.Text.Json.Nodes.JsonNode with
+    type System.Text.Json.Nodes.JsonNode with     // Stringify
         /// JsonNode(=> JNode) 를 Json string 으로 변환
         member x.Stringify(?settings:JsonSerializerOptions):string =
                 let settings = settings |? JsonSerializerOptions() |> tee(fun s -> s.WriteIndented <- true)
@@ -467,7 +467,7 @@ module JsonExtensionModule =
 
     // Json 관련 static method 들을 모아놓은 static class
     [<AbstractClass; Sealed>]
-    type J() =
+    type J() =     // CreateJArr, CreateIClassFromJson, CreateIClassFromXml
         /// JObj[] -> JArr 변환
         static member CreateJArr(jns:JNode seq): JArr = jns |> toArray |> JArr
 

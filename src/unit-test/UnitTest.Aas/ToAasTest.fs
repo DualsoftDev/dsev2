@@ -19,7 +19,7 @@ module ToAasTest =
     let aasXml = Aas.aasXml0
 
     /// Json Test
-    type T() =
+    type T() =     // ``AasShell: JObj -> string conversion test``, ``AasShell: Json -> JObj -> {Xml, Json} conversion test``
         [<Test>]
         member _.``AasShell: JObj -> string conversion test`` () =
             let assetInformation = JObj().Set(N.AssetKind, "NotApplicable").Set(N.GlobalAssetId, "something_eea66fa1")
@@ -48,7 +48,7 @@ module ToAasTest =
             ()
 
     /// Json Test
-    type T2() =
+    type T2() =     // ``Project: instance -> Aas Test``, ``Project: instance -> Aas Test2``, ``Project with cylinder: instance -> Aas Test``, ``Hello DS -> Aasx file``
         [<Test>]
         member _.``Project: instance -> Aas Test`` () =
             let rtProject = dsProject |> Project.FromJson

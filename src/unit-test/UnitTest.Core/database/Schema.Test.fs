@@ -27,7 +27,7 @@ module Schema =
         |> tee(tracefn "ConnectionString='%s'")
 
     [<SetUpFixture>]
-    type GlobalTestSetup() =
+    type GlobalTestSetup() =     // GlobalSetup, Cleanup
         [<OneTimeSetUp>]
         member _.GlobalSetup() =
             Ev2.Core.FS.ModuleInitializer.Initialize(null)
@@ -205,7 +205,7 @@ module Schema =
         ()
 
 
-    type PGSqlTest() =
+    type PGSqlTest() =     // ``[PGSql] EdObject - DsObject - OrmObject - DB insert - JSON test``, ``PGSql Dapper test``
         [<Test>]
         member x.``[PGSql] EdObject - DsObject - OrmObject - DB insert - JSON test`` () =
             pgsqlDbApi() |> basic_test
@@ -219,7 +219,7 @@ module Schema =
             |> ignore
 
 
-    type SQLiteTest() =
+    type SQLiteTest() =     // dbCreateTest, dbReadTest, upsertTest, ``insert test``, ``[SQLite] EdObject - DsObject - OrmObject - DB insert - JSON test``, ``JSON - DsObject - DB update test``, ``DB Delete preview test``, ``Cylinder 추가 test``, ``설계 문서 위치에 샘플 생성``, ``[Sqlite] DB System 수정 commit``, ``[Sqlite] DB Project 수정 commit``
         [<Test>]
         member x.dbCreateTest() =
             use conn = sqliteDbApi().CreateConnection()
@@ -664,7 +664,7 @@ module Schema =
 
 
 
-    type IndependantTest() =
+    type IndependantTest() =     // ``비교``, ``복제 비교``, ``복사 비교``, ``Sqlite Dapper test``
         [<Test>]
         member x.``비교`` () =
             let dsProject = rtProject |> validateRuntime

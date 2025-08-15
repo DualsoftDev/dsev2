@@ -11,7 +11,7 @@ open Newtonsoft.Json
 
 
 [<AbstractClass>]
-type RtUnique() =
+type RtUnique() =     // ToNjObj, ToNj
     inherit Unique()
     interface IRtUnique
 
@@ -60,7 +60,7 @@ and internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) 
 
 // Main domain types
 /// Call 간 화살표 연결.  Work 내에 존재
-and ArrowBetweenCalls(source:Call, target:Call, typ:DbArrowType) =
+and ArrowBetweenCalls(source:Call, target:Call, typ:DbArrowType) =     // Source, Target, Type
     inherit WorkEntity()
     let arrow = Arrow<Call>(source, target, typ)
 
@@ -70,7 +70,7 @@ and ArrowBetweenCalls(source:Call, target:Call, typ:DbArrowType) =
     member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
 /// Work 간 화살표 연결.  System 내에 존재
-and ArrowBetweenWorks(source:Work, target:Work, typ:DbArrowType) =
+and ArrowBetweenWorks(source:Work, target:Work, typ:DbArrowType) =     // Source, Target, Type
     inherit DsSystemEntity()
     let arrow = Arrow<Work>(source, target, typ)
 
@@ -79,7 +79,7 @@ and ArrowBetweenWorks(source:Work, target:Work, typ:DbArrowType) =
     member x.Target with get() = arrow.Target and set v = arrow.Target <- v
     member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
 
-and Project() =
+and Project() =     // Create, Initialize
     inherit RtUnique()
 
     static member Create() = createExtended<Project>()
@@ -134,7 +134,7 @@ and Project() =
 
 
 
-and DsSystem() =
+and DsSystem() =     // Create
     inherit ProjectEntity()
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
@@ -204,7 +204,7 @@ and DsSystem() =
     //    this
 
 
-and Flow() =
+and Flow() =     // Create
     inherit DsSystemEntity()
 
     interface IRtFlow
@@ -261,7 +261,7 @@ and DsAction() =
 
 
 // see static member Create
-and Work() =
+and Work() =     // Create
     inherit DsSystemEntity()
 
     interface IRtWork
@@ -294,7 +294,7 @@ and Work() =
         work
 
 // see static member Create
-and Call() =
+and Call() =     // Create
     inherit WorkEntity()
 
     interface IRtCall
@@ -332,7 +332,7 @@ and Call() =
         call
 
 
-and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
+and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,     // Create, Callers, ApiDef
                inSymbol:string, outSymbol:string,
                valueSpec:IValueSpec option
 ) =
@@ -373,7 +373,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =
+and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =     // Create, ApiUsers
     inherit DsSystemEntity()
 
     new() = ApiDef(true)

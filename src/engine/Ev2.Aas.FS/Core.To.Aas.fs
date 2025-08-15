@@ -19,7 +19,7 @@ module CoreToAas =
     //    jobj.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, extensionSemantic) |> ignore
     //    Some jobj
 
-    type NjUnique with
+    type NjUnique with     // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
                 JObj().TrySetProperty(x.Name,      "Name")
@@ -116,7 +116,7 @@ module CoreToAas =
 
             } |> choose id |> Seq.cast<JNode> |> toArray
 
-    type NjProject with // ToSjSMC, ToSjSubmodel
+    type NjProject with     // ToSjSMC, ToSjSubmodel
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let me = x
@@ -205,7 +205,7 @@ module CoreToAas =
 
 
 
-    type NjSystem with
+    type NjSystem with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let fs = x.Flows |-> _.ToSjSMC()
@@ -268,35 +268,35 @@ module CoreToAas =
         //    sm
 
 
-    type NjApiDef with
+    type NjApiDef with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiDef", x.CollectProperties())
 
-    type NjApiCall with
+    type NjApiCall with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiCall", x.CollectProperties())
 
 
-    type NjButton with
+    type NjButton with     // ToSjSMC
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("Button", x.CollectProperties())
 
-    type NjLamp with
+    type NjLamp with     // ToSjSMC
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
             JObj().ToSjSMC("Lamp", props)
 
-    type NjCondition with
+    type NjCondition with     // ToSjSMC
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
             JObj().ToSjSMC("Condition", props)
 
-    type NjAction with
+    type NjAction with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
             JObj().ToSjSMC("Action", props)
 
-    type NjFlow with    // ToSjSMC
+    type NjFlow with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let buttons    = x.Buttons    |-> _.ToSjSMC() |> toSjSMC "Buttons"
@@ -308,14 +308,14 @@ module CoreToAas =
             JObj().ToSjSMC("Flow", props)
             |> _.AddValues([|buttons; lamps; conditions; actions|] |> choose id)
 
-    type NjCall with
+    type NjCall with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let me = x
             let props = x.CollectProperties()
             JObj().ToSjSMC("Call", props)
 
-    type NjArrow with
+    type NjArrow with     // ToSjSMC
         /// Convert arrow to Aas Jons of SubmodelElementCollection
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
@@ -331,7 +331,7 @@ module CoreToAas =
                 |> _.AddValues(values)
                 |> Some
 
-    type NjWork with    // ToSjSMC
+    type NjWork with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let arrows = x.Arrows |-> _.ToSjSMC() |> toSjSMC "Arrows"

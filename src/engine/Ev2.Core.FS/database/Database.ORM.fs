@@ -76,7 +76,7 @@ module ORMTypesModule =
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) =
+    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) =     // Initialize
         inherit ORMUnique()
 
         new() = ORMProject(Environment.UserName, nullVersion, nullString, minDate)

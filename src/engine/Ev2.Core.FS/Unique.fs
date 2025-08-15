@@ -12,7 +12,7 @@ open Dual.Common.Db.FS
 module Interfaces =
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =
+    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =     // CopyUniqueProperties, isDuplicated
         interface IUnique
 
         internal new() = Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
