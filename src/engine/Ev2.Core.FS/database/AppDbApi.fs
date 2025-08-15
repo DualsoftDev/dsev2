@@ -215,14 +215,6 @@ module ORMTypeConversionModule =
             |> replicateProperties src
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
 
-        /// TypeFactory를 통해 확장 ORM 타입 생성 시도
-        let createOrmWithFactory (runtimeType: Type) (defaultFactory: unit -> ORMUnique) : ORMUnique =
-            if isItNotNull TypeFactoryModule.TypeFactory then
-                let factory = TypeFactoryModule.TypeFactory
-                let obj = factory.CreateOrm(runtimeType)
-                if isItNotNull obj then obj :?> ORMUnique else defaultFactory()
-            else
-                defaultFactory()
 
         match x |> tryCast<Unique> with
         | Some uniq ->
@@ -233,10 +225,7 @@ module ORMTypeConversionModule =
             match uniq with
             | :? Project as z ->
                 // TypeFactory를 통해 확장 타입 생성 시도
-                let ormProject =
-                    createOrmWithFactory (z.GetType()) (fun () ->
-                        ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                    )
+                let ormProject = ORMProject(z.Author, z.Version, z.Description, z.DateTime)
                 // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
                 match ormProject with
                 | :? ORMProject as orm ->
@@ -251,23 +240,16 @@ module ORMTypeConversionModule =
                 (* System 소유주 project 지정.  *)
                 let ownerProjectId = rt.Project >>= _.Id
 
-                // TypeFactory를 통해 확장 타입 생성 시도
-                let ormSystem =
-                    createOrmWithFactory (rt.GetType()) (fun () ->
-                        ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
-                    )
-                // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
-                match ormSystem with
-                | :? ORMSystem as orm ->
+                ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                |> tee(fun orm ->
                     orm.OwnerProjectId <- ownerProjectId
                     orm.IRI <- rt.IRI
                     orm.Author <- rt.Author
                     orm.LangVersion <- rt.LangVersion
                     orm.EngineVersion <- rt.EngineVersion
                     orm.Description <- rt.Description
-                    orm.DateTime <- rt.DateTime
-                | _ -> ()
-                ormSystem |> ormReplicateProperties rt
+                    orm.DateTime <- rt.DateTime )
+                |> ormReplicateProperties rt
 
             | :? Flow as rt ->
                 ORMFlow()

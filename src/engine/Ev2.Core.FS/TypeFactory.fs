@@ -19,8 +19,6 @@ type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> IRtUnique
     abstract CreateNj : njType:Type -> INjUnique
-    /// 지정된 런타임 타입에 해당하는 ORM 객체 생성
-    abstract CreateOrm : runtimeType:Type -> IORMUnique
     /// SQL 스키마 확장 제공자 반환 (C# 친화적 - null 가능)
     abstract GetSchemaExtension : unit -> ISchemaExtension
 
