@@ -6,21 +6,16 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Newtonsoft.Json
 
-/// Third Party 확장을 위한 SQL 스키마 확장 인터페이스 (C# 친화적)
-[<AllowNullLiteral>]
-type ISchemaExtension =
+/// Third Party 확장을 위한 C# 호환 타입 팩토리 인터페이스
+type ITypeFactory =
     /// 전체 스키마를 받아서 수정된 스키마 반환 (추가 테이블, 인덱스 등)
     abstract ModifySchema : baseSchema:string -> string
     /// DB 생성 후 추가 작업 수행 (초기 데이터 삽입, 추가 설정 등)
     abstract PostCreateDatabase : conn:IDbConnection * tr:IDbTransaction -> unit
 
-/// Third Party 확장을 위한 C# 호환 타입 팩토리 인터페이스
-type ITypeFactory =
     /// 지정된 런타임 타입의 인스턴스 생성
     abstract CreateRuntime : runtimeType:Type -> IRtUnique
     abstract CreateNj : njType:Type -> INjUnique
-    /// SQL 스키마 확장 제공자 반환 (C# 친화적 - null 가능)
-    abstract GetSchemaExtension : unit -> ISchemaExtension
 
     abstract CopyProperties: source:IUnique * target:IUnique -> unit
     abstract DeserializeJson: typeName:string * jsonString:string * settings:JsonSerializerSettings -> INjUnique

@@ -61,19 +61,11 @@ type AppDbApi(dbProvider:DbProvider) =     // With, WithNew, WithConn, TryFindEn
                 //initialized <- true
                 DcLogger.EnableTrace <- true        // TODO: 삭제 필요
                 let createDb() =
-                    let schemaExtension =
-                        TypeFactoryModule.TypeFactory
-                        |> Option.ofObj
-                        |-> _.GetSchemaExtension()
-
                     let withTrigger = false
                     let schema =
-                        getSqlCreateSchema dbProvider withTrigger
-                        |> (fun schema ->
-                            // 스키마 확장 적용
-                            schemaExtension
-                            |-> _.ModifySchema(schema)
-                            |? schema)
+                        let schema = getSqlCreateSchema dbProvider withTrigger
+                        // TypeFactory 를 통해 스키마 확장 적용
+                        getTypeFactory() |-> (fun factory -> factory.ModifySchema schema) |? schema
 
                     logInfo $"Creating database schema on {connStr}..."
                     logInfo $"CreateSchema:\r\n{schema}"
@@ -94,7 +86,7 @@ type AppDbApi(dbProvider:DbProvider) =     // With, WithNew, WithConn, TryFindEn
                         conn.Execute(schema, null, tr) |> ignore
 
                         // DB 생성 후 추가 작업 수행
-                        schemaExtension |> iter _.PostCreateDatabase(conn, tr)
+                        getTypeFactory() |> iter _.PostCreateDatabase(conn, tr)
 
                         insertEnumValues<DbStatus4>   conn tr Tn.Enum
                         insertEnumValues<DbCallType>  conn tr Tn.Enum
