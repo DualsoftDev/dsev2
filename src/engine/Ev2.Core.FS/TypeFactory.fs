@@ -25,8 +25,6 @@ type ITypeFactory =
     abstract CopyProperties: source:IUnique * target:IUnique -> unit
     abstract DeserializeJson: typeName:string * jsonString:string * settings:JsonSerializerSettings -> INjUnique
 
-///// Third Party 확장을 위한 Database CRUD 훅 인터페이스
-//type IExtensionDbHandler =
     /// Insert 완료 후 확장 처리 (런타임 타입 전달)
     abstract HandleAfterInsert : IRtUnique * IDbConnection * IDbTransaction -> unit
     /// Update 완료 후 확장 처리 (런타임 타입 전달)
