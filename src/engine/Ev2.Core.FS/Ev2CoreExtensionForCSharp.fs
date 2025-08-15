@@ -117,99 +117,46 @@ type ProjectExtensions =
 
         runtimeProject
 
-    // =====================
-    // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
-    // =====================
+
+    static let commitResultToString (result: DbCommitResult) : string =
+        match result with
+        | Ok result -> result.Stringify()
+        | Error errorMsg -> failwith errorMsg
+
 
     /// C# exception 기반 CommitToDB - 실패시 예외 발생
     [<Extension>]
     static member CsCommitToDB(project:Project, dbApi:AppDbApi) : string =
-        match project.RTryCommitToDB(dbApi) with
-        | Ok result ->
-            match result with
-            | NoChange -> "NoChange"
-            | Inserted -> "Inserted"
-            | Updated diffs -> $"Updated ({diffs.Length} changes)"
-            | Deleted -> "Deleted"
-        | Error errorMsg -> failwith errorMsg
+        project.RTryCommitToDB(dbApi) |> commitResultToString
+
+    /// C# exception 기반 CommitToDB - 실패시 예외 발생
+    [<Extension>]
+    static member CsCommitToDB(system:DsSystem, dbApi:AppDbApi) : string =
+        system.RTryCommitToDB(dbApi) |> commitResultToString
 
     /// C# exception 기반 RemoveFromDB - 실패시 예외 발생
     [<Extension>]
     static member CsRemoveFromDB(project:Project, dbApi:AppDbApi) : string =
-        match project.RTryRemoveFromDB(dbApi) with
-        | Ok result ->
-            match result with
-            | NoChange -> "NoChange"
-            | Inserted -> "Inserted"
-            | Updated diffs -> $"Updated ({diffs.Length} changes)"
-            | Deleted -> "Deleted"
-        | Error errorMsg -> failwith errorMsg
+        project.RTryRemoveFromDB(dbApi) |> commitResultToString
 
     /// C# exception 기반 CheckoutFromDB by Id - 실패시 예외 발생
     [<Extension>]
     static member CsCheckoutFromDB(projectId:int64, dbApi:AppDbApi) : Project =
-        match Project.RTryCheckoutFromDB(projectId, dbApi) with
-        | Ok project -> project
-        | Error errorMsg -> failwith errorMsg
+        Project.RTryCheckoutFromDB(projectId, dbApi) |> Result.defaultWith failwith
 
     /// C# exception 기반 CheckoutFromDB by name - 실패시 예외 발생
     [<Extension>]
     static member CsCheckoutFromDB(projectName:string, dbApi:AppDbApi) : Project =
-        match Project.RTryCheckoutFromDB(projectName, dbApi) with
-        | Ok project -> project
-        | Error errorMsg -> failwith errorMsg
+        Project.RTryCheckoutFromDB(projectName, dbApi) |> Result.defaultWith failwith
 
-    // =====================
-    // CsTryXXX 메서드들 - bool * result * error 패턴
-    // =====================
-    /// C# 친화적인 TryCommitToDB - (성공여부, 결과메시지, 에러메시지) 반환
-    [<Extension>]
-    static member CsTryCommitToDB(project:Project, dbApi:AppDbApi) : bool * string * string =
-        match project.RTryCommitToDB(dbApi) with
-        | Ok result ->
-            let resultMessage =
-                match result with
-                | NoChange -> "NoChange"
-                | Inserted -> "Inserted"
-                | Updated diffs -> $"Updated ({diffs.Length} changes)"
-                | Deleted -> "Deleted"
-            (true, resultMessage, "")
-        | Error errorMsg -> (false, "", errorMsg)
 
-    /// C# 친화적인 TryRemoveFromDB - (성공여부, 결과메시지, 에러메시지) 반환
-    [<Extension>]
-    static member CsTryRemoveFromDB(project:Project, dbApi:AppDbApi) : bool * string * string =
-        match project.RTryRemoveFromDB(dbApi) with
-        | Ok result ->
-            let resultMessage =
-                match result with
-                | NoChange -> "NoChange"
-                | Inserted -> "Inserted"
-                | Updated diffs -> $"Updated ({diffs.Length} changes)"
-                | Deleted -> "Deleted"
-            (true, resultMessage, "")
-        | Error errorMsg -> (false, "", errorMsg)
-
-    /// C# 친화적인 TryCheckoutFromDB - (성공여부, Project객체, 에러메시지) 반환
-    [<Extension>]
-    static member CsTryCheckoutFromDB(projectId:int64, dbApi:AppDbApi) : bool * Project * string =
-        match Project.RTryCheckoutFromDB(projectId, dbApi) with
-        | Ok project -> (true, project, "")
-        | Error errorMsg -> (false, Unchecked.defaultof<Project>, errorMsg)
-
-    /// C# 친화적인 TryCheckoutFromDB by name - (성공여부, Project객체, 에러메시지) 반환
-    [<Extension>]
-    static member CsTryCheckoutFromDB(projectName:string, dbApi:AppDbApi) : bool * Project * string =
-        match Project.RTryCheckoutFromDB(projectName, dbApi) with
-        | Ok project -> (true, project, "")
-        | Error errorMsg -> (false, Unchecked.defaultof<Project>, errorMsg)
 
 // DsSystem 타입에 대한 정적 메서드
 type DsSystemExtensions =
     static member CsImportFromJson(json:string): DsSystem =
         json
         |> NjSystem.ImportFromJson
-        |> NewtonsoftJsonModules.getRuntimeObject<DsSystem>
+        |> getRuntimeObject<DsSystem>
         |> validateRuntime
 
     static member CsFromJson(json:string): DsSystem =
@@ -294,17 +241,6 @@ type DsSystemExtensions with
     // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
     // =====================
 
-    /// C# exception 기반 CommitToDB - 실패시 예외 발생
-    [<Extension>]
-    static member CsCommitToDB(system:DsSystem, dbApi:AppDbApi) : string =
-        match system.RTryCommitToDB(dbApi) with
-        | Ok result ->
-            match result with
-            | NoChange -> "NoChange"
-            | Inserted -> "Inserted"
-            | Updated diffs -> $"Updated ({diffs.Length} changes)"
-            | Deleted -> "Deleted"
-        | Error errorMsg -> failwith errorMsg
 
     /// C# exception 기반 CheckoutFromDB by Id - 실패시 예외 발생
     [<Extension>]
@@ -313,22 +249,6 @@ type DsSystemExtensions with
         | Ok system -> system
         | Error errorMsg -> failwith errorMsg
 
-    // =====================
-    // CsTryXXX 메서드들 - bool * result * error 패턴
-    // =====================
-    /// C# 친화적인 TryCommitToDB - (성공여부, 결과메시지, 에러메시지) 반환
-    [<Extension>]
-    static member CsTryCommitToDB(system:DsSystem, dbApi:AppDbApi) : bool * string * string =
-        match system.RTryCommitToDB(dbApi) with
-        | Ok result ->
-            let resultMessage =
-                match result with
-                | NoChange -> "NoChange"
-                | Inserted -> "Inserted"
-                | Updated diffs -> $"Updated ({diffs.Length} changes)"
-                | Deleted -> "Deleted"
-            (true, resultMessage, "")
-        | Error errorMsg -> (false, "", errorMsg)
 
     /// C# 친화적인 TryCheckoutFromDB - (성공여부, DsSystem객체, 에러메시지) 반환
     [<Extension>]

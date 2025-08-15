@@ -24,6 +24,13 @@ type DbCommitSuccessResponse =
     | Updated of CompareResult[]
     /// 삭제 (하부 포함)
     | Deleted
+    with
+        member x.Stringify() =
+            match x with
+            | NoChange -> "NoChange"
+            | Inserted -> "Inserted"
+            | Updated diffs -> $"Updated ({diffs.Length} changes)"
+            | Deleted -> "Deleted"
 
 type DbCommitResult = Result<DbCommitSuccessResponse, ErrorMessage>
 
