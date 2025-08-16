@@ -47,6 +47,7 @@ module internal Db2DsImpl =
     //        deleteFromDatabase identifier conn tr
     //    )
 
+    [<Obsolete("N+1 query 최적화 필요!.")>]
     // 사전 조건: ormSystem.RtObject 에 RtSystem 이 생성되어 있어야 한다.
     let private rTryCheckoutSystemFromDBHelper(ormSystem:ORMSystem) (dbApi:AppDbApi): DbCheckoutResult<DsSystem> =
         let helper(conn:IDbConnection, tr:IDbTransaction) =
