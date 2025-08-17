@@ -160,8 +160,6 @@ module Schema =
 
             json === json2
 
-            dsSystem.ToAasJson() |> ignore
-
             let r = dsProject2.RTryCommitToDB(dbApi)
             r ==== Ok NoChange
 

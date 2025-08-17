@@ -52,8 +52,7 @@ Ev2.Core.FS/
 │   ├── DB.Select.fs          # 데이터베이스 조회
 │   ├── DB.Insert.fs          # 데이터베이스 삽입
 │   ├── DB.Update.fs          # 데이터베이스 업데이트
-│   ├── DB.API.fs             # 데이터베이스 API
-│   └── Ds2Aas.fs            # AAS 변환
+│   └── DB.API.fs             # 데이터베이스 API
 ├── Extension/                # 확장 시스템 폴더
 └── DevDoc/                   # 개발 문서
     ├── DbConstraint.md
