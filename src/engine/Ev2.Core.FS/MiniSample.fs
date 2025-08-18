@@ -64,15 +64,15 @@ module MiniSample =
         [call1; call2] |> work1.AddCalls
 
         // ApiDef 생성
-        let apiDef =
-            ApiDef.Create(Name = "TestApiDef")
+        let apiDef1 = ApiDef.Create(Name = "TestApiDef1")
+        let apiDef2 = ApiDef.Create(Name = "TestApiDef2")
 
         // ApiCall 생성
         let apiCall =
             ApiCall.Create()
             |> tee (fun a ->
                 a.Name <- "TestApiCall"
-                a.ApiDefGuid <- apiDef.Guid
+                a.ApiDefGuid <- apiDef1.Guid
                 a.InAddress <- "X0"
                 a.OutAddress <- "Y0"
                 a.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
@@ -80,10 +80,10 @@ module MiniSample =
             )
 
         // System에 요소들 추가
-        [work1; work2] |> system.AddWorks
-        [flow] |> system.AddFlows
-        [apiDef] |> system.AddApiDefs
-        [apiCall] |> system.AddApiCalls
+        [ work1; work2] |> system.AddWorks
+        [ flow] |> system.AddFlows
+        [ apiDef1; apiDef2 ] |> system.AddApiDefs
+        [ apiCall] |> system.AddApiCalls
 
         // Project에 System 추가
         project.AddActiveSystem system
