@@ -198,7 +198,7 @@ module ORMTypeConversionModule =
         ): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType)
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
-            ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
+            new ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
     let internal rt2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
@@ -217,7 +217,7 @@ module ORMTypeConversionModule =
             match uniq with
             | :? Project as z ->
                 // TypeFactory를 통해 확장 타입 생성 시도
-                let ormProject = ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                let ormProject = new ORMProject(z.Author, z.Version, z.Description, z.DateTime)
                 // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
                 match ormProject with
                 | :? ORMProject as orm ->
@@ -232,7 +232,7 @@ module ORMTypeConversionModule =
                 (* System 소유주 project 지정.  *)
                 let ownerProjectId = rt.Project >>= _.Id
 
-                ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
                 |> tee(fun orm ->
                     orm.OwnerProjectId <- ownerProjectId
                     orm.IRI <- rt.IRI
@@ -244,13 +244,13 @@ module ORMTypeConversionModule =
                 |> ormReplicateProperties rt
 
             | :? Flow as rt ->
-                ORMFlow()
+                new ORMFlow()
                 |> ormReplicateProperties rt
 
             | :? Work as rt ->
                 let flowId = (rt.Flow >>= _.Id)
                 let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
-                ORMWork  (pid, status4Id, flowId)
+                new ORMWork(pid, status4Id, flowId)
                 |> ormReplicateProperties rt
 
             | :? Call as rt ->
@@ -264,7 +264,7 @@ module ORMTypeConversionModule =
                     dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
                     |? int DbArrowType.None
 
-                ORMArrowWork(src, tgt, parentId, arrowTypeId)
+                new ORMArrowWork(src, tgt, parentId, arrowTypeId)
                 |> ormReplicateProperties rt
 
             | :? ArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
@@ -274,18 +274,18 @@ module ORMTypeConversionModule =
                     dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
                     |? int DbArrowType.None
 
-                ORMArrowCall(src, tgt, parentId, arrowTypeId)
+                new ORMArrowCall(src, tgt, parentId, arrowTypeId)
                 |> ormReplicateProperties rt
 
             | :? ApiDef as rt ->
-                ORMApiDef(pid)
+                new ORMApiDef(pid)
                 |> ormReplicateProperties rt
 
 
-            | :? DsButton    as rt -> ORMButton(pid)    |> ormReplicateProperties rt
-            | :? Lamp      as rt -> ORMLamp(pid)      |> ormReplicateProperties rt
-            | :? DsCondition as rt -> ORMCondition(pid) |> ormReplicateProperties rt
-            | :? DsAction    as rt -> ORMAction(pid)    |> ormReplicateProperties rt
+            | :? DsButton    as rt -> new ORMButton(pid)    |> ormReplicateProperties rt
+            | :? Lamp      as rt -> new ORMLamp(pid)      |> ormReplicateProperties rt
+            | :? DsCondition as rt -> new ORMCondition(pid) |> ormReplicateProperties rt
+            | :? DsAction    as rt -> new ORMAction(pid)    |> ormReplicateProperties rt
 
 
             | :? ApiCall as rt ->
@@ -294,7 +294,7 @@ module ORMTypeConversionModule =
                         rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
                     with _ -> failwith "ERROR: ApiDef not accessible"
                 let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
-                ORMApiCall (pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
+                new ORMApiCall(pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
                 |> ormReplicateProperties rt
 
             | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

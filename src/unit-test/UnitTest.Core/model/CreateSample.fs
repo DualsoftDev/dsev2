@@ -70,10 +70,10 @@ module CreateSampleModule =
             rtFlow <-
                 Flow.Create(Name = "MainFlow")
                 |> tee (fun z ->
-                    z.AddButtons    [ DsButton   (Name="MyButton1")]
-                    z.AddLamps      [ Lamp     (Name="MyLamp1")]
-                    z.AddConditions [ DsCondition(Name="MyCondition1")]
-                    z.AddActions    [ DsAction   (Name="MyAction1")]
+                    z.AddButtons    [ new DsButton(Name="MyButton1")]
+                    z.AddLamps      [ new Lamp(Name="MyLamp1")]
+                    z.AddConditions [ new DsCondition(Name="MyCondition1")]
+                    z.AddActions    [ new DsAction(Name="MyAction1")]
                     )
             rtWork1 <-
                 Work.Create()
@@ -100,7 +100,7 @@ module CreateSampleModule =
             [rtFlow] |> rtSystem.AddFlows
 
             let edArrowW =
-                ArrowBetweenWorks(rtWork1, rtWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
+                new ArrowBetweenWorks(rtWork1, rtWork3, DbArrowType.Start, Name="Work 간 연결 arrow")
                 |> tee (fun z ->
                     z.Parameter <- {| ArrowWidth=2.1; ArrowHead="Diamond"; ArrowTail="Rectangle" |} |> JsonConvert.SerializeObject)
             [edArrowW] |> rtSystem.AddArrows
@@ -132,9 +132,9 @@ module CreateSampleModule =
             rtProject.AddActiveSystem rtSystem
             rtFlow.AddWorks([rtWork1])
 
-            let edArrow1 = ArrowBetweenCalls(rtCall1a, rtCall1b, DbArrowType.Start)
+            let edArrow1 = new ArrowBetweenCalls(rtCall1a, rtCall1b, DbArrowType.Start)
             rtWork1.AddArrows [edArrow1]
-            let edArrow2 = ArrowBetweenCalls(rtCall2a, rtCall2b, DbArrowType.Reset)
+            let edArrow2 = new ArrowBetweenCalls(rtCall2a, rtCall2b, DbArrowType.Reset)
             rtWork2.AddArrows [edArrow2]
 
             rtProject.EnumerateRtObjects()

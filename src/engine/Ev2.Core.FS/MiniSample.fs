@@ -23,8 +23,8 @@ module MiniSample =
         let flow =
             Flow.Create(Name = "TestFlow")
             |> tee (fun f ->
-                f.AddButtons [ DsButton(Name="Button1") ]
-                f.AddLamps [ Lamp(Name="Lamp1") ]
+                f.AddButtons [ new DsButton(Name="Button1") ]
+                f.AddLamps [ new Lamp(Name="Lamp1") ]
             )
 
         // Work 생성

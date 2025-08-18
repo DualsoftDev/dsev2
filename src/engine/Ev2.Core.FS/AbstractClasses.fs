@@ -338,7 +338,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,     // Create,
 ) =
     inherit DsSystemEntity()
 
-    new() = ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
+    new() = new ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
 
     static member Create() = createExtended<ApiCall>()
 
@@ -376,7 +376,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,     // Create,
 and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =     // Create, ApiUsers
     inherit DsSystemEntity()
 
-    new() = ApiDef(true)
+    new() = new ApiDef(true)
 
     static member Create() = createExtended<ApiDef>()
 

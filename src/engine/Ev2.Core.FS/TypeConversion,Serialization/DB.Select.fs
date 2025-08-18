@@ -64,10 +64,10 @@ module internal Db2DsImpl =
                     let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
                     let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
 
-                    let buttons    = ormButtons    |-> (fun z -> DsButton    () |> replicateProperties z) |> toArray
-                    let lamps      = ormLamps      |-> (fun z -> Lamp      () |> replicateProperties z) |> toArray
-                    let conditions = ormConditions |-> (fun z -> DsCondition () |> replicateProperties z) |> toArray
-                    let actions    = ormActions    |-> (fun z -> DsAction    () |> replicateProperties z) |> toArray
+                    let buttons    = ormButtons    |-> (fun z -> new DsButton() |> replicateProperties z) |> toArray
+                    let lamps      = ormLamps      |-> (fun z -> new Lamp() |> replicateProperties z) |> toArray
+                    let conditions = ormConditions |-> (fun z -> new DsCondition() |> replicateProperties z) |> toArray
+                    let actions    = ormActions    |-> (fun z -> new DsAction() |> replicateProperties z) |> toArray
 
                     let flow = Flow.Create(buttons, lamps, conditions, actions)
                     setParentI s flow

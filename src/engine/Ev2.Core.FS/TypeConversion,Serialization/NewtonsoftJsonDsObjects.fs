@@ -488,7 +488,7 @@ module rec NewtonsoftJsonObjects =
                     |? DbArrowType.None
 
                 a.RuntimeObject <-
-                    ArrowBetweenWorks(src, tgt, arrowType)
+                    new ArrowBetweenWorks(src, tgt, arrowType)
                     |> replicateProperties a)
 
             let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
@@ -500,10 +500,10 @@ module rec NewtonsoftJsonObjects =
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
-            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton()     |> replicateProperties z)
-            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp()       |> replicateProperties z)
-            njf.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition()  |> replicateProperties z)
-            njf.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction()     |> replicateProperties z)
+            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- new DsButton()     |> replicateProperties z)
+            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- new Lamp()       |> replicateProperties z)
+            njf.Conditions |> iter (fun z -> z.RuntimeObject <- new DsCondition()  |> replicateProperties z)
+            njf.Actions    |> iter (fun z -> z.RuntimeObject <- new DsAction()     |> replicateProperties z)
 
 
 
@@ -543,7 +543,7 @@ module rec NewtonsoftJsonObjects =
                     |? DbArrowType.None
 
                 a.RuntimeObject <-
-                    ArrowBetweenCalls(src, tgt, arrowType)
+                    new ArrowBetweenCalls(src, tgt, arrowType)
                     |> replicateProperties a )
 
             (* DsWork 객체 생성은 flow guid 생성 시까지 지연 *)
@@ -571,20 +571,20 @@ module rec NewtonsoftJsonObjects =
                     | null | "" -> None
                     | p -> deserializeWithType p |> Some
                 noop()
-                ApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
+                new ApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
                 |> replicateProperties njac
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
-                ApiDef(njad.IsPush, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin)
+                new ApiDef(njad.IsPush, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin)
                 |> replicateProperties njad
             ()
 
 
         | :? NjButton as njx ->
             njx.RuntimeObject <-
-                DsButton()
+                new DsButton()
                 |> replicateProperties njx
 
 
@@ -698,7 +698,7 @@ module Ds2JsonModule =
 
         let createFallbackNjProject() =
             let rt = rtObj :?> Project
-            NjProject(Database=rt.Database
+            new NjProject(Database=rt.Database
                 , Author=rt.Author
                 , Version=rt.Version
                 , Description=rt.Description)
@@ -715,7 +715,7 @@ module Ds2JsonModule =
 
         let createFallbackNjSystem() =
             let rt = rtObj :?> DsSystem
-            NjSystem(IRI=rt.IRI
+            new NjSystem(IRI=rt.IRI
                 , Author=rt.Author
                 , LangVersion=rt.LangVersion
                 , EngineVersion=rt.EngineVersion
@@ -733,7 +733,7 @@ module Ds2JsonModule =
 
         let createFallbackNjFlow() =
             let rt = rtObj :?> Flow
-            NjFlow()
+            new NjFlow()
             |> fromNjUniqINGD rt
             |> tee(fun z ->
                 let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
@@ -745,7 +745,7 @@ module Ds2JsonModule =
 
         let createFallbackNjWork() =
             let rt = rtObj :?> Work
-            NjWork()
+            new NjWork()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
                 let calls    = rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
@@ -759,7 +759,7 @@ module Ds2JsonModule =
             let rt = rtObj :?> Call
             let ac = rt.AutoConditions |> jsonSerializeStrings
             let cc = rt.CommonConditions |> jsonSerializeStrings
-            NjCall()
+            new NjCall()
             |> fromNjUniqINGD rt
             |> tee (fun z ->
                 let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
@@ -769,30 +769,30 @@ module Ds2JsonModule =
 
         let createFallbackNjButton() =
             let rt = rtObj :?> DsButton
-            NjButton()
+            new NjButton()
             |> fromNjUniqINGD rt
             :> INjUnique
 
         let createFallbackNjLamp() =
             let rt = rtObj :?> Lamp
-            NjLamp()
+            new NjLamp()
             |> fromNjUniqINGD rt
             :> INjUnique
 
         let createFallbackNjCondition() =
             let rt = rtObj :?> DsCondition
-            NjCondition()
+            new NjCondition()
             |> fromNjUniqINGD rt
             :> INjUnique
 
         let createFallbackNjAction() =
             let rt = rtObj :?> DsAction
-            NjAction()
+            new NjAction()
             |> fromNjUniqINGD rt
             :> INjUnique
 
         let createFallbackNjArrow() =
-            NjArrow()
+            new NjArrow()
             |> fromNjUniqINGD rtObj
             |> tee (fun z ->
                 match rtObj with
@@ -811,7 +811,7 @@ module Ds2JsonModule =
         let createFallbackNjApiCall() =
             let rt = rtObj :?> ApiCall
             let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
-            NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
+            new NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
                 InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
                 ValueSpec=valueSpec )
             |> fromNjUniqINGD rt
@@ -819,7 +819,7 @@ module Ds2JsonModule =
 
         let createFallbackNjApiDef() =
             let rt = rtObj :?> ApiDef
-            NjApiDef(IsPush=rt.IsPush, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin)
+            new NjApiDef(IsPush=rt.IsPush, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin)
             |> fromNjUniqINGD rt
             :> INjUnique
 

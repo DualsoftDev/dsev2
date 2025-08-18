@@ -13,7 +13,7 @@ module ORMTypesModule =
         inherit Unique()
         interface IORMUnique
 
-        new() = ORMUnique(nullString, emptyGuid, None, nullString, minDate)
+        new() = new ORMUnique(nullString, emptyGuid, None, nullString, minDate)
         /// Parent Id
         member val ParentId = Option<Id>.None with get, set
 
@@ -55,7 +55,7 @@ module ORMTypesModule =
     [<AbstractClass>]
     type ORMArrowBase(srcId:Id, tgtId:Id, parentId:Id option, arrowTypeId:Id) =
         inherit ORMUnique(ParentId=parentId)
-        new() = ORMArrowBase(-1, -1, None, -1)
+        new() = new ORMArrowBase(-1, -1, None, -1)
         interface IORMArrow
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
@@ -64,14 +64,14 @@ module ORMTypesModule =
     /// Work 간 연결.  System 에 속함
     type ORMArrowWork(srcId:Id, tgtId:Id, systemId:Id, arrowTypeId:Id) =
         inherit ORMArrowBase(srcId, tgtId, Some systemId, arrowTypeId)
-        new() = ORMArrowWork(-1, -1, -1, -1)
+        new() = new ORMArrowWork(-1, -1, -1, -1)
         interface IORMArrowWork
         member val SystemId = systemId with get, set
 
     /// Call 간 연결.  Work 에 속함
     type ORMArrowCall(srcId:Id, tgtId:Id, workId:Id, arrowTypeId:Id) =
         inherit ORMArrowBase(srcId, tgtId, Some workId, arrowTypeId)
-        new() = ORMArrowCall(-1, -1, -1, -1)
+        new() = new ORMArrowCall(-1, -1, -1, -1)
         interface IORMArrowCall
         member val WorkId = workId with get, set
 
@@ -79,7 +79,7 @@ module ORMTypesModule =
     type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) =     // Initialize
         inherit ORMUnique()
 
-        new() = ORMProject(Environment.UserName, nullVersion, nullString, minDate)
+        new() = new ORMProject(Environment.UserName, nullVersion, nullString, minDate)
         interface IORMProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
@@ -105,7 +105,7 @@ module ORMTypesModule =
     ) =
         inherit ORMProjectEntity()
 
-        new() = ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
+        new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate)
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
@@ -134,7 +134,7 @@ module ORMTypesModule =
     type ORMFlow(systemId:Id) =
         inherit ORMWorkEntity(systemId)
 
-        new() = ORMFlow(-1)
+        new() = new ORMFlow(-1)
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
@@ -149,32 +149,32 @@ module ORMTypesModule =
     type ORMButton(flowId:Id) =
         inherit ORMFlowEntity(flowId)
 
-        new() = ORMButton(-1)
+        new() = new ORMButton(-1)
         interface IORMButton
 
     type ORMLamp(flowId:Id) =
         inherit ORMFlowEntity(flowId)
 
-        new() = ORMLamp(-1)
+        new() = new ORMLamp(-1)
         interface IORMLamp
 
     type ORMCondition(flowId:Id) =
         inherit ORMFlowEntity(flowId)
 
-        new() = ORMCondition(-1)
+        new() = new ORMCondition(-1)
         interface IORMCondition
 
     type ORMAction(flowId:Id) =
         inherit ORMFlowEntity(flowId)
 
-        new() = ORMAction(-1)
+        new() = new ORMAction(-1)
         interface IORMAction
 
 
     type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option) =
         inherit ORMSystemEntity(systemId)
 
-        new() = ORMWork(-1, None, None)
+        new() = new ORMWork(-1, None, None)
         interface IORMWork
 
         member val FlowId     = flowId     with get, set
@@ -206,7 +206,7 @@ module ORMTypesModule =
     ) =
         inherit ORMWorkEntity(workId)
 
-        new() = ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), [], [], false, None)
+        new() = new ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), [], [], false, None)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set
@@ -233,14 +233,14 @@ module ORMTypesModule =
     type ORMMapProjectSystem(projectId:Id, systemId:Id) =
         inherit ORMUnique()
 
-        new() = ORMMapProjectSystem(-1, -1)
+        new() = new ORMMapProjectSystem(-1, -1)
         member val ProjectId = projectId with get, set
         member val SystemId  = systemId  with get, set
 
     type ORMMapCall2ApiCall(callId:Id, apiCallId:Id) =
         inherit ORMUnique()
 
-        new() = ORMMapCall2ApiCall(-1, -1)
+        new() = new ORMMapCall2ApiCall(-1, -1)
         member val CallId = callId with get, set
         member val ApiCallId = apiCallId with get, set
 
@@ -252,7 +252,7 @@ module ORMTypesModule =
     ) =
         inherit ORMSystemEntity(systemId)
 
-        new() = ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString)
+        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString)
         interface IORMApiCall
         member val ApiDefId = apiDefId with get, set
 
@@ -271,7 +271,7 @@ module ORMTypesModule =
     type ORMApiDef(systemId:Id) =
         inherit ORMSystemEntity(systemId)
 
-        new() = ORMApiDef(-1)
+        new() = new ORMApiDef(-1)
         interface IORMApiDef
         member val IsPush = false with get, set
         member val TopicIndex = Option<int>.None with get, set
@@ -281,7 +281,7 @@ module ORMTypesModule =
     type ORMProgress(systemId:Id, topicIndex:int, ?progress:int, ?description:string) =
         inherit ORMSystemEntity(systemId)
 
-        new() = ORMProgress(-1, 0)
+        new() = new ORMProgress(-1, 0)
         interface IORMProgress
 
         member val TopicIndex = topicIndex with get, set
@@ -292,7 +292,7 @@ module ORMTypesModule =
     type ORMEnum(name, category, value) =
         interface IORMEnum
 
-        new() = ORMEnum(nullString, nullString, -1)
+        new() = new ORMEnum(nullString, nullString, -1)
         interface IORMUnique
         member val Id       = Option<Id>.None with get, set
         member val Name     = name            with get, set

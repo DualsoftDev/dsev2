@@ -18,7 +18,7 @@ module Interfaces =
         inherit DisposableBase()
         interface IUnique
 
-        internal new() = Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
+        internal new() = new Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
         [<JsonProperty(Order = -100)>] member val Id = id with get, set
