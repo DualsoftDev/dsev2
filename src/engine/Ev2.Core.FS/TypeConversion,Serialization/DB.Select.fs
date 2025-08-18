@@ -82,8 +82,6 @@ module internal Db2DsImpl =
                 for orm in orms do
                     let apiDef = ApiDef.Create()
                     apiDef.IsPush <- orm.IsPush
-                    //apiDef.TopicIndex <- orm.TopicIndex
-                    //apiDef.IsTopicOrigin <- orm.IsTopicOrigin
                     apiDef
                     |> replicateProperties orm
             ]

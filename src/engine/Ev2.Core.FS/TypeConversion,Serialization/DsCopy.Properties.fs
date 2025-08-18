@@ -135,15 +135,15 @@ module internal DsCopyModule =
         | (:? ApiDef) | (:? NjApiDef) | (:? ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
-                | :? ApiDef    as s -> {| IsPush=s.IsPush; (* TopicIndex=s.TopicIndex; IsTopicOrigin=s.IsTopicOrigin *) |}
-                | :? NjApiDef  as s -> {| IsPush=s.IsPush; (* TopicIndex=s.TopicIndex; IsTopicOrigin=s.IsTopicOrigin *) |}
-                | :? ORMApiDef as s -> {| IsPush=s.IsPush; (* TopicIndex=s.TopicIndex; IsTopicOrigin=s.IsTopicOrigin *) |}
+                | :? ApiDef    as s -> {| IsPush=s.IsPush |}
+                | :? NjApiDef  as s -> {| IsPush=s.IsPush |}
+                | :? ORMApiDef as s -> {| IsPush=s.IsPush |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ApiDef    as d -> d.IsPush<-s.IsPush; (* d.TopicIndex<-s.TopicIndex; d.IsTopicOrigin<-s.IsTopicOrigin *)
-            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; (* d.TopicIndex<-s.TopicIndex; d.IsTopicOrigin<-s.IsTopicOrigin *)
-            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; (* d.TopicIndex<-s.TopicIndex; d.IsTopicOrigin<-s.IsTopicOrigin *)
+            | :? ApiDef    as d -> d.IsPush<-s.IsPush
+            | :? NjApiDef  as d -> d.IsPush<-s.IsPush
+            | :? ORMApiDef as d -> d.IsPush<-s.IsPush
             | _ -> failwith "ERROR"
 
 

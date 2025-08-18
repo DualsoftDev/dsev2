@@ -23,7 +23,6 @@ module DatabaseSchemaModule =
         let [<Literal>] ArrowCall    = "arrowCall"
         let [<Literal>] ApiCall      = "apiCall"
         let [<Literal>] ApiDef       = "apiDef"
-        let [<Literal>] Progress     = "progress"
 
         // { Flow 하부 정의 용
         let [<Literal>] Button       = "button"
@@ -245,14 +244,8 @@ CREATE VIEW {k Vn.ApiCall} AS
             match dbProvider with
             | DbProvider.Sqlite _ | DbProvider.Postgres _ -> $"""
 --
--- Table 수준에서 지정하기 힘든 constraint 를 index 로 지정
+-- 여기서 Table 수준에서 지정하기 힘든 constraint 를 index 로 지정 (있다면..)
 --
-
--- ApiDef table 의 topicIndex, isTopicOrigin 조합이 유일함을 보장하는 인덱스
---
--- CREATE UNIQUE INDEX IF NOT EXISTS idx_apidef_topic_uniq
--- ON {k Tn.ApiDef}({k "systemId"}, {k "topicIndex"}, {k "isTopicOrigin"})
--- WHERE {k "topicIndex"} IS NOT NULL AND {k "isTopicOrigin"} IS NOT NULL;
 """
 
         (* ----------------------- [sqlTables] ----------------------- *)
@@ -402,18 +395,9 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
 
 CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "isPush"}          {boolean} NOT NULL DEFAULT {falseValue}
-    -- , {k "topicIndex"}      {int32}
-    -- , {k "isTopicOrigin"}   {boolean}
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.ApiDef}_uniq UNIQUE (systemId, name)
-    -- , CONSTRAINT {Tn.ApiDef}_topic_check CHECK (
-    --     (topicIndex IS NULL AND isTopicOrigin IS NULL) OR
-    --     (topicIndex IS NOT NULL AND isTopicOrigin IS NOT NULL)
-    -- )
-
-    -- topicIndex와 isTopicOrigin은 둘 다 null이거나 둘 다 non-null이어야 함
-    -- 둘 다 non-null인 경우 (systemId, topicIndex, isTopicOrigin) 조합이 unique함 (별도 인덱스로 구현)
 );
 
 
@@ -612,7 +596,6 @@ CREATE VIEW {k Vn.ApiDef} AS
         , x.{k "name"}
         , x.{k "parameter"}
         , x.{k "isPush"}
-        , x.{k "topicIndex"}
         , s.{k "id"}    AS systemId
         , s.{k "name"}  AS systemName
     FROM {k Tn.ApiDef} x

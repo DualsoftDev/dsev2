@@ -357,8 +357,6 @@ module rec NewtonsoftJsonObjects =
         interface INjApiDef
 
         member val IsPush = false with get, set
-        //member val TopicIndex = Option<int>.None with get, set
-        //member val IsTopicOrigin = Option<bool>.None with get, set
         static member Create() = createExtended<NjApiDef>()
 
 
@@ -391,6 +389,8 @@ module rec NewtonsoftJsonObjects =
                 let rts = njs |> getRuntimeObject<DsSystem>
                 njs.Works <- rts.Works |-> _.ToNj<NjWork>() |> toArray
                 njs.Flows <- rts.Flows |-> _.ToNj<NjFlow>() |> toArray
+                njs.ApiDefs  <- rts.ApiDefs |-> _.ToNj<NjApiDef>() |> toArray
+                njs.ApiCalls <- rts.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
 
                 njs.Arrows   |> iter onNsJsonSerializing
                 njs.Flows    |> iter onNsJsonSerializing
@@ -500,10 +500,10 @@ module rec NewtonsoftJsonObjects =
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
-            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- new DsButton()     |> replicateProperties z)
-            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- new Lamp()       |> replicateProperties z)
-            njf.Conditions |> iter (fun z -> z.RuntimeObject <- new DsCondition()  |> replicateProperties z)
-            njf.Actions    |> iter (fun z -> z.RuntimeObject <- new DsAction()     |> replicateProperties z)
+            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- new DsButton()    |> replicateProperties z)
+            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- new Lamp()        |> replicateProperties z)
+            njf.Conditions |> iter (fun z -> z.RuntimeObject <- new DsCondition() |> replicateProperties z)
+            njf.Actions    |> iter (fun z -> z.RuntimeObject <- new DsAction()    |> replicateProperties z)
 
 
 
@@ -571,20 +571,20 @@ module rec NewtonsoftJsonObjects =
                     | null | "" -> None
                     | p -> deserializeWithType p |> Some
                 noop()
-                new ApiCall(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
+                ApiCall.Create(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
                 |> replicateProperties njac
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
-                new ApiDef(njad.IsPush(*, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin*))
+                ApiDef.Create(njad.IsPush(*, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin*))
                 |> replicateProperties njad
             ()
 
 
         | :? NjButton as njx ->
             njx.RuntimeObject <-
-                new DsButton()
+                DsButton.Create()
                 |> replicateProperties njx
 
 
@@ -819,7 +819,7 @@ module Ds2JsonModule =
 
         let createFallbackNjApiDef() =
             let rt = rtObj :?> ApiDef
-            new NjApiDef(IsPush=rt.IsPush(*, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin*))
+            new NjApiDef(IsPush=rt.IsPush)
             |> fromNjUniqINGD rt
             :> INjUnique
 

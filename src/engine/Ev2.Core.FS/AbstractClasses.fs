@@ -19,6 +19,10 @@ type RtUnique() =     // ToNjObj, ToNj
     /// Runtime 객체를 Newtonsoft JSON 객체로 변환
     default x.ToNjObj() = fwdRtObj2NjObj x
 
+    abstract member ValidateRuntime: unit -> unit
+    /// Runtime 객체를 Newtonsoft JSON 객체로 변환
+    default x.ValidateRuntime() = ()
+
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
 // Entity base classes
@@ -243,21 +247,25 @@ and DsButton() =
     inherit FlowEntity()
 
     interface IRtButton
+    static member Create() = createExtended<DsButton>()
 
 and Lamp() =
     inherit FlowEntity()
 
     interface IRtLamp
+    static member Create() = createExtended<Lamp>()
 
 and DsCondition() =
     inherit FlowEntity()
 
     interface IRtCondition
+    static member Create() = createExtended<DsCondition>()
 
 and DsAction() =
     inherit FlowEntity()
 
     interface IRtAction
+    static member Create() = createExtended<DsAction>()
 
 
 // see static member Create
@@ -383,11 +391,6 @@ and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =     // Create, A
     interface IRtApiDef
 
     member val IsPush = isPush with get, set
-
-    ///// Joint 에 해당. topic index 는 0 부터 시작
-    //member val TopicIndex = topicIndex with get, set
-    ///// e.g ADV/RET : 둘다 동일 TopicIndex 를 가지나, ADV 는 IsTopicOrigin 값이 true, RET 는 false
-    //member val IsTopicOrigin = isTopicOrigin with get, set
 
     member x.System   = x.RawParent >>= tryCast<DsSystem>
 

@@ -88,4 +88,4 @@ module MiniSample =
         // Project에 System 추가
         project.AddActiveSystem system
 
-        project
+        project |> validateRuntime
