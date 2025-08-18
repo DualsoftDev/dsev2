@@ -7,15 +7,48 @@ open Dual.Common.Core.FS
 open Newtonsoft.Json
 open Dual.Common.Db.FS
 open PropertyChanged
+open System.ComponentModel
+open System.Reactive.Subjects
 
 
 [<AutoOpen>]
 module Interfaces =
+    let PropertyChangedSubject = new Subject<obj * PropertyChangedEventArgs>()
 
     [<AbstractClass>]
     [<AddINotifyPropertyChangedInterface>]
-    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =     // CopyUniqueProperties, isDuplicated
+    type UniqueWithFody() as this =
         inherit DisposableBase()
+        let propertyChangedHandler =
+            PropertyChangedEventHandler(fun obj e ->
+                // 필요 시 e.PropertyName 사용
+                PropertyChangedSubject.OnNext(obj, e)
+            )
+
+        (*
+            [<AddINotifyPropertyChangedInterface>]는 빌드 이후(IL weaving) 에 INotifyPropertyChanged 구현을 주입합니다.
+            하지만 F# 컴파일러는 컴파일 타임에 interface INotifyPropertyChanged를 선언해 두면 add_PropertyChanged/remove_PropertyChanged 구현을 즉시 요구합니다.
+            그래서 interface INotifyPropertyChanged를 직접 선언하면 안 됩니다. (Fody가 나중에 넣어줄 거라서요)
+        *)
+
+        // 런타임 캐스팅 헬퍼
+        let asINPC (o: obj) = o :?> INotifyPropertyChanged
+
+        do
+            // Fody가 주입할 이벤트에 런타임 캐스트로 구독
+            (asINPC (box this)).PropertyChanged.AddHandler(propertyChangedHandler)
+
+        override _.DisposeCore () =
+            // 구독 해제 (중복 호출에도 안전)
+            (asINPC (box this)).PropertyChanged.RemoveHandler(propertyChangedHandler)
+            ()
+
+
+
+    [<AbstractClass>]
+    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =     // CopyUniqueProperties, isDuplicated
+        inherit UniqueWithFody()
+
         interface IUnique
 
         internal new() = new Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
@@ -31,6 +64,10 @@ module Interfaces =
 
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
+
+        override x.DisposeCore (): unit =
+            base.DisposeCore()
+            x.RawParent <- None
 
         abstract member CopyUniqueProperties : Unique -> unit
         default x.CopyUniqueProperties (dst:Unique) : unit =
