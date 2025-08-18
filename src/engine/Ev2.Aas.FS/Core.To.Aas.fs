@@ -98,12 +98,12 @@ module CoreToAas =
 
                 | :? NjApiDef as apiDef ->
                     JObj().TrySetProperty(apiDef.IsPush,   "IsPush")
-                    match apiDef.TopicIndex, apiDef.IsTopicOrigin with
-                    | Some topicIndex, isOrigin ->
-                        JObj().TrySetProperty(topicIndex, "TopicIndex")
-                        JObj().TrySetProperty(isOrigin,   "IsTopicOrigin")
-                    | None, None -> ()
-                    | _ -> failwith "ERROR: TopicIndex and IsTopicOrigin must be both None or both Some"
+                    //match apiDef.TopicIndex, apiDef.IsTopicOrigin with
+                    //| Some topicIndex, isOrigin ->
+                    //    JObj().TrySetProperty(topicIndex, "TopicIndex")
+                    //    JObj().TrySetProperty(isOrigin,   "IsTopicOrigin")
+                    //| None, None -> ()
+                    //| _ -> failwith "ERROR: TopicIndex and IsTopicOrigin must be both None or both Some"
 
                 | (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ->
                     ()

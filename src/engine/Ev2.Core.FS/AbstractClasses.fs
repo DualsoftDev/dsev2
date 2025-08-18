@@ -383,10 +383,12 @@ and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =     // Create, A
     interface IRtApiDef
 
     member val IsPush = isPush with get, set
-    /// Joint 에 해당. topic index 는 0 부터 시작
-    member val TopicIndex = topicIndex with get, set
-    /// e.g ADV/RET : 둘다 동일 TopicIndex 를 가지나, ADV 는 IsTopicOrigin 값이 true, RET 는 false
-    member val IsTopicOrigin = isTopicOrigin with get, set
+
+    ///// Joint 에 해당. topic index 는 0 부터 시작
+    //member val TopicIndex = topicIndex with get, set
+    ///// e.g ADV/RET : 둘다 동일 TopicIndex 를 가지나, ADV 는 IsTopicOrigin 값이 true, RET 는 false
+    //member val IsTopicOrigin = isTopicOrigin with get, set
+
     member x.System   = x.RawParent >>= tryCast<DsSystem>
 
     // system 에서 현재 ApiDef 을 사용하는 ApiCall 들

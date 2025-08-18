@@ -357,8 +357,8 @@ module rec NewtonsoftJsonObjects =
         interface INjApiDef
 
         member val IsPush = false with get, set
-        member val TopicIndex = Option<int>.None with get, set
-        member val IsTopicOrigin = Option<bool>.None with get, set
+        //member val TopicIndex = Option<int>.None with get, set
+        //member val IsTopicOrigin = Option<bool>.None with get, set
         static member Create() = createExtended<NjApiDef>()
 
 
@@ -577,7 +577,7 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
-                new ApiDef(njad.IsPush, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin)
+                new ApiDef(njad.IsPush(*, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin*))
                 |> replicateProperties njad
             ()
 
@@ -819,7 +819,7 @@ module Ds2JsonModule =
 
         let createFallbackNjApiDef() =
             let rt = rtObj :?> ApiDef
-            new NjApiDef(IsPush=rt.IsPush, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin)
+            new NjApiDef(IsPush=rt.IsPush(*, TopicIndex=rt.TopicIndex, IsTopicOrigin=rt.IsTopicOrigin*))
             |> fromNjUniqINGD rt
             :> INjUnique
 

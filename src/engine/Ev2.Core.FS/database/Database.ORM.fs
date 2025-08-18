@@ -278,15 +278,15 @@ module ORMTypesModule =
         member val IsTopicOrigin = Option<bool>.None with get, set
 
 
-    type ORMProgress(systemId:Id, topicIndex:int, ?progress:int, ?description:string) =
-        inherit ORMSystemEntity(systemId)
+    //type ORMProgress(systemId:Id, topicIndex:int, ?progress:int, ?description:string) =
+    //    inherit ORMSystemEntity(systemId)
 
-        new() = new ORMProgress(-1, 0)
-        interface IORMProgress
+    //    new() = new ORMProgress(-1, 0)
+    //    interface IORMProgress
 
-        member val TopicIndex = topicIndex with get, set
-        member val Description = description with get, set
-        member val Progress = progress with get, set
+    //    member val TopicIndex = topicIndex with get, set
+    //    member val Description = description with get, set
+    //    member val Progress = progress with get, set
 
 
     type ORMEnum(name, category, value) =

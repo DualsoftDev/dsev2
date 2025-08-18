@@ -65,7 +65,7 @@ type AppDbApi(dbProvider:DbProvider) =     // With, WithNew, WithConn, TryFindEn
                     let schema =
                         let schema = getSqlCreateSchema dbProvider withTrigger
                         // TypeFactory 를 통해 스키마 확장 적용
-                        getTypeFactory() |-> (fun factory -> factory.ModifySchema schema) |? schema
+                        getTypeFactory() |-> (fun factory -> factory.ModifySchema (schema, dbProvider.VendorName)) |? schema
 
                     logInfo $"Creating database schema on {connStr}..."
                     logInfo $"CreateSchema:\r\n{schema}"

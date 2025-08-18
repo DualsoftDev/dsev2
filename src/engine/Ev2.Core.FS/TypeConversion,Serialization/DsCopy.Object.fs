@@ -231,10 +231,10 @@ module internal rec DsObjectCopyImpl =
             let bag = bag |? ReplicateBag()
             newApiDef
             |> uniqReplicateWithBag bag x
-            |> tee(fun a ->
-                a.TopicIndex <- x.TopicIndex
-                a.IsTopicOrigin <- x.IsTopicOrigin
-            ) |> ignore
+            //|> tee(fun a ->
+            //    a.TopicIndex <- x.TopicIndex
+            //    a.IsTopicOrigin <- x.IsTopicOrigin)
+            |> ignore
 
         member x.replicate(bag:ReplicateBag) =
             new ApiDef(x.IsPush)

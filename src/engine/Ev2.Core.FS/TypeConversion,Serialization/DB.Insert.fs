@@ -119,8 +119,8 @@ module internal DbInsertModule =
 
                     let apiDefId =
                         conn.Insert($"""INSERT INTO {Tn.ApiDef}
-                                               (guid, parameter, name, isPush, topicIndex, isTopicOrigin, systemId)
-                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TopicIndex, @IsTopicOrigin, @SystemId);""", orm, tr)
+                                               (guid, parameter, name, isPush, systemId)    -- , topicIndex, isTopicOrigin
+                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @SystemId);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
 
                     rt.Id <- Some apiDefId
                     orm.Id <- Some apiDefId

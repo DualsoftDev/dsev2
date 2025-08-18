@@ -577,15 +577,15 @@ module DsObjectUtilsModule =
                 for w in sys.ApiDefs do
                     verify (sys.Guid |> isParentGuid w)
 
-                // ApiDef 의 TopicIndex 점검
-                // 1. 동일 TopicIndex 를 가진 ApiDef 의 갯수는 항상 2가 되어야 함
-                sys.ApiDefs
-                |> filter (_.TopicIndex.IsSome)
-                |> groupBy (_.TopicIndex)
-                |> iter (fun (topicIndex, apiDefs) ->
-                    let count = apiDefs |> List.length
-                    if count <> 2 then
-                        failwith $"TopicIndex {topicIndex}를 가진 ApiDef의 개수가 {count}개입니다. 2개여야 합니다.")
+                //// ApiDef 의 TopicIndex 점검
+                //// 1. 동일 TopicIndex 를 가진 ApiDef 의 갯수는 항상 2가 되어야 함
+                //sys.ApiDefs
+                //|> filter (_.TopicIndex.IsSome)
+                //|> groupBy (_.TopicIndex)
+                //|> iter (fun (topicIndex, apiDefs) ->
+                //    let count = apiDefs |> List.length
+                //    if count <> 2 then
+                //        failwith $"TopicIndex {topicIndex}를 가진 ApiDef의 개수가 {count}개입니다. 2개여야 합니다.")
 
                 sys.ApiCalls |> iter _.Validate(guidDicDebug)
                 for ac in sys.ApiCalls  do
