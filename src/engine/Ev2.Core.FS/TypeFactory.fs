@@ -33,6 +33,7 @@ type ITypeFactory =
 
     abstract GetSemanticId : semanticKey:string -> string
     abstract WriteAasExtensionProperties : njObj:INjUnique -> seq<System.Text.Json.Nodes.JsonObject option>
+    abstract ReadAasExtensionProperties : njObj:INjUnique * smc: obj -> unit        // smc: SubmodelElementCollection type
 
 [<AutoOpen>]
 module TypeFactoryModule =

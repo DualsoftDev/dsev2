@@ -92,8 +92,9 @@ module CoreFromAas =
         obj.Id <- id
         obj.Parameter <- parameter
         obj
-    //type Environment = AasCore.Aas3_0.Environment
-    //type ISubmodel = AasCore.Aas3_0.ISubmodel
+
+    let internal readAasExtensionProperties (smc:SubmodelElementCollection) (njObj:INjUnique)  =
+        getTypeFactory() |-> (fun factory -> factory.ReadAasExtensionProperties(njObj, smc))
 
     type NjProject with     // FromISubmodel, FromAasxFile
         static member FromAasxFile(aasxPath: string): NjProject =
@@ -171,8 +172,9 @@ module CoreFromAas =
                 , Version        = version
                 , Description    = description
                 , ActiveSystems  = activeSystems
-                , PassiveSystems = passiveSystems
-            )
+                , PassiveSystems = passiveSystems)
+            |> tee (readAasExtensionProperties project)
+
 
 
     type NjSystem with     // FromSMC
@@ -206,8 +208,8 @@ module CoreFromAas =
                 , Works = works
                 , Arrows = arrows
                 , ApiDefs = apiDefs
-                , ApiCalls = apiCalls
-            )
+                , ApiCalls = apiCalls)
+            |> tee (readAasExtensionProperties smc)
 
     type NjArrow with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
@@ -215,25 +217,29 @@ module CoreFromAas =
             let src = smc.GetPropValue "Source"
             let tgt = smc.GetPropValue "Target"
             let typ = smc.GetPropValue "Type"
-            NjArrow.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                    , Source=src, Target=tgt, Type=typ)
+            NjArrow.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, Source=src, Target=tgt, Type=typ)
+            |> tee (readAasExtensionProperties smc)
 
 
     type NjButton with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjButton =
             createSimpleFromSMC (fun () -> NjButton.Create()) smc
+            |> tee (readAasExtensionProperties smc)
 
     type NjLamp with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjLamp =
             createSimpleFromSMC (fun () -> NjLamp.Create()) smc
+            |> tee (readAasExtensionProperties smc)
 
     type NjCondition with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCondition =
             createSimpleFromSMC (fun () -> NjCondition.Create()) smc
+            |> tee (readAasExtensionProperties smc)
 
     type NjAction with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjAction =
             createSimpleFromSMC (fun () -> NjAction.Create()) smc
+            |> tee (readAasExtensionProperties smc)
 
     type NjFlow with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
@@ -245,6 +251,7 @@ module CoreFromAas =
             let actions     = smc.TryFindChildSMC "Actions"     |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Action")     |? [||] |-> NjAction.FromSMC
 
             NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter, Buttons = buttons, Lamps = lamps, Conditions = conditions, Actions = actions)
+            |> tee (readAasExtensionProperties smc)
 
 
     type NjWork with     // FromSMC
@@ -275,6 +282,7 @@ module CoreFromAas =
                 , Calls = calls
                 , Status4 = status4
                 , Arrows = arrows)
+            |> tee (readAasExtensionProperties smc)
 
     type NjCall with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
@@ -305,8 +313,9 @@ module CoreFromAas =
                 , Timeout = timeout
                 , CallType = callType
                 , Status4 = status4
-                , ApiCalls = apiCalls     // Guid[] type
-                )
+                , ApiCalls = apiCalls)     // Guid[] type
+            |> tee (readAasExtensionProperties smc)
+
 
 
     type NjApiDef with     // FromSMC
@@ -314,6 +323,7 @@ module CoreFromAas =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
             NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush)
+            |> tee (readAasExtensionProperties smc)
 
     type NjApiCall with     // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjApiCall =
@@ -332,5 +342,5 @@ module CoreFromAas =
                 , OutAddress = outAddress
                 , InSymbol = inSymbol
                 , OutSymbol = outSymbol
-                , ValueSpec = valueSpec
-            )
+                , ValueSpec = valueSpec)
+            |> tee (readAasExtensionProperties smc)

@@ -24,7 +24,13 @@ module rec AasExtensions =
         member internal semantic.hasSemanticKey (semanticKey: string) =
             semantic.SemanticId <> null &&
             semantic.SemanticId.Keys
-            |> Seq.exists (fun k -> k.Value = AasSemantics.map.[semanticKey])
+            |> Seq.exists (fun k ->
+                match AasSemantics.map.TryGet(semanticKey) with
+                | Some semanticId when semanticId = k.Value -> true
+                | _ ->
+                    match getTypeFactory() |-> _.GetSemanticId(semanticKey) with
+                    | Some semanticId when semanticId = k.Value -> true
+                    | _ -> false)
 
     type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
 

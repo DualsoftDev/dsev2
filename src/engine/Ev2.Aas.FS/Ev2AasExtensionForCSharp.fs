@@ -1,9 +1,10 @@
 namespace Dual.Ev2.Aas
 
 open System.Runtime.CompilerServices
-open Ev2.Core.FS
-open Dual.Common.Db.FS
 open System.Runtime.InteropServices
+open AasCore.Aas3_0
+open Dual.Common.Db.FS
+open Ev2.Core.FS
 
 /// C#에서 F# AASX 메서드에 접근하기 위한 Extension 메서드들
 /// F#의 type extension은 C#에서 직접 접근이 불가능하므로 wrapper 제공
@@ -59,4 +60,8 @@ type AasxExtensions =     // FromAasxFile, CsTrySetProperty
     ) =
         let counters = if counters = null then None else Some counters
         jObj.TrySetProperty(value, name, ?counters=counters)
+
+    [<Extension>]
+    static member CsTryGetPropValue<'T>(smc: SubmodelElementCollection, propName:string) =
+        smc.TryGetPropValue<'T>(propName)
 
