@@ -15,6 +15,7 @@ module Interfaces =
     [<AbstractClass>]
     [<AddINotifyPropertyChangedInterface>]
     type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =     // CopyUniqueProperties, isDuplicated
+        inherit DisposableBase()
         interface IUnique
 
         internal new() = Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
