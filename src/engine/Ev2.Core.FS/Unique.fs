@@ -6,12 +6,14 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Newtonsoft.Json
 open Dual.Common.Db.FS
+open PropertyChanged
 
 
 [<AutoOpen>]
 module Interfaces =
 
     [<AbstractClass>]
+    [<AddINotifyPropertyChangedInterface>]
     type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =     // CopyUniqueProperties, isDuplicated
         interface IUnique
 
