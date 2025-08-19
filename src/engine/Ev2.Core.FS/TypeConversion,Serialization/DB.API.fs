@@ -27,13 +27,14 @@ module Ds2SqliteModule =
                         let mutable diffs = dbProject.ComputeDiff(x) |> toArray
 
                         // 확장 속성 diff도 추가
-                        if isItNotNull TypeFactory then
+                        getTypeFactory()
+                        |> iter (fun factory ->
                             let extensionDiffs =
-                                TypeFactory.ComputeExtensionDiff(dbProject, x)
+                                factory.ComputeExtensionDiff(dbProject, x)
                                 |> Seq.cast<CompareResult>
                                 |> toArray
                             if not (extensionDiffs.IsEmpty()) then
-                                diffs <- Array.append diffs extensionDiffs
+                                diffs <- Array.append diffs extensionDiffs )
 
                         if diffs.IsEmpty() then
                             Ok NoChange

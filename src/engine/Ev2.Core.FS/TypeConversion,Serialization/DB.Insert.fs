@@ -75,8 +75,7 @@ module internal DbInsertModule =
                     rt.InsertSystemMapToDB(dbApi)
 
                     // 확장 처리 훅
-                    if isItNotNull TypeFactory then
-                        TypeFactory.HandleAfterInsert(rt, conn, tr)
+                    getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(rt, conn, tr))
 
 
                 | :? DsSystem as rt ->
@@ -109,8 +108,7 @@ module internal DbInsertModule =
                     rt.Arrows |> iter _.InsertToDB(dbApi)
 
                     // 확장 처리 훅
-                    if isItNotNull TypeFactory then
-                        TypeFactory.HandleAfterInsert(rt, conn, tr)
+                    getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(rt, conn, tr))
 
 
                 | :? ApiDef as rt ->
@@ -192,7 +190,7 @@ module internal DbInsertModule =
 
                     match box x with
                     | :? DsButton    as rt -> let orm = rt.ToORM<ORMButton>    dbApi in insertFlowElement Tn.Button    (rtX, orm)
-                    | :? Lamp      as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertFlowElement Tn.Lamp      (rtX, orm)
+                    | :? Lamp        as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertFlowElement Tn.Lamp      (rtX, orm)
                     | :? DsCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertFlowElement Tn.Condition (rtX, orm)
                     | :? DsAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertFlowElement Tn.Action    (rtX, orm)
                     | _ -> failwith "ERROR"
@@ -309,13 +307,14 @@ module internal DbInsertModule =
                 let mutable diffs = dbSystem.ComputeDiff(s, criteria) |> toArray
 
                 // 확장 속성 diff도 추가
-                if isItNotNull TypeFactory then
+                getTypeFactory()
+                |> iter (fun factory ->
                     let extensionDiffs =
-                        TypeFactory.ComputeExtensionDiff(dbSystem, s)
+                        factory.ComputeExtensionDiff(dbSystem, s)
                         |> Seq.cast<CompareResult>
                         |> toArray
                     if not (extensionDiffs.IsEmpty()) then
-                        diffs <- Array.append diffs extensionDiffs
+                        diffs <- Array.append diffs extensionDiffs)
 
                 match diffs with
                 | [||] ->   // DB 에 저장된 system 과 동일하므로 변경 없음
@@ -324,9 +323,9 @@ module internal DbInsertModule =
                     // 확장 처리 훅만 호출 (실제 업데이트는 DB.Update.fs에서 처리)
 
                     // 확장 처리 훅
-                    if isItNotNull TypeFactory then
+                    getTypeFactory() |> iter (fun factory ->
                         dbApi.With(fun (conn, tr) ->
-                            TypeFactory.HandleAfterUpdate(s, conn, tr))
+                            factory.HandleAfterUpdate(s, conn, tr)))
 
                     Updated diffs
                 )

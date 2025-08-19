@@ -70,6 +70,7 @@ module Interfaces =
             x.RawParent <- None
 
         abstract member CopyUniqueProperties : Unique -> unit
+        /// Unique 객체의 고유 속성 복사.  Id, Name, Parameter, Guid, RawParent 복사
         default x.CopyUniqueProperties (dst:Unique) : unit =
             dst.Id        <- x.Id
             dst.Name      <- x.Name

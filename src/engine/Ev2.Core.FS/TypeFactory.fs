@@ -17,6 +17,7 @@ type ITypeFactory =
     abstract CreateRuntime : runtimeType:Type -> IRtUnique
     abstract CreateNj : njType:Type -> INjUnique
 
+    /// 확장 속성 복사
     abstract CopyProperties: source:IUnique * target:IUnique -> unit
     abstract DeserializeJson: typeName:string * jsonString:string * settings:JsonSerializerSettings -> INjUnique
 

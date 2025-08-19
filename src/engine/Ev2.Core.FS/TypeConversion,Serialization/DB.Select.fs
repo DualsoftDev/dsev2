@@ -209,8 +209,7 @@ module internal Db2DsImpl =
             assert(setEqual s.Arrows rtArrows)
 
             // 확장 복원 훅
-            if isItNotNull TypeFactory then
-                TypeFactory.HandleAfterSelect(rtSystem, conn, tr)
+            getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(rtSystem, conn, tr))
 
             rtSystem
 
@@ -268,8 +267,7 @@ module internal Db2DsImpl =
             ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
 
             // 확장 복원 훅
-            if isItNotNull TypeFactory then
-                TypeFactory.HandleAfterSelect(rtProj, conn, tr)
+            getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(rtProj, conn, tr))
 
             rtProj
 
@@ -282,6 +280,7 @@ module internal Db2DsImpl =
         conn.TryQuerySingle<'T>($"SELECT * FROM {tableName} WHERE id=@Id", {|Id = id|}, tr)
 
 
+    /// Project 의 PK id 로 DB 에서 Project 를 조회하고, 성공 시 DbCheckoutResult<Project> 객체를 반환
     let rTryCheckoutProjectFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<Project> =
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowWithId<ORMProject> conn tr Tn.Project id with
@@ -290,6 +289,7 @@ module internal Db2DsImpl =
             | Some ormProject ->
                 rTryCheckoutProjectFromDBHelper ormProject dbApi)
 
+    /// System 의 PK id 로 DB 에서 DsSystem 를 조회하고, 성공 시 DbCheckoutResult<DsSystem> 객체를 반환
     let rTryCheckoutSystemFromDB(id:Id) (dbApi:AppDbApi):DbCheckoutResult<DsSystem> =
         dbApi.With(fun (conn, tr) ->
             match tryGetORMRowWithId<ORMSystem> conn tr Tn.System id with
@@ -298,7 +298,7 @@ module internal Db2DsImpl =
             | Some ormSystem ->
                 ormSystem.RtObject <-
                     let rtSystem =
-                        createExtended<DsSystem>()
+                        DsSystem.Create()
                         |> replicateProperties ormSystem
                     Some (rtSystem :> IRtUnique)
 

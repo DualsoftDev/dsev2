@@ -23,6 +23,7 @@ module internal DsCopyModule =
         | _ -> failwithf "Unsupported type for replication: %A" (source.GetType())
 
 
+    /// 추후 참조를 위해, XXX.{Rt,Nj,ORM}Object 에 알맞은 값을 설정한다.
     let private linkUniq (src:#Unique) (dst:#Unique): #Unique=
         match box src with
         | :? IRtUnique  as s -> dst.RtObject  <- Some s

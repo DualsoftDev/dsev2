@@ -1,9 +1,7 @@
 namespace Ev2.Core.FS
 
-open System
 open Dapper
 
-open Dual.Common.Base
 open Dual.Common.Core.FS
 
 [<AutoOpen>]
@@ -12,23 +10,24 @@ module internal rec DbUpdateImpl =
     type IRtUnique with
         member x.getTableName() =
             match x with
-            | :? Project -> Tn.Project
-            | :? DsSystem  -> Tn.System
-            | :? Flow    -> Tn.Flow
-            | :? DsButton  -> Tn.Button
-            | :? Lamp    -> Tn.Lamp
+            | :? Project     -> Tn.Project
+            | :? DsSystem    -> Tn.System
+            | :? Flow        -> Tn.Flow
+            | :? DsButton    -> Tn.Button
+            | :? Lamp        -> Tn.Lamp
             | :? DsCondition -> Tn.Condition
-            | :? DsAction -> Tn.Action
-            | :? ApiDef -> Tn.ApiDef
-            | :? ApiCall -> Tn.ApiCall
-            | :? Work -> Tn.Work
-            | :? Call -> Tn.Call
+            | :? DsAction    -> Tn.Action
+            | :? ApiDef      -> Tn.ApiDef
+            | :? ApiCall     -> Tn.ApiCall
+            | :? Work        -> Tn.Work
+            | :? Call        -> Tn.Call
             | :? ArrowBetweenCalls -> Tn.ArrowCall
             | :? ArrowBetweenWorks -> Tn.ArrowWork
             | _ -> failwith $"Unknown RtUnique type: {x.GetType().Name}"
 
+        /// Runtime 객체의 변경된 부분(diff result) 만 DB에 반영
         member x.rTryUpdateProjectToDB (dbApi:AppDbApi, diffs:CompareResult []): DbCommitResult =
-            assert (!! diffs.IsNullOrEmpty())
+            assert (diffs.any())
             assert (x :? Project || x :? DsSystem)
             dbApi.With(fun (conn, tr) ->
                 let firstError =
@@ -37,18 +36,19 @@ module internal rec DbUpdateImpl =
                             d.rTryCommitToDB dbApi
                     } |> Result.chooseError
                     |> tryHead
+
                 match firstError with
                 | Some e ->
                     Error e
                 | None ->
                     // 확장 처리 훅 - 확장 속성이 변경된 경우에도 UPDATE 수행
-                    if isItNotNull TypeFactory then
-                        TypeFactory.HandleAfterUpdate(x, conn, tr)
+                    getTypeFactory() |> iter (fun factory -> factory.HandleAfterUpdate(x, conn, tr))
                     Ok (Updated diffs)
             )
 
 
     type CompareResult with
+        /// CompareResult 객체(diff 결과물)를 DB에 반영
         member x.rTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->
                 match x with
