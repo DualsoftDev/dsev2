@@ -2,18 +2,17 @@ namespace Ev2.Core.FS
 
 open System
 open System.Runtime.Serialization
+open System.IO
+open System.Linq
+open System.Text.RegularExpressions
+open System.Diagnostics
+
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 open Dual.Common.Core.FS
 open Dual.Common.Base
-open System.IO
-open System.Linq
-open System.Collections.Generic
-open System.Text.RegularExpressions
-open Newtonsoft.Json.Linq
 open Dual.Common.Db.FS
-open System.Diagnostics
-open System.Runtime.CompilerServices
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -173,10 +172,10 @@ module rec NewtonsoftJsonObjects =
         abstract Initialize : flows:NjFlow[] * works:NjWork[] * arrows:NjArrow[] * apiDefs:NjApiDef[] * apiCalls:NjApiCall[] -> NjSystem
         default x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[],
                            apiDefs:NjApiDef[], apiCalls:NjApiCall[]) =
-            x.Flows <- flows
-            x.Works <- works
-            x.Arrows <- arrows
-            x.ApiDefs <- apiDefs
+            x.Flows    <- flows
+            x.Works    <- works
+            x.Arrows   <- arrows
+            x.ApiDefs  <- apiDefs
             x.ApiCalls <- apiCalls
             x
 
@@ -202,10 +201,10 @@ module rec NewtonsoftJsonObjects =
         abstract Initialize : buttons:NjButton[] * lamps:NjLamp[] * conditions:NjCondition[] * actions:NjAction[] -> NjFlow
         default x.Initialize(buttons:NjButton[], lamps:NjLamp[],
                            conditions:NjCondition[], actions:NjAction[]) =
-            x.Buttons <- buttons
-            x.Lamps <- lamps
+            x.Buttons    <- buttons
+            x.Lamps      <- lamps
             x.Conditions <- conditions
-            x.Actions <- actions
+            x.Actions    <- actions
             x
 
     type NjButton() =
@@ -327,15 +326,17 @@ module rec NewtonsoftJsonObjects =
 
         /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
         abstract Initialize : callType:string * apiCalls:Guid[] * autoConditions:string * commonConditions:string * isDisabled:bool * timeout:int option -> NjCall
-        default x.Initialize(callType:string, apiCalls:Guid[],
-                           autoConditions:string, commonConditions:string,
-                           isDisabled:bool, timeout:int option) =
-            x.CallType <- callType
-            x.ApiCalls <- apiCalls
+        default x.Initialize(
+            callType:string, apiCalls:Guid[],
+            autoConditions:string, commonConditions:string,
+            isDisabled:bool, timeout:int option
+        ) =
+            x.CallType   <- callType
+            x.ApiCalls   <- apiCalls
+            x.IsDisabled <- isDisabled
+            x.Timeout    <- timeout
             x.AutoConditions <- autoConditions
             x.CommonConditions <- commonConditions
-            x.IsDisabled <- isDisabled
-            x.Timeout <- timeout
             x
 
 
@@ -688,15 +689,16 @@ module Ds2JsonModule =
     /// IRtUnique 전용 Runtime 객체를 JSON 타입으로 변환
     let rtObj2NjObj (rtObj:IRtUnique): INjUnique =
         let rtObj = rtObj :?> RtUnique
-        /// TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
-        let createWithTypeFactory (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
+        /// [C]reate with [T]ype [F]actory:  TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
+        let ctf (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
             let njObj =
                 getTypeFactory()
                 >>= (fun factory -> factory.CreateNj(rtObj.GetType()) |> Option.ofObj)
             njObj
             |?? (fun () -> fallbackFactory())
 
-        let createFallbackNjProject() =
+        /// [C]reate [F]all[B]ack with type NjProject : ctf 실패시의 fallback
+        let cfbNjProject() =
             let rt = rtObj :?> Project
             new NjProject(Database=rt.Database
                 , Author=rt.Author
@@ -713,7 +715,8 @@ module Ds2JsonModule =
                 verify (n.RuntimeObject = rt)) // serialization 연결 고리
             :> INjUnique
 
-        let createFallbackNjSystem() =
+        /// [C]reate [F]all[B]ack with type NjSystem : ctf 실패시의 fallback
+        let cfbNjSystem() =
             let rt = rtObj :?> DsSystem
             new NjSystem(IRI=rt.IRI
                 , Author=rt.Author
@@ -731,7 +734,8 @@ module Ds2JsonModule =
             ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
             :> INjUnique
 
-        let createFallbackNjFlow() =
+        /// [C]reate [F]all[B]ack with type NjFlow : ctf 실패시의 fallback
+        let cfbNjFlow() =
             let rt = rtObj :?> Flow
             new NjFlow()
             |> fromNjUniqINGD rt
@@ -743,7 +747,7 @@ module Ds2JsonModule =
                 z.Initialize(buttons, lamps, conditions, actions) |> ignore)
             :> INjUnique
 
-        let createFallbackNjWork() =
+        let cfbNjWork() =
             let rt = rtObj :?> Work
             new NjWork()
             |> fromNjUniqINGD rt
@@ -755,7 +759,7 @@ module Ds2JsonModule =
                 z.Status4 <- rt.Status4)
             :> INjUnique
 
-        let createFallbackNjCall() =
+        let cfbNjCall() =
             let rt = rtObj :?> Call
             let ac = rt.AutoConditions |> jsonSerializeStrings
             let cc = rt.CommonConditions |> jsonSerializeStrings
@@ -767,31 +771,31 @@ module Ds2JsonModule =
                 z.Status4 <- rt.Status4)
             :> INjUnique
 
-        let createFallbackNjButton() =
+        let cfbNjButton() =
             let rt = rtObj :?> DsButton
             new NjButton()
             |> fromNjUniqINGD rt
             :> INjUnique
 
-        let createFallbackNjLamp() =
+        let cfbNjLamp() =
             let rt = rtObj :?> Lamp
             new NjLamp()
             |> fromNjUniqINGD rt
             :> INjUnique
 
-        let createFallbackNjCondition() =
+        let cfbNjCondition() =
             let rt = rtObj :?> DsCondition
             new NjCondition()
             |> fromNjUniqINGD rt
             :> INjUnique
 
-        let createFallbackNjAction() =
+        let cfbNjAction() =
             let rt = rtObj :?> DsAction
             new NjAction()
             |> fromNjUniqINGD rt
             :> INjUnique
 
-        let createFallbackNjArrow() =
+        let cfbNjArrow() =
             new NjArrow()
             |> fromNjUniqINGD rtObj
             |> tee (fun z ->
@@ -808,7 +812,7 @@ module Ds2JsonModule =
             )
             :> INjUnique
 
-        let createFallbackNjApiCall() =
+        let cfbNjApiCall() =
             let rt = rtObj :?> ApiCall
             let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
             new NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
@@ -817,7 +821,7 @@ module Ds2JsonModule =
             |> fromNjUniqINGD rt
             :> INjUnique
 
-        let createFallbackNjApiDef() =
+        let cfbNjApiDef() =
             let rt = rtObj :?> ApiDef
             new NjApiDef(IsPush=rt.IsPush)
             |> fromNjUniqINGD rt
@@ -826,24 +830,21 @@ module Ds2JsonModule =
         if isItNull rtObj then
             getNull<NjUnique>()
         else
-            if rtObj :? ApiDef then
-                noop()
-
             let njObj =
                 match rtObj with
-                | :? Project               as p  -> createWithTypeFactory rtObj createFallbackNjProject
-                | :? DsSystem              as s  -> createWithTypeFactory rtObj createFallbackNjSystem
-                | :? Flow                  as f  -> createWithTypeFactory rtObj createFallbackNjFlow
-                | :? Work                  as w  -> createWithTypeFactory rtObj createFallbackNjWork
-                | :? Call                  as c  -> createWithTypeFactory rtObj createFallbackNjCall
-                | :? DsButton              as b  -> createWithTypeFactory rtObj createFallbackNjButton
-                | :? Lamp                  as l  -> createWithTypeFactory rtObj createFallbackNjLamp
-                | :? DsCondition           as d  -> createWithTypeFactory rtObj createFallbackNjCondition
-                | :? DsAction              as a  -> createWithTypeFactory rtObj createFallbackNjAction
-                | :? ArrowBetweenWorks     as r  -> createWithTypeFactory rtObj createFallbackNjArrow
-                | :? ArrowBetweenCalls     as r  -> createWithTypeFactory rtObj createFallbackNjArrow
-                | :? ApiCall               as ac -> createWithTypeFactory rtObj createFallbackNjApiCall
-                | :? ApiDef                as ad -> createWithTypeFactory rtObj createFallbackNjApiDef
+                | :? Project               as p  -> ctf rtObj cfbNjProject
+                | :? DsSystem              as s  -> ctf rtObj cfbNjSystem
+                | :? Flow                  as f  -> ctf rtObj cfbNjFlow
+                | :? Work                  as w  -> ctf rtObj cfbNjWork
+                | :? Call                  as c  -> ctf rtObj cfbNjCall
+                | :? DsButton              as b  -> ctf rtObj cfbNjButton
+                | :? Lamp                  as l  -> ctf rtObj cfbNjLamp
+                | :? DsCondition           as d  -> ctf rtObj cfbNjCondition
+                | :? DsAction              as a  -> ctf rtObj cfbNjAction
+                | :? ArrowBetweenWorks     as r  -> ctf rtObj cfbNjArrow
+                | :? ArrowBetweenCalls     as r  -> ctf rtObj cfbNjArrow
+                | :? ApiCall               as ac -> ctf rtObj cfbNjApiCall
+                | :? ApiDef                as ad -> ctf rtObj cfbNjApiDef
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
                 :?> NjUnique
             njObj.RuntimeObject <- rtObj // serialization 연결 고리

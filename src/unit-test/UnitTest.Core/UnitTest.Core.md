@@ -290,3 +290,9 @@ graph TD
 - **UnitTest.Aas**: AAS 통합 테스트
 - **Dual.Common.UnitTest.FS**: 공통 테스트 유틸리티
 - **Dual.Common.Db.FS**: 데이터베이스 계층
+
+## 주의사항
+- 테스트 실행 시 test-data 디렉토리에 다수의 SQLite 및 JSON 파일이 생성됩니다
+- 병렬 테스트 실행을 위해 각 테스트는 고유한 파일명을 사용합니다
+- PostgreSQL 테스트는 로컬 서버(localhost:5432) 연결이 필요합니다
+- 테스트 종료 후 임시 파일들은 자동으로 정리되지만, test-data 디렉토리는 주기적으로 확인하세요

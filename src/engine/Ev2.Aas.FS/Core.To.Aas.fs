@@ -9,16 +9,6 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreToAas =
-    ///// 확장 속성용 JObj 생성 헬퍼 함수
-    //let private createExtensionPropertyJObj (value: obj) (propName: string) (typeName: string) =
-    //    let extensionSemantic = NjProject.CreateExtensionSemanticUrl(typeName, propName)
-    //    let jobj = JObj()
-    //    jobj.SetTypedValue(value) |> ignore
-    //    jobj.Set(N.IdShort, propName) |> ignore
-    //    jobj.Set(N.ModelType, ModelType.Property.ToString()) |> ignore
-    //    jobj.SetSemantic(SemanticIdType.ExternalReference, KeyType.ConceptDescription, extensionSemantic) |> ignore
-    //    Some jobj
-
     type NjUnique with     // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {

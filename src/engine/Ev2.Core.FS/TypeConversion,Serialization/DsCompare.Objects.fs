@@ -13,10 +13,10 @@ module rec DsCompareObjects =
         member private x.tryGet(): Unique option = x |> tryCast<Unique>
         member private x.get(): Unique = x.tryGet() |?? (fun () -> failwith "ERROR")
 
-        member x.GetGuid():Guid                  = x.get().Guid
-        member x.GetName()                       = x.get().Name
-        member x.GetParameter()                  = x.get().Parameter
-        member x.TryGetId():Id option            = x |> tryCast<Unique> >>= _.Id
+        member x.GetGuid():Guid       = x.get().Guid
+        member x.GetName()            = x.get().Name
+        member x.GetParameter()       = x.get().Parameter
+        member x.TryGetId():Id option = x |> tryCast<Unique> >>= _.Id
         member x.TryGetRawParent():Unique option = x.tryGet() >>= _.RawParent
 
     type CompareCriteria(?id:bool, ?guid:bool, ?dateTime:bool, ?parentGuid, ?parameter, ?runtimeStatus) =
@@ -26,6 +26,7 @@ module rec DsCompareObjects =
         let parentGuid = parentGuid |? true
         let parameter  = parameter  |? true
         let runtimeStatus = runtimeStatus |? false
+
         member val Id         = id         with get, set
         member val Guid       = guid       with get, set
         member val DateTime   = dateTime   with get, set
@@ -90,8 +91,8 @@ module rec DsCompareObjects =
     let private computeDiffRecursively<'T when 'T :> IRtUnique>
         (xs: 'T seq)
         (ys: 'T seq)
-        (criteria: Cc): Cr seq =
-
+        (criteria: Cc): Cr seq
+      =
         let xs = xs.ToDictionary(_.GetGuid(), id)
         let ys = ys.ToDictionary(_.GetGuid(), id)
 
@@ -116,8 +117,8 @@ module rec DsCompareObjects =
                 yield! x.ComputeDiffUnique(y, criteria)
 
                 (* System 들 비교*)
-                yield! (x.ActiveSystems,    y.ActiveSystems,     criteria) |||> computeDiffRecursively
-                yield! (x.PassiveSystems,   y.PassiveSystems,    criteria) |||> computeDiffRecursively
+                yield! (x.ActiveSystems,  y.ActiveSystems,  criteria) |||> computeDiffRecursively
+                yield! (x.PassiveSystems, y.PassiveSystems, criteria) |||> computeDiffRecursively
 
                 (* 기타 속성 비교 *)
                 // AasXml 멤버 제거됨
@@ -276,7 +277,7 @@ module rec DsCompareObjects =
                 | (:? ApiCall as u), (:? ApiCall as v)  -> yield! u.ComputeDiff(v, criteria)
 
                 | (:? DsButton    as u), (:? DsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? Lamp      as u), (:? Lamp      as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Lamp        as u), (:? Lamp        as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? DsCondition as u), (:? DsCondition as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? DsAction    as u), (:? DsAction    as v)  -> yield! u.ComputeDiff(v, criteria)
 

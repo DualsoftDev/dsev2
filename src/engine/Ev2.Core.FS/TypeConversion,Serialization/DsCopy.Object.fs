@@ -54,20 +54,20 @@ module internal rec DsObjectCopyImpl =
                 works |> contains a.Target |> verify)
 
             // 복제된 데이터를 newSystem에 설정
-            flows |> newSystem.RawFlows.AddRange
-            works |> newSystem.RawWorks.AddRange
-            arrows |> newSystem.RawArrows.AddRange
-            apiDefs |> newSystem.RawApiDefs.AddRange
+            flows    |> newSystem.RawFlows   .AddRange
+            works    |> newSystem.RawWorks   .AddRange
+            arrows   |> newSystem.RawArrows  .AddRange
+            apiDefs  |> newSystem.RawApiDefs .AddRange
             apiCalls |> newSystem.RawApiCalls.AddRange
 
             // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
             newSystem |> uniqReplicateWithBag bag x |> ignore
 
             // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
-            flows |> iter (setParentI newSystem)
-            works |> iter (setParentI newSystem)
-            arrows |> iter (setParentI newSystem)
-            apiDefs |> iter (setParentI newSystem)
+            flows    |> iter (setParentI newSystem)
+            works    |> iter (setParentI newSystem)
+            arrows   |> iter (setParentI newSystem)
+            apiDefs  |> iter (setParentI newSystem)
             apiCalls |> iter (setParentI newSystem)
 
 
