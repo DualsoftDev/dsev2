@@ -22,7 +22,7 @@ module CreateSampleWithHelloDsModule =
             let cylWorkRet = Work.Create() |> tee (fun z -> z.Name <- "RETURN")
             cylSystem.AddWorks [cylWorkAdv; cylWorkRet;]
 
-            let edArrowW = new ArrowBetweenWorks(cylWorkAdv, cylWorkRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+            let edArrowW = ArrowBetweenWorks.Create(cylWorkAdv, cylWorkRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
             cylSystem.AddArrows [edArrowW]
 
 
@@ -183,21 +183,21 @@ module CreateSampleWithHelloDsModule =
             let createArrowsInWork1() =
                 let findCall name = hdsWork1.Calls.Find(fun x -> x.Name = name)
                 [
-                    new ArrowBetweenCalls(findCall $"Device1_ADV", findCall $"Device2_ADV", DbArrowType.Start)
-                    new ArrowBetweenCalls(findCall $"Device2_ADV", findCall $"Device3_ADV", DbArrowType.Start)
-                    new ArrowBetweenCalls(findCall $"Device3_ADV", findCall $"Device4_ADV", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device1_ADV", findCall $"Device2_ADV", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device2_ADV", findCall $"Device3_ADV", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device3_ADV", findCall $"Device4_ADV", DbArrowType.Start)
 
-                    new ArrowBetweenCalls(findCall $"Device4_ADV", findCall $"Device1_RET", DbArrowType.Start)
-                    new ArrowBetweenCalls(findCall $"Device4_ADV", findCall $"Device2_RET", DbArrowType.Start)
-                    new ArrowBetweenCalls(findCall $"Device4_ADV", findCall $"Device3_RET", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device4_ADV", findCall $"Device1_RET", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device4_ADV", findCall $"Device2_RET", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device4_ADV", findCall $"Device3_RET", DbArrowType.Start)
 
-                    new ArrowBetweenCalls(findCall $"Device3_RET", findCall $"Device4_RET", DbArrowType.Start)
+                    ArrowBetweenCalls.Create(findCall $"Device3_RET", findCall $"Device4_RET", DbArrowType.Start)
                 ] |> hdsWork1.AddArrows
                 ()
             let createArrowsInSystem() =
                 [
-                    new ArrowBetweenWorks(hdsWork1, hdsWork2, DbArrowType.StartReset)
-                    new ArrowBetweenWorks(hdsWork2, hdsWork3, DbArrowType.StartReset)
+                    ArrowBetweenWorks.Create(hdsWork1, hdsWork2, DbArrowType.StartReset)
+                    ArrowBetweenWorks.Create(hdsWork2, hdsWork3, DbArrowType.StartReset)
                 ] |> hdsSystem.AddArrows
 
             createApiCalls()

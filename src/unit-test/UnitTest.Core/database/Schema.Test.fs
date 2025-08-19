@@ -689,7 +689,7 @@ module Schema =
                 let dsProject2 = dsProject.Replicate() |> validateRuntime
                 let w = dsProject2.Systems[0].Works[0]
                 let c1, c2 = w.Calls[0], w.Calls[0]
-                let arrow = new ArrowBetweenCalls(c1, c2, DbArrowType.Start)
+                let arrow = ArrowBetweenCalls.Create(c1, c2, DbArrowType.Start)
                 w.AddArrows([arrow])
 
                 let f = dsProject2.Systems[0].Flows[0]

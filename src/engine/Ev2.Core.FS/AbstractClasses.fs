@@ -62,26 +62,44 @@ and internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) 
     member val Target = target with get, set
     member val Type = typ with get, set
 
+
+
 // Main domain types
 /// Call 간 화살표 연결.  Work 내에 존재
-and ArrowBetweenCalls(source:Call, target:Call, typ:DbArrowType) =     // Source, Target, Type
+and ArrowBetweenCalls() =     // Source, Target, Type
     inherit WorkEntity()
-    let arrow = Arrow<Call>(source, target, typ)
+    let mutable arrow : Arrow<Call> option = None
+    member private x.Initialize(source:Call, target:Call, typ:DbArrowType) =
+        arrow <- Some (Arrow<Call>(source, target, typ))
+
+    static member Create(source:Call, target:Call, typ:DbArrowType) =
+        let instance = createExtended<ArrowBetweenCalls>()
+        instance.Initialize(source, target, typ)
+        instance
 
     interface IRtArrow
-    member x.Source with get() = arrow.Source and set v = arrow.Source <- v
-    member x.Target with get() = arrow.Target and set v = arrow.Target <- v
-    member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
+    member x.Source with get() = arrow.Value.Source and set v = arrow.Value.Source <- v
+    member x.Target with get() = arrow.Value.Target and set v = arrow.Value.Target <- v
+    member x.Type   with get() = arrow.Value.Type   and set v = arrow.Value.Type <- v
 
 /// Work 간 화살표 연결.  System 내에 존재
-and ArrowBetweenWorks(source:Work, target:Work, typ:DbArrowType) =     // Source, Target, Type
+and ArrowBetweenWorks() =     // Source, Target, Type
     inherit DsSystemEntity()
-    let arrow = Arrow<Work>(source, target, typ)
+
+    let mutable arrow : Arrow<Work> option = None
+    member private x.Initialize(source:Work, target:Work, typ:DbArrowType) =
+        arrow <- Some (Arrow<Work>(source, target, typ))
+
+    static member Create(source:Work, target:Work, typ:DbArrowType) =
+        let instance = createExtended<ArrowBetweenWorks>()
+        instance.Initialize(source, target, typ)
+        instance
+
 
     interface IRtArrow
-    member x.Source with get() = arrow.Source and set v = arrow.Source <- v
-    member x.Target with get() = arrow.Target and set v = arrow.Target <- v
-    member x.Type   with get() = arrow.Type   and set v = arrow.Type <- v
+    member x.Source with get() = arrow.Value.Source and set v = arrow.Value.Source <- v
+    member x.Target with get() = arrow.Value.Target and set v = arrow.Value.Target <- v
+    member x.Type   with get() = arrow.Value.Type   and set v = arrow.Value.Type <- v
 
 and Project() =     // Create, Initialize
     inherit RtUnique()

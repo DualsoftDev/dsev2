@@ -49,7 +49,7 @@ module CreateSampleWithCylinderModule =
             edSystemCyl.AddApiDefs [edApiDef1Cyl]
             edSystemCyl.AddApiCalls [edApiCall1aCyl]
 
-            let edArrowW = new ArrowBetweenWorks(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+            let edArrowW = ArrowBetweenWorks.Create(edWork1Cyl, edWork2Cyl, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
             edSystemCyl.AddArrows [edArrowW]
 
 
@@ -73,7 +73,7 @@ module CreateSampleWithCylinderModule =
             edWork1Cyl.AddCalls [edCall1aCyl; edCall1bCyl]
             edFlowCyl.AddWorks([edWork1Cyl])
 
-            let edArrow1 = new ArrowBetweenCalls(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
+            let edArrow1 = ArrowBetweenCalls.Create(edCall1aCyl, edCall1bCyl, DbArrowType.Start)
             edWork1Cyl.AddArrows [edArrow1]
 
             edSystemCyl.EnumerateRtObjects()

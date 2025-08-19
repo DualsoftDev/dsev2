@@ -51,6 +51,9 @@ module internal Db2DsImpl =
     // 사전 조건: ormSystem.RtObject 에 RtSystem 이 생성되어 있어야 한다.
     let private rTryCheckoutSystemFromDBHelper(ormSystem:ORMSystem) (dbApi:AppDbApi): DbCheckoutResult<DsSystem> =
         let helper(conn:IDbConnection, tr:IDbTransaction) =
+            let handleAfterSelect (runtime:IRtUnique) =
+                getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(runtime, conn, tr))
+
             let rtSystem = ormSystem.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR")
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
@@ -71,7 +74,9 @@ module internal Db2DsImpl =
 
                     let flow = Flow.Create(buttons, lamps, conditions, actions)
                     setParentI s flow
-                    flow |> replicateProperties ormFlow
+                    flow
+                    |> replicateProperties ormFlow
+                    |> tee handleAfterSelect
             ]
 
             rtFlows |> s.addFlows
@@ -84,6 +89,8 @@ module internal Db2DsImpl =
                     apiDef.IsPush <- orm.IsPush
                     apiDef
                     |> replicateProperties orm
+                    |> tee handleAfterSelect
+
             ]
             rtApiDefs |> s.addApiDefs
 
@@ -107,6 +114,7 @@ module internal Db2DsImpl =
                     apiCall.ValueSpec <- valueParam
                     apiCall
                     |> replicateProperties orm
+                    |> tee handleAfterSelect
             ]
             rtApiCalls |> s.addApiCalls
 
@@ -119,6 +127,7 @@ module internal Db2DsImpl =
                     Work.Create()
                     |> setParent s
                     |> replicateProperties orm
+                    |> tee handleAfterSelect
                     |> tee(fun w ->
                         match orm.FlowId with
                         | Some flowId ->
@@ -127,6 +136,7 @@ module internal Db2DsImpl =
                         | None -> ()
 
                         w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+
             ]
             rtWorks |> s.addWorks
 
@@ -151,6 +161,7 @@ module internal Db2DsImpl =
                         let ccs = orm.CommonConditions |> jsonDeserializeStrings
                         Call.Create(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
                         |> replicateProperties orm
+                        |> tee handleAfterSelect
                         |> setParent w
                         |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
                 ]
@@ -168,8 +179,9 @@ module internal Db2DsImpl =
                         let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                        new ArrowBetweenCalls(src, tgt, arrowType)
+                        ArrowBetweenCalls.Create(src, tgt, arrowType)
                         |> replicateProperties orm
+                        |> tee handleAfterSelect
                 ]
                 rtArrows |> w.addArrows
 
@@ -189,8 +201,9 @@ module internal Db2DsImpl =
                     let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
                     let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
 
-                    new ArrowBetweenWorks(src, tgt, arrowType)
+                    ArrowBetweenWorks.Create(src, tgt, arrowType)
                     |> replicateProperties orm
+                    |> tee handleAfterSelect
             ]
             rtArrows |> s.addArrows
             assert(setEqual s.Arrows rtArrows)

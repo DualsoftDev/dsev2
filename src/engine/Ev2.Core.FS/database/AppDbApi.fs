@@ -208,104 +208,105 @@ module ORMTypeConversionModule =
             |> tee(fun dst -> dst.ParentId <- src.RawParent >>= _.Id)
 
 
-        match x |> tryCast<Unique> with
-        | Some uniq ->
-            let id = uniq.Id |? -1
-            let pid = (uniq.RawParent >>= _.Id) |? -1
-            let guid = uniq.Guid
+        let ormUniq =
+            match x |> tryCast<Unique> with
+            | Some uniq ->
+                let id = uniq.Id |? -1
+                let pid = (uniq.RawParent >>= _.Id) |? -1
+                let guid = uniq.Guid
 
-            match uniq with
-            | :? Project as z ->
-                // TypeFactory를 통해 확장 타입 생성 시도
-                let ormProject = new ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
-                match ormProject with
-                | :? ORMProject as orm ->
-                    orm.Author <- z.Author
-                    orm.Version <- z.Version
-                    orm.Description <- z.Description
-                    orm.DateTime <- z.DateTime
-                | _ -> ()
-                ormProject |> ormReplicateProperties z
+                match uniq with
+                | :? Project as z ->
+                    // TypeFactory를 통해 확장 타입 생성 시도
+                    let ormProject = new ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                    // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
+                    match ormProject with
+                    | :? ORMProject as orm ->
+                        orm.Author <- z.Author
+                        orm.Version <- z.Version
+                        orm.Description <- z.Description
+                        orm.DateTime <- z.DateTime
+                    | _ -> ()
+                    ormProject |> ormReplicateProperties z
 
-            | :? DsSystem as rt ->
-                (* System 소유주 project 지정.  *)
-                let ownerProjectId = rt.Project >>= _.Id
+                | :? DsSystem as rt ->
+                    (* System 소유주 project 지정.  *)
+                    let ownerProjectId = rt.Project >>= _.Id
 
-                new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
-                |> tee(fun orm ->
-                    orm.OwnerProjectId <- ownerProjectId
-                    orm.IRI <- rt.IRI
-                    orm.Author <- rt.Author
-                    orm.LangVersion <- rt.LangVersion
-                    orm.EngineVersion <- rt.EngineVersion
-                    orm.Description <- rt.Description
-                    orm.DateTime <- rt.DateTime )
-                |> ormReplicateProperties rt
+                    new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                    |> tee(fun orm ->
+                        orm.OwnerProjectId <- ownerProjectId
+                        orm.IRI <- rt.IRI
+                        orm.Author <- rt.Author
+                        orm.LangVersion <- rt.LangVersion
+                        orm.EngineVersion <- rt.EngineVersion
+                        orm.Description <- rt.Description
+                        orm.DateTime <- rt.DateTime )
+                    |> ormReplicateProperties rt
 
-            | :? Flow as rt ->
-                new ORMFlow()
-                |> ormReplicateProperties rt
+                | :? Flow as rt ->
+                    new ORMFlow()
+                    |> ormReplicateProperties rt
 
-            | :? Work as rt ->
-                let flowId = (rt.Flow >>= _.Id)
-                let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
-                new ORMWork(pid, status4Id, flowId)
-                |> ormReplicateProperties rt
+                | :? Work as rt ->
+                    let flowId = (rt.Flow >>= _.Id)
+                    let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
+                    new ORMWork(pid, status4Id, flowId)
+                    |> ormReplicateProperties rt
 
-            | :? Call as rt ->
-                ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout)
-                |> ormReplicateProperties rt
+                | :? Call as rt ->
+                    ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout)
+                    |> ormReplicateProperties rt
 
-            | :? ArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
-                let parentId = (rt.RawParent >>= _.Id).Value
-                let arrowTypeId =
-                    dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
-                    |? int DbArrowType.None
+                | :? ArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                    let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
+                    let parentId = (rt.RawParent >>= _.Id).Value
+                    let arrowTypeId =
+                        dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
+                        |? int DbArrowType.None
 
-                new ORMArrowWork(src, tgt, parentId, arrowTypeId)
-                |> ormReplicateProperties rt
+                    new ORMArrowWork(src, tgt, parentId, arrowTypeId)
+                    |> ormReplicateProperties rt
 
-            | :? ArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
-                let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
-                let parentId = (rt.RawParent >>= _.Id).Value
-                let arrowTypeId =
-                    dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
-                    |? int DbArrowType.None
+                | :? ArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
+                    let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
+                    let parentId = (rt.RawParent >>= _.Id).Value
+                    let arrowTypeId =
+                        dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
+                        |? int DbArrowType.None
 
-                new ORMArrowCall(src, tgt, parentId, arrowTypeId)
-                |> ormReplicateProperties rt
+                    new ORMArrowCall(src, tgt, parentId, arrowTypeId)
+                    |> ormReplicateProperties rt
 
-            | :? ApiDef as rt ->
-                new ORMApiDef(pid)
-                |> ormReplicateProperties rt
-
-
-            | :? DsButton    as rt -> new ORMButton(pid)    |> ormReplicateProperties rt
-            | :? Lamp      as rt -> new ORMLamp(pid)      |> ormReplicateProperties rt
-            | :? DsCondition as rt -> new ORMCondition(pid) |> ormReplicateProperties rt
-            | :? DsAction    as rt -> new ORMAction(pid)    |> ormReplicateProperties rt
+                | :? ApiDef as rt ->
+                    new ORMApiDef(pid)
+                    |> ormReplicateProperties rt
 
 
-            | :? ApiCall as rt ->
-                let apiDefId =
-                    try
-                        rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
-                    with _ -> failwith "ERROR: ApiDef not accessible"
-                let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
-                new ORMApiCall(pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
-                |> ormReplicateProperties rt
+                | :? DsButton    as rt -> new ORMButton(pid)    |> ormReplicateProperties rt
+                | :? Lamp        as rt -> new ORMLamp(pid)      |> ormReplicateProperties rt
+                | :? DsCondition as rt -> new ORMCondition(pid) |> ormReplicateProperties rt
+                | :? DsAction    as rt -> new ORMAction(pid)    |> ormReplicateProperties rt
 
-            | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
-            // 새로 생성된 ORMUnique 객체에 대한 신규 Guid 정보를 dic 에 기록
-            |> tee (fun ormUniq ->
-                let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
-                guidDicDebug[guid] <- ormUniq )
+                | :? ApiCall as rt ->
+                    let apiDefId =
+                        try
+                            rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+                        with _ -> failwith "ERROR: ApiDef not accessible"
+                    let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
+                    new ORMApiCall(pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
+                    |> ormReplicateProperties rt
 
-        | _ -> failwithf "Cannot convert to ORM. %A" x
+                | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"
 
+                // 새로 생성된 ORMUnique 객체에 대한 신규 Guid 정보를 dic 에 기록
+                |> tee (fun ormUniq ->
+                    let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
+                    guidDicDebug[guid] <- ormUniq )
+
+            | _ -> failwithf "Cannot convert to ORM. %A" x
+        ormUniq
 
 
     type IDsObject with // ToORM

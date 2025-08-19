@@ -488,7 +488,7 @@ module rec NewtonsoftJsonObjects =
                     |? DbArrowType.None
 
                 a.RuntimeObject <-
-                    new ArrowBetweenWorks(src, tgt, arrowType)
+                    ArrowBetweenWorks.Create(src, tgt, arrowType)
                     |> replicateProperties a)
 
             let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
@@ -500,10 +500,10 @@ module rec NewtonsoftJsonObjects =
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
-            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- new DsButton()    |> replicateProperties z)
-            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- new Lamp()        |> replicateProperties z)
-            njf.Conditions |> iter (fun z -> z.RuntimeObject <- new DsCondition() |> replicateProperties z)
-            njf.Actions    |> iter (fun z -> z.RuntimeObject <- new DsAction()    |> replicateProperties z)
+            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton.Create()    |> replicateProperties z)
+            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z)
+            njf.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z)
+            njf.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z)
 
 
 
@@ -543,7 +543,7 @@ module rec NewtonsoftJsonObjects =
                     |? DbArrowType.None
 
                 a.RuntimeObject <-
-                    new ArrowBetweenCalls(src, tgt, arrowType)
+                    ArrowBetweenCalls.Create(src, tgt, arrowType)
                     |> replicateProperties a )
 
             (* DsWork 객체 생성은 flow guid 생성 시까지 지연 *)
@@ -826,6 +826,9 @@ module Ds2JsonModule =
         if isItNull rtObj then
             getNull<NjUnique>()
         else
+            if rtObj :? ApiDef then
+                noop()
+
             let njObj =
                 match rtObj with
                 | :? Project               as p  -> createWithTypeFactory rtObj createFallbackNjProject

@@ -245,7 +245,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let source = bag.Newbies[x.Source.Guid] :?> Work
             let target = bag.Newbies[x.Target.Guid] :?> Work
-            new ArrowBetweenWorks(source, target, x.Type)
+            ArrowBetweenWorks.Create(source, target, x.Type)
             |> tee(fun newArrow -> x.replicateTo(newArrow, bag))
 
     type ArrowBetweenCalls with // replicate
@@ -256,7 +256,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate(bag:ReplicateBag) =
             let source = bag.Newbies[x.Source.Guid] :?> Call
             let target = bag.Newbies[x.Target.Guid] :?> Call
-            new ArrowBetweenCalls(source, target, x.Type)
+            ArrowBetweenCalls.Create(source, target, x.Type)
             |> tee(fun newArrow -> x.replicateTo(newArrow, bag))
 
 [<AutoOpen>]
