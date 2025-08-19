@@ -162,6 +162,16 @@ module internal DsCopyModule =
 
         | _ -> failwith "ERROR"
 
+
+        (* 특별 case 처리 *)
+        match sbx, dbx with
+        | (:? ApiCall as s), (:?NjApiCall as d) ->
+            d.ApiDef <- s.ApiDefGuid
+        | (:? NjApiCall as s), (:? ApiCall as d) ->
+            d.ApiDefGuid <- s.ApiDef
+        | _ -> ()
+
+
         getTypeFactory()
         |> iter(fun factory -> factory.CopyProperties(src, dst))
 

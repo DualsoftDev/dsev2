@@ -287,7 +287,7 @@ module internal DbInsertModule =
                 | _ -> failwith "ERROR"
 
 
-
+                getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(x, conn, tr))
             )
 
 

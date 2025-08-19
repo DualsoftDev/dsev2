@@ -843,7 +843,7 @@ module Ds2JsonModule =
                 | :? ApiDef                as ad -> createWithTypeFactory rtObj createFallbackNjApiDef
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
                 :?> NjUnique
-            replicateProperties rtObj njObj |> ignore
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
+            replicateProperties rtObj njObj |> ignore
             onNsJsonSerializing njObj
             njObj
