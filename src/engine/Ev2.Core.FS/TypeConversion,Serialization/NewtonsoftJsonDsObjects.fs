@@ -13,6 +13,7 @@ open Newtonsoft.Json.Linq
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open Dual.Common.Db.FS
+open Newtonsoft.Json.Serialization
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -472,6 +473,9 @@ module rec NewtonsoftJsonObjects =
                         Work.Create(calls, arrows, optFlow)
                         |> replicateProperties njw
 
+                    // Status4 속성 복사
+                    dsWork.Status4 <- njw.Status4
+
                     yield dsWork
                     njw.RuntimeObject <- dsWork
             |]
@@ -689,164 +693,122 @@ module Ds2JsonModule =
     /// IRtUnique 전용 Runtime 객체를 JSON 타입으로 변환
     let rtObj2NjObj (rtObj:IRtUnique): INjUnique =
         let rtObj = rtObj :?> RtUnique
-        /// [C]reate with [T]ype [F]actory:  TypeFactory를 통한 확장 타입 생성 헬퍼 함수 - xxx 스타일 적용
-        let ctf (rtObj: RtUnique) (fallbackFactory: unit -> INjUnique) : INjUnique =
-            let njObj =
-                getTypeFactory()
-                >>= (fun factory -> factory.CreateNj(rtObj.GetType()) |> Option.ofObj)
-            njObj
-            |?? (fun () -> fallbackFactory())
-
-        /// [C]reate [F]all[B]ack with type NjProject : ctf 실패시의 fallback
-        let cfbNjProject() =
-            let rt = rtObj :?> Project
-            new NjProject(Database=rt.Database
-                , Author=rt.Author
-                , Version=rt.Version
-                , Description=rt.Description)
-            |> fromNjUniqINGD rt
-            |> tee (fun z ->
-                let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
-                let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
-                z.Initialize(activeSystems, passiveSystems, rt, isDeserialization=false) |> ignore)
-            |> tee(fun n ->
-                // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
-                if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
-                verify (n.RuntimeObject = rt)) // serialization 연결 고리
-            :> INjUnique
-
-        /// [C]reate [F]all[B]ack with type NjSystem : ctf 실패시의 fallback
-        let cfbNjSystem() =
-            let rt = rtObj :?> DsSystem
-            new NjSystem(IRI=rt.IRI
-                , Author=rt.Author
-                , LangVersion=rt.LangVersion
-                , EngineVersion=rt.EngineVersion
-                , Description=rt.Description)
-            |> fromNjUniqINGD rt
-            |> tee (fun z ->
-                let flows    = rt.Flows    |-> _.ToNj<NjFlow>()   |> toArray
-                let works    = rt.Works    |-> _.ToNj<NjWork>()   |> toArray
-                let arrows   = rt.Arrows   |-> _.ToNj<NjArrow>()  |> toArray
-                let apiDefs  = rt.ApiDefs  |-> _.ToNj<NjApiDef>() |> toArray
-                let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
-                z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
-            ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
-            :> INjUnique
-
-        /// [C]reate [F]all[B]ack with type NjFlow : ctf 실패시의 fallback
-        let cfbNjFlow() =
-            let rt = rtObj :?> Flow
-            new NjFlow()
-            |> fromNjUniqINGD rt
-            |> tee(fun z ->
-                let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
-                let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
-                let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                let actions    = rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
-                z.Initialize(buttons, lamps, conditions, actions) |> ignore)
-            :> INjUnique
-
-        let cfbNjWork() =
-            let rt = rtObj :?> Work
-            new NjWork()
-            |> fromNjUniqINGD rt
-            |> tee (fun z ->
-                let calls    = rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
-                let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
-                let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
-                z.Initialize(calls, arrows, flowGuid) |> ignore
-                z.Status4 <- rt.Status4)
-            :> INjUnique
-
-        let cfbNjCall() =
-            let rt = rtObj :?> Call
-            let ac = rt.AutoConditions |> jsonSerializeStrings
-            let cc = rt.CommonConditions |> jsonSerializeStrings
-            new NjCall()
-            |> fromNjUniqINGD rt
-            |> tee (fun z ->
-                let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
-                z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
-                z.Status4 <- rt.Status4)
-            :> INjUnique
-
-        let cfbNjButton() =
-            let rt = rtObj :?> DsButton
-            new NjButton()
-            |> fromNjUniqINGD rt
-            :> INjUnique
-
-        let cfbNjLamp() =
-            let rt = rtObj :?> Lamp
-            new NjLamp()
-            |> fromNjUniqINGD rt
-            :> INjUnique
-
-        let cfbNjCondition() =
-            let rt = rtObj :?> DsCondition
-            new NjCondition()
-            |> fromNjUniqINGD rt
-            :> INjUnique
-
-        let cfbNjAction() =
-            let rt = rtObj :?> DsAction
-            new NjAction()
-            |> fromNjUniqINGD rt
-            :> INjUnique
-
-        let cfbNjArrow() =
-            new NjArrow()
-            |> fromNjUniqINGD rtObj
-            |> tee (fun z ->
-                match rtObj with
-                | :? ArrowBetweenWorks as arrow ->
-                    z.Source <- guid2str (arrow.GetSource().Guid)
-                    z.Target <- guid2str (arrow.GetTarget().Guid)
-                    z.Type <- arrow.GetArrowType().ToString()
-                | :? ArrowBetweenCalls as arrow ->
-                    z.Source <- guid2str (arrow.GetSource().Guid)
-                    z.Target <- guid2str (arrow.GetTarget().Guid)
-                    z.Type <- arrow.GetArrowType().ToString()
-                | _ -> ()
-            )
-            :> INjUnique
-
-        let cfbNjApiCall() =
-            let rt = rtObj :?> ApiCall
-            let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
-            new NjApiCall(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
-                InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
-                ValueSpec=valueSpec )
-            |> fromNjUniqINGD rt
-            :> INjUnique
-
-        let cfbNjApiDef() =
-            let rt = rtObj :?> ApiDef
-            new NjApiDef(IsPush=rt.IsPush)
-            |> fromNjUniqINGD rt
-            :> INjUnique
 
         if isItNull rtObj then
             getNull<NjUnique>()
         else
             let njObj =
                 match rtObj with
-                | :? Project               as p  -> ctf rtObj cfbNjProject
-                | :? DsSystem              as s  -> ctf rtObj cfbNjSystem
-                | :? Flow                  as f  -> ctf rtObj cfbNjFlow
-                | :? Work                  as w  -> ctf rtObj cfbNjWork
-                | :? Call                  as c  -> ctf rtObj cfbNjCall
-                | :? DsButton              as b  -> ctf rtObj cfbNjButton
-                | :? Lamp                  as l  -> ctf rtObj cfbNjLamp
-                | :? DsCondition           as d  -> ctf rtObj cfbNjCondition
-                | :? DsAction              as a  -> ctf rtObj cfbNjAction
-                | :? ArrowBetweenWorks     as r  -> ctf rtObj cfbNjArrow
-                | :? ArrowBetweenCalls     as r  -> ctf rtObj cfbNjArrow
-                | :? ApiCall               as ac -> ctf rtObj cfbNjApiCall
-                | :? ApiDef                as ad -> ctf rtObj cfbNjApiDef
+                | :? Project as p  ->
+                    let rt = p
+                    NjProject.Create(Database=rt.Database
+                        , Author=rt.Author
+                        , Version=rt.Version
+                        , Description=rt.Description)
+                    |> fromNjUniqINGD rt
+                    |> tee (fun z ->
+                        let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
+                        let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
+                        z.Initialize(activeSystems, passiveSystems, rt, isDeserialization=false) |> ignore)
+                    |> tee(fun n ->
+                        // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
+                        if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
+                        verify (n.RuntimeObject = rt)) // serialization 연결 고리
+                    :> INjUnique
+
+                | :? DsSystem as s ->
+                    let rt = s
+                    NjSystem.Create(IRI=rt.IRI
+                        , Author=rt.Author
+                        , LangVersion=rt.LangVersion
+                        , EngineVersion=rt.EngineVersion
+                        , Description=rt.Description)
+                    |> fromNjUniqINGD rt
+                    |> tee (fun z ->
+                        let flows    = rt.Flows    |-> _.ToNj<NjFlow>()   |> toArray
+                        let works    = rt.Works    |-> _.ToNj<NjWork>()   |> toArray
+                        let arrows   = rt.Arrows   |-> _.ToNj<NjArrow>()  |> toArray
+                        let apiDefs  = rt.ApiDefs  |-> _.ToNj<NjApiDef>() |> toArray
+                        let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
+                        z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
+                    ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
+                    :> INjUnique
+
+                | :? Flow as f ->
+                    let rt = f
+                    NjFlow.Create()
+                    |> fromNjUniqINGD rt
+                    |> tee(fun z ->
+                        let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
+                        let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
+                        let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
+                        let actions    = rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
+                        z.Initialize(buttons, lamps, conditions, actions) |> ignore)
+                    :> INjUnique
+
+                | :? Work as w ->
+                    let rt = w
+                    NjWork.Create()
+                    |> fromNjUniqINGD rt
+                    |> tee (fun z ->
+                        let calls    = rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
+                        let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
+                        let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
+                        z.Initialize(calls, arrows, flowGuid) |> ignore
+                        z.Status4 <- rt.Status4)
+                    :> INjUnique
+
+
+                | :? Call as c ->
+                    let rt = c
+                    let ac = rt.AutoConditions |> jsonSerializeStrings
+                    let cc = rt.CommonConditions |> jsonSerializeStrings
+                    NjCall.Create()
+                    |> fromNjUniqINGD rt
+                    |> tee (fun z ->
+                        let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
+                        z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
+                        z.Status4 <- rt.Status4)
+                    :> INjUnique
+
+
+
+                | :? DsButton    as b -> NjButton.Create()    |> fromNjUniqINGD b :> INjUnique
+                | :? Lamp        as l -> NjLamp.Create()      |> fromNjUniqINGD l :> INjUnique
+                | :? DsCondition as d -> NjCondition.Create() |> fromNjUniqINGD d :> INjUnique
+                | :? DsAction    as a -> NjAction.Create()    |> fromNjUniqINGD a :> INjUnique
+
+                | (:? ArrowBetweenWorks | :? ArrowBetweenCalls) ->
+                    NjArrow.Create()
+                    |> fromNjUniqINGD rtObj
+                    |> tee (fun z ->
+                        match rtObj with
+                        | :? ArrowBetweenWorks as arrow ->
+                            z.Source <- guid2str (arrow.GetSource().Guid)
+                            z.Target <- guid2str (arrow.GetTarget().Guid)
+                            z.Type <- arrow.GetArrowType().ToString()
+                        | :? ArrowBetweenCalls as arrow ->
+                            z.Source <- guid2str (arrow.GetSource().Guid)
+                            z.Target <- guid2str (arrow.GetTarget().Guid)
+                            z.Type <- arrow.GetArrowType().ToString()
+                        | _ -> ()
+                    ) :> INjUnique
+
+
+                | :? ApiCall as ac ->
+                    let rt = ac
+                    let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
+                    NjApiCall.Create(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
+                        InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
+                        ValueSpec=valueSpec )
+                    |> fromNjUniqINGD rt
+                    :> INjUnique
+
+                | :? ApiDef as ad -> NjApiDef.Create(IsPush=ad.IsPush) |> fromNjUniqINGD ad :> INjUnique
+
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
                 :?> NjUnique
+
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
             replicateProperties rtObj njObj |> ignore
             onNsJsonSerializing njObj
