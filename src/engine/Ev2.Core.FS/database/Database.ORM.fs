@@ -88,9 +88,7 @@ module ORMTypesModule =
         member val Description = description with get, set
         member val DateTime    = dateTime    with get, set
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : runtime:Project -> ORMProject
-        default x.Initialize(runtime:Project) =
+        member x.Initialize(runtime:Project) =
             runtime.CopyUniqueProperties(x)
             x.DateTime <- runtime.DateTime
             x.Author <- runtime.Author
@@ -118,9 +116,7 @@ module ORMTypesModule =
         member val Description   = description   with get, set
         member val DateTime      = dateTime      with get, set
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : runtime:DsSystem -> ORMSystem
-        default x.Initialize(runtime:DsSystem) =
+        member x.Initialize(runtime:DsSystem) =
             runtime.CopyUniqueProperties(x)
             x.DateTime <- runtime.DateTime
             x.IRI <- runtime.IRI
@@ -138,9 +134,7 @@ module ORMTypesModule =
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : runtime:Flow -> ORMFlow
-        default x.Initialize(runtime:Flow) =
+        member x.Initialize(runtime:Flow) =
             runtime.CopyUniqueProperties(x)
             x.SystemId <- runtime.System |-> _.Id |? None
             x
@@ -186,9 +180,7 @@ module ORMTypesModule =
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : runtime:Work -> ORMWork
-        default x.Initialize(runtime:Work) =
+        member x.Initialize(runtime:Work) =
             runtime.CopyUniqueProperties(x)
             x.Motion <- runtime.Motion
             x.Script <- runtime.Script
@@ -216,9 +208,7 @@ module ORMTypesModule =
         member val AutoConditions   = autoConditions   |> jsonSerializeStrings with get, set
         member val CommonConditions = commonConditions |> jsonSerializeStrings with get, set
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : runtime:Call -> ORMCall
-        default x.Initialize(runtime:Call) =
+        member x.Initialize(runtime:Call) =
             runtime.CopyUniqueProperties(x)
             x.CallTypeId <- runtime.CallType |> int64 |> Some
             x.IsDisabled <- runtime.IsDisabled

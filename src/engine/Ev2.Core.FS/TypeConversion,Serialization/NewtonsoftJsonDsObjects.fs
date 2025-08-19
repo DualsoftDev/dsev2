@@ -120,9 +120,7 @@ module rec NewtonsoftJsonObjects =
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized x
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : activeSystems:NjSystem[] * passiveSystems:NjSystem[] * project:Project * isDeserialization:bool -> NjProject
-        default x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[], project:Project, isDeserialization:bool) =
+        member x.Initialize(activeSystems:NjSystem[], passiveSystems:NjSystem[], project:Project, isDeserialization:bool) =
             x.ActiveSystems <- activeSystems
             x.PassiveSystems <- passiveSystems
             x
@@ -169,9 +167,7 @@ module rec NewtonsoftJsonObjects =
             fwdOnNsJsonDeserialized x
 
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : flows:NjFlow[] * works:NjWork[] * arrows:NjArrow[] * apiDefs:NjApiDef[] * apiCalls:NjApiCall[] -> NjSystem
-        default x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[],
+        member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[],
                            apiDefs:NjApiDef[], apiCalls:NjApiCall[]) =
             x.Flows    <- flows
             x.Works    <- works
@@ -198,10 +194,7 @@ module rec NewtonsoftJsonObjects =
 
 
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : buttons:NjButton[] * lamps:NjLamp[] * conditions:NjCondition[] * actions:NjAction[] -> NjFlow
-        default x.Initialize(buttons:NjButton[], lamps:NjLamp[],
-                           conditions:NjCondition[], actions:NjAction[]) =
+        member x.Initialize(buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]) =
             x.Buttons    <- buttons
             x.Lamps      <- lamps
             x.Conditions <- conditions
@@ -267,9 +260,7 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
 
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : calls:NjCall[] * arrows:NjArrow[] * flowGuid:string -> NjWork
-        default x.Initialize(calls:NjCall[], arrows:NjArrow[], flowGuid:string) =
+        member x.Initialize(calls:NjCall[], arrows:NjArrow[], flowGuid:string) =
             x.Calls <- calls
             x.Arrows <- arrows
             x.FlowGuid <- flowGuid
@@ -325,9 +316,7 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeTimeout()    = x.Timeout.IsSome
 
 
-        /// Initialize 메서드 - abstract/default 패턴으로 가상함수 구현
-        abstract Initialize : callType:string * apiCalls:Guid[] * autoConditions:string * commonConditions:string * isDisabled:bool * timeout:int option -> NjCall
-        default x.Initialize(
+        member x.Initialize(
             callType:string, apiCalls:Guid[],
             autoConditions:string, commonConditions:string,
             isDisabled:bool, timeout:int option
