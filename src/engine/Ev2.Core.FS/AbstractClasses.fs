@@ -137,22 +137,29 @@ and Project() =     // Create, Initialize
     member x.Systems = (x.ActiveSystems @ x.PassiveSystems) |> toList
     // } Runtime/DB 용
 
-    /// Initialize method for parameterless constructor + Initialize pattern
-    abstract Initialize : activeSystems: DsSystem seq * passiveSystems: DsSystem seq * njProj:INjProject  -> Project
-    default this.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProj:INjProject): Project =
+    member x.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProj:INjProject): Project =
         // Clear existing systems
-        this.RawActiveSystems.Clear()
-        this.RawPassiveSystems.Clear()
+        x.RawActiveSystems.Clear()
+        x.RawPassiveSystems.Clear()
 
         // Add new systems and set parent relationships
         activeSystems |> iter (fun s ->
-            this.RawActiveSystems.Add(s)
-            setParentI this s)
+            x.RawActiveSystems.Add(s)
+            setParentI x s)
         passiveSystems |> iter (fun s ->
-            this.RawPassiveSystems.Add(s)
-            setParentI this s)
+            x.RawPassiveSystems.Add(s)
+            setParentI x s)
+        x
 
-        this
+
+    abstract OnBeforeSave : unit  -> unit
+    /// Runtime 객체 저장(DB, JSON, AASX) 이전에 호출되는 메서드
+    default this.OnBeforeSave() = ()
+
+    abstract OnAfterLoad : unit -> unit
+    /// Runtime 객체 로드(DB, JSON) 이후에 호출되는 메서드
+    default this.OnAfterLoad() = ()
+
 
 
 

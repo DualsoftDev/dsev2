@@ -56,6 +56,7 @@ module internal DbInsertModule =
 
                 match box x with
                 | :? Project as rt ->
+                    rt.OnBeforeSave()
                     let orm = rt.ToORM(dbApi)
                     assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
