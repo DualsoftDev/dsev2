@@ -9,7 +9,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="devdoc\**\*.md" />
 		<Compile Include="AppSettings.fs" />
 		<Compile Include="ConstEnums.fs" />
 		<Compile Include="Interfaces.fs" />
