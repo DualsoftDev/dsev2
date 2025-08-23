@@ -33,7 +33,7 @@ type ITypeFactory =
     abstract ComputeExtensionDiff : obj1:IRtUnique * obj2:IRtUnique -> seq<ICompareResult>
 
     abstract GetSemanticId : semanticKey:string -> string
-    abstract WriteAasExtensionProperties : njObj:INjUnique -> seq<obj>
+    abstract WriteAasExtensionProperties : njObj:INjUnique -> seq<System.Text.Json.Nodes.JsonObject>
     abstract ReadAasExtensionProperties : njObj:INjUnique * smc: obj -> unit        // smc: SubmodelElementCollection type
 
 [<AutoOpen>]

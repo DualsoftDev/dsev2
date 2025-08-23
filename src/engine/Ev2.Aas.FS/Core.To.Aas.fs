@@ -25,13 +25,7 @@ module CoreToAas =
         /// Generic reflection 기반으로 확장 속성을 동적으로 수집
         member x.tryCollectExtensionProperties(): JObj option seq =
             getTypeFactory()
-            |-> (fun factory ->
-                factory.WriteAasExtensionProperties x
-                |> Seq.map (fun obj ->
-                    match obj with
-                    | :? JObj as jobj -> Some jobj
-                    | :? System.Text.Json.Nodes.JsonObject as jo -> Some jo
-                    | _ -> None))
+            |-> (fun factory -> factory.WriteAasExtensionProperties x |-> Some)
             |? Seq.empty
 
 
