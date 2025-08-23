@@ -95,8 +95,8 @@ module Interfaces =
             dup
 
 
-    let mutable fwdReplicateProperties: Unique -> Unique -> Unique = let dummy (src:Unique) (dst:Unique) = failwith "Should be reimplemented" in dummy
-    let replicateProperties (src:#Unique) (dst:#Unique): #Unique =
+    let mutable internal fwdReplicateProperties: Unique -> Unique -> Unique = let dummy (src:Unique) (dst:Unique) = failwith "Should be reimplemented" in dummy
+    let internal replicateProperties (src:#Unique) (dst:#Unique): #Unique =
         fwdReplicateProperties src dst |> ignore
         dst
 

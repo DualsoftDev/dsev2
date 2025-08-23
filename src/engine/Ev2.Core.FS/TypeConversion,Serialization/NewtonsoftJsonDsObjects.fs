@@ -59,14 +59,6 @@ module rec NewtonsoftJsonObjects =
     //let njSetParentI (parent:NjUnique) (x:#NjUnique): unit = x.RawParent <- Some parent
 
 
-    /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 NjUnique 객체에 저장
-    let internal fromNjUniqINGD (src:#Unique) (dst:#NjUnique): #NjUnique =
-        if isItNotNull src then
-            replicateProperties src dst |> ignore
-        dst
-
-
-
     [<AbstractClass>]
     type NjProjectEntity() =
         inherit NjUnique()
@@ -362,7 +354,7 @@ module rec NewtonsoftJsonObjects =
         | None -> ()
 
         | Some runtimeObj ->
-            fromNjUniqINGD runtimeObj njUnique.Value |> ignore
+            replicateProperties runtimeObj njUnique.Value |> ignore
 
             match njObj with
             | :? NjProject as njp ->
@@ -699,7 +691,7 @@ module Ds2JsonModule =
                         , Author=rt.Author
                         , Version=rt.Version
                         , Description=rt.Description)
-                    |> fromNjUniqINGD rt
+                    |> replicateProperties rt
                     |> tee (fun z ->
                         let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                         let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
@@ -717,7 +709,7 @@ module Ds2JsonModule =
                         , LangVersion=rt.LangVersion
                         , EngineVersion=rt.EngineVersion
                         , Description=rt.Description)
-                    |> fromNjUniqINGD rt
+                    |> replicateProperties rt
                     |> tee (fun z ->
                         let flows    = rt.Flows    |-> _.ToNj<NjFlow>()   |> toArray
                         let works    = rt.Works    |-> _.ToNj<NjWork>()   |> toArray
@@ -731,7 +723,7 @@ module Ds2JsonModule =
                 | :? Flow as f ->
                     let rt = f
                     NjFlow.Create()
-                    |> fromNjUniqINGD rt
+                    |> replicateProperties rt
                     |> tee(fun z ->
                         let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
                         let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
@@ -743,7 +735,7 @@ module Ds2JsonModule =
                 | :? Work as w ->
                     let rt = w
                     NjWork.Create()
-                    |> fromNjUniqINGD rt
+                    |> replicateProperties rt
                     |> tee (fun z ->
                         let calls    = rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
                         let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
@@ -758,7 +750,7 @@ module Ds2JsonModule =
                     let ac = rt.AutoConditions |> jsonSerializeStrings
                     let cc = rt.CommonConditions |> jsonSerializeStrings
                     NjCall.Create()
-                    |> fromNjUniqINGD rt
+                    |> replicateProperties rt
                     |> tee (fun z ->
                         let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
                         z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
@@ -767,14 +759,14 @@ module Ds2JsonModule =
 
 
 
-                | :? DsButton    as b -> NjButton.Create()    |> fromNjUniqINGD b :> INjUnique
-                | :? Lamp        as l -> NjLamp.Create()      |> fromNjUniqINGD l :> INjUnique
-                | :? DsCondition as d -> NjCondition.Create() |> fromNjUniqINGD d :> INjUnique
-                | :? DsAction    as a -> NjAction.Create()    |> fromNjUniqINGD a :> INjUnique
+                | :? DsButton    as b -> NjButton.Create()    |> replicateProperties b :> INjUnique
+                | :? Lamp        as l -> NjLamp.Create()      |> replicateProperties l :> INjUnique
+                | :? DsCondition as d -> NjCondition.Create() |> replicateProperties d :> INjUnique
+                | :? DsAction    as a -> NjAction.Create()    |> replicateProperties a :> INjUnique
 
                 | (:? ArrowBetweenWorks | :? ArrowBetweenCalls) ->
                     NjArrow.Create()
-                    |> fromNjUniqINGD rtObj
+                    |> replicateProperties rtObj
                     |> tee (fun z ->
                         match rtObj with
                         | :? ArrowBetweenWorks as arrow ->
@@ -795,15 +787,14 @@ module Ds2JsonModule =
                     NjApiCall.Create(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
                         InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
                         ValueSpec=valueSpec )
-                    |> fromNjUniqINGD rt
+                    |> replicateProperties rt
                     :> INjUnique
 
-                | :? ApiDef as ad -> NjApiDef.Create(IsPush=ad.IsPush) |> fromNjUniqINGD ad :> INjUnique
+                | :? ApiDef as ad -> NjApiDef.Create(IsPush=ad.IsPush) |> replicateProperties ad :> INjUnique
 
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
                 :?> NjUnique
 
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
-            replicateProperties rtObj njObj |> ignore
             onNsJsonSerializing njObj
             njObj
