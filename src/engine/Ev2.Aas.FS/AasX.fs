@@ -226,7 +226,6 @@ module AasXModule2 =
 
         member x.ExportToAasxFile(outputPath: string, ?dbApi: AppDbApi): unit =
             dbApi |> iter x.ReadRuntimeDataFromDatabase
-            x.OnBeforeSave(StorageType.Aasx)
 
             // 개선: TypeFactory를 통한 확장 타입 인식
             eprintfn "[ExportToAasxFile] Runtime Project type: %s" (x.GetType().FullName)

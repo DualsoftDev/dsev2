@@ -200,6 +200,8 @@ module ORMTypeConversionModule =
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
             new ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
 
+    /// runtime object -> ORM object 변환
+    /// 주의 사항 : 하부에서 dbApi.With() 사용 금지.  dbApi.TryFindEnumValueId 함수 이용 용도로만 제한
     let internal rt2Orm (dbApi:AppDbApi) (x:IDsObject): ORMUnique =
         /// Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 ORMUnique 객체에 저장
         let ormReplicateProperties (src:Unique) (dst:ORMUnique): ORMUnique =
@@ -218,30 +220,14 @@ module ORMTypeConversionModule =
                 match uniq with
                 | :? Project as z ->
                     // TypeFactory를 통해 확장 타입 생성 시도
-                    let ormProject = new ORMProject(z.Author, z.Version, z.Description, z.DateTime)
-                    // 기본 속성 설정 (확장 타입이든 기본 타입이든 필요)
-                    match ormProject with
-                    | :? ORMProject as orm ->
-                        orm.Author <- z.Author
-                        orm.Version <- z.Version
-                        orm.Description <- z.Description
-                        orm.DateTime <- z.DateTime
-                    | _ -> ()
-                    ormProject |> ormReplicateProperties z
+                    new ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                    |> ormReplicateProperties z
 
                 | :? DsSystem as rt ->
                     (* System 소유주 project 지정.  *)
                     let ownerProjectId = rt.Project >>= _.Id
 
                     new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
-                    |> tee(fun orm ->
-                        orm.OwnerProjectId <- ownerProjectId
-                        orm.IRI <- rt.IRI
-                        orm.Author <- rt.Author
-                        orm.LangVersion <- rt.LangVersion
-                        orm.EngineVersion <- rt.EngineVersion
-                        orm.Description <- rt.Description
-                        orm.DateTime <- rt.DateTime )
                     |> ormReplicateProperties rt
 
                 | :? Flow as rt ->

@@ -348,9 +348,11 @@ module rec NewtonsoftJsonObjects =
     let rec (*internal*) onNsJsonSerializing (njObj:INjObject) =
         let njUnique = njObj |> tryCast<NjUnique>
         match njUnique |-> _.RuntimeObject with
-        // RuntimeObject 가 없는 경우는 AAS Submodel 에서 생성한 경우임.
+        // RuntimeObject 가 없는 경우는 AAS Submodel 에서 NjObject 를 생성한 경우임.
         // 이 경우는 RuntimeObject 를 채우지 않고, 그냥 넘어감.
-        | Some runtimeObj when isItNull runtimeObj -> ()
+        | Some runtimeObj when isItNull runtimeObj ->
+            //Debugger.Break()
+            ()
         | None -> ()
 
         | Some runtimeObj ->
@@ -366,8 +368,8 @@ module rec NewtonsoftJsonObjects =
                 njp.Database <- rtp.Database
 
             | :? NjSystem as njs ->
-                if isItNotNull njs.RuntimeObject then
-                    njs.RuntimeObject |> replicateProperties njs |> ignore
+                //if isItNotNull njs.RuntimeObject then
+                //    njs.RuntimeObject |> replicateProperties njs |> ignore
 
                 let rts = njs |> getRuntimeObject<DsSystem>
                 njs.Works <- rts.Works |-> _.ToNj<NjWork>() |> toArray
@@ -619,11 +621,9 @@ module Ds2JsonModule =
     type Project with     // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
-            x.OnBeforeSave(StorageType.Json)
             let njProject = x.ToNjObj() :?> NjProject
             njProject.ToJson()
         member x.ToJson(jsonFilePath:string) =
-            x.OnBeforeSave(StorageType.Json)
             let njProject = x.ToNjObj() :?> NjProject
             njProject.ToJsonFile(jsonFilePath)
 
@@ -633,7 +633,6 @@ module Ds2JsonModule =
                 json
                 |> NjProject.FromJson
                 |> getRuntimeObject<Project>        // de-serialization 연결 고리
-                |> tee _.OnAfterLoad(StorageType.Json)
                 |> validateRuntime
             project
 

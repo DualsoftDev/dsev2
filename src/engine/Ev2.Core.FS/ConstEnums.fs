@@ -2,27 +2,10 @@ namespace Ev2.Core.FS
 
 open System
 open System.Text.RegularExpressions
-open Dual.Common.Base
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
 open Dual.Common.Core.FS
 open System.Runtime.CompilerServices
-open System.Data
-
-type StorageType =
-    | Json
-    | Database of IDbConnection * IDbTransaction
-    | Aasx
-with
-    /// For CSharp. Database 케이스에서 conn/tx를 안전하게 얻기
-    member x.CsTryGetDatabase(conn: byref<IDbConnection>, tx: byref<IDbTransaction>) =
-        match x with
-        | Database (c, t) -> conn <- c; tx <- t; true
-        | _ -> false
-    member x.AsDatabase() =
-        match x with
-        | Database (c, t) -> struct (c, t)
-        | _ -> invalidOp "StorageType is not Database."
 
 [<AutoOpen>]
 module ConstEnums =

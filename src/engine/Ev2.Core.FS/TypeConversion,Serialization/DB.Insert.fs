@@ -56,7 +56,6 @@ module internal DbInsertModule =
 
                 match box x with
                 | :? Project as rt ->
-                    rt.OnBeforeSave(StorageType.Database(conn, tr))
                     let orm = rt.ToORM(dbApi)
                     assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
@@ -73,6 +72,7 @@ module internal DbInsertModule =
                     rt.Database <- dbApi.DbProvider
 
                     rt.InsertSystemMapToDB(dbApi)
+                    rt.OnAfterSave(conn, tr)
 
                 | :? DsSystem as rt ->
                     let ormSystem = rt.ToORM<ORMSystem>(dbApi)
@@ -279,7 +279,6 @@ module internal DbInsertModule =
 
 
                 getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(x, conn, tr))
-                x |> tryCast<Project> |> iter ( _.OnAfterSave(StorageType.Database(conn, tr)))
             )
 
 

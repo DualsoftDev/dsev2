@@ -153,18 +153,13 @@ and Project() =     // Create, Initialize
         x
 
 
-    abstract OnBeforeSave : StorageType  -> unit
-    /// Runtime 객체 저장(DB, JSON, AASX) 이전에 호출되는 메서드
-    default this.OnBeforeSave(storageType:StorageType) = ()
+    abstract OnAfterSave : IDbConnection * IDbTransaction  -> unit
+    /// DB 저장 직후에 호출되는 메서드
+    default this.OnAfterSave(conn:IDbConnection, tr:IDbTransaction) = ()
 
-    abstract OnAfterSave : StorageType  -> unit
-    /// Runtime 객체 저장(DB, JSON, AASX) 이전에 호출되는 메서드
-    default this.OnAfterSave(storageType:StorageType) = ()
-
-
-    abstract OnAfterLoad : StorageType -> unit
-    /// Runtime 객체 로드(DB, JSON) 이후에 호출되는 메서드
-    default this.OnAfterLoad(storageType:StorageType) = ()
+    abstract OnAfterLoad : IDbConnection * IDbTransaction  -> unit
+    /// DB load 이후에 호출되는 메서드
+    default this.OnAfterLoad(conn:IDbConnection, tr:IDbTransaction) = ()
 
 
 

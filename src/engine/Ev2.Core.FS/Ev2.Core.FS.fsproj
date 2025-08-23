@@ -9,6 +9,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Remove="Extension\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Include="AppSettings.fs" />
 		<Compile Include="ConstEnums.fs" />
 		<Compile Include="Interfaces.fs" />
@@ -60,11 +64,6 @@
 
 	<ItemGroup>
 		<Compile Include="AssemblyInfo.fs" />
-	</ItemGroup>
-
-
-	<ItemGroup>
-	  <Folder Include="Extension\" />
 	</ItemGroup>
 
 </Project>
