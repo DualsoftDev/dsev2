@@ -12,13 +12,13 @@ module CoreToAas =
     type NjUnique with     // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
-                JObj().TrySetProperty(x.Name, "Name")
-                JObj().TrySetProperty(x.Guid, "Guid")
+                JObj().TrySetProperty(x.Name, nameof x.Name)
+                JObj().TrySetProperty(x.Guid, nameof x.Guid)
 
                 if (x.Parameter.NonNullAny()) then
-                    JObj().TrySetProperty(x.Parameter, "Parameter")
+                    JObj().TrySetProperty(x.Parameter, nameof x.Parameter)
                 if x.Id.IsSome then
-                    JObj().TrySetProperty(x.Id.Value, "Id")
+                    JObj().TrySetProperty(x.Id.Value, nameof x.Id)
             }
 
         /// 확장 타입별 특수 속성 수집 (AAS용)
@@ -39,57 +39,57 @@ module CoreToAas =
                 match x with
                 | :? NjProject as prj ->
                     if isItNotNull prj.Database then
-                        JObj().TrySetProperty(prj.Database.ToString(), "Database")
-                    JObj().TrySetProperty(prj.Description,         "Description")
-                    JObj().TrySetProperty(prj.Author,              "Author")
-                    JObj().TrySetProperty(prj.Version.ToString(),  "Version")
-                    JObj().TrySetProperty(prj.DateTime,            "DateTime")
+                        JObj().TrySetProperty(prj.Database.ToString(), nameof prj.Database)
+                    JObj().TrySetProperty(prj.Description,         nameof prj.Description)
+                    JObj().TrySetProperty(prj.Author,              nameof prj.Author)
+                    JObj().TrySetProperty(prj.Version.ToString(),  nameof prj.Version)
+                    JObj().TrySetProperty(prj.DateTime,            nameof prj.DateTime)
 
                 | :? NjSystem as sys ->
-                    JObj().TrySetProperty(sys.IRI,                      "IRI")
-                    JObj().TrySetProperty(sys.Author,                   "Author")
-                    JObj().TrySetProperty(sys.EngineVersion.ToString(), "EngineVersion")
-                    JObj().TrySetProperty(sys.LangVersion.ToString(),   "LangVersion")
-                    JObj().TrySetProperty(sys.Description,              "Description")
-                    JObj().TrySetProperty(sys.DateTime,                 "DateTime")
+                    JObj().TrySetProperty(sys.IRI,                      nameof sys.IRI)
+                    JObj().TrySetProperty(sys.Author,                   nameof sys.Author)
+                    JObj().TrySetProperty(sys.EngineVersion.ToString(), nameof sys.EngineVersion)
+                    JObj().TrySetProperty(sys.LangVersion.ToString(),   nameof sys.LangVersion)
+                    JObj().TrySetProperty(sys.Description,              nameof sys.Description)
+                    JObj().TrySetProperty(sys.DateTime,                 nameof sys.DateTime)
 
                 | :? NjApiCall as apiCall ->
-                    JObj().TrySetProperty(apiCall.ApiDef,     "ApiDef")       // Guid
-                    JObj().TrySetProperty(apiCall.InAddress,  "InAddress")
-                    JObj().TrySetProperty(apiCall.OutAddress, "OutAddress")
-                    JObj().TrySetProperty(apiCall.InSymbol,   "InSymbol")
-                    JObj().TrySetProperty(apiCall.OutSymbol,  "OutSymbol")
-                    JObj().TrySetProperty(apiCall.ValueSpec,  "ValueSpec")
+                    JObj().TrySetProperty(apiCall.ApiDef,     nameof apiCall.ApiDef)       // Guid
+                    JObj().TrySetProperty(apiCall.InAddress,  nameof apiCall.InAddress)
+                    JObj().TrySetProperty(apiCall.OutAddress, nameof apiCall.OutAddress)
+                    JObj().TrySetProperty(apiCall.InSymbol,   nameof apiCall.InSymbol)
+                    JObj().TrySetProperty(apiCall.OutSymbol,  nameof apiCall.OutSymbol)
+                    JObj().TrySetProperty(apiCall.ValueSpec,  nameof apiCall.ValueSpec)
 
                 | :? NjCall as call ->
-                    JObj().TrySetProperty(call.IsDisabled,       "IsDisabled")
-                    JObj().TrySetProperty(call.CommonConditions, "CommonConditions")
-                    JObj().TrySetProperty(call.AutoConditions,   "AutoConditions")
+                    JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
+                    JObj().TrySetProperty(call.CommonConditions, nameof call.CommonConditions)
+                    JObj().TrySetProperty(call.AutoConditions,   nameof call.AutoConditions)
                     if call.Timeout.IsSome then
-                        JObj().TrySetProperty(call.Timeout.Value,     "Timeout")
-                    JObj().TrySetProperty(call.CallType.ToString(),   "CallType")
-                    JObj().TrySetProperty(sprintf "%A" call.ApiCalls, "ApiCalls")      // Guid[] type
+                        JObj().TrySetProperty(call.Timeout.Value,     nameof call.Timeout)
+                    JObj().TrySetProperty(call.CallType.ToString(),   nameof call.CallType)
+                    JObj().TrySetProperty(sprintf "%A" call.ApiCalls, nameof call.ApiCalls)      // Guid[] type
                     if call.Status.NonNullAny() then
-                        JObj().TrySetProperty(call.Status, "Status")
+                        JObj().TrySetProperty(call.Status, nameof call.Status)
 
                 | :? NjArrow as arrow ->
-                    JObj().TrySetProperty(arrow.Source, "Source")
-                    JObj().TrySetProperty(arrow.Target, "Target")
-                    JObj().TrySetProperty(arrow.Type,   "Type")
+                    JObj().TrySetProperty(arrow.Source, nameof arrow.Source)
+                    JObj().TrySetProperty(arrow.Target, nameof arrow.Target)
+                    JObj().TrySetProperty(arrow.Type,   nameof arrow.Type)
 
                 | :? NjWork as work ->
-                    JObj().TrySetProperty(work.FlowGuid,   "FlowGuid")
-                    JObj().TrySetProperty(work.Motion,     "Motion")
-                    JObj().TrySetProperty(work.Script,     "Script")
-                    JObj().TrySetProperty(work.IsFinished, "IsFinished")
-                    JObj().TrySetProperty(work.NumRepeat,  "NumRepeat")
-                    JObj().TrySetProperty(work.Period,     "Period")
-                    JObj().TrySetProperty(work.Delay,      "Delay")
+                    JObj().TrySetProperty(work.FlowGuid,   nameof work.FlowGuid)
+                    JObj().TrySetProperty(work.Motion,     nameof work.Motion)
+                    JObj().TrySetProperty(work.Script,     nameof work.Script)
+                    JObj().TrySetProperty(work.IsFinished, nameof work.IsFinished)
+                    JObj().TrySetProperty(work.NumRepeat,  nameof work.NumRepeat)
+                    JObj().TrySetProperty(work.Period,     nameof work.Period)
+                    JObj().TrySetProperty(work.Delay,      nameof work.Delay)
                     if work.Status.NonNullAny() then
-                        JObj().TrySetProperty(work.Status, "Status")
+                        JObj().TrySetProperty(work.Status, nameof work.Status)
 
                 | :? NjApiDef as apiDef ->
-                    JObj().TrySetProperty(apiDef.IsPush,   "IsPush")
+                    JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
 
                 | (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ->
                     ()
@@ -111,7 +111,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = actives
-                    , semanticKey = "ActiveSystems"
+                    , semanticKey = nameof x.ActiveSystems
                 )
 
 
@@ -120,7 +120,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = passives
-                    , semanticKey = "PassiveSystems"
+                    , semanticKey = nameof x.PassiveSystems
                 )
 
             let project =
@@ -199,7 +199,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = fs
-                    , semanticKey = "Flows"
+                    , semanticKey = nameof x.Flows
                 )
 
             let ws = x.Works |-> _.ToSjSMC()
@@ -207,7 +207,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = ws
-                    , semanticKey = "Works"
+                    , semanticKey = nameof x.Works
                 )
 
             let arrs = x.Arrows |-> _.ToSjSMC()
@@ -215,7 +215,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = arrs
-                    , semanticKey = "Arrows"
+                    , semanticKey = nameof x.Arrows
                 )
 
 
@@ -224,7 +224,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = ads
-                    , semanticKey = "ApiDefs"
+                    , semanticKey = nameof x.ApiDefs
                 )
 
             let acs = x.ApiCalls |-> _.ToSjSMC()
@@ -232,7 +232,7 @@ module CoreToAas =
                 JObj().AddProperties(
                     modelType = A.smc
                     , values = acs
-                    , semanticKey = "ApiCalls"
+                    , semanticKey = nameof x.ApiCalls
                 )
 
             let me = x
@@ -285,10 +285,10 @@ module CoreToAas =
     type NjFlow with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
-            let buttons    = x.Buttons    |-> _.ToSjSMC() |> toSjSMC "Buttons"
-            let lamps      = x.Lamps      |-> _.ToSjSMC() |> toSjSMC "Lamps"
-            let conditions = x.Conditions |-> _.ToSjSMC() |> toSjSMC "Conditions"
-            let actions    = x.Actions    |-> _.ToSjSMC() |> toSjSMC "Actions"
+            let buttons    = x.Buttons    |-> _.ToSjSMC() |> toSjSMC (nameof x.Buttons)
+            let lamps      = x.Lamps      |-> _.ToSjSMC() |> toSjSMC (nameof x.Lamps)
+            let conditions = x.Conditions |-> _.ToSjSMC() |> toSjSMC (nameof x.Conditions)
+            let actions    = x.Actions    |-> _.ToSjSMC() |> toSjSMC (nameof x.Actions)
 
             let props = x.CollectProperties()
             JObj().ToSjSMC("Flow", props)
@@ -320,8 +320,8 @@ module CoreToAas =
     type NjWork with     // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
-            let arrows = x.Arrows |-> _.ToSjSMC() |> toSjSMC "Arrows"
-            let calls  = x.Calls  |-> _.ToSjSMC() |> toSjSMC "Calls"
+            let arrows = x.Arrows |-> _.ToSjSMC() |> toSjSMC (nameof x.Arrows)
+            let calls  = x.Calls  |-> _.ToSjSMC() |> toSjSMC (nameof x.Calls)
             let props = x.CollectProperties()
             JObj().ToSjSMC("Work", props)
             |> _.AddValues([|arrows; calls|] |> choose id)
