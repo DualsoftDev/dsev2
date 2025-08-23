@@ -15,7 +15,7 @@ open Dual.Common.UnitTest.FS
 open Ev2.Core.FS
 
 // see ..\submodules\nuget\UnitTest\UnitTest.Nuget.Common\Json\NsFsOption.Test.fs
-type NullContainer (nullstr:string, nullableInt:Nullable<int>, optNullable:int option) =
+type NullContainer (nullstr:string, nullableInt:Nullable<int>, optNullable:int option) = // 
     member val String = nullString with get, set
     member val NullableInt = nullableInt with get, set
     member val OptNullable = optNullable with get, set

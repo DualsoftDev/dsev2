@@ -34,7 +34,7 @@ module rec AasExtensions =
 
     type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
 
-    type SMEsExtension =     // TryGetPropValueBySemanticKey, TryGetPropValueByCategory, CollectChildrenSMEWithSemanticKey, CollectChildrenSMCWithSemanticKey, TryGetPropValue, GetPropValue, TryFindChildSME, TryFindChildSMC
+    type SMEsExtension = // TryGetPropValueBySemanticKey, TryGetPropValueByCategory, CollectChildrenSMEWithSemanticKey, CollectChildrenSMCWithSemanticKey, TryGetPropValue, GetPropValue, TryFindChildSME, TryFindChildSMC
         [<Extension>]
         static member TryGetPropValueBySemanticKey(smc:ISubmodelElement seq, semanticKey:string): string option =
             smc.OfType<Property>()
@@ -109,7 +109,7 @@ module rec AasExtensions =
 
 
     let private nonnullize(values:ResizeArray<ISubmodelElement>) = if values = null then ResizeArray<ISubmodelElement>() else values
-    type SubmodelElementCollection with     // ReadUniqueInfo, ValuesOfType, TryGetPropValueBySemanticKey, TryGetPropValueByCategory, CollectChildrenSMEWithSemanticKey, CollectChildrenSMCWithSemanticKey, TryGetPropValue, GetPropValue, TryFindChildSME, TryFindChildSMC, GetSMC
+    type SubmodelElementCollection with // ReadUniqueInfo, ValuesOfType, TryGetPropValueBySemanticKey, TryGetPropValueByCategory, CollectChildrenSMEWithSemanticKey, CollectChildrenSMCWithSemanticKey, TryGetPropValue, GetPropValue, TryFindChildSME, TryFindChildSMC, GetSMC
         member smc.ReadUniqueInfo() = nonnullize(smc.Value).ReadUniqueInfo()
         member smc.ValuesOfType<'T when 'T :> ISubmodelElement>() = nonnullize(smc.Value).OfType<'T>()
         member smc.TryGetPropValueBySemanticKey (semanticKey:string): string option = nonnullize(smc.Value).TryGetPropValueBySemanticKey semanticKey
@@ -125,7 +125,7 @@ module rec AasExtensions =
         member smc.GetSMC(semanticKey: string): SubmodelElementCollection [] =
                 smc.CollectChildrenSMCWithSemanticKey semanticKey
 
-    type ISubmodel with     // GetSMCWithSemanticKey
+    type ISubmodel with // GetSMCWithSemanticKey
         member sm.GetSMCWithSemanticKey(semanticKey:string): SubmodelElementCollection [] =
             sm.SubmodelElements
                 .CollectChildrenSMCWithSemanticKey semanticKey

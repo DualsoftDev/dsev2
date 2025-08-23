@@ -19,7 +19,7 @@ open Dual.Common.Base
 [<AutoOpen>]
 module AasXModule2 =
 
-    type NjProject with     // ToSjENV, ToAasJsonStringENV, ToENV, ExportToAasxFile, InjectToExistingAasxFile
+    type NjProject with // ToSjENV, ToAasJsonStringENV, ToENV, ExportToAasxFile, InjectToExistingAasxFile
         member x.ToSjENV() : JObj =
 
             (* https://github.com/aas-core-works/aas-package3-csharp.git : AAS 비공식 인 듯..*)
@@ -175,7 +175,7 @@ module AasXModule2 =
             // 5. 파일 교체 (백업 포함)
             replaceFileWithBackup aasxPath tempPath
 
-    type Project with   // UpdateDbAasXml, FromAasxFile, ReadRuntimeDataFromDatabase, ExportToAasxFile, InjectToExistingAasxFile
+    type Project with // UpdateDbAasXml, FromAasxFile, ReadRuntimeDataFromDatabase, ExportToAasxFile, InjectToExistingAasxFile
         /// AASX 파일에서 aas submodel xml 파일을 읽어서 database 의 project table 의 aasXml column 을 update
         member project.UpdateDbAasXml(aasxPath: string, dbApi: AppDbApi): unit =
             // 1. AASX 파일에서 원본 XML 읽기

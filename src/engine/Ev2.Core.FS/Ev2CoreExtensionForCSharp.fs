@@ -16,7 +16,7 @@ module ExtCopyModule =
             replicateProperties x nj |> ignore
 
 
-type CopyExtensionForCSharp =     // CsCopyTo
+type CopyExtensionForCSharp = // CsCopyTo
     [<Extension>]
     static member CsCopyTo(src:Unique, dst:Unique) =
         match src, dst with
@@ -50,7 +50,7 @@ type CopyExtensionForCSharp =     // CsCopyTo
 
 
 
-type Ev2CoreExtensionForCSharp =
+type Ev2CoreExtensionForCSharp = // CsToJson, CsFromJson, CsToNjProject, CsCreateProject, CsCreateDsSystem
 
     // Project 확장 메서드 - C# 전용
     [<Extension>]
@@ -93,7 +93,7 @@ type Ev2CoreExtensionForCSharp =
             EmJson.ToJson(njObj)
 
 // Project 타입에 대한 정적 메서드 (C#에서 ProjectExtensions.CsFromJson() 형태로 사용)
-type ProjectExtensions =
+type ProjectExtensions = // 
     static member CsFromJson(json:string): Project =
         // JSON을 JObject로 파싱하여 RuntimeType 확인
         let jObj = Newtonsoft.Json.Linq.JObject.Parse(json)
@@ -154,7 +154,7 @@ type ProjectExtensions =
 
 
 // DsSystem 타입에 대한 정적 메서드
-type DsSystemExtensions =
+type DsSystemExtensions = // 
     static member CsImportFromJson(json:string): DsSystem =
         json
         |> NjSystem.ImportFromJson
@@ -164,7 +164,7 @@ type DsSystemExtensions =
     static member CsFromJson(json:string): DsSystem =
         DsSystemExtensions.CsImportFromJson(json)
 
-type DbApiExtensions =
+type DbApiExtensions = // 
     // =====================
     // CsWith 메서드들 - 기본 With 메서드의 C# 호환 버전
     // =====================
@@ -260,7 +260,7 @@ type DsSystemExtensions with
         | Error errorMsg -> (false, Unchecked.defaultof<DsSystem>, errorMsg)
 
 // AppDbApi C# 호환 확장 메서드들
-type AppDbApiCsExtensions =
+type AppDbApiCsExtensions = // 
     // =====================
     // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
     // =====================

@@ -276,7 +276,7 @@ module rec TmpCompatibility =
 
 
 // C# 친화적인 정적 팩토리 클래스 - C#에서 직접 접근 가능
-type DsObjectFactory =
+type DsObjectFactory = // InitializeAppSettings, CreateProject, CreateDsSystemExtended, CreateDsSystem, CreateWork, CreateCall
 
     /// C#에서 AppSettings 초기화를 위한 헬퍼 메서드
     static member InitializeAppSettings() =

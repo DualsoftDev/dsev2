@@ -9,13 +9,13 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 
-type DbObjectIdentifier =
+type DbObjectIdentifier = //
     | ByGuid of Guid
     | ById of int
     | ByName of string
 
 /// DB commit success 응답.  예외난 경우 제외.
-type DbCommitSuccessResponse =
+type DbCommitSuccessResponse = // Stringify
     /// commit 으로 인한 db 변경 없음
     | NoChange
     /// 신규 추가 (하부 포함)

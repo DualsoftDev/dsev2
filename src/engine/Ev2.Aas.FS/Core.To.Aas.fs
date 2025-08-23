@@ -9,7 +9,7 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreToAas =
-    type NjUnique with     // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
+    type NjUnique with // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
                 JObj().TrySetProperty(x.Name, nameof x.Name)
@@ -102,7 +102,7 @@ module CoreToAas =
 
             } |> choose id |> Seq.cast<JNode> |> toArray
 
-    type NjProject with     // ToSjSMC, ToSjSubmodel
+    type NjProject with // ToSjSMC, ToSjSubmodel
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let me = x
@@ -191,7 +191,7 @@ module CoreToAas =
 
 
 
-    type NjSystem with     // ToSjSMC
+    type NjSystem with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let fs = x.Flows |-> _.ToSjSMC()
@@ -254,7 +254,7 @@ module CoreToAas =
         //    sm
 
 
-    type NjApiDef with     // ToSjSMC
+    type NjApiDef with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiDef", x.CollectProperties())
 

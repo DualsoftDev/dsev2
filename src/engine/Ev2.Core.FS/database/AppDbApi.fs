@@ -41,7 +41,7 @@ module DbApiModule =
 
 
 /// Database API - C#에서 직접 접근 가능하도록 namespace 레벨로 이동
-type AppDbApi(dbProvider:DbProvider) =     // With, WithNew, WithConn, TryFindEnumValueId, TryFindEnumValue
+type AppDbApi(dbProvider:DbProvider) = // With, WithNew, WithConn, TryFindEnumValueId, TryFindEnumValue
     inherit DbApi(dbProvider)
 
     let venderDb = base.VendorDB

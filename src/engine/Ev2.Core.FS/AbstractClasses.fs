@@ -12,7 +12,7 @@ open System.Data
 
 
 [<AbstractClass>]
-type RtUnique() =     // ToNjObj, ToNj
+type RtUnique() = // ToNjObj, ToNj, ValidateRuntime
     inherit Unique()
     interface IRtUnique
 
@@ -28,7 +28,7 @@ type RtUnique() =     // ToNjObj, ToNj
 
 // Entity base classes
 [<AbstractClass>]
-type ProjectEntity() =
+type ProjectEntity() = // 
     inherit RtUnique()
     member x.Project = x.RawParent >>= tryCast<Project>
 
@@ -67,7 +67,7 @@ and internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) 
 
 // Main domain types
 /// Call 간 화살표 연결.  Work 내에 존재
-and ArrowBetweenCalls() =     // Source, Target, Type
+and ArrowBetweenCalls() = // Create
     inherit WorkEntity()
     let mutable arrow : Arrow<Call> option = None
     member private x.Initialize(source:Call, target:Call, typ:DbArrowType) =
@@ -84,7 +84,7 @@ and ArrowBetweenCalls() =     // Source, Target, Type
     member x.Type   with get() = arrow.Value.Type   and set v = arrow.Value.Type <- v
 
 /// Work 간 화살표 연결.  System 내에 존재
-and ArrowBetweenWorks() =     // Source, Target, Type
+and ArrowBetweenWorks() = // Create
     inherit DsSystemEntity()
 
     let mutable arrow : Arrow<Work> option = None
@@ -102,7 +102,7 @@ and ArrowBetweenWorks() =     // Source, Target, Type
     member x.Target with get() = arrow.Value.Target and set v = arrow.Value.Target <- v
     member x.Type   with get() = arrow.Value.Type   and set v = arrow.Value.Type <- v
 
-and Project() =     // Create, Initialize
+and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
     inherit RtUnique()
 
     static member Create() = createExtended<Project>()
@@ -164,7 +164,7 @@ and Project() =     // Create, Initialize
 
 
 
-and DsSystem() =     // Create
+and DsSystem() = // Create
     inherit ProjectEntity()
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
@@ -234,7 +234,7 @@ and DsSystem() =     // Create
     //    this
 
 
-and Flow() =     // Create
+and Flow() = // Create
     inherit DsSystemEntity()
 
     interface IRtFlow
@@ -269,25 +269,25 @@ and Flow() =     // Create
 
         flow
 
-and DsButton() =
+and DsButton() = // Create
     inherit FlowEntity()
 
     interface IRtButton
     static member Create() = createExtended<DsButton>()
 
-and Lamp() =
+and Lamp() = // Create
     inherit FlowEntity()
 
     interface IRtLamp
     static member Create() = createExtended<Lamp>()
 
-and DsCondition() =
+and DsCondition() = // Create
     inherit FlowEntity()
 
     interface IRtCondition
     static member Create() = createExtended<DsCondition>()
 
-and DsAction() =
+and DsAction() = // Create
     inherit FlowEntity()
 
     interface IRtAction
@@ -295,7 +295,7 @@ and DsAction() =
 
 
 // see static member Create
-and Work() =     // Create
+and Work() = // Create
     inherit DsSystemEntity()
 
     interface IRtWork
@@ -328,7 +328,7 @@ and Work() =     // Create
         work
 
 // see static member Create
-and Call() =     // Create
+and Call() = // Create
     inherit WorkEntity()
 
     interface IRtCall
@@ -366,7 +366,7 @@ and Call() =     // Create
         call
 
 
-and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,     // Create, Callers, ApiDef
+and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
                inSymbol:string, outSymbol:string,
                valueSpec:IValueSpec option
 ) =
@@ -407,7 +407,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string,     // Create,
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) =     // Create, ApiUsers
+and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) = // Create, ApiUsers
     inherit DsSystemEntity()
 
     new() = new ApiDef(true)

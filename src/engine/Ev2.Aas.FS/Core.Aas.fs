@@ -164,7 +164,7 @@ module JsonExtensionModule =
         | SubmodelElementList
 
 
-    type ModelType =     // ToString
+    type ModelType = // ToString
         | AnnotatedRelationshipElement
         | AssetAdministrationShell
         | BasicEventElement
@@ -194,7 +194,7 @@ module JsonExtensionModule =
 
 
     /// Json/Xml node type.  속성 이름 혹은 node 이름
-    type N =     // ToString
+    type N = // ToString
         | AssetKind
         | AssetInformation
         | AssetAdministrationShells
@@ -465,7 +465,7 @@ module JsonExtensionModule =
 
     // Json 관련 static method 들을 모아놓은 static class
     [<AbstractClass; Sealed>]
-    type J() =     // CreateJArr, CreateIClassFromJson, CreateIClassFromXml
+    type J() = // CreateJArr, CreateIClassFromJson, CreateIClassFromXml
         /// JObj[] -> JArr 변환
         static member CreateJArr(jns:JNode seq): JArr = jns |> toArray |> JArr
 
