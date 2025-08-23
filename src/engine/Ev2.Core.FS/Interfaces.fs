@@ -109,7 +109,6 @@ module InterfaceModule =
     type IORMApiDef     = inherit IORMUnique
     type IORMParamWork  = inherit IORMUnique
     type IORMParamCall  = inherit IORMUnique
-    type IORMProgress   = inherit IORMUnique
     type IORMEnum       = inherit IORMUnique
     type IORMMeta       = inherit IORMUnique
     type IORMLog        = inherit IORMUnique

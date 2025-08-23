@@ -116,6 +116,8 @@ type ProjectExtensions =
             |> validateRuntime
 
         runtimeProject
+        |> replicateProperties njProject
+
 
 
     static let commitResultToString (result: DbCommitResult) : string =
