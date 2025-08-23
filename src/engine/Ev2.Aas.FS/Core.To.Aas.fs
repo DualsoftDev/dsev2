@@ -12,8 +12,8 @@ module CoreToAas =
     type NjUnique with     // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
-                JObj().TrySetProperty(x.Name,      "Name")
-                JObj().TrySetProperty(x.Guid,      "Guid")
+                JObj().TrySetProperty(x.Name, "Name")
+                JObj().TrySetProperty(x.Guid, "Guid")
 
                 if (x.Parameter.NonNullAny()) then
                     JObj().TrySetProperty(x.Parameter, "Parameter")
@@ -24,7 +24,15 @@ module CoreToAas =
         /// 확장 타입별 특수 속성 수집 (AAS용)
         /// Generic reflection 기반으로 확장 속성을 동적으로 수집
         member x.tryCollectExtensionProperties(): JObj option seq =
-            getTypeFactory() |-> (fun factory -> factory.WriteAasExtensionProperties x) |? Seq.empty
+            getTypeFactory()
+            |-> (fun factory ->
+                factory.WriteAasExtensionProperties x
+                |> Seq.map (fun obj ->
+                    match obj with
+                    | :? JObj as jobj -> Some jobj
+                    | :? System.Text.Json.Nodes.JsonObject as jo -> Some jo
+                    | _ -> None))
+            |? Seq.empty
 
 
         member x.CollectProperties(): JNode[] =
