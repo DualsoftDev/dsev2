@@ -56,7 +56,7 @@ module internal DbInsertModule =
 
                 match box x with
                 | :? Project as rt ->
-                    rt.OnBeforeSave()
+                    rt.OnBeforeSave(StorageType.Database(conn, tr))
                     let orm = rt.ToORM(dbApi)
                     assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
 
@@ -72,12 +72,7 @@ module internal DbInsertModule =
                     orm.Id <- Some projId
                     rt.Database <- dbApi.DbProvider
 
-
                     rt.InsertSystemMapToDB(dbApi)
-
-                    // 확장 처리 훅
-                    getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(rt, conn, tr))
-
 
                 | :? DsSystem as rt ->
                     let ormSystem = rt.ToORM<ORMSystem>(dbApi)
@@ -107,9 +102,6 @@ module internal DbInsertModule =
 
                     // system 의 arrows 를 삽입 (works 간 연결)
                     rt.Arrows |> iter _.InsertToDB(dbApi)
-
-                    // 확장 처리 훅
-                    getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(rt, conn, tr))
 
 
                 | :? ApiDef as rt ->
@@ -287,6 +279,7 @@ module internal DbInsertModule =
 
 
                 getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(x, conn, tr))
+                x |> tryCast<Project> |> iter ( _.OnAfterSave(StorageType.Database(conn, tr)))
             )
 
 

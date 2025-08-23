@@ -8,6 +8,7 @@ open Dual.Common.Core.FS
 open System.Collections.Generic
 open Dual.Common.Db.FS
 open Newtonsoft.Json
+open System.Data
 
 
 [<AbstractClass>]
@@ -152,13 +153,18 @@ and Project() =     // Create, Initialize
         x
 
 
-    abstract OnBeforeSave : unit  -> unit
+    abstract OnBeforeSave : StorageType  -> unit
     /// Runtime 객체 저장(DB, JSON, AASX) 이전에 호출되는 메서드
-    default this.OnBeforeSave() = ()
+    default this.OnBeforeSave(storageType:StorageType) = ()
 
-    abstract OnAfterLoad : unit -> unit
+    abstract OnAfterSave : StorageType  -> unit
+    /// Runtime 객체 저장(DB, JSON, AASX) 이전에 호출되는 메서드
+    default this.OnAfterSave(storageType:StorageType) = ()
+
+
+    abstract OnAfterLoad : StorageType -> unit
     /// Runtime 객체 로드(DB, JSON) 이후에 호출되는 메서드
-    default this.OnAfterLoad() = ()
+    default this.OnAfterLoad(storageType:StorageType) = ()
 
 
 

@@ -627,11 +627,11 @@ module Ds2JsonModule =
     type Project with     // ToJson, FromJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
-            x.OnBeforeSave()
+            x.OnBeforeSave(StorageType.Json)
             let njProject = x.ToNjObj() :?> NjProject
             njProject.ToJson()
         member x.ToJson(jsonFilePath:string) =
-            x.OnBeforeSave()
+            x.OnBeforeSave(StorageType.Json)
             let njProject = x.ToNjObj() :?> NjProject
             njProject.ToJsonFile(jsonFilePath)
 
@@ -641,7 +641,7 @@ module Ds2JsonModule =
                 json
                 |> NjProject.FromJson
                 |> getRuntimeObject<Project>        // de-serialization 연결 고리
-                |> tee _.OnAfterLoad()
+                |> tee _.OnAfterLoad(StorageType.Json)
                 |> validateRuntime
             project
 
