@@ -96,7 +96,7 @@ module CoreFromAas =
     let internal readAasExtensionProperties (smc:SubmodelElementCollection) (njObj:INjUnique)  =
         getTypeFactory() |-> (fun factory -> factory.ReadAasExtensionProperties(njObj, smc))
 
-    type NjProject with // FromISubmodel, FromAasxFile
+    type NjProject with // FromAasxFile, FromISubmodel
         static member FromAasxFile(aasxPath: string): NjProject =
             let aasFileInfo = AasXModule.readEnvironmentFromAasx aasxPath
             let env = aasFileInfo.Environment

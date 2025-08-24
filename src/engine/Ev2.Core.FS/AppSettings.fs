@@ -7,7 +7,7 @@ open System.Runtime.Serialization
 
 [<AutoOpen>]
 module AppSettingsModule =
-    type AppSettings() as this =     // OnSerializing, OnDeserializedMethod
+    type AppSettings() as this = // OnDeserializedMethod, OnSerializing
         do
             AppSettings.TheAppSettings <- this
 

@@ -15,7 +15,7 @@ module internal rec DsObjectCopyImpl =
         |> replicateProperties src
         |> tee(fun z -> bag.Newbies.TryAdd(src.Guid, z))
 
-    type Project with // replicate
+    type Project with // replicate, replicateTo
         /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
         member x.replicateTo(newProject:Project, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
@@ -37,7 +37,7 @@ module internal rec DsObjectCopyImpl =
             Project.Create([], [])
             |> tee(fun z -> x.replicateTo(z, bag))
 
-    type DsSystem with // replicate
+    type DsSystem with // replicate, replicateTo
         /// DsSystem 복제. 지정된 newSystem 객체에 현재 시스템의 내용을 복사
         member x.replicateTo(newSystem:DsSystem, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
@@ -78,7 +78,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newSystem -> x.replicateTo(newSystem, bag))
 
 
-    type Work with // replicate
+    type Work with // replicate, replicateTo
         /// Work 복제. 지정된 newWork 객체에 현재 작업의 내용을 복사
         member x.replicateTo(newWork:Work, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
@@ -117,7 +117,7 @@ module internal rec DsObjectCopyImpl =
 
 
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
-    type Flow with // replicate
+    type Flow with // replicate, replicateTo
         /// Flow 복제. 지정된 newFlow 객체에 현재 플로우의 내용을 복사
         member x.replicateTo(newFlow:Flow, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
@@ -147,7 +147,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newFlow -> x.replicateTo(newFlow, bag))
 
 
-    type DsButton with // replicate
+    type DsButton with // replicate, replicateTo
         member x.replicateTo(newButton:DsButton, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newButton |> uniqReplicateWithBag bag x |> ignore
@@ -157,7 +157,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newButton -> x.replicateTo(newButton, bag))
 
 
-    type Lamp with // replicate
+    type Lamp with // replicate, replicateTo
         member x.replicateTo(newLamp:Lamp, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newLamp |> uniqReplicateWithBag bag x |> ignore
@@ -167,7 +167,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newLamp -> x.replicateTo(newLamp, bag))
 
 
-    type DsCondition with // replicate
+    type DsCondition with // replicate, replicateTo
         member x.replicateTo(newCondition:DsCondition, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newCondition |> uniqReplicateWithBag bag x |> ignore
@@ -177,7 +177,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newCondition -> x.replicateTo(newCondition, bag))
 
 
-    type DsAction with // replicate
+    type DsAction with // replicate, replicateTo
         member x.replicateTo(newAction:DsAction, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newAction |> uniqReplicateWithBag bag x |> ignore
@@ -187,7 +187,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newAction -> x.replicateTo(newAction, bag))
 
 
-    type Call with // replicate
+    type Call with // replicate, replicateTo
         /// Call 복제. 지정된 newCall 객체에 현재 호출의 내용을 복사
         member x.replicateTo(newCall:Call, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
@@ -217,7 +217,7 @@ module internal rec DsObjectCopyImpl =
             Call.Create(x.CallType, x.ApiCallGuids |> toList, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
             |> tee(fun newCall -> x.replicateTo(newCall, bag))
 
-    type ApiCall with // replicate
+    type ApiCall with // replicate, replicateTo
         member x.replicateTo(newApiCall:ApiCall, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newApiCall |> uniqReplicateWithBag bag x |> ignore
@@ -226,7 +226,7 @@ module internal rec DsObjectCopyImpl =
             new ApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
             |> tee(fun newApiCall -> x.replicateTo(newApiCall, bag))
 
-    type ApiDef with // replicate
+    type ApiDef with // replicate, replicateTo
         member x.replicateTo(newApiDef:ApiDef, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newApiDef
@@ -237,7 +237,7 @@ module internal rec DsObjectCopyImpl =
             new ApiDef(x.IsPush)
             |> tee(fun newApiDef -> x.replicateTo(newApiDef, bag))
 
-    type ArrowBetweenWorks with // replicate
+    type ArrowBetweenWorks with // replicate, replicateTo
         member x.replicateTo(newArrow:ArrowBetweenWorks, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newArrow |> uniqReplicateWithBag bag x |> ignore
@@ -248,7 +248,7 @@ module internal rec DsObjectCopyImpl =
             ArrowBetweenWorks.Create(source, target, x.Type)
             |> tee(fun newArrow -> x.replicateTo(newArrow, bag))
 
-    type ArrowBetweenCalls with // replicate
+    type ArrowBetweenCalls with // replicate, replicateTo
         member x.replicateTo(newArrow:ArrowBetweenCalls, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newArrow |> uniqReplicateWithBag bag x |> ignore
@@ -263,7 +263,7 @@ module internal rec DsObjectCopyImpl =
 module DsObjectCopyAPIModule =
     open DsObjectCopyImpl
 
-    type DsSystem with // Replicate, Duplicate
+    type DsSystem with // Duplicate, Replicate
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate(ReplicateBag())
 
@@ -316,7 +316,7 @@ module DsObjectCopyAPIModule =
             replicaSys
 
 
-    type Project with // Replicate, Duplicate
+    type Project with // Duplicate, Replicate
         /// RtProject 객체 완전히 동일하게 복사 생성.  (Id, Guid 및 DateTime 포함 모두 동일하게 복사)
         member x.Replicate() =  // RtProject
             x.EnumerateRtObjects()

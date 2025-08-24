@@ -27,7 +27,7 @@ module DbApiModule =
     let checkedConnections = HashSet<string>()
 
 
-    type IDbConnection with     // QueryRows
+    type IDbConnection with // QueryRows<'T>
         /// DB 의 table 에서 특정 column 의 id 를 기준으로 row 를 가져온다.
         // e.g x.QueryRows<ORMAction>(Tn.Action, "assetId", assetIds |? [||])
         member conn.QueryRows<'T>(tableName:string, criteriaColumnName:string, criteriaIds:int[], tr:IDbTransaction) =
@@ -41,7 +41,7 @@ module DbApiModule =
 
 
 /// Database API - C#에서 직접 접근 가능하도록 namespace 레벨로 이동
-type AppDbApi(dbProvider:DbProvider) = // With, WithNew, WithConn, TryFindEnumValueId, TryFindEnumValue
+type AppDbApi(dbProvider:DbProvider) = // CallCache, CheckDatabaseChange, ClearAllCaches, CreateConnection, EnumCache, EnumerateCalls, EnumerateWorks, EnumerateWorksOfFlows, TheAppDbApi, WorkCache
     inherit DbApi(dbProvider)
 
     let venderDb = base.VendorDB
@@ -192,7 +192,7 @@ module ORMTypeConversionModule =
             conn.TryQuerySingle<ORMEnum>($"SELECT * FROM {Tn.Enum} WHERE id = {enumId}")
             >>= (fun z -> Enum.TryParse<'TEnum>(z.Name) |> tryParseToOption)
 
-    type ORMCall with   // Create
+    type ORMCall with // Create
         static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ): ORMUnique =

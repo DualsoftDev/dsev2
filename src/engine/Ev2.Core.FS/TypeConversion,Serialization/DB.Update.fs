@@ -7,7 +7,7 @@ open Dual.Common.Core.FS
 [<AutoOpen>]
 module internal rec DbUpdateImpl =
 
-    type IRtUnique with
+    type IRtUnique with // getTableName, rTryUpdateProjectToDB
         member x.getTableName() =
             match x with
             | :? Project     -> Tn.Project
@@ -47,7 +47,7 @@ module internal rec DbUpdateImpl =
             )
 
 
-    type CompareResult with
+    type CompareResult with // rTryCommitToDB
         /// CompareResult 객체(diff 결과물)를 DB에 반영
         member x.rTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             dbApi.With(fun (conn, tr) ->

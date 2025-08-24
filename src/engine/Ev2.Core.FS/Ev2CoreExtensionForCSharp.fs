@@ -11,7 +11,7 @@ open Newtonsoft.Json
 
 [<AutoOpen>]
 module ExtCopyModule =
-    type Project with     // CopyTo
+    type Project with // CopyTo
         member x.CopyTo(nj:NjProject) =
             replicateProperties x nj |> ignore
 
@@ -50,7 +50,7 @@ type CopyExtensionForCSharp = // CsCopyTo
 
 
 
-type Ev2CoreExtensionForCSharp = // CsToJson, CsFromJson, CsToNjProject, CsCreateProject, CsCreateDsSystem
+type Ev2CoreExtensionForCSharp = // CsExportToJson, CsToJson
 
     // Project 확장 메서드 - C# 전용
     [<Extension>]
@@ -93,7 +93,7 @@ type Ev2CoreExtensionForCSharp = // CsToJson, CsFromJson, CsToNjProject, CsCreat
             EmJson.ToJson(njObj)
 
 // Project 타입에 대한 정적 메서드 (C#에서 ProjectExtensions.CsFromJson() 형태로 사용)
-type ProjectExtensions = // 
+type ProjectExtensions = // CsCheckoutFromDB, CsCommitToDB, CsFromJson, CsRemoveFromDB
     static member CsFromJson(json:string): Project =
         // JSON을 JObject로 파싱하여 RuntimeType 확인
         let jObj = Newtonsoft.Json.Linq.JObject.Parse(json)
@@ -154,7 +154,7 @@ type ProjectExtensions = //
 
 
 // DsSystem 타입에 대한 정적 메서드
-type DsSystemExtensions = // 
+type DsSystemExtensions = // CsFromJson, CsImportFromJson
     static member CsImportFromJson(json:string): DsSystem =
         json
         |> NjSystem.ImportFromJson
@@ -164,7 +164,7 @@ type DsSystemExtensions = //
     static member CsFromJson(json:string): DsSystem =
         DsSystemExtensions.CsImportFromJson(json)
 
-type DbApiExtensions = // 
+type DbApiExtensions = // CsWith, CsWith<'T>, CsWithConn, CsWithConn<'T>, CsWithNew, CsWithNew<'T>
     // =====================
     // CsWith 메서드들 - 기본 With 메서드의 C# 호환 버전
     // =====================
@@ -238,7 +238,7 @@ type DbApiExtensions = //
         dbApi.WithConn((fun conn -> action.Invoke(conn)), (fun ex -> onError.Invoke(ex)))
 
 // 기존 DsSystemExtensions에 추가
-type DsSystemExtensions with
+type DsSystemExtensions with // CsCheckoutFromDB, CsTryCheckoutFromDB
     // =====================
     // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
     // =====================
@@ -260,7 +260,7 @@ type DsSystemExtensions with
         | Error errorMsg -> (false, Unchecked.defaultof<DsSystem>, errorMsg)
 
 // AppDbApi C# 호환 확장 메서드들
-type AppDbApiCsExtensions = // 
+type AppDbApiCsExtensions = //
     // =====================
     // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
     // =====================

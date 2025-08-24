@@ -9,7 +9,7 @@ open System.Diagnostics
 
 [<AutoOpen>]
 module rec DsCompareObjects =
-    type IUnique with   // GetGuid, GetName, TryGetId, GetDateTime, TryGetRawParent
+    type IUnique with // GetGuid, GetName, GetParameter, TryGetId, TryGetRawParent
         member private x.tryGet(): Unique option = x |> tryCast<Unique>
         member private x.get(): Unique = x.tryGet() |?? (fun () -> failwith "ERROR")
 
@@ -264,7 +264,7 @@ module rec DsCompareObjects =
             }
 
 
-    type IRtUnique with // ComputeDiff, IsEqual
+    type IRtUnique with // IsEqual
         member internal x.ComputeDiff(y:IRtUnique, criteria:Cc): Cr seq =
             seq {
                 match x, y with

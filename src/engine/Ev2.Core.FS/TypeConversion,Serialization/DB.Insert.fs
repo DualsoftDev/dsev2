@@ -13,7 +13,7 @@ open Dual.Common.Db.FS
 [<AutoOpen>]
 module internal DbInsertModule =
 
-    type Project with   // InsertSystemMapToDB
+    type Project with // InsertSystemMapToDB
         // project 하부에 연결된 passive system 을 DB 에 저장
         member x.InsertSystemMapToDB(dbApi:DbApi) =
 
@@ -49,7 +49,7 @@ module internal DbInsertModule =
             )
 
 
-    type IRtUnique with
+    type IRtUnique with // InsertToDB
         member x.InsertToDB(dbApi:AppDbApi) =
             let guidDicDebug = dbApi.DDic.TryGet<Guid2UniqDic>() |?? (fun () -> Guid2UniqDic() |> tee dbApi.DDic.Set)
             dbApi.With(fun (conn, tr) ->

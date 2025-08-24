@@ -35,7 +35,7 @@ module Ev2PreludeModule =
 [<AutoOpen>]
 module ResizeArrayExtensions =
 
-    type System.Collections.Generic.List<'T> with
+    type System.Collections.Generic.List<'T> with // VerifyAddAsSet, VerifyAddRangeAsSet
         member xs.VerifyAddAsSet(item: 'T, ?isDuplicatedPredicate: ('T -> 'T -> bool)) =
             xs.AddAsSet(item, ?isDuplicatedPredicate=isDuplicatedPredicate, onDuplicated=(fun x -> failwith $"ERROR: {x} duplicated."))
 
@@ -44,7 +44,7 @@ module ResizeArrayExtensions =
 
     let [<Literal>] DateFormatString = "yyyy-MM-ddTHH:mm:ss"
 
-    type DateTime with
+    type DateTime with // TruncateToSecond
         [<Extension>]
         member x.TruncateToSecond() =
             DateTime(x.Year, x.Month, x.Day,
@@ -68,7 +68,7 @@ module ValueRangeModule =
         abstract member Jsonize:   unit -> string
         abstract member Stringify: unit -> string
 
-    type ValueSpec<'T> =
+    type ValueSpec<'T> = // Jsonize, Stringify
         | Single of 'T
         | Multiple of 'T list
         | Ranges of RangeSegment<'T> list   // 단일 or 복수 범위 모두 표현 가능
@@ -257,7 +257,7 @@ module ValueRangeModule =
     let parseValueSpec text = rTryParseValueSpec text |> Result.get
 
 
-    type IValueSpec with
+    type IValueSpec with // Deserialize, Parse, RTryParse, TryDeserialize, TryParse
         /// JSON 역직렬화 함수.
         static member Deserialize(text: string) = deserializeWithType text
         static member TryDeserialize(text: string) =

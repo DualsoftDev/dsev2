@@ -27,7 +27,7 @@ module Schema =
         |> tee(tracefn "ConnectionString='%s'")
 
     [<SetUpFixture>]
-    type GlobalTestSetup() =     // GlobalSetup, Cleanup
+    type GlobalTestSetup() = // Cleanup, GlobalSetup
         [<OneTimeSetUp>]
         member _.GlobalSetup() =
             Ev2.Core.FS.ModuleInitializer.Initialize(null)
@@ -217,7 +217,7 @@ module Schema =
             |> ignore
 
 
-    type SQLiteTest() =     // dbCreateTest, dbReadTest, upsertTest, ``insert test``, ``[SQLite] EdObject - DsObject - OrmObject - DB insert - JSON test``, ``JSON - DsObject - DB update test``, ``DB Delete preview test``, ``Cylinder 추가 test``, ``설계 문서 위치에 샘플 생성``, ``[Sqlite] DB System 수정 commit``, ``[Sqlite] DB Project 수정 commit``
+    type SQLiteTest() = // dbCreateTest, dbReadTest, upsertTest
         [<Test>]
         member x.dbCreateTest() =
             use conn = sqliteDbApi().CreateConnection()

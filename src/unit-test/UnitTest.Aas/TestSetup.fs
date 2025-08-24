@@ -11,7 +11,7 @@ open T
 [<AutoOpen>]
 module TestSetup =
     [<SetUpFixture>]
-    type GlobalTestSetup() = // GlobalSetup, Cleanup
+    type GlobalTestSetup() = // Cleanup, GlobalSetup
         [<OneTimeSetUp>]
         member _.GlobalSetup() =
             Ev2.Core.FS.ModuleInitializer.Initialize(null)

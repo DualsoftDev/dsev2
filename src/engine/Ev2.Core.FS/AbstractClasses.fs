@@ -28,7 +28,7 @@ type RtUnique() = // ToNjObj, ToNj, ValidateRuntime
 
 // Entity base classes
 [<AbstractClass>]
-type ProjectEntity() = // 
+type ProjectEntity() = // Actions, ActiveSystems, ApiCalls, ApiDefs, ApiUsers, Arrows, Buttons, Call, Callers, Calls, Conditions, Create, Flow, Flows, Initialize, Lamps, OwnerProjectId, PassiveSystems, Project, System, Systems, Work, Works
     inherit RtUnique()
     member x.Project = x.RawParent >>= tryCast<Project>
 

@@ -93,7 +93,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
-    type NjProject() =     // Create, Initialize, OnSerializingMethod, OnDeserializedMethod
+    type NjProject() = // Create, Initialize
         inherit NjUnique()
         interface INjProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -118,7 +118,7 @@ module rec NewtonsoftJsonObjects =
             x
 
 
-    type NjSystem() =     // Create
+    type NjSystem() = // Create, Initialize, OnDeserializedMethod, OnSerializingMethod, ShouldSerializeApiCalls, ShouldSerializeApiDefs, ShouldSerializeArrows, ShouldSerializeFlows, ShouldSerializeWorks
         inherit NjProjectEntity()
         interface INjSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
@@ -168,7 +168,7 @@ module rec NewtonsoftJsonObjects =
             x.ApiCalls <- apiCalls
             x
 
-    type NjFlow () =
+    type NjFlow () = // Create, Initialize, ShouldSerializeActions, ShouldSerializeButtons, ShouldSerializeConditions, ShouldSerializeLamps
         inherit NjSystemEntity()
         interface INjFlow
 
@@ -193,32 +193,32 @@ module rec NewtonsoftJsonObjects =
             x.Actions    <- actions
             x
 
-    type NjButton() =
+    type NjButton() = // Create
         inherit NjFlowEntity()
 
         interface INjButton
         static member Create() = createExtended<NjButton>()
 
-    type NjLamp() =
+    type NjLamp() = // Create
         inherit NjFlowEntity()
 
         interface INjLamp
         static member Create() = createExtended<NjLamp>()
 
-    type NjCondition() =
+    type NjCondition() = // Create
         inherit NjFlowEntity()
 
         interface INjCondition
         static member Create() = createExtended<NjCondition>()
 
-    type NjAction() =
+    type NjAction() = // Create
         inherit NjFlowEntity()
 
         interface INjAction
         static member Create() = createExtended<NjAction>()
 
 
-    type NjWork () =
+    type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
         inherit NjSystemEntity()
         interface INjWork
         member val FlowGuid   = null:string with get, set
@@ -258,7 +258,7 @@ module rec NewtonsoftJsonObjects =
             x.FlowGuid <- flowGuid
             x
 
-    type NjArrow() =
+    type NjArrow() = // Create
         inherit NjUnique()
 
         interface INjArrow
@@ -268,7 +268,7 @@ module rec NewtonsoftJsonObjects =
         static member Create() = createExtended<NjArrow>()
 
 
-    type NjCall() =
+    type NjCall() = // Create, Initialize, ShouldSerializeApiCalls, ShouldSerializeAutoConditions, ShouldSerializeCallType, ShouldSerializeCommonConditions, ShouldSerializeIsDisabled, ShouldSerializeStatus, ShouldSerializeTimeout
         inherit NjWorkEntity()
 
         interface INjCall
@@ -322,7 +322,7 @@ module rec NewtonsoftJsonObjects =
             x
 
 
-    type NjApiCall() =
+    type NjApiCall() = // Create
         inherit NjSystemEntity()
 
         interface INjApiCall
@@ -335,7 +335,7 @@ module rec NewtonsoftJsonObjects =
         static member Create() = createExtended<NjApiCall>()
 
 
-    type NjApiDef() =
+    type NjApiDef() = // Create
         inherit NjSystemEntity()
         interface INjApiDef
 
@@ -591,7 +591,7 @@ module Ds2JsonModule =
         rtObj
 
 
-    type NjProject with // ToJson, FromJson
+    type NjProject with // FromJson, ToJson, ToJsonFile
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             (* Withh context version *)
@@ -618,7 +618,7 @@ module Ds2JsonModule =
 
             EmJson.FromJson<NjProject>(json, settings)
 
-    type Project with     // ToJson, FromJson
+    type Project with // FromJson, ToJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             let njProject = x.ToNjObj() :?> NjProject
@@ -639,7 +639,7 @@ module Ds2JsonModule =
 
 
 
-    type NjSystem with
+    type NjSystem with // ExportToJson, ExportToJsonFile, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환
         member x.ExportToJson():string =
             let settings = EmJson.CreateDefaultSettings()
@@ -652,7 +652,7 @@ module Ds2JsonModule =
         /// JSON 문자열을 DsSystem 로 변환
         static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
 
-    type DsSystem with     // ToJson, FromJson
+    type DsSystem with // ExportToJson, FromJson, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환
         member x.ExportToJson():string =
             let njSystem = x.ToNj<NjSystem>()

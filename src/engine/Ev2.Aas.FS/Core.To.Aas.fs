@@ -9,7 +9,7 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CoreToAas =
-    type NjUnique with // tryCollectPropertiesNjUnique, tryCollectExtensionProperties, CollectProperties
+    type NjUnique with // CollectProperties, tryCollectExtensionProperties, tryCollectPropertiesNjUnique
         member x.tryCollectPropertiesNjUnique(): JObj option seq =
             seq {
                 JObj().TrySetProperty(x.Name, nameof x.Name)
@@ -258,31 +258,31 @@ module CoreToAas =
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiDef", x.CollectProperties())
 
-    type NjApiCall with     // ToSjSMC
+    type NjApiCall with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiCall", x.CollectProperties())
 
 
-    type NjButton with     // ToSjSMC
+    type NjButton with // ToSjSMC
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("Button", x.CollectProperties())
 
-    type NjLamp with     // ToSjSMC
+    type NjLamp with // ToSjSMC
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
             JObj().ToSjSMC("Lamp", props)
 
-    type NjCondition with     // ToSjSMC
+    type NjCondition with // ToSjSMC
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
             JObj().ToSjSMC("Condition", props)
 
-    type NjAction with     // ToSjSMC
+    type NjAction with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
             JObj().ToSjSMC("Action", props)
 
-    type NjFlow with     // ToSjSMC
+    type NjFlow with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let buttons    = x.Buttons    |-> _.ToSjSMC() |> toSjSMC (nameof x.Buttons)
@@ -294,14 +294,14 @@ module CoreToAas =
             JObj().ToSjSMC("Flow", props)
             |> _.AddValues([|buttons; lamps; conditions; actions|] |> choose id)
 
-    type NjCall with     // ToSjSMC
+    type NjCall with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let me = x
             let props = x.CollectProperties()
             JObj().ToSjSMC("Call", props)
 
-    type NjArrow with     // ToSjSMC
+    type NjArrow with // ToSjSMC
         /// Convert arrow to Aas Jons of SubmodelElementCollection
         member x.ToSjSMC(): JNode =
             let props = x.CollectProperties()
@@ -317,7 +317,7 @@ module CoreToAas =
                 |> _.AddValues(values)
                 |> Some
 
-    type NjWork with     // ToSjSMC
+    type NjWork with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let arrows = x.Arrows |-> _.ToSjSMC() |> toSjSMC (nameof x.Arrows)

@@ -76,7 +76,7 @@ module ORMTypesModule =
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) =     // Initialize
+    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) = // Initialize
         inherit ORMUnique()
 
         new() = new ORMProject(Environment.UserName, nullVersion, nullString, minDate)
@@ -97,7 +97,7 @@ module ORMTypesModule =
             x
 
 
-    type ORMSystem(ownerProjectId:Id option
+    type ORMSystem(ownerProjectId:Id option // Initialize
         , iri:string, author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
     ) =
@@ -127,7 +127,7 @@ module ORMTypesModule =
             x.OwnerProjectId <- runtime.OwnerProjectId
             x
 
-    type ORMFlow(systemId:Id) =
+    type ORMFlow(systemId:Id) = // Initialize
         inherit ORMWorkEntity(systemId)
 
         new() = new ORMFlow(-1)
@@ -165,7 +165,7 @@ module ORMTypesModule =
         interface IORMAction
 
 
-    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option) =
+    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option) = // Initialize
         inherit ORMSystemEntity(systemId)
 
         new() = new ORMWork(-1, None, None)
@@ -192,7 +192,7 @@ module ORMTypesModule =
             x.Status4Id <- runtime.Status4 |-> int64
             x
 
-    type ORMCall(workId:Id, status4Id:Id option
+    type ORMCall(workId:Id, status4Id:Id option // Initialize
         , callTypeId:Id option, autoConditions:string seq
         , commonConditions:string seq, isDisabled:bool, timeout:int option
     ) =
@@ -235,7 +235,7 @@ module ORMTypesModule =
         member val ApiCallId = apiCallId with get, set
 
     //type ORMApiCall(systemId:Id) =
-    type ORMApiCall(systemId:Id, apiDefId:Id
+    type ORMApiCall(systemId:Id, apiDefId:Id // ValueSpecHint
         , inAddress:string, outAddress:string
         , inSymbol:string, outSymbol:string
         , valueSpec:string

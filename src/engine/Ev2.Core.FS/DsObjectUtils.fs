@@ -13,7 +13,7 @@ open Dual.Common.Base
 module rec TmpCompatibility =
     type Guid2UniqDic = Dictionary<Guid, Unique>
 
-    type RtUnique with     // UpdateDateTime, EnumerateRtObjects
+    type RtUnique with // EnumerateRtObjects, UpdateDateTime
         /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
         ///
         /// project, system 만 date time 가지는 걸로 변경 고려 중..
@@ -54,7 +54,7 @@ module rec TmpCompatibility =
 
 
 
-    type Project with     // AddActiveSystem, AddPassiveSystem
+    type Project with // AddActiveSystem, AddPassiveSystem
         member x.AddActiveSystem(system:DsSystem) =
             system |> setParent x |> ignore
             x.RawActiveSystems.AddAsSet(system, Unique.isDuplicated)
@@ -63,7 +63,7 @@ module rec TmpCompatibility =
             system |> setParent x |> ignore
             x.RawPassiveSystems.AddAsSet(system, Unique.isDuplicated)
 
-    type DsSystem with     // AddWorks, RemoveWorks, AddFlows, RemoveFlows, AddArrows, RemoveArrows, AddApiDefs, RemoveApiDefs, AddApiCalls, RemoveApiCalls
+    type DsSystem with // AddApiCalls, AddApiDefs, AddArrows, AddFlows, AddWorks, RemoveApiCalls, RemoveApiDefs, RemoveArrows, RemoveFlows, RemoveWorks
         member internal x.addWorks(works:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             works |> iter (setParentI x)
@@ -161,7 +161,7 @@ module rec TmpCompatibility =
 
 
 
-    type Flow with    // {Add/Remove}{Works, Buttons, Lamps, Conditions, Actions}
+    type Flow with // AddActions, AddButtons, AddConditions, AddLamps, AddWorks, RemoveActions, RemoveButtons, RemoveConditions, RemoveLamps, RemoveWorks
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
         member internal x.addWorks(ws:Work seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
@@ -226,7 +226,7 @@ module rec TmpCompatibility =
 
 
 
-    type Work with    // AddCalls, RemoveCalls, AddArrows, RemoveArrows
+    type Work with // AddArrows, AddCalls, RemoveArrows, RemoveCalls
         member internal x.addCalls(calls:Call seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             calls |> iter (setParentI x)
@@ -255,7 +255,7 @@ module rec TmpCompatibility =
         member x.AddArrows   (arrows:ArrowBetweenCalls seq) = x.addArrows   (arrows, true)
         member x.RemoveArrows(arrows:ArrowBetweenCalls seq) = x.removeArrows(arrows, true)
 
-    type Call with    // AddApiCalls
+    type Call with // AddApiCalls
         member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
@@ -276,7 +276,7 @@ module rec TmpCompatibility =
 
 
 // C# 친화적인 정적 팩토리 클래스 - C#에서 직접 접근 가능
-type DsObjectFactory = // InitializeAppSettings, CreateProject, CreateDsSystemExtended, CreateDsSystem, CreateWork, CreateCall
+type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExtended, CreateDsSystem, CreateDsSystemExtended, CreateFlow, CreateProject, CreateWork, CreateWorkExtended, InitializeAppSettings
 
     /// C#에서 AppSettings 초기화를 위한 헬퍼 메서드
     static member InitializeAppSettings() =
@@ -367,7 +367,7 @@ type DsObjectFactory = // InitializeAppSettings, CreateProject, CreateDsSystemEx
 module DsObjectUtilsModule =
 
     // F# 코드 호환성을 위한 타입 확장 (static member)
-    type Project with   // Create, Initialize
+    type Project with // Create
         static member Create(activeSystems:DsSystem seq, passiveSystems:DsSystem seq) =
             // 매개변수가 있는 경우 직접 생성자 사용하거나 확장 타입에서 initialize
             let project = createExtended<Project>()
@@ -383,7 +383,7 @@ module DsObjectUtilsModule =
             createExtended<Project>()
 
 
-    type DsSystem with   // Create, Initialize
+    type DsSystem with // Create
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
         ) =
@@ -412,7 +412,7 @@ module DsObjectUtilsModule =
             createExtended<DsSystem>()
 
 
-    type Work with   // Create, Initialize
+    type Work with // Create
         static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let work = createExtended<Work>()
@@ -429,7 +429,7 @@ module DsObjectUtilsModule =
             createExtended<Work>()
 
 
-    type Call with   // Create, Initialize
+    type Call with // Create
         static member Create(callType:DbCallType, apiCalls:ApiCall seq,
             autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
         ) =
@@ -450,7 +450,7 @@ module DsObjectUtilsModule =
             createExtended<Call>()
 
 
-    type Flow with   // Create, Initialize
+    type Flow with // Create
         static member Create(buttons:DsButton seq, lamps:Lamp seq, conditions:DsCondition seq, actions:DsAction seq) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let flow = createExtended<Flow>()
@@ -472,7 +472,7 @@ module DsObjectUtilsModule =
             createExtended<Flow>()
 
 
-    type ApiDef with   // Create
+    type ApiDef with // Create
         static member Create(isPush:bool) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let apiDef = createExtended<ApiDef>()
@@ -482,7 +482,7 @@ module DsObjectUtilsModule =
         static member Create() =
             createExtended<ApiDef>()
 
-    type ApiCall with   // Create
+    type ApiCall with // Create
         static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let apiCall = createExtended<ApiCall>()
@@ -497,7 +497,7 @@ module DsObjectUtilsModule =
         static member Create() =
             createExtended<ApiCall>()
 
-    type IArrow with
+    type IArrow with // GetArrowType, GetSource, GetTarget
         member x.GetSource(): Unique =
             match x with
             | :? ArrowBetweenCalls as a -> a.Source
@@ -516,7 +516,7 @@ module DsObjectUtilsModule =
             | :? ArrowBetweenWorks as a -> a.Type
             | _ -> failwith "ERROR"
 
-    type Unique with
+    type Unique with // EnumerateAncestors, GetFQDN
         member x.EnumerateAncestors(?includeMe): Unique list = [
             let includeMe = includeMe |? true
             if includeMe then
@@ -534,7 +534,7 @@ module DsObjectUtilsModule =
             |> String.concat "/"
 
 
-    type RtUnique with
+    type RtUnique with // Validate
         member x.Validate(guidDicDebug:Guid2UniqDic) =
             verify (x.Guid <> emptyGuid)
             x.ValidateRuntime()

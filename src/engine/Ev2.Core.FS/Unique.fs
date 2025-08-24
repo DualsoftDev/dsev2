@@ -46,7 +46,7 @@ module Interfaces =
 
 
     [<AbstractClass>]
-    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) =     // CopyUniqueProperties, isDuplicated
+    type Unique(name:string, guid:Guid, parameter:string, ?id:Id, ?parent:Unique) = // isDuplicated
         inherit UniqueWithFody()
 
         interface IUnique
