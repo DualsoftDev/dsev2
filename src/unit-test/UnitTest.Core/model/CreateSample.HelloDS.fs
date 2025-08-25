@@ -8,33 +8,8 @@ open Ev2.Core.FS
 
 [<AutoOpen>]
 module CreateSampleWithHelloDsModule =
-    [<AutoOpen>]
-    module CreateCylinderModule =
-        (* Cylinder *)
-        let createSystemDoubleCylinder(name):DsSystem =
-            let cylSystem = DsSystem.Create() |> tee (fun z -> z.Name <- name)
-
-            let cylApiDefAdv = ApiDef.Create(Name = "ApiDefADV")
-            let cylApiDefRet = ApiDef.Create(Name = "ApiDefRET")
-            cylSystem.AddApiDefs [cylApiDefAdv; cylApiDefRet]
-
-            let cylWorkAdv = Work.Create() |> tee (fun z -> z.Name <- "ADVANCE")
-            let cylWorkRet = Work.Create() |> tee (fun z -> z.Name <- "RETURN")
-            cylSystem.AddWorks [cylWorkAdv; cylWorkRet;]
-
-            let edArrowW = ArrowBetweenWorks.Create(cylWorkAdv, cylWorkRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
-            cylSystem.AddArrows [edArrowW]
-
-
-            cylSystem.EnumerateRtObjects()
-            |> iter (fun edObj ->
-                // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
-                edObj.Id.IsNone === true
-            )
-            cylSystem
-
-    [<AutoOpen>]
-    module CreateControllerModule =
+    //[<AutoOpen>]
+    //module CreateControllerModule =
         let createHelloDS(): Project =
             let hdsProject:Project = Project.Create(Name = "HelloDS")
             let hdsSystem: DsSystem =
@@ -73,10 +48,10 @@ module CreateSampleWithHelloDsModule =
             [hdsWork1; hdsWork2; hdsWork3] |> hdsSystem.AddWorks
             [hdsFlow] |> hdsSystem.AddFlows
 
-            let dev1 = createSystemDoubleCylinder "Device1"
-            let dev2 = createSystemDoubleCylinder "Device2"
-            let dev3 = createSystemDoubleCylinder "Device3"
-            let dev4 = createSystemDoubleCylinder "Device4"
+            let dev1 = createCylinder "Device1"
+            let dev2 = createCylinder "Device2"
+            let dev3 = createCylinder "Device3"
+            let dev4 = createCylinder "Device4"
             [ dev1; dev2; dev3; dev4 ] |> iter hdsProject.AddPassiveSystem
 
             let createApiCalls() =

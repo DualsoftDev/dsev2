@@ -221,12 +221,13 @@ module ORMTypesModule =
 
 
 
-    type ORMMapProjectSystem(projectId:Id, systemId:Id) =
+    type ORMMapProjectSystem(projectId:Id, systemId:Id, isActiveSystem:bool) =
         inherit ORMUnique()
 
-        new() = new ORMMapProjectSystem(-1, -1)
+        new() = new ORMMapProjectSystem(-1, -1, false)
         member val ProjectId = projectId with get, set
         member val SystemId  = systemId  with get, set
+        member val IsActiveSystem = isActiveSystem with get, set
 
     type ORMMapCall2ApiCall(callId:Id, apiCallId:Id) =
         inherit ORMUnique()

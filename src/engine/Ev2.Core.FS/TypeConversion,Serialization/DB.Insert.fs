@@ -20,7 +20,7 @@ module internal DbInsertModule =
             dbApi.With(fun (conn, tr) ->
 
 
-                let insertSystemMap (s:DsSystem) =
+                let insertSystemMap (isActiveSystem:bool) (s:DsSystem) =
                     // s.PrototypeSystemGuid 에 따라 다른 처리???
                     //assert(not s.PrototypeSystemGuid.Is)
 
@@ -34,18 +34,19 @@ module internal DbInsertModule =
                                         WHERE projectId = @ProjectId AND systemId = @SystemId""", {|ProjectId = projId; SystemId=sysId|}, tr) with
                     | Some row ->
                             conn.Execute($"""UPDATE {Tn.MapProject2System}
-                                             SET loadedName = @LoadedName
-                                             WHERE id = @Id""", {|LoadedName=s.Name; Id=row.Id|}, tr) |> ignore
+                                             SET loadedName = @LoadedName, isActiveSystem=@IsActiveSystem
+                                             WHERE id = @Id""", {|LoadedName=s.Name; Id=row.Id; IsActiveSystem=isActiveSystem|}, tr) |> ignore
                     | None ->
                         let affectedRows = conn.Execute(
                                 $"""INSERT INTO {Tn.MapProject2System}
-                                            (projectId, systemId, loadedName, guid)
-                                     VALUES (@ProjectId, @SystemId, @LoadedName, @Guid)""",
-                                {|  ProjectId = projId; SystemId = sysId; LoadedName=s.Name
+                                            (projectId, systemId, loadedName, isActiveSystem, guid)
+                                     VALUES (@ProjectId, @SystemId, @LoadedName, @IsActiveSystem, @Guid)""",
+                                {|  ProjectId = projId; SystemId = sysId; LoadedName=s.Name; IsActiveSystem=isActiveSystem;
                                     Guid=Guid.NewGuid() |}, tr)
                         ()
 
-                x.PassiveSystems |> iter insertSystemMap
+                x.ActiveSystems  |> iter (insertSystemMap true)
+                x.PassiveSystems |> iter (insertSystemMap false)
             )
 
 

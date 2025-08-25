@@ -537,7 +537,6 @@ module DsObjectUtilsModule =
     type RtUnique with // Validate
         member x.Validate(guidDicDebug:Guid2UniqDic) =
             verify (x.Guid <> emptyGuid)
-            x.ValidateRuntime()
 
             x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
             match x with

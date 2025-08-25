@@ -625,7 +625,7 @@ module Ds2JsonModule =
                         njObj :?> NjProject)
                 |?? (fun () ->                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
                     EmJson.FromJson<NjProject>(json, settings))
-            njProj
+            njProj |> tee(_.OnConstructed())
 
     type Project with // ToJson
         /// DsProject 를 JSON 문자열로 변환
@@ -643,27 +643,29 @@ module Ds2JsonModule =
                 |> NjProject.FromJson
                 |> getRuntimeObject<Project>        // de-serialization 연결 고리
                 |> validateRuntime
+                |> tee(_.OnConstructed())
             project
 
     type NjSystem with // ExportToJson, ExportToJsonFile, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환
-        member x.ExportToJson():string =
+        member x.ExportToJson(): string =
             let settings = EmJson.CreateDefaultSettings()
             settings.DateFormatString <- DateFormatString
             EmJson.ToJson(x, settings)
-        member x.ExportToJsonFile(jsonFilePath:string) =
+        member x.ExportToJsonFile(jsonFilePath:string): string =
             x.ExportToJson()
             |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
         /// JSON 문자열을 DsSystem 로 변환
-        static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json)
+        static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json) |> tee(_.OnConstructed())
 
     type DsSystem with // ExportToJson, FromJson, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환
-        member x.ExportToJson():string =
+        member x.ExportToJson(): string =
             let njSystem = x.ToNj<NjSystem>()
             njSystem.ExportToJson()
-        member x.ExportToJson(jsonFilePath:string) =
+
+        member x.ExportToJson(jsonFilePath:string): string =
             let njSystem = x.ToNj<NjSystem>()
             njSystem.ExportToJsonFile(jsonFilePath)
 
@@ -676,6 +678,7 @@ module Ds2JsonModule =
                 |> NjSystem.ImportFromJson
                 |> getRuntimeObject<DsSystem>        // de-serialization 연결 고리
                 |> validateRuntime
+                |> tee(_.OnConstructed())
             | _ -> // RuntimeType 이 없거나, 잘못된 경우
                 failwith "Invalid system JSON file.  'RuntimeType' not found or mismatch."
         static member FromJson(json) = DsSystem.ImportFromJson(json)
@@ -802,4 +805,5 @@ module Ds2JsonModule =
 
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
             onNsJsonSerializing njObj
+            njObj.OnConstructed()
             njObj

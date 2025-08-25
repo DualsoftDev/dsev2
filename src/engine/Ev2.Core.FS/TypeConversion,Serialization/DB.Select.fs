@@ -232,9 +232,7 @@ module internal Db2DsImpl =
                 Project.Create()
                 |> replicateProperties ormProject
 
-
-
-            let ormPassiveSystems =
+            let ormSystems =
                 let systemIds = projSysMaps |-> _.SystemId
 
                 let sql =
@@ -242,14 +240,6 @@ module internal Db2DsImpl =
                     $"SELECT * FROM {Tn.System} WHERE {idCheck}"
 
                 conn.Query<ORMSystem>(sql, {| SystemIds = systemIds |}, tr)
-
-            let ormActiveSystems =
-                let sql = $"SELECT * FROM {Tn.System} WHERE ownerProjectId = @OwnerProjectId"
-                conn.Query<ORMSystem>(sql, {| OwnerProjectId = ormProject.Id |}, tr)
-
-
-            let ormSystems =
-                ormActiveSystems @ ormPassiveSystems
                 |> tees (fun os ->
                     let sys = createExtended<DsSystem>()
                     sys |> replicateProperties os |> ignore
@@ -257,6 +247,9 @@ module internal Db2DsImpl =
                     os.RtObject <- Some (sys :> IRtUnique))
                 |> toArray
 
+            let (ormActiveSystems, ormPassiveSystems) =
+                let activeSystemIds = projSysMaps |> filter (fun m -> m.IsActiveSystem) |-> _.SystemId |> toArray
+                ormSystems |> Seq.partition(fun s -> activeSystemIds.Contains s.Id.Value)
 
             let rtActives = ormActiveSystems   |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR"))
             let rtPassives = ormPassiveSystems |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR"))

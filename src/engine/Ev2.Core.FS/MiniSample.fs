@@ -5,11 +5,29 @@ open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module MiniSample =
+    let createCylinder(name:string) =
+            let cylSystem = DsSystem.Create() |> tee (fun z -> z.Name <- name)
+
+            let cylApiDefAdv = ApiDef.Create(Name = "ApiDefADV")
+            let cylApiDefRet = ApiDef.Create(Name = "ApiDefRET")
+            cylSystem.AddApiDefs [cylApiDefAdv; cylApiDefRet]
+
+            let cylWorkAdv = Work.Create() |> tee (fun z -> z.Name <- "ADVANCE")
+            let cylWorkRet = Work.Create() |> tee (fun z -> z.Name <- "RETURN")
+            cylSystem.AddWorks [cylWorkAdv; cylWorkRet;]
+
+            let edArrowW = ArrowBetweenWorks.Create(cylWorkAdv, cylWorkRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+            cylSystem.AddArrows [edArrowW]
+
+            cylSystem
 
     /// Extension type 테스트를 위한 간단한 Project 생성
     let create() =
         // Project 생성
         let project = Project.Create(Name = "TestProject")
+
+        let cyl = createCylinder "Cylinder1"
+        project.AddPassiveSystem cyl
 
         // DsSystem 생성 및 추가
         let system =

@@ -12,17 +12,13 @@ open System.Data
 
 
 [<AbstractClass>]
-type RtUnique() = // ToNjObj, ToNj, ValidateRuntime
+type RtUnique() = // ToNjObj, ToNj
     inherit Unique()
     interface IRtUnique
 
     abstract member ToNjObj : unit -> INjUnique
     /// Runtime 객체를 Newtonsoft JSON 객체로 변환
     default x.ToNjObj() = fwdRtObj2NjObj x
-
-    abstract member ValidateRuntime: unit -> unit
-    /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
-    default x.ValidateRuntime() = ()
 
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
