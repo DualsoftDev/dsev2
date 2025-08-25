@@ -258,7 +258,7 @@ module rec TmpCompatibility =
     type Call with // AddApiCalls
         member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
             if byUI = Some true then x.UpdateDateTime()
-            apiCalls |> iter (setParentI x)
+            //apiCalls |> iter (setParentI x)
             apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
 
         member x.AddApiCalls (apiCalls:ApiCall seq)         = x.addApiCalls (apiCalls, true)

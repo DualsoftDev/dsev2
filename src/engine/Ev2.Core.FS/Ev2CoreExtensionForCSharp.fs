@@ -7,6 +7,7 @@ open System.Data
 open System.Runtime.CompilerServices
 open System.IO
 open Newtonsoft.Json
+open System.Runtime.InteropServices
 
 
 [<AutoOpen>]
@@ -91,6 +92,11 @@ type Ev2CoreExtensionForCSharp = // CsExportToJson, CsToJson
             // 다른 타입들에 대한 기본 JSON 직렬화
             let njObj = rtObj.ToNjObj()
             EmJson.ToJson(njObj)
+
+    [<Extension>]
+    static member CsEnumerateRtObjects(rtObj:RtUnique, [<Optional; DefaultParameterValue(true)>] includeMe:bool): RtUnique[] =
+        rtObj.EnumerateRtObjects(includeMe) |> toArray
+
 
 // Project 타입에 대한 정적 메서드 (C#에서 ProjectExtensions.CsFromJson() 형태로 사용)
 type ProjectExtensions = // CsCheckoutFromDB, CsCommitToDB, CsRemoveFromDB

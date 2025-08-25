@@ -74,6 +74,6 @@ module TypeFactoryHelper =
                         factory.CreateNj(typeof<'T>) :> IUnique
                     else
                         failwith "ERROR"
-                obj :?> 'T)
+                if isItNull obj then new 'T() else obj :?> 'T)
         |?? (fun () -> new 'T())
 

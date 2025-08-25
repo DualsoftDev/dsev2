@@ -84,6 +84,7 @@ module MiniSample =
         [ flow] |> system.AddFlows
         [ apiDef1; apiDef2 ] |> system.AddApiDefs
         [ apiCall] |> system.AddApiCalls
+        [ apiCall] |> call1.AddApiCalls
 
         // Project에 System 추가
         project.AddActiveSystem system
