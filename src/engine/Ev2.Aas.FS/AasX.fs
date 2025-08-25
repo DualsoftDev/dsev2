@@ -117,6 +117,8 @@ module AasXModule2 =
                 Xmlization.Serialize.To(env, writer)
                 writer.Flush()
 
+            prj.AasxPath <- outputPath
+
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
         /// 개선된 버전: AASX 파일 구조 분석, AAS 버전 확인, Content_Types.xml 기반 파일 찾기
@@ -174,6 +176,7 @@ module AasXModule2 =
 
             // 5. 파일 교체 (백업 포함)
             replaceFileWithBackup aasxPath tempPath
+            prj.AasxPath <- aasxPath
 
     type Project with // ExportToAasxFile, FromAasxFile, InjectToExistingAasxFile, ReadRuntimeDataFromDatabase, UpdateDbAasXml
         /// AASX 파일에서 aas submodel xml 파일을 읽어서 database 의 project table 의 aasXml column 을 update
@@ -227,46 +230,14 @@ module AasXModule2 =
         member x.ExportToAasxFile(outputPath: string, ?dbApi: AppDbApi): unit =
             dbApi |> iter x.ReadRuntimeDataFromDatabase
 
-            // 개선: TypeFactory를 통한 확장 타입 인식
-            eprintfn "[ExportToAasxFile] Runtime Project type: %s" (x.GetType().FullName)
-            let njProj =
-                match getTypeFactory() with
-                | Some factory ->
-                    eprintfn "[ExportToAasxFile] TypeFactory found"
-                    // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
-                    match factory.CreateNj(x.GetType()) |> Option.ofObj with
-                    | None ->
-                        eprintfn "[ExportToAasxFile] CreateNj returned None, using JSON fallback"
-                        // 2) JSON을 통한 기본 변환 사용
-                        x.ToJson() |> NjProject.FromJson
-                    | Some njObj ->
-                        eprintfn "[ExportToAasxFile] CreateNj created type: %s" (njObj.GetType().FullName)
-                        njObj :?> NjProject
-                | None ->
-                    eprintfn "[ExportToAasxFile] No TypeFactory, using fallback"
-                    // Fallback: 기존 방식
-                    x.ToJson() |> NjProject.FromJson
-
-            eprintfn "[ExportToAasxFile] NjProject type created: %s" (njProj.GetType().FullName)
+            let njProj = x.ToNjObj() :?> NjProject
 
             njProj.RuntimeObject <- x // Runtime 객체들을 NjProject에 복사
             NewtonsoftJsonObjects.onNsJsonSerializing njProj
             njProj.ExportToAasxFile(outputPath)
+            x.AasxPath <- outputPath
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
         member x.InjectToExistingAasxFile(aasxPath: string) =
-            // 개선: TypeFactory를 통한 확장 타입 인식
-            let njProj =
-                match getTypeFactory() with
-                | Some factory ->
-                    // 1) Runtime 객체에서 직접 확장 NjXXX 생성 시도
-                    match factory.CreateNj(x.GetType()) |> Option.ofObj with
-                    | None ->
-                        // 2) JSON을 통한 기본 변환 사용
-                        x.ToJson() |> NjProject.FromJson
-                    | Some njObj -> njObj :?> NjProject
-                | None ->
-                    // Fallback: 기존 방식
-                    x.ToJson() |> NjProject.FromJson
-
+            let njProj = x.ToNjObj() :?> NjProject
             njProj.InjectToExistingAasxFile(aasxPath)

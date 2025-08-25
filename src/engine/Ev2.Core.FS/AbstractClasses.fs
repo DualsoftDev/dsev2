@@ -120,6 +120,7 @@ and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
     // { JSON 용
     /// 마지막 저장 db 에 대한 connection string
     member val Database = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
+    member val AasxPath = nullString with get, set // AASX 파일 경로.
 
     member val Author        = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
     member val Version       = Version()  with get, set

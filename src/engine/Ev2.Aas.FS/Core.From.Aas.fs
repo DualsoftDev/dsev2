@@ -148,7 +148,7 @@ module CoreFromAas =
                 //        applyExtensionProperties baseProject extensionProps
                 //    baseProject
 
-            project
+            project |> tee(fun z -> z.AasxPath <- aasxPath)
 
         static member FromISubmodel(submodel:ISubmodel): NjProject =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
