@@ -93,33 +93,7 @@ type Ev2CoreExtensionForCSharp = // CsExportToJson, CsToJson
             EmJson.ToJson(njObj)
 
 // Project 타입에 대한 정적 메서드 (C#에서 ProjectExtensions.CsFromJson() 형태로 사용)
-type ProjectExtensions = // CsCheckoutFromDB, CsCommitToDB, CsFromJson, CsRemoveFromDB
-    static member CsFromJson(json:string): Project =
-        // JSON을 JObject로 파싱하여 RuntimeType 확인
-        let jObj = Newtonsoft.Json.Linq.JObject.Parse(json)
-        // TypeFactory를 통해 RuntimeType에 맞는 JSON 타입 찾기
-        let njProject =
-            getTypeFactory()
-            |-> (fun factory ->
-                    let runtimeTypeName =
-                        match jObj.["RuntimeType"] with
-                        | null -> "NjProject"
-                        | token -> token.ToString()
-                    let njObj = factory.DeserializeJson(runtimeTypeName, json, EmJson.DefaultSettings)
-                    njObj :?> NjUnique)
-            |?? (fun () ->                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
-                EmJson.FromJson<NjProject>(json))
-
-        let runtimeProject =
-            njProject
-            |> getRuntimeObject<Project>
-            |> validateRuntime
-
-        runtimeProject
-        |> replicateProperties njProject
-
-
-
+type ProjectExtensions = // CsCheckoutFromDB, CsCommitToDB, CsRemoveFromDB
     static let commitResultToString (result: DbCommitResult) : string =
         match result with
         | Ok result -> result.Stringify()
@@ -165,10 +139,6 @@ type DsSystemExtensions = // CsFromJson, CsImportFromJson
         DsSystemExtensions.CsImportFromJson(json)
 
 type DbApiExtensions = // CsWith, CsWith<'T>, CsWithConn, CsWithConn<'T>, CsWithNew, CsWithNew<'T>
-    // =====================
-    // CsWith 메서드들 - 기본 With 메서드의 C# 호환 버전
-    // =====================
-
     /// 기본 CsWith - 값을 반환하는 함수용
     [<Extension>]
     static member CsWith<'T>(dbApi:AppDbApi, func:Func<IDbConnection, IDbTransaction, 'T>) =
@@ -189,10 +159,6 @@ type DbApiExtensions = // CsWith, CsWith<'T>, CsWithConn, CsWithConn<'T>, CsWith
     static member CsWith(dbApi:AppDbApi, action:Action<IDbConnection, IDbTransaction>, onError:Action<Exception>) =
         dbApi.With(action, onError)
 
-    // =====================
-    // CsWithNew 메서드들 - 새로운 연결/트랜잭션 생성
-    // =====================
-
     /// CsWithNew - 새 연결에서 값을 반환하는 함수용
     [<Extension>]
     static member CsWithNew<'T>(dbApi:AppDbApi, func:Func<IDbConnection, IDbTransaction, 'T>) =
@@ -212,10 +178,6 @@ type DbApiExtensions = // CsWith, CsWith<'T>, CsWithConn, CsWithConn<'T>, CsWith
     [<Extension>]
     static member CsWithNew(dbApi:AppDbApi, action:Action<IDbConnection, IDbTransaction>, onError:Action<Exception>) =
         dbApi.WithNew((fun (conn, tr) -> action.Invoke(conn, tr)), (fun ex -> onError.Invoke(ex)))
-
-    // =====================
-    // CsWithConn 메서드들 - 연결만 사용 (트랜잭션 없음)
-    // =====================
 
     /// CsWithConn - 트랜잭션 없이 값을 반환하는 함수용
     [<Extension>]
@@ -239,11 +201,6 @@ type DbApiExtensions = // CsWith, CsWith<'T>, CsWithConn, CsWithConn<'T>, CsWith
 
 // 기존 DsSystemExtensions에 추가
 type DsSystemExtensions with // CsCheckoutFromDB, CsTryCheckoutFromDB
-    // =====================
-    // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
-    // =====================
-
-
     /// C# exception 기반 CheckoutFromDB by Id - 실패시 예외 발생
     [<Extension>]
     static member CsCheckoutFromDB(systemId:int64, dbApi:AppDbApi) : DsSystem =
@@ -260,11 +217,7 @@ type DsSystemExtensions with // CsCheckoutFromDB, CsTryCheckoutFromDB
         | Error errorMsg -> (false, Unchecked.defaultof<DsSystem>, errorMsg)
 
 // AppDbApi C# 호환 확장 메서드들
-type AppDbApiCsExtensions = //
-    // =====================
-    // CsXXX 메서드들 - exception 기반 패턴 (C# 친화적)
-    // =====================
-
+type AppDbApiCsExtensions = // CsFindEnumValueId, CsFindEnumValue, CsTryFindEnumValueId, CsTryFindEnumValue
     /// C# exception 기반 FindEnumValueId - 실패시 예외 발생
     [<Extension>]
     static member CsFindEnumValueId<'TEnum when 'TEnum : enum<int>>(dbApi:AppDbApi, enumValue:'TEnum) : int64 =
@@ -280,9 +233,6 @@ type AppDbApiCsExtensions = //
         | Some enumValue -> enumValue
         | None -> failwith $"Enum id {enumId} not found in database"
 
-    // =====================
-    // CsTryXXX 메서드들 - bool * result * error 패턴
-    // =====================
     /// C# 친화적인 TryFindEnumValueId - (성공여부, Id값, 에러메시지) 반환
     [<Extension>]
     static member CsTryFindEnumValueId<'TEnum when 'TEnum : enum<int>>(dbApi:AppDbApi, enumValue:'TEnum) : bool * int64 * string =

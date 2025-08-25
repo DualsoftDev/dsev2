@@ -608,14 +608,24 @@ module Ds2JsonModule =
 
         /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): NjProject =
-            (* Withh context version *)
+            // JSON을 JObject로 파싱하여 RuntimeType 확인
+            let jObj = Newtonsoft.Json.Linq.JObject.Parse(json)
             let settings = EmJson.CreateDefaultSettings()
-            // Json deserialize 중에 필요한 담을 그릇 준비
-            //settings.Context <- new StreamingContext(StreamingContextStates.All, Nj2RtBag())
+            // TypeFactory를 통해 RuntimeType에 맞는 JSON 타입 찾기
+            let njProj =
+                getTypeFactory()
+                |-> (fun factory ->
+                        let runtimeTypeName =
+                            match jObj.["RuntimeType"] with
+                            | null -> "NjProject"
+                            | token -> token.ToString()
+                        let njObj = factory.DeserializeJson(runtimeTypeName, json, settings)
+                        njObj :?> NjProject)
+                |?? (fun () ->                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
+                    EmJson.FromJson<NjProject>(json, settings))
+            njProj
 
-            EmJson.FromJson<NjProject>(json, settings)
-
-    type Project with // FromJson, ToJson
+    type Project with // ToJson
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             let njProject = x.ToNjObj() :?> NjProject
@@ -625,16 +635,13 @@ module Ds2JsonModule =
             njProject.ToJsonFile(jsonFilePath)
 
         /// JSON 문자열을 DsProject 로 변환
-        static member FromJson(json:string): Project =
+        static member internal fromJson(json:string): Project =
             let project =
                 json
                 |> NjProject.FromJson
                 |> getRuntimeObject<Project>        // de-serialization 연결 고리
                 |> validateRuntime
             project
-
-
-
 
     type NjSystem with // ExportToJson, ExportToJsonFile, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환

@@ -51,7 +51,7 @@ type AasxExtensions = // CsTryGetPropValue<'T>, CsTrySetProperty<'T>, FromAasxFi
     static member FromAasxFile(aasxPath:string) : Project =
         let njProj = NjProject.FromAasxFile(aasxPath)
         //njProj.ToJson() |> Project.FromJson
-        njProj.ToJson() |> ProjectExtensions.CsFromJson
+        njProj.ToJson() |> Project.FromJson
 
     [<Extension>]
     static member CsTrySetProperty<'T>(

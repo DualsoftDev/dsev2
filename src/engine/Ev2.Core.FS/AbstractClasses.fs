@@ -161,7 +161,7 @@ and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
     /// DB load 이후에 호출되는 메서드
     default this.OnAfterLoad(conn:IDbConnection, tr:IDbTransaction) = ()
 
-
+    static member FromJson(json:string): Project = fwdProjectFromJson json :?> Project
 
 
 and DsSystem() = // Create

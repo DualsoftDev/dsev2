@@ -131,17 +131,21 @@ module InterfaceModule =
     // formatDateTime 함수는 사용되지 않으므로 제거됨 - DateFormatString 상수 사용
     // let formatDateTime(dt:DateTime) = dt.ToString("yyyy-MM-ddTHH:mm:ss")
 
-    let internal now() =
+[<AutoOpen>]
+module internal InterfaceInternalModule =
+    let now() =
         let x = AppSettings.TheAppSettings
         let y = x.UseUtcTime
         if AppSettings.TheAppSettings.UseUtcTime then DateTime.UtcNow else DateTime.Now
 
 
     /// Unique 객체의 복사.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-    let mutable internal fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdDuplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
 
     /// Unique 객체의 복제.  Id, Guid 및 DateTime 모두 동일하게 복제
-    let mutable internal fwdReplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdReplicate:  IUnique->IUnique = let dummy (src:IUnique) = failwithlog "Should be reimplemented." in dummy
 
     /// runtime object to Newtonsoft JSON object
-    let mutable internal fwdRtObj2NjObj:  IRtUnique->INjUnique = let dummy (src:IRtUnique) = failwithlog "Should be reimplemented." in dummy
+    let mutable fwdRtObj2NjObj:  IRtUnique->INjUnique = let dummy (src:IRtUnique) = failwithlog "Should be reimplemented." in dummy
+
+    let mutable fwdProjectFromJson:  string->IRtProject= let dummy (json:string) = failwithlog "Should be reimplemented." in dummy

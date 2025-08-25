@@ -25,6 +25,8 @@ module ModuleInitializer =
 
             fwdReplicateProperties <- replicatePropertiesImpl
 
+            fwdProjectFromJson <- fun json -> Project.fromJson json
+
             let appSettings =
                 let json =
                     let baseDir = AppDomain.CurrentDomain.BaseDirectory;
