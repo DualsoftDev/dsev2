@@ -2,48 +2,7 @@
 
 이 파일은 이 저장소에서 코드 작업을 할 때 Claude Code (claude.ai/code)에게 가이드를 제공합니다.
 
-## 무시할 폴더
 
-### 인터넷 github과 동일한 내용
-- submodules/aas-core3.0-csharp
-- submodules/aas-packages3-csharp  
-- submodules/aas-specs-metamodel
-- submodules/aasx-package-explorer
-
-### 현재 프로젝트에서 중요하지 않은 내용
-- submodules/nuget/Others/*
-- submodules/nuget/PLC/*
-- submodules/nuget/Tests/*
-- submodules/nuget/Web/*
-
-## 빌드 및 개발 명령어
-
-### 프로젝트 빌드
-```bash
-# 메인 솔루션 빌드
-cd src
-dotnet build dsev2.sln
-
-# 특정 구성으로 빌드
-dotnet build dsev2.sln --configuration Release
-
-# 상세 출력으로 빌드
-dotnet build dsev2.sln --verbosity detailed
-```
-
-### 테스트 실행
-```bash
-# 솔루션의 모든 테스트 실행
-cd src  
-dotnet test dsev2.sln
-
-# 특정 테스트 프로젝트 실행
-dotnet test unit-test/UnitTest.Core/UnitTest.Core.fsproj
-dotnet test unit-test/UnitTest.Aas/UnitTest.Aas.fsproj
-
-# 상세 출력으로 테스트 실행
-dotnet test dsev2.sln --verbosity normal
-```
 
 ### 프로젝트 구조
 ```bash
@@ -53,10 +12,6 @@ src/dsev2.sln
 # 핵심 엔진 프로젝트  
 src/engine/Ev2.Core.FS/     # 핵심 도메인 모델과 비즈니스 로직
 src/engine/Ev2.Aas.FS/      # AAS (Asset Administration Shell) 통합
-
-# 유닛 테스트 프로젝트
-src/unit-test/UnitTest.Core/ # 핵심 기능 테스트
-src/unit-test/UnitTest.Aas/  # AAS 기능 테스트
 ```
 
 ## 고수준 아키텍처

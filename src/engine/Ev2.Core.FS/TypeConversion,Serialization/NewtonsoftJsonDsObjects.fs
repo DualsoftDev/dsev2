@@ -608,9 +608,6 @@ module Ds2JsonModule =
 
         /// JSON 문자열을 DsProject 로 변환
         static member FromJson(json:string): NjProject =
-            (* Simple version *)
-            //EmJson.FromJson<DsProject>(json)
-
             (* Withh context version *)
             let settings = EmJson.CreateDefaultSettings()
             // Json deserialize 중에 필요한 담을 그릇 준비

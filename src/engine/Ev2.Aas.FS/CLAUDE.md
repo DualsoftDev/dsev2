@@ -5,5 +5,3 @@
 - 이 project 의 기능 테스트는 ../unit-test/UnitTest.Aas/UnitTest.Aas.fsproj 에서 수행
 - NjProject 가 aasx file 의 xml 의 하나의 submodule 로 구성되어 serialize / deserialize 됨
 
-## 프로젝트 상세 문서
-@Ev2.Aas.FS.md
