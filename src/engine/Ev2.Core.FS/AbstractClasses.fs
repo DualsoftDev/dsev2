@@ -395,12 +395,12 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
 
     member x.ApiDef
         with get() =
-            match x.RawParent with
-            | Some (:? DsSystem as sys) ->
-                sys.ApiDefs
-                |> List.tryFind (fun ad -> ad.Guid = x.ApiDefGuid )
-                |> Option.defaultWith (fun () -> failwith $"ApiDef with Guid {x.ApiDefGuid} not found in System")
-            | _ -> failwith "Parent is not DsSystem type"
+            x.Project
+            |-> (fun proj ->
+                fwdEnumerateRtObjects proj |> _.OfType<ApiDef>()
+                |> Seq.tryFind (fun ad -> ad.Guid = x.ApiDefGuid )
+                |?? (fun () -> failwith $"ApiDef with Guid {x.ApiDefGuid} not found in System") )
+            |?? (fun () -> failwith "Parent is not DsSystem type")
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 

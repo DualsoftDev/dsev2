@@ -14,13 +14,6 @@ module rec TmpCompatibility =
     type Guid2UniqDic = Dictionary<Guid, Unique>
 
     type RtUnique with // EnumerateRtObjects, UpdateDateTime
-        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
-        ///
-        /// project, system 만 date time 가지는 걸로 변경 고려 중..
-        member x.UpdateDateTime(?dateTime:DateTime) =
-            let dateTime = dateTime |?? (fun () -> now().TruncateToSecond())
-            x.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- dateTime)
-
         (* see also EdUnique.EnumerateRtObjects *)
         member x.EnumerateRtObjects(?includeMe): RtUnique list =
             seq {
@@ -51,6 +44,15 @@ module rec TmpCompatibility =
                     tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
                     ()
             } |> List.ofSeq
+        member x.EnumerateRtObjectsT<'T(* when 'T:> RtUnique*)>(?includeMe): 'T list =
+            x.EnumerateRtObjects(?includeMe=includeMe) |> List.choose tryCast<'T>
+
+        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
+        ///
+        /// project, system 만 date time 가지는 걸로 변경 고려 중..
+        member x.UpdateDateTime(?dateTime:DateTime) =
+            let dateTime = dateTime |?? (fun () -> now().TruncateToSecond())
+            x.EnumerateRtObjectsT<IWithDateTime>() |> iter (fun z -> z.DateTime <- dateTime)
 
 
 
@@ -563,7 +565,10 @@ module DsObjectUtilsModule =
                             for ac in c.ApiCalls do
                                 try
                                     ac.ApiDef.Guid = ac.ApiDefGuid |> verify
-                                    sys.ApiDefs |> contains ac.ApiDef |> verify
+                                    match sys.Project with
+                                    | Some proj -> proj.EnumerateRtObjectsT<ApiDef>() |> contains ac.ApiDef |> verify
+                                    | None -> sys.ApiDefs |> contains ac.ApiDef |> verify
+
                                 with ex ->
                                     logWarn $"Exception while validating ApiCall: {ex.Message}"
                                     ()  // NjSystem 등에서 ApiDef 접근 실패 시 무시

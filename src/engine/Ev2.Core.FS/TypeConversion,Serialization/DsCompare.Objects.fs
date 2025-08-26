@@ -1,6 +1,7 @@
 namespace Ev2.Core.FS
 
 open System
+open System.Linq
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 open Dual.Common.Base
@@ -285,6 +286,10 @@ module rec DsCompareObjects =
                 | (:? ArrowBetweenCalls as u), (:? ArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)
 
                 | _ -> failwith "ERROR"
+
+                match getTypeFactory() with
+                | Some factory -> yield! factory.ComputeExtensionDiff(x, y).Cast<Cr>()
+                | _ -> ()
             }
         member x.IsEqual(y:Project, ?criteria:Cc) =
             let criteria = criteria |? Cc()

@@ -67,7 +67,7 @@ module internal DbInsertModule =
 
                     rt.Id <- Some projId
 
-                    rt.Systems |> iter _.InsertToDB(dbApi)  // 시스템 하부에 연결된 시스템들을 삽입 (재귀적 호출, prototype 은 제외됨)
+                    (rt.PassiveSystems @ rt.ActiveSystems) |> iter _.InsertToDB(dbApi)  // 시스템 하부에 연결된 시스템들을 삽입 (재귀적 호출, prototype 은 제외됨)
                     //proj.Id <- Some projId
                     orm.Id <- Some projId
                     rt.Database <- dbApi.DbProvider

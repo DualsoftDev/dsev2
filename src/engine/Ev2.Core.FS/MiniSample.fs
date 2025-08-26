@@ -26,9 +26,6 @@ module MiniSample =
         // Project 생성
         let project = Project.Create(Name = "TestProject")
 
-        let cyl = createCylinder "Cylinder1"
-        project.AddPassiveSystem cyl
-
         // DsSystem 생성 및 추가
         let system =
             DsSystem.Create()
@@ -81,16 +78,20 @@ module MiniSample =
         // Call을 Work에 추가
         [call1; call2] |> work1.AddCalls
 
+        let cyl = createCylinder "Cylinder1"
+        project.AddPassiveSystem cyl
+
         // ApiDef 생성
-        let apiDef1 = ApiDef.Create(Name = "TestApiDef1")
-        let apiDef2 = ApiDef.Create(Name = "TestApiDef2")
+        let apiDefAdv = cyl.ApiDefs |> find(fun ad -> ad.Name = "ApiDefADV")
+        let apiDefRet = cyl.ApiDefs |> find(fun ad -> ad.Name = "ApiDefRET")
+        apiDefAdv |> validateRuntime |> ignore
 
         // ApiCall 생성
         let apiCall =
             ApiCall.Create()
             |> tee (fun a ->
                 a.Name <- "TestApiCall"
-                a.ApiDefGuid <- apiDef1.Guid
+                a.ApiDefGuid <- apiDefAdv.Guid
                 a.InAddress <- "X0"
                 a.OutAddress <- "Y0"
                 a.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
@@ -100,7 +101,6 @@ module MiniSample =
         // System에 요소들 추가
         [ work1; work2] |> system.AddWorks
         [ flow] |> system.AddFlows
-        [ apiDef1; apiDef2 ] |> system.AddApiDefs
         [ apiCall] |> system.AddApiCalls
         [ apiCall] |> call1.AddApiCalls
 

@@ -5,6 +5,7 @@ open log4net
 open Dual.Common.Base
 open Dual.Common.Db.FS
 open System
+open System.Linq
 open System.IO
 open Dapper
 
@@ -26,6 +27,7 @@ module ModuleInitializer =
             fwdReplicateProperties <- replicatePropertiesImpl
 
             fwdProjectFromJson <- fun json -> Project.fromJson json
+            fwdEnumerateRtObjects <- fun (rtObj: IRtUnique) -> (rtObj :?> RtUnique).EnumerateRtObjects().Cast<IRtUnique>()
 
             let appSettings =
                 let json =

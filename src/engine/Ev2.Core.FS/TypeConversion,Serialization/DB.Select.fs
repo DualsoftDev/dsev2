@@ -98,7 +98,8 @@ module internal Db2DsImpl =
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
 
                 /// orm.ApiDefId -> RtApiDef : rtSystem 하부의 RtApiDef 타입 객체들
-                let rtApiDefs = rtSystem.EnumerateRtObjects().OfType<ApiDef>().ToArray()
+                let container = rtSystem.Project >>= tryCast<RtUnique> |? (rtSystem :> RtUnique)
+                let rtApiDefs = container.EnumerateRtObjects().OfType<ApiDef>().ToArray()
                 for orm in orms do
 
                     // orm.ApiDefId -> rtApiDef -> _.Guid

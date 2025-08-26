@@ -149,3 +149,5 @@ module internal InterfaceInternalModule =
     let mutable fwdRtObj2NjObj:  IRtUnique->INjUnique = let dummy (src:IRtUnique) = failwithlog "Should be reimplemented." in dummy
 
     let mutable fwdProjectFromJson:  string->IRtProject= let dummy (json:string) = failwithlog "Should be reimplemented." in dummy
+
+    let mutable fwdEnumerateRtObjects:  IRtUnique->IRtUnique seq = let dummy (obj:IRtUnique) = failwithlog "Should be reimplemented." in dummy
