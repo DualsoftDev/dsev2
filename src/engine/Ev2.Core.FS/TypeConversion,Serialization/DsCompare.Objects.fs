@@ -123,9 +123,9 @@ module rec DsCompareObjects =
 
                 (* 기타 속성 비교 *)
                 // AasXml 멤버 제거됨
-                if criteria.Author && x.Author <> y.Author then yield Diff("Author", x, y)
+                if criteria.Author && x.Author <> y.Author then yield Diff(nameof x.Author, x, y)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
-                    yield Diff("DateTime", x, y)
+                    yield Diff(nameof x.DateTime, x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -140,13 +140,13 @@ module rec DsCompareObjects =
                 yield! (x.ApiDefs , y.ApiDefs , criteria) |||> computeDiffRecursively
                 yield! (x.ApiCalls, y.ApiCalls, criteria) |||> computeDiffRecursively
 
-                if x.Author        <> y.Author        then yield Diff("Author", x, y)
-                if x.IRI           <> y.IRI           then yield Diff("IRI", x, y)
-                if x.EngineVersion <> y.EngineVersion then yield Diff("EngineVersion", x, y)
-                if x.LangVersion   <> y.LangVersion   then yield Diff("LangVersion", x, y)
-                if x.Description   <> y.Description   then yield Diff("Description", x, y)
+                if x.Author        <> y.Author        then yield Diff(nameof x.Author, x, y)
+                if x.IRI           <> y.IRI           then yield Diff(nameof x.IRI, x, y)
+                if x.EngineVersion <> y.EngineVersion then yield Diff(nameof x.EngineVersion, x, y)
+                if x.LangVersion   <> y.LangVersion   then yield Diff(nameof x.LangVersion, x, y)
+                if x.Description   <> y.Description   then yield Diff(nameof x.Description, x, y)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
-                    yield Diff("DateTime", x, y)
+                    yield Diff(nameof x.DateTime, x, y)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -177,12 +177,12 @@ module rec DsCompareObjects =
                 let yp = y.Flow |-> _.Guid
                 if xp <> yp then yield Diff("OwnerFlow", x, y)
 
-                if x.Motion     <> y.Motion     then yield Diff("Motion", x, y)
-                if x.Script     <> y.Script     then yield Diff("Script", x, y)
-                if x.IsFinished <> y.IsFinished then yield Diff("IsFinished", x, y)
-                if x.NumRepeat  <> y.NumRepeat  then yield Diff("NumRepeat", x, y)
-                if x.Period     <> y.Period     then yield Diff("Period", x, y)
-                if x.Delay      <> y.Delay      then yield Diff("Delay", x, y)
+                if x.Motion     <> y.Motion     then yield Diff(nameof x.Motion, x, y)
+                if x.Script     <> y.Script     then yield Diff(nameof x.Script, x, y)
+                if x.IsFinished <> y.IsFinished then yield Diff(nameof x.IsFinished, x, y)
+                if x.NumRepeat  <> y.NumRepeat  then yield Diff(nameof x.NumRepeat, x, y)
+                if x.Period     <> y.Period     then yield Diff(nameof x.Period, x, y)
+                if x.Delay      <> y.Delay      then yield Diff(nameof x.Delay, x, y)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y)
 
                 yield! (x.Calls,  y.Calls,  criteria) |||> computeDiffRecursively
@@ -194,12 +194,12 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
-                if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff("Work", x, y)
-                if not <| isStringsEqual x.AutoConditions   y.AutoConditions   then yield Diff("AutoConditions", x, y)
-                if not <| isStringsEqual x.CommonConditions y.CommonConditions then yield Diff("CommonConditions", x, y)
-                if x.CallType   <> y.CallType    then yield Diff("CallType", x, y)
-                if x.IsDisabled <> y.IsDisabled  then yield Diff("IsDisabled", x, y)
-                if x.Timeout    <> y.Timeout     then yield Diff("Timeout", x, y)
+                if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff(nameof x.Work, x, y)
+                if not <| isStringsEqual x.AutoConditions   y.AutoConditions   then yield Diff(nameof x.AutoConditions, x, y)
+                if not <| isStringsEqual x.CommonConditions y.CommonConditions then yield Diff(nameof x.CommonConditions, x, y)
+                if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y)
+                if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y)
+                if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y)
 
                 let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
@@ -210,37 +210,37 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:ApiDef, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.IsPush <> y.IsPush then yield Diff("IsPush", x, y)
+                if x.IsPush <> y.IsPush then yield Diff(nameof x.IsPush, x, y)
             }
 
     type ApiCall with // ComputeDiff
         member x.ComputeDiff(y:ApiCall, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.ApiDefGuid <> y.ApiDefGuid then yield Diff("ApiDefGuid", x, y)
-                if x.InAddress  <> y.InAddress  then yield Diff("InAddress", x, y)
-                if x.OutAddress <> y.OutAddress then yield Diff("OutAddress", x, y)
-                if x.InSymbol   <> y.InSymbol   then yield Diff("InSymbol", x, y)
-                if x.OutSymbol  <> y.OutSymbol  then yield Diff("OutSymbol", x, y)
-                if x.ValueSpec  <> y.ValueSpec  then yield Diff("ValueSpec", x, y)
+                if x.ApiDefGuid <> y.ApiDefGuid then yield Diff(nameof x.ApiDefGuid, x, y)
+                if x.InAddress  <> y.InAddress  then yield Diff(nameof x.InAddress, x, y)
+                if x.OutAddress <> y.OutAddress then yield Diff(nameof x.OutAddress, x, y)
+                if x.InSymbol   <> y.InSymbol   then yield Diff(nameof x.InSymbol, x, y)
+                if x.OutSymbol  <> y.OutSymbol  then yield Diff(nameof x.OutSymbol, x, y)
+                if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y)
             }
 
     type ArrowBetweenWorks with // ComputeDiff
         member x.ComputeDiff(y:ArrowBetweenWorks, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
-                if x.Target.Guid <> y.Target.Guid then yield Diff("Target", x, y)
-                if x.Type <> y.Type then yield Diff("Type", x, y)
+                if x.Source.Guid <> y.Source.Guid then yield Diff(nameof x.Source, x, y)
+                if x.Target.Guid <> y.Target.Guid then yield Diff(nameof x.Target, x, y)
+                if x.Type <> y.Type then yield Diff(nameof x.Type, x, y)
             }
 
     type ArrowBetweenCalls with // ComputeDiff
         member x.ComputeDiff(y:ArrowBetweenCalls, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.Source.Guid <> y.Source.Guid then yield Diff("Source", x, y)
-                if x.Target.Guid <> y.Target.Guid then yield Diff("Target", x, y)
-                if x.Type <> y.Type then yield Diff("Type", x, y)
+                if x.Source.Guid <> y.Source.Guid then yield Diff(nameof x.Source, x, y)
+                if x.Target.Guid <> y.Target.Guid then yield Diff(nameof x.Target, x, y)
+                if x.Type <> y.Type then yield Diff(nameof x.Type, x, y)
             }
 
     type DsButton with // ComputeDiff
