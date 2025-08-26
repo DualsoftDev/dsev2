@@ -101,8 +101,8 @@ type AppDbApi(dbProvider:DbProvider) = // CallCache, CheckDatabaseChange, ClearA
                         raise ex
                 try
                     let dic = conn.ParseConnectionString()
-                    let schemaName = dic.TryGet("Search Path")// |? "tia"
-                    if not <| conn.IsTableExists(Tn.TableDescription, ?schemaName=schemaName) then
+                    let schemaName = dic.TryGet("Search Path") |? null
+                    if not <| conn.IsTableExists(Tn.TableDescription, schemaName) then
                         createDb()
                 with exn ->
                     createDb()
