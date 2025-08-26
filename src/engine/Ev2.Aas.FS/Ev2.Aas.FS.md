@@ -4,7 +4,7 @@
 - **프로젝트명**: Ev2.Aas.FS
 - **타입**: F# 라이브러리
 - **프레임워크**: .NET 9.0
-- **언어 버전**: F# 9.0
+- **언어 버전**: F# 9.0 (프로젝트 파일에서 LangVersion 9.0 설정)
 - **네임스페이스**: Dual.Ev2.Aas
 - **역할**: Asset Administration Shell (AAS) 3.0 표준 통합 및 AASX 파일 처리
 
@@ -28,8 +28,9 @@ Ev2.Core.FS 프로젝트의 AAS (Asset Administration Shell) 패키지 탐색기
 
 ### 패키지 참조
 - `AasCore.Aas3_0`: AAS 3.0 표준 구현
-  - 조건부 참조: 로컬 프로젝트 우선, 없으면 NuGet 패키지 사용
+  - 조건부 참조: 로컬 프로젝트 우선, 없으면 NuGet 패키지 (v1.0.0) 사용
   - 로컬 경로: `..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\`
+  - 주석 처리된 패키지: `System.IO.Packaging` (v9.0.6)
 
 ## 파일 구조
 
