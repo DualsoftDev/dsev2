@@ -79,7 +79,7 @@ module internal Db2DsImpl =
                     |> tee handleAfterSelect
             ]
 
-            rtFlows |> s.addFlows
+            s.addFlows(rtFlows, false)
 
             let rtApiDefs = [
                 let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
@@ -92,7 +92,7 @@ module internal Db2DsImpl =
                     |> tee handleAfterSelect
 
             ]
-            rtApiDefs |> s.addApiDefs
+            s.addApiDefs(rtApiDefs, false)
 
             let rtApiCalls = [
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
@@ -116,7 +116,7 @@ module internal Db2DsImpl =
                     |> replicateProperties orm
                     |> tee handleAfterSelect
             ]
-            rtApiCalls |> s.addApiCalls
+            s.addApiCalls(rtApiCalls, false)
 
 
 
@@ -138,7 +138,7 @@ module internal Db2DsImpl =
                         w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
 
             ]
-            rtWorks |> s.addWorks
+            s.addWorks(rtWorks, false)
 
             for w in rtWorks do
                 let rtCalls = [
@@ -165,7 +165,7 @@ module internal Db2DsImpl =
                         |> setParent w
                         |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
                 ]
-                rtCalls |> w.addCalls
+                w.addCalls(rtCalls, false)
 
 
                 // work 내의 call 간 연결
@@ -183,7 +183,7 @@ module internal Db2DsImpl =
                         |> replicateProperties orm
                         |> tee handleAfterSelect
                 ]
-                rtArrows |> w.addArrows
+                w.addArrows(rtArrows, false)
 
                 // call 이하는 더 이상 읽어 들일 구조가 없다.
                 for c in rtCalls do
@@ -205,7 +205,7 @@ module internal Db2DsImpl =
                     |> replicateProperties orm
                     |> tee handleAfterSelect
             ]
-            rtArrows |> s.addArrows
+            s.addArrows(rtArrows, false)
             assert(setEqual s.Arrows rtArrows)
 
             // 확장 복원 훅

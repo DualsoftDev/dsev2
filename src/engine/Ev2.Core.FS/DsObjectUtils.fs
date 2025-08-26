@@ -64,27 +64,27 @@ module rec TmpCompatibility =
             x.RawPassiveSystems.AddAsSet(system, Unique.isDuplicated)
 
     type DsSystem with // AddApiCalls, AddApiDefs, AddArrows, AddFlows, AddWorks, RemoveApiCalls, RemoveApiDefs, RemoveArrows, RemoveFlows, RemoveWorks
-        member internal x.addWorks(works:Work seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addWorks(works:Work seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             works |> iter (setParentI x)
             x.RawWorks.VerifyAddRangeAsSet(works, Unique.isDuplicated)
 
-        member internal x.removeWorks(works:Work seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeWorks(works:Work seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             let system = works |-> _.System.Value |> distinct |> exactlyOne
             let arrows = system.Arrows.Where(fun a -> works.Contains a.Source || works.Contains a.Target)
-            system.removeArrows(arrows, ?byUI = byUI)
+            system.removeArrows(arrows, updateDateTime)
             works |> iter (fun w -> w.RawParent <- None)
             works |> iter (x.RawWorks.Remove >> ignore)
 
 
-        member internal x.addFlows(flows:Flow seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addFlows(flows:Flow seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             flows |> iter (setParentI x)
             x.RawFlows.VerifyAddRangeAsSet(flows, Unique.isDuplicated)
 
-        member internal x.removeFlows(flows:Flow seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeFlows(flows:Flow seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             let flowsDic = flows |> HashSet
             // 삭제 대상인 flows 를 쳐다보고 있는 works 들을 찾아서, 그들의 Flow 를 None 으로 설정
             x.Works
@@ -97,24 +97,24 @@ module rec TmpCompatibility =
             flows |> iter (x.RawFlows.Remove >> ignore)
 
 
-        member internal x.addArrows(arrows:ArrowBetweenWorks seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addArrows(arrows:ArrowBetweenWorks seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             x.RawArrows.VerifyAddRangeAsSet(arrows)
 
-        member internal x.removeArrows(arrows:ArrowBetweenWorks seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeArrows(arrows:ArrowBetweenWorks seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
 
-        member internal x.addApiDefs(apiDefs:ApiDef seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addApiDefs(apiDefs:ApiDef seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             apiDefs |> iter (setParentI x)
             x.RawApiDefs.VerifyAddRangeAsSet(apiDefs, Unique.isDuplicated)
 
-        member internal x.removeApiDefs(apiDefs:ApiDef seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeApiDefs(apiDefs:ApiDef seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
 
             // 삭제 대상인 ApiDef 을 쳐다보고 있는 ApiCall 들을 삭제
             let apiDefsDic = apiDefs |> HashSet
@@ -131,13 +131,13 @@ module rec TmpCompatibility =
             apiDefs |> iter (x.RawApiDefs.Remove >> ignore)
 
 
-        member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addApiCalls(apiCalls:ApiCall seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             apiCalls |> iter (setParentI x)
             x.RawApiCalls.VerifyAddRangeAsSet(apiCalls, Unique.isDuplicated)
 
-        member internal x.removeApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeApiCalls(apiCalls:ApiCall seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             apiCalls |> iter clearParentI
             apiCalls |> iter (x.RawApiCalls.Remove >> ignore)
 
@@ -163,48 +163,48 @@ module rec TmpCompatibility =
 
     type Flow with // AddActions, AddButtons, AddConditions, AddLamps, AddWorks, RemoveActions, RemoveButtons, RemoveConditions, RemoveLamps, RemoveWorks
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
-        member internal x.addWorks(ws:Work seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addWorks(ws:Work seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- Some x)
 
-        member internal x.removeWorks(ws:Work seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeWorks(ws:Work seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             ws |> iter (fun w -> w.Flow <- None)
 
-        member internal x.addButtons(buttons:DsButton seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addButtons(buttons:DsButton seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             buttons |> iter (setParentI x)
             x.RawButtons.VerifyAddRangeAsSet(buttons)
-        member internal x.removeButtons(buttons:DsButton seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeButtons(buttons:DsButton seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             buttons |> iter clearParentI
             buttons |> iter (x.RawButtons.Remove >> ignore)
 
 
-        member internal x.addLamps(lamps:Lamp seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addLamps(lamps:Lamp seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             lamps |> iter (setParentI x)
             x.RawLamps.VerifyAddRangeAsSet(lamps)
-        member internal x.removeLamps(lamps:Lamp seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeLamps(lamps:Lamp seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             lamps |> iter clearParentI
             lamps |> iter (x.RawLamps.Remove >> ignore)
 
-        member internal x.addConditions(conditions:DsCondition seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addConditions(conditions:DsCondition seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             conditions |> iter (setParentI x)
             x.RawConditions.VerifyAddRangeAsSet(conditions)
-        member internal x.removeConditions(conditions:DsCondition seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeConditions(conditions:DsCondition seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             conditions |> iter clearParentI
             conditions |> iter (x.RawConditions.Remove >> ignore)
 
-        member internal x.addActions(actions:DsAction seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addActions(actions:DsAction seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             actions |> iter (setParentI x)
             x.RawActions.VerifyAddRangeAsSet(actions)
-        member internal x.removeActions(actions:DsAction seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeActions(actions:DsAction seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             actions |> iter clearParentI
             actions |> iter (x.RawActions.Remove >> ignore)
 
@@ -227,26 +227,26 @@ module rec TmpCompatibility =
 
 
     type Work with // AddArrows, AddCalls, RemoveArrows, RemoveCalls
-        member internal x.addCalls(calls:Call seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addCalls(calls:Call seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             calls |> iter (setParentI x)
             x.RawCalls.VerifyAddRangeAsSet(calls)
-        member internal x.removeCalls(calls:Call seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeCalls(calls:Call seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             let work = calls |-> _.RawParent.Value |> distinct |> exactlyOne :?> Work
             let arrows = work.Arrows.Where(fun a -> calls.Contains a.Source || calls.Contains a.Target)
-            work.removeArrows(arrows, ?byUI = byUI)
+            work.removeArrows(arrows, updateDateTime)
             calls |> iter clearParentI
             calls |> iter (x.RawCalls.Remove >> ignore)
 
-        member internal x.addArrows(arrows:ArrowBetweenCalls seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addArrows(arrows:ArrowBetweenCalls seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             arrows |> iter (setParentI x)
             x.RawArrows.VerifyAddRangeAsSet(arrows)
 
 
-        member internal x.removeArrows(arrows:ArrowBetweenCalls seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.removeArrows(arrows:ArrowBetweenCalls seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             arrows |> iter clearParentI
             arrows |> iter (x.RawArrows.Remove >> ignore)
 
@@ -256,8 +256,8 @@ module rec TmpCompatibility =
         member x.RemoveArrows(arrows:ArrowBetweenCalls seq) = x.removeArrows(arrows, true)
 
     type Call with // AddApiCalls
-        member internal x.addApiCalls(apiCalls:ApiCall seq, ?byUI:bool) =
-            if byUI = Some true then x.UpdateDateTime()
+        member internal x.addApiCalls(apiCalls:ApiCall seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
             //apiCalls |> iter (setParentI x)
             apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
 
