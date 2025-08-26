@@ -404,16 +404,24 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool) = // Create, ApiUsers
+and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
     inherit DsSystemEntity()
 
-    new() = new ApiDef(true)
+    new() = new ApiDef(true, emptyGuid, emptyGuid)
 
     static member Create() = createExtended<ApiDef>()
 
     interface IRtApiDef
 
     member val IsPush = isPush with get, set
+
+    member val TxGuid = txGuid with get, set
+    member val RxGuid = rxGuid with get, set
+
+    member x.TX:Work = x.System |-> (fun s -> fwdEnumerateRtObjects s |> _.OfType<Work>() |> Seq.find (fun w -> w.Guid = x.TxGuid)) |? getNull<Work>()
+
+    member x.Period = x.TX.Period
+
 
     member x.System   = x.RawParent >>= tryCast<DsSystem>
 

@@ -201,7 +201,7 @@ let dsJson = """
 
 
 // 동적 DB 경로를 사용하는 함수로 변경
-let getDsProjectJson (dbConnectionString: string) = 
+let getDsProjectJson (dbConnectionString: string) =
     sprintf """
 {
   "RuntimeType": "Project",
@@ -379,14 +379,18 @@ let dsProject = getDsProjectJson "Data Source=:memory:;Version=3;BusyTimeout=200
           "Id": 9,
           "Name": "ApiDef1a",
           "Guid": "62663164-6c91-4768-9855-548cf3be74db",
-          "IsPush": true
+          "IsPush": true,
+          "TxGuid": "79e1fd10-12a3-4b69-9a0d-7f81185573e8",
+          "RxGuid": "79e1fd10-12a3-4b69-9a0d-7f81185573e8"
         },
         {
           "RuntimeType": "ApiDef",
           "Id": 10,
           "Name": "UnusedApi",
           "Guid": "7904be5c-98c6-47e3-b922-de468b6183b8",
-          "IsPush": true
+          "IsPush": true,
+          "TxGuid": "7ab686ee-a7c6-4b88-a979-a1f3e7daa757",
+          "RxGuid": "7ab686ee-a7c6-4b88-a979-a1f3e7daa757"
         }
       ],
       "ApiCalls": [

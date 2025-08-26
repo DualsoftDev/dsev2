@@ -234,7 +234,7 @@ module internal rec DsObjectCopyImpl =
             |> ignore
 
         member x.replicate(bag:ReplicateBag) =
-            new ApiDef(x.IsPush)
+            new ApiDef(x.IsPush, x.TxGuid, x.RxGuid)
             |> tee(fun newApiDef -> x.replicateTo(newApiDef, bag))
 
     type ArrowBetweenWorks with // replicate, replicateTo

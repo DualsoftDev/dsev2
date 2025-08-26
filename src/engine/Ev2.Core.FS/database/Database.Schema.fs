@@ -398,6 +398,8 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "isPush"}          {boolean} NOT NULL DEFAULT {falseValue}
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
+    , {k "txGuid"}          {guid} NOT NULL
+    , {k "rxGuid"}          {guid} NOT NULL
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.ApiDef}_uniq UNIQUE (systemId, name)
 );

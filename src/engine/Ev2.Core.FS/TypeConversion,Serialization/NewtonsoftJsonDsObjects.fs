@@ -342,6 +342,8 @@ module rec NewtonsoftJsonObjects =
         interface INjApiDef
 
         member val IsPush = false with get, set
+        member val TxGuid = emptyGuid with get, set
+        member val RxGuid = emptyGuid with get, set
         static member Create() = createExtended<NjApiDef>()
 
 

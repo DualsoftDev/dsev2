@@ -136,15 +136,15 @@ module internal DsCopyModule =
         | (:? ApiDef) | (:? NjApiDef) | (:? ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
-                | :? ApiDef    as s -> {| IsPush=s.IsPush |}
-                | :? NjApiDef  as s -> {| IsPush=s.IsPush |}
-                | :? ORMApiDef as s -> {| IsPush=s.IsPush |}
+                | :? ApiDef    as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
+                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
+                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ApiDef    as d -> d.IsPush<-s.IsPush
-            | :? NjApiDef  as d -> d.IsPush<-s.IsPush
-            | :? ORMApiDef as d -> d.IsPush<-s.IsPush
+            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
+            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
+            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
             | _ -> failwith "ERROR"
 
 
@@ -170,6 +170,7 @@ module internal DsCopyModule =
             d.ApiDef <- s.ApiDefGuid
         | (:? NjApiCall as s), (:? ApiCall as d) ->
             d.ApiDefGuid <- s.ApiDef
+
         | _ -> ()
 
 

@@ -6,20 +6,22 @@ open Dual.Common.Core.FS
 [<AutoOpen>]
 module MiniSample =
     let createCylinder(name:string) =
-            let cylSystem = DsSystem.Create() |> tee (fun z -> z.Name <- name)
+        let sys = DsSystem.Create(Name=name)
 
-            let cylApiDefAdv = ApiDef.Create(Name = "ApiDefADV")
-            let cylApiDefRet = ApiDef.Create(Name = "ApiDefRET")
-            cylSystem.AddApiDefs [cylApiDefAdv; cylApiDefRet]
+        let flow = Flow.Create(Name="CylFlow")
+        let workAdv = Work.Create(Name="ADVANCE", Flow=Some flow)
+        let workRet = Work.Create(Name="RETURN",  Flow=Some flow)
+        sys.AddWorks [workAdv; workRet;]
+        sys.AddFlows [flow]
 
-            let cylWorkAdv = Work.Create() |> tee (fun z -> z.Name <- "ADVANCE")
-            let cylWorkRet = Work.Create() |> tee (fun z -> z.Name <- "RETURN")
-            cylSystem.AddWorks [cylWorkAdv; cylWorkRet;]
+        let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid)
+        let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid)
+        sys.AddApiDefs [apiDefAdv; apiDefRet]
 
-            let edArrowW = ArrowBetweenWorks.Create(cylWorkAdv, cylWorkRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
-            cylSystem.AddArrows [edArrowW]
+        let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+        sys.AddArrows [arrowW]
 
-            cylSystem
+        sys
 
     /// Extension type 테스트를 위한 간단한 Project 생성
     let create() =

@@ -74,6 +74,8 @@ module AasSemantics =
             ("ImportedPrototypeSystems",   "https://dualsoft.com/aas/project/importedPrototypeSystems")
 
             ("IsPush",           "https://dualsoft.com/aas/apiDef/isPush")
+            ("TxGuid",           "https://dualsoft.com/aas/apiDef/TxGuid")
+            ("RxGuid",           "https://dualsoft.com/aas/apiDef/RxGuid")
             ("FlowGuid",         "https://dualsoft.com/aas/work/flowGuid")
             ("Motion",           "https://dualsoft.com/aas/work/motion")
             ("Script",           "https://dualsoft.com/aas/work/script")
