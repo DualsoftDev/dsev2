@@ -404,7 +404,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool, ?topicIndex:int, ?isTopicOrigin:bool) = // Create, ApiUsers
+and ApiDef(isPush:bool) = // Create, ApiUsers
     inherit DsSystemEntity()
 
     new() = new ApiDef(true)
