@@ -278,11 +278,11 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
     , {k "projectId"}      {intKeyType} NOT NULL
     , {k "systemId"}       {intKeyType} NOT NULL
-    , {k "loadedName"}     TEXT
+    , {k "loadedName"}     TEXT NOT NULL
     , {k "isActiveSystem"} {boolean} NOT NULL DEFAULT {falseValue}
     , FOREIGN KEY(projectId)   REFERENCES {Tn.Project}(id) ON DELETE CASCADE
     , FOREIGN KEY(systemId)    REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- NO ACTION       -- ON DELETE RESTRICT    -- RESTRICT: 부모 레코드가 삭제되기 전에 참조되고 있는 자식 레코드가 있는지 즉시 검사하고, 있으면 삭제를 막음.
-    , CONSTRAINT {Tn.MapProject2System}_uniq UNIQUE (projectId, systemId)
+    , CONSTRAINT {Tn.MapProject2System}_uniq UNIQUE (projectId, loadedName)
 );
 
 -- TODO: MapProject2System row 하나 삭제시,

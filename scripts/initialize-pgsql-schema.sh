@@ -1,15 +1,96 @@
 #!/bin/bash
 
-USER="ds"
+# Help function
+show_help() {
+  cat << EOF
+PostgreSQL Database Initialization Script
 
-# 1. 비밀번호 파일 경로
+Usage: $0 [OPTIONS]
+
+OPTIONS:
+  -h, --help              Show this help message and exit
+  -u, --user USERNAME     PostgreSQL username (default: 'ds')
+  -p, --password PASSWORD PostgreSQL password (default: same as username)
+
+Examples:
+  $0                               # use default user 'ds' and password 'ds'
+  $0 -u myuser                     # use user 'myuser' and password 'myuser'
+  $0 --user myuser                 # use user 'myuser' and password 'myuser'
+  $0 -u myuser -p mypass           # use user 'myuser' and password 'mypass'
+  $0 --user myuser --password mypass  # use user 'myuser' and password 'mypass'
+
+Legacy positional arguments (deprecated):
+  $0 [user] [password]             # positional arguments still supported
+
+Description:
+  This script initializes PostgreSQL database with the specified user.
+  It creates a role, database, and schema for the user.
+  The PostgreSQL admin password is read from .pgpass.secret file or prompted.
+EOF
+}
+
+# Default values
+USER="ds"
+USER_PASSWORD=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    -u|--user)
+      USER="$2"
+      shift 2
+      ;;
+    -p|--password)
+      USER_PASSWORD="$2"
+      shift 2
+      ;;
+    -*)
+      echo "Unknown option: $1"
+      echo "Use '$0 --help' for more information."
+      exit 1
+      ;;
+    *)
+      # Handle legacy positional arguments
+      if [ -z "$POSITIONAL_ARGS" ]; then
+        POSITIONAL_ARGS=()
+      fi
+      POSITIONAL_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# Handle legacy positional arguments if no options were used
+if [ -n "$POSITIONAL_ARGS" ]; then
+  if [ ${#POSITIONAL_ARGS[@]} -eq 1 ]; then
+    USER="${POSITIONAL_ARGS[0]}"
+  elif [ ${#POSITIONAL_ARGS[@]} -eq 2 ]; then
+    USER="${POSITIONAL_ARGS[0]}"
+    USER_PASSWORD="${POSITIONAL_ARGS[1]}"
+  elif [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
+    echo "Too many arguments."
+    echo "Use '$0 --help' for more information."
+    exit 1
+  fi
+fi
+
+# Set default password if not specified
+if [ -z "$USER_PASSWORD" ]; then
+  USER_PASSWORD="$USER"
+fi
+
+# PostgreSQL 관리자 비밀번호 파일 경로
 PASSFILE=".pgpass.secret"
 
-# 2. 비밀번호 로드 또는 입력
+# PostgreSQL 관리자 비밀번호 로드 또는 입력
 if [ -f "$PASSFILE" ]; then
   PGPASSWORD=$(<"$PASSFILE")
 else
-  read -s -p "Enter postgres password: " PGPASSWORD
+  read -s -p "Enter postgres admin password: " PGPASSWORD
   echo ""
   echo "$PGPASSWORD" > "$PASSFILE"
   chmod 600 "$PASSFILE"  # 보안: 파일 권한 설정
@@ -37,7 +118,7 @@ function db_exists() {
 }
 function installtime-initialize() {
   # 1. CREATE ROLE & DATABASE
-  sql postgres "CREATE ROLE $USER LOGIN PASSWORD 'ds';"     #'$USER' 로 사용할 수 없음.
+  sql postgres "CREATE ROLE $USER LOGIN PASSWORD '$USER_PASSWORD';"
   sql postgres "CREATE DATABASE $USER OWNER $USER;"
 }
 
