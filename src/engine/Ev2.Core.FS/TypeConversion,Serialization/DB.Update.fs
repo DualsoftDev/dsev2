@@ -53,12 +53,12 @@ module internal rec DbUpdateImpl =
             dbApi.With(fun (conn, tr) ->
                 match x with
                 // DB 수정
-                | Diff (cat, dbEntity, newEntity) ->
+                | Diff (cat, dbEntity, newEntity, updateSql) ->
                     let dbColumnName = tryGetDBColumnName(dbApi, cat) |?? (fun () -> failwith $"Unknown property name: {cat}")
                     let propertyName = getPropertyNameForDB(dbApi, cat)
                     assert(dbEntity.GetType() = newEntity.GetType())
                     let tableName = dbEntity.getTableName()
-                    let sql = $"UPDATE {tableName} SET {dbColumnName}=@{propertyName} WHERE id=@Id"
+                    let sql = updateSql |> Option.ofObj |? $"UPDATE {tableName} SET {dbColumnName}=@{propertyName} WHERE id=@Id"
                     let count = conn.Execute(sql, newEntity, tr)
                     verify(count > 0 )
                     Ok (Updated [|x|])

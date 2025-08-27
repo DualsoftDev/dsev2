@@ -42,8 +42,9 @@ module CreateSampleWithCylinderModule =
             edSystemCyl  <- DsSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
             edFlowCyl    <- Flow.Create(Name = "CylFlow")
             edWork1Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
-            edWork2Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork2"; z.Flow <- Some edFlowCyl)
+            edWork2Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork2")
 
+            edFlowCyl.AddWorks [edWork1Cyl; edWork2Cyl;]
             edSystemCyl.AddWorks [edWork1Cyl; edWork2Cyl;]
             edSystemCyl.AddFlows [edFlowCyl]
             edSystemCyl.AddApiDefs [edApiDef1Cyl]

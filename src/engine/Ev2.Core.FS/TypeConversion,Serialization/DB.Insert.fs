@@ -53,7 +53,7 @@ module internal DbInsertModule =
     type IRtUnique with // InsertToDB
         member x.InsertToDB(dbApi:AppDbApi) =
             let bag = dbApi.DDic.TryGet<ReplicateBag>() |?? (fun () -> ReplicateBag() |> tee dbApi.DDic.Set)
-            let guidDicDebug = bag.Newbies
+            let guidDicDebug = bag.OldGuid2NewObjectMap
             dbApi.With(fun (conn, tr) ->
 
                 match box x with
@@ -342,7 +342,7 @@ module internal DbInsertModule =
         dbApi.With(fun (conn, tr) ->
             ReplicateBag() |> dbApi.DDic.Set
             let ormSystem = x.ToORM(dbApi)
-            assert (dbApi.DDic.Get<ReplicateBag>().Newbies.Any())
+            assert (dbApi.DDic.Get<ReplicateBag>().OldGuid2NewObjectMap.Any())
 
             rTryCommitSystemToDBHelper dbApi x)
 

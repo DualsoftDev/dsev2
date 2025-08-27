@@ -269,6 +269,11 @@ module rec NewtonsoftJsonObjects =
         member val Type = DbArrowType.None.ToString() with get, set
         static member Create() = createExtended<NjArrow>()
 
+        member val SourceGuid = emptyGuid with get, set
+        member val TargetGuid = emptyGuid with get, set
+        member val TypeId:Id = 0 with get, set
+
+
 
     type NjCall() = // Create, Initialize, ShouldSerializeApiCalls, ShouldSerializeAutoConditions, ShouldSerializeCallType, ShouldSerializeCommonConditions, ShouldSerializeIsDisabled, ShouldSerializeStatus, ShouldSerializeTimeout
         inherit NjWorkEntity()
@@ -448,16 +453,16 @@ module rec NewtonsoftJsonObjects =
 
             let works = [|
                 for njw in njs.Works do
-                    let optFlow =
+                    let flowGuid =
                         if njw.FlowGuid.NonNullAny() then
-                            flows |> tryFind (fun f -> f.Guid = s2guid njw.FlowGuid)
+                            flows |> tryFind (fun f -> f.Guid = s2guid njw.FlowGuid) |-> _.Guid
                         else
                             None
                     let calls  = njw.Calls  |-> getRuntimeObject<Call>
                     let arrows = njw.Arrows |-> getRuntimeObject<ArrowBetweenCalls>
 
                     let dsWork =
-                        Work.Create(calls, arrows, optFlow)
+                        Work.Create(calls, arrows, flowGuid)
                         |> replicateProperties njw
 
                     // Status4 속성 복사
@@ -469,10 +474,6 @@ module rec NewtonsoftJsonObjects =
 
             njs.Arrows
             |> iter (fun (a:NjArrow) ->
-                let works = njs.Works |-> getRuntimeObject<Work>
-                let src = works |> find(fun w -> w.Guid = s2guid a.Source)
-                let tgt = works |> find(fun w -> w.Guid = s2guid a.Target)
-
                 let arrowType =
                     a.Type
                     |> Enum.TryParse<DbArrowType>
@@ -480,7 +481,7 @@ module rec NewtonsoftJsonObjects =
                     |? DbArrowType.None
 
                 a.RuntimeObject <-
-                    ArrowBetweenWorks.Create(src, tgt, arrowType)
+                    ArrowBetweenWorks.Create(s2guid a.Source, s2guid a.Target, arrowType)
                     |> replicateProperties a)
 
             let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
@@ -525,9 +526,6 @@ module rec NewtonsoftJsonObjects =
 
             njw.Arrows
             |> iter (fun (a:NjArrow) ->
-                let calls = njw.Calls |-> getRuntimeObject<Call>
-                let src = calls |> find(fun w -> w.Guid = s2guid a.Source)
-                let tgt = calls |> find(fun w -> w.Guid = s2guid a.Target)
                 let arrowType =
                     a.Type
                     |> Enum.TryParse<DbArrowType>
@@ -535,7 +533,7 @@ module rec NewtonsoftJsonObjects =
                     |? DbArrowType.None
 
                 a.RuntimeObject <-
-                    ArrowBetweenCalls.Create(src, tgt, arrowType)
+                    ArrowBetweenCalls.Create(s2guid a.Source, s2guid a.Target, arrowType)
                     |> replicateProperties a )
 
             (* DsWork 객체 생성은 flow guid 생성 시까지 지연 *)

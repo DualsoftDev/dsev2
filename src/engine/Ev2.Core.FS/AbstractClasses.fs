@@ -54,49 +54,67 @@ and [<AbstractClass>] CallEntity() =
     member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<Project>
 
 // Internal helper class
-and internal Arrow<'T when 'T :> Unique>(source:'T, target:'T, typ:DbArrowType) =
-    member val Source = source with get, set
-    member val Target = target with get, set
+and internal Arrow(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) =
+    member val SourceGuid = sourceGuid with get, set
+    member val TargetGuid = targetGuid with get, set
     member val Type = typ with get, set
 
 
 
 // Main domain types
 /// Call 간 화살표 연결.  Work 내에 존재
-and ArrowBetweenCalls() = // Create
+and ArrowBetweenCalls(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Create
     inherit WorkEntity()
-    let mutable arrow : Arrow<Call> option = None
-    member private x.Initialize(source:Call, target:Call, typ:DbArrowType) =
-        arrow <- Some (Arrow<Call>(source, target, typ))
+    member private x.getCallByGuid (guid:Guid) =
+        x.Work |-> _.Calls >>= tryFind (fun (c:Call) -> c.Guid = guid) |> Option.get
+
+    new() = new ArrowBetweenCalls(emptyGuid, emptyGuid, DbArrowType.None)
+    static member Create(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) =
+        createExtended<ArrowBetweenCalls>()
+        |> tee(fun z ->
+            z.SourceGuid <- sourceGuid
+            z.TargetGuid <- targetGuid
+            z.Type <- typ )
 
     static member Create(source:Call, target:Call, typ:DbArrowType) =
-        let instance = createExtended<ArrowBetweenCalls>()
-        instance.Initialize(source, target, typ)
-        instance
+        ArrowBetweenCalls.Create(source.Guid, target.Guid, typ)
 
     interface IRtArrow
-    member x.Source with get() = arrow.Value.Source and set v = arrow.Value.Source <- v
-    member x.Target with get() = arrow.Value.Target and set v = arrow.Value.Target <- v
-    member x.Type   with get() = arrow.Value.Type   and set v = arrow.Value.Type <- v
+    member val SourceGuid = sourceGuid with get, set
+    member val TargetGuid = targetGuid with get, set
+    member val Type = typ with get, set
+
+    member x.Source = x.getCallByGuid(x.SourceGuid)
+    member x.Target = x.getCallByGuid(x.TargetGuid)
+    member x.TypeId:Id = DbApi.GetEnumId x.Type
 
 /// Work 간 화살표 연결.  System 내에 존재
-and ArrowBetweenWorks() = // Create
+and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Create
     inherit DsSystemEntity()
 
-    let mutable arrow : Arrow<Work> option = None
-    member private x.Initialize(source:Work, target:Work, typ:DbArrowType) =
-        arrow <- Some (Arrow<Work>(source, target, typ))
+    member private x.getWorkByGuid (guid:Guid) =
+        x.System |-> _.Works >>= tryFind (fun (w:Work) -> w.Guid = guid) |> Option.get
 
+    new() = new ArrowBetweenWorks(emptyGuid, emptyGuid, DbArrowType.None)
+
+    static member Create(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) =
+        createExtended<ArrowBetweenWorks>()
+        |> tee(fun z ->
+            z.SourceGuid <- sourceGuid
+            z.TargetGuid <- targetGuid
+            z.Type <- typ )
     static member Create(source:Work, target:Work, typ:DbArrowType) =
-        let instance = createExtended<ArrowBetweenWorks>()
-        instance.Initialize(source, target, typ)
-        instance
-
+        ArrowBetweenWorks.Create(source.Guid, target.Guid, typ)
 
     interface IRtArrow
-    member x.Source with get() = arrow.Value.Source and set v = arrow.Value.Source <- v
-    member x.Target with get() = arrow.Value.Target and set v = arrow.Value.Target <- v
-    member x.Type   with get() = arrow.Value.Type   and set v = arrow.Value.Type <- v
+    member val SourceGuid = sourceGuid with get, set
+    member val TargetGuid = targetGuid with get, set
+    member val Type = typ with get, set
+
+    member x.Source = x.getWorkByGuid(x.SourceGuid)
+    member x.Target = x.getWorkByGuid(x.TargetGuid)
+    member x.TypeId:Id = DbApi.GetEnumId x.Type
+    //member val TypeId:Id = DbApi.GetEnumId typ with get, set
 
 and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
     inherit RtUnique()
@@ -298,7 +316,9 @@ and Work() = // Create
     interface IRtWork
     member val internal RawCalls  = ResizeArray<Call>() with get, set
     member val internal RawArrows = ResizeArray<ArrowBetweenCalls>() with get, set
-    member val Flow = Option<Flow>.None with get, set
+    member x.Flow:Flow option = x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
+
+    member val FlowGuid = noneGuid with get, set
 
     member val Motion     = nullString with get, set
     member val Script     = nullString with get, set
@@ -313,10 +333,10 @@ and Work() = // Create
     member x.Arrows = x.RawArrows |> toList
 
     static member Create() = createExtended<Work>()
-    static member Create(calls: Call seq, arrows: ArrowBetweenCalls seq, flow: Flow option) =
+    static member Create(calls: Call seq, arrows: ArrowBetweenCalls seq, flowGuid: Guid option) =
         let work = createExtended<Work>()
         // Set flow
-        work.Flow <- flow
+        work.FlowGuid <- flowGuid
 
         // Add new components and set parent relationships
         calls  |> iter (fun c -> work.RawCalls. Add(c); setParentI work c)

@@ -1,5 +1,6 @@
 namespace Ev2.Core.FS
 
+open System
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open Dual.Common.Db.FS
@@ -38,6 +39,7 @@ module internal DsCopyModule =
         | _  -> failwith "ERROR"
 
         dst
+
 
     /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
     let replicatePropertiesImpl (src:#Unique) (dst:#Unique) : #Unique =
@@ -83,17 +85,18 @@ module internal DsCopyModule =
 
 
         | (:? Work) | (:? NjWork) | (:? ORMWork) ->
+            noop()
             let s =
                 match sbx with
-                | :? Work    as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
-                | :? NjWork  as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
-                | :? ORMWork as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) |}
+                | :? Work    as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) FlowGuid=s.FlowGuid |}
+                | :? NjWork  as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid |}
+                | :? ORMWork as s -> {| Motion=s.Motion; Script=s.Script; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) FlowGuid=s.FlowGuid|}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
-            | :? NjWork  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
-            | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay;
+            | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid
+            | :? NjWork  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+            | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid
             | _ -> failwith "ERROR"
 
 
@@ -159,7 +162,28 @@ module internal DsCopyModule =
 
         | ( :? ArrowBetweenCalls | :? ArrowBetweenWorks
           | :? ORMArrowCall | :? ORMArrowWork
-          | :? NjArrow ) -> ()
+          | :? NjArrow ) ->
+            let getEnumId (s:DbArrowType) = DbApi.GetEnumId s
+            let getEnumIdFromString (s:string) = DbApi.GetEnumId (Enum.Parse(typeof<DbArrowType>, s) :?> DbArrowType)
+
+            let s =
+                match sbx with
+                | :? ArrowBetweenWorks as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
+                | :? ArrowBetweenCalls as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
+                | :? ORMArrowWork      as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
+                | :? ORMArrowCall      as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
+                | :? NjArrow           as s -> {| SourceGuid=s2guid s.Source; TargetGuid=s2guid s.Target; Type=Enum.TryParse<DbArrowType>(s.Type) |> tryParseToOption |> _.Value; TypeId=getEnumIdFromString(s.Type) |}
+                | _ -> failwith "ERROR"
+
+            match dbx with
+            | :? ArrowBetweenWorks as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
+            | :? ArrowBetweenCalls as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
+            | :? ORMArrowWork      as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; d.TypeId<-s.TypeId
+            | :? ORMArrowCall      as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; d.TypeId<-s.TypeId
+            | :? NjArrow           as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type.ToString(); d.TypeId<-s.TypeId
+            | _ -> failwith "ERROR"
+
+            ()
 
         | _ -> failwith "ERROR"
 
@@ -186,6 +210,7 @@ module internal DsCopyModule =
            "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay"; "Status4"
            "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
            "ValueSpec";
+           "FlowId"; "SourceGuid"; "TargetGuid"; "TypeId"
            // 확장 속성 추가
            "Location"; "Area" |]
         |> Set.ofArray

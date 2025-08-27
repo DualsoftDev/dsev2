@@ -14,26 +14,12 @@ module rec ReplicateUtility =
     /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
     type ReplicateBag(src:IDictionary<Guid, Unique>) =
         new() = ReplicateBag(Dictionary<Guid, Unique>())
-        /// NewGuid -> New object
-        member val Newbies = Dictionary<Guid, Unique>(src)
-        member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
+        /// OldGuid -> New object
+        member val OldGuid2NewObjectMap = Dictionary<Guid, Unique>(src)
+        //member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
 
 [<AutoOpen>]
 module rec TmpCompatibility =
-    //type Guid2UniqDic(src:IDictionary<Guid, Unique>) =
-    //    inherit Dictionary<Guid, Unique>(src)
-    //    let oldGuid2NewGuid = Dictionary<Guid, Guid>()
-
-    //    new() = Guid2UniqDic(Dictionary<Guid, Unique>())
-
-    //    member x.DebugDic = oldGuid2NewGuid
-
-    //    member x.AddGuidRelation(oldGuid:Guid, newGuid:Guid) =
-    //        oldGuid2NewGuid.TryAdd(oldGuid, newGuid) |> ignore
-
-    //    member x.GetNewGuid(oldGuid:Guid):Guid =
-    //        oldGuid2NewGuid.TryGet(oldGuid) |?? (fun () -> x.TryGet(oldGuid) |-> _.Guid |?? (fun () -> failwith "ERROR"))
-
     type RtUnique with // EnumerateRtObjects, UpdateDateTime
         (* see also EdUnique.EnumerateRtObjects *)
         member x.EnumerateRtObjects(?includeMe): RtUnique list =
@@ -108,13 +94,11 @@ module rec TmpCompatibility =
 
         member internal x.removeFlows(flows:Flow seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
-            let flowsDic = flows |> HashSet
+            let flowsDic = flows |-> _.Guid |> HashSet
             // 삭제 대상인 flows 를 쳐다보고 있는 works 들을 찾아서, 그들의 Flow 를 None 으로 설정
             x.Works
-            |> choose( fun w ->
-                w.Flow >>= flowsDic.TryGet      // work 중에서 w.Flow 가 삭제 대상인 flows 에 포함된 것들만 선택
-                |-> fun f -> w)
-            |> iter (fun w -> w.Flow <- None)  // 선택된 works 의 Flow 를 None 으로 설정
+            |> filter(fun w -> w.FlowGuid |-> flowsDic.Contains |? false) // work 중에서 w.FlowGuid 가 삭제 대상인 flows 에 포함된 것들만 선택
+            |> iter (fun w -> w.FlowGuid <- None)
 
             flows |> iter clearParentI
             flows |> iter (x.RawFlows.Remove >> ignore)
@@ -188,11 +172,11 @@ module rec TmpCompatibility =
         // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
         member internal x.addWorks(ws:Work seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
-            ws |> iter (fun w -> w.Flow <- Some x)
+            ws |> iter (fun w -> w.FlowGuid <- Some x.Guid)
 
         member internal x.removeWorks(ws:Work seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
-            ws |> iter (fun w -> w.Flow <- None)
+            ws |> iter (fun w -> w.FlowGuid <- None)
 
         member internal x.addButtons(buttons:DsButton seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
@@ -345,7 +329,7 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
     static member CreateWorkExtended() =
         createExtended<Work>()
 
-    static member CreateWork(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
+    static member CreateWork(calls:Call seq, arrows:ArrowBetweenCalls seq, flowGuid:Guid option) =
         let calls = calls |> toList
         let arrows = arrows |> toList
 
@@ -354,7 +338,7 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
         work.RawArrows.Clear()
         work.RawCalls.AddRange(calls)
         work.RawArrows.AddRange(arrows)
-        work.Flow <- flow
+        work.FlowGuid <- flowGuid
         calls  |> iter (setParentI work)
         arrows |> iter (setParentI work)
         work
@@ -436,14 +420,14 @@ module DsObjectUtilsModule =
 
 
     type Work with // Create
-        static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flow:Flow option) =
+        static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flowGuid:Guid option) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let work = createExtended<Work>()
             work.RawCalls.Clear()
             work.RawArrows.Clear()
             work.RawCalls.AddRange(calls)
             work.RawArrows.AddRange(arrows)
-            work.Flow <- flow
+            work.FlowGuid <- flowGuid
             calls  |> iter (setParentI work)
             arrows |> iter (setParentI work)
             work
@@ -581,7 +565,7 @@ module DsObjectUtilsModule =
                     for c in w.Calls do
                         // ApiCalls가 비어있을 수 있음 (NjSystem 등의 경우)
                         if not (c.ApiCalls.IsEmpty) then
-                            c.ApiCalls |-> _.Guid |> forall(bag.Newbies.ContainsKey) |> verify
+                            c.ApiCalls |-> _.Guid |> forall(bag.OldGuid2NewObjectMap.ContainsKey) |> verify
                             c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
                             for ac in c.ApiCalls do
                                 try

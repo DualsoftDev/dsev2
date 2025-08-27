@@ -53,25 +53,30 @@ module ORMTypesModule =
 
 
     [<AbstractClass>]
-    type ORMArrowBase(srcId:Id, tgtId:Id, parentId:Id option, arrowTypeId:Id) =
+    type ORMArrowBase(srcId:Id, tgtId:Id, parentId:Id option, arrowTypeId:Id, srcGuid:Guid, tgtGuid:Guid) =
         inherit ORMUnique(ParentId=parentId)
-        new() = new ORMArrowBase(-1, -1, None, -1)
+        new() = new ORMArrowBase(-1, -1, None, -1, emptyGuid, emptyGuid)
         interface IORMArrow
         member val Source = srcId with get, set
         member val Target = tgtId with get, set
         member val TypeId = arrowTypeId with get, set
 
+        member val SourceGuid = srcGuid with get, set
+        member val TargetGuid = tgtGuid with get, set
+        member val Type = DbArrowType.None with get, set
+
+
     /// Work 간 연결.  System 에 속함
-    type ORMArrowWork(srcId:Id, tgtId:Id, systemId:Id, arrowTypeId:Id) =
-        inherit ORMArrowBase(srcId, tgtId, Some systemId, arrowTypeId)
-        new() = new ORMArrowWork(-1, -1, -1, -1)
+    type ORMArrowWork(srcId:Id, tgtId:Id, systemId:Id, arrowTypeId:Id, srcGuid:Guid, tgtGuid:Guid) =
+        inherit ORMArrowBase(srcId, tgtId, Some systemId, arrowTypeId, srcGuid, tgtGuid)
+        new() = new ORMArrowWork(-1, -1, -1, -1, emptyGuid, emptyGuid)
         interface IORMArrowWork
         member val SystemId = systemId with get, set
 
     /// Call 간 연결.  Work 에 속함
-    type ORMArrowCall(srcId:Id, tgtId:Id, workId:Id, arrowTypeId:Id) =
-        inherit ORMArrowBase(srcId, tgtId, Some workId, arrowTypeId)
-        new() = new ORMArrowCall(-1, -1, -1, -1)
+    type ORMArrowCall(srcId:Id, tgtId:Id, workId:Id, arrowTypeId:Id, srcGuid:Guid, tgtGuid:Guid) =
+        inherit ORMArrowBase(srcId, tgtId, Some workId, arrowTypeId, srcGuid, tgtGuid)
+        new() = new ORMArrowCall(-1, -1, -1, -1, emptyGuid, emptyGuid)
         interface IORMArrowCall
         member val WorkId = workId with get, set
 
@@ -166,13 +171,14 @@ module ORMTypesModule =
         interface IORMAction
 
 
-    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option) = // Initialize
+    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option, flowGuid:Guid option) = // Initialize
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMWork(-1, None, None)
+        new() = new ORMWork(-1, None, None, noneGuid)
         interface IORMWork
 
         member val FlowId     = flowId     with get, set
+        member val FlowGuid   = flowGuid   with get, set
         member val Motion     = nullString with get, set
         member val Script     = nullString with get, set
         member val IsFinished = false      with get, set

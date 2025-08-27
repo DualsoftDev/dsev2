@@ -84,8 +84,8 @@ module CreateSampleModule =
                 |> tee (fun z ->
                     z.Name    <- "BoundedWork2"
                     z.Status4 <- Some DbStatus4.Going
-                    z.Script  <- "My script"
-                    z.Flow    <- Some rtFlow)
+                    z.Script  <- "My script")
+
             rtWork3 <-
                 Work.Create()
                 |> tee (fun z ->
@@ -128,7 +128,7 @@ module CreateSampleModule =
             rtWork2.AddCalls [rtCall2a; rtCall2b]
             rtProject.AddPassiveSystem rtCylinder
             rtProject.AddActiveSystem rtSystem
-            rtFlow.AddWorks([rtWork1])
+            rtFlow.AddWorks([rtWork1; rtWork2; rtWork3])
 
             let edArrow1 = ArrowBetweenCalls.Create(rtCall1a, rtCall1b, DbArrowType.Start)
             rtWork1.AddArrows [edArrow1]

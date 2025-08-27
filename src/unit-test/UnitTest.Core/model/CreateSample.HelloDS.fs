@@ -37,10 +37,11 @@ module CreateSampleWithHelloDsModule =
                 z.Name      <- name
                 z.Status4   <- Some DbStatus4.Ready)
 
-        let hdsWork1 = createWork "Work1" |> tee(fun w -> w.Flow <- Some hdsFlow)
-        let hdsWork2 = createWork "Work2" |> tee(fun w -> w.Flow <- Some hdsFlow)
-        let hdsWork3 = createWork "Work3" |> tee(fun w -> w.Flow <- Some hdsFlow)
+        let hdsWork1 = createWork "Work1"
+        let hdsWork2 = createWork "Work2"
+        let hdsWork3 = createWork "Work3"
 
+        [hdsWork1; hdsWork2; hdsWork3] |> hdsFlow.AddWorks
         [hdsWork1; hdsWork2; hdsWork3] |> hdsSystem.AddWorks
         [hdsFlow] |> hdsSystem.AddFlows
 

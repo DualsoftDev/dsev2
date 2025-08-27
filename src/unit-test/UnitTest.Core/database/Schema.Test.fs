@@ -88,6 +88,7 @@ module Schema =
         let dsProject = rtProject.Replicate() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
+        let yyy = rtProject
         let rtObjs = dsProject.EnumerateRtObjects()
         for rtObj in rtObjs do
             tracefn $"{rtObj.GetType().Name}: {rtObj.GetFQDN()}"
@@ -125,7 +126,7 @@ module Schema =
             let dsSystem = dsProject.Systems[0]
             let dsFlow = dsSystem.Flows[0]
             dsFlow.Guid === rtFlow.Guid
-            dsFlow.Works.Length === 2
+            dsFlow.Works.Length === 3
             dsSystem.Works.Length === 3
             let dsWork1 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork1")
             let dsWork2 = dsSystem.Works |> Seq.find(fun w -> w.Name = "BoundedWork2")
@@ -137,10 +138,10 @@ module Schema =
             dsWork2.Name === rtWork2.Name
             dsWork3.Name === rtWork3.Name
 
-            let flowWors = dsFlow.Works
-            flowWors.Length === 2
-            flowWors[0].Guid === rtWork1.Guid
-            flowWors[1].Guid === rtWork2.Guid
+            let flowWorks = dsFlow.Works
+            flowWorks.Length === 3
+            flowWorks[0].Guid === rtWork1.Guid
+            flowWorks[1].Guid === rtWork2.Guid
             dsFlow.Name === rtFlow.Name
 
             rtWork1.Calls.Length === 2
@@ -564,6 +565,7 @@ module Schema =
 
         [<Test>]
         member x.``[Sqlite] DB System 수정 commit`` () =
+            let xxx = rtProject
             let dsProject = rtProject.Replicate() |> validateRuntime
             let diffs = dsProject.ComputeDiff rtProject |> toArray
 
@@ -613,7 +615,7 @@ module Schema =
                     | Ok (Updated diffs) ->
                         diffs.Length === 1
                         match diffs[0] with
-                        | Diff("Name", dbW, newW) when newW = w -> ()
+                        | Diff("Name", dbW, newW, _) when newW = w -> ()
                         | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
 
@@ -638,7 +640,7 @@ module Schema =
 
                         if diffs.Length = 3 then
                             match diffs[2] with
-                            | Diff("DateTime", dbSys, newSys) when dbSys.GetGuid() = newSys.GetGuid() -> ()
+                            | Diff("DateTime", dbSys, newSys, _) when dbSys.GetGuid() = newSys.GetGuid() -> ()
                             | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
 
@@ -683,9 +685,9 @@ module Schema =
                 w2.Parameter <- """{"Age": 3}"""
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs.Length === 3
-                diffs |> contains (Diff("Name",      w, w2)) === true
-                diffs |> contains (Diff("Parameter", w, w2)) === true
-                diffs |> contains (Diff("Motion",    w, w2)) === true
+                diffs |> contains (Diff("Name",      w, w2, null)) === true
+                diffs |> contains (Diff("Parameter", w, w2, null)) === true
+                diffs |> contains (Diff("Motion",    w, w2, null)) === true
 
             do
                 // 추가한 개체 (arrow) detect 가능해야 한다.
@@ -734,9 +736,9 @@ module Schema =
 
             let diffs = rtProject.ComputeDiff(dsProject) |> toList
             diffs.Length === 5
-            diffs |> contains (Diff ("Guid", rtProject, dsProject)) === true
-            diffs |> contains (Diff ("DateTime", rtProject, dsProject)) === true
-            diffs |> contains (Diff ("Name", rtProject, dsProject)) === true
+            diffs |> contains (Diff ("Guid", rtProject, dsProject, null)) === true
+            diffs |> contains (Diff ("DateTime", rtProject, dsProject, null)) === true
+            diffs |> contains (Diff ("Name", rtProject, dsProject, null)) === true
             diffs |> contains (LeftOnly rtProject.Systems[0]) === true
             diffs |> contains (RightOnly dsProject.Systems[0]) === true
 
@@ -750,14 +752,14 @@ module Schema =
                 diffs |> contains (LeftOnly src) === true
                 diffs |> contains (RightOnly cc) === true
                 let diffs2 = src.ComputeDiff cc |> toArray
-                diffs2 |> contains (Diff ("Guid", src, cc)) === true
+                diffs2 |> contains (Diff ("Guid", src, cc, null)) === true
                 diffs2
                 |> forall(fun d ->
                     match d with
-                    | Diff("Guid", x, y) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("IRI",  x, y) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("DateTime",  x, y) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Parent",  x, y) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Guid",      x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("IRI",       x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("DateTime",  x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Parent",    x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
                     | (   LeftOnly (:? Flow)
                         | LeftOnly (:? Work)
                         | LeftOnly (:? ArrowBetweenWorks)

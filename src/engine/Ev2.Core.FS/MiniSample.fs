@@ -9,9 +9,11 @@ module MiniSample =
     let createCylinder(name:string) =
         let sys = DsSystem.Create(Name=name)
 
+        let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"))
+        let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"))
         let flow = Flow.Create(Name="CylFlow")
-        let workAdv = Work.Create(Name="ADVANCE", Flow=Some flow, Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"))
-        let workRet = Work.Create(Name="RETURN",  Flow=Some flow, Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"))
+        flow.AddWorks [workAdv; workRet]
+
         sys.AddWorks [workAdv; workRet;]
         sys.AddFlows [flow]
 
@@ -58,7 +60,6 @@ module MiniSample =
             |> tee (fun w ->
                 w.Name <- "Work2"
                 w.Status4 <- Some DbStatus4.Going
-                w.Flow <- Some flow
             )
 
         // Call 생성
@@ -103,6 +104,7 @@ module MiniSample =
 
         // System에 요소들 추가
         [ work1; work2] |> system.AddWorks
+        [ work1; work2] |> flow.AddWorks
         [ flow] |> system.AddFlows
         [ apiCall] |> system.AddApiCalls
         [ apiCall] |> call1.AddApiCalls

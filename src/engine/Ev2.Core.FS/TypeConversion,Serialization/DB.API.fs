@@ -24,7 +24,9 @@ module Ds2SqliteModule =
                     // 이미 존재하는 프로젝트는 업데이트
                     Project.RTryCheckoutFromDB(dbProj.Id.Value, dbApi)
                     >>= (fun dbProject ->
+                        noop()
                         let mutable diffs = dbProject.ComputeDiff(x) |> toArray
+                        noop()
 
                         // 확장 속성 diff도 추가
                         getTypeFactory()

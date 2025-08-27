@@ -106,6 +106,16 @@ type AppDbApi(dbProvider:DbProvider) = // CallCache, CheckDatabaseChange, ClearA
                         createDb()
                 with exn ->
                     createDb()
+
+                if DbApi.EnumDic.Count = 0 then
+                    for enum in conn.Query<ORMEnum>($"SELECT id, category, name, value FROM {Tn.Enum}") do
+                        let id, v = enum.Id.Value, enum.Value
+                        match enum.Category with
+                        | c when c = typeof<DbStatus4>.Name   -> DbApi.EnumDic[(typeof<DbStatus4>,   v)] <- id
+                        | c when c = typeof<DbCallType>.Name  -> DbApi.EnumDic[(typeof<DbCallType>,  v)] <- id
+                        | c when c = typeof<DbArrowType>.Name -> DbApi.EnumDic[(typeof<DbArrowType>, v)] <- id
+                        | _ -> ()
+                    ()
         )
         //:?> SQLiteConnection
     // createCache 함수를 사용한 캐시 초기화
@@ -237,7 +247,7 @@ module ORMTypeConversionModule =
                 | :? Work as rt ->
                     let flowId = (rt.Flow >>= _.Id)
                     let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
-                    new ORMWork(pid, status4Id, flowId)
+                    new ORMWork(pid, status4Id, flowId, rt.FlowGuid)
                     |> ormReplicateProperties rt
 
                 | :? Call as rt ->
@@ -246,22 +256,24 @@ module ORMTypeConversionModule =
 
                 | :? ArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                     let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
+                    let srcGuid, tgtGuid = rt.Source.Guid, rt.Target.Guid
                     let parentId = (rt.RawParent >>= _.Id).Value
                     let arrowTypeId =
                         dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
                         |? int DbArrowType.None
 
-                    new ORMArrowWork(src, tgt, parentId, arrowTypeId)
+                    new ORMArrowWork(src, tgt, parentId, arrowTypeId, srcGuid, tgtGuid)
                     |> ormReplicateProperties rt
 
                 | :? ArrowBetweenCalls as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.
                     let id, src, tgt = o2n rt.Id, rt.Source.Id.Value, rt.Target.Id.Value
+                    let srcGuid, tgtGuid = rt.Source.Guid, rt.Target.Guid
                     let parentId = (rt.RawParent >>= _.Id).Value
                     let arrowTypeId =
                         dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
                         |? int DbArrowType.None
 
-                    new ORMArrowCall(src, tgt, parentId, arrowTypeId)
+                    new ORMArrowCall(src, tgt, parentId, arrowTypeId, srcGuid, tgtGuid)
                     |> ormReplicateProperties rt
 
                 | :? ApiDef as rt ->
@@ -289,7 +301,7 @@ module ORMTypeConversionModule =
                 // 새로 생성된 ORMUnique 객체에 대한 신규 Guid 정보를 dic 에 기록
                 |> tee (fun ormUniq ->
                     let bag = dbApi.DDic.Get<ReplicateBag>()
-                    bag.Newbies[guid] <- ormUniq )
+                    bag.OldGuid2NewObjectMap[guid] <- ormUniq )
 
             | _ -> failwithf "Cannot convert to ORM. %A" x
         ormUniq

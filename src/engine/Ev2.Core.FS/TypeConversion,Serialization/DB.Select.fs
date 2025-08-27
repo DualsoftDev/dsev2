@@ -122,7 +122,7 @@ module internal Db2DsImpl =
 
 
             let rtWorks = [
-                let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr)
+                let orms = conn.Query<ORMWork>($"SELECT * FROM {Tn.Work} WHERE systemId = @Id", s, tr).ToArray()
 
                 for orm in orms do
                     Work.Create()
@@ -130,13 +130,8 @@ module internal Db2DsImpl =
                     |> replicateProperties orm
                     |> tee handleAfterSelect
                     |> tee(fun w ->
-                        match orm.FlowId with
-                        | Some flowId ->
-                            let flow = rtFlows |> find(fun f -> f.Id.Value = flowId)
-                            w.Flow <- Some flow
-                        | None -> ()
-
-                        w.Status4    <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+                        w.FlowGuid <- rtFlows |> tryFind(fun f -> f.Id = orm.FlowId) |-> _.Guid
+                        w.Status4  <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
 
             ]
             s.addWorks(rtWorks, false)
@@ -176,11 +171,15 @@ module internal Db2DsImpl =
                             {| WorkId = w.Id.Value |}, tr)
 
                     for orm in orms do
+                        let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
                         let src = rtCalls |> find(fun c -> c.Id.Value = orm.Source)
                         let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
-                        let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                        orm.SourceGuid <- src.Guid
+                        orm.TargetGuid <- tgt.Guid
+                        orm.Type <- arrowType
 
-                        ArrowBetweenCalls.Create(src, tgt, arrowType)
+                        noop()
+                        ArrowBetweenCalls.Create(src.Guid, tgt.Guid, arrowType)
                         |> replicateProperties orm
                         |> tee handleAfterSelect
                 ]
@@ -198,11 +197,14 @@ module internal Db2DsImpl =
                         , {| SystemId = s.Id.Value |}, tr)
 
                 for orm in orms do
+                    let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
                     let src = rtWorks |> find(fun w -> w.Id.Value = orm.Source)
                     let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
-                    let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                    orm.SourceGuid <- src.Guid
+                    orm.TargetGuid <- tgt.Guid
+                    orm.Type <- arrowType
 
-                    ArrowBetweenWorks.Create(src, tgt, arrowType)
+                    ArrowBetweenWorks.Create(src.Guid, tgt.Guid, arrowType)
                     |> replicateProperties orm
                     |> tee handleAfterSelect
             ]
