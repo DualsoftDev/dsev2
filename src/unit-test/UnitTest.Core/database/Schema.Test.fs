@@ -45,7 +45,7 @@ module Schema =
 
     // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
     let pgsqlDbApi() =
-        "Host=localhost;Database=ds;Username=ds;Password=ds;Search Path=ds"
+        "Host=localhost;Database=dstest;Username=dstest;Password=dstest;Search Path=dstest"
         |> DbProvider.Postgres
         |> AppDbApi
 
@@ -82,6 +82,9 @@ module Schema =
     let ``basic_test`` (dbApi:AppDbApi) =
         createEditableProject()
 
+        let xxx = rtCylinder.Replicate()
+        xxx |> validateRuntime |> ignore
+
         let dsProject = rtProject.Replicate() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
@@ -89,7 +92,7 @@ module Schema =
         for rtObj in rtObjs do
             tracefn $"{rtObj.GetType().Name}: {rtObj.GetFQDN()}"
 
-        let rtObjDic = rtObjs.ToDictionary(_.Guid, fun z -> z :> Unique)
+        let rtObjDic = rtObjs.ToDictionary(_.Guid, fun z -> z :> Unique) |> Guid2UniqDic
         dsProject.Validate(rtObjDic)
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->

@@ -40,3 +40,9 @@ undiet:
 			cd - > /dev/null; \
 		fi; \
 	done
+
+
+clean:
+	@find . -type d \( -name "bin" -o -name "obj" -o -name ".vs" \) -exec rm -rf {} +
+	rm -rf ./src/unit-test/UnitTest.Core/test-data
+	./scripts/initialize-pgsql-schema.sh -u dstest

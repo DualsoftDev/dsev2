@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
+open System
 
 [<AutoOpen>]
 module MiniSample =
@@ -9,13 +10,13 @@ module MiniSample =
         let sys = DsSystem.Create(Name=name)
 
         let flow = Flow.Create(Name="CylFlow")
-        let workAdv = Work.Create(Name="ADVANCE", Flow=Some flow)
-        let workRet = Work.Create(Name="RETURN",  Flow=Some flow)
+        let workAdv = Work.Create(Name="ADVANCE", Flow=Some flow, Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"))
+        let workRet = Work.Create(Name="RETURN",  Flow=Some flow, Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"))
         sys.AddWorks [workAdv; workRet;]
         sys.AddFlows [flow]
 
-        let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid)
-        let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid)
+        let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid, Guid=Guid.Parse("30000000-0000-0000-0000-000000000000"))
+        let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid, Guid=Guid.Parse("40000000-0000-0000-0000-000000000000"))
         sys.AddApiDefs [apiDefAdv; apiDefRet]
 
         let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")

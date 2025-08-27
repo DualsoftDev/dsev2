@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open Dual.Common.Core.FS
 open Dual.Common.Base
+open System
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
 module internal rec DsObjectCopyImpl =
@@ -19,8 +20,8 @@ module internal rec DsObjectCopyImpl =
         /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
         member x.replicateTo(newProject:Project, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
-            let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
             let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
+            let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
 
             newProject
             |> uniqReplicateWithBag bag x
@@ -223,19 +224,28 @@ module internal rec DsObjectCopyImpl =
             newApiCall |> uniqReplicateWithBag bag x |> ignore
 
         member x.replicate(bag:ReplicateBag) =
-            new ApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
-            |> tee(fun newApiCall -> x.replicateTo(newApiCall, bag))
+            let newApiDefGuid = bag.Newbies.GetNewGuid(x.ApiDefGuid)
+            new ApiCall(newApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
+            |> tee(fun newApiCall ->
+                //bag.Newbies.AddGuidRelation(x.ApiDefGuid, newApiCall.TxGuid)
+                x.replicateTo(newApiCall, bag))
 
     type ApiDef with // replicate, replicateTo
-        member x.replicateTo(newApiDef:ApiDef, ?bag:ReplicateBag) =
+        member private x.replicateTo(newApiDef:ApiDef, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newApiDef
             |> uniqReplicateWithBag bag x
+            |> tee(fun z ->
+                newApiDef.TxGuid <- bag.Newbies.GetNewGuid(x.TxGuid)
+                newApiDef.RxGuid <- bag.Newbies.GetNewGuid(x.RxGuid))
             |> ignore
 
         member x.replicate(bag:ReplicateBag) =
-            new ApiDef(x.IsPush, x.TxGuid, x.RxGuid)
-            |> tee(fun newApiDef -> x.replicateTo(newApiDef, bag))
+            new ApiDef(x.IsPush, Guid.NewGuid(), Guid.NewGuid())
+            |> tee(fun newApiDef ->
+                bag.Newbies.AddGuidRelation(x.RxGuid, newApiDef.RxGuid)
+                bag.Newbies.AddGuidRelation(x.TxGuid, newApiDef.TxGuid)
+                x.replicateTo(newApiDef, bag))
 
     type ArrowBetweenWorks with // replicate, replicateTo
         member x.replicateTo(newArrow:ArrowBetweenWorks, ?bag:ReplicateBag) =
@@ -283,10 +293,10 @@ module DsObjectCopyAPIModule =
                 repl.Id <- None
                 repl.Guid <- newGuids[repl.Guid])
 
-            // [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
-            for ac in replicaSys.ApiCalls do
-                let newGuid = newGuids[ac.ApiDefGuid]
-                ac.ApiDefGuid <- newGuid
+            //// [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
+            //for ac in replicaSys.ApiCalls do
+            //    let newGuid = newGuids[ac.ApiDefGuid]
+            //    ac.ApiDefGuid <- newGuid
 
             for c in replicaSys.Works >>= _.Calls do
 

@@ -12,6 +12,7 @@ module CreateSampleModule =
 
     let mutable rtProject  = getNull<Project>()
     let mutable rtSystem   = getNull<DsSystem>()
+    let mutable rtCylinder = getNull<DsSystem>()
     let mutable rtApiCall1a = getNull<ApiCall>()
     let mutable rtApiCall1b = getNull<ApiCall>()
     let mutable rtApiDef1  = getNull<ApiDef>()
@@ -29,16 +30,12 @@ module CreateSampleModule =
     let createEditableProject() =
         if isItNull rtProject then
             rtProject <- Project.Create(Name = "MainProject")
-            rtSystem  <-
-                DsSystem.Create()
-                |> tee (fun z ->
-                    z.Name <- "MainSystem"(*, IsPrototype=true*)
-                    z.IRI <- "http://example.com/ev2/system/main"
-                    )
+            rtCylinder <- MiniSample.createCylinder("Cylinder")
 
-            rtApiDef1 <- ApiDef.Create(Name = "ApiDef1a")
-            rtApiDef2 <- ApiDef.Create() |> tee (fun z -> z.Name <- "UnusedApi")
-            [rtApiDef1; rtApiDef2;] |> rtSystem.AddApiDefs
+            rtSystem <- DsSystem.Create(Name = "MainSystem", IRI="http://example.com/ev2/system/main")
+
+            rtApiDef1 <- rtCylinder.ApiDefs.Find(fun ad -> ad.Name = "ApiDefADV")
+            rtApiDef2 <- rtCylinder.ApiDefs.Find(fun ad -> ad.Name = "ApiDefRET")
 
             rtApiCall1a <-
                 ApiCall.Create()
@@ -129,6 +126,7 @@ module CreateSampleModule =
             rtCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
             rtCall2b  <- Call.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished)
             rtWork2.AddCalls [rtCall2a; rtCall2b]
+            rtProject.AddPassiveSystem rtCylinder
             rtProject.AddActiveSystem rtSystem
             rtFlow.AddWorks([rtWork1])
 

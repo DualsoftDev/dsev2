@@ -92,9 +92,6 @@ module internal DbInsertModule =
                     // flows 삽입
                     rt.Flows |> iter _.InsertToDB(dbApi)
 
-                    // system 의 apiDefs 를 삽입
-                    rt.ApiDefs |> iter _.InsertToDB(dbApi)
-
                     // system 의 apiCalls 를 삽입
                     rt.ApiCalls |> iter _.InsertToDB(dbApi)
 
@@ -103,6 +100,9 @@ module internal DbInsertModule =
 
                     // system 의 arrows 를 삽입 (works 간 연결)
                     rt.Arrows |> iter _.InsertToDB(dbApi)
+
+                    // system 의 apiDefs 를 삽입
+                    rt.ApiDefs |> iter _.InsertToDB(dbApi)
 
 
                 | :? ApiDef as rt ->

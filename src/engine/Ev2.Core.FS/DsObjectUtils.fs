@@ -11,7 +11,19 @@ open Dual.Common.Base
 
 [<AutoOpen>]
 module rec TmpCompatibility =
-    type Guid2UniqDic = Dictionary<Guid, Unique>
+    type Guid2UniqDic(src:IDictionary<Guid, Unique>) =
+        inherit Dictionary<Guid, Unique>(src)
+        let oldGuid2NewGuid = Dictionary<Guid, Guid>()
+
+        new() = Guid2UniqDic(Dictionary<Guid, Unique>())
+
+        member x.DebugDic = oldGuid2NewGuid
+
+        member x.AddGuidRelation(oldGuid:Guid, newGuid:Guid) =
+            oldGuid2NewGuid.TryAdd(oldGuid, newGuid) |> ignore
+
+        member x.GetNewGuid(oldGuid:Guid):Guid =
+            oldGuid2NewGuid.TryGet(oldGuid) |?? (fun () -> x.TryGet(oldGuid) |-> _.Guid |?? (fun () -> failwith "ERROR"))
 
     type RtUnique with // EnumerateRtObjects, UpdateDateTime
         (* see also EdUnique.EnumerateRtObjects *)
