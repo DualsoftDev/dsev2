@@ -10,13 +10,15 @@ open Dual.Common.Core.FS
 open Dual.Common.Base
 
 [<AutoOpen>]
-module rec ReplicateUtility =
+module ReplicateBagModule =
     /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
     type ReplicateBag(src:IDictionary<Guid, Unique>) =
         new() = ReplicateBag(Dictionary<Guid, Unique>())
         /// OldGuid -> New object
         member val OldGuid2NewObjectMap = Dictionary<Guid, Unique>(src)
-        //member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
+        member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
+        member x.Add(old:Guid, neo:Guid) = x.OldGuid2NewGuidMap.Add(old, neo)
+
 
 [<AutoOpen>]
 module rec TmpCompatibility =

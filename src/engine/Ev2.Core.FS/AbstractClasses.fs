@@ -150,7 +150,7 @@ and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
     // { Runtime/DB 용
     member x.ActiveSystems  = x.RawActiveSystems  |> toList
     member x.PassiveSystems = x.RawPassiveSystems |> toList
-    member x.Systems = (x.ActiveSystems @ x.PassiveSystems) |> toList
+    member x.Systems = (x.PassiveSystems @ x.ActiveSystems) |> toList
     // } Runtime/DB 용
 
     member x.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProj:INjProject): Project =

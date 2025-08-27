@@ -82,9 +82,7 @@ module Schema =
     let ``basic_test`` (dbApi:AppDbApi) =
         createEditableProject()
 
-        let xxx = rtCylinder.Replicate()
-        xxx |> validateRuntime |> ignore
-
+        let xxx = rtProject
         let dsProject = rtProject.Replicate() |> validateRuntime
         //let json = dsProject.ToJson(Path.Combine(testDataDir(), "dssystem.json"))
 
@@ -123,8 +121,11 @@ module Schema =
             let diffProj = edProject.ComputeDiff dsProject |> toArray
             let diffSys = edProject.Systems[0].ComputeDiff dsProject.Systems[0] |> toArray
 
-            let dsSystem = dsProject.Systems[0]
+            let dsSystem = dsProject.Systems |> find(fun s -> s.Name = "MainSystem")
             let dsFlow = dsSystem.Flows[0]
+            let yyy = rtProject
+            let rtSystem = rtProject.Systems |> find(fun s -> s.Name = "MainSystem")
+            let rtFlow = rtSystem.Flows[0]
             dsFlow.Guid === rtFlow.Guid
             dsFlow.Works.Length === 3
             dsSystem.Works.Length === 3
@@ -180,7 +181,7 @@ module Schema =
             ==== Ok NoChange
 
             do
-                let dsProj = dsProject2.Duplicate($"CC_{dsProject2.Name}")
+                let dsProj = dsProject2.Duplicate()
                 dsProj.Name <- $"Duplicate of {dsProj.Name}"
                 validateRuntime dsProj |> ignore
                 dsProj.ToJson(Path.Combine(testDataDir(), "duplicate-of-db-inserted-dssystem.json")) |> ignore
@@ -193,7 +194,7 @@ module Schema =
                 let dsSystem4 = dsProject3.Systems[0].Duplicate()
                 validateRuntime dsSystem4 |> ignore
                 dsSystem4.Name <- "DuplicatedSystem"
-                dsProject3.Duplicate($"CC_{dsProject3.Name}")
+                dsProject3.Duplicate()
                 |> tee(fun z ->
                     z.Name <- $"{z.Name}4"
                     z.EnumerateRtObjects().OfType<ApiCall>().First().ValueSpec <- Some <| Single 3.14156952
@@ -367,7 +368,7 @@ module Schema =
 
             let dsProject1 = Project.FromJson json |> validateRuntime
             noop()
-            let dsProject2 = dsProject1 |> _.Duplicate($"CC_{dsProject1.Name}")
+            let dsProject2 = dsProject1 |> _.Duplicate()
             let sys = dsProject2.ActiveSystems[0]
             sys.Flows.Length === 1
             let flow = sys.Flows[0]
@@ -731,7 +732,7 @@ module Schema =
                 - Active/Passive system 들의 Guid 변경되어야 함.
                 - Parent 및 OwnerSystem member 변경되어야 함.
             *)
-            let dsProject = rtProject.Duplicate($"CC_{rtProject.Name}") |> validateRuntime
+            let dsProject = rtProject.Duplicate() |> validateRuntime
             rtProject.IsEqual dsProject === false
 
             let diffs = rtProject.ComputeDiff(dsProject) |> toList

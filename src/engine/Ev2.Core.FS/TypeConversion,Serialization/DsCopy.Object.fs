@@ -3,8 +3,11 @@ namespace Ev2.Core.FS
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open System
+open System.Collections
+open System.Collections.Generic
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
+[<AutoOpen>]
 module internal rec DsObjectCopyImpl =
     let uniqReplicateWithBag (bag:ReplicateBag) (src:#Unique) (dst:#Unique) : #Unique =
         dst
@@ -193,59 +196,115 @@ module internal rec DsObjectCopyImpl =
 
 [<AutoOpen>]
 module DsObjectCopyAPIModule =
-    open DsObjectCopyImpl
+    let rec uniqGenerateNew (bag:ReplicateBag) (rtObj:RtUnique) =
+        let newGuid = Guid.NewGuid() in bag.Add(rtObj.Guid, newGuid); rtObj.Guid <- newGuid
+        let map = bag.OldGuid2NewGuidMap
+        match box rtObj with
+        | :? Project as rt ->
+            rt.Systems |> iter ( uniqGenerateNew bag >> ignore)
+
+        | :? DsSystem as rt ->
+            rt.ApiDefs |> iter ( uniqGenerateNew bag >> ignore)
+            rt.ApiCalls |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Flows |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Works |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Arrows |> iter ( uniqGenerateNew bag >> ignore)
+
+        | :? Work as rt ->
+            rt.Calls |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Arrows |> iter ( uniqGenerateNew bag >> ignore)
+            rt.FlowGuid |> iter (fun guid -> rt.FlowGuid <- Some map[guid])
+
+        | :? ArrowBetweenWorks as rt ->
+            rt.SourceGuid <- map[rt.SourceGuid]
+            rt.TargetGuid <- map[rt.TargetGuid]
+
+        | :? Call as rt ->
+            rt.ApiCallGuids
+            |> List.ofSeq
+            |> List.map (fun g -> map[g])
+            |> fun gs ->
+                rt.ApiCallGuids.Clear()
+                rt.ApiCallGuids.AddRange gs
+
+        | :? ArrowBetweenCalls as rt ->
+            rt.SourceGuid <- map[rt.SourceGuid]
+            rt.TargetGuid <- map[rt.TargetGuid]
+
+        | :? ApiDef as rt ->
+            rt.TxGuid <- map[rt.TxGuid]
+            rt.RxGuid <- map[rt.RxGuid]
+
+        | :? Flow as rt ->
+            rt.Buttons |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Lamps |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Conditions |> iter ( uniqGenerateNew bag >> ignore)
+            rt.Actions |> iter ( uniqGenerateNew bag >> ignore)
+
+        | :? ApiCall as rt ->
+            rt.ApiDefGuid <- map[rt.ApiDefGuid]
+            ()
+        | :? DsButton as rt -> ()
+
+
+        | _ -> failwith "Not Project"
+
 
     type DsSystem with // Duplicate, Replicate
         /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
         member x.Replicate() = x.replicate()
 
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        member x.Duplicate() =
-            let oldies = x.EnumerateRtObjects().ToDictionary( _.Guid, id)
-            let current = now()
-            let replicaSys =
-                x.Replicate()
-                |> uniqGuid (newGuid()) |> uniqDateTime current |> uniqId None
-            let replicas = replicaSys.EnumerateRtObjects()
-            let newGuids = replicas.ToDictionary( _.Guid, (fun _ -> newGuid()))
+        member x.Duplicate(?bag:ReplicateBag) =
+            let bag = bag |?? (fun () -> ReplicateBag())
+            x.Replicate()
+            |> tee( fun z -> uniqGenerateNew bag z)
 
-            replicaSys.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
+            //let oldies = x.EnumerateRtObjects().ToDictionary( _.Guid, id)
+            //let current = now()
+            //let replicaSys =
+            //    x.Replicate()
+            //    |> uniqGuid (newGuid()) |> uniqDateTime current |> uniqId None
+            //let replicas = replicaSys.EnumerateRtObjects()
+            //let newGuids = replicas.ToDictionary( _.Guid, (fun _ -> newGuid()))
 
-            replicas |> iter (fun repl ->
-                repl.Id <- None
-                repl.Guid <- newGuids[repl.Guid])
+            //replicaSys.IRI <- null     // IRI 는 항시 고유해야 하므로, 복제시 null 로 초기화
 
-            //// [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
-            //for ac in replicaSys.ApiCalls do
-            //    let newGuid = newGuids[ac.ApiDefGuid]
-            //    ac.ApiDefGuid <- newGuid
+            //replicas |> iter (fun repl ->
+            //    repl.Id <- None
+            //    repl.Guid <- newGuids[repl.Guid])
 
-            for c in replicaSys.Works >>= _.Calls do
+            ////// [ApiCall 에서 APiDef Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
+            ////for ac in replicaSys.ApiCalls do
+            ////    let newGuid = newGuids[ac.ApiDefGuid]
+            ////    ac.ApiDefGuid <- newGuid
 
-                // [Call 에서 APiCall Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
-                let newGuids =
-                    c.ApiCallGuids
-                    |-> (fun g -> newGuids[g])
-                    |> toList
+            //for c in replicaSys.Works >>= _.Calls do
 
-                c.ApiCallGuids.Clear()
-                c.ApiCallGuids.AddRange newGuids
+            //    // [Call 에서 APiCall Guid 참조] 부분, 신규 생성 객체의 Guid 로 교체
+            //    let newGuids =
+            //        c.ApiCallGuids
+            //        |-> (fun g -> newGuids[g])
+            //        |> toList
+
+            //    c.ApiCallGuids.Clear()
+            //    c.ApiCallGuids.AddRange newGuids
 
 
-            // 새로운 GUID 할당 후 validation 실행
-            // parent 관계는 유지되어야 하므로 validation이 성공해야 함
-            replicaSys |> validateRuntime |> ignore
+            //// 새로운 GUID 할당 후 validation 실행
+            //// parent 관계는 유지되어야 하므로 validation이 성공해야 함
+            //replicaSys |> validateRuntime |> ignore
 
-            // 삭제 요망: debug only
-            // flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
-            replicaSys.Works
-            |> filter _.Flow.IsSome
-            |> iter (fun w ->
-                replicaSys.Flows
-                |> exists (fun f -> f.Guid = w.Flow.Value.Guid)
-                |> verify)
+            //// 삭제 요망: debug only
+            //// flow 할당된 works 에 대해서 새로 duplicate 된 flow 를 할당되었나 확인
+            //replicaSys.Works
+            //|> filter _.Flow.IsSome
+            //|> iter (fun w ->
+            //    replicaSys.Flows
+            //    |> exists (fun f -> f.Guid = w.Flow.Value.Guid)
+            //    |> verify)
 
-            replicaSys
+            //replicaSys
 
 
     type Project with // Duplicate, Replicate
@@ -262,13 +321,17 @@ module DsObjectCopyAPIModule =
             |> validateRuntime
 
         /// 객체 복사 생성.  Id, Guid 및 DateTime 은 새로운 값으로 치환
-        member x.Duplicate(newName:string) =  // RtProject
-            let actives  = x.ActiveSystems    |-> _.Duplicate()
-            let passives = x.PassiveSystems   |-> _.Duplicate()
-            Project.Create()
-            |> replicateProperties x |> uniqName newName |> uniqGuid (newGuid()) |> uniqDateTime (now())  |> uniqId None
-            |> tee (fun z ->
-                actives  |> z.RawActiveSystems.AddRange
-                passives |> z.RawPassiveSystems.AddRange
-                actives @ passives |> iter (fun s -> s.RawParent <- Some z))
+        member x.Duplicate(?bag:ReplicateBag) =  // RtProject
+            let bag = bag |?? (fun () -> ReplicateBag())
+            x.Replicate()
+            |> tee( fun z -> uniqGenerateNew bag z)
+            //let bag = ReplicateBag()
+            //let actives  = x.ActiveSystems    |-> _.Duplicate(bag)
+            //let passives = x.PassiveSystems   |-> _.Duplicate(bag)
+            //Project.Create()
+            //|> replicateProperties x |> uniqName newName |> uniqGuid (newGuid()) |> uniqDateTime (now())  |> uniqId None
+            //|> tee (fun z ->
+            //    actives  |> z.RawActiveSystems.AddRange
+            //    passives |> z.RawPassiveSystems.AddRange
+            //    actives @ passives |> iter (fun s -> s.RawParent <- Some z))
 

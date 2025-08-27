@@ -13,7 +13,7 @@ module internal DsCopyModule =
     let duplicateUnique (source:IUnique): IUnique =
         match source with
         | :? DsSystem  as rs -> rs.Duplicate()
-        | :? Project as rp -> rp.Duplicate($"CC_{rp.Name}")
+        | :? Project as rp -> rp.Duplicate()
         | _ -> failwithf "Unsupported type for duplication: %A" (source.GetType())
 
     /// fwdReplicate <- replicateUnique
