@@ -590,7 +590,7 @@ module rec NewtonsoftJsonObjects =
 module Ds2JsonModule =
     /// Runtime 객체의 validation
     let validateRuntime (rtObj:#RtUnique): #RtUnique =
-        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, fun z -> z :> Unique) |> Guid2UniqDic
+        let guidDic = rtObj.EnumerateRtObjects().ToDictionary(_.Guid, fun z -> z :> Unique) |> ReplicateBag
         rtObj.Validate(guidDic)
         rtObj
 

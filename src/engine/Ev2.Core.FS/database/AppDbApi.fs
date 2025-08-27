@@ -288,8 +288,8 @@ module ORMTypeConversionModule =
 
                 // 새로 생성된 ORMUnique 객체에 대한 신규 Guid 정보를 dic 에 기록
                 |> tee (fun ormUniq ->
-                    let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
-                    guidDicDebug[guid] <- ormUniq )
+                    let bag = dbApi.DDic.Get<ReplicateBag>()
+                    bag.Newbies[guid] <- ormUniq )
 
             | _ -> failwithf "Cannot convert to ORM. %A" x
         ormUniq

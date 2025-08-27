@@ -92,7 +92,7 @@ module Schema =
         for rtObj in rtObjs do
             tracefn $"{rtObj.GetType().Name}: {rtObj.GetFQDN()}"
 
-        let rtObjDic = rtObjs.ToDictionary(_.Guid, fun z -> z :> Unique) |> Guid2UniqDic
+        let rtObjDic = rtObjs.ToDictionary(_.Guid, fun z -> z :> Unique) |> ReplicateBag
         dsProject.Validate(rtObjDic)
         dsProject.EnumerateRtObjects()
         |> iter (fun dsobj ->

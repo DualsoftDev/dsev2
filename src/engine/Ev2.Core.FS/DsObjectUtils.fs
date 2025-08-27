@@ -10,20 +10,29 @@ open Dual.Common.Core.FS
 open Dual.Common.Base
 
 [<AutoOpen>]
+module rec ReplicateUtility =
+    /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
+    type ReplicateBag(src:IDictionary<Guid, Unique>) =
+        new() = ReplicateBag(Dictionary<Guid, Unique>())
+        /// NewGuid -> New object
+        member val Newbies = Dictionary<Guid, Unique>(src)
+        member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
+
+[<AutoOpen>]
 module rec TmpCompatibility =
-    type Guid2UniqDic(src:IDictionary<Guid, Unique>) =
-        inherit Dictionary<Guid, Unique>(src)
-        let oldGuid2NewGuid = Dictionary<Guid, Guid>()
+    //type Guid2UniqDic(src:IDictionary<Guid, Unique>) =
+    //    inherit Dictionary<Guid, Unique>(src)
+    //    let oldGuid2NewGuid = Dictionary<Guid, Guid>()
 
-        new() = Guid2UniqDic(Dictionary<Guid, Unique>())
+    //    new() = Guid2UniqDic(Dictionary<Guid, Unique>())
 
-        member x.DebugDic = oldGuid2NewGuid
+    //    member x.DebugDic = oldGuid2NewGuid
 
-        member x.AddGuidRelation(oldGuid:Guid, newGuid:Guid) =
-            oldGuid2NewGuid.TryAdd(oldGuid, newGuid) |> ignore
+    //    member x.AddGuidRelation(oldGuid:Guid, newGuid:Guid) =
+    //        oldGuid2NewGuid.TryAdd(oldGuid, newGuid) |> ignore
 
-        member x.GetNewGuid(oldGuid:Guid):Guid =
-            oldGuid2NewGuid.TryGet(oldGuid) |?? (fun () -> x.TryGet(oldGuid) |-> _.Guid |?? (fun () -> failwith "ERROR"))
+    //    member x.GetNewGuid(oldGuid:Guid):Guid =
+    //        oldGuid2NewGuid.TryGet(oldGuid) |?? (fun () -> x.TryGet(oldGuid) |-> _.Guid |?? (fun () -> failwith "ERROR"))
 
     type RtUnique with // EnumerateRtObjects, UpdateDateTime
         (* see also EdUnique.EnumerateRtObjects *)
@@ -549,7 +558,7 @@ module DsObjectUtilsModule =
 
 
     type RtUnique with // Validate
-        member x.Validate(guidDicDebug:Guid2UniqDic) =
+        member x.Validate(bag:ReplicateBag) =
             verify (x.Guid <> emptyGuid)
 
             x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
@@ -559,12 +568,12 @@ module DsObjectUtilsModule =
 
             match x with
             | :? Project as prj ->
-                prj.Systems |> iter _.Validate(guidDicDebug)
+                prj.Systems |> iter _.Validate(bag)
                 for s in prj.Systems do
                     verify (prj.Guid |> isParentGuid s)
 
             | :? DsSystem as sys ->
-                sys.Works |> iter _.Validate(guidDicDebug)
+                sys.Works |> iter _.Validate(bag)
 
 
                 for w in sys.Works  do
@@ -572,7 +581,7 @@ module DsObjectUtilsModule =
                     for c in w.Calls do
                         // ApiCalls가 비어있을 수 있음 (NjSystem 등의 경우)
                         if not (c.ApiCalls.IsEmpty) then
-                            c.ApiCalls |-> _.Guid |> forall(guidDicDebug.ContainsKey) |> verify
+                            c.ApiCalls |-> _.Guid |> forall(bag.Newbies.ContainsKey) |> verify
                             c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
                             for ac in c.ApiCalls do
                                 try
@@ -585,33 +594,33 @@ module DsObjectUtilsModule =
                                     logWarn $"Exception while validating ApiCall: {ex.Message}"
                                     ()  // NjSystem 등에서 ApiDef 접근 실패 시 무시
 
-                sys.Arrows |> iter _.Validate(guidDicDebug)
+                sys.Arrows |> iter _.Validate(bag)
                 for a in sys.Arrows do
                     verify (sys.Guid |> isParentGuid a)
                     sys.Works |> contains a.Source |> verify
                     sys.Works |> contains a.Target |> verify
 
-                sys.ApiDefs |> iter _.Validate(guidDicDebug)
+                sys.ApiDefs |> iter _.Validate(bag)
                 for w in sys.ApiDefs do
                     verify (sys.Guid |> isParentGuid w)
 
-                sys.ApiCalls |> iter _.Validate(guidDicDebug)
+                sys.ApiCalls |> iter _.Validate(bag)
                 for ac in sys.ApiCalls  do
                     verify (sys.Guid |> isParentGuid ac)
 
             | :? Flow as flow ->
                 let works = flow.Works
-                works |> iter _.Validate(guidDicDebug)
+                works |> iter _.Validate(bag)
                 for w in works  do
                     verify (w.Flow = Some flow)
 
 
             | :? Work as work ->
-                work.Calls |> iter _.Validate(guidDicDebug)
+                work.Calls |> iter _.Validate(bag)
                 for c in work.Calls do
                     verify (work.Guid |> isParentGuid c)
 
-                work.Arrows |> iter _.Validate(guidDicDebug)
+                work.Arrows |> iter _.Validate(bag)
                 for a in work.Arrows do
                     verify (work.Guid |> isParentGuid a)
                     work.Calls |> contains a.Source |> verify

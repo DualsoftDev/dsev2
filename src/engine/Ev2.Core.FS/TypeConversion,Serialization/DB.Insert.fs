@@ -52,13 +52,14 @@ module internal DbInsertModule =
 
     type IRtUnique with // InsertToDB
         member x.InsertToDB(dbApi:AppDbApi) =
-            let guidDicDebug = dbApi.DDic.TryGet<Guid2UniqDic>() |?? (fun () -> Guid2UniqDic() |> tee dbApi.DDic.Set)
+            let bag = dbApi.DDic.TryGet<ReplicateBag>() |?? (fun () -> ReplicateBag() |> tee dbApi.DDic.Set)
+            let guidDicDebug = bag.Newbies
             dbApi.With(fun (conn, tr) ->
 
                 match box x with
                 | :? Project as rt ->
                     let orm = rt.ToORM(dbApi)
-                    assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
+                    assert (guidDicDebug.Any())
 
                     let projId =
                         conn.Insert($"""INSERT INTO {Tn.Project}
@@ -86,7 +87,6 @@ module internal DbInsertModule =
                                     ormSystem, tr)
 
                     rt.Id <- Some sysId
-                    let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
                     guidDicDebug[rt.Guid].Id <- Some sysId
 
                     // flows 삽입
@@ -155,7 +155,6 @@ module internal DbInsertModule =
                     let rtX = x :?> FlowEntity
 
                     let insertFlowElement (tableName:string) (rtX:#FlowEntity, ormX:#ORMFlowEntity) =
-                            let guidDicDebug = dbApi.DDic.Get<Guid2UniqDic>()
                             ormX.FlowId <- flowId
                             dbApi.With(fun (conn, tr) ->
                                 let xId =
@@ -341,9 +340,9 @@ module internal DbInsertModule =
 
     let rTryCommitSystemToDB (x:DsSystem) (dbApi:AppDbApi): DbCommitResult =
         dbApi.With(fun (conn, tr) ->
-            Guid2UniqDic() |> dbApi.DDic.Set
+            ReplicateBag() |> dbApi.DDic.Set
             let ormSystem = x.ToORM(dbApi)
-            assert (dbApi.DDic.Get<Guid2UniqDic>().Any())
+            assert (dbApi.DDic.Get<ReplicateBag>().Newbies.Any())
 
             rTryCommitSystemToDBHelper dbApi x)
 

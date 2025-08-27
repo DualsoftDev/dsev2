@@ -6,11 +6,6 @@ open System
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
 module internal rec DsObjectCopyImpl =
-    /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
-    type ReplicateBag() =
-        /// NewGuid -> New object
-        member val Newbies = Guid2UniqDic()
-
     let uniqReplicateWithBag (bag:ReplicateBag) (src:#Unique) (dst:#Unique) : #Unique =
         dst
         |> replicateProperties src
@@ -18,7 +13,7 @@ module internal rec DsObjectCopyImpl =
 
     type Project with // replicate, replicateTo
         /// Project 복제.  PrototypeSystems 은 공용이므로, 참조 공유 (shallow copy) 방식으로 복제됨.
-        member x.replicateTo(newProject:Project, ?bag:ReplicateBag) =
+        member private x.replicateTo(newProject:Project, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             let passives   = x.PassiveSystems   |-> _.replicate(bag) |> toArray
             let actives    = x.ActiveSystems    |-> _.replicate(bag) |> toArray
@@ -40,7 +35,7 @@ module internal rec DsObjectCopyImpl =
 
     type DsSystem with // replicate, replicateTo
         /// DsSystem 복제. 지정된 newSystem 객체에 현재 시스템의 내용을 복사
-        member x.replicateTo(newSystem:DsSystem, ?bag:ReplicateBag) =
+        member private x.replicateTo(newSystem:DsSystem, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             // flow, work 상호 참조때문에 일단 flow 만 shallow copy
             let apiDefs  = x.ApiDefs  |-> _.replicate(bag)  |> toArray
@@ -81,7 +76,7 @@ module internal rec DsObjectCopyImpl =
 
     type Work with // replicate, replicateTo
         /// Work 복제. 지정된 newWork 객체에 현재 작업의 내용을 복사
-        member x.replicateTo(newWork:Work, ?bag:ReplicateBag) =
+        member private x.replicateTo(newWork:Work, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             let calls =
                 x.Calls |> Seq.map(fun z -> z.replicate bag) |> List.ofSeq
@@ -111,8 +106,6 @@ module internal rec DsObjectCopyImpl =
             arrows |> iter (setParentI newWork)
 
         member x.replicate(bag:ReplicateBag) =
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let targetType = x.GetType()
             Work.Create([], [], None)
             |> tee(fun newWork -> x.replicateTo(newWork, bag))
 
@@ -120,7 +113,7 @@ module internal rec DsObjectCopyImpl =
     /// flow 와 work 는 상관관계로 복사할 때 서로를 참조해야 하므로, shallow copy 우선 한 후, works 생성 한 후 나머지 정보 채우기 수행
     type Flow with // replicate, replicateTo
         /// Flow 복제. 지정된 newFlow 객체에 현재 플로우의 내용을 복사
-        member x.replicateTo(newFlow:Flow, ?bag:ReplicateBag) =
+        member private x.replicateTo(newFlow:Flow, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             let buttons    = x.Buttons    |-> _.replicate(bag) |> toArray
             let lamps      = x.Lamps      |-> _.replicate(bag) |> toArray
@@ -149,7 +142,7 @@ module internal rec DsObjectCopyImpl =
 
 
     type DsButton with // replicate, replicateTo
-        member x.replicateTo(newButton:DsButton, ?bag:ReplicateBag) =
+        member private x.replicateTo(newButton:DsButton, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newButton |> uniqReplicateWithBag bag x |> ignore
 
@@ -159,7 +152,7 @@ module internal rec DsObjectCopyImpl =
 
 
     type Lamp with // replicate, replicateTo
-        member x.replicateTo(newLamp:Lamp, ?bag:ReplicateBag) =
+        member private x.replicateTo(newLamp:Lamp, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newLamp |> uniqReplicateWithBag bag x |> ignore
 
@@ -169,7 +162,7 @@ module internal rec DsObjectCopyImpl =
 
 
     type DsCondition with // replicate, replicateTo
-        member x.replicateTo(newCondition:DsCondition, ?bag:ReplicateBag) =
+        member private x.replicateTo(newCondition:DsCondition, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newCondition |> uniqReplicateWithBag bag x |> ignore
 
@@ -179,7 +172,7 @@ module internal rec DsObjectCopyImpl =
 
 
     type DsAction with // replicate, replicateTo
-        member x.replicateTo(newAction:DsAction, ?bag:ReplicateBag) =
+        member private x.replicateTo(newAction:DsAction, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newAction |> uniqReplicateWithBag bag x |> ignore
 
@@ -190,7 +183,7 @@ module internal rec DsObjectCopyImpl =
 
     type Call with // replicate, replicateTo
         /// Call 복제. 지정된 newCall 객체에 현재 호출의 내용을 복사
-        member x.replicateTo(newCall:Call, ?bag:ReplicateBag) =
+        member private x.replicateTo(newCall:Call, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             // ApiCall들은 시스템 레벨에서 복제되므로 그대로 유지
             let apiCallGuids = x.ApiCallGuids |> toList
@@ -219,36 +212,35 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newCall -> x.replicateTo(newCall, bag))
 
     type ApiCall with // replicate, replicateTo
-        member x.replicateTo(newApiCall:ApiCall, ?bag:ReplicateBag) =
+        member private x.replicateTo(newApiCall:ApiCall, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newApiCall |> uniqReplicateWithBag bag x |> ignore
 
         member x.replicate(bag:ReplicateBag) =
-            let newApiDefGuid = bag.Newbies.GetNewGuid(x.ApiDefGuid)
-            new ApiCall(newApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
+            //let newApiDefGuid = bag.Newbies.GetNewGuid(x.ApiDefGuid)
+            //new ApiCall(newApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
+            new ApiCall(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
             |> tee(fun newApiCall ->
                 //bag.Newbies.AddGuidRelation(x.ApiDefGuid, newApiCall.TxGuid)
                 x.replicateTo(newApiCall, bag))
 
-    type ApiDef with // replicate, replicateTo
-        member private x.replicateTo(newApiDef:ApiDef, ?bag:ReplicateBag) =
-            let bag = bag |? ReplicateBag()
+    type ApiDef with // replicate
+        member x.replicate(bag:ReplicateBag) =
+            //let txGuid = bag.Newbies.GetNewGuid(x.TxGuid)
+            //let rxGuid = bag.Newbies.GetNewGuid(x.RxGuid)
+            //let newApiDef = ApiDef.Create(IsPush=x.IsPush, TxGuid=txGuid, RxGuid=rxGuid)
+            //bag.Newbies.AddGuidRelation(x.RxGuid, newApiDef.RxGuid)
+            //bag.Newbies.AddGuidRelation(x.TxGuid, newApiDef.TxGuid)
+
+            let newApiDef = ApiDef.Create(IsPush=x.IsPush, TxGuid=x.TxGuid, RxGuid=x.RxGuid)
             newApiDef
             |> uniqReplicateWithBag bag x
-            |> tee(fun z ->
-                newApiDef.TxGuid <- bag.Newbies.GetNewGuid(x.TxGuid)
-                newApiDef.RxGuid <- bag.Newbies.GetNewGuid(x.RxGuid))
-            |> ignore
-
-        member x.replicate(bag:ReplicateBag) =
-            new ApiDef(x.IsPush, Guid.NewGuid(), Guid.NewGuid())
-            |> tee(fun newApiDef ->
-                bag.Newbies.AddGuidRelation(x.RxGuid, newApiDef.RxGuid)
-                bag.Newbies.AddGuidRelation(x.TxGuid, newApiDef.TxGuid)
-                x.replicateTo(newApiDef, bag))
+            //|> tee(fun z ->
+            //    newApiDef.TxGuid <- bag.Newbies.GetNewGuid(x.TxGuid)
+            //    newApiDef.RxGuid <- bag.Newbies.GetNewGuid(x.RxGuid))
 
     type ArrowBetweenWorks with // replicate, replicateTo
-        member x.replicateTo(newArrow:ArrowBetweenWorks, ?bag:ReplicateBag) =
+        member private x.replicateTo(newArrow:ArrowBetweenWorks, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newArrow |> uniqReplicateWithBag bag x |> ignore
 
@@ -259,7 +251,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newArrow -> x.replicateTo(newArrow, bag))
 
     type ArrowBetweenCalls with // replicate, replicateTo
-        member x.replicateTo(newArrow:ArrowBetweenCalls, ?bag:ReplicateBag) =
+        member private x.replicateTo(newArrow:ArrowBetweenCalls, ?bag:ReplicateBag) =
             let bag = bag |? ReplicateBag()
             newArrow |> uniqReplicateWithBag bag x |> ignore
 
