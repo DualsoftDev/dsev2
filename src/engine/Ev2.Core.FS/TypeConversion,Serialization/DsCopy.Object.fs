@@ -196,9 +196,17 @@ module internal rec DsObjectCopyImpl =
 
 [<AutoOpen>]
 module DsObjectCopyAPIModule =
+    let buildUniqGenerateMap(bag:ReplicateBag) (rtObj:RtUnique) =
+        rtObj.EnumerateRtObjects()
+        |> iter (fun rt ->
+            rt.Id <- None
+            rt.UpdateDateTime()
+            bag.Add(rt.Guid, Guid.NewGuid())
+            bag.Disambiguate.Invoke(rt))
+
     let rec uniqGenerateNew (bag:ReplicateBag) (rtObj:RtUnique) =
-        let newGuid = Guid.NewGuid() in bag.Add(rtObj.Guid, newGuid); rtObj.Guid <- newGuid
         let map = bag.OldGuid2NewGuidMap
+        rtObj.Guid <- map[rtObj.Guid]
         match box rtObj with
         | :? Project as rt ->
             rt.Systems |> iter ( uniqGenerateNew bag >> ignore)
@@ -244,7 +252,7 @@ module DsObjectCopyAPIModule =
         | :? ApiCall as rt ->
             rt.ApiDefGuid <- map[rt.ApiDefGuid]
             ()
-        | :? DsButton as rt -> ()
+        | (:? DsButton) | (:? Lamp) | (:? DsCondition) | (:? DsAction) as rt -> ()
 
 
         | _ -> failwith "Not Project"
@@ -258,7 +266,9 @@ module DsObjectCopyAPIModule =
         member x.Duplicate(?bag:ReplicateBag) =
             let bag = bag |?? (fun () -> ReplicateBag())
             x.Replicate()
-            |> tee( fun z -> uniqGenerateNew bag z)
+            |> tee( fun z ->
+                buildUniqGenerateMap bag z
+                uniqGenerateNew bag z)
 
             //let oldies = x.EnumerateRtObjects().ToDictionary( _.Guid, id)
             //let current = now()
@@ -324,7 +334,9 @@ module DsObjectCopyAPIModule =
         member x.Duplicate(?bag:ReplicateBag) =  // RtProject
             let bag = bag |?? (fun () -> ReplicateBag())
             x.Replicate()
-            |> tee( fun z -> uniqGenerateNew bag z)
+            |> tee( fun z ->
+                buildUniqGenerateMap bag z
+                uniqGenerateNew bag z)
             //let bag = ReplicateBag()
             //let actives  = x.ActiveSystems    |-> _.Duplicate(bag)
             //let passives = x.PassiveSystems   |-> _.Duplicate(bag)

@@ -403,10 +403,11 @@ module Schema =
             createEditableSystemCylinder()
             let originalEdProject = rtProject
             let edProject = rtProject.Replicate() |> validateRuntime
+            let rtCyl = rtProject.Systems |> find(fun s -> s.Name = "Cylinder")
 
-            let edSysCyl1 = edSystemCyl.Duplicate(Name="실린더 instance1")
-            let edSysCyl2 = edSystemCyl.Duplicate(Name="실린더 instance2")
-            let edSysCyl3 = edSystemCyl.Duplicate(Name="실린더 instance3")
+            let edSysCyl1 = rtCyl.Duplicate(Name="실린더 instance1")
+            let edSysCyl2 = rtCyl.Duplicate(Name="실린더 instance2")
+            let edSysCyl3 = rtCyl.Duplicate(Name="실린더 instance3")
             [edSysCyl1; edSysCyl2; edSysCyl3] |> iter edProject.AddPassiveSystem
 
             edProject |> validateRuntime |> ignore
@@ -589,6 +590,7 @@ module Schema =
 
         [<Test>]
         member x.``[Sqlite] DB Project 수정 commit`` () =
+            let getMainSystem(prj:Project) = prj.Systems |> find (fun s -> s.Name = "MainSystem")
             let xxx = rtProject
             let dsProject = rtProject.Replicate() |> validateRuntime
             let dbApi = sqliteDbApi()
@@ -607,7 +609,8 @@ module Schema =
                     |> tee (tracefn "Result2: %A")
                     ==== Ok NoChange
 
-                let w = dsProject.Systems[0].Works[0]
+                let sys = getMainSystem(dsProject)
+                let w = sys.Works[0]
                 do
                     // 수정 후, 다시 commit 하면 Updated 가 나와야 함.
                     // Diff 결과는 db 의  work 와 update 한 work 의 이름만 달라야 함
@@ -626,8 +629,8 @@ module Schema =
                     let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr)
                     let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr)
 
-                    let sysArrow0 = dsProject.Systems[0].Arrows[0]
-                    dsProject.Systems[0].RemoveWorks([w])
+                    let sysArrow0 = sys.Arrows[0]
+                    sys.RemoveWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
                         // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 DateTime 이 초단위 절삭에서 변경될 수도 있음
@@ -653,7 +656,7 @@ module Schema =
                     let nw = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr)
                     let na = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr)
 
-                    dsProject.Systems[0].AddWorks([w])
+                    sys.AddWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
                         diffs |> contains (RightOnly w) === true
@@ -673,14 +676,17 @@ module Schema =
         member x.``비교`` () =
             let dsProject = rtProject |> validateRuntime
 
+            let getMainSystem(prj:Project) = prj.Systems |> find (fun s -> s.Name = "MainSystem")
+            let sys = getMainSystem(dsProject)
 
             do
                 let dsProject2 = dsProject.Replicate() |> validateRuntime
+                let sys2 = getMainSystem(dsProject2)
                 dsProject.IsEqual dsProject2 === true
 
                 // dsProject2 의 work 이름을 변경하고 비교
-                let w = dsProject.Systems[0].Works[0]
-                let w2 = dsProject2.Systems[0].Works[0]
+                let w = sys.Works[0]
+                let w2 = sys2.Works[0]
                 w2.Name <- "ChangedWorkName"
                 w2.Motion <- "MyMotion"
                 w2.Parameter <- """{"Age": 3}"""
@@ -693,12 +699,13 @@ module Schema =
             do
                 // 추가한 개체 (arrow) detect 가능해야 한다.
                 let dsProject2 = dsProject.Replicate() |> validateRuntime
-                let w = dsProject2.Systems[0].Works[0]
+                let sys2 = getMainSystem(dsProject2)
+                let w = sys2.Works[0]
                 let c1, c2 = w.Calls[0], w.Calls[0]
                 let arrow = ArrowBetweenCalls.Create(c1, c2, DbArrowType.Start)
                 w.AddArrows([arrow])
 
-                let f = dsProject2.Systems[0].Flows[0]
+                let f = sys2.Flows[0]
                 let button = new DsButton(Name="NewButton")
                 f.AddButtons( [ button ])
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
@@ -709,9 +716,10 @@ module Schema =
             do
                 // 삭제한 개체 (arrow) detect 가능해야 한다.
                 let dsProject2 = dsProject.Replicate() |> validateRuntime
-                let w = dsProject2.Systems[0].Works[0]
+                let sys2 = getMainSystem(dsProject2)
+                let w = sys2.Works[0]
                 let arrowRight = w.Arrows.Head
-                let arrowLeft = dsProject.Systems[0].Works[0].Arrows.Head
+                let arrowLeft = sys.Works[0].Arrows.Head
                 w.RemoveArrows([arrowRight])
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (LeftOnly arrowLeft) === true
@@ -728,6 +736,7 @@ module Schema =
 
         [<Test>]
         member x.``복사 비교`` () =
+            let xxx = rtProject
             (* Project 복사:
                 - Active/Passive system 들의 Guid 변경되어야 함.
                 - Parent 및 OwnerSystem member 변경되어야 함.
@@ -736,9 +745,12 @@ module Schema =
             rtProject.IsEqual dsProject === false
 
             let diffs = rtProject.ComputeDiff(dsProject) |> toList
-            diffs.Length === 5
+            (diffs.Length = 6 || diffs.Length = 7) === true
             diffs |> contains (Diff ("Guid", rtProject, dsProject, null)) === true
-            diffs |> contains (Diff ("DateTime", rtProject, dsProject, null)) === true
+
+            // 시간은 초 미만 절삭으로 동일하게 설정될 수도 있다.
+            //diffs |> contains (Diff ("DateTime", rtProject, dsProject, null)) === true
+
             diffs |> contains (Diff ("Name", rtProject, dsProject, null)) === true
             diffs |> contains (LeftOnly rtProject.Systems[0]) === true
             diffs |> contains (RightOnly dsProject.Systems[0]) === true
@@ -759,6 +771,7 @@ module Schema =
                     match d with
                     | Diff("Guid",      x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
                     | Diff("IRI",       x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Name",      x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
                     | Diff("DateTime",  x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
                     | Diff("Parent",    x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
                     | (   LeftOnly (:? Flow)
@@ -771,7 +784,8 @@ module Schema =
                         | RightOnly (:? ArrowBetweenWorks)
                         | RightOnly (:? ApiDef)
                         | RightOnly (:? ApiCall) ) -> true
-                    | _ -> false
+                    | _ ->
+                        false
                 ) === true
 
             ()

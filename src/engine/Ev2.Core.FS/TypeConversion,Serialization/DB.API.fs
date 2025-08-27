@@ -45,7 +45,9 @@ module Ds2SqliteModule =
                     )
 
                 | [dbProj] ->
-                    Error $"Project with Id {x.Id} already exists with a different Guid: {dbProj.Guid}. Cannot update."
+                    let msg = $"Project with Id {x.Id} already exists with a different Guid: {dbProj.Guid}. Cannot update."
+                    logWarn "%s" msg
+                    Error msg
 
                 | _ ->
                     failwith "ERROR" )

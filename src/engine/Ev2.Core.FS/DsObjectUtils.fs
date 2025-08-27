@@ -18,6 +18,16 @@ module ReplicateBagModule =
         member val OldGuid2NewObjectMap = Dictionary<Guid, Unique>(src)
         member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
         member x.Add(old:Guid, neo:Guid) = x.OldGuid2NewGuidMap.Add(old, neo)
+        member val Disambiguate =
+            Action<Unique>(fun (rtObj:Unique) ->
+                let num = Guid.NewGuid().ToString("N").Substring(0, 8)
+                match rtObj with
+                | :? Project as rt -> rt.Name <- $"{rt.Name}_{num}"
+                | :? DsSystem as rt ->
+                    rt.Name <- $"{rt.Name}_{num}"
+                    rt.IRI <- $"{rt.IRI}_{num}"
+                | _ -> ()
+            ) with get, set
 
 
 [<AutoOpen>]
@@ -83,7 +93,10 @@ module rec TmpCompatibility =
         member internal x.removeWorks(works:Work seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             let system = works |-> _.System.Value |> distinct |> exactlyOne
-            let arrows = system.Arrows.Where(fun a -> works.Contains a.Source || works.Contains a.Target)
+            let arrows =
+                system.Arrows
+                    .Where(fun a -> works.Contains a.Source || works.Contains a.Target)
+                    .ToArray()
             system.removeArrows(arrows, updateDateTime)
             works |> iter (fun w -> w.RawParent <- None)
             works |> iter (x.RawWorks.Remove >> ignore)
