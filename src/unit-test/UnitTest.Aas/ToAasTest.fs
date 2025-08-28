@@ -91,9 +91,10 @@ module ToAasTest =
             createEditableSystemCylinder()
             let originalEdProject = rtProject
             let edProject = rtProject.Replicate() |> validateRuntime
-            let edSysCyl1 = edSystemCyl.Duplicate(Name="실린더 instance1")
-            let edSysCyl2 = edSystemCyl.Duplicate(Name="실린더 instance2")
-            let edSysCyl3 = edSystemCyl.Duplicate(Name="실린더 instance3")
+            let rtCyl = rtProject.Systems |> find (fun s -> s.Name = "Cylinder")
+            let edSysCyl1 = rtCyl.Duplicate(Name="실린더 instance1")
+            let edSysCyl2 = rtCyl.Duplicate(Name="실린더 instance2")
+            let edSysCyl3 = rtCyl.Duplicate(Name="실린더 instance3")
             [edSysCyl1; edSysCyl2; edSysCyl3] |> iter edProject.AddPassiveSystem
 
             let projJson = edProject.ToJson(getUniqueJsonPath())

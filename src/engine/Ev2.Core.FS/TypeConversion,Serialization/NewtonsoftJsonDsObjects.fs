@@ -269,9 +269,9 @@ module rec NewtonsoftJsonObjects =
         member val Type = DbArrowType.None.ToString() with get, set
         static member Create() = createExtended<NjArrow>()
 
-        member val SourceGuid = emptyGuid with get, set
-        member val TargetGuid = emptyGuid with get, set
-        member val TypeId:Id = 0 with get, set
+        [<JsonIgnore>] member val SourceGuid = emptyGuid with get, set
+        [<JsonIgnore>] member val TargetGuid = emptyGuid with get, set
+        [<JsonIgnore>] member val TypeId:Id = 0 with get, set
 
 
 
