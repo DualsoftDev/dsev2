@@ -2,13 +2,11 @@ namespace Ev2.Core.FS
 
 open System
 open System.Linq
+open System.Data
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
-open System.Collections.Generic
 open Dual.Common.Db.FS
-open Newtonsoft.Json
-open System.Data
 
 
 [<AbstractClass>]
@@ -52,13 +50,6 @@ and [<AbstractClass>] CallEntity() =
     member x.Work    = x.RawParent >>= _.RawParent >>= tryCast<Work>
     member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<DsSystem>
     member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<Project>
-
-// Internal helper class
-and internal Arrow(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) =
-    member val SourceGuid = sourceGuid with get, set
-    member val TargetGuid = targetGuid with get, set
-    member val Type = typ with get, set
-
 
 
 // Main domain types
@@ -222,42 +213,24 @@ and DsSystem() = // Create
         system.RawApiCalls.Clear()
 
         // Add new components and set parent relationships
-        flows |> iter (fun f -> system.RawFlows.Add(f); setParentI system f)
-        works |> iter (fun w -> system.RawWorks.Add(w); setParentI system w)
-        arrows |> iter (fun a -> system.RawArrows.Add(a); setParentI system a)
-        apiDefs |> iter (fun d -> system.RawApiDefs.Add(d); setParentI system d)
+        flows    |> iter (fun f -> system.RawFlows   .Add(f); setParentI system f)
+        works    |> iter (fun w -> system.RawWorks   .Add(w); setParentI system w)
+        arrows   |> iter (fun a -> system.RawArrows  .Add(a); setParentI system a)
+        apiDefs  |> iter (fun d -> system.RawApiDefs .Add(d); setParentI system d)
         apiCalls |> iter (fun c -> system.RawApiCalls.Add(c); setParentI system c)
 
         system
 
-    ///// Initialize method for parameterless constructor + Initialize pattern (virtual)
-    //abstract member Initialize : Flow seq * Work seq * ArrowBetweenWorks seq * ApiDef seq * ApiCall seq -> DsSystem
-    //default this.Initialize(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
-    //    // Clear existing components
-    //    this.RawFlows.Clear()
-    //    this.RawWorks.Clear()
-    //    this.RawArrows.Clear()
-    //    this.RawApiDefs.Clear()
-    //    this.RawApiCalls.Clear()
-
-    //    // Add new components and set parent relationships
-    //    flows |> iter (fun f -> this.RawFlows.Add(f); setParentI this f)
-    //    works |> iter (fun w -> this.RawWorks.Add(w); setParentI this w)
-    //    arrows |> iter (fun a -> this.RawArrows.Add(a); setParentI this a)
-    //    apiDefs |> iter (fun d -> this.RawApiDefs.Add(d); setParentI this d)
-    //    apiCalls |> iter (fun c -> this.RawApiCalls.Add(c); setParentI this c)
-
-    //    this
 
 
 and Flow() = // Create
     inherit DsSystemEntity()
 
     interface IRtFlow
-    member val internal RawButtons    = ResizeArray<DsButton>() with get, set
-    member val internal RawLamps      = ResizeArray<Lamp>() with get, set
+    member val internal RawButtons    = ResizeArray<DsButton>()    with get, set
+    member val internal RawLamps      = ResizeArray<Lamp>()        with get, set
     member val internal RawConditions = ResizeArray<DsCondition>() with get, set
-    member val internal RawActions    = ResizeArray<DsAction>() with get, set
+    member val internal RawActions    = ResizeArray<DsAction>()    with get, set
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
@@ -350,13 +323,13 @@ and Call() = // Create
     inherit WorkEntity()
 
     interface IRtCall
-    member val CallType   = DbCallType.Normal with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
-    member val IsDisabled = false with get, set
-    member val Timeout    = Option<int>.None with get, set    // 실행 타임아웃(ms)
-    member val AutoConditions   = ResizeArray<string>() with get, set    // 사전 조건 식 (자동 실행 조건)
-    member val CommonConditions = ResizeArray<string>() with get, set    // 안전 조건 식 (실행 보호조건)
-    member val ApiCallGuids = ResizeArray<Guid>() with get, set    // DB 저장시에는 callId 로 저장
-    member val Status4 = Option<DbStatus4>.None with get, set
+    member val CallType         = DbCallType.Normal      with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
+    member val IsDisabled       = false                  with get, set
+    member val Timeout          = Option<int>.None       with get, set    // 실행 타임아웃(ms)
+    member val AutoConditions   = ResizeArray<string>()  with get, set    // 사전 조건 식 (자동 실행 조건)
+    member val CommonConditions = ResizeArray<string>()  with get, set    // 안전 조건 식 (실행 보호조건)
+    member val ApiCallGuids     = ResizeArray<Guid>()    with get, set    // DB 저장시에는 callId 로 저장
+    member val Status4          = Option<DbStatus4>.None with get, set
 
     member x.ApiCalls =
         match (x.RawParent >>= _.RawParent) with
@@ -373,13 +346,13 @@ and Call() = // Create
     static member Create(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
         let call = createExtended<Call>()
         // Set call properties
-        call.CallType <- callType
+        call.CallType   <- callType
         call.IsDisabled <- isDisabled
-        call.Timeout <- timeout
+        call.Timeout    <- timeout
 
-        autoConditions |> iter call.AutoConditions.Add
+        autoConditions   |> iter call.AutoConditions.Add
         commonConditions |> iter call.CommonConditions.Add
-        apiCallGuids |> iter call.ApiCallGuids.Add
+        apiCallGuids     |> iter call.ApiCallGuids.Add
 
         call
 
@@ -418,15 +391,20 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         with get() =
             x.Project
             |-> (fun proj ->
-                fwdEnumerateRtObjects proj |> _.OfType<ApiDef>()
-                |> Seq.tryFind (fun ad -> ad.Guid = x.ApiDefGuid )
-                |?? (fun () -> failwith $"ApiDef with Guid {x.ApiDefGuid} not found in System") )
+                    fwdEnumerateRtObjects proj
+                    |> _.OfType<ApiDef>()
+                    |> tryFind (fun ad -> ad.Guid = x.ApiDefGuid )
+                    |?? (fun () -> failwith $"ApiDef with Guid {x.ApiDefGuid} not found in System") )
             |?? (fun () -> failwith "Parent is not DsSystem type")
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
 and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
     inherit DsSystemEntity()
+
+    let getWork (system:DsSystem option) (guid:Guid): Work =
+        system >>= (fun s -> s.Works |> tryFind (fun w -> w.Guid = guid))
+        |? getNull<Work>()
 
     new() = new ApiDef(true, emptyGuid, emptyGuid)
 
@@ -439,20 +417,22 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
     member val TxGuid = txGuid with get, set
     member val RxGuid = rxGuid with get, set
 
-    member x.TX:Work = x.System |-> (fun s -> fwdEnumerateRtObjects s |> _.OfType<Work>() |> Seq.find (fun w -> w.Guid = x.TxGuid)) |? getNull<Work>()
+    member x.TX: Work = getWork x.System x.TxGuid
+    member x.RX: Work = getWork x.System x.RxGuid
 
     member x.Period = x.TX.Period
 
 
-    member x.System   = x.RawParent >>= tryCast<DsSystem>
+    member x.System = x.RawParent >>= tryCast<DsSystem>
 
     // system 에서 현재 ApiDef 을 사용하는 ApiCall 들
     member x.ApiUsers:ApiCall[] =
         x.System
         |-> (fun s ->
-            s.ApiCalls
-            |> filter (fun c ->
-                try c.ApiDef = x
-                with _ -> false)  // ApiDef 접근 실패 시 false
-            |> toArray)
+                s.ApiCalls
+                |> filter (fun c ->
+                    try c.ApiDef = x
+                    with _ -> false)  // ApiDef 접근 실패 시 false
+                |> toArray)
         |? [||]
+
