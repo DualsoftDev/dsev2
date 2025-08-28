@@ -37,12 +37,31 @@
 
 This document extends the base Sequence Control Submodel Template with additional properties and entities for enhanced industrial automation scenarios. These extensions are implemented using the Third Party Extension mechanism without modifying the core engine.
 
+[NOTE]
+====
+The extended properties in this document fall into two categories:
+
+**Core Extensions** (실제 요구사항):
+- Progress tracking entity (CustomProgress)
+- Topic pairing properties (TopicIndex, IsTopicOrigin)
+
+**Sample Extensions** (확장 예시):
+- Location, Area, Duration, RetryIntervalSeconds, IsActive
+
+The sample extensions demonstrate the extension mechanism and can be replaced with domain-specific properties as needed.
+====
+
 [IMPORTANT]
 ====
 This document assumes familiarity with the base Sequence Control Submodel Template (SequenceControl.adoc). Only the extended properties and new concepts are documented here.
 ====
 
 == Extension Mechanism
+
+[IMPORTANT]
+====
+This section provides reference guidance for developers who need to implement additional extension properties beyond those defined in this document. If you are only using the extensions defined here, you can skip this section.
+====
 
 The extensions are implemented through the `ITypeFactory` interface, which allows adding new properties to existing types without modifying the core engine. The implementation uses a dual type system:
 
