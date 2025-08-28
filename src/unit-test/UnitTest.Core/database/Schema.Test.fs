@@ -603,10 +603,15 @@ module Schema =
                     dsProject.RTryCommitToDB(dbApi)
                     |> tee (tracefn "Result2: %A")
                     ==== Ok Inserted
+            )
 
+            dbApi.With(fun (conn, tr) ->
                 do
+                    let r = dsProject.RTryCommitToDB(dbApi)
+                    tracefn "Result3: %A" r
+
                     dsProject.RTryCommitToDB(dbApi)
-                    |> tee (tracefn "Result2: %A")
+                    |> tee (tracefn "Result3: %A")
                     ==== Ok NoChange
 
                 let sys = getMainSystem(dsProject)

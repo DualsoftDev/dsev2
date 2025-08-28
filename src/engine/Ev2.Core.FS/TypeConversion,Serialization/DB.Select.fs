@@ -81,19 +81,6 @@ module internal Db2DsImpl =
 
             s.addFlows(rtFlows, false)
 
-            let rtApiDefs = [
-                let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
-
-                for orm in orms do
-                    let apiDef = ApiDef.Create()
-                    apiDef.IsPush <- orm.IsPush
-                    apiDef
-                    |> replicateProperties orm
-                    |> tee handleAfterSelect
-
-            ]
-            s.addApiDefs(rtApiDefs, false)
-
             let rtApiCalls = [
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
 
@@ -116,6 +103,7 @@ module internal Db2DsImpl =
                     apiCall
                     |> replicateProperties orm
                     |> tee handleAfterSelect
+
             ]
             s.addApiCalls(rtApiCalls, false)
 
@@ -210,6 +198,29 @@ module internal Db2DsImpl =
             ]
             s.addArrows(rtArrows, false)
             assert(setEqual s.Arrows rtArrows)
+
+            let rtApiDefs = [
+                let orms =  conn.Query<ORMApiDef>($"SELECT * FROM {Tn.ApiDef} WHERE systemId = @Id", s, tr)
+
+                let sys = ormSystem.RtObject >>= tryCast<DsSystem> |> Option.get
+                for orm in orms do
+                    let apiDef = ApiDef.Create()
+
+                    // Rt -> ORM : 추후 속성 복사를 원활하게 하기 위해서 Guid 값을 채움 (Id 기반으로 검색해서)
+                    orm.XTxGuid <- sys.Works |> find(fun w -> w.Id = orm.TxId) |> _.Guid
+                    orm.XRxGuid <- sys.Works |> find(fun w -> w.Id = orm.RxId) |> _.Guid
+
+                    // ORM -> Rt
+                    apiDef.IsPush <- orm.IsPush
+
+                    apiDef
+                    |> replicateProperties orm
+                    |> tee handleAfterSelect
+
+            ]
+            s.addApiDefs(rtApiDefs, false)
+
+
 
             // 확장 복원 훅
             getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(rtSystem, conn, tr))

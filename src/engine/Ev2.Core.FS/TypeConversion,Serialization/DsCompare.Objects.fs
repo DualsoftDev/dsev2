@@ -214,8 +214,8 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if x.IsPush <> y.IsPush then yield Diff(nameof x.IsPush, x, y, null)
-                if x.TxGuid <> y.TxGuid then yield Diff(nameof x.TxGuid, x, y, null)
-                if x.RxGuid <> y.RxGuid then yield Diff(nameof x.RxGuid, x, y, null)
+                if x.TxGuid <> y.TxGuid then yield Diff(nameof x.TxGuid, x, y, $"UPDATE {Tn.ApiDef} SET txId={y.TX.Id.Value} WHERE id={y.Id.Value}")
+                if x.RxGuid <> y.RxGuid then yield Diff(nameof x.RxGuid, x, y, $"UPDATE {Tn.ApiDef} SET rxId={y.RX.Id.Value} WHERE id={y.Id.Value}")
             }
 
     type ApiCall with // ComputeDiff

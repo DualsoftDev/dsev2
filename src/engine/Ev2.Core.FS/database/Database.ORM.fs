@@ -275,11 +275,11 @@ module ORMTypesModule =
         interface IORMApiDef
         member val IsPush = false with get, set
 
-        member val TxGuid = emptyGuid with get, set
-        member val RxGuid = emptyGuid with get, set
+        member val TxId = Option<Id>.None with get, set
+        member val RxId = Option<Id>.None with get, set
 
-        //member val TopicIndex = Option<int>.None with get, set
-        //member val IsTopicOrigin = Option<bool>.None with get, set
+        member val XTxGuid = emptyGuid with get, set
+        member val XRxGuid = emptyGuid with get, set
 
     type ORMEnum(name, category, value) =
         interface IORMEnum
