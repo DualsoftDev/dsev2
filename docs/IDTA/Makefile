@@ -7,20 +7,30 @@ copyFont:
 
 FONTS_DIR_RAW := $(shell pwd)
 FONTS_DIR := $(subst \,/,$(FONTS_DIR_RAW))
-pdf:
-#magick -density 300 cover.pdf cover.png
-#asciidoctor-pdf -a pdf-theme=custom-theme.yml -a pdf-themesdir=. SequenceControl.adoc
-#	asciidoctor-pdf -a pdf-theme=custom-theme.yml -a pdf-themesdir=. -a pdf-fontsdir=fonts SequenceControl.adoc
 
-	asciidoctor-pdf -a pdf-theme=custom-theme.yml \
+# Common PDF options
+PDF_OPTIONS = -a pdf-theme=custom-theme.yml \
 	-a pdf-themesdir=. \
 	-a pdf-fontsdir="$(FONTS_DIR)/fonts" \
 	-a chapter-label="" \
 	-a chapter-refsig="" \
 	-a section-refsig="" \
 	-a chapter-signifier="" \
-	-a untitled-label="" \
-	SequenceControl.adoc
+	-a untitled-label=""
+
+# Generate PDF for base SequenceControl document
+pdf:
+#magick -density 300 cover.pdf cover.png
+#asciidoctor-pdf -a pdf-theme=custom-theme.yml -a pdf-themesdir=. SequenceControl.adoc
+#	asciidoctor-pdf -a pdf-theme=custom-theme.yml -a pdf-themesdir=. -a pdf-fontsdir=fonts SequenceControl.adoc
+	asciidoctor-pdf $(PDF_OPTIONS) SequenceControl.adoc
+
+# Generate PDF for ExtendedSequenceControl document
+pdf-extend:
+	asciidoctor-pdf $(PDF_OPTIONS) ExtendedSequenceControl.adoc
+
+# Generate all PDFs
+pdf-all: pdf pdf-extend
 
 
 install:

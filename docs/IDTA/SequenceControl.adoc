@@ -7,8 +7,8 @@
 //
 :author: Dualsoft
 :email: help@dualsoft.com
-:revnumber: 1.0
-:revdate: 2025-07-25
+:revnumber: 1.1
+:revdate: 2025-08-28
 :version-label: Version
 :idta-number: IDTA 02XXX-1-0
 :document-status: Draft
@@ -89,6 +89,7 @@ https://dualsoft.com
 |*Date*      |*Version* |*Comment*
 
 |07.24.2025  |1.0       |Release of the draft Submodel template published by Dualsoft.
+|08.28.2025  |1.1       |Add properties of ApiDef, ApiCall, etc.
 |===
 
 
@@ -262,6 +263,38 @@ control mechanisms.
 |*kind*          |Instance
 |===
 
+=== Semantic URL Patterns
+
+The Sequence Control Submodel uses standardized semantic URLs for AAS serialization. These URLs follow a consistent pattern to ensure interoperability:
+
+==== Base Pattern
+`https://dualsoft.com/aas/{category}/{element}`
+
+==== URL Categories
+
+[cols="30%,70%",options="header"]
+|===
+|*Category* |*Description*
+|unique |Unique identifiers (name, guid, id)
+|plural |Collection elements (systems, flows, works, calls)
+|singular |Single reference elements (apiDef, flow)
+|common |Common properties shared across types (status, dateTime)
+|project |Project-specific properties
+|system |System-specific properties  
+|work |Work-specific properties
+|call |Call-specific properties
+|apiDef |API definition properties
+|apiCall |API call properties
+|arrow |Arrow connection properties
+|===
+
+==== Examples
+- `https://dualsoft.com/aas/unique/name` - Name identifier
+- `https://dualsoft.com/aas/unique/guid` - GUID identifier
+- `https://dualsoft.com/aas/plural/systems` - Systems collection
+- `https://dualsoft.com/aas/work/period` - Work period property
+- `https://dualsoft.com/aas/apiDef/isPush` - API push property
+
 === Submodel Elements
 
 [#_element_hierarchy]
@@ -293,9 +326,7 @@ SequenceControlSubmodel
     │       │       ├── Name (1)
     │       │       ├── Guid (1)
     │       │       ├── Id (0..1)
-    │       │       ├── IsPush (0..1)
-    │       │       ├── TopicIndex (0..1)
-    │       │       └── IsTopicOrigin (0..1)
+    │       │       └── IsPush (0..1)
     │       ├── Flows (0..1)
     │       │   └── Flow (1..*)
     │       │       ├── Name (1)
@@ -440,11 +471,13 @@ System 하부에는 <<_element_hierarchy>> 에서 정의한 System 구조가 포
 
 [width="100%",cols="10%,40%,10%,25%,15%",options="header",]
 |===
-|*idShort* |*semanticId*                             |*valueType* |*description*            |*multiplicity*
-|Name      |"https://dualsoft.com/aas/unique/name"   |string      |API 정의 명칭            |1
-|Guid      |"https://dualsoft.com/aas/unique/guid"   |string      |API 정의 고유 식별자     |1
-|Id        |"https://dualsoft.com/aas/unique/id"     |integer     |DB상의 ApiDef PK ID       |0..1
-|IsPush    |"https://dualsoft.com/aas/apiDef/isPush" |boolean     |Push 타입 API 여부        |0..1
+|*idShort*      |*semanticId*                                     |*valueType* |*description*            |*multiplicity*
+|Name           |"https://dualsoft.com/aas/unique/name"           |string      |API 정의 명칭            |1
+|Guid           |"https://dualsoft.com/aas/unique/guid"           |string      |API 정의 고유 식별자     |1
+|Id             |"https://dualsoft.com/aas/unique/id"             |integer     |DB상의 ApiDef PK ID       |0..1
+|IsPush         |"https://dualsoft.com/aas/apiDef/isPush"         |boolean     |Push 타입 API 여부        |0..1
+|TxGuid         |"https://dualsoft.com/aas/apiDef/txGuid"         |string      |송신 Work의 GUID 참조     |0..1
+|RxGuid         |"https://dualsoft.com/aas/apiDef/rxGuid"         |string      |수신 Work의 GUID 참조     |0..1
 |===
 
 ==== ApiCalls
@@ -488,6 +521,8 @@ System 하부에는 <<_element_hierarchy>> 에서 정의한 System 구조가 포
 |Guid        |"https://dualsoft.com/aas/unique/guid"    |string      |작업 고유 식별자      |1
 |Id          |"https://dualsoft.com/aas/unique/id"      |integer     |DB상의 Work PK ID      |0..1
 |FlowGuid    |"https://dualsoft.com/aas/work/flowGuid"  |string      |소속 플로우의 GUID     |0..1
+|Motion      |"https://dualsoft.com/aas/work/motion"    |string      |모션 정의             |0..1
+|Script      |"https://dualsoft.com/aas/work/script"    |string      |스크립트 정의         |0..1
 |IsFinished  |"https://dualsoft.com/aas/work/isFinished" |boolean     |완료 상태             |0..1
 |NumRepeat   |"https://dualsoft.com/aas/work/numRepeat" |integer     |반복 횟수             |0..1
 |Period      |"https://dualsoft.com/aas/work/period"    |double      |주기 설정             |0..1
@@ -505,13 +540,13 @@ System 하부에는 <<_element_hierarchy>> 에서 정의한 System 구조가 포
 |Name                 |"https://dualsoft.com/aas/unique/name"            |string      |호출 명칭                     |1
 |Guid                 |"https://dualsoft.com/aas/unique/guid"            |string      |호출 고유 식별자              |1
 |Id                   |"https://dualsoft.com/aas/unique/id"              |integer     |DB상의 Call PK ID              |0..1
-|IsDisabled           |"https://dualsoft.com/aas/call/isDisabled"        |boolean     |비활성화 상태                 |0..1
-|CommonPrecondition   |"https://dualsoft.com/aas/call/commonConditions" |string      |공통 사전조건                 |0..1
-|AutoPrecondition     |"https://dualsoft.com/aas/call/autoConditions"   |string      |자동 사전조건                 |0..1
-|Timeout              |"https://dualsoft.com/aas/call/timeout"           |double      |타임아웃 설정                 |0..1
-|Status               |"https://dualsoft.com/aas/common/status"          |string      |작업 상태             |0..1
 |CallType             |"https://dualsoft.com/aas/call/callType"          |string      |호출 타입                     |0..1
-|ApiCalls             |"https://dualsoft.com/aas/plural/apiCalls"        |string      |호출하는 ApiCall의 GUID 목록 |0..1
+|ApiCalls             |"https://dualsoft.com/aas/plural/apiCalls"        |string[]    |호출하는 ApiCall의 GUID 목록 |0..1
+|IsDisabled           |"https://dualsoft.com/aas/call/isDisabled"        |boolean     |비활성화 상태                 |0..1
+|CommonPrecondition   |"https://dualsoft.com/aas/call/commonConditions"  |string      |공통 사전조건                 |0..1
+|AutoPrecondition     |"https://dualsoft.com/aas/call/autoConditions"    |string      |자동 사전조건                 |0..1
+|Timeout              |"https://dualsoft.com/aas/call/timeout"           |double      |타임아웃 설정                 |0..1
+|Status               |"https://dualsoft.com/aas/common/status"          |string      |호출 상태                     |0..1
 |===
 
 ===== Arrows (Call Level)
@@ -875,10 +910,8 @@ Implementations MUST validate:
 |VR-005 |All Call elements MUST have Name and Guid properties
 |VR-006 |All Flow elements MUST have Name and Guid properties
 |VR-007 |All ApiDef elements MUST have Name and Guid properties
-|VR-008 |All ApiDef elements 의 TopicIndex 와 IsTopicOrigin 은 둘다 null 이거나 둘다 non-null 이어야 함
-|VR-009 |System 하부의 모든 ApiDef elements 에서 TopicIndex 와 IsTopicOrigin 가 non-null 인 요소는 TopicIndex 하나에 대해 IsTopicOrigin 가 true 인 것과 false 인 것 두개가 쌍으로 존재해야 함.  e.g Cylinder system 의 ADV 와 RET 은 동일한 TopicIndex 를 사용하고 IsTopicOrigin 는 각각 true, false 로 설정되어야 함
-|VR-010 |All ApiCall elements MUST have Name, Guid, and ApiDef properties
-|VR-011 |All Arrow elements MUST have Name, Guid, Source, and Target properties
+|VR-008 |All ApiCall elements MUST have Name, Guid, and ApiDef properties
+|VR-009 |All Arrow elements MUST have Name, Guid, Source, and Target properties
 |===
 
 ===== Multiplicity Validation
@@ -1026,7 +1059,9 @@ Implementations MUST validate:
           {
             "Name": "Station Control API",
             "Guid": "api-def-11111111-2222-3333-4444-555555555555",
-            "IsPush": false
+            "IsPush": false,
+            "TxGuid": "work-12121212-3434-5656-7878-909090909090",
+            "RxGuid": "work-next-station-guid"
           }
         ],
         "Flows": [
@@ -1040,26 +1075,29 @@ Implementations MUST validate:
             "Name": "Part Processing",
             "Guid": "work-12121212-3434-5656-7878-909090909090",
             "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "Motion": "linear",
+            "Script": "process_part.dsl",
             "Period": 30.0,
             "NumRepeat": 0,
             "Calls": [
               {
                 "Name": "Start Processing",
                 "Guid": "call-abcdefab-1234-5678-9012-123456789012",
-                "CommonPrecondition": "part_present == true",
-                "Timeout": 10.0,
                 "CallType": "automatic",
-                "ApiCalls": [
-                  {
-                    "Name": "Start Command",
-                    "Guid": "apicall-fedcbadc-4321-8765-2109-876543210987",
-                    "ApiDef": "api-def-11111111-2222-3333-4444-555555555555",
-                    "InAddress": "station1/start",
-                    "ValueSpec": "{ \"operation\": \"start\", \"speed\": 100 }"
-                  }
-                ]
+                "ApiCalls": ["apicall-fedcbadc-4321-8765-2109-876543210987"],
+                "CommonPrecondition": "part_present == true",
+                "Timeout": 10.0
               }
             ]
+          }
+        ],
+        "ApiCalls": [
+          {
+            "Name": "Start Command",
+            "Guid": "apicall-fedcbadc-4321-8765-2109-876543210987",
+            "ApiDef": "api-def-11111111-2222-3333-4444-555555555555",
+            "InAddress": "station1/start",
+            "ValueSpec": "{ \"operation\": \"start\", \"speed\": 100 }"
           }
         ]
       }
