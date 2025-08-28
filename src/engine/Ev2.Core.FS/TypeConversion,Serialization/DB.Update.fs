@@ -3,6 +3,8 @@ namespace Ev2.Core.FS
 open Dapper
 
 open Dual.Common.Core.FS
+open System.Diagnostics
+open Dual.Common.Base
 
 [<AutoOpen>]
 module internal rec DbUpdateImpl =
@@ -54,7 +56,12 @@ module internal rec DbUpdateImpl =
                 match x with
                 // DB 수정
                 | Diff (cat, dbEntity, newEntity, updateSql) ->
-                    let dbColumnName = tryGetDBColumnName(dbApi, cat) |?? (fun () -> failwith $"Unknown property name: {cat}")
+                    let dbColumnName =
+                        tryGetDBColumnName(dbApi, cat)
+                        |?? (fun () ->
+                            Debugger.Break()
+                            logWarn $"Unknown property name: {cat}"
+                            cat)
                     let propertyName = getPropertyNameForDB(dbApi, cat)
                     assert(dbEntity.GetType() = newEntity.GetType())
                     let tableName = dbEntity.getTableName()

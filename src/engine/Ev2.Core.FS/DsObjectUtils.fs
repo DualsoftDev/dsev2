@@ -10,14 +10,16 @@ open Dual.Common.Core.FS
 open Dual.Common.Base
 
 [<AutoOpen>]
-module ReplicateBagModule =
+module DuplicateBagModule =
     /// Work <-> Flow, Arrow <-> Call, Arrow <-> Work 간의 참조를 찾기 위한 bag
-    type ReplicateBag(src:IDictionary<Guid, Unique>) =
-        new() = ReplicateBag(Dictionary<Guid, Unique>())
+    type DuplicateBag(src:IDictionary<Guid, Unique>) =
+        new() = DuplicateBag(Dictionary<Guid, Unique>())
         /// OldGuid -> New object
         member val OldGuid2NewObjectMap = Dictionary<Guid, Unique>(src)
         member val OldGuid2NewGuidMap = Dictionary<Guid, Guid>()
         member x.Add(old:Guid, neo:Guid) = x.OldGuid2NewGuidMap.Add(old, neo)
+
+        /// 복사할 때, 충돌나지 않도록 하기 위한 조치 수행
         member val Disambiguate =
             Action<Unique>(fun (rtObj:Unique) ->
                 let num = Guid.NewGuid().ToString("N").Substring(0, 8)
@@ -231,12 +233,12 @@ module rec TmpCompatibility =
             actions |> iter (x.RawActions.Remove >> ignore)
 
 
-        member x.AddWorks        (ws:Work seq)              = x.addWorks        (ws, true)
-        member x.RemoveWorks     (ws:Work seq)              = x.removeWorks     (ws, true)
+        member x.AddWorks        (ws:Work seq)                = x.addWorks        (ws, true)
+        member x.RemoveWorks     (ws:Work seq)                = x.removeWorks     (ws, true)
         member x.AddButtons      (buttons:DsButton seq)       = x.addButtons      (buttons, true)
         member x.RemoveButtons   (buttons:DsButton seq)       = x.removeButtons   (buttons, true)
-        member x.AddLamps        (lamps:Lamp seq)           = x.addLamps        (lamps, true)
-        member x.RemoveLamps     (lamps:Lamp seq)           = x.removeLamps     (lamps, true)
+        member x.AddLamps        (lamps:Lamp seq)             = x.addLamps        (lamps, true)
+        member x.RemoveLamps     (lamps:Lamp seq)             = x.removeLamps     (lamps, true)
         member x.AddConditions   (conditions:DsCondition seq) = x.addConditions   (conditions, true)
         member x.RemoveConditions(conditions:DsCondition seq) = x.removeConditions(conditions, true)
         member x.AddActions      (actions:DsAction seq)       = x.addActions      (actions, true)
@@ -557,7 +559,7 @@ module DsObjectUtilsModule =
 
 
     type RtUnique with // Validate
-        member x.Validate(bag:ReplicateBag) =
+        member x.Validate(bag:DuplicateBag) =
             verify (x.Guid <> emptyGuid)
 
             x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))

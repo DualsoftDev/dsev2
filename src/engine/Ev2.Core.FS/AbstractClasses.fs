@@ -150,6 +150,7 @@ and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
     // { Runtime/DB 용
     member x.ActiveSystems  = x.RawActiveSystems  |> toList
     member x.PassiveSystems = x.RawPassiveSystems |> toList
+    /// Project 내의 systems: 참조되는 PasssiveSystems 을 먼저 배치
     member x.Systems = (x.PassiveSystems @ x.ActiveSystems) |> toList
     // } Runtime/DB 용
 

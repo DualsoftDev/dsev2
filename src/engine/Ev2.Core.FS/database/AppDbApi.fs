@@ -300,7 +300,7 @@ module ORMTypeConversionModule =
 
                 // 새로 생성된 ORMUnique 객체에 대한 신규 Guid 정보를 dic 에 기록
                 |> tee (fun ormUniq ->
-                    let bag = dbApi.DDic.Get<ReplicateBag>()
+                    let bag = dbApi.DDic.Get<DuplicateBag>()
                     bag.OldGuid2NewObjectMap[guid] <- ormUniq )
 
             | _ -> failwithf "Cannot convert to ORM. %A" x

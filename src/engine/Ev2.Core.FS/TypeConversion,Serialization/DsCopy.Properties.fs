@@ -211,8 +211,9 @@ module internal DsCopyModule =
            "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
            "ValueSpec";
            "FlowId"; "SourceGuid"; "TargetGuid"; "TypeId"
-           // 확장 속성 추가
-           "Location"; "Area" |]
+           // 확장 속성 추가는 여기서 수행 할 수 없음!!
+           // "Location"; "Area"
+           |]
         |> Set.ofArray
 
     let tryGetDBColumnName(dbApi:DbApi, propertyName: string) : string option =
