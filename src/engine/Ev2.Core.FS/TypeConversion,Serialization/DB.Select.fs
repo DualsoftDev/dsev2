@@ -174,9 +174,9 @@ module internal Db2DsImpl =
                         let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
                         let src = rtCalls |> find(fun c -> c.Id.Value = orm.Source)
                         let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
-                        orm.SourceGuid <- src.Guid
-                        orm.TargetGuid <- tgt.Guid
-                        orm.Type <- arrowType
+                        orm.XSourceGuid <- src.Guid
+                        orm.XTargetGuid <- tgt.Guid
+                        orm.XType <- arrowType
 
                         noop()
                         ArrowBetweenCalls.Create(src.Guid, tgt.Guid, arrowType)
@@ -200,9 +200,9 @@ module internal Db2DsImpl =
                     let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
                     let src = rtWorks |> find(fun w -> w.Id.Value = orm.Source)
                     let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
-                    orm.SourceGuid <- src.Guid
-                    orm.TargetGuid <- tgt.Guid
-                    orm.Type <- arrowType
+                    orm.XSourceGuid <- src.Guid
+                    orm.XTargetGuid <- tgt.Guid
+                    orm.XType <- arrowType
 
                     ArrowBetweenWorks.Create(src.Guid, tgt.Guid, arrowType)
                     |> replicateProperties orm

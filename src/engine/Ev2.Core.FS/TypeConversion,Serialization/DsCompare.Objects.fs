@@ -234,18 +234,18 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:ArrowBetweenWorks, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.SourceGuid <> y.SourceGuid then yield Diff(nameof x.SourceGuid, x, y, $"UPDATE {Tn.ArrowWork} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
-                if x.TargetGuid <> y.TargetGuid then yield Diff(nameof x.TargetGuid, x, y, $"UPDATE {Tn.ArrowWork} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
-                if x.TypeId <> y.TypeId then yield Diff(nameof x.TypeId, x, y, null)
+                if x.XSourceGuid <> y.XSourceGuid then yield Diff(nameof x.XSourceGuid, x, y, $"UPDATE {Tn.ArrowWork} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
+                if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, $"UPDATE {Tn.ArrowWork} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
+                if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, null)
             }
 
     type ArrowBetweenCalls with // ComputeDiff
         member x.ComputeDiff(y:ArrowBetweenCalls, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.SourceGuid <> y.SourceGuid then yield Diff(nameof x.SourceGuid, x, y, $"UPDATE {Tn.ArrowCall} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
-                if x.TargetGuid <> y.TargetGuid then yield Diff(nameof x.TargetGuid, x, y, $"UPDATE {Tn.ArrowCall} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
-                if x.TypeId <> y.TypeId then yield Diff(nameof x.TypeId, x, y, null)
+                if x.XSourceGuid <> y.XSourceGuid then yield Diff(nameof x.XSourceGuid, x, y, $"UPDATE {Tn.ArrowCall} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
+                if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, $"UPDATE {Tn.ArrowCall} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
+                if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, null)
             }
 
     type DsButton with // ComputeDiff

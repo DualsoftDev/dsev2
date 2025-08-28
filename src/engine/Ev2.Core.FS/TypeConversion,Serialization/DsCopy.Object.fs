@@ -177,12 +177,12 @@ module internal rec DsObjectCopyImpl =
 
     type ArrowBetweenWorks with // replicate
         member x.replicate() =
-            ArrowBetweenWorks.Create(x.SourceGuid, x.TargetGuid, x.Type)
+            ArrowBetweenWorks.Create(x.XSourceGuid, x.XTargetGuid, x.Type)
             |> replicateProperties x
 
     type ArrowBetweenCalls with // replicate
         member x.replicate() =
-            ArrowBetweenCalls.Create(x.SourceGuid, x.TargetGuid, x.Type)
+            ArrowBetweenCalls.Create(x.XSourceGuid, x.XTargetGuid, x.Type)
             |> replicateProperties x
 
 [<AutoOpen>]
@@ -217,8 +217,8 @@ module DsObjectCopyAPIModule =
             rt.FlowGuid |> iter (fun guid -> rt.FlowGuid <- Some map[guid])
 
         | :? ArrowBetweenWorks as rt ->
-            rt.SourceGuid <- map[rt.SourceGuid]
-            rt.TargetGuid <- map[rt.TargetGuid]
+            rt.XSourceGuid <- map[rt.XSourceGuid]
+            rt.XTargetGuid <- map[rt.XTargetGuid]
 
         | :? Call as rt ->
             rt.ApiCallGuids
@@ -229,8 +229,8 @@ module DsObjectCopyAPIModule =
                 rt.ApiCallGuids.AddRange gs
 
         | :? ArrowBetweenCalls as rt ->
-            rt.SourceGuid <- map[rt.SourceGuid]
-            rt.TargetGuid <- map[rt.TargetGuid]
+            rt.XSourceGuid <- map[rt.XSourceGuid]
+            rt.XTargetGuid <- map[rt.XTargetGuid]
 
         | :? ApiDef as rt ->
             rt.TxGuid <- map[rt.TxGuid]

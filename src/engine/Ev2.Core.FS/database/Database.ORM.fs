@@ -62,9 +62,9 @@ module ORMTypesModule =
         member val TypeId = arrowTypeId with get, set
 
         //{ 실제 DB 에 저장되지 않는 data.  저장소 변환시 자료 복사 용도로만 사용
-        member val SourceGuid = srcGuid with get, set
-        member val TargetGuid = tgtGuid with get, set
-        member val Type = DbArrowType.None with get, set
+        member val XSourceGuid = srcGuid with get, set
+        member val XTargetGuid = tgtGuid with get, set
+        member val XType = DbArrowType.None with get, set
         //}
 
 

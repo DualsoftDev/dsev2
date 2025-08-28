@@ -72,21 +72,21 @@ and ArrowBetweenCalls(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
     static member Create(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) =
         createExtended<ArrowBetweenCalls>()
         |> tee(fun z ->
-            z.SourceGuid <- sourceGuid
-            z.TargetGuid <- targetGuid
+            z.XSourceGuid <- sourceGuid
+            z.XTargetGuid <- targetGuid
             z.Type <- typ )
 
     static member Create(source:Call, target:Call, typ:DbArrowType) =
         ArrowBetweenCalls.Create(source.Guid, target.Guid, typ)
 
     interface IRtArrow
-    member val SourceGuid = sourceGuid with get, set
-    member val TargetGuid = targetGuid with get, set
+    member val XSourceGuid = sourceGuid with get, set
+    member val XTargetGuid = targetGuid with get, set
     member val Type = typ with get, set
 
-    member x.Source = x.getCallByGuid(x.SourceGuid)
-    member x.Target = x.getCallByGuid(x.TargetGuid)
-    member x.TypeId:Id = DbApi.GetEnumId x.Type
+    member x.Source = x.getCallByGuid(x.XSourceGuid)
+    member x.Target = x.getCallByGuid(x.XTargetGuid)
+    member x.XTypeId:Id = DbApi.GetEnumId x.Type
 
 /// Work 간 화살표 연결.  System 내에 존재
 and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Create
@@ -100,20 +100,20 @@ and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
     static member Create(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) =
         createExtended<ArrowBetweenWorks>()
         |> tee(fun z ->
-            z.SourceGuid <- sourceGuid
-            z.TargetGuid <- targetGuid
+            z.XSourceGuid <- sourceGuid
+            z.XTargetGuid <- targetGuid
             z.Type <- typ )
     static member Create(source:Work, target:Work, typ:DbArrowType) =
         ArrowBetweenWorks.Create(source.Guid, target.Guid, typ)
 
     interface IRtArrow
-    member val SourceGuid = sourceGuid with get, set
-    member val TargetGuid = targetGuid with get, set
+    member val XSourceGuid = sourceGuid with get, set
+    member val XTargetGuid = targetGuid with get, set
     member val Type = typ with get, set
 
-    member x.Source = x.getWorkByGuid(x.SourceGuid)
-    member x.Target = x.getWorkByGuid(x.TargetGuid)
-    member x.TypeId:Id = DbApi.GetEnumId x.Type
+    member x.Source = x.getWorkByGuid(x.XSourceGuid)
+    member x.Target = x.getWorkByGuid(x.XTargetGuid)
+    member x.XTypeId:Id = DbApi.GetEnumId x.Type
     //member val TypeId:Id = DbApi.GetEnumId typ with get, set
 
 and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
@@ -385,8 +385,8 @@ and Call() = // Create
 
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
-               inSymbol:string, outSymbol:string,
-               valueSpec:IValueSpec option
+    inSymbol:string, outSymbol:string,
+    valueSpec:IValueSpec option
 ) =
     inherit DsSystemEntity()
 

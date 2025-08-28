@@ -163,24 +163,27 @@ module internal DsCopyModule =
         | ( :? ArrowBetweenCalls | :? ArrowBetweenWorks
           | :? ORMArrowCall | :? ORMArrowWork
           | :? NjArrow ) ->
-            let getEnumId (s:DbArrowType) = DbApi.GetEnumId s
-            let getEnumIdFromString (s:string) = DbApi.GetEnumId (Enum.Parse(typeof<DbArrowType>, s) :?> DbArrowType)
+            let parseEnum (s:string) : DbArrowType =
+                match Enum.TryParse<DbArrowType>(s) with
+                | true, v -> v
+                | _ -> failwith $"Cannot parse {s}"
+            let getEnumIdFromString (s:string) = s |> parseEnum |> DbApi.GetEnumId
 
             let s =
                 match sbx with
-                | :? ArrowBetweenWorks as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
-                | :? ArrowBetweenCalls as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
-                | :? ORMArrowWork      as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
-                | :? ORMArrowCall      as s -> {| SourceGuid=s.SourceGuid; TargetGuid=s.TargetGuid; Type=s.Type; TypeId=s.TypeId |}
-                | :? NjArrow           as s -> {| SourceGuid=s2guid s.Source; TargetGuid=s2guid s.Target; Type=Enum.TryParse<DbArrowType>(s.Type) |> tryParseToOption |> _.Value; TypeId=getEnumIdFromString(s.Type) |}
+                | :? ArrowBetweenWorks as s -> {| SourceGuid=s.XSourceGuid;   TargetGuid=s.XTargetGuid;   Type=s.Type; TypeId=s.XTypeId |}
+                | :? ArrowBetweenCalls as s -> {| SourceGuid=s.XSourceGuid;   TargetGuid=s.XTargetGuid;   Type=s.Type; TypeId=s.XTypeId |}
+                | :? ORMArrowWork      as s -> {| SourceGuid=s.XSourceGuid;   TargetGuid=s.XTargetGuid;   Type=s.XType; TypeId=s.TypeId |}
+                | :? ORMArrowCall      as s -> {| SourceGuid=s.XSourceGuid;   TargetGuid=s.XTargetGuid;   Type=s.XType; TypeId=s.TypeId |}
+                | :? NjArrow           as s -> {| SourceGuid=s2guid s.Source; TargetGuid=s2guid s.Target; Type=parseEnum(s.Type); TypeId=getEnumIdFromString(s.Type) |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ArrowBetweenWorks as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
-            | :? ArrowBetweenCalls as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
-            | :? ORMArrowWork      as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; d.TypeId<-s.TypeId
-            | :? ORMArrowCall      as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type; d.TypeId<-s.TypeId
-            | :? NjArrow           as d -> d.SourceGuid<-s.SourceGuid; d.TargetGuid<-s.TargetGuid; d.Type<-s.Type.ToString(); d.TypeId<-s.TypeId
+            | :? ArrowBetweenWorks as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
+            | :? ArrowBetweenCalls as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
+            | :? ORMArrowWork      as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.XType<-s.Type; d.TypeId<-s.TypeId
+            | :? ORMArrowCall      as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.XType<-s.Type; d.TypeId<-s.TypeId
+            | :? NjArrow           as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.Type<-s.Type.ToString(); d.XTypeId<-s.TypeId
             | _ -> failwith "ERROR"
 
             ()
