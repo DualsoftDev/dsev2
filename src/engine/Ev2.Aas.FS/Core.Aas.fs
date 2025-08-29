@@ -106,8 +106,6 @@ module AasSemantics =
             ("PrototypeGuid",    "https://dualsoft.com/aas/passiveSystemLoadType/prototypeGuid")
             ("InstanceGuid",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceGuid")
 
-            ("ExtensionTypeInfo", "https://dualsoft.com/aas/extension/typeInfo")
-
             ("__RidIdentification",   "https://www.hsu-hh.de/aut/aas/identification")
         ] |> Tuple.toDictionary
 

@@ -130,23 +130,6 @@ module CoreToAas =
 
         /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
-            // 확장 타입 정보 생성 - AASX에서 타입 복원을 위해 저장
-            let extensionTypeInfo =
-                JObj().AddProperties(
-                    semanticKey = "ExtensionTypeInfo"
-                    , value = prj.GetType().FullName  // 확장 타입 이름 저장
-                    , modelType = ModelType.Property
-                )
-
-            // 모든 SubmodelElements 결합
-            let allElements =
-                [|
-                    yield prj.ToSjSMC()
-                    yield extensionTypeInfo
-                    //yield! extensionProperties
-                |]
-
-
             let sm =
                 JObj().AddProperties(
                     category = Category.CONSTANT
@@ -155,7 +138,7 @@ module CoreToAas =
                     , idShort = SubmodelIdShort
                     , kind = KindType.Instance
                     , semanticKey = "Submodel"
-                    , smel = allElements
+                    , smel = [| prj.ToSjSMC() |]
                 )
             sm
 
