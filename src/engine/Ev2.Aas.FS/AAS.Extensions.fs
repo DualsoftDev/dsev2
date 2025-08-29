@@ -2,20 +2,17 @@ namespace Dual.Ev2.Aas
 
 (* AAS Json/Xml 로부터 Core 를 생성하기 위한 코드 *)
 
-open System.Linq
 open System
-
-open AasCore.Aas3_0
-
-open Dual.Common.Core.FS
-open Dual.Common.Base.FS
-open Ev2.Core.FS
+open System.Linq
 open System.Globalization
 open System.Runtime.CompilerServices
 
-open System.Text.Json
-open System.Text.Json.Nodes
+open AasCore.Aas3_0
+
 open Dual.Common.Base
+open Dual.Common.Core.FS
+
+open Ev2.Core.FS
 
 [<AutoOpen>]
 module rec AasExtensions =
@@ -133,15 +130,10 @@ module rec AasExtensions =
 open System.IO
 open System.IO.Compression
 open System.Text
-open System.Text.Json
 open System.Xml
 
 
-open AasCore.Aas3_0
-open Dual.Common.Core.FS
 
-open System
-open Ev2.Core.FS
 
 
 [<AutoOpen>]

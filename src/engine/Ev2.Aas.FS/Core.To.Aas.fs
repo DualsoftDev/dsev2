@@ -97,10 +97,8 @@ module CoreToAas =
                     ()
                 | (:? NjFlow) ->
                     ()
-                | xxx ->
-                    failwith "ERROR"
-
-
+                | unknown ->
+                    failwith $"ERROR: Unknown type {unknown.GetType().Name}"
 
             } |> choose id |> Seq.cast<JNode> |> toArray
 
@@ -130,16 +128,6 @@ module CoreToAas =
                 |> _.AddValues([| activeSystems; passiveSystems |])
             project
 
-
-        ///// 확장 속성용 semantic URL 생성
-        //static member CreateExtensionSemanticUrl(typeName: string, propName: string): string =
-        //    let lowerTypeName =
-        //        typeName.Split('.')
-        //        |> Array.last
-        //        |> (fun name -> name.ToLowerInvariant())
-        //    let lowerPropName = propName.ToLowerInvariant()
-        //    sprintf "https://dualsoft.com/aas/extension/%s/%s" lowerTypeName lowerPropName
-
         /// To [S]ystem [J]son Submodel (SM) 형태로 변환
         member prj.ToSjSubmodel(): JNode =
             // 확장 타입 정보 생성 - AASX에서 타입 복원을 위해 저장
@@ -149,26 +137,6 @@ module CoreToAas =
                     , value = prj.GetType().FullName  // 확장 타입 이름 저장
                     , modelType = ModelType.Property
                 )
-
-            //// 확장 속성들을 별도의 Property로 수집
-            //let extensionProperties =
-            //    let extensionProps = prj.CollectExtensionProperties()
-            //    extensionProps
-            //    |> Array.choose (fun token ->
-            //        match token with
-            //        | :? Newtonsoft.Json.Linq.JProperty as jprop ->
-            //            let propertyNode =
-            //                JObj()
-            //                    .Set(N.IdShort, jprop.Name)
-            //                    .Set(N.ModelType, ModelType.Property.ToString())
-            //                    .Set(N.ValueType, "xs:string")
-            //                    .Set(N.Value, jprop.Value.ToString())
-            //                    .SetSemantic(NjProject.CreateExtensionSemanticUrl(prj.GetType().FullName, jprop.Name))
-
-            //            Some(propertyNode :> JNode)
-            //        | _ ->
-            //            None
-            //    )
 
             // 모든 SubmodelElements 결합
             let allElements =
@@ -240,20 +208,6 @@ module CoreToAas =
             let me = x
             JObj().ToSjSMC("System", x.CollectProperties())
             |> _.AddValues([| apiDefs; apiCalls; flows; arrows; works |])
-
-        //// To [S]ystem [J]son Submodel element (SME) 형태로 변환
-        //[<Obsolete("안씀")>]
-        //member sys.ToSjSubmodel(): JNode =
-        //    let sm =
-        //        JObj().AddProperties(
-        //            category = Category.CONSTANT,
-        //            modelType = ModelType.Submodel,
-        //            id = guid2str sys.Guid,
-        //            kind = KindType.Instance,
-        //            semanticKey = "FakeSystemSubmodel",
-        //            smel = [| sys.ToSjSMC() |]
-        //        )
-        //    sm
 
 
     type NjApiDef with // ToSjSMC
