@@ -206,23 +206,6 @@ module internal DsCopyModule =
 
         dst
 
-    let private allPropertyNames =
-        [| "Id"; "Name"; "Guid"; "DateTime"; "Parameter"; "RawParent";
-           "Author"; "Version"; "Description"; "Database";
-           "IRI"; "OriginGuid"; "EngineVersion"; "LangVersion"; "OwnerProjectId"
-           "Motion"; "Script"; "IsFinished"; "NumRepeat"; "Period"; "Delay"; "Status4"
-           "InAddress"; "OutAddress"; "InSymbol"; "OutSymbol";
-           "ValueSpec";
-           "FlowId"; "SourceGuid"; "TargetGuid"; "TypeId"
-           // 확장 속성 추가는 여기서 수행 할 수 없음!!
-           // "Location"; "Area"
-           |]
-        |> Set.ofArray
-
-    let tryGetDBColumnName(dbApi:DbApi, propertyName: string) : string option =
-        allPropertyNames.TryGet(propertyName)
-        |-> (fun propertyName ->
-                propertyName[0..0].ToLower() + propertyName[1..])    // 첫 문자만 소문자로 변경
 
     let getPropertyNameForDB(dbApi:DbApi, propertyName: string) : string =
         match propertyName with

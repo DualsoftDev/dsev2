@@ -56,12 +56,7 @@ module internal rec DbUpdateImpl =
                 match x with
                 // DB 수정
                 | Diff (cat, dbEntity, newEntity, updateSql) ->
-                    let dbColumnName =
-                        tryGetDBColumnName(dbApi, cat)
-                        |?? (fun () ->
-                            Debugger.Break()
-                            logWarn $"Unknown property name: {cat}"
-                            cat)
+                    let dbColumnName = cat
                     let propertyName = getPropertyNameForDB(dbApi, cat)
                     assert(dbEntity.GetType() = newEntity.GetType())
                     let tableName = dbEntity.getTableName()
