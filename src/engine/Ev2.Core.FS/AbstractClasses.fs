@@ -7,6 +7,7 @@ open System.Data
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
+open Newtonsoft.Json
 
 
 [<AbstractClass>]
@@ -387,6 +388,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         |? [||]
 
 
+    [<JsonIgnore>]
     member x.ApiDef
         with get() =
             x.Project

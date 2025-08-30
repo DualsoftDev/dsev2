@@ -53,13 +53,14 @@ type CopyExtensionForCSharp = // CsCopyTo
 
 type Ev2CoreExtensionForCSharp = // CsExportToJson, CsToJson
 
-    // Project 확장 메서드 - C# 전용
+    // Project 객체를 Json serialize 해서 문자열 반환
     [<Extension>]
     static member CsToJson(project:Project): string =
         // NjProject.ToJson()을 사용하여 일관된 DateFormatString 적용
         let njProject = project.ToNjObj() :?> NjProject
         njProject.ToJson()
 
+    // Project 객체를 Json serialize 해서 인자로 주어진 파일에 저장하고, 전체 문자열 반환
     [<Extension>]
     static member CsToJson(project:Project, filePath:string): string =
         let njProject = project.ToNjObj() :?> NjProject
@@ -67,18 +68,19 @@ type Ev2CoreExtensionForCSharp = // CsExportToJson, CsToJson
         File.WriteAllText(filePath, json)
         json
 
-    // DsSystem 확장 메서드 - C# 전용
+    // DsSystem 객체를 Json 문자열로 변환
     [<Extension>]
     static member CsExportToJson(system:DsSystem): string =
         let njSystem = system.ToNj<NjSystem>()
         njSystem.ExportToJson()
 
+    // DsSystem 객체를 Json serialize 해서 인자로 주어진 파일에 저장하고, 전체 문자열 반환
     [<Extension>]
     static member CsExportToJson(system:DsSystem, filePath:string): string =
         let njSystem = system.ToNj<NjSystem>()
         njSystem.ExportToJsonFile(filePath)
 
-    // 범용 RtUnique 확장 메서드
+    // Runtime object (Project or DsSystem) 를 Json 문자열로 변환
     [<Extension>]
     static member CsToJson(rtObj:RtUnique): string =
         match rtObj with
@@ -93,6 +95,7 @@ type Ev2CoreExtensionForCSharp = // CsExportToJson, CsToJson
             let njObj = rtObj.ToNjObj()
             EmJson.ToJson(njObj)
 
+    /// Runtime object 하부의 Runtime object 들을 반환.
     [<Extension>]
     static member CsEnumerateRtObjects(rtObj:RtUnique, [<Optional; DefaultParameterValue(true)>] includeMe:bool): RtUnique[] =
         rtObj.EnumerateRtObjects(includeMe) |> toArray
@@ -135,12 +138,14 @@ type ProjectExtensions = // CsCheckoutFromDB, CsCommitToDB, CsRemoveFromDB
 
 // DsSystem 타입에 대한 정적 메서드
 type DsSystemExtensions = // CsFromJson, CsImportFromJson
+    /// Json 문자열로부터 DsSystem 객체 생성해서 반환
     static member CsImportFromJson(json:string): DsSystem =
         json
         |> NjSystem.ImportFromJson
         |> getRuntimeObject<DsSystem>
         |> validateRuntime
 
+    /// Json 문자열로부터 DsSystem 객체 생성해서 반환
     static member CsFromJson(json:string): DsSystem =
         DsSystemExtensions.CsImportFromJson(json)
 

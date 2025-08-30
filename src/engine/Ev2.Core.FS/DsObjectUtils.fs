@@ -34,46 +34,57 @@ module DuplicateBagModule =
 
 [<AutoOpen>]
 module rec TmpCompatibility =
-    type RtUnique with // EnumerateRtObjects, UpdateDateTime
-        (* see also EdUnique.EnumerateRtObjects *)
-        member x.EnumerateRtObjects(?includeMe): RtUnique list =
+    let rec enumerateHelper (visited:HashSet<Guid>) (includeMe:bool option) (x:RtUnique) : RtUnique seq =
+        if visited.Contains x.Guid then
+            Seq.empty
+        else
+            visited.Add x.Guid |> ignore
             seq {
                 let includeMe = includeMe |? true
                 if includeMe then
                     yield x
                 match x with
                 | :? Project as prj ->
-                    yield! prj.Systems   >>= _.EnumerateRtObjects()
+                    yield! prj.Systems  |> Seq.bind (enumerateHelper visited None)
                 | :? DsSystem as sys ->
-                    yield! sys.Works     >>= _.EnumerateRtObjects()
-                    yield! sys.Flows     >>= _.EnumerateRtObjects()
-                    yield! sys.Arrows    >>= _.EnumerateRtObjects()
-                    yield! sys.ApiDefs   >>= _.EnumerateRtObjects()
-                    yield! sys.ApiCalls  >>= _.EnumerateRtObjects()
+                    yield! sys.Works     |> Seq.bind (enumerateHelper visited None)
+                    yield! sys.Flows     |> Seq.bind (enumerateHelper visited None)
+                    yield! sys.Arrows    |> Seq.bind (enumerateHelper visited None)
+                    yield! sys.ApiDefs   |> Seq.bind (enumerateHelper visited None)
+                    yield! sys.ApiCalls  |> Seq.bind (enumerateHelper visited None)
                 | :? Work as work ->
-                    yield! work.Calls    >>= _.EnumerateRtObjects()
-                    yield! work.Arrows   >>= _.EnumerateRtObjects()
+                    yield! work.Calls    |> Seq.bind (enumerateHelper visited None)
+                    yield! work.Arrows   |> Seq.bind (enumerateHelper visited None)
                 | :? Flow as flow ->
-                    yield! flow.Buttons    >>= _.EnumerateRtObjects()
-                    yield! flow.Lamps      >>= _.EnumerateRtObjects()
-                    yield! flow.Conditions >>= _.EnumerateRtObjects()
-                    yield! flow.Actions    >>= _.EnumerateRtObjects()
+                    yield! flow.Buttons    |> Seq.bind (enumerateHelper visited None)
+                    yield! flow.Lamps      |> Seq.bind (enumerateHelper visited None)
+                    yield! flow.Conditions |> Seq.bind (enumerateHelper visited None)
+                    yield! flow.Actions    |> Seq.bind (enumerateHelper visited None)
 
                 | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls)  ->
                     ()
                 | _ ->
-                    tracefn $"Skipping {(x.GetType())} in EnumerateRtObjects"
+                    tracefn $"Skipping {(x.GetType())} in enumerateHelper : {x.Guid}"
                     ()
-            } |> List.ofSeq
+            }
+    type RtUnique with // EnumerateRtObjects, UpdateDateTime
+        (* see also EdUnique.EnumerateRtObjects *)
+        member x.EnumerateRtObjects(?includeMe): RtUnique list =
+            let hash = HashSet<Guid>()
+            enumerateHelper hash includeMe x
+            |> List.ofSeq
+
         member x.EnumerateRtObjectsT<'T(* when 'T:> RtUnique*)>(?includeMe): 'T list =
             x.EnumerateRtObjects(?includeMe=includeMe) |> List.choose tryCast<'T>
 
-        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신.  (tree 구조를 따라가면서 갱신)
-        ///
-        /// project, system 만 date time 가지는 걸로 변경 고려 중..
+        /// DS object 의 모든 상위 DS object 의 DateTime 을 갱신
+        /// project, system 만 date time 을 가짐
         member x.UpdateDateTime(?dateTime:DateTime) =
             let dateTime = dateTime |?? (fun () -> now().TruncateToSecond())
-            x.EnumerateRtObjectsT<IWithDateTime>() |> iter (fun z -> z.DateTime <- dateTime)
+            match x with
+            | :? Project as prj -> prj.DateTime <- dateTime
+            | :? DsSystem as sys -> sys.DateTime <- dateTime; sys.Project |> iter (fun p -> p.DateTime <- dateTime)
+            | _ -> ()
 
 
 
