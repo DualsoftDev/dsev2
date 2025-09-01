@@ -3,14 +3,15 @@ namespace Ev2.Core.FS
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open System
+open System.Threading
 
 [<AutoOpen>]
 module MiniSample =
     let createCylinder(name:string) =
         let sys = DsSystem.Create(Name=name)
 
-        let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"))
-        let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"))
+        let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"), Period=2000)
+        let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"), Period=2000)
         let flow = Flow.Create(Name="CylFlow")
         flow.AddWorks [workAdv; workRet]
 
@@ -24,6 +25,7 @@ module MiniSample =
         let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
         sys.AddArrows [arrowW]
 
+        sys.OnConstructed()
         sys
 
     /// Extension type 테스트를 위한 간단한 Project 생성
@@ -111,5 +113,10 @@ module MiniSample =
 
         // Project에 System 추가
         project.AddActiveSystem system
+        project.OnConstructed()
+
+        // 상태 변경 후, property changed event handling 을 위한, 충분한 시간을 줌.
+        project.ActiveSystems[0].Works[0].Calls[0].Status4 <- Some DbStatus4.Going;
+        Thread.Sleep(2500)
 
         project |> validateRuntime
