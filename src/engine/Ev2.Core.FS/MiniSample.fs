@@ -117,6 +117,7 @@ module MiniSample =
 
         // 상태 변경 후, property changed event handling 을 위한, 충분한 시간을 줌.
         project.ActiveSystems[0].Works[0].Calls[0].Status4 <- Some DbStatus4.Going;
-        Thread.Sleep(2500)
+        if not (isInUnitTest()) then
+            Thread.Sleep(2500)
 
         project |> validateRuntime
