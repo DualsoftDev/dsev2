@@ -39,27 +39,31 @@ module rec TmpCompatibility =
             Seq.empty
         else
             visited.Add x.Guid |> ignore
+            let enumerates (rtObjects:#RtUnique seq) =
+                rtObjects
+                |> Seq.collect (enumerateHelper visited None)
+
             seq {
                 let includeMe = includeMe |? true
                 if includeMe then
                     yield x
                 match x with
                 | :? Project as prj ->
-                    yield! prj.Systems  |> Seq.bind (enumerateHelper visited None)
+                    yield! prj.Systems |> enumerates
                 | :? DsSystem as sys ->
-                    yield! sys.Works     |> Seq.bind (enumerateHelper visited None)
-                    yield! sys.Flows     |> Seq.bind (enumerateHelper visited None)
-                    yield! sys.Arrows    |> Seq.bind (enumerateHelper visited None)
-                    yield! sys.ApiDefs   |> Seq.bind (enumerateHelper visited None)
-                    yield! sys.ApiCalls  |> Seq.bind (enumerateHelper visited None)
+                    yield! sys.Works     |> enumerates
+                    yield! sys.Flows     |> enumerates
+                    yield! sys.Arrows    |> enumerates
+                    yield! sys.ApiDefs   |> enumerates
+                    yield! sys.ApiCalls  |> enumerates
                 | :? Work as work ->
-                    yield! work.Calls    |> Seq.bind (enumerateHelper visited None)
-                    yield! work.Arrows   |> Seq.bind (enumerateHelper visited None)
+                    yield! work.Calls    |> enumerates
+                    yield! work.Arrows   |> enumerates
                 | :? Flow as flow ->
-                    yield! flow.Buttons    |> Seq.bind (enumerateHelper visited None)
-                    yield! flow.Lamps      |> Seq.bind (enumerateHelper visited None)
-                    yield! flow.Conditions |> Seq.bind (enumerateHelper visited None)
-                    yield! flow.Actions    |> Seq.bind (enumerateHelper visited None)
+                    yield! flow.Buttons    |> enumerates
+                    yield! flow.Lamps      |> enumerates
+                    yield! flow.Conditions |> enumerates
+                    yield! flow.Actions    |> enumerates
 
                 | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls)  ->
                     ()
