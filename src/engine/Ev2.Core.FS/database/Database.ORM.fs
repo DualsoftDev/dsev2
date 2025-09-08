@@ -25,11 +25,13 @@ module ORMTypesModule =
     [<AbstractClass>]
     type ORMSystemEntity(systemId:Id) =
         inherit ORMUnique(ParentId=Some systemId)
+        interface ISystemEntity
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
     [<AbstractClass>]
     type ORMSystemEntityWithFlow(systemId:Id, flowId:Id option) =
         inherit ORMSystemEntity(systemId)
+        interface ISystemEntityWithFlow
         member val FlowId = flowId with get, set
 
     [<AbstractClass>]

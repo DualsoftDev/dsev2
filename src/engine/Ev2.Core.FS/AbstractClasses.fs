@@ -30,11 +30,13 @@ type ProjectEntity() = // Actions, ActiveSystems, ApiCalls, ApiDefs, ApiUsers, A
 /// DsSystem 객체에 포함되는 member 들이 상속할 base class.  e.g RtFlow, RtWork, RtArrowBetweenWorks, RtApiDef, RtApiCall
 and [<AbstractClass>] DsSystemEntity() =
     inherit RtUnique()
+    interface ISystemEntity
     member x.System  = x.RawParent >>= tryCast<DsSystem>
     member x.Project = x.RawParent >>= _.RawParent >>= tryCast<Project>
 
 and [<AbstractClass>] DsSystemEntityWithFlow() =
     inherit DsSystemEntity()
+    interface ISystemEntityWithFlow
     member val FlowGuid = noneGuid with get, set
     member val FlowId = Option<Id>.None with get, set
     member x.Flow:Flow option =

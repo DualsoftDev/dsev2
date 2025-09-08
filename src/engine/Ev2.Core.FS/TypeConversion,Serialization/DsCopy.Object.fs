@@ -46,11 +46,11 @@ module internal rec DsObjectCopyImpl =
                 let actions    = x.Actions    |-> _.replicate() |> toArray
 
                 // 복제된 데이터를 newSystem에 설정
-                flows    |> newSystem.RawFlows   .AddRange
-                works    |> newSystem.RawWorks   .AddRange
-                arrows   |> newSystem.RawArrows  .AddRange
-                apiDefs  |> newSystem.RawApiDefs .AddRange
-                apiCalls |> newSystem.RawApiCalls.AddRange
+                flows      |> newSystem.RawFlows     .AddRange
+                works      |> newSystem.RawWorks     .AddRange
+                arrows     |> newSystem.RawArrows    .AddRange
+                apiDefs    |> newSystem.RawApiDefs   .AddRange
+                apiCalls   |> newSystem.RawApiCalls  .AddRange
                 buttons    |> newSystem.RawButtons   .AddRange
                 lamps      |> newSystem.RawLamps     .AddRange
                 conditions |> newSystem.RawConditions.AddRange
@@ -60,11 +60,11 @@ module internal rec DsObjectCopyImpl =
                 newSystem |> replicateProperties x |> ignore
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
-                flows    |> iter (setParentI newSystem)
-                works    |> iter (setParentI newSystem)
-                arrows   |> iter (setParentI newSystem)
-                apiDefs  |> iter (setParentI newSystem)
-                apiCalls |> iter (setParentI newSystem)
+                flows      |> iter (setParentI newSystem)
+                works      |> iter (setParentI newSystem)
+                arrows     |> iter (setParentI newSystem)
+                apiDefs    |> iter (setParentI newSystem)
+                apiCalls   |> iter (setParentI newSystem)
                 buttons    |> iter (setParentI newSystem)
                 lamps      |> iter (setParentI newSystem)
                 conditions |> iter (setParentI newSystem)
@@ -116,7 +116,7 @@ module internal rec DsObjectCopyImpl =
             |> tee(fun newFlow ->
                 // Flow는 이제 UI 요소를 직접 소유하지 않으므로 속성 복사만 수행
                 // UI 요소들은 System 레벨에서 복제됨
-                
+
                 // 속성 복사 (GUID 포함)
                 newFlow |> replicateProperties x |> ignore )
 
@@ -203,11 +203,11 @@ module DsObjectCopyAPIModule =
             rt.Systems |> iter proc
 
         | :? DsSystem as rt ->
-            rt.ApiDefs  |> iter proc
-            rt.ApiCalls |> iter proc
-            rt.Flows    |> iter proc
-            rt.Works    |> iter proc
-            rt.Arrows   |> iter proc
+            rt.ApiDefs    |> iter proc
+            rt.ApiCalls   |> iter proc
+            rt.Flows      |> iter proc
+            rt.Works      |> iter proc
+            rt.Arrows     |> iter proc
             rt.Buttons    |> iter proc
             rt.Lamps      |> iter proc
             rt.Conditions |> iter proc

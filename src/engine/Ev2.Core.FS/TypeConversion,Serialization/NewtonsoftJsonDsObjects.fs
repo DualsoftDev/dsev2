@@ -68,12 +68,14 @@ module rec NewtonsoftJsonObjects =
     [<AbstractClass>]
     type NjSystemEntity() =
         inherit NjUnique()
+        interface ISystemEntity
         [<JsonIgnore>] member x.System  = x.RawParent >>= tryCast<NjSystem>
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
     [<AbstractClass>]
     type NjSystemEntityWithFlow() =
         inherit NjSystemEntity()
+        interface ISystemEntityWithFlow
         member val FlowGuid = null:string with get, set
         [<JsonIgnore>] member x.Flow = x.System |-> (fun s -> s.Flows |> tryFind(fun (f:NjFlow) -> f.Guid.ToString() = x.FlowGuid))
 
@@ -411,7 +413,7 @@ module rec NewtonsoftJsonObjects =
             | ( (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
                 ()
-                
+
             | ( (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ) ->
                 (* UI 요소들도 replicateProperties 호출 필요 *)
                 match njUnique |-> _.RuntimeObject with
@@ -499,7 +501,7 @@ module rec NewtonsoftJsonObjects =
             njs.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z)
             njs.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z)
             njs.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z)
-            
+
             let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
             let apiDefs  = njs.ApiDefs  |-> getRuntimeObject<ApiDef>
             let apiCalls = njs.ApiCalls |-> getRuntimeObject<ApiCall>
@@ -507,7 +509,7 @@ module rec NewtonsoftJsonObjects =
             let lamps      = njs.Lamps      |-> getRuntimeObject<Lamp>
             let conditions = njs.Conditions |-> getRuntimeObject<DsCondition>
             let actions    = njs.Actions    |-> getRuntimeObject<DsAction>
-            
+
             let rts =
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions)
                 |> replicateProperties njs

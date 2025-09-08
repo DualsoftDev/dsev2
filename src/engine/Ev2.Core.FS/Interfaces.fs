@@ -14,7 +14,7 @@ module InterfaceModule =
     type IParameterContainer = inherit IDsObject
     type IArrow     = inherit IDsObject
     /// Guid, Name, DateTime
-    type IUnique     = inherit IDsObject
+    type IUnique    = inherit IDsObject
 
     type IWithDateTime =
         inherit IDsObject
@@ -59,8 +59,8 @@ module InterfaceModule =
 
     type IRtArrow     = inherit IRtUnique inherit IArrow
 
-    type IRtProject = inherit IRtUnique inherit IWithDateTime
-    type IRtSystem  = inherit IRtUnique inherit IWithDateTime
+    type IRtProject = inherit IRtUnique inherit IDsProject inherit IWithDateTime
+    type IRtSystem  = inherit IRtUnique inherit IDsSystem  inherit IWithDateTime
     type IRtFlow    = inherit IRtUnique inherit IDsFlow
     type IRtWork    = inherit IRtUnique inherit IDsWork
     type IRtCall    = inherit IRtUnique inherit IDsCall
@@ -89,29 +89,32 @@ module InterfaceModule =
 
 
     type RowId = int
-    type IORMProject    = inherit IORMUnique inherit IWithDateTime
-    type IORMSystem     = inherit IORMUnique inherit IWithDateTime
-    type IORMFlow       = inherit IORMUnique
-    type IORMWork       = inherit IORMUnique
-    type IORMCall       = inherit IORMUnique
-    type IORMArrow      = inherit IORMUnique
+    type IORMProject    = inherit IORMUnique inherit IDsProject inherit IWithDateTime
+    type IORMSystem     = inherit IORMUnique inherit IDsSystem  inherit IWithDateTime
+    type IORMFlow       = inherit IORMUnique inherit IDsFlow
+    type IORMWork       = inherit IORMUnique inherit IDsWork
+    type IORMCall       = inherit IORMUnique inherit IDsCall
+    type IORMArrow      = inherit IORMUnique inherit IArrow
     type IORMArrowWork  = inherit IORMArrow
     type IORMArrowCall  = inherit IORMArrow
 
-    type IORMButton     = inherit IORMUnique
-    type IORMLamp       = inherit IORMUnique
-    type IORMCondition  = inherit IORMUnique
-    type IORMAction     = inherit IORMUnique
+    type IORMButton     = inherit IORMUnique inherit IDsButton
+    type IORMLamp       = inherit IORMUnique inherit IDsLamp
+    type IORMCondition  = inherit IORMUnique inherit IDsCondition
+    type IORMAction     = inherit IORMUnique inherit IDsAction
 
 
 
-    type IORMApiCall    = inherit IORMUnique
-    type IORMApiDef     = inherit IORMUnique
+    type IORMApiCall    = inherit IORMUnique inherit IDsApiCall
+    type IORMApiDef     = inherit IORMUnique inherit IDsApiDef
     type IORMParamWork  = inherit IORMUnique
     type IORMParamCall  = inherit IORMUnique
     type IORMEnum       = inherit IORMUnique
     type IORMMeta       = inherit IORMUnique
     type IORMLog        = inherit IORMUnique
+
+    type ISystemEntity = interface end
+    type ISystemEntityWithFlow = inherit ISystemEntity
 
 
     type ICompareResult = interface end

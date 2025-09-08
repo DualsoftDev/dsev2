@@ -23,22 +23,6 @@ module internal DsCopyModule =
         | :? Project as rp -> rp.Replicate()
         | _ -> failwithf "Unsupported type for replication: %A" (source.GetType())
 
-
-    /// 추후 참조를 위해, XXX.{Rt,Nj,ORM}Object 에 알맞은 값을 설정한다.
-    let private copyFlowProperties (sbx: obj) (dbx: obj) =
-        let s =
-            match sbx with
-            | :? DsSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
-            | :? NjSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
-            | :? ORMSystemEntityWithFlow as s -> {| FlowGuid=None; FlowId=s.FlowId |}
-            | _ -> failwith "ERROR"
-
-        match dbx with
-        | :? DsSystemEntityWithFlow  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
-        | :? NjSystemEntityWithFlow  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
-        | :? ORMSystemEntityWithFlow as d -> d.FlowId<-s.FlowId
-        | _ -> failwith "ERROR"
-
     let private linkUniq (src:#Unique) (dst:#Unique): #Unique=
         match box src with
         | :? IRtUnique  as s -> dst.RtObject  <- Some s
@@ -65,7 +49,8 @@ module internal DsCopyModule =
         let sbx, dbx = box src, box dst
 
         match sbx with
-        | (:? Project) | (:? NjProject) | (:? ORMProject) ->
+        | :? IDsProject ->
+            // Project, NjProject, ORMProject
             let s =
                 match sbx with
                 | :? Project    as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; AasxPath=s.AasxPath; Database=s.Database; DateTime=s.DateTime |}
@@ -78,7 +63,8 @@ module internal DsCopyModule =
             | :? ORMProject as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; (*d.Database<-s.Database;*) d.DateTime<-s.DateTime
             | _ -> failwith "ERROR"
 
-        | (:? DsSystem) | (:? NjSystem) | (:? ORMSystem) ->
+        | :? IDsSystem ->
+            // System, NjSystem, ORMSystem
             let s =
                 match sbx with
                 | :? DsSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
@@ -93,12 +79,13 @@ module internal DsCopyModule =
             | _ -> failwith "ERROR"
 
 
-        | (:? Flow) | (:? NjFlow) | (:? ORMFlow) ->
+        | :? IDsFlow  ->
+            // Flow, NjFlow, ORMFlow
             // 특별히 복사할 것 없음.
             ()
 
-
-        | (:? Work) | (:? NjWork) | (:? ORMWork) ->
+        | :? IDsWork ->
+            // Work, NjWork, ORMWork
             noop()
             let s =
                 match sbx with
@@ -113,12 +100,14 @@ module internal DsCopyModule =
             | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid
             | _ -> failwith "ERROR"
 
+        | :? IDsCall ->
+            // Call, NjCall, ORMCall // 미처리 : ApiCalls, Status4
 
-        | (:? Call) | (:? NjCall) | (:? ORMCall) ->   // 미처리 : ApiCalls, Status4
             /// From Json
             let fj (s:string) = if s.IsNullOrEmpty() then ResizeArray() else EmJson.FromJson<ResizeArray<string>> s
             /// To Json
             let tj obj = EmJson.ToJson obj
+
             let s =
                 match sbx with
                 | :? Call    as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
@@ -135,7 +124,8 @@ module internal DsCopyModule =
 
 
 
-        | (:? ApiCall) | (:? NjApiCall) | (:? ORMApiCall) ->   // 미처리 : ApiDefGuid, Status4
+        | :? IDsApiCall ->
+            // ApiCall, NjApiCall, ORMApiCall ->   // 미처리 : ApiDefGuid, Status4
             let s =
                 match sbx with
                 | :? ApiCall    as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; (*ApiDef;*) |}
@@ -149,8 +139,8 @@ module internal DsCopyModule =
             | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec
             | _ -> failwith "ERROR"
 
-
-        | (:? ApiDef) | (:? NjApiDef) | (:? ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
+        | :? IDsApiDef ->
+            // ApiDef, NjApiDef, ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
                 | :? ApiDef    as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
@@ -164,20 +154,28 @@ module internal DsCopyModule =
             | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid
             | _ -> failwith "ERROR"
 
+        // DsButton, NjButton, ORMButton
+        // Lamp, NjLamp, ORMLamp
+        // DsCondition, NjCondition, ORMCondition
+        // DsAction, NjAction, ORMAction
+        | :? ISystemEntityWithFlow ->
+            let s =
+                match sbx with
+                | :? DsSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
+                | :? NjSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
+                | :? ORMSystemEntityWithFlow as s -> {| FlowGuid=None; FlowId=s.FlowId |}
+                | _ -> failwith "ERROR"
 
+            match dbx with
+            | :? DsSystemEntityWithFlow  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
+            | :? NjSystemEntityWithFlow  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+            | :? ORMSystemEntityWithFlow as d -> d.FlowId<-s.FlowId
+            | _ -> failwith "ERROR"
 
-
-
-
-        | (:? DsButton) | (:? NjButton) | (:? ORMButton)
-        | (:? Lamp) | (:? NjLamp) | (:? ORMLamp)
-        | (:? DsCondition) | (:? NjCondition) | (:? ORMCondition)
-        | (:? DsAction) | (:? NjAction) | (:? ORMAction) ->
-            copyFlowProperties sbx dbx
-
-        | ( :? ArrowBetweenCalls | :? ArrowBetweenWorks
-          | :? ORMArrowCall | :? ORMArrowWork
-          | :? NjArrow ) ->
+        // ArrowBetweenCalls, ArrowBetweenWorks
+        // ORMArrowCall, ORMArrowWork
+        // NjArrow,
+        | :? IArrow ->
             let parseEnum (s:string) : DbArrowType =
                 match Enum.TryParse<DbArrowType>(s) with
                 | true, v -> v
