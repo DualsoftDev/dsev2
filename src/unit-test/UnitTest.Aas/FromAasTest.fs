@@ -9,6 +9,7 @@ open Dual.Ev2.Aas
 open T.TestHelpers  // 테스트 헬퍼 함수 추가
 open T  // createHelloDS 사용을 위해
 open Ev2.Core.FS
+open Dual.Common.Base
 
 module FromAasTest =
     let dsJson = DsJson.dsJson
@@ -21,9 +22,9 @@ module FromAasTest =
         member _.``AasShell: Json -> JObj -> {Xml, Json} conversion test`` () =
             let env = J.CreateIClassFromXml<Aas.Environment>(aasXml0)
             let xml = env.ToXml()
-            xml =~= aasXml0
+            EmXml.IsXmlEquals(xml, aasXml0) === true
 
-            env.ToJson() =~= aasJson0
+            EmJson.IsJsonEquals(env.ToJson(), aasJson0) === true
 
 
             //let dsSystem = DsSystem.FromAasJsonENV(aasJson0)

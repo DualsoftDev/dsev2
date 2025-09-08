@@ -5,6 +5,7 @@ open NUnit.Framework
 
 open Ev2.Core.FS
 open Dual.Common.UnitTest.FS
+open Dual.Common.Base
 
 
 [<AutoOpen>]
@@ -50,7 +51,7 @@ module ValueSpecTestModule =
     ]
   }
 }"""
-        singleDoubleValue.Jsonize() =~= jsonSingleDoubleValue
+        EmJson.IsJsonEquals(singleDoubleValue.Jsonize(), jsonSingleDoubleValue) === true
         jsonSingleDoubleValue |> IValueSpec.Deserialize === singleDoubleValue
 
         // bool 타입
@@ -63,7 +64,7 @@ module ValueSpecTestModule =
     ]
   }
 }"""
-        singleBoolValue.Jsonize() =~= jsonSingleBoolValue
+        EmJson.IsJsonEquals(singleBoolValue.Jsonize(), jsonSingleBoolValue) === true
         jsonSingleBoolValue |> IValueSpec.Deserialize === singleBoolValue
 
 
@@ -130,7 +131,7 @@ module ValueSpecTestModule =
     ]
   }
 }"""
-        multipleRange.Jsonize() =~= jsonMultipleRange
+        EmJson.IsJsonEquals(multipleRange.Jsonize(), jsonMultipleRange) === true
         jsonMultipleRange |> IValueSpec.Deserialize === multipleRange
 
 

@@ -26,25 +26,24 @@ module ToAasTest =
             let assetAdministrationShell = JObj().Set(N.Id, "something_142922d6").Set(N.AssetInformation, assetInformation).Set(N.ModelType, "AssetAdministrationShell")
             let assetAdministrationShells = JObj().Set(N.AssetAdministrationShells, J.CreateJArr( [assetAdministrationShell] ))
             let json = assetAdministrationShells.Stringify()
-            json =~= aasJson
+            EmJson.IsJsonEquals(json, aasJson) === true
 
         [<Test>]
         member _.``AasShell: Json -> JObj -> {Xml, Json} conversion test`` () =
             let env = J.CreateIClassFromJson<Aas.Environment>(aasJson)
             let xml = env.ToXml()
-            xml =~= aasXml
+            EmXml.IsXmlEquals(xml, aasXml) === true
 
 
             let jsonObject = Aas.Jsonization.Serialize.ToJsonObject(env);
             let json = jsonObject.Stringify()
-            json =~= aasJson
-
-            env.ToJson() =~= aasJson
+            EmJson.IsJsonEquals(json, aasJson) === true
+            EmJson.IsJsonEquals(env.ToJson(), aasJson) === true
 
 
             let project = Project.FromJson(dsProject)
             let json = project.ToJson()
-            json =~= dsProject
+            EmJson.IsJsonEquals(json, dsProject) === true
             ()
 
     /// Json Test
@@ -105,7 +104,7 @@ module ToAasTest =
             let njProject2 = NjProject.FromISubmodel(submodel)
             let json2 = EmJson.ToJson(njProject2)
 
-            projJson =~= json2
+            EmJson.IsJsonEquals(projJson, json2) === true
 
 
             let aasxPath = getUniqueAasxPath()

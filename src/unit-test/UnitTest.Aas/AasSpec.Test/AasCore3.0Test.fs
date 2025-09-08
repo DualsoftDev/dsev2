@@ -5,6 +5,7 @@ open Dual.Ev2
 open Dual.Ev2.Aas
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
+open Dual.Common.Base
 
 
 
@@ -26,7 +27,7 @@ module AasCore3_0Test =
 </submodel>"""
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-            xml =~= xmlAnswer
+            EmXml.IsXmlEquals(xml, xmlAnswer) === true
             ()
 
         [<Test>]
@@ -244,7 +245,7 @@ module AasCore3_0Test =
 </submodel>"""
 
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-            xml =~= xmlAnswer
+            EmXml.IsXmlEquals(xml, xmlAnswer) === true
             ()
 
 
@@ -307,7 +308,7 @@ module AasCore3_0Test =
   </submodelElements>
 </submodel>"""
             let xml = J.CreateIClassFromJson<Aas.Submodel>(json).ToXml()
-            xml =~= xmlAnswer
+            EmXml.IsXmlEquals(xml, xmlAnswer) === true
             ()
 
 
