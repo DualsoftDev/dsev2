@@ -331,6 +331,30 @@ SequenceControlSubmodel
     │       │       ├── Name (1)
     │       │       ├── Guid (1)
     │       │       └── Id (0..1)
+    │       ├── Buttons (0..1)
+    │       │   └── Button (1..*)
+    │       │       ├── Name (1)
+    │       │       ├── Guid (1)
+    │       │       ├── Id (0..1)
+    │       │       └── FlowGuid (0..1)
+    │       ├── Lamps (0..1)
+    │       │   └── Lamp (1..*)
+    │       │       ├── Name (1)
+    │       │       ├── Guid (1)
+    │       │       ├── Id (0..1)
+    │       │       └── FlowGuid (0..1)
+    │       ├── Conditions (0..1)
+    │       │   └── Condition (1..*)
+    │       │       ├── Name (1)
+    │       │       ├── Guid (1)
+    │       │       ├── Id (0..1)
+    │       │       └── FlowGuid (0..1)
+    │       ├── Actions (0..1)
+    │       │   └── Action (1..*)
+    │       │       ├── Name (1)
+    │       │       ├── Guid (1)
+    │       │       ├── Id (0..1)
+    │       │       └── FlowGuid (0..1)
     │       └── Works (0..1)
     │           └── Work (1..*)
     │               ├── Name (1)
@@ -393,6 +417,10 @@ SequenceControlSubmodel
 
 **Key Relationships:**
 - **Work.FlowGuid** → references **Flow.Guid**
+- **Button.FlowGuid** → references **Flow.Guid**
+- **Lamp.FlowGuid** → references **Flow.Guid**
+- **Condition.FlowGuid** → references **Flow.Guid**
+- **Action.FlowGuid** → references **Flow.Guid**
 - **ApiCall.ApiDef** → references **ApiDef.Guid**
 - **Arrow.Source/Target** → references **Work.Guid** or **Call.Guid** (same level)
 - **Call-level Arrows** connect **Call** elements only
@@ -462,6 +490,10 @@ The System includes the System structure defined in <<_element_hierarchy>>.
 |Works            |"https://dualsoft.com/aas/plural/works"          |SMC         |Sub works collection            |0..1
 |ApiDefs          |"https://dualsoft.com/aas/plural/apiDefs"        |SMC         |Sub ApiDefs collection          |0..1
 |ApiCalls         |"https://dualsoft.com/aas/plural/apiCalls"       |SMC         |Sub ApiCalls collection         |0..1
+|Buttons          |"https://dualsoft.com/aas/plural/buttons"        |SMC         |Sub buttons collection          |0..1
+|Lamps            |"https://dualsoft.com/aas/plural/lamps"          |SMC         |Sub lamps collection            |0..1
+|Conditions       |"https://dualsoft.com/aas/plural/conditions"     |SMC         |Sub conditions collection       |0..1
+|Actions          |"https://dualsoft.com/aas/plural/actions"        |SMC         |Sub actions collection          |0..1
 |===
 
 ==== ApiDefs
@@ -507,6 +539,58 @@ The System includes the System structure defined in <<_element_hierarchy>>.
 |Name             |"https://dualsoft.com/aas/unique/name"           |string      |Flow name                            |1
 |Guid             |"https://dualsoft.com/aas/unique/guid"           |string      |Flow unique identifier               |1
 |Id               |"https://dualsoft.com/aas/unique/id"             |integer     |Flow PK ID in DB                     |0..1
+|===
+
+==== Buttons
+
+===== Button
+
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
+|===
+|*idShort*        |*semanticId*                                     |*valueType* |*description*                        |*multiplicity*
+|Name             |"https://dualsoft.com/aas/unique/name"           |string      |Button name                          |1
+|Guid             |"https://dualsoft.com/aas/unique/guid"           |string      |Button unique identifier             |1
+|Id               |"https://dualsoft.com/aas/unique/id"             |integer     |Button PK ID in DB                   |0..1
+|FlowGuid         |"https://dualsoft.com/aas/button/flowGuid"       |string      |GUID of associated flow              |0..1
+|===
+
+==== Lamps
+
+===== Lamp
+
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
+|===
+|*idShort*        |*semanticId*                                     |*valueType* |*description*                        |*multiplicity*
+|Name             |"https://dualsoft.com/aas/unique/name"           |string      |Lamp name                            |1
+|Guid             |"https://dualsoft.com/aas/unique/guid"           |string      |Lamp unique identifier               |1
+|Id               |"https://dualsoft.com/aas/unique/id"             |integer     |Lamp PK ID in DB                     |0..1
+|FlowGuid         |"https://dualsoft.com/aas/lamp/flowGuid"         |string      |GUID of associated flow              |0..1
+|===
+
+==== Conditions
+
+===== Condition
+
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
+|===
+|*idShort*        |*semanticId*                                     |*valueType* |*description*                        |*multiplicity*
+|Name             |"https://dualsoft.com/aas/unique/name"           |string      |Condition name                       |1
+|Guid             |"https://dualsoft.com/aas/unique/guid"           |string      |Condition unique identifier          |1
+|Id               |"https://dualsoft.com/aas/unique/id"             |integer     |Condition PK ID in DB                |0..1
+|FlowGuid         |"https://dualsoft.com/aas/condition/flowGuid"    |string      |GUID of associated flow              |0..1
+|===
+
+==== Actions
+
+===== Action
+
+[width="100%",cols="10%,40%,10%,25%,15%",options="header",]
+|===
+|*idShort*        |*semanticId*                                     |*valueType* |*description*                        |*multiplicity*
+|Name             |"https://dualsoft.com/aas/unique/name"           |string      |Action name                          |1
+|Guid             |"https://dualsoft.com/aas/unique/guid"           |string      |Action unique identifier             |1
+|Id               |"https://dualsoft.com/aas/unique/id"             |integer     |Action PK ID in DB                   |0..1
+|FlowGuid         |"https://dualsoft.com/aas/action/flowGuid"       |string      |GUID of associated flow              |0..1
 |===
 
 ==== Works
@@ -956,7 +1040,7 @@ Implementations MUST validate:
 [cols="40%,60%",options="header"]
 |===
 |*Rule*           |*Description*
-|VR-030           |FlowGuid references MUST point to existing Flow elements
+|VR-030           |FlowGuid references in Work, Button, Lamp, Condition, and Action MUST point to existing Flow elements
 |VR-031           |ApiDef references in ApiCall MUST point to existing ApiDef elements
 |VR-032           |Source references in Arrow MUST point to existing Work or Call elements
 |VR-033           |Target references in Arrow MUST point to existing Work or Call elements
@@ -1090,6 +1174,39 @@ Implementations MUST validate:
             ]
           }
         ],
+        "Buttons": [
+          {
+            "Name": "Start Button",
+            "Guid": "button-11111111-aaaa-bbbb-cccc-111111111111",
+            "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          },
+          {
+            "Name": "Stop Button", 
+            "Guid": "button-22222222-aaaa-bbbb-cccc-222222222222",
+            "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          }
+        ],
+        "Lamps": [
+          {
+            "Name": "Status Lamp",
+            "Guid": "lamp-11111111-dddd-eeee-ffff-111111111111",
+            "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          }
+        ],
+        "Conditions": [
+          {
+            "Name": "Part Present",
+            "Guid": "condition-11111111-1111-2222-3333-111111111111",
+            "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          }
+        ],
+        "Actions": [
+          {
+            "Name": "Process Complete",
+            "Guid": "action-11111111-4444-5555-6666-111111111111",
+            "FlowGuid": "flow-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          }
+        ],
         "ApiCalls": [
           {
             "Name": "Start Command",
@@ -1191,39 +1308,101 @@ Implementations MUST validate:
     "System": [
       {
         "Name": "Cell A Controller",
-        "Guid": "cell-a-ctrl-1111-2222-3333-444455556666"
+        "Guid": "cell-a-ctrl-1111-2222-3333-444455556666",
+        "Flows": [
+          {
+            "Name": "Cell A Production Flow",
+            "Guid": "cell-a-flow-aaaa-bbbb-cccc-dddd11111111"
+          }
+        ],
+        "Works": [
+          {
+            "Name": "Cell A Processing",
+            "Guid": "cell-a-work-1234-abcd-5678-efgh901234567",
+            "FlowGuid": "cell-a-flow-aaaa-bbbb-cccc-dddd11111111",
+            "Period": 45.0
+          }
+        ],
+        "Buttons": [
+          {
+            "Name": "Cell A Start",
+            "Guid": "cell-a-btn-1111-2222-3333-444455556666",
+            "FlowGuid": "cell-a-flow-aaaa-bbbb-cccc-dddd11111111"
+          }
+        ],
+        "Lamps": [
+          {
+            "Name": "Cell A Status",
+            "Guid": "cell-a-lamp-1111-2222-3333-444455556666",
+            "FlowGuid": "cell-a-flow-aaaa-bbbb-cccc-dddd11111111"
+          }
+        ]
       },
       {
         "Name": "Cell B Controller",
-        "Guid": "cell-b-ctrl-2222-3333-4444-555566667777"
+        "Guid": "cell-b-ctrl-2222-3333-4444-555566667777",
+        "Flows": [
+          {
+            "Name": "Cell B Production Flow",
+            "Guid": "cell-b-flow-bbbb-cccc-dddd-eeee22222222"
+          }
+        ],
+        "Works": [
+          {
+            "Name": "Cell B Processing",
+            "Guid": "cell-b-work-5678-efgh-9012-ijkl345678901",
+            "FlowGuid": "cell-b-flow-bbbb-cccc-dddd-eeee22222222",
+            "Period": 60.0
+          }
+        ],
+        "Buttons": [
+          {
+            "Name": "Cell B Start",
+            "Guid": "cell-b-btn-2222-3333-4444-555566667777",
+            "FlowGuid": "cell-b-flow-bbbb-cccc-dddd-eeee22222222"
+          }
+        ],
+        "Lamps": [
+          {
+            "Name": "Cell B Status",
+            "Guid": "cell-b-lamp-2222-3333-4444-555566667777",
+            "FlowGuid": "cell-b-flow-bbbb-cccc-dddd-eeee22222222"
+          }
+        ]
+      },
+      {
+        "Name": "Quality Controller",
+        "Guid": "quality-ctrl-3333-4444-5555-666677778888",
+        "Flows": [
+          {
+            "Name": "Quality Check Flow",
+            "Guid": "quality-flow-cccc-dddd-eeee-ffff33333333"
+          }
+        ],
+        "Works": [
+          {
+            "Name": "Quality Check",
+            "Guid": "quality-work-9012-ijkl-3456-mnop789012345",
+            "FlowGuid": "quality-flow-cccc-dddd-eeee-ffff33333333"
+          }
+        ],
+        "Conditions": [
+          {
+            "Name": "Quality Pass",
+            "Guid": "quality-cond-3333-4444-5555-666677778888",
+            "FlowGuid": "quality-flow-cccc-dddd-eeee-ffff33333333"
+          }
+        ],
+        "Actions": [
+          {
+            "Name": "Mark Complete",
+            "Guid": "quality-action-3333-4444-5555-666677778888",
+            "FlowGuid": "quality-flow-cccc-dddd-eeee-ffff33333333"
+          }
+        ]
       }
     ]
   },
-  "Flows": [
-    {
-      "Name": "Coordinated Production",
-      "Guid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff"
-    }
-  ],
-  "Works": [
-    {
-      "Name": "Cell A Processing",
-      "Guid": "cell-a-work-1234-abcd-5678-efgh901234567",
-      "FlowGuid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff",
-      "Period": 45.0
-    },
-    {
-      "Name": "Cell B Processing",
-      "Guid": "cell-b-work-5678-efgh-9012-ijkl345678901",
-      "FlowGuid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff",
-      "Period": 60.0
-    },
-    {
-      "Name": "Quality Check",
-      "Guid": "quality-work-9012-ijkl-3456-mnop789012345",
-      "FlowGuid": "coord-flow-aaaa-bbbb-cccc-ddddeeeefffff"
-    }
-  ],
   "Arrows": [
     {
       "Name": "A to Quality",
