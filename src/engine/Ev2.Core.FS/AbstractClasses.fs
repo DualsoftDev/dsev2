@@ -33,6 +33,12 @@ and [<AbstractClass>] DsSystemEntity() =
     member x.System  = x.RawParent >>= tryCast<DsSystem>
     member x.Project = x.RawParent >>= _.RawParent >>= tryCast<Project>
 
+and [<AbstractClass>] DsSystemEntityWithFlow() =
+    inherit DsSystemEntity()
+    member val FlowGuid = noneGuid with get, set
+    member x.Flow:Flow option = x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
+
+
 and [<AbstractClass>] FlowEntity() =
     inherit RtUnique()
     member x.Flow    = x.RawParent >>= tryCast<Flow>
@@ -286,14 +292,11 @@ and DsAction() = // Create
 
 // see static member Create
 and Work() = // Create
-    inherit DsSystemEntity()
+    inherit DsSystemEntityWithFlow()
 
     interface IRtWork
     member val internal RawCalls  = ResizeArray<Call>() with get, set
     member val internal RawArrows = ResizeArray<ArrowBetweenCalls>() with get, set
-    member x.Flow:Flow option = x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
-
-    member val FlowGuid = noneGuid with get, set
 
     member val Motion     = nullString with get, set
     member val Script     = nullString with get, set
