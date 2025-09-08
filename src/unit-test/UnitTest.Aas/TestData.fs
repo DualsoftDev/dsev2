@@ -15,39 +15,7 @@ let dsJson = """
       "RuntimeType": "Flow",
       "Id": 1,
       "Name": "MainFlow",
-      "Guid": "0854a365-afb1-43d8-b853-203932dc1e89",
-      "Buttons": [
-        {
-          "RuntimeType": "Button",
-          "Id": 1,
-          "Name": "MyButton1",
-          "Guid": "25ab316a-2d49-4365-a632-2eeaab822375"
-        }
-      ],
-      "Lamps": [
-        {
-          "RuntimeType": "Lamp",
-          "Id": 1,
-          "Name": "MyLamp1",
-          "Guid": "4531a565-1fc0-4fce-8bec-6b58292dee21"
-        }
-      ],
-      "Conditions": [
-        {
-          "RuntimeType": "Condition",
-          "Id": 1,
-          "Name": "MyCondition1",
-          "Guid": "1dd7a13f-e0e2-4eac-af62-d75ca7a20d1d"
-        }
-      ],
-      "Actions": [
-        {
-          "RuntimeType": "Action",
-          "Id": 1,
-          "Name": "MyAction1",
-          "Guid": "c0a40935-fbca-4dd6-9883-d927bf4a93a9"
-        }
-      ]
+      "Guid": "0854a365-afb1-43d8-b853-203932dc1e89"
     }
   ],
   "Works": [
@@ -195,6 +163,42 @@ let dsJson = """
       "InSymbol": "XTag2",
       "OutSymbol": "YTag2"
     }
+  ],
+  "Buttons": [
+    {
+      "RuntimeType": "Button",
+      "Id": 1,
+      "Name": "MyButton1",
+      "Guid": "25ab316a-2d49-4365-a632-2eeaab822375",
+      "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+    }
+  ],
+  "Lamps": [
+    {
+      "RuntimeType": "Lamp",
+      "Id": 1,
+      "Name": "MyLamp1",
+      "Guid": "4531a565-1fc0-4fce-8bec-6b58292dee21",
+      "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+    }
+  ],
+  "Conditions": [
+    {
+      "RuntimeType": "Condition",
+      "Id": 1,
+      "Name": "MyCondition1",
+      "Guid": "1dd7a13f-e0e2-4eac-af62-d75ca7a20d1d",
+      "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+    }
+  ],
+  "Actions": [
+    {
+      "RuntimeType": "Action",
+      "Id": 1,
+      "Name": "MyAction1",
+      "Guid": "c0a40935-fbca-4dd6-9883-d927bf4a93a9",
+      "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+    }
   ]
 }
 """
@@ -237,39 +241,60 @@ let dsProject = getDsProjectJson "Data Source=:memory:;Version=3;BusyTimeout=200
           "RuntimeType": "Flow",
           "Id": 5,
           "Name": "MainFlow",
-          "Guid": "0854a365-afb1-43d8-b853-203932dc1e89",
-          "Buttons": [
-            {
-              "RuntimeType": "Button",
-              "Id": 5,
-              "Name": "MyButton1",
-              "Guid": "25ab316a-2d49-4365-a632-2eeaab822375"
-            }
-          ],
-          "Lamps": [
-            {
-              "RuntimeType": "Lamp",
-              "Id": 5,
-              "Name": "MyLamp1",
-              "Guid": "4531a565-1fc0-4fce-8bec-6b58292dee21"
-            }
-          ],
-          "Conditions": [
-            {
-              "RuntimeType": "Condition",
-              "Id": 5,
-              "Name": "MyCondition1",
-              "Guid": "1dd7a13f-e0e2-4eac-af62-d75ca7a20d1d"
-            }
-          ],
-          "Actions": [
-            {
-              "RuntimeType": "Action",
-              "Id": 5,
-              "Name": "MyAction1",
-              "Guid": "c0a40935-fbca-4dd6-9883-d927bf4a93a9"
-            }
-          ]
+          "Guid": "0854a365-afb1-43d8-b853-203932dc1e89"
+        }
+      ],
+      "ApiDefs": [
+        {
+          "RuntimeType": "ApiDef",
+          "Id": 9,
+          "Name": "ApiDef1a",
+          "Guid": "62663164-6c91-4768-9855-548cf3be74db",
+          "IsPush": true,
+          "TxGuid": "79e1fd10-12a3-4b69-9a0d-7f81185573e8",
+          "RxGuid": "79e1fd10-12a3-4b69-9a0d-7f81185573e8"
+        },
+        {
+          "RuntimeType": "ApiDef",
+          "Id": 10,
+          "Name": "UnusedApi",
+          "Guid": "7904be5c-98c6-47e3-b922-de468b6183b8",
+          "IsPush": true,
+          "TxGuid": "7ab686ee-a7c6-4b88-a979-a1f3e7daa757",
+          "RxGuid": "7ab686ee-a7c6-4b88-a979-a1f3e7daa757"
+        }
+      ],
+      "ApiCalls": [
+        {
+          "RuntimeType": "ApiCall",
+          "Id": 9,
+          "Name": "ApiCall1a",
+          "Guid": "ac98ee1a-70e9-46c5-844f-d65c3d7a8157",
+          "ApiDef": "62663164-6c91-4768-9855-548cf3be74db",
+          "InAddress": "InAddressX0",
+          "OutAddress": "OutAddress1",
+          "InSymbol": "XTag1",
+          "OutSymbol": "YTag2",
+          "ValueSpec": "{\r\n  \"valueType\": \"Double\",\r\n  \"value\": {\r\n    \"Case\": \"Ranges\",\r\n    \"Fields\": [\r\n      [\r\n        {\r\n          \"Lower\": null,\r\n          \"Upper\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 3.14,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          }\r\n        },\r\n        {\r\n          \"Lower\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 5.0,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          },\r\n          \"Upper\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 6.0,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          }\r\n        },\r\n        {\r\n          \"Lower\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 7.1,\r\n                \"Item2\": {\r\n                  \"Case\": \"Closed\"\r\n                }\r\n              }\r\n            ]\r\n          },\r\n          \"Upper\": null\r\n        }\r\n      ]\r\n    ]\r\n  }\r\n}"
+        },
+        {
+          "RuntimeType": "ApiCall",
+          "Id": 10,
+          "Name": "ApiCall1b",
+          "Guid": "f38e2525-aaee-4b75-942f-e3d813414c61",
+          "ApiDef": "7904be5c-98c6-47e3-b922-de468b6183b8",
+          "InAddress": "X0",
+          "OutAddress": "Y1",
+          "InSymbol": "XTag2",
+          "OutSymbol": "YTag2"
+        }
+      ],
+      "Flows": [
+        {
+          "RuntimeType": "Flow",
+          "Id": 5,
+          "Name": "MainFlow",
+          "Guid": "0854a365-afb1-43d8-b853-203932dc1e89"
         }
       ],
       "Works": [
@@ -416,6 +441,42 @@ let dsProject = getDsProjectJson "Data Source=:memory:;Version=3;BusyTimeout=200
           "OutAddress": "Y1",
           "InSymbol": "XTag2",
           "OutSymbol": "YTag2"
+        }
+      ],
+      "Buttons": [
+        {
+          "RuntimeType": "Button",
+          "Id": 5,
+          "Name": "MyButton1",
+          "Guid": "25ab316a-2d49-4365-a632-2eeaab822375",
+          "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+        }
+      ],
+      "Lamps": [
+        {
+          "RuntimeType": "Lamp",
+          "Id": 5,
+          "Name": "MyLamp1",
+          "Guid": "4531a565-1fc0-4fce-8bec-6b58292dee21",
+          "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+        }
+      ],
+      "Conditions": [
+        {
+          "RuntimeType": "Condition",
+          "Id": 5,
+          "Name": "MyCondition1",
+          "Guid": "1dd7a13f-e0e2-4eac-af62-d75ca7a20d1d",
+          "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
+        }
+      ],
+      "Actions": [
+        {
+          "RuntimeType": "Action",
+          "Id": 5,
+          "Name": "MyAction1",
+          "Guid": "c0a40935-fbca-4dd6-9883-d927bf4a93a9",
+          "FlowGuid": "0854a365-afb1-43d8-b853-203932dc1e89"
         }
       ]
     }
