@@ -44,10 +44,14 @@ module MiniSample =
         // Flow 생성
         let flow =
             Flow.Create(Name = "TestFlow")
-            |> tee (fun f ->
-                f.AddButtons [ new DsButton(Name="Button1") ]
-                f.AddLamps [ new Lamp(Name="Lamp1") ]
-            )
+        
+        // UI 요소 생성
+        let button1 = DsButton.Create(Name = "Button1")
+        let lamp1 = Lamp.Create(Name = "Lamp1")
+        
+        // UI 요소들의 Flow 설정
+        button1.FlowGuid <- Some flow.Guid
+        lamp1.FlowGuid <- Some flow.Guid
 
         // Work 생성
         let work1 =
@@ -110,6 +114,8 @@ module MiniSample =
         [ flow] |> system.AddFlows
         [ apiCall] |> system.AddApiCalls
         [ apiCall] |> call1.AddApiCalls
+        [ button1 ] |> system.AddButtons
+        [ lamp1 ] |> system.AddLamps
 
         // Project에 System 추가
         project.AddActiveSystem system

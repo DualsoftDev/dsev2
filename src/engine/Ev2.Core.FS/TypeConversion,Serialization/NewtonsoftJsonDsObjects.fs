@@ -72,6 +72,12 @@ module rec NewtonsoftJsonObjects =
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
     [<AbstractClass>]
+    type NjSystemEntityWithFlow() =
+        inherit NjSystemEntity()
+        member val FlowGuid = null:string with get, set
+        [<JsonIgnore>] member x.Flow = x.System |-> (fun s -> s.Flows |> tryFind(fun (f:NjFlow) -> f.Guid.ToString() = x.FlowGuid))
+
+    [<AbstractClass>]
     type NjFlowEntity() =
         inherit NjUnique()
         [<JsonIgnore>] member x.Flow    = x.RawParent >>= tryCast<NjFlow>
@@ -129,7 +135,11 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 102)>] member val Works    = [||]:NjWork[]    with get, set
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
-        [<JsonProperty(Order = 104)>] member val ApiCalls = [||]:NjApiCall[] with get, set
+        [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
+        [<JsonProperty(Order = 106)>] member val Buttons    = [||]:NjButton[]    with get, set
+        [<JsonProperty(Order = 107)>] member val Lamps      = [||]:NjLamp[]      with get, set
+        [<JsonProperty(Order = 108)>] member val Conditions = [||]:NjCondition[] with get, set
+        [<JsonProperty(Order = 109)>] member val Actions    = [||]:NjAction[]    with get, set
 
         static member Create() = createExtended<NjSystem>()
 
@@ -151,6 +161,10 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeArrows  () = x.Arrows  .NonNullAny()
         member x.ShouldSerializeApiDefs () = x.ApiDefs .NonNullAny()
         member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
+        member x.ShouldSerializeButtons    () = x.Buttons   .NonNullAny()
+        member x.ShouldSerializeLamps      () = x.Lamps     .NonNullAny()
+        member x.ShouldSerializeConditions () = x.Conditions.NonNullAny()
+        member x.ShouldSerializeActions    () = x.Actions   .NonNullAny()
 
 
         [<OnSerializing>]
@@ -162,59 +176,48 @@ module rec NewtonsoftJsonObjects =
 
 
         member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[],
-                           apiDefs:NjApiDef[], apiCalls:NjApiCall[]) =
+                           apiDefs:NjApiDef[], apiCalls:NjApiCall[],
+                           buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]) =
             x.Flows    <- flows
             x.Works    <- works
             x.Arrows   <- arrows
             x.ApiDefs  <- apiDefs
             x.ApiCalls <- apiCalls
-            x
-
-    type NjFlow () = // Create, Initialize, ShouldSerializeActions, ShouldSerializeButtons, ShouldSerializeConditions, ShouldSerializeLamps
-        inherit NjSystemEntity()
-        interface INjFlow
-
-        [<JsonProperty(Order = 101)>] member val Buttons    = [||]:NjButton    []    with get, set
-        [<JsonProperty(Order = 102)>] member val Lamps      = [||]:NjLamp      []    with get, set
-        [<JsonProperty(Order = 103)>] member val Conditions = [||]:NjCondition []    with get, set
-        [<JsonProperty(Order = 104)>] member val Actions    = [||]:NjAction    []    with get, set
-
-        static member Create() = createExtended<NjFlow>()
-
-        member x.ShouldSerializeButtons    () = x.Buttons   .NonNullAny()
-        member x.ShouldSerializeLamps      () = x.Lamps     .NonNullAny()
-        member x.ShouldSerializeConditions () = x.Conditions.NonNullAny()
-        member x.ShouldSerializeActions    () = x.Actions   .NonNullAny()
-
-
-
-        member x.Initialize(buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]) =
             x.Buttons    <- buttons
             x.Lamps      <- lamps
             x.Conditions <- conditions
             x.Actions    <- actions
             x
 
+    type NjFlow () = // Create, Initialize
+        inherit NjSystemEntity()
+        interface INjFlow
+
+        static member Create() = createExtended<NjFlow>()
+
+        member x.Initialize() =
+            x
+
     type NjButton() = // Create
-        inherit NjFlowEntity()
+        inherit NjSystemEntityWithFlow()
 
         interface INjButton
         static member Create() = createExtended<NjButton>()
 
     type NjLamp() = // Create
-        inherit NjFlowEntity()
+        inherit NjSystemEntityWithFlow()
 
         interface INjLamp
         static member Create() = createExtended<NjLamp>()
 
     type NjCondition() = // Create
-        inherit NjFlowEntity()
+        inherit NjSystemEntityWithFlow()
 
         interface INjCondition
         static member Create() = createExtended<NjCondition>()
 
     type NjAction() = // Create
-        inherit NjFlowEntity()
+        inherit NjSystemEntityWithFlow()
 
         interface INjAction
         static member Create() = createExtended<NjAction>()
@@ -404,10 +407,16 @@ module rec NewtonsoftJsonObjects =
                 let rtc = njc |> getRuntimeObject<Call>
                 ()
 
-            | ( (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall)
-            |   (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) )  ->
+            | ( (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
                 ()
+                
+            | ( (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ) ->
+                (* UI 요소들도 replicateProperties 호출 필요 *)
+                match njUnique |-> _.RuntimeObject with
+                | Some runtimeObj when isItNotNull runtimeObj ->
+                    replicateProperties runtimeObj njUnique.Value |> ignore
+                | _ -> ()
 
             | _ ->
                 failwith "ERROR.  확장 필요?"
@@ -484,39 +493,32 @@ module rec NewtonsoftJsonObjects =
                     ArrowBetweenWorks.Create(s2guid a.Source, s2guid a.Target, arrowType)
                     |> replicateProperties a)
 
+            // UI 요소들의 RuntimeObject 생성
+            njs.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton.Create()    |> replicateProperties z)
+            njs.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z)
+            njs.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z)
+            njs.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z)
+            
             let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
             let apiDefs  = njs.ApiDefs  |-> getRuntimeObject<ApiDef>
             let apiCalls = njs.ApiCalls |-> getRuntimeObject<ApiCall>
+            let buttons    = njs.Buttons    |-> getRuntimeObject<DsButton>
+            let lamps      = njs.Lamps      |-> getRuntimeObject<Lamp>
+            let conditions = njs.Conditions |-> getRuntimeObject<DsCondition>
+            let actions    = njs.Actions    |-> getRuntimeObject<DsAction>
+            
             let rts =
-                DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls)
+                DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions)
                 |> replicateProperties njs
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
-            njf.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton.Create()    |> replicateProperties z)
-            njf.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z)
-            njf.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z)
-            njf.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z)
-
-
-
-            let buttons    = njf.Buttons    |-> getRuntimeObject<DsButton>
-            let lamps      = njf.Lamps      |-> getRuntimeObject<Lamp>
-            let conditions = njf.Conditions |-> getRuntimeObject<DsCondition>
-            let actions    = njf.Actions    |-> getRuntimeObject<DsAction>
-
+            // Flow는 이제 UI 요소를 직접 소유하지 않음
             let rtFlow =
-                Flow.Create(buttons, lamps, conditions, actions)
+                Flow.Create()
                 |> replicateProperties njf
 
-            let all:NjUnique seq =
-                njf.Buttons     .Cast<NjUnique>()
-                @ njf.Lamps     .Cast<NjUnique>()
-                @ njf.Conditions.Cast<NjUnique>()
-                @ njf.Actions   .Cast<NjUnique>()
-            all |> iter (fun z -> z.RawParent <- Some njf)
-
-            njf.RuntimeObject <-  rtFlow
+            njf.RuntimeObject <- rtFlow
             ()
 
         | :? NjWork as njw ->
@@ -724,7 +726,11 @@ module Ds2JsonModule =
                         let arrows   = rt.Arrows   |-> _.ToNj<NjArrow>()  |> toArray
                         let apiDefs  = rt.ApiDefs  |-> _.ToNj<NjApiDef>() |> toArray
                         let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
-                        z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
+                        let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
+                        let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
+                        let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
+                        let actions    = rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
+                        z.Initialize(flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions) |> ignore
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
 
@@ -733,11 +739,8 @@ module Ds2JsonModule =
                     NjFlow.Create()
                     |> replicateProperties rt
                     |> tee(fun z ->
-                        let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
-                        let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
-                        let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                        let actions    = rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
-                        z.Initialize(buttons, lamps, conditions, actions) |> ignore)
+                        // Flow는 이제 UI 요소를 직접 소유하지 않음
+                        z.Initialize() |> ignore)
                     :> INjUnique
 
                 | :? Work as w ->

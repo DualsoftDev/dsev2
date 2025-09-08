@@ -36,7 +36,11 @@ and [<AbstractClass>] DsSystemEntity() =
 and [<AbstractClass>] DsSystemEntityWithFlow() =
     inherit DsSystemEntity()
     member val FlowGuid = noneGuid with get, set
-    member x.Flow:Flow option = x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
+    member val FlowId = Option<Id>.None with get, set
+    member x.Flow:Flow option =
+        match x.FlowId with
+        | Some id -> x.System |-> _.Flows >>= tryFind(fun f -> f.Id = Some id)
+        | None -> x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
 
 
 and [<AbstractClass>] FlowEntity() =
@@ -190,6 +194,10 @@ and DsSystem() = // Create
     member val internal RawArrows   = ResizeArray<ArrowBetweenWorks>() with get, set
     member val internal RawApiDefs  = ResizeArray<ApiDef>() with get, set
     member val internal RawApiCalls = ResizeArray<ApiCall>() with get, set
+    member val internal RawButtons    = ResizeArray<DsButton>() with get, set
+    member val internal RawLamps      = ResizeArray<Lamp>() with get, set
+    member val internal RawConditions = ResizeArray<DsCondition>() with get, set
+    member val internal RawActions    = ResizeArray<DsAction>() with get, set
 
     member x.OwnerProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
 
@@ -206,11 +214,16 @@ and DsSystem() = // Create
     member x.Arrows   = x.RawArrows   |> toList
     member x.ApiDefs  = x.RawApiDefs  |> toList
     member x.ApiCalls = x.RawApiCalls |> toList
+    member x.Buttons    = x.RawButtons    |> toList
+    member x.Lamps      = x.RawLamps      |> toList
+    member x.Conditions = x.RawConditions |> toList
+    member x.Actions    = x.RawActions    |> toList
 
     static member Create() = createExtended<DsSystem>()
 
     /// Creates a DsSystem with the specified components using parameterless constructor + Initialize pattern
-    static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
+    static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq,
+                         buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
         let system = createExtended<DsSystem>()
         // Clear existing components
         system.RawFlows.Clear()
@@ -218,6 +231,10 @@ and DsSystem() = // Create
         system.RawArrows.Clear()
         system.RawApiDefs.Clear()
         system.RawApiCalls.Clear()
+        system.RawButtons.Clear()
+        system.RawLamps.Clear()
+        system.RawConditions.Clear()
+        system.RawActions.Clear()
 
         // Add new components and set parent relationships
         flows    |> iter (fun f -> system.RawFlows   .Add(f); setParentI system f)
@@ -225,6 +242,10 @@ and DsSystem() = // Create
         arrows   |> iter (fun a -> system.RawArrows  .Add(a); setParentI system a)
         apiDefs  |> iter (fun d -> system.RawApiDefs .Add(d); setParentI system d)
         apiCalls |> iter (fun c -> system.RawApiCalls.Add(c); setParentI system c)
+        buttons    |> iter (fun b -> system.RawButtons   .Add(b); setParentI system b)
+        lamps      |> iter (fun l -> system.RawLamps     .Add(l); setParentI system l)
+        conditions |> iter (fun c -> system.RawConditions.Add(c); setParentI system c)
+        actions    |> iter (fun a -> system.RawActions   .Add(a); setParentI system a)
 
         system
 
@@ -234,17 +255,13 @@ and Flow() = // Create
     inherit DsSystemEntity()
 
     interface IRtFlow
-    member val internal RawButtons    = ResizeArray<DsButton>()    with get, set
-    member val internal RawLamps      = ResizeArray<Lamp>()        with get, set
-    member val internal RawConditions = ResizeArray<DsCondition>() with get, set
-    member val internal RawActions    = ResizeArray<DsAction>()    with get, set
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
-    member x.Buttons    = x.RawButtons    |> toList
-    member x.Lamps      = x.RawLamps      |> toList
-    member x.Conditions = x.RawConditions |> toList
-    member x.Actions    = x.RawActions    |> toList
+    member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flow = Some x)) |? []
+    member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flow = Some x)) |? []
+    member x.Conditions = x.System |-> (fun s -> s.Conditions |> filter (fun c -> c.Flow = Some x)) |? []
+    member x.Actions    = x.System |-> (fun s -> s.Actions    |> filter (fun a -> a.Flow = Some x)) |? []
 
     member x.Works:Work[] =
         x.System
@@ -255,36 +272,27 @@ and Flow() = // Create
         |? [||]
 
     static member Create() = createExtended<Flow>()
-    static member Create(buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
-        let flow = createExtended<Flow>()
-        // Add new components and set parent relationships
-        buttons    |> iter (fun z -> flow.RawButtons   .Add(z); z.RawParent <- Some flow)
-        lamps      |> iter (fun z -> flow.RawLamps     .Add(z); z.RawParent <- Some flow)
-        conditions |> iter (fun z -> flow.RawConditions.Add(z); z.RawParent <- Some flow)
-        actions    |> iter (fun z -> flow.RawActions   .Add(z); z.RawParent <- Some flow)
-
-        flow
 
 and DsButton() = // Create
-    inherit FlowEntity()
+    inherit DsSystemEntityWithFlow()
 
     interface IRtButton
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
-    inherit FlowEntity()
+    inherit DsSystemEntityWithFlow()
 
     interface IRtLamp
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
-    inherit FlowEntity()
+    inherit DsSystemEntityWithFlow()
 
     interface IRtCondition
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
-    inherit FlowEntity()
+    inherit DsSystemEntityWithFlow()
 
     interface IRtAction
     static member Create() = createExtended<DsAction>()

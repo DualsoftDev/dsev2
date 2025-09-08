@@ -281,10 +281,14 @@ module ORMTypeConversionModule =
                     |> ormReplicateProperties rt
 
 
-                | :? DsButton    as rt -> new ORMButton(pid)    |> ormReplicateProperties rt
-                | :? Lamp        as rt -> new ORMLamp(pid)      |> ormReplicateProperties rt
-                | :? DsCondition as rt -> new ORMCondition(pid) |> ormReplicateProperties rt
-                | :? DsAction    as rt -> new ORMAction(pid)    |> ormReplicateProperties rt
+                | :? DsSystemEntityWithFlow as rt ->
+                    let flowId = (rt.Flow >>= _.Id)
+                    match rt with
+                    | :? DsButton    as rt -> new ORMButton   (pid, flowId) |> ormReplicateProperties rt
+                    | :? Lamp        as rt -> new ORMLamp     (pid, flowId) |> ormReplicateProperties rt
+                    | :? DsCondition as rt -> new ORMCondition(pid, flowId) |> ormReplicateProperties rt
+                    | :? DsAction    as rt -> new ORMAction   (pid, flowId) |> ormReplicateProperties rt
+                    | _ -> failwith "ERROR"
 
 
                 | :? ApiCall as rt ->

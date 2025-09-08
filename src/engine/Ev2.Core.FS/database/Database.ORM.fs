@@ -28,6 +28,11 @@ module ORMTypesModule =
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
     [<AbstractClass>]
+    type ORMSystemEntityWithFlow(systemId:Id, flowId:Id option) =
+        inherit ORMSystemEntity(systemId)
+        member val FlowId = flowId with get, set
+
+    [<AbstractClass>]
     type ORMFlowEntity(flowId:Id) =
         inherit ORMUnique(ParentId=Some flowId)
         member x.FlowId with get() = x.ParentId and set v = x.ParentId <- v
@@ -148,28 +153,28 @@ module ORMTypesModule =
             x
 
 
-    type ORMButton(flowId:Id) =
-        inherit ORMFlowEntity(flowId)
+    type ORMButton(systemId:Id, flowId:Id option) =
+        inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMButton(-1)
+        new() = new ORMButton(-1, None)
         interface IORMButton
 
-    type ORMLamp(flowId:Id) =
-        inherit ORMFlowEntity(flowId)
+    type ORMLamp(systemId:Id, flowId:Id option) =
+        inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMLamp(-1)
+        new() = new ORMLamp(-1, None)
         interface IORMLamp
 
-    type ORMCondition(flowId:Id) =
-        inherit ORMFlowEntity(flowId)
+    type ORMCondition(systemId:Id, flowId:Id option) =
+        inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMCondition(-1)
+        new() = new ORMCondition(-1, None)
         interface IORMCondition
 
-    type ORMAction(flowId:Id) =
-        inherit ORMFlowEntity(flowId)
+    type ORMAction(systemId:Id, flowId:Id option) =
+        inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMAction(-1)
+        new() = new ORMAction(-1, None)
         interface IORMAction
 
 

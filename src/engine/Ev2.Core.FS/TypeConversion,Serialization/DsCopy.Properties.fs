@@ -155,10 +155,61 @@ module internal DsCopyModule =
 
 
 
-        | (:? DsButton) | (:? NjButton) | (:? ORMButton) ->  ()
-        | (:? Lamp) | (:? NjLamp) | (:? ORMLamp) ->  ()
-        | (:? DsCondition) | (:? NjCondition) | (:? ORMCondition) -> ()
-        | (:? DsAction) | (:? NjAction) | (:? ORMAction) ->  ()
+        | (:? DsButton) | (:? NjButton) | (:? ORMButton) ->
+            let s =
+                match sbx with
+                | :? DsButton  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
+                | :? NjButton  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
+                | :? ORMButton as s -> {| FlowGuid=None; FlowId=s.FlowId |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? DsButton  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
+            | :? NjButton  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+            | :? ORMButton as d -> d.FlowId<-s.FlowId
+            | _ -> failwith "ERROR"
+
+        | (:? Lamp) | (:? NjLamp) | (:? ORMLamp) ->
+            let s =
+                match sbx with
+                | :? Lamp    as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
+                | :? NjLamp  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
+                | :? ORMLamp as s -> {| FlowGuid=None; FlowId=s.FlowId |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? Lamp    as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
+            | :? NjLamp  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+            | :? ORMLamp as d -> d.FlowId<-s.FlowId
+            | _ -> failwith "ERROR"
+
+        | (:? DsCondition) | (:? NjCondition) | (:? ORMCondition) ->
+            let s =
+                match sbx with
+                | :? DsCondition  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
+                | :? NjCondition  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
+                | :? ORMCondition as s -> {| FlowGuid=None; FlowId=s.FlowId |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? DsCondition  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
+            | :? NjCondition  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+            | :? ORMCondition as d -> d.FlowId<-s.FlowId
+            | _ -> failwith "ERROR"
+
+        | (:? DsAction) | (:? NjAction) | (:? ORMAction) ->
+            let s =
+                match sbx with
+                | :? DsAction  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
+                | :? NjAction  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
+                | :? ORMAction as s -> {| FlowGuid=None; FlowId=s.FlowId |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? DsAction  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
+            | :? NjAction  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+            | :? ORMAction as d -> d.FlowId<-s.FlowId
+            | _ -> failwith "ERROR"
 
         | ( :? ArrowBetweenCalls | :? ArrowBetweenWorks
           | :? ORMArrowCall | :? ORMArrowWork

@@ -56,16 +56,19 @@ module rec TmpCompatibility =
                     yield! sys.Arrows    |> enumerates
                     yield! sys.ApiDefs   |> enumerates
                     yield! sys.ApiCalls  |> enumerates
+                    yield! sys.Buttons   |> enumerates
+                    yield! sys.Lamps     |> enumerates
+                    yield! sys.Conditions |> enumerates
+                    yield! sys.Actions   |> enumerates
                 | :? Work as work ->
                     yield! work.Calls    |> enumerates
                     yield! work.Arrows   |> enumerates
                 | :? Flow as flow ->
-                    yield! flow.Buttons    |> enumerates
-                    yield! flow.Lamps      |> enumerates
-                    yield! flow.Conditions |> enumerates
-                    yield! flow.Actions    |> enumerates
+                    // Flow는 이제 UI 요소를 직접 소유하지 않음
+                    ()
 
-                | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls)  ->
+                | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls) 
+                | (:? DsButton) | (:? Lamp) | (:? DsCondition) | (:? DsAction) ->
                     ()
                 | _ ->
                     tracefn $"Skipping {(x.GetType())} in enumerateHelper : {x.Guid}"
@@ -200,30 +203,23 @@ module rec TmpCompatibility =
 
 
 
-    type Flow with // AddActions, AddButtons, AddConditions, AddLamps, AddWorks, RemoveActions, RemoveButtons, RemoveConditions, RemoveLamps, RemoveWorks
-        // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
-        member internal x.addWorks(ws:Work seq, updateDateTime:bool) =
-            if updateDateTime then x.UpdateDateTime()
-            ws |> iter (fun w -> w.FlowGuid <- Some x.Guid)
-
-        member internal x.removeWorks(ws:Work seq, updateDateTime:bool) =
-            if updateDateTime then x.UpdateDateTime()
-            ws |> iter (fun w -> w.FlowGuid <- None)
-
+    // Button, Lamp, Condition, Action 관련 메서드 추가 (Flow에서 DsSystem으로 이동)
+    type DsSystem with
         member internal x.addButtons(buttons:DsButton seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             buttons |> iter (setParentI x)
             x.RawButtons.VerifyAddRangeAsSet(buttons)
+            
         member internal x.removeButtons(buttons:DsButton seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             buttons |> iter clearParentI
             buttons |> iter (x.RawButtons.Remove >> ignore)
 
-
         member internal x.addLamps(lamps:Lamp seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             lamps |> iter (setParentI x)
             x.RawLamps.VerifyAddRangeAsSet(lamps)
+            
         member internal x.removeLamps(lamps:Lamp seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             lamps |> iter clearParentI
@@ -233,6 +229,7 @@ module rec TmpCompatibility =
             if updateDateTime then x.UpdateDateTime()
             conditions |> iter (setParentI x)
             x.RawConditions.VerifyAddRangeAsSet(conditions)
+            
         member internal x.removeConditions(conditions:DsCondition seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             conditions |> iter clearParentI
@@ -242,14 +239,12 @@ module rec TmpCompatibility =
             if updateDateTime then x.UpdateDateTime()
             actions |> iter (setParentI x)
             x.RawActions.VerifyAddRangeAsSet(actions)
+            
         member internal x.removeActions(actions:DsAction seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             actions |> iter clearParentI
             actions |> iter (x.RawActions.Remove >> ignore)
 
-
-        member x.AddWorks        (ws:Work seq)                = x.addWorks        (ws, true)
-        member x.RemoveWorks     (ws:Work seq)                = x.removeWorks     (ws, true)
         member x.AddButtons      (buttons:DsButton seq)       = x.addButtons      (buttons, true)
         member x.RemoveButtons   (buttons:DsButton seq)       = x.removeButtons   (buttons, true)
         member x.AddLamps        (lamps:Lamp seq)             = x.addLamps        (lamps, true)
@@ -258,6 +253,21 @@ module rec TmpCompatibility =
         member x.RemoveConditions(conditions:DsCondition seq) = x.removeConditions(conditions, true)
         member x.AddActions      (actions:DsAction seq)       = x.addActions      (actions, true)
         member x.RemoveActions   (actions:DsAction seq)       = x.removeActions   (actions, true)
+
+
+
+    type Flow with // AddWorks, RemoveWorks (더 이상 Button 등을 관리하지 않음)
+        // works 들이 flow 자신의 직접 child 가 아니므로 따로 관리 함수 필요
+        member internal x.addWorks(ws:Work seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
+            ws |> iter (fun w -> w.FlowGuid <- Some x.Guid)
+
+        member internal x.removeWorks(ws:Work seq, updateDateTime:bool) =
+            if updateDateTime then x.UpdateDateTime()
+            ws |> iter (fun w -> w.FlowGuid <- None)
+
+        member x.AddWorks        (ws:Work seq)                = x.addWorks        (ws, true)
+        member x.RemoveWorks     (ws:Work seq)                = x.removeWorks     (ws, true)
 
 
 
@@ -336,7 +346,8 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
     static member CreateApiCall() = createExtended<ApiCall>()
 
     static member CreateDsSystem(flows:Flow[], works:Work[],
-        arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
+        arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[],
+        buttons:DsButton[], lamps:Lamp[], conditions:DsCondition[], actions:DsAction[]
     ) =
         let system = createExtended<DsSystem>()
         system.RawFlows.Clear()
@@ -344,16 +355,28 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
         system.RawArrows.Clear()
         system.RawApiDefs.Clear()
         system.RawApiCalls.Clear()
+        system.RawButtons.Clear()
+        system.RawLamps.Clear()
+        system.RawConditions.Clear()
+        system.RawActions.Clear()
         system.RawFlows.AddRange(flows)
         system.RawWorks.AddRange(works)
         system.RawArrows.AddRange(arrows)
         system.RawApiDefs.AddRange(apiDefs)
         system.RawApiCalls.AddRange(apiCalls)
+        system.RawButtons.AddRange(buttons)
+        system.RawLamps.AddRange(lamps)
+        system.RawConditions.AddRange(conditions)
+        system.RawActions.AddRange(actions)
         flows    |> iter (setParentI system)
         works    |> iter (setParentI system)
         arrows   |> iter (setParentI system)
         apiDefs  |> iter (setParentI system)
         apiCalls |> iter (setParentI system)
+        buttons  |> iter (setParentI system)
+        lamps    |> iter (setParentI system)
+        conditions |> iter (setParentI system)
+        actions  |> iter (setParentI system)
         system
 
 
@@ -424,7 +447,8 @@ module DsObjectUtilsModule =
 
     type DsSystem with // Create
         static member Create(flows:Flow[], works:Work[],
-            arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[]
+            arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[],
+            buttons:DsButton[], lamps:Lamp[], conditions:DsCondition[], actions:DsAction[]
         ) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let system = createExtended<DsSystem>()
@@ -433,17 +457,29 @@ module DsObjectUtilsModule =
             system.RawArrows.Clear()
             system.RawApiDefs.Clear()
             system.RawApiCalls.Clear()
+            system.RawButtons.Clear()
+            system.RawLamps.Clear()
+            system.RawConditions.Clear()
+            system.RawActions.Clear()
             system.RawFlows.AddRange(flows)
             system.RawWorks.AddRange(works)
             system.RawArrows.AddRange(arrows)
             system.RawApiDefs.AddRange(apiDefs)
             system.RawApiCalls.AddRange(apiCalls)
+            system.RawButtons.AddRange(buttons)
+            system.RawLamps.AddRange(lamps)
+            system.RawConditions.AddRange(conditions)
+            system.RawActions.AddRange(actions)
             // parent 관계 설정 추가
             flows    |> iter (setParentI system)
             works    |> iter (setParentI system)
             arrows   |> iter (setParentI system)
             apiDefs  |> iter (setParentI system)
             apiCalls |> iter (setParentI system)
+            buttons  |> iter (setParentI system)
+            lamps    |> iter (setParentI system)
+            conditions |> iter (setParentI system)
+            actions  |> iter (setParentI system)
             system
 
         static member Create() =
@@ -489,24 +525,9 @@ module DsObjectUtilsModule =
             createExtended<Call>()
 
 
-    type Flow with // Create
-        static member Create(buttons:DsButton seq, lamps:Lamp seq, conditions:DsCondition seq, actions:DsAction seq) =
-            // 매개변수가 있는 경우 확장 타입에서 initialize
-            let flow = createExtended<Flow>()
-            flow.RawButtons.Clear()
-            flow.RawLamps.Clear()
-            flow.RawConditions.Clear()
-            flow.RawActions.Clear()
-            flow.RawButtons.AddRange(buttons)
-            flow.RawLamps.AddRange(lamps)
-            flow.RawConditions.AddRange(conditions)
-            flow.RawActions.AddRange(actions)
-            buttons    |> iter (fun z -> z.RawParent <- Some flow)
-            lamps      |> iter (fun z -> z.RawParent <- Some flow)
-            conditions |> iter (fun z -> z.RawParent <- Some flow)
-            actions    |> iter (fun z -> z.RawParent <- Some flow)
-            flow
+    // Flow는 더 이상 Create 메서드로 Button 등을 받지 않음
 
+    type Flow with
         static member Create() =
             createExtended<Flow>()
 

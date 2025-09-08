@@ -89,8 +89,14 @@ module internal DbInsertModule =
                     rt.Id <- Some sysId
                     guidDicDebug[rt.Guid].Id <- Some sysId
 
-                    // flows 삽입
+                    // flows 삽입 (먼저 삽입하여 Id 획득)
                     rt.Flows |> iter _.InsertToDB(dbApi)
+
+                    // Button, Lamp, Condition, Action 삽입 (DsSystem에 속하며 Flow.Id 참조)
+                    rt.Buttons    |> iter _.InsertToDB(dbApi)
+                    rt.Lamps      |> iter _.InsertToDB(dbApi)
+                    rt.Conditions |> iter _.InsertToDB(dbApi)
+                    rt.Actions    |> iter _.InsertToDB(dbApi)
 
                     // system 의 apiCalls 를 삽입
                     rt.ApiCalls |> iter _.InsertToDB(dbApi)
@@ -147,22 +153,19 @@ module internal DbInsertModule =
                     orm.Id <- Some flowId
                     assert (guidDicDebug[rt.Guid] = orm)
 
-                    rt.Buttons    |> iter _.InsertToDB(dbApi)
-                    rt.Lamps      |> iter _.InsertToDB(dbApi)
-                    rt.Conditions |> iter _.InsertToDB(dbApi)
-                    rt.Actions    |> iter _.InsertToDB(dbApi)
+                | :? DsSystemEntityWithFlow as se when (box se :? DsButton || box se :? Lamp || box se :? DsCondition || box se :? DsAction) ->
+                    let systemId = se.System |-> _.Id |??  (fun () -> failwith "ERROR: DsSystemEntityWithFlow must have a SystemId set before inserting to DB.")
+                    let flowId = se.Flow >>= _.Id  // nullable
+                    let rtX = x :?> DsSystemEntityWithFlow
 
-                | :? FlowEntity as fe ->
-                    let flowId = fe.Flow |-> _.Id |??  (fun () -> failwith "ERROR: RtFlowEntity must have a FlowId set before inserting to DB.")
-                    let rtX = x :?> FlowEntity
-
-                    let insertFlowElement (tableName:string) (rtX:#FlowEntity, ormX:#ORMFlowEntity) =
+                    let insertSystemElement (tableName:string) (rtX:#DsSystemEntityWithFlow, ormX:#ORMSystemEntityWithFlow) =
+                            ormX.SystemId <- systemId
                             ormX.FlowId <- flowId
                             dbApi.With(fun (conn, tr) ->
                                 let xId =
                                     conn.Insert($"""INSERT INTO {tableName}
-                                                    (guid, parameter, name, flowId)
-                                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @FlowId);""", ormX, tr)
+                                                    (guid, parameter, name, systemId, flowId)
+                                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId);""", ormX, tr)
                                 rtX.Id <- Some xId
                                 ormX.Id <- Some xId
                                 assert (guidDicDebug[rtX.Guid] = ormX)
@@ -184,10 +187,10 @@ module internal DbInsertModule =
                     (* 간략 format .. *)
 
                     match box x with
-                    | :? DsButton    as rt -> let orm = rt.ToORM<ORMButton>    dbApi in insertFlowElement Tn.Button    (rtX, orm)
-                    | :? Lamp        as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertFlowElement Tn.Lamp      (rtX, orm)
-                    | :? DsCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertFlowElement Tn.Condition (rtX, orm)
-                    | :? DsAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertFlowElement Tn.Action    (rtX, orm)
+                    | :? DsButton    as rt -> let orm = rt.ToORM<ORMButton>    dbApi in insertSystemElement Tn.Button    (rtX, orm)
+                    | :? Lamp        as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertSystemElement Tn.Lamp      (rtX, orm)
+                    | :? DsCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertSystemElement Tn.Condition (rtX, orm)
+                    | :? DsAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertSystemElement Tn.Action    (rtX, orm)
                     | _ -> failwith "ERROR"
 
 

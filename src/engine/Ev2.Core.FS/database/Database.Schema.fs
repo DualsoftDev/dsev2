@@ -327,27 +327,35 @@ CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
 
 
 CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
-    , {k "flowId"}        {intKeyType} NOT NULL
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    , CONSTRAINT {Tn.Button}_uniq UNIQUE (flowId, name)
+    , {k "systemId"}      {intKeyType} NOT NULL
+    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
+    , CONSTRAINT {Tn.Button}_uniq UNIQUE (systemId, flowId, name)
 );
 
 CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
-    , {k "flowId"}        {intKeyType} NOT NULL
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    , CONSTRAINT {Tn.Lamp}_uniq UNIQUE (flowId, name)
+    , {k "systemId"}      {intKeyType} NOT NULL
+    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
+    , CONSTRAINT {Tn.Lamp}_uniq UNIQUE (systemId, flowId, name)
 );
 
 CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
-    , {k "flowId"}        {intKeyType} NOT NULL
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    , CONSTRAINT {Tn.Condition}_uniq UNIQUE (flowId, name)
+    , {k "systemId"}      {intKeyType} NOT NULL
+    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
+    , CONSTRAINT {Tn.Condition}_uniq UNIQUE (systemId, flowId, name)
 );
 
 CREATE TABLE {k Tn.Action}( {sqlUniqWithName()}
-    , {k "flowId"}        {intKeyType} NOT NULL
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE CASCADE
-    , CONSTRAINT {Tn.Action}_uniq UNIQUE (flowId, name)
+    , {k "systemId"}      {intKeyType} NOT NULL
+    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
+    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
+    , CONSTRAINT {Tn.Action}_uniq UNIQUE (systemId, flowId, name)
 );
 
 CREATE TABLE {k Tn.Enum}(
@@ -634,13 +642,13 @@ CREATE VIEW {k Vn.Button} AS
         x.{k "id"}
         , x.{k "name"}
         , x.{k "parameter"}
-        , f.{k "id"}    AS flowId
+        , x.{k "flowId"} AS flowId
         , f.{k "name"}  AS flowName
-        , s.{k "id"}    AS systemId
+        , x.{k "systemId"} AS systemId
         , s.{k "name"}  AS systemName
     FROM {k Tn.Button} x
-    JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    JOIN {k Tn.System} s ON s.id = f.systemId
+    JOIN {k Tn.System} s ON s.id = x.systemId
+    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
     ;
 
 CREATE VIEW {k Vn.Lamp} AS
@@ -648,13 +656,13 @@ CREATE VIEW {k Vn.Lamp} AS
         x.{k "id"}
         , x.{k "name"}
         , x.{k "parameter"}
-        , f.{k "id"}    AS flowId
+        , x.{k "flowId"} AS flowId
         , f.{k "name"}  AS flowName
-        , s.{k "id"}    AS systemId
+        , x.{k "systemId"} AS systemId
         , s.{k "name"}  AS systemName
     FROM {k Tn.Lamp} x
-    JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    JOIN {k Tn.System} s ON s.id = f.systemId
+    JOIN {k Tn.System} s ON s.id = x.systemId
+    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
     ;
 
 CREATE VIEW {k Vn.Condition} AS
@@ -662,13 +670,13 @@ CREATE VIEW {k Vn.Condition} AS
         x.{k "id"}
         , x.{k "name"}
         , x.{k "parameter"}
-        , f.{k "id"}    AS flowId
+        , x.{k "flowId"} AS flowId
         , f.{k "name"}  AS flowName
-        , s.{k "id"}    AS systemId
+        , x.{k "systemId"} AS systemId
         , s.{k "name"}  AS systemName
     FROM {k Tn.Condition} x
-    JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    JOIN {k Tn.System} s ON s.id = f.systemId
+    JOIN {k Tn.System} s ON s.id = x.systemId
+    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
     ;
 
 CREATE VIEW {k Vn.Action} AS
@@ -676,13 +684,13 @@ CREATE VIEW {k Vn.Action} AS
         x.{k "id"}
         , x.{k "name"}
         , x.{k "parameter"}
-        , f.{k "id"}    AS flowId
+        , x.{k "flowId"} AS flowId
         , f.{k "name"}  AS flowName
-        , s.{k "id"}    AS systemId
+        , x.{k "systemId"} AS systemId
         , s.{k "name"}  AS systemName
     FROM {k Tn.Action} x
-    JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    JOIN {k Tn.System} s ON s.id = f.systemId
+    JOIN {k Tn.System} s ON s.id = x.systemId
+    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
     ;
 
 

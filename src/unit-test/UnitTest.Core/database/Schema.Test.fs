@@ -712,7 +712,8 @@ module Schema =
 
                 let f = sys2.Flows[0]
                 let button = new DsButton(Name="NewButton")
-                f.AddButtons( [ button ])
+                button.FlowGuid <- Some f.Guid
+                sys2.AddButtons( [ button ])
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (RightOnly(arrow)) === true
                 diffs |> contains (RightOnly(button)) === true

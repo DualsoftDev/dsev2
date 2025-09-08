@@ -18,18 +18,29 @@ module CreateSampleWithHelloDsModule =
 
         let hdsFlow =
             Flow.Create(Name = "STN1")
-            |> tee (fun z ->
-                [
-                    new DsButton(Name="AutoSelect")
-                    new DsButton(Name="ManualSelect")
-                    new DsButton(Name="DrivePushBtn")
-                    new DsButton(Name="EmergencyBtn")
-                ] |> z.AddButtons
-
-                z.AddLamps      [ new Lamp(Name="MyLamp1")]
-                z.AddConditions [ new DsCondition(Name="MyCondition1")]
-                z.AddActions    [ new DsAction(Name="MyAction1")]
-            )
+        
+        // UI 요소들 생성
+        let buttons = [
+            DsButton.Create(Name="AutoSelect")
+            DsButton.Create(Name="ManualSelect")
+            DsButton.Create(Name="DrivePushBtn")
+            DsButton.Create(Name="EmergencyBtn")
+        ]
+        let lamps = [ Lamp.Create(Name="MyLamp1") ]
+        let conditions = [ DsCondition.Create(Name="MyCondition1") ]
+        let actions = [ DsAction.Create(Name="MyAction1") ]
+        
+        // UI 요소들의 Flow 설정
+        buttons |> iter (fun b -> b.FlowGuid <- Some hdsFlow.Guid)
+        lamps |> iter (fun l -> l.FlowGuid <- Some hdsFlow.Guid)
+        conditions |> iter (fun c -> c.FlowGuid <- Some hdsFlow.Guid)
+        actions |> iter (fun a -> a.FlowGuid <- Some hdsFlow.Guid)
+        
+        // System에 UI 요소들 추가
+        buttons |> hdsSystem.AddButtons
+        lamps |> hdsSystem.AddLamps
+        conditions |> hdsSystem.AddConditions
+        actions |> hdsSystem.AddActions
 
         let createWork name =
             Work.Create()

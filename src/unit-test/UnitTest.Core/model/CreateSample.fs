@@ -66,12 +66,25 @@ module CreateSampleModule =
 
             rtFlow <-
                 Flow.Create(Name = "MainFlow")
-                |> tee (fun z ->
-                    z.AddButtons    [ new DsButton(Name="MyButton1")]
-                    z.AddLamps      [ new Lamp(Name="MyLamp1")]
-                    z.AddConditions [ new DsCondition(Name="MyCondition1")]
-                    z.AddActions    [ new DsAction(Name="MyAction1")]
-                    )
+            
+            // UI 요소들 생성
+            let button1 = DsButton.Create(Name="MyButton1")
+            let lamp1 = Lamp.Create(Name="MyLamp1")
+            let condition1 = DsCondition.Create(Name="MyCondition1")
+            let action1 = DsAction.Create(Name="MyAction1")
+            
+            // UI 요소들의 Flow 설정
+            button1.FlowGuid <- Some rtFlow.Guid
+            lamp1.FlowGuid <- Some rtFlow.Guid
+            condition1.FlowGuid <- Some rtFlow.Guid
+            action1.FlowGuid <- Some rtFlow.Guid
+            
+            // System에 UI 요소들 추가
+            [button1] |> rtSystem.AddButtons
+            [lamp1] |> rtSystem.AddLamps
+            [condition1] |> rtSystem.AddConditions
+            [action1] |> rtSystem.AddActions
+            
             rtWork1 <-
                 Work.Create()
                 |> tee (fun z ->

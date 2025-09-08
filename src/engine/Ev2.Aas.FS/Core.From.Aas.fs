@@ -89,6 +89,12 @@ module CoreFromAas =
             let works    = smc.GetSMC "Works"    >>= (_.GetSMC("Work"))    |-> NjWork.FromSMC
             let flows    = smc.GetSMC "Flows"    >>= (_.GetSMC("Flow"))    |-> NjFlow.FromSMC
             let arrows   = smc.GetSMC "Arrows"   >>= (_.GetSMC("Arrow"))   |-> NjArrow.FromSMC
+            
+            // UI 요소들 읽기
+            let buttons    = smc.GetSMC "Buttons"    >>= (_.GetSMC("Button"))    |-> NjButton.FromSMC
+            let lamps      = smc.GetSMC "Lamps"      >>= (_.GetSMC("Lamp"))      |-> NjLamp.FromSMC
+            let conditions = smc.GetSMC "Conditions" >>= (_.GetSMC("Condition")) |-> NjCondition.FromSMC
+            let actions    = smc.GetSMC "Actions"    >>= (_.GetSMC("Action"))    |-> NjAction.FromSMC
 
             NjSystem.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
@@ -104,7 +110,11 @@ module CoreFromAas =
                 , Works = works
                 , Arrows = arrows
                 , ApiDefs = apiDefs
-                , ApiCalls = apiCalls)
+                , ApiCalls = apiCalls
+                , Buttons = buttons
+                , Lamps = lamps
+                , Conditions = conditions
+                , Actions = actions)
             |> tee (readAasExtensionProperties smc)
 
     type NjArrow with // FromSMC
@@ -119,34 +129,35 @@ module CoreFromAas =
 
     type NjButton with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjButton =
-            createSimpleFromSMC (fun () -> NjButton.Create()) smc
-            |> tee (readAasExtensionProperties smc)
+            let btn = createSimpleFromSMC (fun () -> NjButton.Create()) smc
+            btn.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            btn |> tee (readAasExtensionProperties smc)
 
     type NjLamp with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjLamp =
-            createSimpleFromSMC (fun () -> NjLamp.Create()) smc
-            |> tee (readAasExtensionProperties smc)
+            let lamp = createSimpleFromSMC (fun () -> NjLamp.Create()) smc
+            lamp.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            lamp |> tee (readAasExtensionProperties smc)
 
     type NjCondition with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCondition =
-            createSimpleFromSMC (fun () -> NjCondition.Create()) smc
-            |> tee (readAasExtensionProperties smc)
+            let cond = createSimpleFromSMC (fun () -> NjCondition.Create()) smc
+            cond.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            cond |> tee (readAasExtensionProperties smc)
 
     type NjAction with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjAction =
-            createSimpleFromSMC (fun () -> NjAction.Create()) smc
-            |> tee (readAasExtensionProperties smc)
+            let act = createSimpleFromSMC (fun () -> NjAction.Create()) smc
+            act.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            act |> tee (readAasExtensionProperties smc)
 
     type NjFlow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
-            let buttons     = smc.TryFindChildSMC "Buttons"     |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Button")     |? [||] |-> NjButton.FromSMC
-            let lamps       = smc.TryFindChildSMC "Lamps"       |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Lamp")       |? [||] |-> NjLamp.FromSMC
-            let conditions  = smc.TryFindChildSMC "Conditions"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Condition")  |? [||] |-> NjCondition.FromSMC
-            let actions     = smc.TryFindChildSMC "Actions"     |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Action")     |? [||] |-> NjAction.FromSMC
+            // Flow는 이제 UI 요소를 직접 소유하지 않음
 
-            NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter, Buttons = buttons, Lamps = lamps, Conditions = conditions, Actions = actions)
+            NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter)
             |> tee (readAasExtensionProperties smc)
 
 

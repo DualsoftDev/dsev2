@@ -57,22 +57,48 @@ module internal Db2DsImpl =
             let rtSystem = ormSystem.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR")
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
+            
+            // Load Buttons, Lamps, Conditions, Actions for System
+            let sys = {| SystemId = ormSystem.Id.Value |}
+            let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE systemId = @SystemId", sys, tr)
+            let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE systemId = @SystemId", sys, tr)
+            let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE systemId = @SystemId", sys, tr)
+            let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE systemId = @SystemId", sys, tr)
+
+            for ormButton in ormButtons do
+                let button = createExtended<DsButton>() |> replicateProperties ormButton
+                button.FlowId <- ormButton.FlowId
+                setParentI s button
+                s.RawButtons.Add button
+                handleAfterSelect button
+                
+            for ormLamp in ormLamps do
+                let lamp = createExtended<Lamp>() |> replicateProperties ormLamp
+                lamp.FlowId <- ormLamp.FlowId
+                setParentI s lamp
+                s.RawLamps.Add lamp
+                handleAfterSelect lamp
+                
+            for ormCondition in ormConditions do
+                let condition = createExtended<DsCondition>() |> replicateProperties ormCondition
+                condition.FlowId <- ormCondition.FlowId
+                setParentI s condition
+                s.RawConditions.Add condition
+                handleAfterSelect condition
+                
+            for ormAction in ormActions do
+                let action = createExtended<DsAction>() |> replicateProperties ormAction
+                action.FlowId <- ormAction.FlowId
+                setParentI s action
+                s.RawActions.Add action
+                handleAfterSelect action
+
+            // Load Flows
             let rtFlows = [
                 let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
 
                 for ormFlow in orms do
-                    let f = {| FlowId = ormFlow.Id |}
-                    let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE flowId = @FlowId", f,  tr)
-                    let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE flowId = @FlowId", f,  tr)
-                    let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE flowId = @FlowId", f,  tr)
-                    let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE flowId = @FlowId", f,  tr)
-
-                    let buttons    = ormButtons    |-> (fun z -> new DsButton() |> replicateProperties z) |> toArray
-                    let lamps      = ormLamps      |-> (fun z -> new Lamp() |> replicateProperties z) |> toArray
-                    let conditions = ormConditions |-> (fun z -> new DsCondition() |> replicateProperties z) |> toArray
-                    let actions    = ormActions    |-> (fun z -> new DsAction() |> replicateProperties z) |> toArray
-
-                    let flow = Flow.Create(buttons, lamps, conditions, actions)
+                    let flow = Flow.Create()
                     setParentI s flow
                     flow
                     |> replicateProperties ormFlow
@@ -80,6 +106,16 @@ module internal Db2DsImpl =
             ]
 
             s.addFlows(rtFlows, false)
+            
+            // Set FlowGuid for Buttons, Lamps, Conditions, Actions
+            for button in s.Buttons do
+                button.FlowGuid <- button.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
+            for lamp in s.Lamps do
+                lamp.FlowGuid <- lamp.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
+            for condition in s.Conditions do
+                condition.FlowGuid <- condition.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
+            for action in s.Actions do
+                action.FlowGuid <- action.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
 
             let rtApiCalls = [
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
@@ -119,6 +155,7 @@ module internal Db2DsImpl =
                     |> tee handleAfterSelect
                     |> tee(fun w ->
                         w.FlowGuid <- rtFlows |> tryFind(fun f -> f.Id = orm.FlowId) |-> _.Guid
+                        w.FlowId <- orm.FlowId
                         w.Status4  <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
 
             ]
