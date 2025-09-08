@@ -186,9 +186,10 @@ module ORMTypesModule =
 
         member val FlowId     = flowId     with get, set
         member val FlowGuid   = flowGuid   with get, set
-        member val Motion     = nullString with get, set
-        member val Script     = nullString with get, set
-        member val IsFinished = false      with get, set
+        member val Motion       = nullString with get, set
+        member val Script       = nullString with get, set
+        member val ExternalStart = nullString with get, set
+        member val IsFinished   = false      with get, set
         member val NumRepeat  = 0          with get, set
         member val Period     = 0          with get, set
         member val Delay      = 0          with get, set
@@ -198,6 +199,7 @@ module ORMTypesModule =
             runtime.CopyUniqueProperties(x)
             x.Motion <- runtime.Motion
             x.Script <- runtime.Script
+            x.ExternalStart <- runtime.ExternalStart
             x.IsFinished <- runtime.IsFinished
             x.NumRepeat <- runtime.NumRepeat
             x.Period <- runtime.Period

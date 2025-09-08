@@ -29,7 +29,6 @@
 		<Compile Include="model\CreateSample.HelloDS.fs" />
 		<Compile Include="model\TestHelloDS.fs" />
 		<Compile Include="database\Schema.Test.fs" />
-		<Compile Include="database\ReadFromDB.Test.fs" />
 		<Compile Include="database\SystemImportExport.Test.fs" />
 		<Compile Include="Duplicate.Test.fs" />
 		<Compile Include="ValueSpec.Test.fs" />

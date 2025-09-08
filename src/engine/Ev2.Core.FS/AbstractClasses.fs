@@ -306,12 +306,13 @@ and Work() = // Create
     member val internal RawCalls  = ResizeArray<Call>() with get, set
     member val internal RawArrows = ResizeArray<ArrowBetweenCalls>() with get, set
 
-    member val Motion     = nullString with get, set
-    member val Script     = nullString with get, set
-    member val IsFinished = false      with get, set
-    member val NumRepeat  = 0          with get, set
-    member val Period     = 0          with get, set
-    member val Delay      = 0          with get, set
+    member val Motion       = nullString with get, set
+    member val Script       = nullString with get, set
+    member val ExternalStart = nullString with get, set
+    member val IsFinished   = false      with get, set
+    member val NumRepeat    = 0          with get, set
+    member val Period       = 0          with get, set
+    member val Delay        = 0          with get, set
 
     member val Status4 = Option<DbStatus4>.None with get, set
 

@@ -199,8 +199,8 @@ module internal DbInsertModule =
                     orm.SystemId <- rt.System >>= _.Id
 
                     let workId = conn.Insert($"""INSERT INTO {Tn.Work}
-                                        (guid, parameter,                      name,  systemId,  flowId,  status4Id,  motion,  script,  isFinished,  numRepeat,  period,  delay)
-                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @IsFinished, @NumRepeat, @Period, @Delay);""", orm, tr)
+                                        (guid, parameter,                      name,  systemId,  flowId,  status4Id,  motion,  script,  externalStart,  isFinished,  numRepeat,  period,  delay)
+                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @ExternalStart, @IsFinished, @NumRepeat, @Period, @Delay);""", orm, tr)
 
                     rt.Id <- Some workId
                     orm.Id <- Some workId

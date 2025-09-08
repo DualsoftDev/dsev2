@@ -135,11 +135,15 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
-                yield! (x.Flows   , y.Flows   , criteria) |||> computeDiffRecursively
-                yield! (x.Works   , y.Works   , criteria) |||> computeDiffRecursively
-                yield! (x.Arrows  , y.Arrows  , criteria) |||> computeDiffRecursively
-                yield! (x.ApiDefs , y.ApiDefs , criteria) |||> computeDiffRecursively
-                yield! (x.ApiCalls, y.ApiCalls, criteria) |||> computeDiffRecursively
+                yield! (x.Flows     , y.Flows     , criteria) |||> computeDiffRecursively
+                yield! (x.Works     , y.Works     , criteria) |||> computeDiffRecursively
+                yield! (x.Arrows    , y.Arrows    , criteria) |||> computeDiffRecursively
+                yield! (x.ApiDefs   , y.ApiDefs   , criteria) |||> computeDiffRecursively
+                yield! (x.ApiCalls  , y.ApiCalls  , criteria) |||> computeDiffRecursively
+                yield! (x.Buttons   , y.Buttons   , criteria) |||> computeDiffRecursively
+                yield! (x.Lamps     , y.Lamps     , criteria) |||> computeDiffRecursively
+                yield! (x.Conditions, y.Conditions, criteria) |||> computeDiffRecursively
+                yield! (x.Actions   , y.Actions   , criteria) |||> computeDiffRecursively
 
                 if x.Author        <> y.Author        then yield Diff(nameof x.Author, x, y, null)
                 if x.IRI           <> y.IRI           then yield Diff(nameof x.IRI, x, y, null)
@@ -180,9 +184,10 @@ module rec DsCompareObjects =
                     let updateSql = $"UPDATE {Tn.Work} SET flowId = {y.Flow.Value.Id.Value} WHERE id = {x.Id.Value};"
                     yield Diff("FlowId", x, y, updateSql)
 
-                if x.Motion     <> y.Motion     then yield Diff(nameof x.Motion, x, y, null)
-                if x.Script     <> y.Script     then yield Diff(nameof x.Script, x, y, null)
-                if x.IsFinished <> y.IsFinished then yield Diff(nameof x.IsFinished, x, y, null)
+                if x.Motion       <> y.Motion       then yield Diff(nameof x.Motion, x, y, null)
+                if x.Script       <> y.Script       then yield Diff(nameof x.Script, x, y, null)
+                if x.ExternalStart <> y.ExternalStart then yield Diff(nameof x.ExternalStart, x, y, null)
+                if x.IsFinished   <> y.IsFinished   then yield Diff(nameof x.IsFinished, x, y, null)
                 if x.NumRepeat  <> y.NumRepeat  then yield Diff(nameof x.NumRepeat, x, y, null)
                 if x.Period     <> y.Period     then yield Diff(nameof x.Period, x, y, null)
                 if x.Delay      <> y.Delay      then yield Diff(nameof x.Delay, x, y, null)
@@ -252,21 +257,25 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:DsButton, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
+                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
             }
     type Lamp with // ComputeDiff
         member x.ComputeDiff(y:Lamp, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
+                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
             }
     type DsCondition with // ComputeDiff
         member x.ComputeDiff(y:DsCondition, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
+                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
             }
     type DsAction with // ComputeDiff
         member x.ComputeDiff(y:DsAction, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
+                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
             }
 
 

@@ -78,10 +78,11 @@ module CoreToAas =
                     JObj().TrySetProperty(arrow.Type,   nameof arrow.Type)
 
                 | :? NjWork as work ->
-                    JObj().TrySetProperty(work.FlowGuid,   nameof work.FlowGuid)
-                    JObj().TrySetProperty(work.Motion,     nameof work.Motion)
-                    JObj().TrySetProperty(work.Script,     nameof work.Script)
-                    JObj().TrySetProperty(work.IsFinished, nameof work.IsFinished)
+                    JObj().TrySetProperty(work.FlowGuid,     nameof work.FlowGuid)
+                    JObj().TrySetProperty(work.Motion,       nameof work.Motion)
+                    JObj().TrySetProperty(work.Script,       nameof work.Script)
+                    JObj().TrySetProperty(work.ExternalStart, nameof work.ExternalStart)
+                    JObj().TrySetProperty(work.IsFinished,   nameof work.IsFinished)
                     JObj().TrySetProperty(work.NumRepeat,  nameof work.NumRepeat)
                     JObj().TrySetProperty(work.Period,     nameof work.Period)
                     JObj().TrySetProperty(work.Delay,      nameof work.Delay)

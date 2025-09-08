@@ -227,9 +227,10 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntity()
         interface INjWork
         member val FlowGuid   = null:string with get, set
-        member val Motion     = nullString  with get, set
-        member val Script     = nullString  with get, set
-        member val IsFinished = false       with get, set
+        member val Motion       = nullString  with get, set
+        member val Script       = nullString  with get, set
+        member val ExternalStart = nullString  with get, set
+        member val IsFinished   = false       with get, set
         member val NumRepeat  = 0           with get, set
         member val Period     = 0           with get, set
         member val Delay      = 0           with get, set

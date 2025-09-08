@@ -78,6 +78,7 @@ module AasSemantics =
             ("FlowGuid",         "https://dualsoft.com/aas/work/flowGuid")
             ("Motion",           "https://dualsoft.com/aas/work/motion")
             ("Script",           "https://dualsoft.com/aas/work/script")
+            ("ExternalStart",    "https://dualsoft.com/aas/work/externalStart")
             ("IsFinished",       "https://dualsoft.com/aas/work/isFinished")
             ("NumRepeat",        "https://dualsoft.com/aas/work/numRepeat")
             ("Period",           "https://dualsoft.com/aas/work/period")

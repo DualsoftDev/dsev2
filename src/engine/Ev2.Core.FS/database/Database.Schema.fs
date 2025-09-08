@@ -370,9 +370,10 @@ CREATE TABLE {k Tn.Enum}(
 CREATE TABLE {k Tn.Work}( {sqlUniqWithName()}
     , {k "systemId"}    {intKeyType} NOT NULL
     , {k "flowId"}      {intKeyType} DEFAULT NULL    -- NULL 허용 (work가 flow에 속하지 않을 수도 있음)
-    , {k "motion"}      TEXT
-    , {k "script"}      TEXT
-    , {k "isFinished"}  {boolean} NOT NULL DEFAULT {falseValue}
+    , {k "motion"}        TEXT
+    , {k "script"}        TEXT
+    , {k "externalStart"} TEXT
+    , {k "isFinished"}    {boolean} NOT NULL DEFAULT {falseValue}
     , {k "numRepeat"}   {int32} NOT NULL DEFAULT 0  -- 반복 횟수
     , {k "period"}      {int32} NOT NULL DEFAULT 0  -- 주기
     , {k "delay"}       {int32} NOT NULL DEFAULT 0  -- 지연
@@ -705,6 +706,7 @@ CREATE VIEW {k Vn.Work} AS
         , x.{k "parameter"}
         , x.{k "motion"}
         , x.{k "script"}
+        , x.{k "externalStart"}
         , x.{k "isFinished"}
         , x.{k "numRepeat"}
         , x.{k "period"}

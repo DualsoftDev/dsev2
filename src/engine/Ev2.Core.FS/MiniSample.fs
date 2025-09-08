@@ -10,8 +10,8 @@ module MiniSample =
     let createCylinder(name:string) =
         let sys = DsSystem.Create(Name=name)
 
-        let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"), Period=2000)
-        let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"), Period=2000)
+        let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylAdvanceStart")
+        let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylReturnStart")
         let flow = Flow.Create(Name="CylFlow")
         flow.AddWorks [workAdv; workRet]
 
@@ -44,11 +44,11 @@ module MiniSample =
         // Flow 생성
         let flow =
             Flow.Create(Name = "TestFlow")
-        
+
         // UI 요소 생성
         let button1 = DsButton.Create(Name = "Button1")
         let lamp1 = Lamp.Create(Name = "Lamp1")
-        
+
         // UI 요소들의 Flow 설정
         button1.FlowGuid <- Some flow.Guid
         lamp1.FlowGuid <- Some flow.Guid
@@ -58,6 +58,7 @@ module MiniSample =
             Work.Create()
             |> tee (fun w ->
                 w.Name <- "Work1"
+                w.ExternalStart <- "StartCommand1"
                 w.Status4 <- Some DbStatus4.Ready
             )
 
@@ -65,6 +66,7 @@ module MiniSample =
             Work.Create()
             |> tee (fun w ->
                 w.Name <- "Work2"
+                w.ExternalStart <- "StartCommand2"
                 w.Status4 <- Some DbStatus4.Going
             )
 

@@ -166,9 +166,10 @@ module CoreFromAas =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
             let flowGuid   = smc.TryGetPropValue       "FlowGuid"   |? null
-            let motion     = smc.TryGetPropValue       "Motion"     |? null
-            let script     = smc.TryGetPropValue       "Script"     |? null
-            let isFinished = smc.TryGetPropValue<bool> "IsFinished" |? false
+            let motion       = smc.TryGetPropValue       "Motion"       |? null
+            let script       = smc.TryGetPropValue       "Script"       |? null
+            let externalStart = smc.TryGetPropValue       "ExternalStart" |? null
+            let isFinished   = smc.TryGetPropValue<bool> "IsFinished"   |? false
             let numRepeat  = smc.TryGetPropValue<int>  "NumRepeat"  |? 0
             let period     = smc.TryGetPropValue<int>  "Period"     |? 0
             let delay      = smc.TryGetPropValue<int>  "Delay"      |? 0
@@ -182,6 +183,7 @@ module CoreFromAas =
                 , FlowGuid = flowGuid
                 , Motion = motion
                 , Script = script
+                , ExternalStart = externalStart
                 , IsFinished = isFinished
                 , NumRepeat = numRepeat
                 , Period = period
