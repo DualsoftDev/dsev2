@@ -60,7 +60,7 @@ DS 시스템의 타입(Project, DsSystem, Flow, Work, Call 등)에 새로운 멤
   VALUES (@Guid, @Parameter, @Name, ..., @ExternalStart, ...)
   ```
 
-### 8. AAS 직렬화 지원 (선택적)
+### 8. AAS 직렬화 지원
 만약 AAS 형식으로 내보내기가 필요한 경우:
 
 #### 8a. AAS 변환 (To AAS)
@@ -83,9 +83,9 @@ DS 시스템의 타입(Project, DsSystem, Flow, Work, Call 등)에 새로운 멤
 - **작업**: 필요시 새 속성을 위한 시맨틱 URL 매핑 추가
 - **예시**: `("ExternalStart", "https://dualsoft.com/aas/work/externalStart")`
 
-### 9. 테스트 데이터 업데이트 (선택적)
+### 9. 테스트 데이터 업데이트
 - **파일**: `src/engine/Ev2.Core.FS/MiniSample.fs`
-- **작업**: 샘플 데이터에 새 속성 값 설정
+- **작업**: 샘플 데이터에 새 속성 값 설정.  모든 곳에 추가하면 복잡하므로, 1개 내지 2개 정도의 샘플만 추가.
 - **예시**: `w.ExternalStart <- "StartCommand1"`
 
 ## 작업 순서 권장사항

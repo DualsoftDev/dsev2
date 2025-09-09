@@ -65,6 +65,7 @@ module CoreToAas =
                     JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
                     JObj().TrySetProperty(call.CommonConditions, nameof call.CommonConditions)
                     JObj().TrySetProperty(call.AutoConditions,   nameof call.AutoConditions)
+                    JObj().TrySetProperty(call.CallValueSpec,    nameof call.CallValueSpec)
                     if call.Timeout.IsSome then
                         JObj().TrySetProperty(call.Timeout.Value,     nameof call.Timeout)
                     JObj().TrySetProperty(call.CallType.ToString(),   nameof call.CallType)

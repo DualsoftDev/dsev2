@@ -199,6 +199,7 @@ module CoreFromAas =
             let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
             let commonConditions = smc.TryGetPropValue       "CommonConditions" |? null
             let autoConditions   = smc.TryGetPropValue       "AutoConditions"   |? null
+            let callValueSpec    = smc.TryGetPropValue       "CallValueSpec"    |? null
             let timeout          = smc.TryGetPropValue<int>  "Timeout"
             let callType         = smc.TryGetPropValue       "CallType"         |? null
             let status4          = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
@@ -219,6 +220,7 @@ module CoreFromAas =
                 , IsDisabled = isDisabled
                 , CommonConditions = commonConditions
                 , AutoConditions = autoConditions
+                , CallValueSpec = callValueSpec
                 , Timeout = timeout
                 , CallType = callType
                 , Status4 = status4
