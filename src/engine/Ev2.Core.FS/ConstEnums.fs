@@ -68,6 +68,21 @@ module ValueRangeModule =
         abstract member Jsonize:   unit -> string
         abstract member Stringify: unit -> string
 
+    let mutable internal fwdValueSpecFromString:  string->IValueSpec = let dummy (text:string) = failwith "Should be reimplemented." in dummy
+    let mutable internal fwdValueSpecFromJson:  string->IValueSpec = let dummy (json:string) = failwith "Should be reimplemented." in dummy
+    type ValueSpec =
+        /// text: "x ∈ {1, 2, 3}"
+        static member FromString(text: string) : IValueSpec = fwdValueSpecFromString text
+
+        /// json: {
+        ///   "valueType": "Double",
+        ///   "value": {
+        ///     "Case": "Single",
+        ///     "Fields": [ 3.14156952 ]
+        ///   }
+        /// }
+        static member FromJson(json: string) : IValueSpec = fwdValueSpecFromJson json
+
     type ValueSpec<'T> = // Jsonize, Stringify
         | Single of 'T
         | Multiple of 'T list
@@ -259,12 +274,12 @@ module ValueRangeModule =
 
     type IValueSpec with // Deserialize, Parse, RTryParse, TryDeserialize, TryParse
         /// JSON 역직렬화 함수.
-        static member Deserialize(text: string) = deserializeWithType text
-        static member TryDeserialize(text: string) =
-            if text.IsNullOrEmpty() then
+        static member Deserialize(json: string) = deserializeWithType json
+        static member TryDeserialize(json: string) =
+            if json.IsNullOrEmpty() then
                 None
             else
-                Some <| deserializeWithType text
+                Some <| deserializeWithType json
 
         /// 사용자 편의 텍스트 parsing 함수.  e.g "3 < x <= 7 || 10 <= x"
         static member Parse(text: string) : IValueSpec = parseValueSpec text

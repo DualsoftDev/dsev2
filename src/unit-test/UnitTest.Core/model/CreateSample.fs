@@ -37,6 +37,13 @@ module CreateSampleModule =
             rtApiDef1 <- rtCylinder.ApiDefs.Find(fun ad -> ad.Name = "ApiDefADV")
             rtApiDef2 <- rtCylinder.ApiDefs.Find(fun ad -> ad.Name = "ApiDefRET")
 
+            let valueSpec =
+                Ranges [
+                    { Lower = None; Upper = Some (3.14, Open) }
+                    { Lower = Some (5.0, Open); Upper = Some (6.0, Open) }
+                    { Lower = Some (7.1, Closed); Upper = None }
+                ]
+
             rtApiCall1a <-
                 ApiCall.Create()
                 |> tee (fun z ->
@@ -46,12 +53,7 @@ module CreateSampleModule =
                     z.OutAddress<- "OutAddress1"
                     z.InSymbol  <- "XTag1"
                     z.OutSymbol <- "YTag2"
-                    z.ValueSpec <-
-                        Some <| Ranges [
-                            { Lower = None; Upper = Some (3.14, Open) }
-                            { Lower = Some (5.0, Open); Upper = Some (6.0, Open) }
-                            { Lower = Some (7.1, Closed); Upper = None }
-                        ]
+                    z.ValueSpec <- Some valueSpec
                     )
             rtApiCall1b <-
                 ApiCall.Create()
@@ -66,25 +68,25 @@ module CreateSampleModule =
 
             rtFlow <-
                 Flow.Create(Name = "MainFlow")
-            
+
             // UI 요소들 생성
             let button1 = DsButton.Create(Name="MyButton1")
             let lamp1 = Lamp.Create(Name="MyLamp1")
             let condition1 = DsCondition.Create(Name="MyCondition1")
             let action1 = DsAction.Create(Name="MyAction1")
-            
+
             // UI 요소들의 Flow 설정
             button1.FlowGuid <- Some rtFlow.Guid
             lamp1.FlowGuid <- Some rtFlow.Guid
             condition1.FlowGuid <- Some rtFlow.Guid
             action1.FlowGuid <- Some rtFlow.Guid
-            
+
             // System에 UI 요소들 추가
             [button1] |> rtSystem.AddButtons
             [lamp1] |> rtSystem.AddLamps
             [condition1] |> rtSystem.AddConditions
             [action1] |> rtSystem.AddActions
-            
+
             rtWork1 <-
                 Work.Create()
                 |> tee (fun z ->
