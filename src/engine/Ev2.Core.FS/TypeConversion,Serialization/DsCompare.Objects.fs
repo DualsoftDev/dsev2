@@ -205,6 +205,7 @@ module rec DsCompareObjects =
                 if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff(nameof x.Work, x, y, null)
                 if not <| isStringsEqual x.AutoConditions   y.AutoConditions   then yield Diff(nameof x.AutoConditions, x, y, null)
                 if not <| isStringsEqual x.CommonConditions y.CommonConditions then yield Diff(nameof x.CommonConditions, x, y, null)
+                if x.CallValueSpec <> y.CallValueSpec then yield Diff(nameof x.CallValueSpec, x, y, null)
                 if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y, null)
                 if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, null)
                 if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, null)

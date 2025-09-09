@@ -110,15 +110,15 @@ module internal DsCopyModule =
 
             let s =
                 match sbx with
-                | :? Call    as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
-                | :? NjCall  as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
-                | :? ORMCall as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     Status4=None           (*ApiCall=s.ApiCall; Status4*) |}
+                | :? Call    as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; CallValueSpec=s.CallValueSpec; Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
+                | :? NjCall  as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     CallValueSpec=s.CallValueSpec; Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
+                | :? ORMCall as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     CallValueSpec=s.CallValueSpec; Status4=None           (*ApiCall=s.ApiCall; Status4*) |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions|>fj; d.CommonConditions<-s.CommonConditions|>fj;  d.Status4<-s.Status4
-            | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;      d.Status4<-s.Status4
-            | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;      (*No status handling*)
+            | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions|>fj; d.CommonConditions<-s.CommonConditions|>fj; d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+            | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;     d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+            | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;     d.CallValueSpec<-s.CallValueSpec; (*No status handling*)
             | _ -> failwith "ERROR"
 
 

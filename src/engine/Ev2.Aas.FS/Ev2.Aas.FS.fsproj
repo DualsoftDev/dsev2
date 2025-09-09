@@ -12,6 +12,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<None Include="devdoc\**\*.md" />
 		<Content Include="AasSyntax.md" />
 		<Content Include="maximal.json" />
 		<Content Include="minimal.json" />

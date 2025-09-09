@@ -225,6 +225,7 @@ module ORMTypesModule =
         member val Timeout    = timeout    with get, set
         member val AutoConditions   = autoConditions   |> jsonSerializeStrings with get, set
         member val CommonConditions = commonConditions |> jsonSerializeStrings with get, set
+        member val CallValueSpec = nullString with get, set
 
         member x.Initialize(runtime:Call) =
             runtime.CopyUniqueProperties(x)
@@ -233,6 +234,7 @@ module ORMTypesModule =
             x.Timeout <- runtime.Timeout
             x.AutoConditions <- runtime.AutoConditions |> jsonSerializeStrings
             x.CommonConditions <- runtime.CommonConditions |> jsonSerializeStrings
+            x.CallValueSpec <- runtime.CallValueSpec
             x.Status4Id <- runtime.Status4 |-> int64
             x
 

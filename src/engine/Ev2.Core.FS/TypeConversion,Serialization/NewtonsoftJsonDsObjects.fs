@@ -301,6 +301,8 @@ module rec NewtonsoftJsonObjects =
         member val IsDisabled = false            with get, set
         [<JsonProperty(Order = 106)>]
         member val Timeout    = Option<int>.None with get, set
+        [<JsonProperty(Order = 107)>]
+        member val CallValueSpec = nullString    with get, set
 
         [<JsonIgnore>]
         member val Status4 = Option<DbStatus4>.None with get, set

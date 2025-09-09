@@ -422,6 +422,7 @@ CREATE TABLE {k Tn.Call}( {sqlUniqWithName()}
     , {k "timeout"}       INT   -- ms
     , {k "autoConditions"}   TEXT
     , {k "commonConditions"} TEXT
+    , {k "callValueSpec"} TEXT
     , {k "isDisabled"}    {boolean} NOT NULL DEFAULT {falseValue}   -- 0: 활성화, 1: 비활성화
     , {k "workId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제

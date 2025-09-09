@@ -127,6 +127,7 @@ module CreateSampleModule =
                     z.AutoConditions.AddRange ["AutoPre 테스트 1"; "AutoConditions 테스트 2"]
                     z.CommonConditions.AddRange ["안전조건1"; "안전조건2"; ]
                     z.Timeout  <- Some 30
+                    z.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
                     z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> JsonConvert.SerializeObject
                     z.ApiCallGuids.AddRange [rtApiCall1a.Guid] )
 
@@ -135,11 +136,12 @@ module CreateSampleModule =
                 |> tee (fun z ->
                     z.Name <- "Call1b"
                     z.Status4 <- Some DbStatus4.Finished
-                    z.CallType <- DbCallType.Repeat)
+                    z.CallType <- DbCallType.Repeat
+                    z.CallValueSpec <- "speed <= 50.0 || position == 'home'")
 
             rtWork1.AddCalls [rtCall1a; rtCall1b]
-            rtCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
-            rtCall2b  <- Call.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished)
+            rtCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing; z.CallValueSpec <- "cycle_count > 0")
+            rtCall2b  <- Call.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished; z.CallValueSpec <- "result == 'success'")
             rtWork2.AddCalls [rtCall2a; rtCall2b]
             rtProject.AddPassiveSystem rtCylinder
             rtProject.AddActiveSystem rtSystem
