@@ -75,6 +75,7 @@ module MiniSample =
             Call.Create()
             |> tee (fun c ->
                 c.Name <- "Call1"
+                c.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
                 c.Status4 <- Some DbStatus4.Ready
                 c.CallType <- DbCallType.Parallel
             )
