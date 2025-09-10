@@ -223,15 +223,17 @@ module CoreFromAas =
 
             // Status4 는 저장 안함.  DB 전용
 
-            NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
+            let njCall = NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , IsDisabled = isDisabled
-                , CommonConditions = commonConditions
-                , AutoConditions = autoConditions
                 , CallValueSpec = callValueSpec
                 , Timeout = timeout
                 , CallType = callType
                 , Status4 = status4
                 , ApiCalls = apiCalls)     // Guid[] type
+            // object properties 설정
+            njCall.AutoConditionsObj <- autoConditions
+            njCall.CommonConditionsObj <- commonConditions
+            njCall
             |> tee (readAasExtensionProperties smc)
 
 

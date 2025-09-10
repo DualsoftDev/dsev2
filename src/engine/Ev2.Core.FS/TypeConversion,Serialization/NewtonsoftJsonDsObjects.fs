@@ -15,6 +15,31 @@ open Dual.Common.Base
 open Dual.Common.Db.FS
 open Newtonsoft.Json.Serialization
 
+// ApiCallValueSpecs를 위한 커스텀 JsonConverter - OnSerializing/OnDeserialized 패턴으로 대체됨
+// type ApiCallValueSpecsConverter() =
+//     inherit JsonConverter<ApiCallValueSpecs>()
+//
+//     override x.WriteJson(writer: JsonWriter, value: ApiCallValueSpecs, serializer: JsonSerializer) =
+//         // ToJson()을 사용하여 JSON 문자열 배열로 직렬화
+//         let json = value.ToJson()
+//         writer.WriteRawValue(json)
+//
+//     override x.ReadJson(reader: JsonReader, objectType: Type, existingValue: ApiCallValueSpecs, hasExistingValue: bool, serializer: JsonSerializer) =
+//         // JSON 문자열을 읽어서 FromJson()으로 역직렬화
+//         let token = JToken.Load(reader)
+//         match token.Type with
+//         | JTokenType.String ->
+//             // 문자열인 경우 직접 파싱
+//             let json = token.ToString()
+//             ApiCallValueSpecs.FromJson(json)
+//         | JTokenType.Array ->
+//             // 배열인 경우 JSON 문자열로 변환 후 파싱
+//             let json = token.ToString()
+//             ApiCallValueSpecs.FromJson(json)
+//         | _ ->
+//             // 기타 타입은 빈 컬렉션 반환
+//             ApiCallValueSpecs()
+
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
 module NewtonsoftJsonModules =
@@ -294,9 +319,14 @@ module rec NewtonsoftJsonObjects =
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
         [<JsonProperty(Order = 103)>]
-        member val AutoConditions   = ApiCallValueSpecs() with get, set
+        member val AutoConditions   = nullString with get, set
         [<JsonProperty(Order = 104)>]
-        member val CommonConditions = ApiCallValueSpecs() with get, set
+        member val CommonConditions = nullString with get, set
+
+        [<JsonIgnore>]
+        member val AutoConditionsObj   = ApiCallValueSpecs() with get, set
+        [<JsonIgnore>]
+        member val CommonConditionsObj = ApiCallValueSpecs() with get, set
         [<JsonProperty(Order = 105)>]
         member val IsDisabled = false            with get, set
         [<JsonProperty(Order = 106)>]
@@ -318,10 +348,35 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeIsDisabled() = x.IsDisabled
         member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
-        member x.ShouldSerializeAutoConditions() = x.AutoConditions.Any()
-        member x.ShouldSerializeCommonConditions() = x.CommonConditions.Any()
+        member x.ShouldSerializeAutoConditions() = x.AutoConditionsObj.NonNullAny()
+        member x.ShouldSerializeCommonConditions() = x.CommonConditionsObj.NonNullAny()
         member x.ShouldSerializeTimeout()    = x.Timeout.IsSome
 
+        [<OnSerializing>]
+        member x.OnSerializingMethod (ctx: StreamingContext) =
+            // ApiCallValueSpecs 객체를 JSON 문자열로 변환
+            if x.AutoConditionsObj.Any() then
+                x.AutoConditions <- x.AutoConditionsObj.ToJson()
+            else
+                x.AutoConditions <- null
+
+            if x.CommonConditionsObj.Any() then
+                x.CommonConditions <- x.CommonConditionsObj.ToJson()
+            else
+                x.CommonConditions <- null
+
+            fwdOnNsJsonSerializing x
+
+        [<OnDeserialized>]
+        member x.OnDeserializedMethod(ctx: StreamingContext) =
+            // JSON 문자열을 ApiCallValueSpecs 객체로 변환
+            if x.AutoConditions.NonNullAny() then
+                x.AutoConditionsObj <- ApiCallValueSpecs.FromJson(x.AutoConditions)
+
+            if x.CommonConditions.NonNullAny() then
+                x.CommonConditionsObj <- ApiCallValueSpecs.FromJson(x.CommonConditions)
+
+            fwdOnNsJsonDeserialized x
 
         member x.Initialize(
             callType:string, apiCalls:Guid[],
@@ -332,8 +387,8 @@ module rec NewtonsoftJsonObjects =
             x.ApiCalls   <- apiCalls
             x.IsDisabled <- isDisabled
             x.Timeout    <- timeout
-            x.AutoConditions <- autoConditions
-            x.CommonConditions <- commonConditions
+            x.AutoConditionsObj <- autoConditions
+            x.CommonConditionsObj <- commonConditions
             x
 
 
@@ -358,6 +413,8 @@ module rec NewtonsoftJsonObjects =
         member val TxGuid = emptyGuid with get, set
         member val RxGuid = emptyGuid with get, set
         static member Create() = createExtended<NjApiDef>()
+        member x.ShouldSerializeTxGuid() = x.TxGuid <> Guid.Empty
+        member x.ShouldSerializeRxGuid() = x.RxGuid <> Guid.Empty
 
 
 
@@ -555,8 +612,8 @@ module rec NewtonsoftJsonObjects =
                 |? DbCallType.Normal
 
             njc.RuntimeObject <-
-                let acs = njc.AutoConditions
-                let ccs = njc.CommonConditions
+                let acs = njc.AutoConditionsObj
+                let ccs = njc.CommonConditionsObj
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
             ()

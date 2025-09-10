@@ -303,6 +303,9 @@ module JsonExtensionModule =
                 | :? Guid     as v -> x.Set(N.ValueType, "xs:string")  .Set(N.Value, v.ToString())
                 | :? DateTime as v -> x.Set(N.ValueType, "xs:dateTime").Set(N.Value, v.ToString("O"))
 
+                // ApiCallValueSpecs를 JSON 문자열로 변환하여 저장
+                | :? ApiCallValueSpecs as v -> x.Set(N.ValueType, "xs:string").Set(N.Value, v.ToJson())
+
                 //// --- Array 처리 ---
                 //| :? (Guid[]) as arr ->
                 //    let jarr = arr |> Array.map (fun g -> JObj().Set(N.Value)(string g)) |> JArr

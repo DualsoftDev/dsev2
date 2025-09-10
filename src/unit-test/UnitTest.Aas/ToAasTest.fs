@@ -43,7 +43,15 @@ module ToAasTest =
 
             let project = Project.FromJson(dsProject)
             let json = project.ToJson()
+
             EmJson.IsJsonEquals(json, dsProject) === true
+
+            //// Round-trip 테스트는 JSON 포맷팅 차이로 실패할 수 있음
+            //// 실제 데이터가 보존되는지 확인
+            //let project2 = Project.FromJson(json)
+            //project2.Name === project.Name
+            //project2.Guid === project.Guid
+            //project2.ActiveSystems.Length === project.ActiveSystems.Length
             ()
 
     /// Json Test
