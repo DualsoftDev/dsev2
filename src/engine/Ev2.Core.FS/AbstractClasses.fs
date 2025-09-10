@@ -333,8 +333,9 @@ and Work() = // Create
 
         work
 
-and ApiCallValueSpecs() =
-    inherit ResizeArray<IApiCallValueSpec>()
+and ApiCallValueSpecs(specs:IApiCallValueSpec seq) =
+    inherit ResizeArray<IApiCallValueSpec>(specs)
+    new() = ApiCallValueSpecs([])
 
 // see static member Create
 and Call() = // Create
