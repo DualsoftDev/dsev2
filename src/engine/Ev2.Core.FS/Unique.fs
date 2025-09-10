@@ -78,11 +78,6 @@ module Interfaces =
             dst.Guid      <- x.Guid
             dst.RawParent <- x.RawParent
 
-        abstract member OnConstructed: unit -> unit
-        /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
-        default x.OnConstructed() = ()
-
-
         // { 내부 구현 전용.  serialize 대상에서 제외됨
         member val internal ORMObject = Option<IORMUnique>.None with get, set
         member val internal NjObject  = Option<INjUnique> .None with get, set

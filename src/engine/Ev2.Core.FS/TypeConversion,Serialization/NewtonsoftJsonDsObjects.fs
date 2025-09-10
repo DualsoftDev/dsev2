@@ -13,32 +13,7 @@ open Newtonsoft.Json.Linq
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open Dual.Common.Db.FS
-open Newtonsoft.Json.Serialization
 
-// ApiCallValueSpecs를 위한 커스텀 JsonConverter - OnSerializing/OnDeserialized 패턴으로 대체됨
-// type ApiCallValueSpecsConverter() =
-//     inherit JsonConverter<ApiCallValueSpecs>()
-//
-//     override x.WriteJson(writer: JsonWriter, value: ApiCallValueSpecs, serializer: JsonSerializer) =
-//         // ToJson()을 사용하여 JSON 문자열 배열로 직렬화
-//         let json = value.ToJson()
-//         writer.WriteRawValue(json)
-//
-//     override x.ReadJson(reader: JsonReader, objectType: Type, existingValue: ApiCallValueSpecs, hasExistingValue: bool, serializer: JsonSerializer) =
-//         // JSON 문자열을 읽어서 FromJson()으로 역직렬화
-//         let token = JToken.Load(reader)
-//         match token.Type with
-//         | JTokenType.String ->
-//             // 문자열인 경우 직접 파싱
-//             let json = token.ToString()
-//             ApiCallValueSpecs.FromJson(json)
-//         | JTokenType.Array ->
-//             // 배열인 경우 JSON 문자열로 변환 후 파싱
-//             let json = token.ToString()
-//             ApiCallValueSpecs.FromJson(json)
-//         | _ ->
-//             // 기타 타입은 빈 컬렉션 반환
-//             ApiCallValueSpecs()
 
 /// [N]ewtonsoft [J]son serialize 를 위한 DS 객체들.
 [<AutoOpen>]
@@ -81,9 +56,6 @@ module NewtonsoftJsonModules =
 /// Newtonsoft Json 호환 버젼
 [<AutoOpen>]
 module rec NewtonsoftJsonObjects =
-    //let njSetParentI (parent:NjUnique) (x:#NjUnique): unit = x.RawParent <- Some parent
-
-
     [<AbstractClass>]
     type NjProjectEntity() =
         inherit NjUnique()
@@ -144,6 +116,10 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystem[] with get, set
 
+        abstract member OnLoaded: unit -> unit
+        /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
+        default x.OnLoaded() = ()
+
         [<OnSerializing>]  member x.OnSerializingMethod (ctx: StreamingContext) = fwdOnNsJsonSerializing  x
         [<OnDeserialized>] member x.OnDeserializedMethod(ctx: StreamingContext) = fwdOnNsJsonDeserialized x
 
@@ -183,6 +159,10 @@ module rec NewtonsoftJsonObjects =
         member val Description   = nullString with get, set
         member val DateTime      = minDate    with get, set
 
+        abstract member OnLoaded: unit -> unit
+        /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
+        default x.OnLoaded() = ()
+
         member x.ShouldSerializeFlows   () = x.Flows   .NonNullAny()
         member x.ShouldSerializeWorks   () = x.Works   .NonNullAny()
         member x.ShouldSerializeArrows  () = x.Arrows  .NonNullAny()
@@ -202,14 +182,15 @@ module rec NewtonsoftJsonObjects =
             fwdOnNsJsonDeserialized x
 
 
-        member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[],
-                           apiDefs:NjApiDef[], apiCalls:NjApiCall[],
-                           buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]) =
-            x.Flows    <- flows
-            x.Works    <- works
-            x.Arrows   <- arrows
-            x.ApiDefs  <- apiDefs
-            x.ApiCalls <- apiCalls
+        member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[]
+            , apiDefs:NjApiDef[], apiCalls:NjApiCall[]
+            , buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]
+        ) =
+            x.Flows      <- flows
+            x.Works      <- works
+            x.Arrows     <- arrows
+            x.ApiDefs    <- apiDefs
+            x.ApiCalls   <- apiCalls
             x.Buttons    <- buttons
             x.Lamps      <- lamps
             x.Conditions <- conditions
@@ -253,18 +234,18 @@ module rec NewtonsoftJsonObjects =
     type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
         inherit NjSystemEntity()
         interface INjWork
-        member val FlowGuid   = null:string with get, set
-        member val Motion       = nullString  with get, set
-        member val Script       = nullString  with get, set
+        member val FlowGuid      = null:string with get, set
+        member val Motion        = nullString  with get, set
+        member val Script        = nullString  with get, set
         member val ExternalStart = nullString  with get, set
-        member val IsFinished   = false       with get, set
-        member val NumRepeat  = 0           with get, set
-        member val Period     = 0           with get, set
-        member val Delay      = 0           with get, set
+        member val IsFinished    = false       with get, set
+        member val NumRepeat     = 0           with get, set
+        member val Period        = 0           with get, set
+        member val Delay         = 0           with get, set
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
-        member val Calls: NjCall[] = [||] with get, set
+        member val Calls: NjCall[]  = [||] with get, set
         member val Arrows:NjArrow[] = [||] with get, set
 
         [<JsonIgnore>]
@@ -342,13 +323,13 @@ module rec NewtonsoftJsonObjects =
         static member Create() = createExtended<NjCall>()
 
         (* 특별한 조건일 때에만 json 표출 *)
-        member x.ShouldSerializeApiCalls()   = x.ApiCalls.NonNullAny()
-        member x.ShouldSerializeIsDisabled() = x.IsDisabled
-        member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
-        member x.ShouldSerializeStatus()     = x.Status4.IsSome
-        member x.ShouldSerializeAutoConditions() = x.AutoConditionsObj.NonNullAny()
+        member x.ShouldSerializeApiCalls()         = x.ApiCalls.NonNullAny()
+        member x.ShouldSerializeIsDisabled()       = x.IsDisabled
+        member x.ShouldSerializeCallType()         = x.CallType <> DbCallType.Normal.ToString()
+        member x.ShouldSerializeStatus()           = x.Status4.IsSome
+        member x.ShouldSerializeAutoConditions()   = x.AutoConditionsObj.NonNullAny()
         member x.ShouldSerializeCommonConditions() = x.CommonConditionsObj.NonNullAny()
-        member x.ShouldSerializeTimeout()    = x.Timeout.IsSome
+        member x.ShouldSerializeTimeout()          = x.Timeout.IsSome
 
         [<OnSerializing>]
         member x.OnSerializingMethod (ctx: StreamingContext) =
@@ -444,9 +425,9 @@ module rec NewtonsoftJsonObjects =
                 //    njs.RuntimeObject |> replicateProperties njs |> ignore
 
                 let rts = njs |> getRuntimeObject<DsSystem>
-                njs.Works <- rts.Works |-> _.ToNj<NjWork>() |> toArray
-                njs.Flows <- rts.Flows |-> _.ToNj<NjFlow>() |> toArray
-                njs.ApiDefs  <- rts.ApiDefs |-> _.ToNj<NjApiDef>() |> toArray
+                njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
+                njs.Flows    <- rts.Flows    |-> _.ToNj<NjFlow>()    |> toArray
+                njs.ApiDefs  <- rts.ApiDefs  |-> _.ToNj<NjApiDef>()  |> toArray
                 njs.ApiCalls <- rts.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
 
                 njs.Arrows   |> iter onNsJsonSerializing
@@ -559,9 +540,9 @@ module rec NewtonsoftJsonObjects =
             njs.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z)
             njs.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z)
 
-            let arrows   = njs.Arrows   |-> getRuntimeObject<ArrowBetweenWorks>
-            let apiDefs  = njs.ApiDefs  |-> getRuntimeObject<ApiDef>
-            let apiCalls = njs.ApiCalls |-> getRuntimeObject<ApiCall>
+            let arrows     = njs.Arrows     |-> getRuntimeObject<ArrowBetweenWorks>
+            let apiDefs    = njs.ApiDefs    |-> getRuntimeObject<ApiDef>
+            let apiCalls   = njs.ApiCalls   |-> getRuntimeObject<ApiCall>
             let buttons    = njs.Buttons    |-> getRuntimeObject<DsButton>
             let lamps      = njs.Lamps      |-> getRuntimeObject<Lamp>
             let conditions = njs.Conditions |-> getRuntimeObject<DsCondition>
@@ -687,7 +668,7 @@ module Ds2JsonModule =
                         njObj :?> NjProject)
                 |?? (fun () ->                 // TypeFactory가 없으면 기본 NjProject로 역직렬화
                     EmJson.FromJson<NjProject>(json, settings))
-            njProj |> tee(_.OnConstructed())
+            njProj |> tee(_.OnLoaded())
 
     type Project with // ToJson
         /// DsProject 를 JSON 문자열로 변환
@@ -705,7 +686,7 @@ module Ds2JsonModule =
                 |> NjProject.FromJson
                 |> getRuntimeObject<Project>        // de-serialization 연결 고리
                 |> validateRuntime
-                |> tee(_.OnConstructed())
+                |> tee(_.OnLoaded())
             project
 
     type NjSystem with // ExportToJson, ExportToJsonFile, ImportFromJson
@@ -719,7 +700,7 @@ module Ds2JsonModule =
             |> tee(fun json -> File.WriteAllText(jsonFilePath, json))
 
         /// JSON 문자열을 DsSystem 로 변환
-        static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json) |> tee(_.OnConstructed())
+        static member ImportFromJson(json:string): NjSystem = EmJson.FromJson<NjSystem>(json) |> tee(_.OnLoaded())
 
     type DsSystem with // ExportToJson, FromJson, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환
@@ -740,7 +721,7 @@ module Ds2JsonModule =
                 |> NjSystem.ImportFromJson
                 |> getRuntimeObject<DsSystem>        // de-serialization 연결 고리
                 |> validateRuntime
-                |> tee(_.OnConstructed())
+                |> tee(_.OnLoaded())
             | _ -> // RuntimeType 이 없거나, 잘못된 경우
                 failwith "Invalid system JSON file.  'RuntimeType' not found or mismatch."
         static member FromJson(json) = DsSystem.ImportFromJson(json)
@@ -781,15 +762,15 @@ module Ds2JsonModule =
                         , Description=rt.Description)
                     |> replicateProperties rt
                     |> tee (fun z ->
-                        let flows    = rt.Flows    |-> _.ToNj<NjFlow>()   |> toArray
-                        let works    = rt.Works    |-> _.ToNj<NjWork>()   |> toArray
-                        let arrows   = rt.Arrows   |-> _.ToNj<NjArrow>()  |> toArray
-                        let apiDefs  = rt.ApiDefs  |-> _.ToNj<NjApiDef>() |> toArray
-                        let apiCalls = rt.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
-                        let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()   |> toArray
-                        let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()     |> toArray
+                        let flows      = rt.Flows      |-> _.ToNj<NjFlow>()      |> toArray
+                        let works      = rt.Works      |-> _.ToNj<NjWork>()      |> toArray
+                        let arrows     = rt.Arrows     |-> _.ToNj<NjArrow>()     |> toArray
+                        let apiDefs    = rt.ApiDefs    |-> _.ToNj<NjApiDef>()    |> toArray
+                        let apiCalls   = rt.ApiCalls   |-> _.ToNj<NjApiCall>()   |> toArray
+                        let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()    |> toArray
+                        let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()      |> toArray
                         let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                        let actions    = rt.Actions    |-> _.ToNj<NjAction>()   |> toArray
+                        let actions    = rt.Actions    |-> _.ToNj<NjAction>()    |> toArray
                         z.Initialize(flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions) |> ignore
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
@@ -868,5 +849,5 @@ module Ds2JsonModule =
 
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
             onNsJsonSerializing njObj
-            njObj.OnConstructed()
+            //njObj.OnConstructed()
             njObj

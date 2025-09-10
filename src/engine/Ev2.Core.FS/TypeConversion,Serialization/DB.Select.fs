@@ -321,8 +321,8 @@ module internal Db2DsImpl =
 
             // 확장 복원 훅
             getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(rtProj, conn, tr))
-            rtProj.OnAfterLoad(conn, tr)
-            rtProj.OnConstructed()
+            rtProj.OnLoaded(conn, tr)
+            rtProj.OnLoaded()
 
             rtProj
 

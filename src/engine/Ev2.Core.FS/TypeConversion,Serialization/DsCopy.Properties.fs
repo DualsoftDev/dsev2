@@ -142,22 +142,22 @@ module internal DsCopyModule =
                 | :? ORMCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // object properties를 JSON 문자열로 변환
-                    d.AutoConditions<-if s.AutoConditionsObj.Count = 0 then null else s.AutoConditionsObj.ToJson()
-                    d.CommonConditions<-if s.CommonConditionsObj.Count = 0 then null else s.CommonConditionsObj.ToJson()
+                    d.AutoConditions   <- if s.AutoConditionsObj.Count   = 0 then null else s.AutoConditionsObj.ToJson()
+                    d.CommonConditions <- if s.CommonConditionsObj.Count = 0 then null else s.CommonConditionsObj.ToJson()
                 | _ -> failwith "ERROR"
             | :? ORMCall as s ->
                 match dbx with
                 | :? Call as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // JSON 문자열을 ApiCallValueSpecs로 역직렬화
-                    d.AutoConditions<-if s.AutoConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
-                    d.CommonConditions<-if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
+                    d.AutoConditions   <- if s.AutoConditions.IsNullOrEmpty()   then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
+                    d.CommonConditions <- if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
                     d.Status4<-None
                 | :? NjCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // JSON 문자열을 object properties로 역직렬화
-                    d.AutoConditionsObj<-if s.AutoConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
-                    d.CommonConditionsObj<-if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
+                    d.AutoConditionsObj   <- if s.AutoConditions.IsNullOrEmpty()   then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
+                    d.CommonConditionsObj <- if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
                     d.Status4<-None
                 | :? ORMCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout

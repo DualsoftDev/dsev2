@@ -74,7 +74,7 @@ module internal DbInsertModule =
                     rt.Database <- dbApi.DbProvider
 
                     rt.InsertSystemMapToDB(dbApi)
-                    rt.OnAfterSave(conn, tr)
+                    rt.OnSaved(conn, tr)
 
                 | :? DsSystem as rt ->
                     let ormSystem = rt.ToORM<ORMSystem>(dbApi)

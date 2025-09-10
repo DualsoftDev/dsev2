@@ -25,7 +25,7 @@ module MiniSample =
         let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
         sys.AddArrows [arrowW]
 
-        sys.OnConstructed()
+        sys.OnLoaded()
         sys
 
     /// Extension type 테스트를 위한 간단한 Project 생성
@@ -122,7 +122,7 @@ module MiniSample =
 
         // Project에 System 추가
         project.AddActiveSystem system
-        project.OnConstructed()
+        project.OnLoaded()
 
         // 상태 변경 후, property changed event handling 을 위한, 충분한 시간을 줌.
         System.Threading.Tasks.Task.Run(fun () -> project.ActiveSystems[0].Works[0].Calls[0].Status4 <- Some DbStatus4.Going) |> ignore

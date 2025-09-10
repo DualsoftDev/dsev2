@@ -120,7 +120,7 @@ and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
     member x.XTypeId:Id = DbApi.GetEnumId x.Type
     //member val TypeId:Id = DbApi.GetEnumId typ with get, set
 
-and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
+and Project() = // Create, Initialize, OnSaved, OnLoaded
     inherit RtUnique()
 
     static member Create() = createExtended<Project>()
@@ -173,13 +173,17 @@ and Project() = // Create, Initialize, OnAfterSave, OnAfterLoad
         x
 
 
-    abstract OnAfterSave : IDbConnection * IDbTransaction  -> unit
+    abstract OnSaved : IDbConnection * IDbTransaction  -> unit
     /// DB 저장 직후에 호출되는 메서드
-    default this.OnAfterSave(conn:IDbConnection, tr:IDbTransaction) = ()
+    default this.OnSaved(conn:IDbConnection, tr:IDbTransaction) = ()
 
-    abstract OnAfterLoad : IDbConnection * IDbTransaction  -> unit
+    abstract member OnLoaded: unit -> unit
+    /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
+    default x.OnLoaded() = ()
+
+    abstract OnLoaded : IDbConnection * IDbTransaction  -> unit
     /// DB load 이후에 호출되는 메서드
-    default this.OnAfterLoad(conn:IDbConnection, tr:IDbTransaction) = ()
+    default this.OnLoaded(conn:IDbConnection, tr:IDbTransaction) = ()
 
     static member FromJson(json:string): Project = fwdProjectFromJson json :?> Project
 
@@ -220,6 +224,11 @@ and DsSystem() = // Create
     member x.Lamps      = x.RawLamps      |> toList
     member x.Conditions = x.RawConditions |> toList
     member x.Actions    = x.RawActions    |> toList
+
+    abstract member OnLoaded: unit -> unit
+    /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
+    default x.OnLoaded() = ()
+
 
     static member Create() = createExtended<DsSystem>()
 

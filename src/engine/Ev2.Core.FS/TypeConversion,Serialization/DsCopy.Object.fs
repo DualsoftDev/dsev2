@@ -34,11 +34,11 @@ module internal rec DsObjectCopyImpl =
             DsSystem.Create([], [], [], [], [], [], [], [], [])
             |> tee(fun newSystem ->
                 // flow, work 상호 참조때문에 일단 flow 만 shallow copy
-                let apiDefs  = x.ApiDefs  |-> _.replicate()  |> toArray
-                let apiCalls = x.ApiCalls |-> _.replicate()  |> toArray
-                let flows    = x.Flows    |-> _.replicate()  |> toArray
-                let works    = x.Works    |-> _.replicate()  |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
-                let arrows   = x.Arrows   |-> _.replicate()  |> toArray
+                let apiDefs    = x.ApiDefs    |-> _.replicate() |> toArray
+                let apiCalls   = x.ApiCalls   |-> _.replicate() |> toArray
+                let flows      = x.Flows      |-> _.replicate() |> toArray
+                let works      = x.Works      |-> _.replicate() |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
+                let arrows     = x.Arrows     |-> _.replicate() |> toArray
                 // UI 요소들도 복제
                 let buttons    = x.Buttons    |-> _.replicate() |> toArray
                 let lamps      = x.Lamps      |-> _.replicate() |> toArray
@@ -89,7 +89,7 @@ module internal rec DsObjectCopyImpl =
                     x.Arrows |-> _.replicate() |> List.ofSeq
 
                 // 복제된 데이터를 newWork에 설정
-                calls |> newWork.RawCalls.AddRange
+                calls  |> newWork.RawCalls.AddRange
                 arrows |> newWork.RawArrows.AddRange
                 newWork.FlowGuid <- x.FlowGuid
 
@@ -97,7 +97,7 @@ module internal rec DsObjectCopyImpl =
                 newWork |> replicateProperties x |> ignore
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
-                calls |> iter (setParentI newWork)
+                calls  |> iter (setParentI newWork)
                 arrows |> iter (setParentI newWork)
 
                 // 검증
@@ -147,9 +147,10 @@ module internal rec DsObjectCopyImpl =
                 let apiCallGuids = x.ApiCallGuids |> toList
 
                 // 복제된 데이터를 newCall에 설정
-                newCall.CallType <- x.CallType
+                newCall.CallType   <- x.CallType
                 newCall.IsDisabled <- x.IsDisabled
-                newCall.Timeout <- x.Timeout
+                newCall.Timeout    <- x.Timeout
+
                 newCall.AutoConditions.Clear()
                 newCall.CommonConditions.Clear()
                 newCall.ApiCallGuids.Clear()
