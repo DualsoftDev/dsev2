@@ -119,6 +119,10 @@ module InterfaceModule =
 
     type ICompareResult = interface end
 
+    /// ValueSpec 인터페이스
+    type IValueSpec = 
+        abstract member Jsonize:   unit -> string
+        abstract member Stringify: unit -> string
 
     let internal minDate      = DateTime.MinValue
     let internal nullableId   = Nullable<Id>()

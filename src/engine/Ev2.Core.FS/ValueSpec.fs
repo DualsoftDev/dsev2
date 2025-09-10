@@ -18,10 +18,6 @@ module ValueRangeModule =
         Upper: option<Bound<'T>>
     }
 
-    type IValueSpec =
-        abstract member Jsonize:   unit -> string
-        abstract member Stringify: unit -> string
-
     let mutable internal fwdValueSpecFromString:  string->IValueSpec = let dummy (text:string) = failwith "Should be reimplemented." in dummy
     let mutable internal fwdValueSpecFromJson:  string->IValueSpec = let dummy (json:string) = failwith "Should be reimplemented." in dummy
     type ValueSpec =
@@ -42,50 +38,91 @@ module ValueRangeModule =
         | Multiple of 'T list
         | Ranges of RangeSegment<'T> list   // 단일 or 복수 범위 모두 표현 가능
         with
+            // 공통 로직을 static member로 정의
+            static member internal CreateJObjectCore(value: ValueSpec<'T>) =
+                let typeName = typeof<'T>.Name
+                let jroot = JObject()
+                jroot["$type"] <- JToken.FromObject(typeName)
+                jroot["Value"] <- JToken.FromObject(value)
+                jroot
+
+            static member internal StringifyCore(value: ValueSpec<'T>) =
+                let stringifyRange (r: RangeSegment<'T>) =
+                    let format (v: 'T, b: BoundType) isLower =
+                        match b, isLower with
+                        | Open  , true  -> sprintf "%A < x" v
+                        | Closed, true  -> sprintf "%A <= x" v
+                        | Open  , false -> sprintf "x < %A" v
+                        | Closed, false -> sprintf "x <= %A" v
+
+                    match r.Lower, r.Upper with
+                    | Some l, Some u ->
+                        let left  = format l true
+                        let right = format u false
+                        if left.EndsWith("x") && right.StartsWith("x ") then
+                            let lval = left .Split(' ').[0]
+                            let lop  = left .Split(' ').[1]
+                            let rop  = right.Split(' ').[1]
+                            let rval = right.Split(' ').[2]
+                            sprintf "%s %s x %s %s" lval lop rop rval
+                        else
+                            sprintf "%s && %s" left right
+                    | Some l, None -> format l true
+                    | None, Some u -> format u false
+                    | None, None -> "true"
+
+                match value with
+                | Single v -> sprintf "x = %A" v
+                | Multiple vs -> vs |> List.map string |> String.concat ", " |> sprintf "x ∈ {%s}"
+                | Ranges rs -> rs |> List.map stringifyRange |> String.concat " || "
+
+            member x.ToJObject() = ValueSpec<'T>.CreateJObjectCore(x)
+
             interface IValueSpec with
-                /// EmJson.ToJson 은 동작하지 않음.  runtime class 고려해야 해서.
                 member x.Jsonize() =
-                    let typeName = typeof<'T>.Name   // 예: "float", "int"
-                    let jroot = JObject()
-                    jroot["$type"] <- JToken.FromObject(typeName)
-                    jroot["Value"]     <- JToken.FromObject(x)
-                    jroot.ToString(Formatting.Indented)
+                    let jobj = x.ToJObject()
+                    jobj.ToString(Formatting.Indented)
 
-                member x.Stringify() =
-                    let stringifyRange (r: RangeSegment<'T>) =
-                        let format (v: 'T, b: BoundType) isLower =
-                            match b, isLower with
-                            | Open  , true  -> sprintf "%A < x" v
-                            | Closed, true  -> sprintf "%A <= x" v
-                            | Open  , false -> sprintf "x < %A" v
-                            | Closed, false -> sprintf "x <= %A" v
-
-                        match r.Lower, r.Upper with
-                        | Some l, Some u ->   // 예: 5 < x < 6
-                            let left  = format l true
-                            let right = format u false
-                            // 예: "5 < x" + " and " + "x < 6" → "5 < x < 6"
-                            if left.EndsWith("x") && right.StartsWith("x ") then
-                                let lval = left .Split(' ')[0]
-                                let lop  = left .Split(' ')[1]
-                                let rop  = right.Split(' ')[1]
-                                let rval = right.Split(' ')[2]
-                                sprintf "%s %s x %s %s" lval lop rop rval
-                            else
-                                sprintf "%s && %s" left right
-
-                        | Some l, None -> format l true
-                        | None, Some u -> format u false
-                        | None, None -> "true"
-
-
-                    match x with
-                    | Single v -> sprintf "x = %A" v
-                    | Multiple vs -> vs |> List.map string |> String.concat ", " |> sprintf "x ∈ {%s}"
-                    | Ranges rs -> rs |> List.map stringifyRange |> String.concat " || "
+                member x.Stringify() = ValueSpec<'T>.StringifyCore(x)
 
             override x.ToString() = (x :> IValueSpec).Stringify()
 
+    [<AbstractClass>]
+    type AbstractValueSpec() =
+
+        abstract member ToJObject: unit -> JObject
+
+        abstract member Jsonize: unit -> string
+        default x.Jsonize() =
+            let jobj = x.ToJObject()
+            jobj.ToString(Formatting.Indented)
+        abstract member ToJson: unit -> string
+        default x.ToJson() = x.Jsonize()
+
+        abstract member Stringify: unit -> string
+
+        interface IValueSpec with
+            member x.Jsonize() = x.Jsonize()
+            member x.Stringify() = x.Stringify()
+
+    /// C# 에서 상속 가능한 ValueSpec wrapper 클래스
+    type ValueSpecWrapper<'T>(value: ValueSpec<'T>) =
+        inherit AbstractValueSpec()
+
+        member val InnerValue = value with get, set
+
+        /// 확장을 위한 가상 메서드 - 커스텀 속성 추가용
+        abstract member AddCustomProperties: JObject -> unit
+        default x.AddCustomProperties(jobj) = ()
+
+        override x.ToJObject() =
+            let jroot = ValueSpec<'T>.CreateJObjectCore(x.InnerValue)
+            x.AddCustomProperties(jroot)  // 확장 포인트
+            jroot
+
+        override x.Stringify() = ValueSpec<'T>.StringifyCore(x.InnerValue)
+
+        override x.ToString() = x.Stringify()
 
 
 
@@ -242,22 +279,57 @@ module ValueRangeModule =
         static member TryParse(text: string) = rTryParseValueSpec text |> Option.ofResult
 
 
-    type GuidedValueSpec(guid:Guid, valueSpec:IValueSpec) =
-        member val Guid = guid with get, set
-        member val ValueSpec = valueSpec with get, set
+    /// Guid를 가진 ValueSpec - ValueSpecWrapper를 상속받아 구현
+    type GuidedValueSpec<'T>(guid:Guid, value: ValueSpec<'T>) =
+        inherit ValueSpecWrapper<'T>(value)
 
-        member x.ToJson() =
-            let jobj = JObject()
-            jobj["Guid"] <- JToken.FromObject(guid)
-            jobj["ValueSpec"] <- JToken.Parse(valueSpec.Jsonize())
+        member val Guid = guid with get, set
+
+        // ValueSpec 속성을 InnerValue로 리다이렉트
+        member x.ValueSpec
+            with get() = x.InnerValue
+            and set(v) = x.InnerValue <- v
+
+        // ToJObject를 override하여 Guid 추가
+        override x.ToJObject() =
+            let jobj = base.ToJObject()
+            jobj["Guid"] <- JToken.FromObject(x.Guid)
+            jobj
+
+        // JSON 직렬화 (Guid 포함)
+        override x.ToJson() =
+            let jobj = x.ToJObject()
             jobj.ToString(Formatting.Indented)
 
-        static member FromJson(json: string) =
+        // JSON 역직렬화 - 타입 정보 필요
+        static member FromJson(json: string) : GuidedValueSpec<'T> =
             let jobj = JObject.Parse(json)
             let guid = jobj["Guid"].ToObject<Guid>()
-            let valueSpecJson = jobj["ValueSpec"].ToString()
-            let valueSpec = IValueSpec.Deserialize(valueSpecJson)
-            GuidedValueSpec(guid, valueSpec)
+            let valueJson = jobj["Value"].ToString()
+            let value = JsonConvert.DeserializeObject<ValueSpec<'T>>(valueJson)
+            GuidedValueSpec<'T>(guid, value)
+
+        //// IValueSpec 유지를 위한 비제네릭 버전 제공
+        //static member FromJsonDynamic(json: string) : IValueSpec =
+        //    let jobj = JObject.Parse(json)
+        //    let guid = jobj["Guid"].ToObject<Guid>()
+        //    let typeName = jobj["$type"].ToString()
+
+        //    // 타입에 따라 적절한 GuidedValueSpec<T> 생성
+        //    match typeName with
+        //    | t when t = typedefof<single>.Name ->
+        //        GuidedValueSpec<single>.FromJson(json) :> IValueSpec
+        //    | t when t = typedefof<double>.Name ->
+        //        GuidedValueSpec<double>.FromJson(json) :> IValueSpec
+        //    | t when t = typedefof<int32>.Name ->
+        //        GuidedValueSpec<int32>.FromJson(json) :> IValueSpec
+        //    | t when t = typedefof<int64>.Name ->
+        //        GuidedValueSpec<int64>.FromJson(json) :> IValueSpec
+        //    | t when t = typedefof<bool>.Name ->
+        //        GuidedValueSpec<bool>.FromJson(json) :> IValueSpec
+        //    | t when t = typedefof<string>.Name ->
+        //        GuidedValueSpec<string>.FromJson(json) :> IValueSpec
+        //    | _ -> failwith $"Unsupported type for GuidedValueSpec: {typeName}"
 
 (*
 
@@ -368,3 +440,31 @@ let json = serializeWithType cond "float"
 
 
 *)
+
+    /// ValueSpec 팩토리 함수 및 헬퍼 메서드
+    module ValueSpec =
+        /// 기존 DU를 wrapper로 변환
+        let wrap (spec: ValueSpec<'T>) =
+            ValueSpecWrapper<'T>(spec)
+
+        /// 단일 값 생성 헬퍼
+        let single value =
+            ValueSpecWrapper(Single value)
+
+        /// 복수 값 생성 헬퍼
+        let multiple values =
+            ValueSpecWrapper(Multiple values)
+
+        /// 범위 생성 헬퍼
+        let ranges rangeList =
+            ValueSpecWrapper(Ranges rangeList)
+
+        /// wrapper에서 inner value 추출
+        let unwrap (wrapper: ValueSpecWrapper<'T>) =
+            wrapper.InnerValue
+
+        /// IValueSpec을 ValueSpecWrapper로 캐스팅 시도
+        let tryAsWrapper (spec: IValueSpec) =
+            match spec with
+            | :? ValueSpecWrapper<_> as wrapper -> Some wrapper
+            | _ -> None
