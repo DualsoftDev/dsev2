@@ -125,7 +125,7 @@ module CreateSampleModule =
                     z.Status4  <- Some DbStatus4.Ready
                     z.CallType <- DbCallType.Parallel
                     // 빈 ApiCallValueSpecs 사용 (실제 값은 CallValueSpec에 저장)
-                    z.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(rtApiCall1a, Single 1)])
+                    z.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(rtApiCall1a, Single 999); ApiCallValueSpec(rtApiCall1b, Multiple [1.1; 2.2; 3.3]); ])
                     z.CommonConditions <- ApiCallValueSpecs()
                     z.Timeout  <- Some 30
                     z.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
