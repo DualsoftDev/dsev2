@@ -63,8 +63,11 @@ module CoreToAas =
 
                 | :? NjCall as call ->
                     JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
-                    JObj().TrySetProperty(call.CommonConditions, nameof call.CommonConditions)
-                    JObj().TrySetProperty(call.AutoConditions,   nameof call.AutoConditions)
+                    // JSON 문자열로 변환하여 AASX에 저장
+                    let commonConditionsStr = if call.CommonConditionsObj.Count = 0 then null else call.CommonConditionsObj.ToJson()
+                    let autoConditionsStr   = if call.AutoConditionsObj.Count = 0 then null else call.AutoConditionsObj.ToJson()
+                    JObj().TrySetProperty(commonConditionsStr, nameof call.CommonConditions)
+                    JObj().TrySetProperty(autoConditionsStr,   nameof call.AutoConditions)
                     JObj().TrySetProperty(call.CallValueSpec,    nameof call.CallValueSpec)
                     if call.Timeout.IsSome then
                         JObj().TrySetProperty(call.Timeout.Value,     nameof call.Timeout)

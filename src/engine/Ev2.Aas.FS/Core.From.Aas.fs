@@ -89,7 +89,7 @@ module CoreFromAas =
             let works    = smc.GetSMC "Works"    >>= (_.GetSMC("Work"))    |-> NjWork.FromSMC
             let flows    = smc.GetSMC "Flows"    >>= (_.GetSMC("Flow"))    |-> NjFlow.FromSMC
             let arrows   = smc.GetSMC "Arrows"   >>= (_.GetSMC("Arrow"))   |-> NjArrow.FromSMC
-            
+
             // UI 요소들 읽기
             let buttons    = smc.GetSMC "Buttons"    >>= (_.GetSMC("Button"))    |-> NjButton.FromSMC
             let lamps      = smc.GetSMC "Lamps"      >>= (_.GetSMC("Lamp"))      |-> NjLamp.FromSMC
@@ -200,10 +200,10 @@ module CoreFromAas =
             // JSON 문자열로 저장된 조건들을 ApiCallValueSpecs로 변환
             let commonConditionsStr = smc.TryGetPropValue       "CommonConditions" |? null
             let autoConditionsStr   = smc.TryGetPropValue       "AutoConditions"   |? null
-            let commonConditions = 
+            let commonConditions =
                 if commonConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
                 else ApiCallValueSpecs.FromJson(commonConditionsStr)
-            let autoConditions = 
+            let autoConditions =
                 if autoConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
                 else ApiCallValueSpecs.FromJson(autoConditionsStr)
             let callValueSpec    = smc.TryGetPropValue       "CallValueSpec"    |? null
