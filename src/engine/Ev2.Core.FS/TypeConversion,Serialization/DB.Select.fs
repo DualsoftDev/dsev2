@@ -57,7 +57,7 @@ module internal Db2DsImpl =
             let rtSystem = ormSystem.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR")
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
-            
+
             // Load Buttons, Lamps, Conditions, Actions for System
             let sys = {| SystemId = ormSystem.Id.Value |}
             let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE systemId = @SystemId", sys, tr)
@@ -71,21 +71,21 @@ module internal Db2DsImpl =
                 setParentI s button
                 s.RawButtons.Add button
                 handleAfterSelect button
-                
+
             for ormLamp in ormLamps do
                 let lamp = createExtended<Lamp>() |> replicateProperties ormLamp
                 lamp.FlowId <- ormLamp.FlowId
                 setParentI s lamp
                 s.RawLamps.Add lamp
                 handleAfterSelect lamp
-                
+
             for ormCondition in ormConditions do
                 let condition = createExtended<DsCondition>() |> replicateProperties ormCondition
                 condition.FlowId <- ormCondition.FlowId
                 setParentI s condition
                 s.RawConditions.Add condition
                 handleAfterSelect condition
-                
+
             for ormAction in ormActions do
                 let action = createExtended<DsAction>() |> replicateProperties ormAction
                 action.FlowId <- ormAction.FlowId
@@ -106,7 +106,7 @@ module internal Db2DsImpl =
             ]
 
             s.addFlows(rtFlows, false)
-            
+
             // Set FlowGuid for Buttons, Lamps, Conditions, Actions
             for button in s.Buttons do
                 button.FlowGuid <- button.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
@@ -179,15 +179,15 @@ module internal Db2DsImpl =
                             , {| CallId = orm.Id.Value |}, tr)
 
                         // JSON 문자열을 ApiCallValueSpecs로 역직렬화
-                        let acs = 
-                            if orm.AutoConditions.IsNullOrEmpty() then 
+                        let acs =
+                            if orm.AutoConditions.IsNullOrEmpty() then
                                 ApiCallValueSpecs()
-                            else 
+                            else
                                 ApiCallValueSpecs.FromJson(orm.AutoConditions)
-                        let ccs = 
-                            if orm.CommonConditions.IsNullOrEmpty() then 
+                        let ccs =
+                            if orm.CommonConditions.IsNullOrEmpty() then
                                 ApiCallValueSpecs()
-                            else 
+                            else
                                 ApiCallValueSpecs.FromJson(orm.CommonConditions)
                         Call.Create(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
                         |> replicateProperties orm

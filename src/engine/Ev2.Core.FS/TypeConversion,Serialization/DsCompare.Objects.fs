@@ -206,7 +206,6 @@ module rec DsCompareObjects =
                 // ApiCallValueSpecs 비교를 위해 JSON으로 변환하여 비교
                 if x.AutoConditions.ToJson() <> y.AutoConditions.ToJson() then yield Diff(nameof x.AutoConditions, x, y, null)
                 if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, null)
-                if x.CallValueSpec <> y.CallValueSpec then yield Diff(nameof x.CallValueSpec, x, y, null)
                 if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y, null)
                 if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, null)
                 if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, null)

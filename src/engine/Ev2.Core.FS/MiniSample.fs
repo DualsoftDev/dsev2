@@ -94,7 +94,6 @@ module MiniSample =
             Call.Create()
             |> tee (fun c ->
                 c.Name <- "Call1"
-                c.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
                 c.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(apiCall, ValueSpec<int>.Single 1); ApiCallValueSpec(apiCall, Multiple [1.1; 2.2; 3.3])])
                 c.Status4 <- Some DbStatus4.Ready
                 c.CallType <- DbCallType.Parallel

@@ -206,7 +206,6 @@ module CoreFromAas =
             let autoConditions =
                 if autoConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
                 else ApiCallValueSpecs.FromJson(autoConditionsStr)
-            let callValueSpec    = smc.TryGetPropValue       "CallValueSpec"    |? null
             let timeout          = smc.TryGetPropValue<int>  "Timeout"
             let callType         = smc.TryGetPropValue       "CallType"         |? null
             let status4          = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
@@ -225,7 +224,6 @@ module CoreFromAas =
 
             let njCall = NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , IsDisabled = isDisabled
-                , CallValueSpec = callValueSpec
                 , Timeout = timeout
                 , CallType = callType
                 , Status4 = status4

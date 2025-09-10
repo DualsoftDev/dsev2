@@ -348,7 +348,6 @@ and Call() = // Create
     member val AutoConditions   = ApiCallValueSpecs()    with get, set    // 사전 조건 식 (자동 실행 조건)
     member val CommonConditions = ApiCallValueSpecs()    with get, set    // 안전 조건 식 (실행 보호조건)
     member val ApiCallGuids     = ResizeArray<Guid>()    with get, set    // DB 저장시에는 callId 로 저장
-    member val CallValueSpec    = nullString             with get, set    // 호출 값 사양
     member val Status4          = Option<DbStatus4>.None with get, set
 
     member x.ApiCalls =

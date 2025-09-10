@@ -115,18 +115,17 @@ module internal DsCopyModule =
                 | :? Call as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
-                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                    d.Status4<-s.Status4
                 | :? NjCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // Call의 ApiCallValueSpecs를 NjCall의 object properties로 복사
                     d.AutoConditionsObj<-s.AutoConditions; d.CommonConditionsObj<-s.CommonConditions
-                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                    d.Status4<-s.Status4
                 | :? ORMCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // ApiCallValueSpecs를 JSON 문자열로 변환
                     d.AutoConditions<-if s.AutoConditions.Count = 0 then null else s.AutoConditions.ToJson()
                     d.CommonConditions<-if s.CommonConditions.Count = 0 then null else s.CommonConditions.ToJson()
-                    d.CallValueSpec<-s.CallValueSpec
                 | _ -> failwith "ERROR"
             | :? NjCall as s ->
                 match dbx with
@@ -134,18 +133,17 @@ module internal DsCopyModule =
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // NjCall의 object properties를 Call의 ApiCallValueSpecs로 복사
                     d.AutoConditions<-s.AutoConditionsObj; d.CommonConditions<-s.CommonConditionsObj
-                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                    d.Status4<-s.Status4
                 | :? NjCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // NjCall 간 object properties 복사
                     d.AutoConditionsObj<-s.AutoConditionsObj; d.CommonConditionsObj<-s.CommonConditionsObj
-                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                    d.Status4<-s.Status4
                 | :? ORMCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // object properties를 JSON 문자열로 변환
                     d.AutoConditions<-if s.AutoConditionsObj.Count = 0 then null else s.AutoConditionsObj.ToJson()
                     d.CommonConditions<-if s.CommonConditionsObj.Count = 0 then null else s.CommonConditionsObj.ToJson()
-                    d.CallValueSpec<-s.CallValueSpec
                 | _ -> failwith "ERROR"
             | :? ORMCall as s ->
                 match dbx with
@@ -154,17 +152,16 @@ module internal DsCopyModule =
                     // JSON 문자열을 ApiCallValueSpecs로 역직렬화
                     d.AutoConditions<-if s.AutoConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
                     d.CommonConditions<-if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
-                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-None
+                    d.Status4<-None
                 | :? NjCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     // JSON 문자열을 object properties로 역직렬화
                     d.AutoConditionsObj<-if s.AutoConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
                     d.CommonConditionsObj<-if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
-                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-None
+                    d.Status4<-None
                 | :? ORMCall as d ->
                     d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
                     d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
-                    d.CallValueSpec<-s.CallValueSpec
                 | _ -> failwith "ERROR"
             | _ -> failwith "ERROR"
 

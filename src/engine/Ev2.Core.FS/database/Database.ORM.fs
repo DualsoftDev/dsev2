@@ -224,7 +224,6 @@ module ORMTypesModule =
         member val Timeout    = timeout    with get, set
         member val AutoConditions   = autoConditions   with get, set
         member val CommonConditions = commonConditions with get, set
-        member val CallValueSpec = nullString with get, set
 
         member x.Initialize(runtime:Call) =
             runtime.CopyUniqueProperties(x)
@@ -234,7 +233,6 @@ module ORMTypesModule =
             // ApiCallValueSpecs를 JSON 문자열로 변환
             x.AutoConditions <- if runtime.AutoConditions.Count = 0 then null else runtime.AutoConditions.ToJson()
             x.CommonConditions <- if runtime.CommonConditions.Count = 0 then null else runtime.CommonConditions.ToJson()
-            x.CallValueSpec <- runtime.CallValueSpec
             x.Status4Id <- runtime.Status4 |-> int64
             x
 

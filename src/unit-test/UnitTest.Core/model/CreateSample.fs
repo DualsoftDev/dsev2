@@ -124,11 +124,9 @@ module CreateSampleModule =
                     z.Name     <- "Call1a"
                     z.Status4  <- Some DbStatus4.Ready
                     z.CallType <- DbCallType.Parallel
-                    // 빈 ApiCallValueSpecs 사용 (실제 값은 CallValueSpec에 저장)
                     z.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(rtApiCall1a, Single 999); ApiCallValueSpec(rtApiCall1b, Multiple [1.1; 2.2; 3.3]); ])
                     z.CommonConditions <- ApiCallValueSpecs()
                     z.Timeout  <- Some 30
-                    z.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
                     z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> JsonConvert.SerializeObject
                     z.ApiCallGuids.AddRange [rtApiCall1a.Guid] )
 
@@ -137,12 +135,11 @@ module CreateSampleModule =
                 |> tee (fun z ->
                     z.Name <- "Call1b"
                     z.Status4 <- Some DbStatus4.Finished
-                    z.CallType <- DbCallType.Repeat
-                    z.CallValueSpec <- "speed <= 50.0 || position == 'home'")
+                    z.CallType <- DbCallType.Repeat)
 
             rtWork1.AddCalls [rtCall1a; rtCall1b]
-            rtCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing; z.CallValueSpec <- "cycle_count > 0")
-            rtCall2b  <- Call.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished; z.CallValueSpec <- "result == 'success'")
+            rtCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
+            rtCall2b  <- Call.Create() |> tee (fun z -> z.Name <- "Call2b"; z.Status4 <- Some DbStatus4.Finished)
             rtWork2.AddCalls [rtCall2a; rtCall2b]
             rtProject.AddPassiveSystem rtCylinder
             rtProject.AddActiveSystem rtSystem

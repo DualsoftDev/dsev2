@@ -68,7 +68,6 @@ module CoreToAas =
                     let autoConditionsStr   = if call.AutoConditionsObj.Count = 0 then null else call.AutoConditionsObj.ToJson()
                     JObj().TrySetProperty(commonConditionsStr, nameof call.CommonConditions)
                     JObj().TrySetProperty(autoConditionsStr,   nameof call.AutoConditions)
-                    JObj().TrySetProperty(call.CallValueSpec,    nameof call.CallValueSpec)
                     if call.Timeout.IsSome then
                         JObj().TrySetProperty(call.Timeout.Value,     nameof call.Timeout)
                     JObj().TrySetProperty(call.CallType.ToString(),   nameof call.CallType)

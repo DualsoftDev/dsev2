@@ -93,7 +93,6 @@ module AasSemantics =
             ("IsDisabled",       "https://dualsoft.com/aas/call/isDisabled")
             ("CommonConditions", "https://dualsoft.com/aas/call/commonConditions")
             ("AutoConditions",   "https://dualsoft.com/aas/call/autoConditions")
-            ("CallValueSpec",    "https://dualsoft.com/aas/call/callValueSpec")
             ("Status4",          "https://dualsoft.com/aas/common/status4")
             ("Status",           "https://dualsoft.com/aas/common/status")
 
