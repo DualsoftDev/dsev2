@@ -32,6 +32,8 @@ module MiniSample =
     let create() =
         // Project 생성
         let project = Project.Create(Name = "TestProject")
+        let cyl = createCylinder "Cylinder1"
+        project.AddPassiveSystem cyl
 
         // DsSystem 생성 및 추가
         let system =
@@ -70,30 +72,6 @@ module MiniSample =
                 w.Status4 <- Some DbStatus4.Going
             )
 
-        // Call 생성
-        let call1 =
-            Call.Create()
-            |> tee (fun c ->
-                c.Name <- "Call1"
-                c.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
-                c.Status4 <- Some DbStatus4.Ready
-                c.CallType <- DbCallType.Parallel
-            )
-
-        let call2 =
-            Call.Create()
-            |> tee (fun c ->
-                c.Name <- "Call2"
-                c.Status4 <- Some DbStatus4.Going
-                c.CallType <- DbCallType.Repeat
-            )
-
-        // Call을 Work에 추가
-        [call1; call2] |> work1.AddCalls
-
-        let cyl = createCylinder "Cylinder1"
-        project.AddPassiveSystem cyl
-
         // ApiDef 생성
         let apiDefAdv = cyl.ApiDefs |> find(fun ad -> ad.Name = "ApiDefADV")
         let apiDefRet = cyl.ApiDefs |> find(fun ad -> ad.Name = "ApiDefRET")
@@ -110,6 +88,29 @@ module MiniSample =
                 a.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
                 a.OutSymbol <- "Y0" // OutSymbol 추가 (NOT NULL constraint)
             )
+
+        // Call 생성
+        let call1 =
+            Call.Create()
+            |> tee (fun c ->
+                c.Name <- "Call1"
+                c.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
+                c.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(apiCall, ValueSpec<int>.Single 1)])
+                c.Status4 <- Some DbStatus4.Ready
+                c.CallType <- DbCallType.Parallel
+            )
+
+        let call2 =
+            Call.Create()
+            |> tee (fun c ->
+                c.Name <- "Call2"
+                c.Status4 <- Some DbStatus4.Going
+                c.CallType <- DbCallType.Repeat
+            )
+
+        // Call을 Work에 추가
+        [call1; call2] |> work1.AddCalls
+
 
         // System에 요소들 추가
         [ work1; work2] |> system.AddWorks

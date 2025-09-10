@@ -5,6 +5,7 @@ open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
 open Dual.Common.Core.FS
+open Dual.Common.Base
 
 
 [<AutoOpen>]
@@ -329,10 +330,17 @@ module ValueRangeModule =
         //    | _ -> failwith $"Unsupported type for GuidedValueSpec: {typeName}"
 
 
-    type ApiCallValueSpec<'T>(apiCall:ApiCall, value: ValueSpec<'T>) =
-        inherit GuidedValueSpec<'T>(apiCall.Guid, value)
+    type ApiCallValueSpec<'T>(apiCallGuid:Guid, value: ValueSpec<'T>) =
+        inherit GuidedValueSpec<'T>(apiCallGuid, value)
+        new (apiCall:ApiCall, value: ValueSpec<'T>) = ApiCallValueSpec<'T>(apiCall.Guid, value)
         interface IApiCallValueSpec
-            with member x.ApiCall = apiCall :> IRtApiCall
+            with member x.ApiCall = x.ApiCall :> IRtApiCall
+        member val ApiCall = getNull<ApiCall>() with get, set
+    //type ApiCallValueSpec<'T>(apiCall:ApiCall, value: ValueSpec<'T>) =
+    //    inherit GuidedValueSpec<'T>(apiCall.Guid, value)
+    //    interface IApiCallValueSpec
+    //        with member x.ApiCall = apiCall :> IRtApiCall
+    //    member val ApiCall = apiCall with get, set
 
     type ApiCallValueSpecs with
         // ToJson: ApiCallValueSpecs를 JSON 문자열로 직렬화
@@ -341,7 +349,7 @@ module ValueRangeModule =
             // 각 spec을 문자열로 변환하여 JSON 배열로 만듦
             let strings =
                 x
-                |> Seq.map (fun spec -> spec.Stringify())
+                |> Seq.map (fun spec -> spec.Jsonize())
                 |> Seq.toArray
             JsonConvert.SerializeObject(strings)
 
@@ -355,15 +363,36 @@ module ValueRangeModule =
                     let strings = JsonConvert.DeserializeObject<string[]>(json)
                     if strings <> null then
                         for str in strings do
-                            // 각 문자열을 IValueSpec으로 파싱한 후
-                            // 임시 ApiCall을 생성하여 ApiCallValueSpec 생성
-                            let valueSpec = IValueSpec.Parse(str)
-                            // ApiCallValueSpec을 생성하려면 ApiCall이 필요하지만,
-                            // 여기서는 단순히 문자열 정보만 보존하기 위해
-                            // 더미 ApiCall 생성
-                            let dummyApiCall = ApiCall.Create()
-                            dummyApiCall.Guid <- Guid.NewGuid()
-                            let apiCallValueSpec = ApiCallValueSpec<string>(dummyApiCall, Single str)
+                            // 각 JSON 요소를 JObject로 파싱하여 Guid 추출
+                            let jobj = JObject.Parse(str)
+                            let guid =
+                                match jobj.["Guid"] with
+                                | null -> Guid.NewGuid()
+                                | token -> token.ToObject<Guid>()
+
+
+                            // 기존 deserializeWithType을 활용하여 IValueSpec 생성
+                            let valueSpec = deserializeWithType str
+
+                            // IValueSpec을 적절한 타입의 ApiCallValueSpec으로 변환
+                            // ValueSpec<'T>의 실제 타입을 확인하여 처리
+                            let apiCallValueSpec : IApiCallValueSpec =
+                                match valueSpec with
+                                | :? ValueSpec<single> as v -> ApiCallValueSpec<single>(guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<double> as v -> ApiCallValueSpec<double>(guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<int8>   as v -> ApiCallValueSpec<int8>  (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<int16>  as v -> ApiCallValueSpec<int16> (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<int32>  as v -> ApiCallValueSpec<int32> (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<int64>  as v -> ApiCallValueSpec<int64> (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<uint8>  as v -> ApiCallValueSpec<uint8> (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<uint16> as v -> ApiCallValueSpec<uint16>(guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<uint32> as v -> ApiCallValueSpec<uint32>(guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<uint64> as v -> ApiCallValueSpec<uint64>(guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<char>   as v -> ApiCallValueSpec<char>  (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<bool>   as v -> ApiCallValueSpec<bool>  (guid, v) :> IApiCallValueSpec
+                                | :? ValueSpec<string> as v -> ApiCallValueSpec<string>(guid, v) :> IApiCallValueSpec
+                                | _ -> failwith $"Unsupported ValueSpec type in ApiCallValueSpecs.FromJson: {valueSpec.GetType().FullName}"
+
                             specs.Add(apiCallValueSpec)
                 with
                 | _ -> ()
@@ -506,4 +535,4 @@ let json = serializeWithType cond "float"
             match spec with
             | :? ValueSpecWrapper<_> as wrapper -> Some wrapper
             | _ -> None
-    
+
