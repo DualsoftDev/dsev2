@@ -42,8 +42,10 @@ undiet:
 	done
 
 
-clean:
+clean: test-clean
 	@find . -type d \( -name "bin" -o -name "obj" -o -name ".vs" \) -exec rm -rf {} +
+
+test-clean:
 	rm -rf ./src/unit-test/UnitTest.Core/test-data
 	./scripts/initialize-pgsql-schema.sh -u dstest
 index:
