@@ -43,8 +43,8 @@ module ValueSpecTestModule =
 
         // double 타입
         let jsonSingleDoubleValue = """{
-  "valueType": "Double",
-  "value": {
+  "$type": "Double",
+  "Value": {
     "Case": "Single",
     "Fields": [
       3.14156952
@@ -57,8 +57,8 @@ module ValueSpecTestModule =
 
         // bool 타입
         let jsonSingleBoolValue = """{
-  "valueType": "Boolean",
-  "value": {
+  "$type": "Boolean",
+  "Value": {
     "Case": "Single",
     "Fields": [
       true
@@ -71,8 +71,8 @@ module ValueSpecTestModule =
 
         // double 타입
         let jsonMultipleRange = """{
-  "valueType": "Double",
-  "value": {
+  "$type": "Double",
+  "Value": {
     "Case": "Ranges",
     "Fields": [
       [

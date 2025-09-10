@@ -5,7 +5,6 @@ open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
 open Dual.Common.Core.FS
-open System.Runtime.CompilerServices
 
 
 [<AutoOpen>]
@@ -44,11 +43,12 @@ module ValueRangeModule =
         | Ranges of RangeSegment<'T> list   // 단일 or 복수 범위 모두 표현 가능
         with
             interface IValueSpec with
+                /// EmJson.ToJson 은 동작하지 않음.  runtime class 고려해야 해서.
                 member x.Jsonize() =
                     let typeName = typeof<'T>.Name   // 예: "float", "int"
                     let jroot = JObject()
-                    jroot["valueType"] <- JToken.FromObject(typeName)
-                    jroot["value"]     <- JToken.FromObject(x)
+                    jroot["$type"] <- JToken.FromObject(typeName)
+                    jroot["Value"]     <- JToken.FromObject(x)
                     jroot.ToString(Formatting.Indented)
 
                 member x.Stringify() =
@@ -91,8 +91,8 @@ module ValueRangeModule =
 
     let deserializeWithType (json: string) : IValueSpec =
         let jroot = JObject.Parse(json)
-        let typeName = jroot.["valueType"].ToString()
-        let valueJson = jroot.["value"].ToString()
+        let typeName = jroot.["$type"].ToString()
+        let valueJson = jroot.["Value"].ToString()
 
         let ty =
             match typeName with
@@ -248,14 +248,14 @@ module ValueRangeModule =
 
         member x.ToJson() =
             let jobj = JObject()
-            jobj["guid"] <- JToken.FromObject(guid)
-            jobj["valueSpec"] <- JToken.Parse(valueSpec.Jsonize())
+            jobj["Guid"] <- JToken.FromObject(guid)
+            jobj["ValueSpec"] <- JToken.Parse(valueSpec.Jsonize())
             jobj.ToString(Formatting.Indented)
 
         static member FromJson(json: string) =
             let jobj = JObject.Parse(json)
-            let guid = jobj["guid"].ToObject<Guid>()
-            let valueSpecJson = jobj["valueSpec"].ToString()
+            let guid = jobj["Guid"].ToObject<Guid>()
+            let valueSpecJson = jobj["ValueSpec"].ToString()
             let valueSpec = IValueSpec.Deserialize(valueSpecJson)
             GuidedValueSpec(guid, valueSpec)
 
