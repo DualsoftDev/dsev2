@@ -178,8 +178,17 @@ module internal Db2DsImpl =
                                 WHERE m.callId = @CallId"""
                             , {| CallId = orm.Id.Value |}, tr)
 
-                        let acs = orm.AutoConditions |> jsonDeserializeStrings
-                        let ccs = orm.CommonConditions |> jsonDeserializeStrings
+                        // JSON 문자열을 ApiCallValueSpecs로 역직렬화
+                        let acs = 
+                            if orm.AutoConditions.IsNullOrEmpty() then 
+                                ApiCallValueSpecs()
+                            else 
+                                ApiCallValueSpecs.FromJson(orm.AutoConditions)
+                        let ccs = 
+                            if orm.CommonConditions.IsNullOrEmpty() then 
+                                ApiCallValueSpecs()
+                            else 
+                                ApiCallValueSpecs.FromJson(orm.CommonConditions)
                         Call.Create(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
                         |> replicateProperties orm
                         |> tee handleAfterSelect

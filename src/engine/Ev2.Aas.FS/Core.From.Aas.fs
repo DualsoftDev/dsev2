@@ -197,8 +197,15 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
-            let commonConditions = smc.TryGetPropValue       "CommonConditions" |? null
-            let autoConditions   = smc.TryGetPropValue       "AutoConditions"   |? null
+            // JSON 문자열로 저장된 조건들을 ApiCallValueSpecs로 변환
+            let commonConditionsStr = smc.TryGetPropValue       "CommonConditions" |? null
+            let autoConditionsStr   = smc.TryGetPropValue       "AutoConditions"   |? null
+            let commonConditions = 
+                if commonConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
+                else ApiCallValueSpecs.FromJson(commonConditionsStr)
+            let autoConditions = 
+                if autoConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
+                else ApiCallValueSpecs.FromJson(autoConditionsStr)
             let callValueSpec    = smc.TryGetPropValue       "CallValueSpec"    |? null
             let timeout          = smc.TryGetPropValue<int>  "Timeout"
             let callType         = smc.TryGetPropValue       "CallType"         |? null

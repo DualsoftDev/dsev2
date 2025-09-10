@@ -67,7 +67,7 @@ module rec TmpCompatibility =
                     // Flow는 이제 UI 요소를 직접 소유하지 않음
                     ()
 
-                | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls) 
+                | (:? Call) | (:? ApiCall) | (:? ApiDef) | (:? ArrowBetweenWorks) | (:? ArrowBetweenCalls)
                 | (:? DsButton) | (:? Lamp) | (:? DsCondition) | (:? DsAction) ->
                     ()
                 | _ ->
@@ -209,7 +209,7 @@ module rec TmpCompatibility =
             if updateDateTime then x.UpdateDateTime()
             buttons |> iter (setParentI x)
             x.RawButtons.VerifyAddRangeAsSet(buttons)
-            
+
         member internal x.removeButtons(buttons:DsButton seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             buttons |> iter clearParentI
@@ -219,7 +219,7 @@ module rec TmpCompatibility =
             if updateDateTime then x.UpdateDateTime()
             lamps |> iter (setParentI x)
             x.RawLamps.VerifyAddRangeAsSet(lamps)
-            
+
         member internal x.removeLamps(lamps:Lamp seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             lamps |> iter clearParentI
@@ -229,7 +229,7 @@ module rec TmpCompatibility =
             if updateDateTime then x.UpdateDateTime()
             conditions |> iter (setParentI x)
             x.RawConditions.VerifyAddRangeAsSet(conditions)
-            
+
         member internal x.removeConditions(conditions:DsCondition seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             conditions |> iter clearParentI
@@ -239,7 +239,7 @@ module rec TmpCompatibility =
             if updateDateTime then x.UpdateDateTime()
             actions |> iter (setParentI x)
             x.RawActions.VerifyAddRangeAsSet(actions)
-            
+
         member internal x.removeActions(actions:DsAction seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             actions |> iter clearParentI
@@ -404,7 +404,7 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
         createExtended<Call>()
 
     static member CreateCall(callType:DbCallType, apiCalls:ApiCall seq,
-        autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
+        autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
     ) =
         let apiCallGuids = apiCalls |-> _.Guid
 
@@ -412,11 +412,9 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
         call.CallType <- callType
         call.IsDisabled <- isDisabled
         call.Timeout <- timeout
-        call.AutoConditions.Clear()
-        call.CommonConditions.Clear()
         call.ApiCallGuids.Clear()
-        call.AutoConditions.AddRange(autoConditions)
-        call.CommonConditions.AddRange(commonConditions)
+        call.AutoConditions <- autoConditions
+        call.CommonConditions <- commonConditions
         call.ApiCallGuids.AddRange(apiCallGuids)
         apiCalls |> iter (setParentI call)
         call
@@ -506,18 +504,16 @@ module DsObjectUtilsModule =
 
     type Call with // Create
         static member Create(callType:DbCallType, apiCalls:ApiCall seq,
-            autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
+            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
         ) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let call = createExtended<Call>()
             call.CallType <- callType
             call.IsDisabled <- isDisabled
             call.Timeout <- timeout
-            call.AutoConditions.Clear()
-            call.CommonConditions.Clear()
             call.ApiCallGuids.Clear()
-            call.AutoConditions.AddRange(autoConditions)
-            call.CommonConditions.AddRange(commonConditions)
+            call.AutoConditions <- autoConditions
+            call.CommonConditions <- commonConditions
             call.ApiCallGuids.AddRange(apiCalls |-> _.Guid)
             call
 

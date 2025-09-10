@@ -294,9 +294,9 @@ module rec NewtonsoftJsonObjects =
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
         [<JsonProperty(Order = 103)>]
-        member val AutoConditions   = nullString with get, set
+        member val AutoConditions   = ApiCallValueSpecs() with get, set
         [<JsonProperty(Order = 104)>]
-        member val CommonConditions = nullString with get, set
+        member val CommonConditions = ApiCallValueSpecs() with get, set
         [<JsonProperty(Order = 105)>]
         member val IsDisabled = false            with get, set
         [<JsonProperty(Order = 106)>]
@@ -318,14 +318,14 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeIsDisabled() = x.IsDisabled
         member x.ShouldSerializeCallType()   = x.CallType <> DbCallType.Normal.ToString()
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
-        member x.ShouldSerializeAutoConditions() = not (String.IsNullOrEmpty(x.AutoConditions))
-        member x.ShouldSerializeCommonConditions() = not (String.IsNullOrEmpty(x.CommonConditions))
+        member x.ShouldSerializeAutoConditions() = x.AutoConditions.Any()
+        member x.ShouldSerializeCommonConditions() = x.CommonConditions.Any()
         member x.ShouldSerializeTimeout()    = x.Timeout.IsSome
 
 
         member x.Initialize(
             callType:string, apiCalls:Guid[],
-            autoConditions:string, commonConditions:string,
+            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs,
             isDisabled:bool, timeout:int option
         ) =
             x.CallType   <- callType
@@ -555,8 +555,8 @@ module rec NewtonsoftJsonObjects =
                 |? DbCallType.Normal
 
             njc.RuntimeObject <-
-                let acs = njc.AutoConditions |> jsonDeserializeStrings
-                let ccs = njc.CommonConditions |> jsonDeserializeStrings
+                let acs = njc.AutoConditions
+                let ccs = njc.CommonConditions
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
             ()
@@ -763,8 +763,8 @@ module Ds2JsonModule =
 
                 | :? Call as c ->
                     let rt = c
-                    let ac = rt.AutoConditions |> jsonSerializeStrings
-                    let cc = rt.CommonConditions |> jsonSerializeStrings
+                    let ac = rt.AutoConditions
+                    let cc = rt.CommonConditions
                     NjCall.Create()
                     |> replicateProperties rt
                     |> tee (fun z ->

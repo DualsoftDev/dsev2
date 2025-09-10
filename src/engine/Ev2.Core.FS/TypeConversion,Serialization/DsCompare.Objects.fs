@@ -203,8 +203,9 @@ module rec DsCompareObjects =
                 yield! x.ComputeDiffUnique(y, criteria)
 
                 if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff(nameof x.Work, x, y, null)
-                if not <| isStringsEqual x.AutoConditions   y.AutoConditions   then yield Diff(nameof x.AutoConditions, x, y, null)
-                if not <| isStringsEqual x.CommonConditions y.CommonConditions then yield Diff(nameof x.CommonConditions, x, y, null)
+                // ApiCallValueSpecs 비교를 위해 JSON으로 변환하여 비교
+                if x.AutoConditions.ToJson() <> y.AutoConditions.ToJson() then yield Diff(nameof x.AutoConditions, x, y, null)
+                if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, null)
                 if x.CallValueSpec <> y.CallValueSpec then yield Diff(nameof x.CallValueSpec, x, y, null)
                 if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y, null)
                 if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, null)

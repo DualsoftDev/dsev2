@@ -211,20 +211,19 @@ module ORMTypesModule =
             x
 
     type ORMCall(workId:Id, status4Id:Id option // Initialize
-        , callTypeId:Id option, autoConditions:string seq
-        , commonConditions:string seq, isDisabled:bool, timeout:int option
+        , callTypeId:Id option, autoConditions: string, commonConditions: string, isDisabled:bool, timeout:int option
     ) =
         inherit ORMWorkEntity(workId)
 
-        new() = new ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), [], [], false, None)
+        new() = new ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), null, null, false, None)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set
         member val CallTypeId = callTypeId with get, set
         member val IsDisabled = isDisabled with get, set
         member val Timeout    = timeout    with get, set
-        member val AutoConditions   = autoConditions   |> jsonSerializeStrings with get, set
-        member val CommonConditions = commonConditions |> jsonSerializeStrings with get, set
+        member val AutoConditions   = autoConditions   with get, set
+        member val CommonConditions = commonConditions with get, set
         member val CallValueSpec = nullString with get, set
 
         member x.Initialize(runtime:Call) =
@@ -232,8 +231,9 @@ module ORMTypesModule =
             x.CallTypeId <- runtime.CallType |> int64 |> Some
             x.IsDisabled <- runtime.IsDisabled
             x.Timeout <- runtime.Timeout
-            x.AutoConditions <- runtime.AutoConditions |> jsonSerializeStrings
-            x.CommonConditions <- runtime.CommonConditions |> jsonSerializeStrings
+            // ApiCallValueSpecs를 JSON 문자열로 변환
+            x.AutoConditions <- if runtime.AutoConditions.Count = 0 then null else runtime.AutoConditions.ToJson()
+            x.CommonConditions <- if runtime.CommonConditions.Count = 0 then null else runtime.CommonConditions.ToJson()
             x.CallValueSpec <- runtime.CallValueSpec
             x.Status4Id <- runtime.Status4 |-> int64
             x

@@ -120,9 +120,16 @@ module InterfaceModule =
     type ICompareResult = interface end
 
     /// ValueSpec 인터페이스
-    type IValueSpec = 
+    type IValueSpec =
         abstract member Jsonize:   unit -> string
         abstract member Stringify: unit -> string
+    type IGuidedValueSpec =
+        inherit IValueSpec
+        abstract member Guid: Guid with get, set
+    type IApiCallValueSpec =
+        inherit IGuidedValueSpec
+        abstract member ApiCall: IRtApiCall
+
 
     let internal minDate      = DateTime.MinValue
     let internal nullableId   = Nullable<Id>()

@@ -333,6 +333,9 @@ and Work() = // Create
 
         work
 
+and ApiCallValueSpecs() =
+    inherit ResizeArray<IApiCallValueSpec>()
+
 // see static member Create
 and Call() = // Create
     inherit WorkEntity()
@@ -341,8 +344,8 @@ and Call() = // Create
     member val CallType         = DbCallType.Normal      with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
     member val IsDisabled       = false                  with get, set
     member val Timeout          = Option<int>.None       with get, set    // 실행 타임아웃(ms)
-    member val AutoConditions   = ResizeArray<string>()  with get, set    // 사전 조건 식 (자동 실행 조건)
-    member val CommonConditions = ResizeArray<string>()  with get, set    // 안전 조건 식 (실행 보호조건)
+    member val AutoConditions   = ApiCallValueSpecs()    with get, set    // 사전 조건 식 (자동 실행 조건)
+    member val CommonConditions = ApiCallValueSpecs()    with get, set    // 안전 조건 식 (실행 보호조건)
     member val ApiCallGuids     = ResizeArray<Guid>()    with get, set    // DB 저장시에는 callId 로 저장
     member val CallValueSpec    = nullString             with get, set    // 호출 값 사양
     member val Status4          = Option<DbStatus4>.None with get, set
@@ -359,15 +362,15 @@ and Call() = // Create
     static member Create() = createExtended<Call>()
 
     /// Creates a Call with the specified parameters using parameterless constructor + Initialize pattern
-    static member Create(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: string seq, commonConditions: string seq, isDisabled: bool, timeout: int option) =
+    static member Create(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled: bool, timeout: int option) =
         let call = createExtended<Call>()
         // Set call properties
         call.CallType   <- callType
         call.IsDisabled <- isDisabled
         call.Timeout    <- timeout
+        call.AutoConditions <- autoConditions
+        call.CommonConditions <- commonConditions
 
-        autoConditions   |> iter call.AutoConditions.Add
-        commonConditions |> iter call.CommonConditions.Add
         apiCallGuids     |> iter call.ApiCallGuids.Add
 
         call

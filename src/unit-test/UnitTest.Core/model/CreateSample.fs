@@ -124,8 +124,9 @@ module CreateSampleModule =
                     z.Name     <- "Call1a"
                     z.Status4  <- Some DbStatus4.Ready
                     z.CallType <- DbCallType.Parallel
-                    z.AutoConditions.AddRange ["AutoPre 테스트 1"; "AutoConditions 테스트 2"]
-                    z.CommonConditions.AddRange ["안전조건1"; "안전조건2"; ]
+                    // 빈 ApiCallValueSpecs 사용 (실제 값은 CallValueSpec에 저장)
+                    z.AutoConditions <- ApiCallValueSpecs()
+                    z.CommonConditions <- ApiCallValueSpecs()
                     z.Timeout  <- Some 30
                     z.CallValueSpec <- "temperature > 20.0 && pressure < 100.0"
                     z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> JsonConvert.SerializeObject

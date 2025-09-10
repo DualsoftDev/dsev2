@@ -109,18 +109,18 @@ module ValueRangeModule =
     type ValueSpecWrapper<'T>(value: ValueSpec<'T>) =
         inherit AbstractValueSpec()
 
-        member val InnerValue = value with get, set
+        member val ValueSpec = value with get, set
 
         /// 확장을 위한 가상 메서드 - 커스텀 속성 추가용
         abstract member AddCustomProperties: JObject -> unit
         default x.AddCustomProperties(jobj) = ()
 
         override x.ToJObject() =
-            let jroot = ValueSpec<'T>.CreateJObjectCore(x.InnerValue)
+            let jroot = ValueSpec<'T>.CreateJObjectCore(x.ValueSpec)
             x.AddCustomProperties(jroot)  // 확장 포인트
             jroot
 
-        override x.Stringify() = ValueSpec<'T>.StringifyCore(x.InnerValue)
+        override x.Stringify() = ValueSpec<'T>.StringifyCore(x.ValueSpec)
 
         override x.ToString() = x.Stringify()
 
@@ -282,13 +282,10 @@ module ValueRangeModule =
     /// Guid를 가진 ValueSpec - ValueSpecWrapper를 상속받아 구현
     type GuidedValueSpec<'T>(guid:Guid, value: ValueSpec<'T>) =
         inherit ValueSpecWrapper<'T>(value)
+        interface IGuidedValueSpec with
+            member x.Guid with get() = x.Guid and set v = x.Guid <- v
 
         member val Guid = guid with get, set
-
-        // ValueSpec 속성을 InnerValue로 리다이렉트
-        member x.ValueSpec
-            with get() = x.InnerValue
-            and set(v) = x.InnerValue <- v
 
         // ToJObject를 override하여 Guid 추가
         override x.ToJObject() =
@@ -330,6 +327,47 @@ module ValueRangeModule =
         //    | t when t = typedefof<string>.Name ->
         //        GuidedValueSpec<string>.FromJson(json) :> IValueSpec
         //    | _ -> failwith $"Unsupported type for GuidedValueSpec: {typeName}"
+
+
+    type ApiCallValueSpec<'T>(apiCall:ApiCall, value: ValueSpec<'T>) =
+        inherit GuidedValueSpec<'T>(apiCall.Guid, value)
+        interface IApiCallValueSpec
+            with member x.ApiCall = apiCall :> IRtApiCall
+
+    type ApiCallValueSpecs with
+        // ToJson: ApiCallValueSpecs를 JSON 문자열로 직렬화
+        // 현재는 단순히 문자열 배열로 저장하고, 향후 확장 가능
+        member x.ToJson() =
+            // 각 spec을 문자열로 변환하여 JSON 배열로 만듦
+            let strings =
+                x
+                |> Seq.map (fun spec -> spec.Stringify())
+                |> Seq.toArray
+            JsonConvert.SerializeObject(strings)
+
+        // FromJson: JSON 문자열에서 ApiCallValueSpecs로 역직렬화
+        // ToJson()에서 저장한 문자열 배열을 다시 읽어옴
+        static member FromJson(json: string) =
+            let specs = ApiCallValueSpecs()
+            if not (json.IsNullOrEmpty()) then
+                try
+                    // JSON 문자열 배열을 파싱
+                    let strings = JsonConvert.DeserializeObject<string[]>(json)
+                    if strings <> null then
+                        for str in strings do
+                            // 각 문자열을 IValueSpec으로 파싱한 후
+                            // 임시 ApiCall을 생성하여 ApiCallValueSpec 생성
+                            let valueSpec = IValueSpec.Parse(str)
+                            // ApiCallValueSpec을 생성하려면 ApiCall이 필요하지만,
+                            // 여기서는 단순히 문자열 정보만 보존하기 위해
+                            // 더미 ApiCall 생성
+                            let dummyApiCall = ApiCall.Create()
+                            dummyApiCall.Guid <- Guid.NewGuid()
+                            let apiCallValueSpec = ApiCallValueSpec<string>(dummyApiCall, Single str)
+                            specs.Add(apiCallValueSpec)
+                with
+                | _ -> ()
+            specs
 
 (*
 
@@ -461,10 +499,11 @@ let json = serializeWithType cond "float"
 
         /// wrapper에서 inner value 추출
         let unwrap (wrapper: ValueSpecWrapper<'T>) =
-            wrapper.InnerValue
+            wrapper.ValueSpec
 
         /// IValueSpec을 ValueSpecWrapper로 캐스팅 시도
         let tryAsWrapper (spec: IValueSpec) =
             match spec with
             | :? ValueSpecWrapper<_> as wrapper -> Some wrapper
             | _ -> None
+    

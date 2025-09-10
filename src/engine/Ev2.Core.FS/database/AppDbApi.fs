@@ -204,11 +204,14 @@ module ORMTypeConversionModule =
 
     type ORMCall with // Create
         static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
-            autoConditions:string seq, commonConditions:string seq, isDisabled:bool, timeout:int option
+            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
         ): ORMUnique =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType)
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
-            new ORMCall(workId, status4Id, callTypeId, autoConditions, commonConditions, isDisabled, timeout)
+            // ApiCallValueSpecs를 JSON 문자열로 변환
+            let autoConditionsJson = if autoConditions.Count = 0 then null else autoConditions.ToJson()
+            let commonConditionsJson = if commonConditions.Count = 0 then null else commonConditions.ToJson()
+            new ORMCall(workId, status4Id, callTypeId, autoConditionsJson, commonConditionsJson, isDisabled, timeout)
 
     /// runtime object -> ORM object 변환
     /// 주의 사항 : 하부에서 dbApi.With() 사용 금지.  dbApi.TryFindEnumValueId 함수 이용 용도로만 제한

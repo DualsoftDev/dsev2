@@ -108,17 +108,61 @@ module internal DsCopyModule =
             /// To Json
             let tj obj = EmJson.ToJson obj
 
-            let s =
-                match sbx with
-                | :? Call    as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions|>tj; CommonConditions=s.CommonConditions|>tj; CallValueSpec=s.CallValueSpec; Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
-                | :? NjCall  as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     CallValueSpec=s.CallValueSpec; Status4=s.Status4;     (*ApiCall=s.ApiCall; Status4*) |}
-                | :? ORMCall as s -> {| IsDisabled=s.IsDisabled; Timeout=s.Timeout; AutoConditions=s.AutoConditions;     CommonConditions=s.CommonConditions;     CallValueSpec=s.CallValueSpec; Status4=None           (*ApiCall=s.ApiCall; Status4*) |}
+            // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
+            match sbx with
+            | :? Call as s ->
+                match dbx with
+                | :? Call as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
+                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                | :? NjCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
+                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                | :? ORMCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    // ApiCallValueSpecs를 JSON 문자열로 변환
+                    d.AutoConditions<-if s.AutoConditions.Count = 0 then null else s.AutoConditions.ToJson()
+                    d.CommonConditions<-if s.CommonConditions.Count = 0 then null else s.CommonConditions.ToJson()
+                    d.CallValueSpec<-s.CallValueSpec
                 | _ -> failwith "ERROR"
-
-            match dbx with
-            | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions|>fj; d.CommonConditions<-s.CommonConditions|>fj; d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
-            | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;     d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
-            | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;     d.CommonConditions<-s.CommonConditions;     d.CallValueSpec<-s.CallValueSpec; (*No status handling*)
+            | :? NjCall as s ->
+                match dbx with
+                | :? Call as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
+                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                | :? NjCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
+                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-s.Status4
+                | :? ORMCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    // ApiCallValueSpecs를 JSON 문자열로 변환
+                    d.AutoConditions<-if s.AutoConditions.Count = 0 then null else s.AutoConditions.ToJson()
+                    d.CommonConditions<-if s.CommonConditions.Count = 0 then null else s.CommonConditions.ToJson()
+                    d.CallValueSpec<-s.CallValueSpec
+                | _ -> failwith "ERROR"
+            | :? ORMCall as s ->
+                match dbx with
+                | :? Call as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    // JSON 문자열을 ApiCallValueSpecs로 역직렬화
+                    d.AutoConditions<-if s.AutoConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
+                    d.CommonConditions<-if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
+                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-None
+                | :? NjCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    // JSON 문자열을 ApiCallValueSpecs로 역직렬화
+                    d.AutoConditions<-if s.AutoConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
+                    d.CommonConditions<-if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
+                    d.CallValueSpec<-s.CallValueSpec; d.Status4<-None
+                | :? ORMCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
+                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
+                    d.CallValueSpec<-s.CallValueSpec
+                | _ -> failwith "ERROR"
             | _ -> failwith "ERROR"
 
 
