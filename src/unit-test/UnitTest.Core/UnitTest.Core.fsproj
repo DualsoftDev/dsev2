@@ -32,6 +32,7 @@
 		<Compile Include="database\SystemImportExport.Test.fs" />
 		<Compile Include="Duplicate.Test.fs" />
 		<Compile Include="ValueSpec.Test.fs" />
+		<Compile Include="GuidedValueSpec.Test.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 
