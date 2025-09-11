@@ -24,8 +24,21 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj" />
 		<ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 	</ItemGroup>
+
+	<!-- 해당 위치에 Aas3_0 이 check out 되어 있으면 그걸 쓰고, 없으면 nuget 참조 -->
+	<PropertyGroup>
+		<AasProjectPath>..\..\..\..\submodules\aas-core3.0-csharp\src\AasCore.Aas3_0\AasCore.Aas3_0.csproj</AasProjectPath>
+	</PropertyGroup>
+
+	<ItemGroup Condition="Exists('$(AasProjectPath)')">
+		<ProjectReference Include="$(AasProjectPath)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="!Exists('$(AasProjectPath)')">
+		<PackageReference Include="AasCore.Aas3_0" Version="1.0.0" />
+	</ItemGroup>
+
 
 </Project>
