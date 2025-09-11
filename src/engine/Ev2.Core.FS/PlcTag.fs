@@ -18,6 +18,7 @@ module PlcTagModule =
         abstract member Address: string with get, set
         abstract member Value: obj with get, set  // Returns/sets TypedValue.Value as obj
         abstract member ValueType: System.Type with get  // The actual type of the value
+        abstract member Jsonize: unit -> string
 
     type NamedAddress(name: string, address: string) =
         interface IWithName
@@ -60,6 +61,7 @@ module PlcTagModule =
             member x.Address   with get() = x.Tag.Address         and set(v) = x.Tag.Address     <- v
             member x.Value     with get() = box x.Tag.Value.Value and set(v) = x.Tag.Value.Value <- unbox v
             member x.ValueType with get() = typeof<'T>
+            member x.Jsonize() = JsonConvert.SerializeObject(x)
 
         new(name, address, valueSpec) = TagWithSpec<'T>(name, address, TypedValue<'T>(typeof<'T>), valueSpec)
         new() = TagWithSpec<'T>(null, null, TypedValue<'T>(typeof<'T>), ValueSpec.Undefined)
@@ -125,3 +127,20 @@ module PlcTagModule =
 
             // JSON 역직렬화를 통해 인스턴스 생성 (OnDeserialized 콜백이 자동 호출됨)
             JsonConvert.DeserializeObject(json, tagWithSpecType) :?> ITagWithSpec
+
+    type IOTagsWithSpec(inTag:ITagWithSpec, outTag:ITagWithSpec) =
+        new() = IOTagsWithSpec(null, null)
+
+        [<JsonIgnore>] member val InTag  = inTag  with get, set
+        [<JsonIgnore>] member val OutTag = outTag with get, set
+        [<JsonProperty("InTag")>]  member val InTagJson  = "" with get, set
+        [<JsonProperty("OutTag")>] member val OutTagJson = "" with get, set
+
+        [<OnSerializing>]
+        member private this.OnSerializing(context: StreamingContext) =
+            this.InTagJson  <- this.InTag.Jsonize()
+            this.OutTagJson <- this.OutTag.Jsonize()
+        [<OnDeserialized>]
+        member private this.OnDeserialized(context: StreamingContext) =
+            this.InTag  <- TagWithSpec.FromJson(this.InTagJson)
+            this.OutTag <- TagWithSpec.FromJson(this.OutTagJson)

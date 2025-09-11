@@ -44,7 +44,6 @@ and [<AbstractClass>] DsSystemEntityWithFlow() =
         | Some id -> x.System |-> _.Flows >>= tryFind(fun f -> f.Id = Some id)
         | None -> x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
 
-
 and [<AbstractClass>] FlowEntity() =
     inherit RtUnique()
     member x.Flow    = x.RawParent >>= tryCast<Flow>
@@ -288,24 +287,28 @@ and DsButton() = // Create
     inherit DsSystemEntityWithFlow()
 
     interface IRtButton
+    interface IWithTagWithSpecs
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
     inherit DsSystemEntityWithFlow()
 
     interface IRtLamp
+    interface IWithTagWithSpecs
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
     inherit DsSystemEntityWithFlow()
 
     interface IRtCondition
+    interface IWithTagWithSpecs
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
     inherit DsSystemEntityWithFlow()
 
     interface IRtAction
+    interface IWithTagWithSpecs
     static member Create() = createExtended<DsAction>()
 
 

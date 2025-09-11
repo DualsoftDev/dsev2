@@ -339,11 +339,13 @@ module GuidedValueSpecTestModule =
 
         // First cycle
         let json1 = JsonConvert.SerializeObject(originalTag)
-        let tag1 = JsonConvert.DeserializeObject<TagWithSpec<int>>(json1)
+        //let tag1 = JsonConvert.DeserializeObject<TagWithSpec<int>>(json1)
+        let tag1 = TagWithSpec.FromJson(json1)
 
         // Second cycle
         let json2 = JsonConvert.SerializeObject(tag1)
         let tag2 = JsonConvert.DeserializeObject<TagWithSpec<int>>(json2)
+        //let tag2 = JsonConvert.DeserializeObject<ITagWithSpec>(json2) <----------- 이거는 실패함.
 
         // Third cycle
         let json3 = JsonConvert.SerializeObject(tag2)
@@ -358,6 +360,13 @@ module GuidedValueSpecTestModule =
         // JSON should remain stable
         json1 === json2
         json2 === json3
+
+        let io = IOTagsWithSpec(tag1, tag2)
+        let ioJson = EmJson.ToJson io
+        let io2 = EmJson.FromJson<IOTagsWithSpec> ioJson
+        let ioJson2 = EmJson.ToJson io2
+
+        EmJson.IsJsonEquals(ioJson, ioJson2) === true
 
     [<Test>]
     let ``TagWithSpec with overlapping ranges serializes correctly`` () =
