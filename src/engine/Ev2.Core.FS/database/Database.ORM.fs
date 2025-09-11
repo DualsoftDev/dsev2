@@ -262,11 +262,11 @@ module ORMTypesModule =
     type ORMApiCall(systemId:Id, apiDefId:Id // ValueSpecHint
         , inAddress:string, outAddress:string
         , inSymbol:string, outSymbol:string
-        , valueSpec:string
+        , valueSpec:string, ioTagsJson:string
     ) =
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString)
+        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString, nullString)
         interface IORMApiCall
         member val ApiDefId = apiDefId with get, set
 
@@ -275,6 +275,7 @@ module ORMTypesModule =
         member val InSymbol    = inSymbol    with get, set
         member val OutSymbol   = outSymbol   with get, set
         member val ValueSpec   = valueSpec with get, set
+        member val IOTagsJson  = ioTagsJson with get, set
 
         /// View only.  ValueSpec 에 대한 user friendly 표현.  e.g "3 <= x < 5".   TODO: ValueSpec 값 수정 시, tableHistory 를 통해 모니터링 하다가 update 해야 함.
         member x.ValueSpecHint =
@@ -282,13 +283,12 @@ module ORMTypesModule =
             else x.ValueSpec |> IValueSpec.Deserialize |> _.ToString()
 
 
-    type ORMApiDef(systemId:Id, ioTagsJson:string) =
+    type ORMApiDef(systemId:Id) =
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMApiDef(-1, nullString)
+        new() = new ORMApiDef(-1)
         interface IORMApiDef
         member val IsPush = false with get, set
-        member val IOTagsJson = ioTagsJson with get, set
 
         member val TxId = Option<Id>.None with get, set
         member val RxId = Option<Id>.None with get, set

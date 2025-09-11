@@ -259,12 +259,8 @@ module CoreFromAas =
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
             let txGuid = smc.GetPropValue          "TxGuid" |> Guid.Parse
             let rxGuid = smc.GetPropValue          "RxGuid" |> Guid.Parse
-            // IOTags 역직렬화
-            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-            let apiDef = NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
-            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-                apiDef.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-            apiDef
+            
+            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
             |> tee (readAasExtensionProperties smc)
 
     type NjApiCall with // FromSMC
@@ -277,12 +273,17 @@ module CoreFromAas =
             let inSymbol   = smc.TryGetPropValue "InSymbol"   |? null
             let outSymbol  = smc.TryGetPropValue "OutSymbol"  |? null
             let valueSpec  = smc.TryGetPropValue "ValueSpec"  |? null
-
-            NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
+            // IOTags 역직렬화
+            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+            
+            let apiCall = NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , ApiDef = apiDef
                 , InAddress = inAddress
                 , OutAddress = outAddress
                 , InSymbol = inSymbol
                 , OutSymbol = outSymbol
                 , ValueSpec = valueSpec)
+            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+                apiCall.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
+            apiCall
             |> tee (readAasExtensionProperties smc)

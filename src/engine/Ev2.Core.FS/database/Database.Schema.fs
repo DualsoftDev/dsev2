@@ -403,6 +403,7 @@ CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
     -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
     , {k "valueSpec"}       {jsonb}
     , {k "valueSpecHint"}   TEXT
+    , {k "ioTagsJson"}      TEXT
     , {k "apiDefId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE      -- Call 삭제시 ApiCall 도 삭제
     , CONSTRAINT {Tn.ApiCall}_uniq UNIQUE (systemId, name)
@@ -413,7 +414,6 @@ CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
     , {k "txId"}            {intKeyType} NOT NULL
     , {k "rxId"}            {intKeyType} NOT NULL
-    , {k "ioTagsJson"}          TEXT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(txId) REFERENCES {Tn.Work}(id) ON DELETE CASCADE
     , FOREIGN KEY(rxId) REFERENCES {Tn.Work}(id) ON DELETE CASCADE

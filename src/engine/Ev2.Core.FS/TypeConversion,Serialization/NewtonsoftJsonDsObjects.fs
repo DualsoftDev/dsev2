@@ -390,7 +390,9 @@ module rec NewtonsoftJsonObjects =
         member val OutSymbol  = nullString with get, set
         [<JsonConverter(typeof<RawJsonConverter>)>]
         member val ValueSpec  = nullString with get, set
+        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjApiCall>()
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
 
     type NjApiDef() = // Create
@@ -400,11 +402,9 @@ module rec NewtonsoftJsonObjects =
         member val IsPush = false with get, set
         member val TxGuid = emptyGuid with get, set
         member val RxGuid = emptyGuid with get, set
-        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjApiDef>()
         member x.ShouldSerializeTxGuid() = x.TxGuid <> Guid.Empty
         member x.ShouldSerializeRxGuid() = x.RxGuid <> Guid.Empty
-        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
 
 
@@ -618,6 +618,7 @@ module rec NewtonsoftJsonObjects =
                 ApiCall.Create(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
                 |> replicateProperties njac
+                |> tee(fun ac -> ac.IOTags <- njac.IOTags)
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
@@ -849,7 +850,7 @@ module Ds2JsonModule =
                     let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
                     NjApiCall.Create(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
                         InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
-                        ValueSpec=valueSpec )
+                        ValueSpec=valueSpec, IOTags=rt.IOTags )
                     |> replicateProperties rt
                     :> INjUnique
 

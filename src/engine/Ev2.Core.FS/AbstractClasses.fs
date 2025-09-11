@@ -289,7 +289,11 @@ and DsButton() = // Create
     interface IRtButton
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = EmJson.ToJson x.IOTags
+    member x.IOTagsJson =
+        if isItNull x.IOTags || x.IOTags.IsLogicallyEmpty() then
+            null
+        else
+            EmJson.ToJson x.IOTags
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
@@ -298,7 +302,11 @@ and Lamp() = // Create
     interface IRtLamp
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = EmJson.ToJson x.IOTags
+    member x.IOTagsJson =
+        if isItNull x.IOTags || x.IOTags.IsLogicallyEmpty() then
+            null
+        else
+            EmJson.ToJson x.IOTags
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
@@ -307,7 +315,11 @@ and DsCondition() = // Create
     interface IRtCondition
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = EmJson.ToJson x.IOTags
+    member x.IOTagsJson =
+        if isItNull x.IOTags || x.IOTags.IsLogicallyEmpty() then
+            null
+        else
+            EmJson.ToJson x.IOTags
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
@@ -316,7 +328,11 @@ and DsAction() = // Create
     interface IRtAction
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = EmJson.ToJson x.IOTags
+    member x.IOTagsJson =
+        if isItNull x.IOTags || x.IOTags.IsLogicallyEmpty() then
+            null
+        else
+            EmJson.ToJson x.IOTags
     static member Create() = createExtended<DsAction>()
 
 
@@ -414,6 +430,12 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
     member val OutSymbol  = outSymbol   with get, set
 
     member val ValueSpec = valueSpec with get, set
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson =
+        if isItNull x.IOTags || x.IOTags.IsLogicallyEmpty() then
+            null
+        else
+            EmJson.ToJson x.IOTags
 
 
     /// system 에서 현재 ApiCall 을 호출하는 Call 들
@@ -451,9 +473,6 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
     static member Create() = createExtended<ApiDef>()
 
     interface IRtApiDef
-    member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = EmJson.ToJson x.IOTags
-
     member val IsPush = isPush with get, set
 
     member val TxGuid = txGuid with get, set

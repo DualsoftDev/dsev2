@@ -222,7 +222,6 @@ module rec DsCompareObjects =
                 if x.IsPush <> y.IsPush then yield Diff(nameof x.IsPush, x, y, null)
                 if x.TxGuid <> y.TxGuid then yield Diff(nameof x.TxGuid, x, y, $"UPDATE {Tn.ApiDef} SET txId={y.TX.Id.Value} WHERE id={y.Id.Value}")
                 if x.RxGuid <> y.RxGuid then yield Diff(nameof x.RxGuid, x, y, $"UPDATE {Tn.ApiDef} SET rxId={y.RX.Id.Value} WHERE id={y.Id.Value}")
-                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
             }
 
     type ApiCall with // ComputeDiff
@@ -235,6 +234,7 @@ module rec DsCompareObjects =
                 if x.InSymbol   <> y.InSymbol   then yield Diff(nameof x.InSymbol, x, y, null)
                 if x.OutSymbol  <> y.OutSymbol  then yield Diff(nameof x.OutSymbol, x, y, null)
                 if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y, null)
+                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
             }
 
     type ArrowBetweenWorks with // ComputeDiff

@@ -8,6 +8,7 @@ open Dapper
 open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
+open Newtonsoft.Json
 
 type DbObjectIdentifier = //
     | ByGuid of Guid
@@ -129,6 +130,12 @@ module internal Db2DsImpl =
                     let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
 
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
+                    let ioTags = 
+                        if orm.IOTagsJson.IsNullOrEmpty() then
+                            IOTagsWithSpec()
+                        else
+                            let parsed = JsonConvert.DeserializeObject<IOTagsWithSpec>(orm.IOTagsJson)
+                            if parsed.IsLogicallyEmpty() then IOTagsWithSpec() else parsed
                     let apiCall = ApiCall.Create()
                     apiCall.ApiDefGuid <- apiDefGuid
                     apiCall.InAddress <- orm.InAddress
@@ -136,6 +143,7 @@ module internal Db2DsImpl =
                     apiCall.InSymbol <- orm.InSymbol
                     apiCall.OutSymbol <- orm.OutSymbol
                     apiCall.ValueSpec <- valueParam
+                    apiCall.IOTags <- ioTags
                     apiCall
                     |> replicateProperties orm
                     |> tee handleAfterSelect

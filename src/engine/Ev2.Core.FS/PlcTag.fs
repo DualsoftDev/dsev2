@@ -10,10 +10,10 @@ open Dual.Common.Core.FS
 /// JSON 문자열을 이스케이프 없이 그대로 쓰기 위한 JsonConverter
 type RawJsonConverter() =
     inherit JsonConverter()
-    
-    override x.CanConvert(objectType) = 
+
+    override x.CanConvert(objectType) =
         objectType = typeof<string>
-    
+
     override x.WriteJson(writer, value, serializer) =
         match value with
         | null -> writer.WriteNull()
@@ -21,21 +21,21 @@ type RawJsonConverter() =
             // JSON 문자열을 이스케이프 없이 그대로 출력
             writer.WriteRawValue(json)
         | _ -> writer.WriteNull()
-    
+
     override x.ReadJson(reader, objectType, existingValue, serializer) =
         match reader.TokenType with
-        | JsonToken.String -> 
+        | JsonToken.String ->
             // 구형식: 이스케이프된 문자열
-            reader.Value :> obj
+            reader.Value
         | JsonToken.StartObject | JsonToken.StartArray ->
             // 신형식: 객체나 배열을 문자열로 변환
             let jToken = JToken.Load(reader)
             jToken.ToString(Formatting.None) :> obj
-        | JsonToken.Null -> 
+        | JsonToken.Null ->
             null
-        | _ -> 
+        | _ ->
             null
-    
+
     override x.CanRead = true
     override x.CanWrite = true
 
@@ -182,3 +182,7 @@ module PlcTagModule =
                 this.InTag  <- TagWithSpec.FromJson(this.InTagJson)
             if not (System.String.IsNullOrEmpty(this.OutTagJson)) then
                 this.OutTag <- TagWithSpec.FromJson(this.OutTagJson)
+        
+        /// 논리적으로 빈 상태인지 확인 (InTag, OutTag 모두 null)
+        member x.IsLogicallyEmpty() =
+            isItNull x.InTag && isItNull x.OutTag

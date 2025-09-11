@@ -280,7 +280,7 @@ module ORMTypeConversionModule =
                     |> ormReplicateProperties rt
 
                 | :? ApiDef as rt ->
-                    new ORMApiDef(pid, nullString)
+                    new ORMApiDef(pid)
                     |> ormReplicateProperties rt
 
 
@@ -300,7 +300,8 @@ module ORMTypeConversionModule =
                             rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
                         with _ -> failwith "ERROR: ApiDef not accessible"
                     let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
-                    new ORMApiCall(pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam)
+                    let ioTagsJson = rt.IOTagsJson
+                    new ORMApiCall(pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam, ioTagsJson)
                     |> ormReplicateProperties rt
 
                 | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

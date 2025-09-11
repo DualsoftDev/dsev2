@@ -61,6 +61,9 @@ module CoreToAas =
                     JObj().TrySetProperty(apiCall.InSymbol,   nameof apiCall.InSymbol)
                     JObj().TrySetProperty(apiCall.OutSymbol,  nameof apiCall.OutSymbol)
                     JObj().TrySetProperty(apiCall.ValueSpec,  nameof apiCall.ValueSpec)
+                    // IOTags 직렬화
+                    let ioTagsStr = if box apiCall.IOTags = null then null else JsonConvert.SerializeObject(apiCall.IOTags)
+                    JObj().TrySetProperty(ioTagsStr, nameof apiCall.IOTags)
 
                 | :? NjCall as call ->
                     JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
@@ -97,9 +100,6 @@ module CoreToAas =
                     JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
                     JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
                     JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
-                    // IOTags 직렬화
-                    let ioTagsStr = if box apiDef.IOTags = null then null else JsonConvert.SerializeObject(apiDef.IOTags)
-                    JObj().TrySetProperty(ioTagsStr, nameof apiDef.IOTags)
 
                 | (:? NjButton as btn) ->
                     JObj().TrySetProperty(btn.FlowGuid, nameof btn.FlowGuid)
