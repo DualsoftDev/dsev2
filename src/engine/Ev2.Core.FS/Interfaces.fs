@@ -119,10 +119,6 @@ module InterfaceModule =
 
     type ICompareResult = interface end
 
-    /// ValueSpec 인터페이스
-    type IValueSpec =
-        abstract member Jsonize:   unit -> string
-        abstract member Stringify: unit -> string
     type IGuidedValueSpec =
         inherit IValueSpec
         abstract member Guid: Guid with get, set
