@@ -4,6 +4,7 @@ open System
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open Dual.Common.Db.FS
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module internal DsCopyModule =
@@ -187,21 +188,78 @@ module internal DsCopyModule =
             // ApiDef, NjApiDef, ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
-                | :? ApiDef    as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
-                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
-                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TxGuid=s.XTxGuid; RxGuid=s.XRxGuid |}
+                | :? ApiDef    as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid; IOTags=s.IOTags |}
+                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid; IOTags=s.IOTags |}
+                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TxGuid=s.XTxGuid; RxGuid=s.XRxGuid; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
-            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
-            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid
+            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid; d.IOTags<-s.IOTags
+            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid; d.IOTags<-s.IOTags
+            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
             | _ -> failwith "ERROR"
 
         // DsButton, NjButton, ORMButton
+        | :? IRtButton ->
+            let s =
+                match sbx with
+                | :? DsButton  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
+                | :? NjButton  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
+                | :? ORMButton as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? DsButton  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
+            | :? NjButton  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
+            | :? ORMButton as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | _ -> failwith "ERROR"
+            
         // Lamp, NjLamp, ORMLamp
+        | :? IRtLamp ->
+            let s =
+                match sbx with
+                | :? Lamp    as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
+                | :? NjLamp  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
+                | :? ORMLamp as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? Lamp    as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
+            | :? NjLamp  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
+            | :? ORMLamp as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | _ -> failwith "ERROR"
+            
         // DsCondition, NjCondition, ORMCondition
+        | :? IRtCondition ->
+            let s =
+                match sbx with
+                | :? DsCondition  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
+                | :? NjCondition  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
+                | :? ORMCondition as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? DsCondition  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
+            | :? NjCondition  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
+            | :? ORMCondition as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | _ -> failwith "ERROR"
+            
         // DsAction, NjAction, ORMAction
+        | :? IRtAction ->
+            let s =
+                match sbx with
+                | :? DsAction  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
+                | :? NjAction  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
+                | :? ORMAction as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | _ -> failwith "ERROR"
+            
+            match dbx with
+            | :? DsAction  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
+            | :? NjAction  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
+            | :? ORMAction as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | _ -> failwith "ERROR"
+            
+        // Other ISystemEntityWithFlow types (Flow, Work)
         | :? ISystemEntityWithFlow ->
             let s =
                 match sbx with

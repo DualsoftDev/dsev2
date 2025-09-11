@@ -329,6 +329,7 @@ CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
     , {k "systemId"}      {intKeyType} NOT NULL
     , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , {k "ioTagsJson"}        TEXT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
     , CONSTRAINT {Tn.Button}_uniq UNIQUE (systemId, flowId, name)
@@ -337,6 +338,7 @@ CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
     , {k "systemId"}      {intKeyType} NOT NULL
     , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , {k "ioTagsJson"}        TEXT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
     , CONSTRAINT {Tn.Lamp}_uniq UNIQUE (systemId, flowId, name)
@@ -345,6 +347,7 @@ CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
     , {k "systemId"}      {intKeyType} NOT NULL
     , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , {k "ioTagsJson"}        TEXT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
     , CONSTRAINT {Tn.Condition}_uniq UNIQUE (systemId, flowId, name)
@@ -353,6 +356,7 @@ CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.Action}( {sqlUniqWithName()}
     , {k "systemId"}      {intKeyType} NOT NULL
     , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
+    , {k "ioTagsJson"}        TEXT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
     , CONSTRAINT {Tn.Action}_uniq UNIQUE (systemId, flowId, name)
@@ -409,6 +413,7 @@ CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
     , {k "systemId"}        {intKeyType} NOT NULL       -- API 가 정의된 target system
     , {k "txId"}            {intKeyType} NOT NULL
     , {k "rxId"}            {intKeyType} NOT NULL
+    , {k "ioTagsJson"}          TEXT
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(txId) REFERENCES {Tn.Work}(id) ON DELETE CASCADE
     , FOREIGN KEY(rxId) REFERENCES {Tn.Work}(id) ON DELETE CASCADE

@@ -20,6 +20,13 @@ module MiniSample =
 
         let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid, Guid=Guid.Parse("30000000-0000-0000-0000-000000000000"))
         let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid, Guid=Guid.Parse("40000000-0000-0000-0000-000000000000"))
+        
+        // ApiDef에 IOTags 샘플 추가
+        apiDefAdv.IOTags <- 
+            let inTag = TagWithSpec<int>("CylAdvIn", "DB10.DBW0", ValueSpec<int>.Single 25)
+            let outTag = TagWithSpec<int>("CylAdvOut", "DB10.DBW2", ValueSpec<int>.Single 50)
+            IOTagsWithSpec(inTag, outTag)
+        
         sys.AddApiDefs [apiDefAdv; apiDefRet]
 
         let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
@@ -54,6 +61,12 @@ module MiniSample =
         // UI 요소들의 Flow 설정
         button1.FlowGuid <- Some flow.Guid
         lamp1.FlowGuid <- Some flow.Guid
+        
+        // Button에 IOTags 샘플 추가
+        button1.IOTags <- 
+            let inTag = TagWithSpec<bool>("ButtonIn", "I0.0", ValueSpec<bool>.Single true)
+            let outTag = TagWithSpec<bool>("ButtonOut", "Q0.0", ValueSpec<bool>.Single false)
+            IOTagsWithSpec(inTag, outTag)
 
         // Work 생성
         let work1 =

@@ -138,9 +138,15 @@ module PlcTagModule =
 
         [<OnSerializing>]
         member private this.OnSerializing(context: StreamingContext) =
-            this.InTagJson  <- this.InTag.Jsonize()
-            this.OutTagJson <- this.OutTag.Jsonize()
+            match box this.InTag with
+            | null -> ()
+            | _ -> this.InTagJson <- this.InTag.Jsonize()
+            match box this.OutTag with
+            | null -> ()
+            | _ -> this.OutTagJson <- this.OutTag.Jsonize()
         [<OnDeserialized>]
         member private this.OnDeserialized(context: StreamingContext) =
-            this.InTag  <- TagWithSpec.FromJson(this.InTagJson)
-            this.OutTag <- TagWithSpec.FromJson(this.OutTagJson)
+            if not (System.String.IsNullOrEmpty(this.InTagJson)) then
+                this.InTag  <- TagWithSpec.FromJson(this.InTagJson)
+            if not (System.String.IsNullOrEmpty(this.OutTagJson)) then
+                this.OutTag <- TagWithSpec.FromJson(this.OutTagJson)

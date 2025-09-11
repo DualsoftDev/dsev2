@@ -210,25 +210,33 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntityWithFlow()
 
         interface INjButton
+        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjButton>()
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
     type NjLamp() = // Create
         inherit NjSystemEntityWithFlow()
 
         interface INjLamp
+        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjLamp>()
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
     type NjCondition() = // Create
         inherit NjSystemEntityWithFlow()
 
         interface INjCondition
+        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjCondition>()
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
     type NjAction() = // Create
         inherit NjSystemEntityWithFlow()
 
         interface INjAction
+        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjAction>()
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
 
     type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
@@ -391,9 +399,11 @@ module rec NewtonsoftJsonObjects =
         member val IsPush = false with get, set
         member val TxGuid = emptyGuid with get, set
         member val RxGuid = emptyGuid with get, set
+        member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjApiDef>()
         member x.ShouldSerializeTxGuid() = x.TxGuid <> Guid.Empty
         member x.ShouldSerializeRxGuid() = x.RxGuid <> Guid.Empty
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
 
 
 

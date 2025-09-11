@@ -639,7 +639,7 @@ module Schema =
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
                         // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 (및 project) 의  DateTime 이 초단위 절삭에서 변경될 수도 있음
-                        diffs.Length.IsOneOf(3, 4) === true
+                        diffs.Length.IsOneOf(2, 3) === true
                         match diffs[0] with
                         | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
                         | _ -> failwith "ERROR"

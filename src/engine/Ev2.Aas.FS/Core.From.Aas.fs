@@ -11,6 +11,7 @@ open Dual.Common.Db.FS
 open Dual.Common.Base
 
 open Ev2.Core.FS
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module CoreFromAas =
@@ -131,24 +132,40 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjButton =
             let btn = createSimpleFromSMC (fun () -> NjButton.Create()) smc
             btn.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            // IOTags 역직렬화
+            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+                btn.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
             btn |> tee (readAasExtensionProperties smc)
 
     type NjLamp with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjLamp =
             let lamp = createSimpleFromSMC (fun () -> NjLamp.Create()) smc
             lamp.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            // IOTags 역직렬화
+            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+                lamp.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
             lamp |> tee (readAasExtensionProperties smc)
 
     type NjCondition with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCondition =
             let cond = createSimpleFromSMC (fun () -> NjCondition.Create()) smc
             cond.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            // IOTags 역직렬화
+            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+                cond.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
             cond |> tee (readAasExtensionProperties smc)
 
     type NjAction with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjAction =
             let act = createSimpleFromSMC (fun () -> NjAction.Create()) smc
             act.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+            // IOTags 역직렬화
+            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+                act.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
             act |> tee (readAasExtensionProperties smc)
 
     type NjFlow with // FromSMC
@@ -242,7 +259,12 @@ module CoreFromAas =
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
             let txGuid = smc.GetPropValue          "TxGuid" |> Guid.Parse
             let rxGuid = smc.GetPropValue          "RxGuid" |> Guid.Parse
-            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
+            // IOTags 역직렬화
+            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+            let apiDef = NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
+            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+                apiDef.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
+            apiDef
             |> tee (readAasExtensionProperties smc)
 
     type NjApiCall with // FromSMC

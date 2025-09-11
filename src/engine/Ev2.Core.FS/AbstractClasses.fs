@@ -288,6 +288,8 @@ and DsButton() = // Create
 
     interface IRtButton
     interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = EmJson.ToJson x.IOTags
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
@@ -295,6 +297,8 @@ and Lamp() = // Create
 
     interface IRtLamp
     interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = EmJson.ToJson x.IOTags
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
@@ -302,6 +306,8 @@ and DsCondition() = // Create
 
     interface IRtCondition
     interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = EmJson.ToJson x.IOTags
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
@@ -309,6 +315,8 @@ and DsAction() = // Create
 
     interface IRtAction
     interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = EmJson.ToJson x.IOTags
     static member Create() = createExtended<DsAction>()
 
 
@@ -443,6 +451,8 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
     static member Create() = createExtended<ApiDef>()
 
     interface IRtApiDef
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = EmJson.ToJson x.IOTags
 
     member val IsPush = isPush with get, set
 

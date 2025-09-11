@@ -119,8 +119,8 @@ module internal DbInsertModule =
 
                     let apiDefId =
                         conn.Insert($"""INSERT INTO {Tn.ApiDef}
-                                               (guid, parameter,                      name, isPush, txId, rxId, systemId)
-                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TxId, @RxId, @SystemId);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
+                                               (guid, parameter,                      name, isPush, txId, rxId, systemId, ioTagsJson)
+                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TxId, @RxId, @SystemId, @IOTagsJson);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
 
                     rt.Id <- Some apiDefId
                     orm.Id <- Some apiDefId
@@ -161,11 +161,22 @@ module internal DbInsertModule =
                     let insertSystemElement (tableName:string) (rtX:#DsSystemEntityWithFlow, ormX:#ORMSystemEntityWithFlow) =
                             ormX.SystemId <- systemId
                             ormX.FlowId <- flowId
+                            
+                            // IOTags 처리 (Button, Lamp, Condition, Action만 해당)
+                            let ioTagsParam = 
+                                match box ormX with
+                                | :? ORMButton | :? ORMLamp | :? ORMCondition | :? ORMAction -> ", ioTagsJson"
+                                | _ -> ""
+                            let ioTagsValue = 
+                                match box ormX with
+                                | :? ORMButton | :? ORMLamp | :? ORMCondition | :? ORMAction -> ", @IOTagsJson"
+                                | _ -> ""
+                            
                             dbApi.With(fun (conn, tr) ->
                                 let xId =
                                     conn.Insert($"""INSERT INTO {tableName}
-                                                    (guid, parameter, name, systemId, flowId)
-                                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId);""", ormX, tr)
+                                                    (guid, parameter, name, systemId, flowId{ioTagsParam})
+                                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId{ioTagsValue});""", ormX, tr)
                                 rtX.Id <- Some xId
                                 ormX.Id <- Some xId
                                 assert (guidDicDebug[rtX.Guid] = ormX)

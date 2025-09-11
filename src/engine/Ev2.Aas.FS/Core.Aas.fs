@@ -101,6 +101,8 @@ module AasSemantics =
             ("InSymbol",         "https://dualsoft.com/aas/apiCall/inSymbol")
             ("OutSymbol",        "https://dualsoft.com/aas/apiCall/outSymbol")
             ("ValueSpec",        "https://dualsoft.com/aas/apiCall/valueSpec")
+            
+            ("IOTags",           "https://dualsoft.com/aas/common/ioTags")
 
             ("LocalDefinition",  "https://dualsoft.com/aas/passiveSystemLoadType/localDefinition")
             ("InstanceName",     "https://dualsoft.com/aas/passiveSystemLoadType/instanceName")

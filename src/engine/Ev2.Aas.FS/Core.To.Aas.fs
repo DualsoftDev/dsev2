@@ -6,6 +6,7 @@ namespace rec Dual.Ev2.Aas
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open Ev2.Core.FS
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module CoreToAas =
@@ -96,15 +97,30 @@ module CoreToAas =
                     JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
                     JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
                     JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
+                    // IOTags 직렬화
+                    let ioTagsStr = if box apiDef.IOTags = null then null else JsonConvert.SerializeObject(apiDef.IOTags)
+                    JObj().TrySetProperty(ioTagsStr, nameof apiDef.IOTags)
 
                 | (:? NjButton as btn) ->
                     JObj().TrySetProperty(btn.FlowGuid, nameof btn.FlowGuid)
+                    // IOTags 직렬화
+                    let ioTagsStr = if box btn.IOTags = null then null else JsonConvert.SerializeObject(btn.IOTags)
+                    JObj().TrySetProperty(ioTagsStr, nameof btn.IOTags)
                 | (:? NjLamp as lamp) ->
                     JObj().TrySetProperty(lamp.FlowGuid, nameof lamp.FlowGuid)
+                    // IOTags 직렬화
+                    let ioTagsStr = if box lamp.IOTags = null then null else JsonConvert.SerializeObject(lamp.IOTags)
+                    JObj().TrySetProperty(ioTagsStr, nameof lamp.IOTags)
                 | (:? NjCondition as cond) ->
                     JObj().TrySetProperty(cond.FlowGuid, nameof cond.FlowGuid)
+                    // IOTags 직렬화
+                    let ioTagsStr = if box cond.IOTags = null then null else JsonConvert.SerializeObject(cond.IOTags)
+                    JObj().TrySetProperty(ioTagsStr, nameof cond.IOTags)
                 | (:? NjAction as act) ->
                     JObj().TrySetProperty(act.FlowGuid, nameof act.FlowGuid)
+                    // IOTags 직렬화
+                    let ioTagsStr = if box act.IOTags = null then null else JsonConvert.SerializeObject(act.IOTags)
+                    JObj().TrySetProperty(ioTagsStr, nameof act.IOTags)
                 | (:? NjFlow) ->
                     ()
                 | unknown ->

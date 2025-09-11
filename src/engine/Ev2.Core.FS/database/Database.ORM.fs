@@ -5,6 +5,7 @@ open System
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 open Dual.Common.Base
+open Newtonsoft.Json
 
 [<AutoOpen>]
 module ORMTypesModule =
@@ -155,29 +156,33 @@ module ORMTypesModule =
             x
 
 
-    type ORMButton(systemId:Id, flowId:Id option) =
+    type ORMButton(systemId:Id, flowId:Id option, ioTagsJson:string) =
         inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMButton(-1, None)
+        new() = new ORMButton(-1, None, nullString)
         interface IORMButton
+        member val IOTagsJson = ioTagsJson with get, set
 
-    type ORMLamp(systemId:Id, flowId:Id option) =
+    type ORMLamp(systemId:Id, flowId:Id option, ioTagsJson:string) =
         inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMLamp(-1, None)
+        new() = new ORMLamp(-1, None, nullString)
         interface IORMLamp
+        member val IOTagsJson = ioTagsJson with get, set
 
-    type ORMCondition(systemId:Id, flowId:Id option) =
+    type ORMCondition(systemId:Id, flowId:Id option, ioTagsJson:string) =
         inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMCondition(-1, None)
+        new() = new ORMCondition(-1, None, nullString)
         interface IORMCondition
+        member val IOTagsJson = ioTagsJson with get, set
 
-    type ORMAction(systemId:Id, flowId:Id option) =
+    type ORMAction(systemId:Id, flowId:Id option, ioTagsJson:string) =
         inherit ORMSystemEntityWithFlow(systemId, flowId)
 
-        new() = new ORMAction(-1, None)
+        new() = new ORMAction(-1, None, nullString)
         interface IORMAction
+        member val IOTagsJson = ioTagsJson with get, set
 
 
     type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option, flowGuid:Guid option) = // Initialize
@@ -277,12 +282,13 @@ module ORMTypesModule =
             else x.ValueSpec |> IValueSpec.Deserialize |> _.ToString()
 
 
-    type ORMApiDef(systemId:Id) =
+    type ORMApiDef(systemId:Id, ioTagsJson:string) =
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMApiDef(-1)
+        new() = new ORMApiDef(-1, nullString)
         interface IORMApiDef
         member val IsPush = false with get, set
+        member val IOTagsJson = ioTagsJson with get, set
 
         member val TxId = Option<Id>.None with get, set
         member val RxId = Option<Id>.None with get, set
