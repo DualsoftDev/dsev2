@@ -29,8 +29,8 @@ module ModuleInitializer =
             fwdProjectFromJson <- fun json -> Project.fromJson json
             fwdEnumerateRtObjects <- fun (rtObj: IRtUnique) -> (rtObj :?> RtUnique).EnumerateRtObjects().Cast<IRtUnique>()
 
-            fwdValueSpecFromString <- fun text -> ValueRangeModule.deserializeWithType text
-            fwdValueSpecFromJson <- fun json -> ValueRangeModule.parseValueSpec json
+            fwdValueSpecFromString <- fun text -> ValueRangeModule.parseValueSpec text
+            fwdValueSpecFromJson <- fun json -> ValueRangeModule.deserializeWithType json
 
             let appSettings =
                 let json =

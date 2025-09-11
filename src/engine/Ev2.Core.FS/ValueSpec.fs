@@ -183,6 +183,8 @@ module ValueRangeModule =
             | t when t = typedefof<uint64>.Name -> typeof<ValueSpec<uint64>>
             | t when t = typedefof<char>  .Name -> typeof<ValueSpec<char>>
             | t when t = typedefof<bool>  .Name -> typeof<ValueSpec<bool>>
+            | t when t = typedefof<string>.Name -> typeof<ValueSpec<string>>
+            | t when t = typedefof<System.DateTime>.Name -> typeof<ValueSpec<System.DateTime>>
             | _ -> failwith $"Unsupported type hint: {typeName}"
 
         JsonConvert.DeserializeObject(valueJson, ty) |> box :?> IValueSpec
