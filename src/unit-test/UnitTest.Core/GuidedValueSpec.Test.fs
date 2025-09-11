@@ -309,10 +309,10 @@ module GuidedValueSpecTestModule =
         ]
 
         // Set values
-        (tags.[0] :> ITagWithSpec).Value <- box 100
-        (tags.[1] :> ITagWithSpec).Value <- box 2.2
-        (tags.[2] :> ITagWithSpec).Value <- box "World"
-        (tags.[3] :> ITagWithSpec).Value <- box true
+        tags.[0].Value <- box 100
+        tags.[1].Value <- box 2.2
+        tags.[2].Value <- box "World"
+        tags.[3].Value <- box true
 
         // Serialize each with type info
         let serializedData =
@@ -321,7 +321,7 @@ module GuidedValueSpecTestModule =
                 {|
                     TypeName = tag.ValueType.FullName
                     Json = JsonConvert.SerializeObject(tag.Tag)
-                    ValueSpecJson = (tag.ValueSpec :> IValueSpec).Jsonize()
+                    ValueSpecJson = tag.ValueSpec.Jsonize()
                 |})
 
         // Verify each can be deserialized

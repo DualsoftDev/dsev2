@@ -53,7 +53,7 @@ module ValueSpecTestModule =
 }"""
         EmJson.IsJsonEquals(singleDoubleValue.Jsonize(), jsonSingleDoubleValue) === true
         jsonSingleDoubleValue |> IValueSpec.Deserialize === singleDoubleValue
-        jsonSingleDoubleValue |> ValueSpec.FromString === singleDoubleValue
+        jsonSingleDoubleValue |> ValueSpec.FromJson === singleDoubleValue
 
         // bool 타입
         let jsonSingleBoolValue = """{
@@ -133,7 +133,7 @@ module ValueSpecTestModule =
   }
 }"""
         EmJson.IsJsonEquals(multipleRange.Jsonize(), jsonMultipleRange) === true
-        let obj = jsonMultipleRange |> ValueSpec.FromString
+        let obj = jsonMultipleRange |> ValueSpec.FromJson
         obj === multipleRange
         let str = obj.Stringify()
         jsonMultipleRange |> IValueSpec.Deserialize === multipleRange
