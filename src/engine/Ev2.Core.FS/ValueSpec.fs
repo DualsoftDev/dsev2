@@ -34,11 +34,41 @@ module ValueRangeModule =
         /// }
         static member FromJson(json: string) : IValueSpec = fwdValueSpecFromJson json
 
-    type ValueSpec<'T> = // Jsonize, Stringify
+    type ValueSpec<'T when 'T : equality and 'T : comparison> = // Jsonize, Stringify
         | Single of 'T
         | Multiple of 'T list
         | Ranges of RangeSegment<'T> list   // 단일 or 복수 범위 모두 표현 가능
         with
+            member x.Contains(value: obj): bool =
+                // 타입 체크
+                match value with
+                | :? 'T as typedValue ->
+                    match x with
+                    | Single v ->
+                        // 값 비교
+                        v = typedValue
+                    | Multiple values ->
+                        // 리스트에 포함되는지 확인
+                        values |> List.contains typedValue
+                    | Ranges ranges ->
+                        // 범위 내에 있는지 확인
+                        ranges |> List.exists (fun range ->
+                            let inLowerBound =
+                                match range.Lower with
+                                | None -> true
+                                | Some (lowerVal, Open) -> typedValue > lowerVal
+                                | Some (lowerVal, Closed) -> typedValue >= lowerVal
+
+                            let inUpperBound =
+                                match range.Upper with
+                                | None -> true
+                                | Some (upperVal, Open) -> typedValue < upperVal
+                                | Some (upperVal, Closed) -> typedValue <= upperVal
+
+                            inLowerBound && inUpperBound
+                        )
+                | _ -> false  // 타입이 맞지 않으면 false
+
             // 공통 로직을 static member로 정의
             static member internal CreateJObjectCore(value: ValueSpec<'T>) =
                 let typeName = typeof<'T>.Name
@@ -107,7 +137,7 @@ module ValueRangeModule =
             member x.Stringify() = x.Stringify()
 
     /// C# 에서 상속 가능한 ValueSpec wrapper 클래스
-    type ValueSpecWrapper<'T>(value: ValueSpec<'T>) =
+    type ValueSpecWrapper<'T when 'T : equality and 'T : comparison>(value: ValueSpec<'T>) =
         inherit AbstractValueSpec()
 
         member val ValueSpec = value with get, set
@@ -281,7 +311,7 @@ module ValueRangeModule =
 
 
     /// Guid를 가진 ValueSpec - ValueSpecWrapper를 상속받아 구현
-    type GuidedValueSpec<'T>(guid:Guid, value: ValueSpec<'T>) =
+    type GuidedValueSpec<'T when 'T : equality and 'T : comparison>(guid:Guid, value: ValueSpec<'T>) =
         inherit ValueSpecWrapper<'T>(value)
         interface IGuidedValueSpec with
             member x.Guid with get() = x.Guid and set v = x.Guid <- v
@@ -330,7 +360,7 @@ module ValueRangeModule =
         //    | _ -> failwith $"Unsupported type for GuidedValueSpec: {typeName}"
 
 
-    type ApiCallValueSpec<'T>(apiCallGuid:Guid, value: ValueSpec<'T>) =
+    type ApiCallValueSpec<'T when 'T : equality and 'T : comparison>(apiCallGuid:Guid, value: ValueSpec<'T>) =
         inherit GuidedValueSpec<'T>(apiCallGuid, value)
         new (apiCall:ApiCall, value: ValueSpec<'T>) = ApiCallValueSpec<'T>(apiCall.Guid, value)
         interface IApiCallValueSpec
