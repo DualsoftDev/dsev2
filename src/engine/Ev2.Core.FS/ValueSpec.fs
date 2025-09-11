@@ -111,7 +111,7 @@ module ValueRangeModule =
                 match value with
                 | Undefined -> failwith "ERROR: ValueSpec is undefined."
                 | Single v -> sprintf "x = %A" v
-                | Multiple vs -> vs |> List.map string |> String.concat ", " |> sprintf "x ∈ {%s}"
+                | Multiple vs -> vs |> List.map (sprintf "%A") |> String.concat ", " |> sprintf "x ∈ {%s}"
                 | Ranges rs -> rs |> List.map stringifyRange |> String.concat " || "
 
             member x.ToJObject() = ValueSpec<'T>.CreateJObjectCore(x)
