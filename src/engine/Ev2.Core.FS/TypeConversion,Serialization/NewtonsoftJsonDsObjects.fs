@@ -388,6 +388,7 @@ module rec NewtonsoftJsonObjects =
         member val OutAddress = nullString with get, set
         member val InSymbol   = nullString with get, set
         member val OutSymbol  = nullString with get, set
+        [<JsonConverter(typeof<RawJsonConverter>)>]
         member val ValueSpec  = nullString with get, set
         static member Create() = createExtended<NjApiCall>()
 

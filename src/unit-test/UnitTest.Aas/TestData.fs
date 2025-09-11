@@ -45,8 +45,8 @@ let dsJson = """{
           "Id": 2,
           "Name": "Call1b",
           "Guid": "4d785edb-d468-46d3-a549-e4d661c131b5",
-          "CallType": "Repeat",
-          "Status": "Finished"
+          "Status": "Finished",
+          "CallType": "Repeat"
         }
       ],
       "Arrows": [
@@ -141,7 +141,7 @@ let dsJson = """{
       "OutAddress": "OutAddress1",
       "InSymbol": "XTag1",
       "OutSymbol": "YTag2",
-      "ValueSpec": "{\r\n  \"$type\": \"Double\",\r\n  \"Value\": {\r\n    \"Case\": \"Ranges\",\r\n    \"Fields\": [\r\n      [\r\n        {\r\n          \"Lower\": null,\r\n          \"Upper\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 3.14,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          }\r\n        },\r\n        {\r\n          \"Lower\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 5.0,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          },\r\n          \"Upper\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 6.0,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          }\r\n        },\r\n        {\r\n          \"Lower\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 7.1,\r\n                \"Item2\": {\r\n                  \"Case\": \"Closed\"\r\n                }\r\n              }\r\n            ]\r\n          },\r\n          \"Upper\": null\r\n        }\r\n      ]\r\n    ]\r\n  }\r\n}"
+      "ValueSpec": {"$type":"Double","Value":{"Case":"Ranges","Fields":[[{"Lower":null,"Upper":{"Case":"Some","Fields":[{"Item1":3.14,"Item2":{"Case":"Open"}}]}},{"Lower":{"Case":"Some","Fields":[{"Item1":5.0,"Item2":{"Case":"Open"}}]},"Upper":{"Case":"Some","Fields":[{"Item1":6.0,"Item2":{"Case":"Open"}}]}},{"Lower":{"Case":"Some","Fields":[{"Item1":7.1,"Item2":{"Case":"Closed"}}]},"Upper":null}]]}}
     },
     {
       "RuntimeType": "ApiCall",

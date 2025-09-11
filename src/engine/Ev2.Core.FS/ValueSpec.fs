@@ -119,7 +119,7 @@ module ValueRangeModule =
             interface IValueSpec with
                 member x.Jsonize() =
                     let jobj = x.ToJObject()
-                    jobj.ToString(Formatting.Indented)
+                    jobj.ToString(Formatting.None)
 
                 member x.Stringify() = ValueSpec<'T>.StringifyCore(x)
 
@@ -133,7 +133,7 @@ module ValueRangeModule =
         abstract member Jsonize: unit -> string
         default x.Jsonize() =
             let jobj = x.ToJObject()
-            jobj.ToString(Formatting.Indented)
+            jobj.ToString(Formatting.None)
         abstract member ToJson: unit -> string
         default x.ToJson() = x.Jsonize()
 

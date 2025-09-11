@@ -7,6 +7,38 @@ open Newtonsoft.Json.Linq
 open System.Runtime.Serialization
 open Dual.Common.Core.FS
 
+/// JSON 문자열을 이스케이프 없이 그대로 쓰기 위한 JsonConverter
+type RawJsonConverter() =
+    inherit JsonConverter()
+    
+    override x.CanConvert(objectType) = 
+        objectType = typeof<string>
+    
+    override x.WriteJson(writer, value, serializer) =
+        match value with
+        | null -> writer.WriteNull()
+        | :? string as json when not (System.String.IsNullOrWhiteSpace(json)) ->
+            // JSON 문자열을 이스케이프 없이 그대로 출력
+            writer.WriteRawValue(json)
+        | _ -> writer.WriteNull()
+    
+    override x.ReadJson(reader, objectType, existingValue, serializer) =
+        match reader.TokenType with
+        | JsonToken.String -> 
+            // 구형식: 이스케이프된 문자열
+            reader.Value :> obj
+        | JsonToken.StartObject | JsonToken.StartArray ->
+            // 신형식: 객체나 배열을 문자열로 변환
+            let jToken = JToken.Load(reader)
+            jToken.ToString(Formatting.None) :> obj
+        | JsonToken.Null -> 
+            null
+        | _ -> 
+            null
+    
+    override x.CanRead = true
+    override x.CanWrite = true
+
 [<AutoOpen>]
 module PlcTagModule =
 
@@ -40,7 +72,7 @@ module PlcTagModule =
             jobj["Name"] <- if isNull this.Name then JValue.CreateNull() :> JToken else JToken.FromObject(this.Name)
             jobj["Address"] <- if isNull this.Address then JValue.CreateNull() :> JToken else JToken.FromObject(this.Address)
             jobj["Value"] <- JToken.FromObject(this.Value)
-            jobj.ToString()
+            jobj.ToString(Formatting.None)
 
         // JSON 역직렬화
         static member FromJson(json: string) : PlcTag<'T> =
@@ -74,11 +106,11 @@ module PlcTagModule =
         [<JsonIgnore>]
         member val ValueSpec = valueSpec with get, set
 
-        // JSON 직렬화용 문자열 멤버
-        [<JsonProperty("Tag")>]
+        // JSON 직렬화용 문자열 멤버 (RawJsonConverter로 이스케이프 방지)
+        [<JsonProperty("Tag"); JsonConverter(typeof<RawJsonConverter>)>]
         member val TagJson = "" with get, set
 
-        [<JsonProperty("ValueSpec")>]
+        [<JsonProperty("ValueSpec"); JsonConverter(typeof<RawJsonConverter>)>]
         member val ValueSpecJson = "" with get, set
 
         // 직렬화 전 콜백 - Tag와 ValueSpec을 JSON 문자열로 저장
@@ -133,8 +165,8 @@ module PlcTagModule =
 
         [<JsonIgnore>] member val InTag  = inTag  with get, set
         [<JsonIgnore>] member val OutTag = outTag with get, set
-        [<JsonProperty("InTag")>]  member val InTagJson  = "" with get, set
-        [<JsonProperty("OutTag")>] member val OutTagJson = "" with get, set
+        [<JsonProperty("InTag"); JsonConverter(typeof<RawJsonConverter>)>]  member val InTagJson  = "" with get, set
+        [<JsonProperty("OutTag"); JsonConverter(typeof<RawJsonConverter>)>] member val OutTagJson = "" with get, set
 
         [<OnSerializing>]
         member private this.OnSerializing(context: StreamingContext) =
