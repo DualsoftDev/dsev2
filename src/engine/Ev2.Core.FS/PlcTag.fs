@@ -5,6 +5,7 @@ open Dual.Common.Db.FS
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open System.Runtime.Serialization
+open Dual.Common.Core.FS
 
 [<AutoOpen>]
 module PlcTagModule =
@@ -114,23 +115,7 @@ module PlcTagModule =
             let typeName = tagJObj.["$type"].ToString()
 
             // 타입 결정
-            let genericType =
-                match typeName with
-                | t when t = typedefof<single>.Name -> typeof<single>
-                | t when t = typedefof<double>.Name -> typeof<double>
-                | t when t = typedefof<int8>  .Name -> typeof<int8>
-                | t when t = typedefof<int16> .Name -> typeof<int16>
-                | t when t = typedefof<int32> .Name -> typeof<int32>
-                | t when t = typedefof<int64> .Name -> typeof<int64>
-                | t when t = typedefof<uint8> .Name -> typeof<uint8>
-                | t when t = typedefof<uint16>.Name -> typeof<uint16>
-                | t when t = typedefof<uint32>.Name -> typeof<uint32>
-                | t when t = typedefof<uint64>.Name -> typeof<uint64>
-                | t when t = typedefof<char>  .Name -> typeof<char>
-                | t when t = typedefof<bool>  .Name -> typeof<bool>
-                | t when t = typedefof<string>.Name -> typeof<string>
-                | t when t = typedefof<System.DateTime>.Name -> typeof<System.DateTime>
-                | _ -> typeof<obj>
+            let genericType = tryGetTypeFromSimpleName typeName |? typeof<obj>
 
             // TagWithSpec 타입 생성
             let tagWithSpecType = typedefof<TagWithSpec<_>>.MakeGenericType(genericType)
