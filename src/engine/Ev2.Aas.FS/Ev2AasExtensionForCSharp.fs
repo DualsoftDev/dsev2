@@ -3,7 +3,6 @@ namespace Dual.Ev2.Aas
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open AasCore.Aas3_0
-open Dual.Common.Db.FS
 open Ev2.Core.FS
 
 /// C#에서 F# AASX 메서드에 접근하기 위한 Extension 메서드들
@@ -50,7 +49,6 @@ type AasxExtensions = // CsTryGetPropValue<'T>, CsTrySetProperty<'T>, FromAasxFi
     /// AASX 파일에서 Project 읽기
     static member FromAasxFile(aasxPath:string) : Project =
         let njProj = NjProject.FromAasxFile(aasxPath)
-        //njProj.ToJson() |> Project.FromJson
         njProj.ToJson() |> Project.FromJson
 
     [<Extension>]
@@ -58,8 +56,7 @@ type AasxExtensions = // CsTryGetPropValue<'T>, CsTrySetProperty<'T>, FromAasxFi
         jObj:JObj, value:'T, name:string
         , [<Optional; DefaultParameterValue(null:PropertyCounter)>] counters: PropertyCounter
     ) =
-        let counters = if counters = null then None else Some counters
-        jObj.TrySetProperty(value, name, ?counters=counters)
+        jObj.TrySetProperty(value, name, counters=counters)
 
     [<Extension>]
     static member CsTryGetPropValue<'T>(smc: SubmodelElementCollection, propName:string) =

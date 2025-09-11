@@ -62,7 +62,7 @@ module CoreToAas =
                     JObj().TrySetProperty(apiCall.OutSymbol,  nameof apiCall.OutSymbol)
                     JObj().TrySetProperty(apiCall.ValueSpec,  nameof apiCall.ValueSpec)
                     // IOTags 직렬화
-                    let ioTagsStr = if box apiCall.IOTags = null then null else JsonConvert.SerializeObject(apiCall.IOTags)
+                    let ioTagsStr = apiCall.IOTags.Jsonize()
                     JObj().TrySetProperty(ioTagsStr, nameof apiCall.IOTags)
 
                 | :? NjCall as call ->
@@ -103,24 +103,17 @@ module CoreToAas =
 
                 | (:? NjButton as btn) ->
                     JObj().TrySetProperty(btn.FlowGuid, nameof btn.FlowGuid)
-                    // IOTags 직렬화
-                    let ioTagsStr = if box btn.IOTags = null then null else JsonConvert.SerializeObject(btn.IOTags)
-                    JObj().TrySetProperty(ioTagsStr, nameof btn.IOTags)
+                    JObj().TrySetProperty(btn.IOTags.Jsonize(), nameof btn.IOTags)
                 | (:? NjLamp as lamp) ->
                     JObj().TrySetProperty(lamp.FlowGuid, nameof lamp.FlowGuid)
-                    // IOTags 직렬화
-                    let ioTagsStr = if box lamp.IOTags = null then null else JsonConvert.SerializeObject(lamp.IOTags)
-                    JObj().TrySetProperty(ioTagsStr, nameof lamp.IOTags)
+                    JObj().TrySetProperty(lamp.IOTags.Jsonize(), nameof lamp.IOTags)
                 | (:? NjCondition as cond) ->
                     JObj().TrySetProperty(cond.FlowGuid, nameof cond.FlowGuid)
-                    // IOTags 직렬화
-                    let ioTagsStr = if box cond.IOTags = null then null else JsonConvert.SerializeObject(cond.IOTags)
-                    JObj().TrySetProperty(ioTagsStr, nameof cond.IOTags)
+                    JObj().TrySetProperty(cond.IOTags.Jsonize(), nameof cond.IOTags)
                 | (:? NjAction as act) ->
                     JObj().TrySetProperty(act.FlowGuid, nameof act.FlowGuid)
-                    // IOTags 직렬화
-                    let ioTagsStr = if box act.IOTags = null then null else JsonConvert.SerializeObject(act.IOTags)
-                    JObj().TrySetProperty(ioTagsStr, nameof act.IOTags)
+                    JObj().TrySetProperty(act.IOTags.Jsonize(), nameof act.IOTags)
+
                 | (:? NjFlow) ->
                     ()
                 | unknown ->

@@ -46,10 +46,7 @@ module NewtonsoftJsonModules =
 
     /// NjUnique 객체의 RuntimeObject 를 'T type 으로 casting 해서 가져온다.
     let getRuntimeObject<'T when 'T :> RtUnique and 'T : not struct> (njObj:NjUnique) : 'T =
-        if isItNull njObj.RuntimeObject then
-            getNull<'T>()
-        else
-            njObj.RuntimeObject :?> 'T
+        njObj.RuntimeObject |> orValue (getNull<'T>()) :?> 'T
 
 
 

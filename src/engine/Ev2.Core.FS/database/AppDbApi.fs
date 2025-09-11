@@ -127,7 +127,7 @@ type AppDbApi(dbProvider:DbProvider) = // CallCache, CheckDatabaseChange, ClearA
         // 강제 초기화 실행
         conn() |> dispose
 
-    static member TheAppDbApi:AppDbApi = if isItNull DbApi.TheDbApi then getNull<AppDbApi>() else DbApi.TheDbApi :?> AppDbApi
+    static member TheAppDbApi:AppDbApi = DbApi.TheDbApi |> orValue (getNull<AppDbApi>()) :?> AppDbApi
 
 
     /// DB 의 ORMWork[] 에 대한 cache
