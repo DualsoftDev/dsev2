@@ -203,13 +203,15 @@ module rec NewtonsoftJsonObjects =
         member x.Initialize() =
             x
 
+    let private isValidIoTags (ioTags:IOTagsWithSpec) =
+        isItNotNull(ioTags) && (isItNotNull(ioTags.InTag) || isItNotNull(ioTags.OutTag))
     type NjButton() = // Create
         inherit NjSystemEntityWithFlow()
 
         interface INjButton
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjButton>()
-        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
+        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
 
     type NjLamp() = // Create
         inherit NjSystemEntityWithFlow()
@@ -217,7 +219,7 @@ module rec NewtonsoftJsonObjects =
         interface INjLamp
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjLamp>()
-        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
+        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
 
     type NjCondition() = // Create
         inherit NjSystemEntityWithFlow()
@@ -225,7 +227,7 @@ module rec NewtonsoftJsonObjects =
         interface INjCondition
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjCondition>()
-        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
+        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
 
     type NjAction() = // Create
         inherit NjSystemEntityWithFlow()
@@ -233,7 +235,7 @@ module rec NewtonsoftJsonObjects =
         interface INjAction
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjAction>()
-        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
+        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
 
 
     type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
@@ -437,12 +439,20 @@ module rec NewtonsoftJsonObjects =
                 njs.Flows    <- rts.Flows    |-> _.ToNj<NjFlow>()    |> toArray
                 njs.ApiDefs  <- rts.ApiDefs  |-> _.ToNj<NjApiDef>()  |> toArray
                 njs.ApiCalls <- rts.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
+                njs.Buttons    <- rts.Buttons    |-> _.ToNj<NjButton>()    |> toArray
+                njs.Lamps      <- rts.Lamps      |-> _.ToNj<NjLamp>()      |> toArray
+                njs.Conditions <- rts.Conditions |-> _.ToNj<NjCondition>() |> toArray
+                njs.Actions    <- rts.Actions    |-> _.ToNj<NjAction>()    |> toArray
 
                 njs.Arrows   |> iter onNsJsonSerializing
                 njs.Flows    |> iter onNsJsonSerializing
                 njs.Works    |> iter onNsJsonSerializing
                 njs.ApiDefs  |> iter onNsJsonSerializing
                 njs.ApiCalls |> iter onNsJsonSerializing
+                njs.Buttons    |> iter onNsJsonSerializing
+                njs.Lamps      |> iter onNsJsonSerializing
+                njs.Conditions |> iter onNsJsonSerializing
+                njs.Actions    |> iter onNsJsonSerializing
 
             | :? NjWork as njw ->
                 let rtw = njw |> getRuntimeObject<Work>
@@ -543,10 +553,10 @@ module rec NewtonsoftJsonObjects =
                     |> replicateProperties a)
 
             // UI 요소들의 RuntimeObject 생성
-            njs.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton.Create()    |> replicateProperties z)
-            njs.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z)
-            njs.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z)
-            njs.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z)
+            njs.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton.Create()    |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
+            njs.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
+            njs.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
+            njs.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
 
             let arrows     = njs.Arrows     |-> getRuntimeObject<ArrowBetweenWorks>
             let apiDefs    = njs.ApiDefs    |-> getRuntimeObject<ApiDef>
@@ -628,8 +638,25 @@ module rec NewtonsoftJsonObjects =
             njx.RuntimeObject <-
                 DsButton.Create()
                 |> replicateProperties njx
+                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
 
+        | :? NjLamp as njx ->
+            njx.RuntimeObject <-
+                Lamp.Create()
+                |> replicateProperties njx
+                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
 
+        | :? NjCondition as njx ->
+            njx.RuntimeObject <-
+                DsCondition.Create()
+                |> replicateProperties njx
+                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
+
+        | :? NjAction as njx ->
+            njx.RuntimeObject <-
+                DsAction.Create()
+                |> replicateProperties njx
+                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
 
         | _ -> failwith "ERROR.  확장 필요?"
 
@@ -820,10 +847,34 @@ module Ds2JsonModule =
 
 
 
-                | :? DsButton    as b -> NjButton.Create()    |> replicateProperties b :> INjUnique
-                | :? Lamp        as l -> NjLamp.Create()      |> replicateProperties l :> INjUnique
-                | :? DsCondition as d -> NjCondition.Create() |> replicateProperties d :> INjUnique
-                | :? DsAction    as a -> NjAction.Create()    |> replicateProperties a :> INjUnique
+                | :? DsButton    as b ->
+                    NjButton.Create()
+                    |> replicateProperties b
+                    |> tee (fun nj ->
+                        nj.IOTags <- b.IOTags
+                        nj.RuntimeObject <- b)
+                    :> INjUnique
+                | :? Lamp        as l ->
+                    NjLamp.Create()
+                    |> replicateProperties l
+                    |> tee (fun nj ->
+                        nj.IOTags <- l.IOTags
+                        nj.RuntimeObject <- l)
+                    :> INjUnique
+                | :? DsCondition as d ->
+                    NjCondition.Create()
+                    |> replicateProperties d
+                    |> tee (fun nj ->
+                        nj.IOTags <- d.IOTags
+                        nj.RuntimeObject <- d)
+                    :> INjUnique
+                | :? DsAction    as a ->
+                    NjAction.Create()
+                    |> replicateProperties a
+                    |> tee (fun nj ->
+                        nj.IOTags <- a.IOTags
+                        nj.RuntimeObject <- a)
+                    :> INjUnique
 
                 | (:? ArrowBetweenWorks | :? ArrowBetweenCalls) ->
                     NjArrow.Create()

@@ -175,13 +175,13 @@ module internal DsCopyModule =
                 match sbx with
                 | :? ApiCall    as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; IOTags=s.IOTags; (*ApiDef;*) |}
                 | :? NjApiCall  as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; IOTags=s.IOTags; (*ApiDef;*) |}
-                | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson); (*ApiDef;*) |}
+                | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
                 | _ -> failwith "ERROR"
 
             match dbx with
             | :? ApiCall    as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType; d.IOTags<-s.IOTags
             | :? NjApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTags<-s.IOTags
-            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTagsJson<-s.IOTags.Jsonize()
             | _ -> failwith "ERROR"
 
         | :? IDsApiDef ->
@@ -203,62 +203,62 @@ module internal DsCopyModule =
         | :? IRtButton ->
             let s =
                 match sbx with
-                | :? DsButton  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
-                | :? NjButton  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
-                | :? ORMButton as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | :? DsButton  as s -> {| FlowId=s.FlowId; FlowGuid=s.FlowGuid;                            IOTags=s.IOTags; |}
+                | :? NjButton  as s -> {| FlowId=None;     FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; IOTags=s.IOTags; |}
+                | :? ORMButton as s -> {| FlowId=s.FlowId; FlowGuid=noneGuid;                              IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
                 | _ -> failwith "ERROR"
-            
+
             match dbx with
-            | :? DsButton  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
+            | :? DsButton  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId;    d.IOTags<-s.IOTags
             | :? NjButton  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMButton as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | :? ORMButton as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
             | _ -> failwith "ERROR"
-            
+
         // Lamp, NjLamp, ORMLamp
         | :? IRtLamp ->
             let s =
                 match sbx with
                 | :? Lamp    as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
                 | :? NjLamp  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
-                | :? ORMLamp as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | :? ORMLamp as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
                 | _ -> failwith "ERROR"
-            
+
             match dbx with
             | :? Lamp    as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
             | :? NjLamp  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMLamp as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | :? ORMLamp as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
             | _ -> failwith "ERROR"
-            
+
         // DsCondition, NjCondition, ORMCondition
         | :? IRtCondition ->
             let s =
                 match sbx with
                 | :? DsCondition  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
                 | :? NjCondition  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
-                | :? ORMCondition as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | :? ORMCondition as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
                 | _ -> failwith "ERROR"
-            
+
             match dbx with
             | :? DsCondition  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
             | :? NjCondition  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMCondition as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | :? ORMCondition as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
             | _ -> failwith "ERROR"
-            
+
         // DsAction, NjAction, ORMAction
         | :? IRtAction ->
             let s =
                 match sbx with
                 | :? DsAction  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId; IOTags=s.IOTags |}
                 | :? NjAction  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None; IOTags=s.IOTags |}
-                | :? ORMAction as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=if s.IOTagsJson.IsNullOrEmpty() then IOTagsWithSpec() else JsonConvert.DeserializeObject<IOTagsWithSpec>(s.IOTagsJson) |}
+                | :? ORMAction as s -> {| FlowGuid=noneGuid; FlowId=s.FlowId; IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
                 | _ -> failwith "ERROR"
-            
+
             match dbx with
             | :? DsAction  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
             | :? NjAction  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMAction as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-JsonConvert.SerializeObject(s.IOTags)
+            | :? ORMAction as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
             | _ -> failwith "ERROR"
-            
+
         // Other ISystemEntityWithFlow types (Flow, Work)
         | :? ISystemEntityWithFlow ->
             let s =

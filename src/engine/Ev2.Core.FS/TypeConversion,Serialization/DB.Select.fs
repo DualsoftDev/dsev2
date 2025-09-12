@@ -69,6 +69,7 @@ module internal Db2DsImpl =
             for ormButton in ormButtons do
                 let button = createExtended<DsButton>() |> replicateProperties ormButton
                 button.FlowId <- ormButton.FlowId
+                button.IOTags <- IOTagsWithSpec.FromJson ormButton.IOTagsJson
                 setParentI s button
                 s.RawButtons.Add button
                 handleAfterSelect button
@@ -76,6 +77,7 @@ module internal Db2DsImpl =
             for ormLamp in ormLamps do
                 let lamp = createExtended<Lamp>() |> replicateProperties ormLamp
                 lamp.FlowId <- ormLamp.FlowId
+                lamp.IOTags <- IOTagsWithSpec.FromJson ormLamp.IOTagsJson
                 setParentI s lamp
                 s.RawLamps.Add lamp
                 handleAfterSelect lamp
@@ -83,6 +85,7 @@ module internal Db2DsImpl =
             for ormCondition in ormConditions do
                 let condition = createExtended<DsCondition>() |> replicateProperties ormCondition
                 condition.FlowId <- ormCondition.FlowId
+                condition.IOTags <- IOTagsWithSpec.FromJson ormCondition.IOTagsJson
                 setParentI s condition
                 s.RawConditions.Add condition
                 handleAfterSelect condition
@@ -90,6 +93,7 @@ module internal Db2DsImpl =
             for ormAction in ormActions do
                 let action = createExtended<DsAction>() |> replicateProperties ormAction
                 action.FlowId <- ormAction.FlowId
+                action.IOTags <- IOTagsWithSpec.FromJson ormAction.IOTagsJson
                 setParentI s action
                 s.RawActions.Add action
                 handleAfterSelect action
@@ -130,12 +134,7 @@ module internal Db2DsImpl =
                     let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
 
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
-                    let ioTags = 
-                        if orm.IOTagsJson.IsNullOrEmpty() then
-                            IOTagsWithSpec()
-                        else
-                            let parsed = JsonConvert.DeserializeObject<IOTagsWithSpec>(orm.IOTagsJson)
-                            if parsed.IsLogicallyEmpty() then IOTagsWithSpec() else parsed
+                    let ioTags = IOTagsWithSpec.FromJson orm.IOTagsJson
                     let apiCall = ApiCall.Create()
                     apiCall.ApiDefGuid <- apiDefGuid
                     apiCall.InAddress <- orm.InAddress
@@ -147,7 +146,6 @@ module internal Db2DsImpl =
                     apiCall
                     |> replicateProperties orm
                     |> tee handleAfterSelect
-
             ]
             s.addApiCalls(rtApiCalls, false)
 

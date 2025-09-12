@@ -184,6 +184,7 @@ module PlcTagModule =
                 this.OutTag <- TagWithSpec.FromJson(this.OutTagJson)
 
         /// 논리적으로 빈 상태인지 확인 (InTag, OutTag 모두 null)
-        member x.IsLogicallyEmpty() = isItNull x.InTag && isItNull x.OutTag
+        member x.IsLogicallyEmpty() = isItNull x || (isItNull x.InTag && isItNull x.OutTag)
         /// Null safe JSON 직렬화 (논리적으로 빈 경우 null 반환)
-        member x.Jsonize(): string = if isItNull x || x.IsLogicallyEmpty() then null else EmJson.ToJson x
+        member x.Jsonize(): string = if x.IsLogicallyEmpty() then null else EmJson.ToJson x
+        static member FromJson(json:string) = if json.IsNullOrEmpty() then getNull<IOTagsWithSpec>() else EmJson.FromJson<IOTagsWithSpec>(json)
