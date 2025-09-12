@@ -335,15 +335,14 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
 
 
     /// 새로운 패턴: createExtended 사용
-    static member CreateProject() = createExtended<Project>()
-    static member CreateDsSystemExtended() =
-        createExtended<DsSystem>()
+    static member CreateProject()  = createExtended<Project>()
+    static member CreateDsSystemExtended() = createExtended<DsSystem>()
     static member CreateDsSystem() = createExtended<DsSystem>()
-    static member CreateWork() = createExtended<Work>()
-    static member CreateCall() = createExtended<Call>()
-    static member CreateFlow() = createExtended<Flow>()
-    static member CreateApiDef() = createExtended<ApiDef>()
-    static member CreateApiCall() = createExtended<ApiCall>()
+    static member CreateWork()     = createExtended<Work>()
+    static member CreateCall()     = createExtended<Call>()
+    static member CreateFlow()     = createExtended<Flow>()
+    static member CreateApiDef()   = createExtended<ApiDef>()
+    static member CreateApiCall()  = createExtended<ApiCall>()
 
     static member CreateDsSystem(flows:Flow[], works:Work[],
         arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[],
@@ -381,8 +380,7 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
 
 
     /// 새로운 패턴: createExtended 사용
-    static member CreateWorkExtended() =
-        createExtended<Work>()
+    static member CreateWorkExtended() = createExtended<Work>()
 
     static member CreateWork(calls:Call seq, arrows:ArrowBetweenCalls seq, flowGuid:Guid option) =
         let calls = calls |> toList
@@ -400,8 +398,7 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
 
 
     /// 새로운 패턴: createExtended 사용
-    static member CreateCallExtended() =
-        createExtended<Call>()
+    static member CreateCallExtended() = createExtended<Call>()
 
     static member CreateCall(callType:DbCallType, apiCalls:ApiCall seq,
         autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
@@ -439,8 +436,7 @@ module DsObjectUtilsModule =
             passiveSystems |> iter (setParentI project)
             project
 
-        static member Create() =
-            createExtended<Project>()
+        static member Create() = createExtended<Project>()
 
 
     type DsSystem with // Create
@@ -480,9 +476,8 @@ module DsObjectUtilsModule =
             actions  |> iter (setParentI system)
             system
 
-        static member Create() =
-            // 매개변수가 없는 경우만 확장 타입 사용
-            createExtended<DsSystem>()
+        // 매개변수가 없는 경우만 확장 타입 사용
+        static member Create() = createExtended<DsSystem>()
 
 
     type Work with // Create
@@ -498,8 +493,7 @@ module DsObjectUtilsModule =
             arrows |> iter (setParentI work)
             work
 
-        static member Create() =
-            createExtended<Work>()
+        static member Create() = createExtended<Work>()
 
 
     type Call with // Create
@@ -517,15 +511,13 @@ module DsObjectUtilsModule =
             call.ApiCallGuids.AddRange(apiCalls |-> _.Guid)
             call
 
-        static member Create() =
-            createExtended<Call>()
+        static member Create() = createExtended<Call>()
 
 
     // Flow는 더 이상 Create 메서드로 Button 등을 받지 않음
 
     type Flow with
-        static member Create() =
-            createExtended<Flow>()
+        static member Create() = createExtended<Flow>()
 
 
     type ApiDef with // Create
@@ -550,8 +542,7 @@ module DsObjectUtilsModule =
             apiCall.ValueSpec <- valueSpec
             apiCall
 
-        static member Create() =
-            createExtended<ApiCall>()
+        static member Create() = createExtended<ApiCall>()
 
     type IArrow with // GetArrowType, GetSource, GetTarget
         member x.GetSource(): Unique =

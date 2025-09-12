@@ -184,13 +184,13 @@ module rec DsCompareObjects =
                     let updateSql = $"UPDATE {Tn.Work} SET flowId = {y.Flow.Value.Id.Value} WHERE id = {x.Id.Value};"
                     yield Diff("FlowId", x, y, updateSql)
 
-                if x.Motion       <> y.Motion       then yield Diff(nameof x.Motion, x, y, null)
-                if x.Script       <> y.Script       then yield Diff(nameof x.Script, x, y, null)
+                if x.Motion        <> y.Motion        then yield Diff(nameof x.Motion,        x, y, null)
+                if x.Script        <> y.Script        then yield Diff(nameof x.Script,        x, y, null)
                 if x.ExternalStart <> y.ExternalStart then yield Diff(nameof x.ExternalStart, x, y, null)
-                if x.IsFinished   <> y.IsFinished   then yield Diff(nameof x.IsFinished, x, y, null)
-                if x.NumRepeat  <> y.NumRepeat  then yield Diff(nameof x.NumRepeat, x, y, null)
-                if x.Period     <> y.Period     then yield Diff(nameof x.Period, x, y, null)
-                if x.Delay      <> y.Delay      then yield Diff(nameof x.Delay, x, y, null)
+                if x.IsFinished    <> y.IsFinished    then yield Diff(nameof x.IsFinished,    x, y, null)
+                if x.NumRepeat     <> y.NumRepeat     then yield Diff(nameof x.NumRepeat,     x, y, null)
+                if x.Period        <> y.Period        then yield Diff(nameof x.Period,        x, y, null)
+                if x.Delay         <> y.Delay         then yield Diff(nameof x.Delay,         x, y, null)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y, null)
 
                 yield! (x.Calls,  y.Calls,  criteria) |||> computeDiffRecursively

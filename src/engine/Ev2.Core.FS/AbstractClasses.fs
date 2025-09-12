@@ -214,11 +214,11 @@ and DsSystem() = // Create
     /// DateTime: 메모리에 최초 객체 생성시 생성
     member val DateTime      = now().TruncateToSecond() with get, set
 
-    member x.Flows    = x.RawFlows    |> toList
-    member x.Works    = x.RawWorks    |> toList
-    member x.Arrows   = x.RawArrows   |> toList
-    member x.ApiDefs  = x.RawApiDefs  |> toList
-    member x.ApiCalls = x.RawApiCalls |> toList
+    member x.Flows      = x.RawFlows      |> toList
+    member x.Works      = x.RawWorks      |> toList
+    member x.Arrows     = x.RawArrows     |> toList
+    member x.ApiDefs    = x.RawApiDefs    |> toList
+    member x.ApiCalls   = x.RawApiCalls   |> toList
     member x.Buttons    = x.RawButtons    |> toList
     member x.Lamps      = x.RawLamps      |> toList
     member x.Conditions = x.RawConditions |> toList
@@ -247,11 +247,11 @@ and DsSystem() = // Create
         system.RawActions.Clear()
 
         // Add new components and set parent relationships
-        flows    |> iter (fun f -> system.RawFlows   .Add(f); setParentI system f)
-        works    |> iter (fun w -> system.RawWorks   .Add(w); setParentI system w)
-        arrows   |> iter (fun a -> system.RawArrows  .Add(a); setParentI system a)
-        apiDefs  |> iter (fun d -> system.RawApiDefs .Add(d); setParentI system d)
-        apiCalls |> iter (fun c -> system.RawApiCalls.Add(c); setParentI system c)
+        flows      |> iter (fun f -> system.RawFlows     .Add(f); setParentI system f)
+        works      |> iter (fun w -> system.RawWorks     .Add(w); setParentI system w)
+        arrows     |> iter (fun a -> system.RawArrows    .Add(a); setParentI system a)
+        apiDefs    |> iter (fun d -> system.RawApiDefs   .Add(d); setParentI system d)
+        apiCalls   |> iter (fun c -> system.RawApiCalls  .Add(c); setParentI system c)
         buttons    |> iter (fun b -> system.RawButtons   .Add(b); setParentI system b)
         lamps      |> iter (fun l -> system.RawLamps     .Add(l); setParentI system l)
         conditions |> iter (fun c -> system.RawConditions.Add(c); setParentI system c)

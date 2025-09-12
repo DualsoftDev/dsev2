@@ -161,17 +161,17 @@ module internal DbInsertModule =
                     let insertSystemElement (tableName:string) (rtX:#DsSystemEntityWithFlow, ormX:#ORMSystemEntityWithFlow) =
                             ormX.SystemId <- systemId
                             ormX.FlowId <- flowId
-                            
+
                             // IOTags 처리 (Button, Lamp, Condition, Action만 해당)
-                            let ioTagsParam = 
+                            let ioTagsParam =
                                 match box ormX with
                                 | :? ORMButton | :? ORMLamp | :? ORMCondition | :? ORMAction -> ", ioTagsJson"
                                 | _ -> ""
-                            let ioTagsValue = 
+                            let ioTagsValue =
                                 match box ormX with
                                 | :? ORMButton | :? ORMLamp | :? ORMCondition | :? ORMAction -> ", @IOTagsJson"
                                 | _ -> ""
-                            
+
                             dbApi.With(fun (conn, tr) ->
                                 let xId =
                                     conn.Insert($"""INSERT INTO {tableName}
