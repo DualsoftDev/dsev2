@@ -306,9 +306,9 @@ module rec NewtonsoftJsonObjects =
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
-        [<JsonProperty(Order = 103)>]
+        [<JsonProperty(Order = 103); JsonConverter(typeof<RawJsonConverter>)>]
         member val AutoConditions   = nullString with get, set
-        [<JsonProperty(Order = 104)>]
+        [<JsonProperty(Order = 104); JsonConverter(typeof<RawJsonConverter>)>]
         member val CommonConditions = nullString with get, set
 
         [<JsonIgnore>]

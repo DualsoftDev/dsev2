@@ -33,6 +33,7 @@
 		<Compile Include="Duplicate.Test.fs" />
 		<Compile Include="ValueSpec.Test.fs" />
 		<Compile Include="GuidedValueSpec.Test.fs" />
+		<Compile Include="EscapeTest.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 

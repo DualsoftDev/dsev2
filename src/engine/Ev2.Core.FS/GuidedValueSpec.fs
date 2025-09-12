@@ -1,7 +1,6 @@
 namespace Ev2.Core.FS
 
 open System
-open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
 open Dual.Common.Core.FS
@@ -37,72 +36,42 @@ module GuidedValueSpecModule =
             let value = JsonConvert.DeserializeObject<ValueSpec<'T>>(valueJson)
             GuidedValueSpec<'T>(guid, value)
 
-        //// IValueSpec 유지를 위한 비제네릭 버전 제공
-        //static member FromJsonDynamic(json: string) : IValueSpec =
-        //    let jobj = JObject.Parse(json)
-        //    let guid = jobj["Guid"].ToObject<Guid>()
-        //    let typeName = jobj["$type"].ToString()
-
-        //    // 타입에 따라 적절한 GuidedValueSpec<T> 생성
-        //    match typeName with
-        //    | t when t = typedefof<single>.Name ->
-        //        GuidedValueSpec<single>.FromJson(json) :> IValueSpec
-        //    | t when t = typedefof<double>.Name ->
-        //        GuidedValueSpec<double>.FromJson(json) :> IValueSpec
-        //    | t when t = typedefof<int32>.Name ->
-        //        GuidedValueSpec<int32>.FromJson(json) :> IValueSpec
-        //    | t when t = typedefof<int64>.Name ->
-        //        GuidedValueSpec<int64>.FromJson(json) :> IValueSpec
-        //    | t when t = typedefof<bool>.Name ->
-        //        GuidedValueSpec<bool>.FromJson(json) :> IValueSpec
-        //    | t when t = typedefof<string>.Name ->
-        //        GuidedValueSpec<string>.FromJson(json) :> IValueSpec
-        //    | _ -> failwith $"Unsupported type for GuidedValueSpec: {typeName}"
-
-
     type ApiCallValueSpec<'T when 'T : equality and 'T : comparison>(apiCallGuid:Guid, value: ValueSpec<'T>) =
         inherit GuidedValueSpec<'T>(apiCallGuid, value)
         new (apiCall:ApiCall, value: ValueSpec<'T>) = ApiCallValueSpec<'T>(apiCall.Guid, value)
         interface IApiCallValueSpec
             with member x.ApiCall = x.ApiCall :> IRtApiCall
         member val ApiCall = getNull<ApiCall>() with get, set
-    //type ApiCallValueSpec<'T>(apiCall:ApiCall, value: ValueSpec<'T>) =
-    //    inherit GuidedValueSpec<'T>(apiCall.Guid, value)
-    //    interface IApiCallValueSpec
-    //        with member x.ApiCall = apiCall :> IRtApiCall
-    //    member val ApiCall = apiCall with get, set
 
     type ApiCallValueSpecs with
         // ToJson: ApiCallValueSpecs를 JSON 문자열로 직렬화
         // 현재는 단순히 문자열 배열로 저장하고, 향후 확장 가능
         member x.ToJson() =
-            // 각 spec을 문자열로 변환하여 JSON 배열로 만듦
-            let strings =
-                x
-                |> Seq.map (fun spec -> spec.Jsonize())
-                |> Seq.toArray
-            JsonConvert.SerializeObject(strings)
+            // 각 spec을 객체로 직접 직렬화 (이중 escape 방지)
+            let objects =
+                x |-> (fun spec -> JObject.Parse(spec.Jsonize()))
+                  |> toArray
+            JsonConvert.SerializeObject(objects)
 
         // FromJson: JSON 문자열에서 ApiCallValueSpecs로 역직렬화
-        // ToJson()에서 저장한 문자열 배열을 다시 읽어옴
+        // ToJson()에서 저장한 객체 배열을 다시 읽어옴
         static member FromJson(json: string) =
             let specs = ApiCallValueSpecs()
-            if not (json.IsNullOrEmpty()) then
+            json |> String.andDo (fun json ->
                 try
-                    // JSON 문자열 배열을 파싱
-                    let strings = JsonConvert.DeserializeObject<string[]>(json)
-                    if strings <> null then
-                        for str in strings do
-                            // 각 JSON 요소를 JObject로 파싱하여 Guid 추출
-                            let jobj = JObject.Parse(str)
+                    // JSON 배열을 JArray로 파싱
+                    let jarray = JArray.Parse(json)
+                    if jarray <> null then
+                        for jtoken in jarray do
+                            let jobj = jtoken :?> JObject
                             let guid =
-                                match jobj.["Guid"] with
-                                | null -> Guid.NewGuid()
-                                | token -> token.ToObject<Guid>()
+                                jobj.["Guid"] |> toOption
+                                |-> _.ToObject<Guid>()
+                                |? Guid.NewGuid()
 
-
-                            // 기존 deserializeWithType을 활용하여 IValueSpec 생성
-                            let valueSpec = deserializeWithType str
+                            // JObject를 다시 JSON 문자열로 변환하여 deserializeWithType 호출
+                            let jsonStr = jobj.ToString()
+                            let valueSpec = deserializeWithType jsonStr
 
                             // IValueSpec을 적절한 타입의 ApiCallValueSpec으로 변환
                             // ValueSpec<'T>의 실제 타입을 확인하여 처리
@@ -126,6 +95,7 @@ module GuidedValueSpecModule =
                             specs.Add(apiCallValueSpec)
                 with
                 | _ -> ()
+            )
             specs
 
 (*
