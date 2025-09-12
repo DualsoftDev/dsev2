@@ -62,7 +62,7 @@ module CoreToAas =
                     JObj().TrySetProperty(apiCall.OutSymbol,  nameof apiCall.OutSymbol)
                     JObj().TrySetProperty(apiCall.ValueSpec,  nameof apiCall.ValueSpec)
                     // IOTags 직렬화
-                    let ioTagsStr = apiCall.IOTags.Jsonize()
+                    let ioTagsStr = IOTagsWithSpec.Jsonize apiCall.IOTags
                     JObj().TrySetProperty(ioTagsStr, nameof apiCall.IOTags)
 
                 | :? NjCall as call ->
@@ -103,16 +103,16 @@ module CoreToAas =
 
                 | (:? NjButton as btn) ->
                     JObj().TrySetProperty(btn.FlowGuid, nameof btn.FlowGuid)
-                    JObj().TrySetProperty(btn.IOTags.Jsonize(), nameof btn.IOTags)
+                    JObj().TrySetProperty(IOTagsWithSpec.Jsonize btn.IOTags, nameof btn.IOTags)
                 | (:? NjLamp as lamp) ->
                     JObj().TrySetProperty(lamp.FlowGuid, nameof lamp.FlowGuid)
-                    JObj().TrySetProperty(lamp.IOTags.Jsonize(), nameof lamp.IOTags)
+                    JObj().TrySetProperty(IOTagsWithSpec.Jsonize lamp.IOTags, nameof lamp.IOTags)
                 | (:? NjCondition as cond) ->
                     JObj().TrySetProperty(cond.FlowGuid, nameof cond.FlowGuid)
-                    JObj().TrySetProperty(cond.IOTags.Jsonize(), nameof cond.IOTags)
+                    JObj().TrySetProperty(IOTagsWithSpec.Jsonize cond.IOTags, nameof cond.IOTags)
                 | (:? NjAction as act) ->
                     JObj().TrySetProperty(act.FlowGuid, nameof act.FlowGuid)
-                    JObj().TrySetProperty(act.IOTags.Jsonize(), nameof act.IOTags)
+                    JObj().TrySetProperty(IOTagsWithSpec.Jsonize act.IOTags, nameof act.IOTags)
 
                 | (:? NjFlow) ->
                     ()

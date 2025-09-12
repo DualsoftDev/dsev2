@@ -289,7 +289,7 @@ and DsButton() = // Create
     interface IRtButton
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = x.IOTags.Jsonize()
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
@@ -298,7 +298,7 @@ and Lamp() = // Create
     interface IRtLamp
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = x.IOTags.Jsonize()
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
@@ -307,7 +307,7 @@ and DsCondition() = // Create
     interface IRtCondition
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = x.IOTags.Jsonize()
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
@@ -316,7 +316,7 @@ and DsAction() = // Create
     interface IRtAction
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = x.IOTags.Jsonize()
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<DsAction>()
 
 
@@ -415,7 +415,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
 
     member val ValueSpec = valueSpec with get, set
     member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = x.IOTags.Jsonize()
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
 
     /// system 에서 현재 ApiCall 을 호출하는 Call 들

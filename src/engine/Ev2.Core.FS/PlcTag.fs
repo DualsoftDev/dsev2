@@ -7,38 +7,6 @@ open Newtonsoft.Json.Linq
 open System.Runtime.Serialization
 open Dual.Common.Core.FS
 
-/// JSON 문자열을 이스케이프 없이 그대로 쓰기 위한 JsonConverter
-type RawJsonConverter() =
-    inherit JsonConverter()
-
-    override x.CanConvert(objectType) =
-        objectType = typeof<string>
-
-    override x.WriteJson(writer, value, serializer) =
-        match value with
-        | null -> writer.WriteNull()
-        | :? string as json when not (System.String.IsNullOrWhiteSpace(json)) ->
-            // JSON 문자열을 이스케이프 없이 그대로 출력
-            writer.WriteRawValue(json)
-        | _ -> writer.WriteNull()
-
-    override x.ReadJson(reader, objectType, existingValue, serializer) =
-        match reader.TokenType with
-        | JsonToken.String ->
-            // 구형식: 이스케이프된 문자열
-            reader.Value
-        | JsonToken.StartObject | JsonToken.StartArray ->
-            // 신형식: 객체나 배열을 문자열로 변환
-            let jToken = JToken.Load(reader)
-            jToken.ToString(Formatting.None) :> obj
-        | JsonToken.Null ->
-            null
-        | _ ->
-            null
-
-    override x.CanRead = true
-    override x.CanWrite = true
-
 [<AutoOpen>]
 module PlcTagModule =
 
@@ -186,5 +154,5 @@ module PlcTagModule =
         /// 논리적으로 빈 상태인지 확인 (InTag, OutTag 모두 null)
         member x.IsLogicallyEmpty() = isItNull x || (isItNull x.InTag && isItNull x.OutTag)
         /// Null safe JSON 직렬화 (논리적으로 빈 경우 null 반환)
-        member x.Jsonize(): string = if x.IsLogicallyEmpty() then null else EmJson.ToJson x
+        static member Jsonize(iotags:IOTagsWithSpec):string = if isItNull iotags || iotags.IsLogicallyEmpty() then null else EmJson.ToJson iotags
         static member FromJson(json:string) = if json.IsNullOrEmpty() then getNull<IOTagsWithSpec>() else EmJson.FromJson<IOTagsWithSpec>(json)

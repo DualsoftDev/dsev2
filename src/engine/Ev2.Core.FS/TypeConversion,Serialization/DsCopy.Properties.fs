@@ -181,7 +181,7 @@ module internal DsCopyModule =
             match dbx with
             | :? ApiCall    as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType; d.IOTags<-s.IOTags
             | :? NjApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTags<-s.IOTags
-            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTagsJson<-s.IOTags.Jsonize()
+            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> failwith "ERROR"
 
         | :? IDsApiDef ->
@@ -211,7 +211,7 @@ module internal DsCopyModule =
             match dbx with
             | :? DsButton  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId;    d.IOTags<-s.IOTags
             | :? NjButton  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMButton as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
+            | :? ORMButton as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> failwith "ERROR"
 
         // Lamp, NjLamp, ORMLamp
@@ -226,7 +226,7 @@ module internal DsCopyModule =
             match dbx with
             | :? Lamp    as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
             | :? NjLamp  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMLamp as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
+            | :? ORMLamp as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> failwith "ERROR"
 
         // DsCondition, NjCondition, ORMCondition
@@ -241,7 +241,7 @@ module internal DsCopyModule =
             match dbx with
             | :? DsCondition  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
             | :? NjCondition  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMCondition as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
+            | :? ORMCondition as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> failwith "ERROR"
 
         // DsAction, NjAction, ORMAction
@@ -256,7 +256,7 @@ module internal DsCopyModule =
             match dbx with
             | :? DsAction  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId; d.IOTags<-s.IOTags
             | :? NjAction  as d -> d.FlowGuid<-(s.FlowGuid |-> guid2str |? null); d.IOTags<-s.IOTags
-            | :? ORMAction as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-s.IOTags.Jsonize()
+            | :? ORMAction as d -> d.FlowId<-s.FlowId; d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> failwith "ERROR"
 
         // Other ISystemEntityWithFlow types (Flow, Work)
