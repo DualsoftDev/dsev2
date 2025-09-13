@@ -1,5 +1,6 @@
 namespace T
 
+open Dual.Common.Base
 open Dual.Common.Core.FS
 
 open Ev2.Core.FS
@@ -18,7 +19,7 @@ module CreateSampleWithHelloDsModule =
 
         let hdsFlow =
             Flow.Create(Name = "STN1")
-        
+
         // UI 요소들 생성
         let buttons = [
             DsButton.Create(Name="AutoSelect")
@@ -29,13 +30,13 @@ module CreateSampleWithHelloDsModule =
         let lamps = [ Lamp.Create(Name="MyLamp1") ]
         let conditions = [ DsCondition.Create(Name="MyCondition1") ]
         let actions = [ DsAction.Create(Name="MyAction1") ]
-        
+
         // UI 요소들의 Flow 설정
         buttons |> iter (fun b -> b.FlowGuid <- Some hdsFlow.Guid)
         lamps |> iter (fun l -> l.FlowGuid <- Some hdsFlow.Guid)
         conditions |> iter (fun c -> c.FlowGuid <- Some hdsFlow.Guid)
         actions |> iter (fun a -> a.FlowGuid <- Some hdsFlow.Guid)
-        
+
         // System에 UI 요소들 추가
         buttons |> hdsSystem.AddButtons
         lamps |> hdsSystem.AddLamps
