@@ -58,11 +58,11 @@ module Schema =
 
     // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
     let sqliteDbApi() =
-        Path.Combine(testDataDir(), getFuncName(2))
+        Path.Combine(testDataDir(), getFuncName(1))
         |> createSqliteDbApi
 
     let jsonPath() =
-        Path.Combine(testDataDir(), $"{getFuncName(2)}.json")
+        Path.Combine(testDataDir(), $"{getFuncName(1)}.json")
         |> createSqliteDbApi
 
 
