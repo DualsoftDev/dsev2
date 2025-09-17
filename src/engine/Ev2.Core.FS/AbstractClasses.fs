@@ -44,6 +44,13 @@ and [<AbstractClass>] DsSystemEntityWithFlow() =
         | Some id -> x.System |-> _.Flows >>= tryFind(fun f -> f.Id = Some id)
         | None -> x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
 
+/// Button, Lamp, Condition, Action
+and [<AbstractClass>] BLCA() =
+    inherit DsSystemEntityWithFlow()
+    interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
+
 and [<AbstractClass>] FlowEntity() =
     inherit RtUnique()
     member x.Flow    = x.RawParent >>= tryCast<Flow>
@@ -284,39 +291,27 @@ and Flow() = // Create
     static member Create() = createExtended<Flow>()
 
 and DsButton() = // Create
-    inherit DsSystemEntityWithFlow()
+    inherit BLCA()
 
     interface IRtButton
-    interface IWithTagWithSpecs
-    member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
-    inherit DsSystemEntityWithFlow()
+    inherit BLCA()
 
     interface IRtLamp
-    interface IWithTagWithSpecs
-    member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
-    inherit DsSystemEntityWithFlow()
+    inherit BLCA()
 
     interface IRtCondition
-    interface IWithTagWithSpecs
-    member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
-    inherit DsSystemEntityWithFlow()
+    inherit BLCA()
 
     interface IRtAction
-    interface IWithTagWithSpecs
-    member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     static member Create() = createExtended<DsAction>()
 
 
