@@ -20,7 +20,7 @@ module MiniSample =
 
         let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid, Guid=Guid.Parse("30000000-0000-0000-0000-000000000000"))
         let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid, Guid=Guid.Parse("40000000-0000-0000-0000-000000000000"))
-        
+
         sys.AddApiDefs [apiDefAdv; apiDefRet]
 
         let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
@@ -55,12 +55,48 @@ module MiniSample =
         // UI 요소들의 Flow 설정
         button1.FlowGuid <- Some flow.Guid
         lamp1.FlowGuid <- Some flow.Guid
-        
+
         // Button에 IOTags 샘플 추가
-        button1.IOTags <- 
+        button1.IOTags <-
             let inTag = TagWithSpec<bool>("ButtonIn", "I0.0", ValueSpec<bool>.Single true)
             let outTag = TagWithSpec<bool>("ButtonOut", "Q0.0", ValueSpec<bool>.Single false)
             IOTagsWithSpec(inTag, outTag)
+
+
+        // Polymorphic UI 요소들 생성 및 등록
+        let rtPolyButton =
+            NewDsButton.Create()
+            |> tee (fun z ->
+                let inTag = TagWithSpec<bool>("PolyButtonIn", "I0.2", ValueSpec<bool>.Single false)
+                let outTag = TagWithSpec<bool>("PolyButtonOut", "Q0.2", ValueSpec<bool>.Single true)
+                z.IOTags <- IOTagsWithSpec(inTag, outTag))
+
+        let rtPolyLamp =
+            NewLamp.Create()
+            |> tee (fun z ->
+                let inTag = TagWithSpec<int>("PolyLampIn", "DB20.DBW0", ValueSpec<int>.Single 128)
+                let outTag = TagWithSpec<int>("PolyLampOut", "DB20.DBW2", ValueSpec<int>.Single 255)
+                z.IOTags <- IOTagsWithSpec(inTag, outTag))
+
+        let rtPolyCondition =
+            NewDsCondition.Create()
+            |> tee (fun z ->
+                let inTag = TagWithSpec<string>("PolyConditionIn", "Condition.Input", ValueSpec<string>.Single "RUN")
+                let outTag = TagWithSpec<string>("PolyConditionOut", "Condition.Output", ValueSpec<string>.Single "OK")
+                z.IOTags <- IOTagsWithSpec(inTag, outTag))
+
+        let rtPolyAction =
+            NewDsAction.Create()
+            |> tee (fun z ->
+                let inTag = TagWithSpec<double>("PolyActionIn", "Action.Input", ValueSpec<double>.Single 1.5)
+                let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)
+                z.IOTags <- IOTagsWithSpec(inTag, outTag))
+
+        [   rtPolyButton :> SystemEntityWithJsonPolymorphic
+            rtPolyLamp :> SystemEntityWithJsonPolymorphic
+            rtPolyCondition :> SystemEntityWithJsonPolymorphic
+            rtPolyAction :> SystemEntityWithJsonPolymorphic ]
+        |> iter system.AddEntitiy
 
         // Work 생성
         let work1 =
@@ -95,7 +131,7 @@ module MiniSample =
                 a.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
                 a.OutSymbol <- "Y0" // OutSymbol 추가 (NOT NULL constraint)
                 // ApiCall에 IOTags 샘플 추가
-                a.IOTags <- 
+                a.IOTags <-
                     let inTag = TagWithSpec<int>("ApiCallIn", "DB10.DBW0", ValueSpec<int>.Single 25)
                     let outTag = TagWithSpec<int>("ApiCallOut", "DB10.DBW2", ValueSpec<int>.Single 50)
                     IOTagsWithSpec(inTag, outTag)

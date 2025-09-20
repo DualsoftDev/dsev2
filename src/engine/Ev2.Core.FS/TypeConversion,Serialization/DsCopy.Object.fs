@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open System
+open Newtonsoft.Json.Linq
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
 [<AutoOpen>]
@@ -44,6 +45,7 @@ module internal rec DsObjectCopyImpl =
                 let lamps      = x.Lamps      |-> _.replicate() |> toArray
                 let conditions = x.Conditions |-> _.replicate() |> toArray
                 let actions    = x.Actions    |-> _.replicate() |> toArray
+                let serializedEntities = x.PolymorphicJsonEntities.SerializedItems.DeepClone() :?> JArray
 
                 // 복제된 데이터를 newSystem에 설정
                 flows      |> newSystem.RawFlows     .AddRange
@@ -58,6 +60,7 @@ module internal rec DsObjectCopyImpl =
 
                 // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
                 newSystem |> replicateProperties x |> ignore
+                newSystem.PolymorphicJsonEntities.SerializedItems <- serializedEntities
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 flows      |> iter (setParentI newSystem)
