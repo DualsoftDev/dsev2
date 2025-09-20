@@ -4,6 +4,8 @@ open System
 open System.Linq
 open System.Diagnostics
 open Dapper
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
@@ -106,6 +108,23 @@ module internal DbInsertModule =
 
                     // system 의 arrows 를 삽입 (works 간 연결)
                     rt.Arrows |> iter _.InsertToDB(dbApi)
+
+                    // polymorphic system entities 저장
+                    let serializedEntities =
+                        rt.PolymorphicJsonEntities.SyncToSerialized()
+                        rt.PolymorphicJsonEntities.SerializedItems |> Seq.cast<JObject> |> Seq.toArray
+
+                    for entityJson in serializedEntities do
+                        let typeName =
+                            entityJson.TryGetValue("$type")
+                            |> function
+                                | true, value -> value.ToString()
+                                | _ -> failwith "systemEntity JSON 에 '$type' 속성이 없습니다."
+                        let jsonText = entityJson.ToString(Formatting.None)
+                        conn.Execute(
+                            $"INSERT INTO {Tn.SystemEntity} (systemId, type, json) VALUES (@SystemId, @Type, @Json)",
+                            {| SystemId = sysId; Type = typeName; Json = jsonText |}, tr)
+                        |> ignore
 
                     // system 의 apiDefs 를 삽입
                     rt.ApiDefs |> iter _.InsertToDB(dbApi)

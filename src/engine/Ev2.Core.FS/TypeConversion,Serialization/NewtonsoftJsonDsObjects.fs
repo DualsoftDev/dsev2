@@ -142,13 +142,14 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 109)>] member val Actions    = [||]:NjAction[]    with get, set
 
         [<JsonIgnore>]
-        member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>()
-        [<JsonProperty("Entitiess")>]
+        member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>() with get, set
+        [<JsonProperty("Entities")>]
         member this.SerializedEntities
             with get () : JArray = this.PolymorphicJsonEntities.SerializedItems
             and set (value: JArray) =
                 let payload = if isNull value then JArray() else value
                 this.PolymorphicJsonEntities.SerializedItems <- payload
+        member x.ShouldSerializeEntities() = x.PolymorphicJsonEntities.Count > 0
 
         static member Create() = createExtended<NjSystem>()
 
@@ -198,6 +199,7 @@ module rec NewtonsoftJsonObjects =
             x.Arrows     <- arrows
             x.ApiDefs    <- apiDefs
             x.ApiCalls   <- apiCalls
+            x.PolymorphicJsonEntities <- entities
             x.Buttons    <- buttons
             x.Lamps      <- lamps
             x.Conditions <- conditions
@@ -445,6 +447,8 @@ module rec NewtonsoftJsonObjects =
                 //    njs.RuntimeObject |> replicateProperties njs |> ignore
 
                 let rts = njs |> getRuntimeObject<DsSystem>
+                njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities
+                njs.PolymorphicJsonEntities.SyncToSerialized()
                 njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
                 njs.Flows    <- rts.Flows    |-> _.ToNj<NjFlow>()    |> toArray
                 njs.ApiDefs  <- rts.ApiDefs  |-> _.ToNj<NjApiDef>()  |> toArray
@@ -579,6 +583,8 @@ module rec NewtonsoftJsonObjects =
             let rts =
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions)
                 |> replicateProperties njs
+            rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities
+            rts.PolymorphicJsonEntities.SyncToValues()
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->

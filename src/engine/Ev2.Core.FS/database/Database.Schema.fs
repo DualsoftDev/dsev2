@@ -299,6 +299,7 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 CREATE TABLE {k Tn.SystemEntity}(
     {k "id"}              {autoincPrimaryKey}
     , {k "systemId"}       {intKeyType} NOT NULL
+    , {k "type"}        TEXT NOT NULL   -- $type
     , {k "json"}        TEXT NOT NULL
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
 );

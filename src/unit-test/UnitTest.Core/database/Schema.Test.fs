@@ -638,8 +638,7 @@ module Schema =
                     sys.RemoveWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
-                        // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 (및 project) 의  DateTime 이 초단위 절삭에서 변경될 수도 있음
-                        diffs.Length.IsOneOf(2, 3) === true
+                        diffs.Length.IsOneOf(2, 3, 4) === true
                         match diffs[0] with
                         | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
                         | _ -> failwith "ERROR"
@@ -647,10 +646,13 @@ module Schema =
                         | LeftOnly dbA when dbA.GetGuid() = sysArrow0.Guid -> ()
                         | _ -> failwith "ERROR"
 
-                        if diffs.Length = 3 then
-                            match diffs[2] with
-                            | Diff("DateTime", dbSys, newSys, _) when dbSys.GetGuid() = newSys.GetGuid() -> ()
-                            | _ -> failwith "ERROR"
+                        let tail = diffs |> Array.skip 2
+                        match tail with
+                        | [||] -> ()
+                        | [|Diff("DateTime", dbSys, newSys, _)|] when dbSys.GetGuid() = newSys.GetGuid() -> ()
+                        | [|Diff("DateTime", dbSys, newSys, _); Diff("DateTime", dbProj, newProj, _)|]
+                            when dbSys.GetGuid() = newSys.GetGuid() && dbProj.GetGuid() = newProj.GetGuid() -> ()
+                        | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
 
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw - 1
@@ -806,5 +808,3 @@ module Schema =
                                        (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,  dateTime)
                                 VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty], tr) )
             |> ignore
-
-
