@@ -57,7 +57,7 @@ module GuidedValueSpecModule =
         // ToJson()에서 저장한 객체 배열을 다시 읽어옴
         static member FromJson(json: string) =
             let specs = ApiCallValueSpecs()
-            json |> DcString.andDo (fun json ->
+            json |> String.andDo (fun json ->
                 try
                     // JSON 배열을 JArray로 파싱
                     let jarray = JArray.Parse(json)

@@ -13,10 +13,12 @@ open Dual.Common.Core.FS
 
 
 module ToAasTest =
-    let dsJson = DsJson.dsJson
-    let dsProject = DsJson.dsProject
     let aasJson = Aas.aasJson0
     let aasXml = Aas.aasXml0
+    let private createSampleProjectAndJson () =
+        let project = MiniSample.create()
+        let projectJson = project.ToJson()
+        project, projectJson
 
     /// Json Test
     type T() = // ``AasShell: JObj -> string conversion test``, ``AasShell: Json -> JObj -> {Xml, Json} conversion test``
@@ -41,10 +43,9 @@ module ToAasTest =
             EmJson.IsJsonEquals(env.ToJson(), aasJson) === true
 
 
-            let project = Project.FromJson(dsProject)
-            let json = project.ToJson()
-
-            EmJson.IsJsonEquals(json, dsProject) === true
+            let _, projectJson = createSampleProjectAndJson ()
+            let roundTripped = Project.FromJson(projectJson)
+            EmJson.IsJsonEquals(roundTripped.ToJson(), projectJson) === true
 
             //// Round-trip 테스트는 JSON 포맷팅 차이로 실패할 수 있음
             //// 실제 데이터가 보존되는지 확인
@@ -58,9 +59,10 @@ module ToAasTest =
     type T2() = // ``Project: instance -> Aas Test``, ``Project: instance -> Aas Test2``, ``Project with cylinder: instance -> Aas Test``, ``Hello DS -> Aasx file``
         [<Test>]
         member _.``Project: instance -> Aas Test`` () =
-            let rtProject = dsProject |> Project.FromJson
-            let xxx = rtProject.ToJson()
-            let njProject = NjProject.FromJson dsProject
+            let _, projectJson = createSampleProjectAndJson ()
+            let rtProject = projectJson |> Project.FromJson
+            EmJson.IsJsonEquals(rtProject.ToJson(), projectJson) === true
+            let njProject = NjProject.FromJson projectJson
 
             let aasxPath = getUniqueAasxPath()
             njProject.ExportToAasxFile(aasxPath) |> ignore
@@ -78,15 +80,17 @@ module ToAasTest =
             let json2 = EmJson.ToJson(njProject2)
 
             let rtProject2 = Project.FromJson(json2)
+            EmJson.IsJsonEquals(json2, projectJson) === true
+            EmJson.IsJsonEquals(rtProject2.ToJson(), projectJson) === true
 
             ()
 
         [<Test>]
         member _.``Project: instance -> Aas Test2`` () =
-            let rtProject = dsProject |> Project.FromJson
+            let project, _ = createSampleProjectAndJson ()
             let dbApi = pgsqlDbApi()
             let aasxPath = getUniqueAasxPath()
-            rtProject.ExportToAasxFile(aasxPath, dbApi) |> ignore
+            project.ExportToAasxFile(aasxPath, dbApi) |> ignore
             cleanupTestFile aasxPath  // 테스트 후 정리
 
             ()

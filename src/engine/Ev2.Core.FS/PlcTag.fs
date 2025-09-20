@@ -90,8 +90,8 @@ module PlcTagModule =
         // 역직렬화 후 콜백 - JSON 문자열에서 Tag와 ValueSpec 복원
         [<OnDeserialized>]
         member private this.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
-            this.TagJson       |> DcString.andDo (fun j -> this.Tag <- PlcTag<'T>.FromJson(j))
-            this.ValueSpecJson |> DcString.andDo (fun j -> this.ValueSpec <- ValueSpec.FromJson(j) :?> ValueSpec<'T>)
+            this.TagJson       |> String.andDo (fun j -> this.Tag <- PlcTag<'T>.FromJson(j))
+            this.ValueSpecJson |> String.andDo (fun j -> this.ValueSpec <- ValueSpec.FromJson(j) :?> ValueSpec<'T>)
 
         // Delegate properties from PlcTag (hide from JSON to avoid duplication)
         [<JsonIgnore>] member x.Name    with get() = x.Tag.Name    and set(v) = x.Tag.Name    <- v
@@ -140,8 +140,8 @@ module PlcTagModule =
 
         [<OnDeserialized>]
         member private this.OnDeserialized(context: StreamingContext) =
-            this.InTagJson  |> DcString.andDo (fun j -> this.InTag  <- TagWithSpec.FromJson j)
-            this.OutTagJson |> DcString.andDo (fun j -> this.OutTag <- TagWithSpec.FromJson j)
+            this.InTagJson  |> String.andDo (fun j -> this.InTag  <- TagWithSpec.FromJson j)
+            this.OutTagJson |> String.andDo (fun j -> this.OutTag <- TagWithSpec.FromJson j)
 
         /// 논리적으로 빈 상태인지 확인 (InTag, OutTag 모두 null)
         member x.IsLogicallyEmpty() = isItNull x || (isItNull x.InTag && isItNull x.OutTag)
