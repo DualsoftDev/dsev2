@@ -141,6 +141,15 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 108)>] member val Conditions = [||]:NjCondition[] with get, set
         [<JsonProperty(Order = 109)>] member val Actions    = [||]:NjAction[]    with get, set
 
+        [<JsonIgnore>]
+        member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>()
+        [<JsonProperty("Entitiess")>]
+        member this.SerializedEntities
+            with get () : JArray = this.PolymorphicJsonEntities.SerializedItems
+            and set (value: JArray) =
+                let payload = if isNull value then JArray() else value
+                this.PolymorphicJsonEntities.SerializedItems <- payload
+
         static member Create() = createExtended<NjSystem>()
 
         /// this system 이 prototype 으로 정의되었는지 여부
@@ -181,6 +190,7 @@ module rec NewtonsoftJsonObjects =
 
         member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[]
             , apiDefs:NjApiDef[], apiCalls:NjApiCall[]
+            , entities:PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>
             , buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]
         ) =
             x.Flows      <- flows
@@ -807,7 +817,7 @@ module Ds2JsonModule =
                         let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()      |> toArray
                         let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
                         let actions    = rt.Actions    |-> _.ToNj<NjAction>()    |> toArray
-                        z.Initialize(flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions) |> ignore
+                        z.Initialize(flows, works, arrows, apiDefs, apiCalls, s.PolymorphicJsonEntities, buttons, lamps, conditions, actions) |> ignore
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
 

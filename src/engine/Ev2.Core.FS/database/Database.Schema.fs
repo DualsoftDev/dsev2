@@ -30,6 +30,7 @@ module DatabaseSchemaModule =
         let [<Literal>] Condition    = "condition"
         let [<Literal>] Action       = "action"
         // } Flow 하부 정의 용
+        let [<Literal>] SystemEntity = "systemEntity"
 
         // { n : m 관계의 table mapping
         let [<Literal>] MapProject2System = "mapProject2System"
@@ -295,7 +296,12 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 {if withTrigger then triggerSql dbProvider else ""}
 
 
-
+CREATE TABLE {k Tn.SystemEntity}(
+    {k "id"}              {autoincPrimaryKey}
+    , {k "systemId"}       {intKeyType} NOT NULL
+    , {k "json"}        TEXT NOT NULL
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
+);
 
 
 --CREATE TRIGGER trigger_{Tn.MapProject2System}_afterDelete_dropSystems

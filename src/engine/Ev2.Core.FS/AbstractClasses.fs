@@ -8,6 +8,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 
 [<AbstractClass>]
@@ -197,6 +198,12 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 and DsSystem() = // Create
     inherit ProjectEntity()
 
+    member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>()
+    member x.Entities = x.PolymorphicJsonEntities.Items
+    member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity
+    member x.RemoveEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
+
+
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
     interface IRtSystem with
@@ -313,6 +320,37 @@ and DsAction() = // Create
 
     interface IRtAction
     static member Create() = createExtended<DsAction>()
+
+
+and [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
+    interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
+
+and NewDsButton() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
+
+    interface IRtButton
+    static member Create() = createExtended<NewDsButton>()
+
+and NewLamp() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
+
+    interface IRtLamp
+    static member Create() = createExtended<NewLamp>()
+
+and NewDsCondition() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
+
+    interface IRtCondition
+    static member Create() = createExtended<NewDsCondition>()
+
+and NewDsAction() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
+
+    interface IRtAction
+    static member Create() = createExtended<NewDsAction>()
+
 
 
 // see static member Create
