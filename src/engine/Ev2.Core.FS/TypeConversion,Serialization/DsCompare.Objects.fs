@@ -141,8 +141,10 @@ module rec DsCompareObjects =
                 yield! (x.ApiDefs   , y.ApiDefs   , criteria) |||> computeDiffRecursively
                 yield! (x.ApiCalls  , y.ApiCalls  , criteria) |||> computeDiffRecursively
 
-                //// TODO: Polymorphic 비교
-                //yield! (x.Entities  , y.Entities   , criteria) |||> computeDiffRecursively
+                // TODO: Polymorphic 비교
+                let xj, yz = x.PolymorphicJsonEntities.Jsonize(), y.PolymorphicJsonEntities.Jsonize()
+                if xj <> yz then
+                    yield Diff("Entities", x, y, null)
                 ////yield! (x.Buttons   , y.Buttons   , criteria) |||> computeDiffRecursively
                 ////yield! (x.Lamps     , y.Lamps     , criteria) |||> computeDiffRecursively
                 ////yield! (x.Conditions, y.Conditions, criteria) |||> computeDiffRecursively
@@ -254,13 +256,13 @@ module rec DsCompareObjects =
         member internal x.ComputeDiff(y:IRtUnique, criteria:Cc): Cr seq =
             seq {
                 match x, y with
-                | (:? Project as u), (:? Project as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? DsSystem  as u), (:? DsSystem  as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? Flow    as u), (:? Flow    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? Work    as u), (:? Work    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? Call    as u), (:? Call    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? ApiDef  as u), (:? ApiDef  as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? ApiCall as u), (:? ApiCall as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Project  as u), (:? Project  as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsSystem as u), (:? DsSystem as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Flow     as u), (:? Flow     as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Work     as u), (:? Work     as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Call     as u), (:? Call     as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? ApiDef   as u), (:? ApiDef   as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? ApiCall  as u), (:? ApiCall  as v)  -> yield! u.ComputeDiff(v, criteria)
 
                 | (:? NewDsButton    as u), (:? NewDsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? NewLamp        as u), (:? NewLamp        as v)  -> yield! u.ComputeDiff(v, criteria)
@@ -278,5 +280,7 @@ module rec DsCompareObjects =
             }
         member x.IsEqual(y:Project, ?criteria:Cc) =
             let criteria = criteria |? Cc()
+            let xxx = x.ComputeDiff(y, criteria) |> toArray
+
             x.ComputeDiff(y, criteria)
             |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working

@@ -22,6 +22,16 @@ type RtUnique() = // ToNjObj, ToNj
 
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
+type [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
+    inherit RtUnique()
+    interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
+    [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
+    override x.ShouldSerializeId() = false
+    override x.ShouldSerializeGuid() = false
+type Polys = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>
+
 // Entity base classes
 [<AbstractClass>]
 type ProjectEntity() = // Actions, ActiveSystems, ApiCalls, ApiDefs, ApiUsers, Arrows, Buttons, Call, Callers, Calls, Conditions, Create, Flow, Flows, Initialize, Lamps, OwnerProjectId, PassiveSystems, Project, System, Systems, Work, Works
@@ -191,7 +201,7 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 and DsSystem() = // Create
     inherit ProjectEntity()
 
-    member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>() with get, set
+    member val PolymorphicJsonEntities = Polys() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
     member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
     member x.AddEntities(entities:SystemEntityWithJsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
@@ -278,14 +288,6 @@ and Flow() = // Create
 
     static member Create() = createExtended<Flow>()
 
-and [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
-    inherit RtUnique()
-    interface IWithTagWithSpecs
-    member val IOTags = IOTagsWithSpec() with get, set
-    [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
-    [<JsonIgnore>] member val Flows = ResizeArray<Flow>() with get, set
-    override x.ShouldSerializeId() = false
-    override x.ShouldSerializeGuid() = false
 
 and NewDsButton() = // Create
     inherit SystemEntityWithJsonPolymorphic()

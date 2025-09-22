@@ -138,7 +138,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
 
         [<JsonIgnore>]
-        member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>() with get, set
+        member val PolymorphicJsonEntities = Polys() with get, set
         [<JsonProperty("Entities")>]
         member this.SerializedEntities
             with get () : JArray = this.PolymorphicJsonEntities.SerializedItems
@@ -183,7 +183,7 @@ module rec NewtonsoftJsonObjects =
 
         member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[]
             , apiDefs:NjApiDef[], apiCalls:NjApiCall[]
-            , entities:PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>
+            , entities:Polys
         ) =
             x.Flows      <- flows
             x.Works      <- works
