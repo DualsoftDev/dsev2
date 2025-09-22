@@ -24,12 +24,6 @@ module DatabaseSchemaModule =
         let [<Literal>] ApiCall      = "apiCall"
         let [<Literal>] ApiDef       = "apiDef"
 
-        //// { Flow 하부 정의 용
-        //let [<Literal>] Button       = "button"
-        //let [<Literal>] Lamp         = "lamp"
-        //let [<Literal>] Condition    = "condition"
-        //let [<Literal>] Action       = "action"
-        //// } Flow 하부 정의 용
         let [<Literal>] SystemEntity = "systemEntity"
 
         // { n : m 관계의 table mapping

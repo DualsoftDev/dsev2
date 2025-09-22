@@ -57,6 +57,7 @@ module rec TmpCompatibility =
                     yield! sys.Arrows    |> enumerates
                     yield! sys.ApiDefs   |> enumerates
                     yield! sys.ApiCalls  |> enumerates
+                    yield! sys.Entities  |> enumerates
                 | :? Work as work ->
                     yield! work.Calls    |> enumerates
                     yield! work.Arrows   |> enumerates
@@ -197,58 +198,14 @@ module rec TmpCompatibility =
         member x.RemoveApiCalls(apiCalls:ApiCall seq)         = x.removeApiCalls(apiCalls, true)
 
 
-
-
-    //// Button, Lamp, Condition, Action 관련 메서드 추가 (Flow에서 DsSystem으로 이동)
-    //type DsSystem with
-    //    member internal x.addButtons(buttons:DsButton seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        buttons |> iter (setParentI x)
-    //        x.RawButtons.VerifyAddRangeAsSet(buttons)
-
-    //    member internal x.removeButtons(buttons:DsButton seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        buttons |> iter clearParentI
-    //        buttons |> iter (x.RawButtons.Remove >> ignore)
-
-    //    member internal x.addLamps(lamps:Lamp seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        lamps |> iter (setParentI x)
-    //        x.RawLamps.VerifyAddRangeAsSet(lamps)
-
-    //    member internal x.removeLamps(lamps:Lamp seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        lamps |> iter clearParentI
-    //        lamps |> iter (x.RawLamps.Remove >> ignore)
-
-    //    member internal x.addConditions(conditions:DsCondition seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        conditions |> iter (setParentI x)
-    //        x.RawConditions.VerifyAddRangeAsSet(conditions)
-
-    //    member internal x.removeConditions(conditions:DsCondition seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        conditions |> iter clearParentI
-    //        conditions |> iter (x.RawConditions.Remove >> ignore)
-
-    //    member internal x.addActions(actions:DsAction seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        actions |> iter (setParentI x)
-    //        x.RawActions.VerifyAddRangeAsSet(actions)
-
-    //    member internal x.removeActions(actions:DsAction seq, updateDateTime:bool) =
-    //        if updateDateTime then x.UpdateDateTime()
-    //        actions |> iter clearParentI
-    //        actions |> iter (x.RawActions.Remove >> ignore)
-
-    //    member x.AddButtons      (buttons:DsButton seq)       = x.addButtons      (buttons, true)
-    //    member x.RemoveButtons   (buttons:DsButton seq)       = x.removeButtons   (buttons, true)
-    //    member x.AddLamps        (lamps:Lamp seq)             = x.addLamps        (lamps, true)
-    //    member x.RemoveLamps     (lamps:Lamp seq)             = x.removeLamps     (lamps, true)
-    //    member x.AddConditions   (conditions:DsCondition seq) = x.addConditions   (conditions, true)
-    //    member x.RemoveConditions(conditions:DsCondition seq) = x.removeConditions(conditions, true)
-    //    member x.AddActions      (actions:DsAction seq)       = x.addActions      (actions, true)
-    //    member x.RemoveActions   (actions:DsAction seq)       = x.removeActions   (actions, true)
+        //member x.AddButtons      (buttons:NewDsButton seq)       = buttons.Cast<SystemEntityWithJsonPolymorphic>() |> x.AddEntities
+        //member x.RemoveButtons   (buttons:NewDsButton seq)       = buttons.Cast<SystemEntityWithJsonPolymorphic>() |> iter x.RemoveEntitiy
+        //member x.AddLamps        (lamps:NewLamp seq)             = x.addLamps        (lamps, true)
+        //member x.RemoveLamps     (lamps:NewLamp seq)             = x.removeLamps     (lamps, true)
+        //member x.AddConditions   (conditions:NewDsCondition seq) = x.addConditions   (conditions, true)
+        //member x.RemoveConditions(conditions:NewDsCondition seq) = x.removeConditions(conditions, true)
+        //member x.AddActions      (actions:NewDsAction seq)       = x.addActions      (actions, true)
+        //member x.RemoveActions   (actions:NewDsAction seq)       = x.removeActions   (actions, true)
 
 
 

@@ -88,44 +88,6 @@ module internal Db2DsImpl =
                 s.PolymorphicJsonEntities.SyncToValues()
                 ()
 
-            //// Load Buttons, Lamps, Conditions, Actions for System
-            //let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE systemId = @SystemId", sys, tr)
-            //let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE systemId = @SystemId", sys, tr)
-            //let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE systemId = @SystemId", sys, tr)
-            //let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE systemId = @SystemId", sys, tr)
-
-            //for ormButton in ormButtons do
-            //    let button = createExtended<DsButton>() |> replicateProperties ormButton
-            //    button.FlowId <- ormButton.FlowId
-            //    button.IOTags <- IOTagsWithSpec.FromJson ormButton.IOTagsJson
-            //    setParentI s button
-            //    s.RawButtons.Add button
-            //    handleAfterSelect button
-
-            //for ormLamp in ormLamps do
-            //    let lamp = createExtended<Lamp>() |> replicateProperties ormLamp
-            //    lamp.FlowId <- ormLamp.FlowId
-            //    lamp.IOTags <- IOTagsWithSpec.FromJson ormLamp.IOTagsJson
-            //    setParentI s lamp
-            //    s.RawLamps.Add lamp
-            //    handleAfterSelect lamp
-
-            //for ormCondition in ormConditions do
-            //    let condition = createExtended<DsCondition>() |> replicateProperties ormCondition
-            //    condition.FlowId <- ormCondition.FlowId
-            //    condition.IOTags <- IOTagsWithSpec.FromJson ormCondition.IOTagsJson
-            //    setParentI s condition
-            //    s.RawConditions.Add condition
-            //    handleAfterSelect condition
-
-            //for ormAction in ormActions do
-            //    let action = createExtended<DsAction>() |> replicateProperties ormAction
-            //    action.FlowId <- ormAction.FlowId
-            //    action.IOTags <- IOTagsWithSpec.FromJson ormAction.IOTagsJson
-            //    setParentI s action
-            //    s.RawActions.Add action
-            //    handleAfterSelect action
-
             // Load Flows
             let rtFlows = [
                 let orms = conn.Query<ORMFlow>($"SELECT * FROM {Tn.Flow} WHERE systemId = @Id", s, tr)
@@ -139,16 +101,6 @@ module internal Db2DsImpl =
             ]
 
             s.addFlows(rtFlows, false)
-
-            //// Set FlowGuid for Buttons, Lamps, Conditions, Actions
-            //for button in s.Buttons do
-            //    button.FlowGuid <- button.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
-            //for lamp in s.Lamps do
-            //    lamp.FlowGuid <- lamp.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
-            //for condition in s.Conditions do
-            //    condition.FlowGuid <- condition.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
-            //for action in s.Actions do
-            //    action.FlowGuid <- action.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
 
             let rtApiCalls = [
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)

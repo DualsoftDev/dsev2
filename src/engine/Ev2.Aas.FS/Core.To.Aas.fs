@@ -105,19 +105,6 @@ module CoreToAas =
                     JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
                     JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
 
-                //| (:? NjButton as btn) ->
-                //    JObj().TrySetProperty(btn.FlowGuid, nameof btn.FlowGuid)
-                //    JObj().TrySetProperty(IOTagsWithSpec.Jsonize btn.IOTags, nameof btn.IOTags)
-                //| (:? NjLamp as lamp) ->
-                //    JObj().TrySetProperty(lamp.FlowGuid, nameof lamp.FlowGuid)
-                //    JObj().TrySetProperty(IOTagsWithSpec.Jsonize lamp.IOTags, nameof lamp.IOTags)
-                //| (:? NjCondition as cond) ->
-                //    JObj().TrySetProperty(cond.FlowGuid, nameof cond.FlowGuid)
-                //    JObj().TrySetProperty(IOTagsWithSpec.Jsonize cond.IOTags, nameof cond.IOTags)
-                //| (:? NjAction as act) ->
-                //    JObj().TrySetProperty(act.FlowGuid, nameof act.FlowGuid)
-                //    JObj().TrySetProperty(IOTagsWithSpec.Jsonize act.IOTags, nameof act.IOTags)
-
                 | (:? NjFlow) ->
                     ()
                 | unknown ->
@@ -168,8 +155,6 @@ module CoreToAas =
 
 
     type NjSystem with // ToSjSMC
-        // TODO: PolymorphicJsonEntities 도 SMEC 로 변환 필요
-
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode =
             let fs = x.Flows |-> _.ToSjSMC()
@@ -213,39 +198,6 @@ module CoreToAas =
                     , semanticKey = nameof x.ApiCalls
                 )
 
-            //// UI 요소들 추가
-            //let btns = x.Buttons |-> _.ToSjSMC()
-            //let buttons =
-            //    JObj().AddProperties(
-            //        modelType = A.smc
-            //        , values = btns
-            //        , semanticKey = nameof x.Buttons
-            //    )
-
-            //let lmps = x.Lamps |-> _.ToSjSMC()
-            //let lamps =
-            //    JObj().AddProperties(
-            //        modelType = A.smc
-            //        , values = lmps
-            //        , semanticKey = nameof x.Lamps
-            //    )
-
-            //let conds = x.Conditions |-> _.ToSjSMC()
-            //let conditions =
-            //    JObj().AddProperties(
-            //        modelType = A.smc
-            //        , values = conds
-            //        , semanticKey = nameof x.Conditions
-            //    )
-
-            //let acts = x.Actions |-> _.ToSjSMC()
-            //let actions =
-            //    JObj().AddProperties(
-            //        modelType = A.smc
-            //        , values = acts
-            //        , semanticKey = nameof x.Actions
-            //    )
-
             let me = x
             JObj().ToSjSMC("System", x.CollectProperties())
             |> _.AddValues([| apiDefs; apiCalls; flows; arrows; works; |])
@@ -259,25 +211,6 @@ module CoreToAas =
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
         member x.ToSjSMC(): JNode = JObj().ToSjSMC("ApiCall", x.CollectProperties())
 
-
-    //type NjButton with // ToSjSMC
-    //    member x.ToSjSMC(): JNode = JObj().ToSjSMC("Button", x.CollectProperties())
-
-    //type NjLamp with // ToSjSMC
-    //    member x.ToSjSMC(): JNode =
-    //        let props = x.CollectProperties()
-    //        JObj().ToSjSMC("Lamp", props)
-
-    //type NjCondition with // ToSjSMC
-    //    member x.ToSjSMC(): JNode =
-    //        let props = x.CollectProperties()
-    //        JObj().ToSjSMC("Condition", props)
-
-    //type NjAction with // ToSjSMC
-    //    /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환
-    //    member x.ToSjSMC(): JNode =
-    //        let props = x.CollectProperties()
-    //        JObj().ToSjSMC("Action", props)
 
     type NjFlow with // ToSjSMC
         /// To [S]ystem [J]son [S]ub[M]odel element [C]llection (SMEC) 형태로 변환

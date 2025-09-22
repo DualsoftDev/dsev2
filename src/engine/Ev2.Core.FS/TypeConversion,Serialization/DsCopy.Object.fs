@@ -117,18 +117,6 @@ module internal rec DsObjectCopyImpl =
     //    member x.replicate() = DsButton.Create() |> replicateProperties x
 
 
-    //type Lamp with // replicate
-    //    member x.replicate() = Lamp.Create() |> replicateProperties x
-
-
-    //type DsCondition with // replicate
-    //    member x.replicate() = DsCondition.Create() |> replicateProperties x
-
-
-    //type DsAction with // replicate
-    //    member x.replicate() = DsAction.Create() |> replicateProperties x
-
-
     type Call with // replicate
         /// Call 복제. 지정된 newCall 객체에 현재 호출의 내용을 복사
         member x.replicate() =

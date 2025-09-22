@@ -199,44 +199,6 @@ module rec NewtonsoftJsonObjects =
 
         static member Create() = createExtended<NjFlow>()
 
-        member x.Initialize() =
-            x
-
-    let private isValidIoTags (ioTags:IOTagsWithSpec) =
-        isItNotNull(ioTags) && (isItNotNull(ioTags.InTag) || isItNotNull(ioTags.OutTag))
-    //type NjButton() = // Create
-    //    inherit NjSystemEntityWithFlow()
-
-    //    interface INjButton
-    //    member val IOTags = IOTagsWithSpec() with get, set
-    //    static member Create() = createExtended<NjButton>()
-    //    member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-    //type NjLamp() = // Create
-    //    inherit NjSystemEntityWithFlow()
-
-    //    interface INjLamp
-    //    member val IOTags = IOTagsWithSpec() with get, set
-    //    static member Create() = createExtended<NjLamp>()
-    //    member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-    //type NjCondition() = // Create
-    //    inherit NjSystemEntityWithFlow()
-
-    //    interface INjCondition
-    //    member val IOTags = IOTagsWithSpec() with get, set
-    //    static member Create() = createExtended<NjCondition>()
-    //    member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-    //type NjAction() = // Create
-    //    inherit NjSystemEntityWithFlow()
-
-    //    interface INjAction
-    //    member val IOTags = IOTagsWithSpec() with get, set
-    //    static member Create() = createExtended<NjAction>()
-    //    member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-
     type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
         inherit NjSystemEntity()
         interface INjWork
@@ -612,31 +574,6 @@ module rec NewtonsoftJsonObjects =
                 |> replicateProperties njad
             ()
 
-
-        //| :? NjButton as njx ->
-        //    njx.RuntimeObject <-
-        //        DsButton.Create()
-        //        |> replicateProperties njx
-        //        |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
-        //| :? NjLamp as njx ->
-        //    njx.RuntimeObject <-
-        //        Lamp.Create()
-        //        |> replicateProperties njx
-        //        |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
-        //| :? NjCondition as njx ->
-        //    njx.RuntimeObject <-
-        //        DsCondition.Create()
-        //        |> replicateProperties njx
-        //        |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
-        //| :? NjAction as njx ->
-        //    njx.RuntimeObject <-
-        //        DsAction.Create()
-        //        |> replicateProperties njx
-        //        |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
         | _ -> failwith "ERROR.  확장 필요?"
 
 
@@ -791,9 +728,6 @@ module Ds2JsonModule =
                     let rt = f
                     NjFlow.Create()
                     |> replicateProperties rt
-                    |> tee(fun z ->
-                        // Flow는 이제 UI 요소를 직접 소유하지 않음
-                        z.Initialize() |> ignore)
                     :> INjUnique
 
                 | :? Work as w ->

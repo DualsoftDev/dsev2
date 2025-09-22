@@ -92,14 +92,6 @@ module CoreFromAas =
             let flows    = smc.GetSMC "Flows"    >>= (_.GetSMC("Flow"))    |-> NjFlow.FromSMC
             let arrows   = smc.GetSMC "Arrows"   >>= (_.GetSMC("Arrow"))   |-> NjArrow.FromSMC
 
-            // TODO: UI 요소 읽기
-
-            //// UI 요소들 읽기
-            //let buttons    = smc.GetSMC "Buttons"    >>= (_.GetSMC("Button"))    |-> NjButton.FromSMC
-            //let lamps      = smc.GetSMC "Lamps"      >>= (_.GetSMC("Lamp"))      |-> NjLamp.FromSMC
-            //let conditions = smc.GetSMC "Conditions" >>= (_.GetSMC("Condition")) |-> NjCondition.FromSMC
-            //let actions    = smc.GetSMC "Actions"    >>= (_.GetSMC("Action"))    |-> NjAction.FromSMC
-
             NjSystem.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
 
@@ -115,13 +107,9 @@ module CoreFromAas =
                 , Arrows = arrows
                 , ApiDefs = apiDefs
                 , ApiCalls = apiCalls
-                //, Buttons = buttons
-                //, Lamps = lamps
-                //, Conditions = conditions
-                //, Actions = actions
-                )
-            |> tee (fun system ->
+            ) |> tee (fun system ->
                 readAasExtensionProperties smc system |> ignore
+                // UI 요소들 읽기
                 let entitiesJson = smc.TryGetPropValue "Entities" |? null
                 if entitiesJson.NonNullAny() then
                     let arr = JArray.Parse(entitiesJson)
@@ -138,46 +126,6 @@ module CoreFromAas =
             |> tee (readAasExtensionProperties smc)
 
 
-    //type NjButton with // FromSMC
-    //    static member FromSMC(smc: SubmodelElementCollection): NjButton =
-    //        let btn = createSimpleFromSMC (fun () -> NjButton.Create()) smc
-    //        btn.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-    //        // IOTags 역직렬화
-    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-    //            btn.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-    //        btn |> tee (readAasExtensionProperties smc)
-
-    //type NjLamp with // FromSMC
-    //    static member FromSMC(smc: SubmodelElementCollection): NjLamp =
-    //        let lamp = createSimpleFromSMC (fun () -> NjLamp.Create()) smc
-    //        lamp.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-    //        // IOTags 역직렬화
-    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-    //            lamp.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-    //        lamp |> tee (readAasExtensionProperties smc)
-
-    //type NjCondition with // FromSMC
-    //    static member FromSMC(smc: SubmodelElementCollection): NjCondition =
-    //        let cond = createSimpleFromSMC (fun () -> NjCondition.Create()) smc
-    //        cond.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-    //        // IOTags 역직렬화
-    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-    //            cond.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-    //        cond |> tee (readAasExtensionProperties smc)
-
-    //type NjAction with // FromSMC
-    //    static member FromSMC(smc: SubmodelElementCollection): NjAction =
-    //        let act = createSimpleFromSMC (fun () -> NjAction.Create()) smc
-    //        act.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-    //        // IOTags 역직렬화
-    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-    //            act.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-    //        act |> tee (readAasExtensionProperties smc)
-
     type NjFlow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
@@ -192,15 +140,15 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjWork =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
-            let flowGuid   = smc.TryGetPropValue       "FlowGuid"   |? null
-            let motion       = smc.TryGetPropValue       "Motion"       |? null
-            let script       = smc.TryGetPropValue       "Script"       |? null
+            let flowGuid      = smc.TryGetPropValue       "FlowGuid"      |? null
+            let motion        = smc.TryGetPropValue       "Motion"        |? null
+            let script        = smc.TryGetPropValue       "Script"        |? null
             let externalStart = smc.TryGetPropValue       "ExternalStart" |? null
-            let isFinished   = smc.TryGetPropValue<bool> "IsFinished"   |? false
-            let numRepeat  = smc.TryGetPropValue<int>  "NumRepeat"  |? 0
-            let period     = smc.TryGetPropValue<int>  "Period"     |? 0
-            let delay      = smc.TryGetPropValue<int>  "Delay"      |? 0
-            let status4    = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
+            let isFinished    = smc.TryGetPropValue<bool> "IsFinished"    |? false
+            let numRepeat     = smc.TryGetPropValue<int>  "NumRepeat"     |? 0
+            let period        = smc.TryGetPropValue<int>  "Period"        |? 0
+            let delay         = smc.TryGetPropValue<int>  "Delay"         |? 0
+            let status4       = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
 
             (* AAS 구조상 Work/Calls/Call[], Work/Arrows/Arrow[] 형태로 존재 *)
             let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Call")  |? [||] |-> NjCall.FromSMC
@@ -225,17 +173,17 @@ module CoreFromAas =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
             // JSON 문자열로 저장된 조건들을 ApiCallValueSpecs로 변환
-            let commonConditionsStr = smc.TryGetPropValue       "CommonConditions" |? null
-            let autoConditionsStr   = smc.TryGetPropValue       "AutoConditions"   |? null
+            let commonConditionsStr = smc.TryGetPropValue "CommonConditions" |? null
+            let autoConditionsStr   = smc.TryGetPropValue "AutoConditions"   |? null
+            let timeout  = smc.TryGetPropValue<int>    "Timeout"
+            let callType = smc.TryGetPropValue         "CallType" |? null
+            let status4  = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
             let commonConditions =
                 if commonConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
                 else ApiCallValueSpecs.FromJson(commonConditionsStr)
             let autoConditions =
                 if autoConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
                 else ApiCallValueSpecs.FromJson(autoConditionsStr)
-            let timeout          = smc.TryGetPropValue<int>  "Timeout"
-            let callType         = smc.TryGetPropValue       "CallType"         |? null
-            let status4          = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
 
 
             let apiCalls =

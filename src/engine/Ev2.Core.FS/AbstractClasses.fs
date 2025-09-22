@@ -193,7 +193,7 @@ and DsSystem() = // Create
 
     member val PolymorphicJsonEntities = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
-    member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity
+    member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
     member x.AddEntities(entities:SystemEntityWithJsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
     member x.RemoveEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
     member x.Buttons    = x.Entities.OfType<NewDsButton>()    |> toArray
@@ -279,11 +279,13 @@ and Flow() = // Create
     static member Create() = createExtended<Flow>()
 
 and [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
-    inherit Unique()
+    inherit RtUnique()
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
     [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     [<JsonIgnore>] member val Flows = ResizeArray<Flow>() with get, set
+    override x.ShouldSerializeId() = false
+    override x.ShouldSerializeGuid() = false
 
 and NewDsButton() = // Create
     inherit SystemEntityWithJsonPolymorphic()

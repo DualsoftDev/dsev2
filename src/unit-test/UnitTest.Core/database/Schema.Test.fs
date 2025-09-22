@@ -111,10 +111,13 @@ module Schema =
 
             dsProject.EnumerateRtObjects()
             |> iter (fun dsobj ->
-                if dsobj.Id.IsNone then
-                    noop()
-                // DB 삽입 후이므로 Id 가 Some 이어야 함
-                dsobj.Id.IsSome === true
+                if dsobj :? SystemEntityWithJsonPolymorphic then
+                    ()
+                else
+                    if dsobj.Id.IsNone then
+                        noop()
+                    // DB 삽입 후이므로 Id 가 Some 이어야 함
+                    dsobj.Id.IsSome === true
             )
 
             let edProject = rtProject
