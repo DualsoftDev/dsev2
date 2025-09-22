@@ -142,8 +142,16 @@ module rec DsCompareObjects =
                 yield! (x.ApiCalls  , y.ApiCalls  , criteria) |||> computeDiffRecursively
 
                 // TODO: Polymorphic 비교
-                let xj, yz = x.PolymorphicJsonEntities.Jsonize(), y.PolymorphicJsonEntities.Jsonize()
-                if xj <> yz then
+                let xj, yj = x.PolymorphicJsonEntities.Jsonize(), y.PolymorphicJsonEntities.Jsonize()
+                if xj <> yj then
+
+                    let xxx_xjs = x.PolymorphicJsonEntities.JsonizeArray()
+                    let xxx_yjs = y.PolymorphicJsonEntities.JsonizeArray()
+                    for i in [0..xxx_xjs.Length-1] do
+                        if (xxx_xjs[i] <> xxx_yjs[i]) then
+                            noop()
+
+
                     yield Diff("Entities", x, y, null)
                 ////yield! (x.Buttons   , y.Buttons   , criteria) |||> computeDiffRecursively
                 ////yield! (x.Lamps     , y.Lamps     , criteria) |||> computeDiffRecursively

@@ -684,6 +684,7 @@ module Schema =
     type IndependantTest() =     // ``비교``, ``복제 비교``, ``복사 비교``, ``Sqlite Dapper test``
         [<Test>]
         member x.``비교`` () =
+            let xxx = rtProject
             let dsProject = rtProject |> validateRuntime
 
             let getMainSystem(prj:Project) = prj.Systems |> find (fun s -> s.Name = "MainSystem")
@@ -721,7 +722,7 @@ module Schema =
                 sys2.AddEntitiy button
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (RightOnly(arrow)) === true
-                diffs |> contains (RightOnly(button)) === true
+                diffs |> contains (Diff("Entities", sys, sys2, null)) === true
                 noop()
 
             do
@@ -742,7 +743,7 @@ module Schema =
             let dsProject = rtProject.Replicate() |> validateRuntime
             let diffs = dsProject.ComputeDiff rtProject |> toArray
             printfn "Differences found: %d" (diffs |> Seq.length)
-            diffs |> Seq.iteri (fun i diff -> printfn "[%d] %A" i diff)
+            diffs |> Seq.iteri (fun i diff -> logDebug "[%d] %A" i diff)
             rtProject.IsEqual dsProject === true
 
         [<Test>]

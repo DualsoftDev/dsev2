@@ -52,8 +52,8 @@ module internal rec DsObjectCopyImpl =
                 // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
                 newSystem |> replicateProperties x |> ignore
                 // UI 요소들도 복제
-                let serializedEntities = x.PolymorphicJsonEntities.SerializedItems.DeepClone() :?> JArray
-                newSystem.PolymorphicJsonEntities.SerializedItems <- serializedEntities
+                newSystem.PolymorphicJsonEntities <- x.PolymorphicJsonEntities.DeepClone()
+                newSystem.PolymorphicJsonEntities.SyncToValues()
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 flows      |> iter (setParentI newSystem)

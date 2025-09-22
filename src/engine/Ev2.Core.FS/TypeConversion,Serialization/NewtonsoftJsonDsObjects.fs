@@ -183,14 +183,12 @@ module rec NewtonsoftJsonObjects =
 
         member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[]
             , apiDefs:NjApiDef[], apiCalls:NjApiCall[]
-            , entities:Polys
         ) =
             x.Flows      <- flows
             x.Works      <- works
             x.Arrows     <- arrows
             x.ApiDefs    <- apiDefs
             x.ApiCalls   <- apiCalls
-            x.PolymorphicJsonEntities <- entities
             x
 
     type NjFlow () = // Create, Initialize
@@ -396,7 +394,7 @@ module rec NewtonsoftJsonObjects =
                 //    njs.RuntimeObject |> replicateProperties njs |> ignore
 
                 let rts = njs |> getRuntimeObject<DsSystem>
-                njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities
+                njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities.DeepClone()
                 njs.PolymorphicJsonEntities.SyncToSerialized()
                 njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
                 njs.Flows    <- rts.Flows    |-> _.ToNj<NjFlow>()    |> toArray
@@ -507,8 +505,7 @@ module rec NewtonsoftJsonObjects =
             let rts =
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, njs.PolymorphicJsonEntities)
                 |> replicateProperties njs
-            let clonedEntities = njs.PolymorphicJsonEntities.SerializedItems.DeepClone() :?> JArray
-            rts.PolymorphicJsonEntities.SerializedItems <- clonedEntities
+            rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities.DeepClone()
             rts.PolymorphicJsonEntities.SyncToValues()
             njs.RuntimeObject <- rts
 
@@ -712,7 +709,7 @@ module Ds2JsonModule =
                         , LangVersion=rt.LangVersion
                         , EngineVersion=rt.EngineVersion
                         , Description=rt.Description
-                        , PolymorphicJsonEntities=rt.PolymorphicJsonEntities)
+                        , PolymorphicJsonEntities=rt.PolymorphicJsonEntities.DeepClone())
                     |> replicateProperties rt
                     |> tee (fun z ->
                         let flows      = rt.Flows      |-> _.ToNj<NjFlow>()      |> toArray
@@ -720,7 +717,7 @@ module Ds2JsonModule =
                         let arrows     = rt.Arrows     |-> _.ToNj<NjArrow>()     |> toArray
                         let apiDefs    = rt.ApiDefs    |-> _.ToNj<NjApiDef>()    |> toArray
                         let apiCalls   = rt.ApiCalls   |-> _.ToNj<NjApiCall>()   |> toArray
-                        z.Initialize(flows, works, arrows, apiDefs, apiCalls, s.PolymorphicJsonEntities) |> ignore
+                        z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
 
