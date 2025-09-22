@@ -26,10 +26,6 @@ type CopyExtensionForCSharp = // CsCopyTo
         | (:? NjFlow),    (:? Flow)
         | (:? NjWork),    (:? Work)
         | (:? NjCall),    (:? Call)
-        | (:? NjButton),  (:? DsButton)
-        | (:? NjLamp),    (:? Lamp)
-        | (:? NjCondition), (:? DsCondition)
-        | (:? NjAction),  (:? DsAction)
         | (:? NjApiDef),  (:? ApiDef)
         | (:? NjApiCall),  (:? ApiCall)
 
@@ -39,10 +35,6 @@ type CopyExtensionForCSharp = // CsCopyTo
         | (:? Flow),     (:? NjFlow)
         | (:? Work),     (:? NjWork)
         | (:? Call),     (:? NjCall)
-        | (:? DsButton), (:? NjButton)
-        | (:? Lamp),     (:? NjLamp)
-        | (:? DsCondition), (:? NjCondition)
-        | (:? DsAction), (:? NjAction)
         | (:? ApiDef),  (:? NjApiDef)
         | (:? ApiCall),  (:? NjApiCall)
             -> replicateProperties src dst |> ignore

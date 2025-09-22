@@ -255,34 +255,34 @@ module rec DsCompareObjects =
                 if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, null)
             }
 
-    type DsButton with // ComputeDiff
-        member x.ComputeDiff(y:DsButton, criteria:Cc): Cr seq =
-            seq {
-                yield! x.ComputeDiffUnique(y, criteria)
-                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
-                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
-            }
-    type Lamp with // ComputeDiff
-        member x.ComputeDiff(y:Lamp, criteria:Cc): Cr seq =
-            seq {
-                yield! x.ComputeDiffUnique(y, criteria)
-                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
-                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
-            }
-    type DsCondition with // ComputeDiff
-        member x.ComputeDiff(y:DsCondition, criteria:Cc): Cr seq =
-            seq {
-                yield! x.ComputeDiffUnique(y, criteria)
-                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
-                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
-            }
-    type DsAction with // ComputeDiff
-        member x.ComputeDiff(y:DsAction, criteria:Cc): Cr seq =
-            seq {
-                yield! x.ComputeDiffUnique(y, criteria)
-                if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
-                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
-            }
+    //type DsButton with // ComputeDiff
+    //    member x.ComputeDiff(y:DsButton, criteria:Cc): Cr seq =
+    //        seq {
+    //            yield! x.ComputeDiffUnique(y, criteria)
+    //            if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
+    //            if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
+    //        }
+    //type Lamp with // ComputeDiff
+    //    member x.ComputeDiff(y:Lamp, criteria:Cc): Cr seq =
+    //        seq {
+    //            yield! x.ComputeDiffUnique(y, criteria)
+    //            if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
+    //            if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
+    //        }
+    //type DsCondition with // ComputeDiff
+    //    member x.ComputeDiff(y:DsCondition, criteria:Cc): Cr seq =
+    //        seq {
+    //            yield! x.ComputeDiffUnique(y, criteria)
+    //            if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
+    //            if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
+    //        }
+    //type DsAction with // ComputeDiff
+    //    member x.ComputeDiff(y:DsAction, criteria:Cc): Cr seq =
+    //        seq {
+    //            yield! x.ComputeDiffUnique(y, criteria)
+    //            if x.FlowGuid <> y.FlowGuid then yield Diff(nameof x.FlowGuid, x, y, null)
+    //            if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
+    //        }
 
 
     type IRtUnique with // IsEqual
@@ -297,10 +297,10 @@ module rec DsCompareObjects =
                 | (:? ApiDef  as u), (:? ApiDef  as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? ApiCall as u), (:? ApiCall as v)  -> yield! u.ComputeDiff(v, criteria)
 
-                | (:? DsButton    as u), (:? DsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? Lamp        as u), (:? Lamp        as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? DsCondition as u), (:? DsCondition as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? DsAction    as u), (:? DsAction    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? NewDsButton    as u), (:? NewDsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? NewLamp        as u), (:? NewLamp        as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? NewDsCondition as u), (:? NewDsCondition as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? NewDsAction    as u), (:? NewDsAction    as v)  -> yield! u.ComputeDiff(v, criteria)
 
                 | (:? ArrowBetweenWorks as u), (:? ArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? ArrowBetweenCalls as u), (:? ArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)

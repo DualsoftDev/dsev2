@@ -15,10 +15,6 @@ module internal rec DbUpdateImpl =
             | :? Project     -> Tn.Project
             | :? DsSystem    -> Tn.System
             | :? Flow        -> Tn.Flow
-            | :? DsButton    -> Tn.Button
-            | :? Lamp        -> Tn.Lamp
-            | :? DsCondition -> Tn.Condition
-            | :? DsAction    -> Tn.Action
             | :? ApiDef      -> Tn.ApiDef
             | :? ApiCall     -> Tn.ApiCall
             | :? Work        -> Tn.Work

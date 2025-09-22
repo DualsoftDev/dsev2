@@ -49,12 +49,12 @@ module MiniSample =
             Flow.Create(Name = "TestFlow")
 
         // UI 요소 생성
-        let button1 = DsButton.Create(Name = "Button1")
-        let lamp1 = Lamp.Create(Name = "Lamp1")
+        let button1 = NewDsButton.Create(Name = "Button1")
+        let lamp1 = NewLamp.Create(Name = "Lamp1")
 
         // UI 요소들의 Flow 설정
-        button1.FlowGuid <- Some flow.Guid
-        lamp1.FlowGuid <- Some flow.Guid
+        button1.Flows.Add(flow)
+        lamp1.Flows.Add(flow)
 
         // Button에 IOTags 샘플 추가
         button1.IOTags <-
@@ -74,7 +74,7 @@ module MiniSample =
         let rtPolyLamp =
             NewLamp.Create()
             |> tee (fun z ->
-                let inTag = TagWithSpec<int>("PolyLampIn", "DB20.DBW0", ValueSpec<int>.Single 128)
+                let inTag = TagWithSpec<int>("PolyLampIn", "DB20.DBW0", TypedValue<int>(99), ValueSpec<int>.Single 128)
                 let outTag = TagWithSpec<int>("PolyLampOut", "DB20.DBW2", ValueSpec<int>.Single 255)
                 z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
@@ -165,8 +165,8 @@ module MiniSample =
         [ flow] |> system.AddFlows
         [ apiCall] |> system.AddApiCalls
         [ apiCall] |> call1.AddApiCalls
-        [ button1 ] |> system.AddButtons
-        [ lamp1 ] |> system.AddLamps
+        button1 |> system.AddEntitiy
+        lamp1 |> system.AddEntitiy
 
         // Project에 System 추가
         project.AddActiveSystem system

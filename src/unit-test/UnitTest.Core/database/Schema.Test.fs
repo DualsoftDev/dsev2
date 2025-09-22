@@ -713,9 +713,9 @@ module Schema =
                 w.AddArrows([arrow])
 
                 let f = sys2.Flows[0]
-                let button = new DsButton(Name="NewButton")
-                button.FlowGuid <- Some f.Guid
-                sys2.AddButtons( [ button ])
+                let button = new NewDsButton(Name="NewButton")
+                button.Flows.Add f
+                sys2.AddEntitiy button
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (RightOnly(arrow)) === true
                 diffs |> contains (RightOnly(button)) === true
@@ -737,7 +737,7 @@ module Schema =
         [<Test>]
         member x.``복제 비교`` () =
             let dsProject = rtProject.Replicate() |> validateRuntime
-            let diffs = dsProject.ComputeDiff rtProject
+            let diffs = dsProject.ComputeDiff rtProject |> toArray
             printfn "Differences found: %d" (diffs |> Seq.length)
             diffs |> Seq.iteri (fun i diff -> printfn "[%d] %A" i diff)
             rtProject.IsEqual dsProject === true

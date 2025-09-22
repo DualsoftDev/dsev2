@@ -1,5 +1,6 @@
 namespace T
 
+open System.Linq
 open Dual.Common.Base
 open Dual.Common.Core.FS
 
@@ -22,26 +23,24 @@ module CreateSampleWithHelloDsModule =
 
         // UI 요소들 생성
         let buttons = [
-            DsButton.Create(Name="AutoSelect")
-            DsButton.Create(Name="ManualSelect")
-            DsButton.Create(Name="DrivePushBtn")
-            DsButton.Create(Name="EmergencyBtn")
+            NewDsButton.Create(Name="AutoSelect")
+            NewDsButton.Create(Name="ManualSelect")
+            NewDsButton.Create(Name="DrivePushBtn")
+            NewDsButton.Create(Name="EmergencyBtn")
         ]
-        let lamps = [ Lamp.Create(Name="MyLamp1") ]
-        let conditions = [ DsCondition.Create(Name="MyCondition1") ]
-        let actions = [ DsAction.Create(Name="MyAction1") ]
-
-        // UI 요소들의 Flow 설정
-        buttons |> iter (fun b -> b.FlowGuid <- Some hdsFlow.Guid)
-        lamps |> iter (fun l -> l.FlowGuid <- Some hdsFlow.Guid)
-        conditions |> iter (fun c -> c.FlowGuid <- Some hdsFlow.Guid)
-        actions |> iter (fun a -> a.FlowGuid <- Some hdsFlow.Guid)
+        let lamps = [ NewLamp.Create(Name="MyLamp1") ]
+        let conditions = [ NewDsCondition.Create(Name="MyCondition1") ]
+        let actions = [ NewDsAction.Create(Name="MyAction1") ]
+        buttons    |> iter (fun b -> b.Flows.Add hdsFlow)
+        lamps      |> iter (fun l -> l.Flows.Add hdsFlow |> ignore)
+        conditions |> iter (fun c -> c.Flows.Add hdsFlow |> ignore)
+        actions    |> iter (fun a -> a.Flows.Add hdsFlow |> ignore)
 
         // System에 UI 요소들 추가
-        buttons |> hdsSystem.AddButtons
-        lamps |> hdsSystem.AddLamps
-        conditions |> hdsSystem.AddConditions
-        actions |> hdsSystem.AddActions
+        buttons    .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
+        lamps      .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
+        conditions .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
+        actions    .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
 
         let createWork name =
             Work.Create()

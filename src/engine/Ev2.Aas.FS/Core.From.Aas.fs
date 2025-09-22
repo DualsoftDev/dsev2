@@ -12,21 +12,22 @@ open Dual.Common.Base
 
 open Ev2.Core.FS
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 [<AutoOpen>]
 module CoreFromAas =
-    // 공통 FromSMC 헬퍼 함수 - UniqueInfo만 필요한 단순한 객체들을 위함
-    let internal createSimpleFromSMC<'T when 'T :> Unique>
-        (constructor: unit -> 'T)
-        (smc: SubmodelElementCollection) : 'T
-      =
-        let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-        let obj = constructor()
-        obj.Name <- name
-        obj.Guid <- guid
-        obj.Id <- id
-        obj.Parameter <- parameter
-        obj
+    //// 공통 FromSMC 헬퍼 함수 - UniqueInfo만 필요한 단순한 객체들을 위함
+    //let internal createSimpleFromSMC<'T when 'T :> Unique>
+    //    (constructor: unit -> 'T)
+    //    (smc: SubmodelElementCollection) : 'T
+    //  =
+    //    let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
+    //    let obj = constructor()
+    //    obj.Name <- name
+    //    obj.Guid <- guid
+    //    obj.Id <- id
+    //    obj.Parameter <- parameter
+    //    obj
 
     let internal readAasExtensionProperties (smc:SubmodelElementCollection) (njObj:INjUnique)  =
         getTypeFactory() |-> (fun factory -> factory.ReadAasExtensionProperties(njObj, smc))
@@ -91,11 +92,13 @@ module CoreFromAas =
             let flows    = smc.GetSMC "Flows"    >>= (_.GetSMC("Flow"))    |-> NjFlow.FromSMC
             let arrows   = smc.GetSMC "Arrows"   >>= (_.GetSMC("Arrow"))   |-> NjArrow.FromSMC
 
-            // UI 요소들 읽기
-            let buttons    = smc.GetSMC "Buttons"    >>= (_.GetSMC("Button"))    |-> NjButton.FromSMC
-            let lamps      = smc.GetSMC "Lamps"      >>= (_.GetSMC("Lamp"))      |-> NjLamp.FromSMC
-            let conditions = smc.GetSMC "Conditions" >>= (_.GetSMC("Condition")) |-> NjCondition.FromSMC
-            let actions    = smc.GetSMC "Actions"    >>= (_.GetSMC("Action"))    |-> NjAction.FromSMC
+            // TODO: UI 요소 읽기
+
+            //// UI 요소들 읽기
+            //let buttons    = smc.GetSMC "Buttons"    >>= (_.GetSMC("Button"))    |-> NjButton.FromSMC
+            //let lamps      = smc.GetSMC "Lamps"      >>= (_.GetSMC("Lamp"))      |-> NjLamp.FromSMC
+            //let conditions = smc.GetSMC "Conditions" >>= (_.GetSMC("Condition")) |-> NjCondition.FromSMC
+            //let actions    = smc.GetSMC "Actions"    >>= (_.GetSMC("Action"))    |-> NjAction.FromSMC
 
             NjSystem.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
@@ -112,11 +115,18 @@ module CoreFromAas =
                 , Arrows = arrows
                 , ApiDefs = apiDefs
                 , ApiCalls = apiCalls
-                , Buttons = buttons
-                , Lamps = lamps
-                , Conditions = conditions
-                , Actions = actions)
-            |> tee (readAasExtensionProperties smc)
+                //, Buttons = buttons
+                //, Lamps = lamps
+                //, Conditions = conditions
+                //, Actions = actions
+                )
+            |> tee (fun system ->
+                readAasExtensionProperties smc system |> ignore
+                let entitiesJson = smc.TryGetPropValue "Entities" |? null
+                if entitiesJson.NonNullAny() then
+                    let arr = JArray.Parse(entitiesJson)
+                    system.PolymorphicJsonEntities.SerializedItems <- arr
+                    system.PolymorphicJsonEntities.SyncToValues())
 
     type NjArrow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
@@ -128,45 +138,45 @@ module CoreFromAas =
             |> tee (readAasExtensionProperties smc)
 
 
-    type NjButton with // FromSMC
-        static member FromSMC(smc: SubmodelElementCollection): NjButton =
-            let btn = createSimpleFromSMC (fun () -> NjButton.Create()) smc
-            btn.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-            // IOTags 역직렬화
-            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-                btn.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-            btn |> tee (readAasExtensionProperties smc)
+    //type NjButton with // FromSMC
+    //    static member FromSMC(smc: SubmodelElementCollection): NjButton =
+    //        let btn = createSimpleFromSMC (fun () -> NjButton.Create()) smc
+    //        btn.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+    //        // IOTags 역직렬화
+    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+    //            btn.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
+    //        btn |> tee (readAasExtensionProperties smc)
 
-    type NjLamp with // FromSMC
-        static member FromSMC(smc: SubmodelElementCollection): NjLamp =
-            let lamp = createSimpleFromSMC (fun () -> NjLamp.Create()) smc
-            lamp.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-            // IOTags 역직렬화
-            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-                lamp.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-            lamp |> tee (readAasExtensionProperties smc)
+    //type NjLamp with // FromSMC
+    //    static member FromSMC(smc: SubmodelElementCollection): NjLamp =
+    //        let lamp = createSimpleFromSMC (fun () -> NjLamp.Create()) smc
+    //        lamp.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+    //        // IOTags 역직렬화
+    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+    //            lamp.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
+    //        lamp |> tee (readAasExtensionProperties smc)
 
-    type NjCondition with // FromSMC
-        static member FromSMC(smc: SubmodelElementCollection): NjCondition =
-            let cond = createSimpleFromSMC (fun () -> NjCondition.Create()) smc
-            cond.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-            // IOTags 역직렬화
-            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-                cond.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-            cond |> tee (readAasExtensionProperties smc)
+    //type NjCondition with // FromSMC
+    //    static member FromSMC(smc: SubmodelElementCollection): NjCondition =
+    //        let cond = createSimpleFromSMC (fun () -> NjCondition.Create()) smc
+    //        cond.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+    //        // IOTags 역직렬화
+    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+    //            cond.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
+    //        cond |> tee (readAasExtensionProperties smc)
 
-    type NjAction with // FromSMC
-        static member FromSMC(smc: SubmodelElementCollection): NjAction =
-            let act = createSimpleFromSMC (fun () -> NjAction.Create()) smc
-            act.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
-            // IOTags 역직렬화
-            let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-            if not (System.String.IsNullOrEmpty(ioTagsStr)) then
-                act.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
-            act |> tee (readAasExtensionProperties smc)
+    //type NjAction with // FromSMC
+    //    static member FromSMC(smc: SubmodelElementCollection): NjAction =
+    //        let act = createSimpleFromSMC (fun () -> NjAction.Create()) smc
+    //        act.FlowGuid <- smc.TryGetPropValue "FlowGuid" |? null
+    //        // IOTags 역직렬화
+    //        let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
+    //        if not (System.String.IsNullOrEmpty(ioTagsStr)) then
+    //            act.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
+    //        act |> tee (readAasExtensionProperties smc)
 
     type NjFlow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
@@ -259,7 +269,7 @@ module CoreFromAas =
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
             let txGuid = smc.GetPropValue          "TxGuid" |> Guid.Parse
             let rxGuid = smc.GetPropValue          "RxGuid" |> Guid.Parse
-            
+
             NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
             |> tee (readAasExtensionProperties smc)
 
@@ -275,7 +285,7 @@ module CoreFromAas =
             let valueSpec  = smc.TryGetPropValue "ValueSpec"  |? null
             // IOTags 역직렬화
             let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
-            
+
             let apiCall = NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
                 , ApiDef = apiDef
                 , InAddress = inAddress
