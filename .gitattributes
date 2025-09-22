@@ -1,1 +1,2 @@
 **/Makefile text eol=lf
+**/*.fs text eol=lf

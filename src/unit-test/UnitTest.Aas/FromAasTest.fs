@@ -12,7 +12,6 @@ open Ev2.Core.FS
 open Dual.Common.Base
 
 module FromAasTest =
-    let dsJson = DsJson.dsJson
     let aasJson0 = Aas.aasJson0
     let aasXml0 = Aas.aasXml0
     ()
