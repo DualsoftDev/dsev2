@@ -240,7 +240,7 @@ module ORMTypeConversionModule =
                     (* System 소유주 project 지정.  *)
                     let ownerProjectId = rt.Project >>= _.Id
 
-                    new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime)
+                    new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime, rt.PolymorphicJsonEntities)
                     |> ormReplicateProperties rt
 
                 | :? Flow as rt ->
@@ -282,17 +282,6 @@ module ORMTypeConversionModule =
                 | :? ApiDef as rt ->
                     new ORMApiDef(pid)
                     |> ormReplicateProperties rt
-
-
-                | :? DsSystemEntityWithFlow as rt ->
-                    let flowId = (rt.Flow >>= _.Id)
-                    match rt with
-                    | :? DsButton    as rt -> new ORMButton   (pid, flowId, rt.IOTagsJson) |> ormReplicateProperties rt
-                    | :? Lamp        as rt -> new ORMLamp     (pid, flowId, rt.IOTagsJson) |> ormReplicateProperties rt
-                    | :? DsCondition as rt -> new ORMCondition(pid, flowId, rt.IOTagsJson) |> ormReplicateProperties rt
-                    | :? DsAction    as rt -> new ORMAction   (pid, flowId, rt.IOTagsJson) |> ormReplicateProperties rt
-                    | _ -> failwith "ERROR"
-
 
                 | :? ApiCall as rt ->
                     let apiDefId =

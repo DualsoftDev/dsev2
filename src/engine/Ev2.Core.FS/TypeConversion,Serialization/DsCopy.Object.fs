@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open Dual.Common.Core.FS
 open Dual.Common.Base
 open System
+open Newtonsoft.Json.Linq
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
 [<AutoOpen>]
@@ -31,7 +32,7 @@ module internal rec DsObjectCopyImpl =
         /// DsSystem 복제. 지정된 newSystem 객체에 현재 시스템의 내용을 복사
         member x.replicate() =
             // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            DsSystem.Create([], [], [], [], [], [], [], [], [])
+            DsSystem.Create([], [], [], [], [])
             |> tee(fun newSystem ->
                 // flow, work 상호 참조때문에 일단 flow 만 shallow copy
                 let apiDefs    = x.ApiDefs    |-> _.replicate() |> toArray
@@ -39,11 +40,7 @@ module internal rec DsObjectCopyImpl =
                 let flows      = x.Flows      |-> _.replicate() |> toArray
                 let works      = x.Works      |-> _.replicate() |> toArray // work 에서 shallow  copy 된 flow 참조 가능해짐.
                 let arrows     = x.Arrows     |-> _.replicate() |> toArray
-                // UI 요소들도 복제
-                let buttons    = x.Buttons    |-> _.replicate() |> toArray
-                let lamps      = x.Lamps      |-> _.replicate() |> toArray
-                let conditions = x.Conditions |-> _.replicate() |> toArray
-                let actions    = x.Actions    |-> _.replicate() |> toArray
+
 
                 // 복제된 데이터를 newSystem에 설정
                 flows      |> newSystem.RawFlows     .AddRange
@@ -51,13 +48,12 @@ module internal rec DsObjectCopyImpl =
                 arrows     |> newSystem.RawArrows    .AddRange
                 apiDefs    |> newSystem.RawApiDefs   .AddRange
                 apiCalls   |> newSystem.RawApiCalls  .AddRange
-                buttons    |> newSystem.RawButtons   .AddRange
-                lamps      |> newSystem.RawLamps     .AddRange
-                conditions |> newSystem.RawConditions.AddRange
-                actions    |> newSystem.RawActions   .AddRange
 
                 // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
                 newSystem |> replicateProperties x |> ignore
+                // UI 요소들도 복제
+                newSystem.PolymorphicJsonEntities <- x.PolymorphicJsonEntities.DeepClone()
+                newSystem.PolymorphicJsonEntities.SyncToValues()
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 flows      |> iter (setParentI newSystem)
@@ -65,10 +61,6 @@ module internal rec DsObjectCopyImpl =
                 arrows     |> iter (setParentI newSystem)
                 apiDefs    |> iter (setParentI newSystem)
                 apiCalls   |> iter (setParentI newSystem)
-                buttons    |> iter (setParentI newSystem)
-                lamps      |> iter (setParentI newSystem)
-                conditions |> iter (setParentI newSystem)
-                actions    |> iter (setParentI newSystem)
 
                 // 검증
                 arrows
@@ -121,20 +113,8 @@ module internal rec DsObjectCopyImpl =
                 newFlow |> replicateProperties x |> ignore )
 
 
-    type DsButton with // replicate
-        member x.replicate() = DsButton.Create() |> replicateProperties x
-
-
-    type Lamp with // replicate
-        member x.replicate() = Lamp.Create() |> replicateProperties x
-
-
-    type DsCondition with // replicate
-        member x.replicate() = DsCondition.Create() |> replicateProperties x
-
-
-    type DsAction with // replicate
-        member x.replicate() = DsAction.Create() |> replicateProperties x
+    //type DsButton with // replicate
+    //    member x.replicate() = DsButton.Create() |> replicateProperties x
 
 
     type Call with // replicate
@@ -209,10 +189,12 @@ module DsObjectCopyAPIModule =
             rt.Flows      |> iter proc
             rt.Works      |> iter proc
             rt.Arrows     |> iter proc
-            rt.Buttons    |> iter proc
-            rt.Lamps      |> iter proc
-            rt.Conditions |> iter proc
-            rt.Actions    |> iter proc
+
+            // TODO: PolymorphicJsonCollection 에 대한 RtUnique 처리
+            //rt.Buttons    |> iter proc
+            //rt.Lamps      |> iter proc
+            //rt.Conditions |> iter proc
+            //rt.Actions    |> iter proc
 
         | :? Work as rt ->
             rt.Calls    |> iter proc
@@ -246,7 +228,6 @@ module DsObjectCopyAPIModule =
         | :? ApiCall as rt ->
             rt.ApiDefGuid <- map[rt.ApiDefGuid]
             ()
-        | (:? DsButton) | (:? Lamp) | (:? DsCondition) | (:? DsAction) as rt -> ()
 
 
         | _ -> failwith "Not Project"

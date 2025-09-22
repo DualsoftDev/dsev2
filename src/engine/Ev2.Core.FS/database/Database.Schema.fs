@@ -24,12 +24,7 @@ module DatabaseSchemaModule =
         let [<Literal>] ApiCall      = "apiCall"
         let [<Literal>] ApiDef       = "apiDef"
 
-        // { Flow 하부 정의 용
-        let [<Literal>] Button       = "button"
-        let [<Literal>] Lamp         = "lamp"
-        let [<Literal>] Condition    = "condition"
-        let [<Literal>] Action       = "action"
-        // } Flow 하부 정의 용
+        let [<Literal>] SystemEntity = "systemEntity"
 
         // { n : m 관계의 table mapping
         let [<Literal>] MapProject2System = "mapProject2System"
@@ -51,7 +46,7 @@ module DatabaseSchemaModule =
 
         let AllTableNames = [
             Project; System; Flow; Work; Call; ArrowWork; ArrowCall; ApiCall; ApiDef;
-            Button; Lamp; Condition; Action; Enum;
+            Enum;
             TableHistory; MapProject2System; MapCall2ApiCall;
             Meta; Temp; TableDescription
         ]
@@ -71,16 +66,10 @@ module DatabaseSchemaModule =
         let [<Literal>] ApiDef     = "vwApiDef"
         let [<Literal>] ApiCall    = "vwApiCall"
 
-        let [<Literal>] Button     = "vwButton"
-        let [<Literal>] Lamp       = "vwLamp"
-        let [<Literal>] Condition  = "vwCondition"
-        let [<Literal>] Action     = "vwAction"
-
         let AllViewTableNames = [
                 MapProject2System; MapCall2ApiCall
                 System; SupervisedSystem; DeviceSystem;
                 Flow; Work; Call; ApiDef; ApiCall
-                Button; Lamp; Condition; Action;
                 ArrowCall; ArrowWork; ]
 
     /// SQL schema 생성.  trigger 도 함께 생성하려면 getSqlCreateSchemaWithTrigger() 사용
@@ -295,7 +284,13 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 {if withTrigger then triggerSql dbProvider else ""}
 
 
-
+CREATE TABLE {k Tn.SystemEntity}(
+    {k "id"}              {autoincPrimaryKey}
+    , {k "systemId"}       {intKeyType} NOT NULL
+    , {k "type"}        TEXT NOT NULL   -- $type
+    , {k "json"}        TEXT NOT NULL
+    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
+);
 
 
 --CREATE TRIGGER trigger_{Tn.MapProject2System}_afterDelete_dropSystems
@@ -325,42 +320,6 @@ CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
     , CONSTRAINT {Tn.Flow}_uniq UNIQUE (systemId, name)
 );
 
-
-CREATE TABLE {k Tn.Button}( {sqlUniqWithName()}
-    , {k "systemId"}      {intKeyType} NOT NULL
-    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
-    , {k "ioTagsJson"}        TEXT
-    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
-    , CONSTRAINT {Tn.Button}_uniq UNIQUE (systemId, flowId, name)
-);
-
-CREATE TABLE {k Tn.Lamp}( {sqlUniqWithName()}
-    , {k "systemId"}      {intKeyType} NOT NULL
-    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
-    , {k "ioTagsJson"}        TEXT
-    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
-    , CONSTRAINT {Tn.Lamp}_uniq UNIQUE (systemId, flowId, name)
-);
-
-CREATE TABLE {k Tn.Condition}( {sqlUniqWithName()}
-    , {k "systemId"}      {intKeyType} NOT NULL
-    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
-    , {k "ioTagsJson"}        TEXT
-    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
-    , CONSTRAINT {Tn.Condition}_uniq UNIQUE (systemId, flowId, name)
-);
-
-CREATE TABLE {k Tn.Action}( {sqlUniqWithName()}
-    , {k "systemId"}      {intKeyType} NOT NULL
-    , {k "flowId"}        {intKeyType} DEFAULT NULL    -- nullable, like Work
-    , {k "ioTagsJson"}        TEXT
-    , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE
-    , FOREIGN KEY(flowId)   REFERENCES {Tn.Flow}(id) ON DELETE SET NULL
-    , CONSTRAINT {Tn.Action}_uniq UNIQUE (systemId, flowId, name)
-);
 
 CREATE TABLE {k Tn.Enum}(
     {k "id"}              {autoincPrimaryKey}
@@ -643,67 +602,6 @@ CREATE VIEW {k Vn.Flow} AS
     ;
 
 
-CREATE VIEW {k Vn.Button} AS
-    SELECT
-        x.{k "id"}
-        , x.{k "name"}
-        , x.{k "parameter"}
-        , x.{k "flowId"} AS flowId
-        , f.{k "name"}  AS flowName
-        , x.{k "systemId"} AS systemId
-        , s.{k "name"}  AS systemName
-    FROM {k Tn.Button} x
-    JOIN {k Tn.System} s ON s.id = x.systemId
-    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    ;
-
-CREATE VIEW {k Vn.Lamp} AS
-    SELECT
-        x.{k "id"}
-        , x.{k "name"}
-        , x.{k "parameter"}
-        , x.{k "flowId"} AS flowId
-        , f.{k "name"}  AS flowName
-        , x.{k "systemId"} AS systemId
-        , s.{k "name"}  AS systemName
-    FROM {k Tn.Lamp} x
-    JOIN {k Tn.System} s ON s.id = x.systemId
-    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    ;
-
-CREATE VIEW {k Vn.Condition} AS
-    SELECT
-        x.{k "id"}
-        , x.{k "name"}
-        , x.{k "parameter"}
-        , x.{k "flowId"} AS flowId
-        , f.{k "name"}  AS flowName
-        , x.{k "systemId"} AS systemId
-        , s.{k "name"}  AS systemName
-    FROM {k Tn.Condition} x
-    JOIN {k Tn.System} s ON s.id = x.systemId
-    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    ;
-
-CREATE VIEW {k Vn.Action} AS
-    SELECT
-        x.{k "id"}
-        , x.{k "name"}
-        , x.{k "parameter"}
-        , x.{k "flowId"} AS flowId
-        , f.{k "name"}  AS flowName
-        , x.{k "systemId"} AS systemId
-        , s.{k "name"}  AS systemName
-    FROM {k Tn.Action} x
-    JOIN {k Tn.System} s ON s.id = x.systemId
-    LEFT JOIN {k Tn.Flow}   f ON f.id = x.flowId
-    ;
-
-
-
-
-
-
 CREATE VIEW {k Vn.Work} AS
     SELECT
         x.{k "id"}
@@ -842,11 +740,6 @@ CREATE TABLE {k Tn.TableDescription} (
                 descT Tn.ArrowCall        $"{Tn.ArrowCall } 관리 table"
                 descT Tn.ApiCall          $"{Tn.ApiCall   } 관리 table"
                 descT Tn.ApiDef           $"{Tn.ApiDef    } 관리 table"
-
-                descT Tn.Button           $"{Tn.Button    } 관리 table"
-                descT Tn.Lamp             $"{Tn.Lamp      } 관리 table"
-                descT Tn.Condition        $"{Tn.Condition } 관리 table"
-                descT Tn.Action           $"{Tn.Action    } 관리 table"
 
                 descT Tn.MapProject2System "Projecdt 와 System 간의 mapping 관리 table"
                 descT Tn.MapCall2ApiCall   "Call 과 ApiCall 간의 mapping 관리 table"

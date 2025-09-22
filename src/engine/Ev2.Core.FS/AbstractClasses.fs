@@ -8,6 +8,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 
 [<AbstractClass>]
@@ -20,6 +21,16 @@ type RtUnique() = // ToNjObj, ToNj
     default x.ToNjObj() = fwdRtObj2NjObj x
 
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
+
+type [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
+    inherit RtUnique()
+    interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
+    [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
+    override x.ShouldSerializeId() = false
+    override x.ShouldSerializeGuid() = false
+type Polys = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>
 
 // Entity base classes
 [<AbstractClass>]
@@ -43,13 +54,6 @@ and [<AbstractClass>] DsSystemEntityWithFlow() =
         match x.FlowId with
         | Some id -> x.System |-> _.Flows >>= tryFind(fun f -> f.Id = Some id)
         | None -> x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
-
-/// Button, Lamp, Condition, Action
-and [<AbstractClass>] BLCA() =
-    inherit DsSystemEntityWithFlow()
-    interface IWithTagWithSpecs
-    member val IOTags = IOTagsWithSpec() with get, set
-    member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
 and [<AbstractClass>] FlowEntity() =
     inherit RtUnique()
@@ -197,6 +201,17 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 and DsSystem() = // Create
     inherit ProjectEntity()
 
+    member val PolymorphicJsonEntities = Polys() with get, set
+    member x.Entities = x.PolymorphicJsonEntities.Items
+    member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
+    member x.AddEntities(entities:SystemEntityWithJsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
+    member x.RemoveEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
+    member x.Buttons    = x.Entities.OfType<NewDsButton>()    |> toArray
+    member x.Lamps      = x.Entities.OfType<NewLamp>()        |> toArray
+    member x.Conditions = x.Entities.OfType<NewDsCondition>() |> toArray
+    member x.Actions    = x.Entities.OfType<NewDsAction>()    |> toArray
+
+
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
     interface IRtSystem with
@@ -206,10 +221,6 @@ and DsSystem() = // Create
     member val internal RawArrows   = ResizeArray<ArrowBetweenWorks>() with get, set
     member val internal RawApiDefs  = ResizeArray<ApiDef>() with get, set
     member val internal RawApiCalls = ResizeArray<ApiCall>() with get, set
-    member val internal RawButtons    = ResizeArray<DsButton>() with get, set
-    member val internal RawLamps      = ResizeArray<Lamp>() with get, set
-    member val internal RawConditions = ResizeArray<DsCondition>() with get, set
-    member val internal RawActions    = ResizeArray<DsAction>() with get, set
 
     member x.OwnerProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
 
@@ -226,10 +237,6 @@ and DsSystem() = // Create
     member x.Arrows     = x.RawArrows     |> toList
     member x.ApiDefs    = x.RawApiDefs    |> toList
     member x.ApiCalls   = x.RawApiCalls   |> toList
-    member x.Buttons    = x.RawButtons    |> toList
-    member x.Lamps      = x.RawLamps      |> toList
-    member x.Conditions = x.RawConditions |> toList
-    member x.Actions    = x.RawActions    |> toList
 
     abstract member OnLoaded: unit -> unit
     /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
@@ -239,8 +246,7 @@ and DsSystem() = // Create
     static member Create() = createExtended<DsSystem>()
 
     /// Creates a DsSystem with the specified components using parameterless constructor + Initialize pattern
-    static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq,
-                         buttons: DsButton seq, lamps: Lamp seq, conditions: DsCondition seq, actions: DsAction seq) =
+    static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
         let system = createExtended<DsSystem>()
         // Clear existing components
         system.RawFlows.Clear()
@@ -248,10 +254,6 @@ and DsSystem() = // Create
         system.RawArrows.Clear()
         system.RawApiDefs.Clear()
         system.RawApiCalls.Clear()
-        system.RawButtons.Clear()
-        system.RawLamps.Clear()
-        system.RawConditions.Clear()
-        system.RawActions.Clear()
 
         // Add new components and set parent relationships
         flows      |> iter (fun f -> system.RawFlows     .Add(f); setParentI system f)
@@ -259,10 +261,6 @@ and DsSystem() = // Create
         arrows     |> iter (fun a -> system.RawArrows    .Add(a); setParentI system a)
         apiDefs    |> iter (fun d -> system.RawApiDefs   .Add(d); setParentI system d)
         apiCalls   |> iter (fun c -> system.RawApiCalls  .Add(c); setParentI system c)
-        buttons    |> iter (fun b -> system.RawButtons   .Add(b); setParentI system b)
-        lamps      |> iter (fun l -> system.RawLamps     .Add(l); setParentI system l)
-        conditions |> iter (fun c -> system.RawConditions.Add(c); setParentI system c)
-        actions    |> iter (fun a -> system.RawActions   .Add(a); setParentI system a)
 
         system
 
@@ -275,10 +273,10 @@ and Flow() = // Create
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
-    member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flow = Some x)) |? []
-    member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flow = Some x)) |? []
-    member x.Conditions = x.System |-> (fun s -> s.Conditions |> filter (fun c -> c.Flow = Some x)) |? []
-    member x.Actions    = x.System |-> (fun s -> s.Actions    |> filter (fun a -> a.Flow = Some x)) |? []
+    member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flows |> Seq.contains x)) |? [||]
+    member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flows.Contains x)) |? [||]
+    member x.Conditions = x.System |-> (fun s -> s.Conditions |> filter (fun c -> c.Flows.Contains x)) |? [||]
+    member x.Actions    = x.System |-> (fun s -> s.Actions    |> filter (fun a -> a.Flows.Contains x)) |? [||]
 
     member x.Works:Work[] =
         x.System
@@ -290,29 +288,31 @@ and Flow() = // Create
 
     static member Create() = createExtended<Flow>()
 
-and DsButton() = // Create
-    inherit BLCA()
+
+and NewDsButton() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtButton
-    static member Create() = createExtended<DsButton>()
+    static member Create() = createExtended<NewDsButton>()
 
-and Lamp() = // Create
-    inherit BLCA()
+and NewLamp() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtLamp
-    static member Create() = createExtended<Lamp>()
+    static member Create() = createExtended<NewLamp>()
 
-and DsCondition() = // Create
-    inherit BLCA()
+and NewDsCondition() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtCondition
-    static member Create() = createExtended<DsCondition>()
+    static member Create() = createExtended<NewDsCondition>()
 
-and DsAction() = // Create
-    inherit BLCA()
+and NewDsAction() = // Create
+    inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtAction
-    static member Create() = createExtended<DsAction>()
+    static member Create() = createExtended<NewDsAction>()
+
 
 
 // see static member Create
@@ -471,4 +471,3 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
                     with _ -> false)  // ApiDef 접근 실패 시 false
                 |> toArray)
         |? [||]
-

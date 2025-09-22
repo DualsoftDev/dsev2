@@ -4,6 +4,8 @@ open System
 open System.Linq
 open System.Diagnostics
 open Dapper
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 open Dual.Common.Base
 open Dual.Common.Core.FS
@@ -92,11 +94,11 @@ module internal DbInsertModule =
                     // flows 삽입 (먼저 삽입하여 Id 획득)
                     rt.Flows |> iter _.InsertToDB(dbApi)
 
-                    // Button, Lamp, Condition, Action 삽입 (DsSystem에 속하며 Flow.Id 참조)
-                    rt.Buttons    |> iter _.InsertToDB(dbApi)
-                    rt.Lamps      |> iter _.InsertToDB(dbApi)
-                    rt.Conditions |> iter _.InsertToDB(dbApi)
-                    rt.Actions    |> iter _.InsertToDB(dbApi)
+                    //// Button, Lamp, Condition, Action 삽입 (DsSystem에 속하며 Flow.Id 참조)
+                    //rt.Buttons    |> iter _.InsertToDB(dbApi)
+                    //rt.Lamps      |> iter _.InsertToDB(dbApi)
+                    //rt.Conditions |> iter _.InsertToDB(dbApi)
+                    //rt.Actions    |> iter _.InsertToDB(dbApi)
 
                     // system 의 apiCalls 를 삽입
                     rt.ApiCalls |> iter _.InsertToDB(dbApi)
@@ -106,6 +108,15 @@ module internal DbInsertModule =
 
                     // system 의 arrows 를 삽입 (works 간 연결)
                     rt.Arrows |> iter _.InsertToDB(dbApi)
+
+                    // polymorphic system entities 저장
+                    let serializedEntities = rt.PolymorphicJsonEntities.JsonizeArray()
+
+                    for (typeName, entityJsonText) in serializedEntities do
+                        conn.Execute(
+                            $"INSERT INTO {Tn.SystemEntity} (systemId, type, json) VALUES (@SystemId, @Type, @Json)",
+                            {| SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
+                        |> ignore
 
                     // system 의 apiDefs 를 삽입
                     rt.ApiDefs |> iter _.InsertToDB(dbApi)
@@ -152,58 +163,6 @@ module internal DbInsertModule =
                     rt.Id <- Some flowId
                     orm.Id <- Some flowId
                     assert (guidDicDebug[rt.Guid] = orm)
-
-                | :? DsSystemEntityWithFlow as se when (box se :? DsButton || box se :? Lamp || box se :? DsCondition || box se :? DsAction) ->
-                    let systemId = se.System |-> _.Id |??  (fun () -> failwith "ERROR: DsSystemEntityWithFlow must have a SystemId set before inserting to DB.")
-                    let flowId = se.Flow >>= _.Id  // nullable
-                    let rtX = x :?> DsSystemEntityWithFlow
-
-                    let insertSystemElement (tableName:string) (rtX:#DsSystemEntityWithFlow, ormX:#ORMSystemEntityWithFlow) =
-                            ormX.SystemId <- systemId
-                            ormX.FlowId <- flowId
-
-                            // IOTags 처리 (Button, Lamp, Condition, Action만 해당)
-                            let ioTagsParam =
-                                match box ormX with
-                                | :? ORMButton | :? ORMLamp | :? ORMCondition | :? ORMAction -> ", ioTagsJson"
-                                | _ -> ""
-                            let ioTagsValue =
-                                match box ormX with
-                                | :? ORMButton | :? ORMLamp | :? ORMCondition | :? ORMAction -> ", @IOTagsJson"
-                                | _ -> ""
-
-                            dbApi.With(fun (conn, tr) ->
-                                let xId =
-                                    conn.Insert($"""INSERT INTO {tableName}
-                                                    (guid, parameter, name, systemId, flowId{ioTagsParam})
-                                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId{ioTagsValue});""", ormX, tr)
-                                rtX.Id <- Some xId
-                                ormX.Id <- Some xId
-                                assert (guidDicDebug[rtX.Guid] = ormX)
-                            )
-
-
-                    (* Button, Lamps, Conditions, Action 등이 복잡해 질 경우 이렇게.. *)
-                    //for x in f.Buttons do
-                    //    let ormX = x.ToORM<ORMButton>(dbApi, cache)
-                    //    ormX.FlowId <- Some flowId
-                    //    let buttonId =
-                    //        conn.Insert($"""INSERT INTO {Tn.Button}
-                    //                        (guid, parameter, name, flowId)
-                    //                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @FlowId);""", ormX, tr)
-                    //    x.Id <- Some buttonId
-                    //    ormX.Id <- Some buttonId
-                    //    assert (cache[x.Guid] = ormX)
-
-                    (* 간략 format .. *)
-
-                    match box x with
-                    | :? DsButton    as rt -> let orm = rt.ToORM<ORMButton>    dbApi in insertSystemElement Tn.Button    (rtX, orm)
-                    | :? Lamp        as rt -> let orm = rt.ToORM<ORMLamp>      dbApi in insertSystemElement Tn.Lamp      (rtX, orm)
-                    | :? DsCondition as rt -> let orm = rt.ToORM<ORMCondition> dbApi in insertSystemElement Tn.Condition (rtX, orm)
-                    | :? DsAction    as rt -> let orm = rt.ToORM<ORMAction>    dbApi in insertSystemElement Tn.Action    (rtX, orm)
-                    | _ -> failwith "ERROR"
-
 
                 | :? Work as rt ->
                     let orm = rt.ToORM<ORMWork>(dbApi)
@@ -361,6 +320,5 @@ module internal DbInsertModule =
             assert (dbApi.DDic.Get<DuplicateBag>().OldGuid2NewObjectMap.Any())
 
             rTryCommitSystemToDBHelper dbApi x)
-
 
 

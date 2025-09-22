@@ -1,5 +1,9 @@
-﻿root = true
+root = true
  
 [*]
 charset = utf-8
+
+[*.{cs,fs}]
+end_of_line = lf
+
 

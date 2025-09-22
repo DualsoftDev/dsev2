@@ -136,10 +136,16 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
-        [<JsonProperty(Order = 106)>] member val Buttons    = [||]:NjButton[]    with get, set
-        [<JsonProperty(Order = 107)>] member val Lamps      = [||]:NjLamp[]      with get, set
-        [<JsonProperty(Order = 108)>] member val Conditions = [||]:NjCondition[] with get, set
-        [<JsonProperty(Order = 109)>] member val Actions    = [||]:NjAction[]    with get, set
+
+        [<JsonIgnore>]
+        member val PolymorphicJsonEntities = Polys() with get, set
+        [<JsonProperty("Entities")>]
+        member this.SerializedEntities
+            with get () : JArray = this.PolymorphicJsonEntities.SerializedItems
+            and set (value: JArray) =
+                let payload = if isNull value then JArray() else value
+                this.PolymorphicJsonEntities.SerializedItems <- payload
+        member x.ShouldSerializeEntities() = x.PolymorphicJsonEntities.Count > 0
 
         static member Create() = createExtended<NjSystem>()
 
@@ -165,10 +171,6 @@ module rec NewtonsoftJsonObjects =
         member x.ShouldSerializeArrows  () = x.Arrows  .NonNullAny()
         member x.ShouldSerializeApiDefs () = x.ApiDefs .NonNullAny()
         member x.ShouldSerializeApiCalls() = x.ApiCalls.NonNullAny()
-        member x.ShouldSerializeButtons    () = x.Buttons   .NonNullAny()
-        member x.ShouldSerializeLamps      () = x.Lamps     .NonNullAny()
-        member x.ShouldSerializeConditions () = x.Conditions.NonNullAny()
-        member x.ShouldSerializeActions    () = x.Actions   .NonNullAny()
 
 
         [<OnSerializing>]
@@ -181,17 +183,12 @@ module rec NewtonsoftJsonObjects =
 
         member x.Initialize(flows:NjFlow[], works:NjWork[], arrows:NjArrow[]
             , apiDefs:NjApiDef[], apiCalls:NjApiCall[]
-            , buttons:NjButton[], lamps:NjLamp[], conditions:NjCondition[], actions:NjAction[]
         ) =
             x.Flows      <- flows
             x.Works      <- works
             x.Arrows     <- arrows
             x.ApiDefs    <- apiDefs
             x.ApiCalls   <- apiCalls
-            x.Buttons    <- buttons
-            x.Lamps      <- lamps
-            x.Conditions <- conditions
-            x.Actions    <- actions
             x
 
     type NjFlow () = // Create, Initialize
@@ -199,44 +196,6 @@ module rec NewtonsoftJsonObjects =
         interface INjFlow
 
         static member Create() = createExtended<NjFlow>()
-
-        member x.Initialize() =
-            x
-
-    let private isValidIoTags (ioTags:IOTagsWithSpec) =
-        isItNotNull(ioTags) && (isItNotNull(ioTags.InTag) || isItNotNull(ioTags.OutTag))
-    type NjButton() = // Create
-        inherit NjSystemEntityWithFlow()
-
-        interface INjButton
-        member val IOTags = IOTagsWithSpec() with get, set
-        static member Create() = createExtended<NjButton>()
-        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-    type NjLamp() = // Create
-        inherit NjSystemEntityWithFlow()
-
-        interface INjLamp
-        member val IOTags = IOTagsWithSpec() with get, set
-        static member Create() = createExtended<NjLamp>()
-        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-    type NjCondition() = // Create
-        inherit NjSystemEntityWithFlow()
-
-        interface INjCondition
-        member val IOTags = IOTagsWithSpec() with get, set
-        static member Create() = createExtended<NjCondition>()
-        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
-    type NjAction() = // Create
-        inherit NjSystemEntityWithFlow()
-
-        interface INjAction
-        member val IOTags = IOTagsWithSpec() with get, set
-        static member Create() = createExtended<NjAction>()
-        member x.ShouldSerializeIOTags() = isValidIoTags(x.IOTags)
-
 
     type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
         inherit NjSystemEntity()
@@ -435,24 +394,18 @@ module rec NewtonsoftJsonObjects =
                 //    njs.RuntimeObject |> replicateProperties njs |> ignore
 
                 let rts = njs |> getRuntimeObject<DsSystem>
+                njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities.DeepClone()
+                njs.PolymorphicJsonEntities.SyncToSerialized()
                 njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
                 njs.Flows    <- rts.Flows    |-> _.ToNj<NjFlow>()    |> toArray
                 njs.ApiDefs  <- rts.ApiDefs  |-> _.ToNj<NjApiDef>()  |> toArray
                 njs.ApiCalls <- rts.ApiCalls |-> _.ToNj<NjApiCall>() |> toArray
-                njs.Buttons    <- rts.Buttons    |-> _.ToNj<NjButton>()    |> toArray
-                njs.Lamps      <- rts.Lamps      |-> _.ToNj<NjLamp>()      |> toArray
-                njs.Conditions <- rts.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                njs.Actions    <- rts.Actions    |-> _.ToNj<NjAction>()    |> toArray
 
                 njs.Arrows   |> iter onNsJsonSerializing
                 njs.Flows    |> iter onNsJsonSerializing
                 njs.Works    |> iter onNsJsonSerializing
                 njs.ApiDefs  |> iter onNsJsonSerializing
                 njs.ApiCalls |> iter onNsJsonSerializing
-                njs.Buttons    |> iter onNsJsonSerializing
-                njs.Lamps      |> iter onNsJsonSerializing
-                njs.Conditions |> iter onNsJsonSerializing
-                njs.Actions    |> iter onNsJsonSerializing
 
             | :? NjWork as njw ->
                 let rtw = njw |> getRuntimeObject<Work>
@@ -469,13 +422,6 @@ module rec NewtonsoftJsonObjects =
             | ( (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
                 ()
-
-            | ( (:? NjButton) | (:? NjLamp) | (:? NjCondition) | (:? NjAction) ) ->
-                (* UI 요소들도 replicateProperties 호출 필요 *)
-                match njUnique |-> _.RuntimeObject with
-                | Some runtimeObj when isItNotNull runtimeObj ->
-                    replicateProperties runtimeObj njUnique.Value |> ignore
-                | _ -> ()
 
             | _ ->
                 failwith "ERROR.  확장 필요?"
@@ -552,23 +498,15 @@ module rec NewtonsoftJsonObjects =
                     ArrowBetweenWorks.Create(s2guid a.Source, s2guid a.Target, arrowType)
                     |> replicateProperties a)
 
-            // UI 요소들의 RuntimeObject 생성
-            njs.Buttons    |> iter (fun z -> z.RuntimeObject <- DsButton.Create()    |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
-            njs.Lamps      |> iter (fun z -> z.RuntimeObject <- Lamp.Create()        |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
-            njs.Conditions |> iter (fun z -> z.RuntimeObject <- DsCondition.Create() |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
-            njs.Actions    |> iter (fun z -> z.RuntimeObject <- DsAction.Create()    |> replicateProperties z |> tee (fun rt -> rt.IOTags <- z.IOTags))
-
             let arrows     = njs.Arrows     |-> getRuntimeObject<ArrowBetweenWorks>
             let apiDefs    = njs.ApiDefs    |-> getRuntimeObject<ApiDef>
             let apiCalls   = njs.ApiCalls   |-> getRuntimeObject<ApiCall>
-            let buttons    = njs.Buttons    |-> getRuntimeObject<DsButton>
-            let lamps      = njs.Lamps      |-> getRuntimeObject<Lamp>
-            let conditions = njs.Conditions |-> getRuntimeObject<DsCondition>
-            let actions    = njs.Actions    |-> getRuntimeObject<DsAction>
 
             let rts =
-                DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions)
+                DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, njs.PolymorphicJsonEntities)
                 |> replicateProperties njs
+            rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities.DeepClone()
+            rts.PolymorphicJsonEntities.SyncToValues()
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
@@ -632,31 +570,6 @@ module rec NewtonsoftJsonObjects =
                 ApiDef.Create(njad.IsPush(*, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin*))
                 |> replicateProperties njad
             ()
-
-
-        | :? NjButton as njx ->
-            njx.RuntimeObject <-
-                DsButton.Create()
-                |> replicateProperties njx
-                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
-        | :? NjLamp as njx ->
-            njx.RuntimeObject <-
-                Lamp.Create()
-                |> replicateProperties njx
-                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
-        | :? NjCondition as njx ->
-            njx.RuntimeObject <-
-                DsCondition.Create()
-                |> replicateProperties njx
-                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
-
-        | :? NjAction as njx ->
-            njx.RuntimeObject <-
-                DsAction.Create()
-                |> replicateProperties njx
-                |> tee (fun rt -> rt.IOTags <- njx.IOTags)
 
         | _ -> failwith "ERROR.  확장 필요?"
 
@@ -795,7 +708,8 @@ module Ds2JsonModule =
                         , Author=rt.Author
                         , LangVersion=rt.LangVersion
                         , EngineVersion=rt.EngineVersion
-                        , Description=rt.Description)
+                        , Description=rt.Description
+                        , PolymorphicJsonEntities=rt.PolymorphicJsonEntities.DeepClone())
                     |> replicateProperties rt
                     |> tee (fun z ->
                         let flows      = rt.Flows      |-> _.ToNj<NjFlow>()      |> toArray
@@ -803,11 +717,7 @@ module Ds2JsonModule =
                         let arrows     = rt.Arrows     |-> _.ToNj<NjArrow>()     |> toArray
                         let apiDefs    = rt.ApiDefs    |-> _.ToNj<NjApiDef>()    |> toArray
                         let apiCalls   = rt.ApiCalls   |-> _.ToNj<NjApiCall>()   |> toArray
-                        let buttons    = rt.Buttons    |-> _.ToNj<NjButton>()    |> toArray
-                        let lamps      = rt.Lamps      |-> _.ToNj<NjLamp>()      |> toArray
-                        let conditions = rt.Conditions |-> _.ToNj<NjCondition>() |> toArray
-                        let actions    = rt.Actions    |-> _.ToNj<NjAction>()    |> toArray
-                        z.Initialize(flows, works, arrows, apiDefs, apiCalls, buttons, lamps, conditions, actions) |> ignore
+                        z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
 
@@ -815,9 +725,6 @@ module Ds2JsonModule =
                     let rt = f
                     NjFlow.Create()
                     |> replicateProperties rt
-                    |> tee(fun z ->
-                        // Flow는 이제 UI 요소를 직접 소유하지 않음
-                        z.Initialize() |> ignore)
                     :> INjUnique
 
                 | :? Work as w ->
@@ -847,34 +754,6 @@ module Ds2JsonModule =
 
 
 
-                | :? DsButton    as b ->
-                    NjButton.Create()
-                    |> replicateProperties b
-                    |> tee (fun nj ->
-                        nj.IOTags <- b.IOTags
-                        nj.RuntimeObject <- b)
-                    :> INjUnique
-                | :? Lamp        as l ->
-                    NjLamp.Create()
-                    |> replicateProperties l
-                    |> tee (fun nj ->
-                        nj.IOTags <- l.IOTags
-                        nj.RuntimeObject <- l)
-                    :> INjUnique
-                | :? DsCondition as d ->
-                    NjCondition.Create()
-                    |> replicateProperties d
-                    |> tee (fun nj ->
-                        nj.IOTags <- d.IOTags
-                        nj.RuntimeObject <- d)
-                    :> INjUnique
-                | :? DsAction    as a ->
-                    NjAction.Create()
-                    |> replicateProperties a
-                    |> tee (fun nj ->
-                        nj.IOTags <- a.IOTags
-                        nj.RuntimeObject <- a)
-                    :> INjUnique
 
                 | (:? ArrowBetweenWorks | :? ArrowBetweenCalls) ->
                     NjArrow.Create()

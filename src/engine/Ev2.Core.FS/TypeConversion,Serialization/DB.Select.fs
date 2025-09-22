@@ -9,6 +9,7 @@ open Dual.Common.Base
 open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 type DbObjectIdentifier = //
     | ByGuid of Guid
@@ -37,6 +38,11 @@ type DbCommitResult = Result<DbCommitSuccessResponse, ErrorMessage>
 
 type DbCheckoutResult<'T> = Result<'T, ErrorMessage>
 
+[<CLIMutable>]
+type private SystemEntityRow =
+    { Type: string
+      Json: string }
+
 [<AutoOpen>]
 module internal Db2DsImpl =
 
@@ -59,44 +65,28 @@ module internal Db2DsImpl =
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
 
-            // Load Buttons, Lamps, Conditions, Actions for System
             let sys = {| SystemId = ormSystem.Id.Value |}
-            let ormButtons    = conn.Query<ORMButton>   ($"SELECT * FROM {Tn.Button}    WHERE systemId = @SystemId", sys, tr)
-            let ormLamps      = conn.Query<ORMLamp>     ($"SELECT * FROM {Tn.Lamp}      WHERE systemId = @SystemId", sys, tr)
-            let ormConditions = conn.Query<ORMCondition>($"SELECT * FROM {Tn.Condition} WHERE systemId = @SystemId", sys, tr)
-            let ormActions    = conn.Query<ORMAction>   ($"SELECT * FROM {Tn.Action}    WHERE systemId = @SystemId", sys, tr)
 
-            for ormButton in ormButtons do
-                let button = createExtended<DsButton>() |> replicateProperties ormButton
-                button.FlowId <- ormButton.FlowId
-                button.IOTags <- IOTagsWithSpec.FromJson ormButton.IOTagsJson
-                setParentI s button
-                s.RawButtons.Add button
-                handleAfterSelect button
+            // Load polymorphic system entities
+            let entitySelectSql =
+                match dbApi.DbProvider with
+                | DbProvider.Postgres _ ->
+                    $"SELECT \"type\" AS Type, \"json\" AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
+                | _ ->
+                    $"SELECT type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
 
-            for ormLamp in ormLamps do
-                let lamp = createExtended<Lamp>() |> replicateProperties ormLamp
-                lamp.FlowId <- ormLamp.FlowId
-                lamp.IOTags <- IOTagsWithSpec.FromJson ormLamp.IOTagsJson
-                setParentI s lamp
-                s.RawLamps.Add lamp
-                handleAfterSelect lamp
+            let ormEntities = conn.Query<SystemEntityRow>(entitySelectSql, sys, tr)
 
-            for ormCondition in ormConditions do
-                let condition = createExtended<DsCondition>() |> replicateProperties ormCondition
-                condition.FlowId <- ormCondition.FlowId
-                condition.IOTags <- IOTagsWithSpec.FromJson ormCondition.IOTagsJson
-                setParentI s condition
-                s.RawConditions.Add condition
-                handleAfterSelect condition
-
-            for ormAction in ormActions do
-                let action = createExtended<DsAction>() |> replicateProperties ormAction
-                action.FlowId <- ormAction.FlowId
-                action.IOTags <- IOTagsWithSpec.FromJson ormAction.IOTagsJson
-                setParentI s action
-                s.RawActions.Add action
-                handleAfterSelect action
+            if ormEntities.Any() then
+                let serialized = JArray()
+                for row in ormEntities do
+                    let jobj = JObject.Parse(row.Json)
+                    if isNull (jobj.Property("$type")) then
+                        jobj.AddFirst(JProperty("$type", JValue(row.Type)))
+                    serialized.Add(jobj)
+                s.PolymorphicJsonEntities.SerializedItems <- serialized
+                s.PolymorphicJsonEntities.SyncToValues()
+                ()
 
             // Load Flows
             let rtFlows = [
@@ -111,16 +101,6 @@ module internal Db2DsImpl =
             ]
 
             s.addFlows(rtFlows, false)
-
-            // Set FlowGuid for Buttons, Lamps, Conditions, Actions
-            for button in s.Buttons do
-                button.FlowGuid <- button.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
-            for lamp in s.Lamps do
-                lamp.FlowGuid <- lamp.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
-            for condition in s.Conditions do
-                condition.FlowGuid <- condition.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
-            for action in s.Actions do
-                action.FlowGuid <- action.FlowId >>= (fun id -> rtFlows |> tryFind(fun f -> f.Id = Some id)) |-> _.Guid
 
             let rtApiCalls = [
                 let orms = conn.Query<ORMApiCall>($"SELECT * FROM {Tn.ApiCall} WHERE systemId = {s.Id.Value}", tr)
@@ -323,7 +303,9 @@ module internal Db2DsImpl =
             rtActives  |> rtProj.RawActiveSystems.AddRange
             rtPassives |> rtProj.RawPassiveSystems.AddRange
 
-            ormSystems |> iter (fun os -> rTryCheckoutSystemFromDBHelper os dbApi |> ignore)
+            ormSystems
+            |-> (fun os -> rTryCheckoutSystemFromDBHelper os dbApi)
+            |> iter (function Error err -> failwith $"Failed to check out system: {err}" | _ -> ())
 
             // 확장 복원 훅
             getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(rtProj, conn, tr))

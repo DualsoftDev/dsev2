@@ -65,6 +65,13 @@ module Interfaces =
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
 
+        abstract ShouldSerializeId : unit -> bool
+        abstract ShouldSerializeGuid : unit -> bool
+        default x.ShouldSerializeId() = true
+        default x.ShouldSerializeGuid() = true
+        member x.ShouldSerializeName() = x.Name.NonNullAny()
+        member x.ShouldSerializeParameter() = x.Parameter.NonNullAny()
+
         override x.DisposeCore (): unit =
             base.DisposeCore()
             x.RawParent <- None

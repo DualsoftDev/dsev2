@@ -51,6 +51,7 @@ module AasSemantics =
             ("Lamps",            "https://dualsoft.com/aas/plural/lamps")
             ("Conditions",       "https://dualsoft.com/aas/plural/conditions")
             ("Actions",          "https://dualsoft.com/aas/plural/actions")
+            ("Entities",         "https://dualsoft.com/aas/plural/entities")
             ("Details",          "https://dualsoft.com/aas/singular/details")
 
             ("ApiDef",           "https://dualsoft.com/aas/singular/apiDef")
@@ -101,7 +102,7 @@ module AasSemantics =
             ("InSymbol",         "https://dualsoft.com/aas/apiCall/inSymbol")
             ("OutSymbol",        "https://dualsoft.com/aas/apiCall/outSymbol")
             ("ValueSpec",        "https://dualsoft.com/aas/apiCall/valueSpec")
-            
+
             ("IOTags",           "https://dualsoft.com/aas/common/ioTags")
 
             ("LocalDefinition",  "https://dualsoft.com/aas/passiveSystemLoadType/localDefinition")

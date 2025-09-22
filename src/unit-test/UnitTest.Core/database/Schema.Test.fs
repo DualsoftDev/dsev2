@@ -111,10 +111,13 @@ module Schema =
 
             dsProject.EnumerateRtObjects()
             |> iter (fun dsobj ->
-                if dsobj.Id.IsNone then
-                    noop()
-                // DB 삽입 후이므로 Id 가 Some 이어야 함
-                dsobj.Id.IsSome === true
+                if dsobj :? SystemEntityWithJsonPolymorphic then
+                    ()
+                else
+                    if dsobj.Id.IsNone then
+                        noop()
+                    // DB 삽입 후이므로 Id 가 Some 이어야 함
+                    dsobj.Id.IsSome === true
             )
 
             let edProject = rtProject
@@ -638,8 +641,7 @@ module Schema =
                     sys.RemoveWorks([w])
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
-                        // work 삭제로 인해, 1. work 자체, 2. 삭제된 work 를 연결하던 arrow, 3. 시스템 (및 project) 의  DateTime 이 초단위 절삭에서 변경될 수도 있음
-                        diffs.Length.IsOneOf(2, 3) === true
+                        diffs.Length.IsOneOf(2, 3, 4) === true
                         match diffs[0] with
                         | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
                         | _ -> failwith "ERROR"
@@ -647,10 +649,13 @@ module Schema =
                         | LeftOnly dbA when dbA.GetGuid() = sysArrow0.Guid -> ()
                         | _ -> failwith "ERROR"
 
-                        if diffs.Length = 3 then
-                            match diffs[2] with
-                            | Diff("DateTime", dbSys, newSys, _) when dbSys.GetGuid() = newSys.GetGuid() -> ()
-                            | _ -> failwith "ERROR"
+                        let tail = diffs |> Array.skip 2
+                        match tail with
+                        | [||] -> ()
+                        | [|Diff("DateTime", dbSys, newSys, _)|] when dbSys.GetGuid() = newSys.GetGuid() -> ()
+                        | [|Diff("DateTime", dbSys, newSys, _); Diff("DateTime", dbProj, newProj, _)|]
+                            when dbSys.GetGuid() = newSys.GetGuid() && dbProj.GetGuid() = newProj.GetGuid() -> ()
+                        | _ -> failwith "ERROR"
                     | _ -> failwith "ERROR"
 
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw - 1
@@ -679,6 +684,7 @@ module Schema =
     type IndependantTest() =     // ``비교``, ``복제 비교``, ``복사 비교``, ``Sqlite Dapper test``
         [<Test>]
         member x.``비교`` () =
+            let xxx = rtProject
             let dsProject = rtProject |> validateRuntime
 
             let getMainSystem(prj:Project) = prj.Systems |> find (fun s -> s.Name = "MainSystem")
@@ -711,12 +717,12 @@ module Schema =
                 w.AddArrows([arrow])
 
                 let f = sys2.Flows[0]
-                let button = new DsButton(Name="NewButton")
-                button.FlowGuid <- Some f.Guid
-                sys2.AddButtons( [ button ])
+                let button = new NewDsButton(Name="NewButton")
+                button.Flows.Add f
+                sys2.AddEntitiy button
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (RightOnly(arrow)) === true
-                diffs |> contains (RightOnly(button)) === true
+                diffs |> contains (Diff("Entities", sys, sys2, null)) === true
                 noop()
 
             do
@@ -735,9 +741,9 @@ module Schema =
         [<Test>]
         member x.``복제 비교`` () =
             let dsProject = rtProject.Replicate() |> validateRuntime
-            let diffs = dsProject.ComputeDiff rtProject
+            let diffs = dsProject.ComputeDiff rtProject |> toArray
             printfn "Differences found: %d" (diffs |> Seq.length)
-            diffs |> Seq.iteri (fun i diff -> printfn "[%d] %A" i diff)
+            diffs |> Seq.iteri (fun i diff -> logDebug "[%d] %A" i diff)
             rtProject.IsEqual dsProject === true
 
         [<Test>]
@@ -806,5 +812,3 @@ module Schema =
                                        (optionGuid,  nullableGuid, optionInt,   nullableInt,  jsonb,  dateTime)
                                 VALUES (@OptionGuid, @NullableGuid, @OptionInt, @NullableInt, @Jsonb, @DateTime)""", [testRowFull; testRowEmpty], tr) )
             |> ignore
-
-
