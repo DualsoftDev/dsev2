@@ -222,7 +222,7 @@ module ORMTypesModule =
     ) =
         inherit ORMWorkEntity(workId)
 
-        new() = new ORMCall(-1, None, (DbCallType.Normal |> int64 |> Some), null, null, false, None)
+        new() = new ORMCall(-1, None, None, null, null, false, None)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set
@@ -234,13 +234,15 @@ module ORMTypesModule =
 
         member x.Initialize(runtime:Call) =
             runtime.CopyUniqueProperties(x)
-            x.CallTypeId <- runtime.CallType |> int64 |> Some
+            (* 다음의 enum 에 대한 id 설정은 dbApi 가 있을 때 해결되어야 한다. *)
+            //x.CallTypeId <- runtime.CallType |> int64 |> Some
+            //x.Status4Id <- runtime.Status4 |-> int64
+
             x.IsDisabled <- runtime.IsDisabled
             x.Timeout <- runtime.Timeout
             // ApiCallValueSpecs를 JSON 문자열로 변환
             x.AutoConditions <- if runtime.AutoConditions.Count = 0 then null else runtime.AutoConditions.ToJson()
             x.CommonConditions <- if runtime.CommonConditions.Count = 0 then null else runtime.CommonConditions.ToJson()
-            x.Status4Id <- runtime.Status4 |-> int64
             x
 
 

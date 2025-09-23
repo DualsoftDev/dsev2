@@ -47,6 +47,6 @@ clean: test-clean
 
 test-clean:
 	rm -rf ./src/unit-test/UnitTest.Core/test-data
-	./scripts/initialize-pgsql-schema.sh -u dstest
+	(cd ./scripts; ./initialize-pgsql-schema.sh -u dstest)
 index:
 	CodeIndexer.sh index dsev2.sln

@@ -65,6 +65,25 @@ module Interfaces =
         /// 자신의 container 에 해당하는 parent DS 객체.  e.g call -> work -> system -> project, flow -> system
         [<JsonIgnore>] member val RawParent = parent with get, set
 
+        // 내부 스레드 안전 저장소 (LockedBits)
+        [<JsonIgnore>] member val StaticOptionBits = LockedBits<int64>.Create() with get, set
+        [<JsonIgnore>] member val DynamicOptionBits = LockedBits<int64>.Create() with get, set
+
+        // 일반 인터페이스용 uint64 속성 (JSON, DB API)
+        member internal x.StaticOption
+            with get() : int64 = x.StaticOptionBits.Read()
+            and set(v : int64) = x.StaticOptionBits.Write(v)
+        member internal x.DynamicOption
+            with get() : int64 = x.DynamicOptionBits.Read()
+            and set(v : int64) = x.DynamicOptionBits.Write(v)
+
+        // JSON 직렬화 시 0이면 생략
+        member x.ShouldSerializeStaticOption() = x.StaticOption <> 0L
+        member x.ShouldSerializeDynamicOption() = x.DynamicOption <> 0L
+
+
+
+
         abstract ShouldSerializeId : unit -> bool
         abstract ShouldSerializeGuid : unit -> bool
         default x.ShouldSerializeId() = true
