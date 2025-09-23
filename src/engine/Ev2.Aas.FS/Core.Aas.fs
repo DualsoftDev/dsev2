@@ -33,6 +33,8 @@ module AasSemantics =
             ("Guid",             "https://dualsoft.com/aas/unique/guid")
             ("Id",               "https://dualsoft.com/aas/unique/id")
             ("Parameter",        "https://dualsoft.com/aas/unique/parameter")
+            ("StaticOption",     "https://dualsoft.com/aas/unique/staticOption")
+            ("DynamicOption",    "https://dualsoft.com/aas/unique/dynamicOption")
 
             ("IRI",              "https://dualsoft.com/aas/system/iri")
             ("Author",           "https://dualsoft.com/aas/system/author")
@@ -601,4 +603,3 @@ module JsonExtensionModule =
             | "ValueReferencePair"                  -> Aas.Xmlization.Deserialize.ValueReferencePairFrom                 (xmlReader)
 
             | _ -> failwithf "Not supported type: %A" typeof<'T>.Name
-

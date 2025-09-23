@@ -15,6 +15,9 @@ module MiniSample =
         let flow = Flow.Create(Name="CylFlow")
         flow.AddWorks [workAdv; workRet]
 
+        workAdv.StaticOptionBits.SetBits(15) |> ignore
+        workAdv.DynamicOptionBits.SetBits(Int64.MaxValue) |> ignore
+
         sys.AddWorks [workAdv; workRet;]
         sys.AddFlows [flow]
 

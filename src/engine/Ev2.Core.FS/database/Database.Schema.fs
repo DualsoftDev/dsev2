@@ -184,7 +184,9 @@ module DatabaseSchemaModule =
         let sqlUniq () = $"""
     {k "id"}              {autoincPrimaryKey}
     , {k "guid"}          {guid} NOT NULL {guidUniqSpec}   -- 32 byte char (for hex) string,  *********** UNIQUE indexing 여부 성능 고려해서 판단 필요 **********
-    , {k "parameter"}     {jsonb}"""
+    , {k "parameter"}     {jsonb}
+    , {k "staticOption"}  {intKeyType} NOT NULL DEFAULT 0
+    , {k "dynamicOption"} {intKeyType} NOT NULL DEFAULT 0"""
 
         let sqlUniqWithName () = sqlUniq() + $"""
     , {k "name"}          {varchar NameLength} NOT NULL"""
@@ -780,7 +782,6 @@ CREATE TABLE {k Tn.TableDescription} (
 -- End of database schema
 --
 """
-
 
 
 

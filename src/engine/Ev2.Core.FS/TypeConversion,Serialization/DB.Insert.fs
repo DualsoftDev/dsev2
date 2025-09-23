@@ -65,8 +65,8 @@ module internal DbInsertModule =
 
                     let projId =
                         conn.Insert($"""INSERT INTO {Tn.Project}
-                                    (guid,   parameter,                     dateTime,  name,  author,  version,  description)
-                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @Version, @Description);""", orm, tr)
+                                    (guid,   parameter,                     staticOption,  dynamicOption,  dateTime,  name,  author,  version,  description)
+                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @DateTime, @Name, @Author, @Version, @Description);""", orm, tr)
 
                     rt.Id <- Some projId
 
@@ -84,8 +84,8 @@ module internal DbInsertModule =
                     let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
 
                     let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                            (guid, parameter,                     dateTime,  name,  iri, author,     langVersion, engineVersion, description,  ownerProjectId)
-                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OwnerProjectId);""",
+                                            (guid, parameter,                     staticOption, dynamicOption, dateTime,  name,  iri, author,     langVersion, engineVersion, description,  ownerProjectId)
+                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OwnerProjectId);""",
                                     ormSystem, tr)
 
                     rt.Id <- Some sysId
@@ -130,8 +130,8 @@ module internal DbInsertModule =
 
                     let apiDefId =
                         conn.Insert($"""INSERT INTO {Tn.ApiDef}
-                                               (guid, parameter,                      name, isPush, txId, rxId, systemId)
-                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TxId, @RxId, @SystemId);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
+                                               (guid, parameter,                      staticOption, dynamicOption, name, isPush, txId, rxId, systemId)
+                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @IsPush, @TxId, @RxId, @SystemId);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
 
                     rt.Id <- Some apiDefId
                     orm.Id <- Some apiDefId
@@ -144,8 +144,8 @@ module internal DbInsertModule =
                     let apiCallId =
                         conn.Insert(
                             $"""INSERT INTO {Tn.ApiCall}
-                                       (guid,   parameter,                     name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      ioTagsJson, valueSpecHint)
-                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint);"""
+                                       (guid,   parameter,                     staticOption,  dynamicOption,  name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      ioTagsJson, valueSpecHint)
+                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint);"""
                             , orm, tr)
 
                     rt.Id <- Some apiCallId
@@ -157,8 +157,8 @@ module internal DbInsertModule =
                     orm.SystemId <- rt.System >>= _.Id
 
                     let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
-                                            (guid, parameter, name, systemId)
-                                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId);""", orm, tr)
+                                            (guid, parameter, staticOption, dynamicOption, name, systemId)
+                                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @SystemId);""", orm, tr)
 
                     rt.Id <- Some flowId
                     orm.Id <- Some flowId
@@ -169,8 +169,8 @@ module internal DbInsertModule =
                     orm.SystemId <- rt.System >>= _.Id
 
                     let workId = conn.Insert($"""INSERT INTO {Tn.Work}
-                                        (guid, parameter,                      name,  systemId,  flowId,  status4Id,  motion,  script,  externalStart,  isFinished,  numRepeat,  period,  delay)
-                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @ExternalStart, @IsFinished, @NumRepeat, @Period, @Delay);""", orm, tr)
+                                        (guid, parameter,                      staticOption, dynamicOption, name,  systemId,  flowId,  status4Id,  motion,  script,  externalStart,  isFinished,  numRepeat,  period,  delay)
+                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @ExternalStart, @IsFinished, @NumRepeat, @Period, @Delay);""", orm, tr)
 
                     rt.Id <- Some workId
                     orm.Id <- Some workId
@@ -188,8 +188,8 @@ module internal DbInsertModule =
 
                     let callId =
                         conn.Insert($"""INSERT INTO {Tn.Call}
-                                    (guid,  parameter,                     name, workId,   status4Id,  callTypeId,  autoConditions, commonConditions, isDisabled, timeout)
-                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoConditions, @CommonConditions, @IsDisabled, @Timeout);""", orm, tr)
+                                    (guid,  parameter,                     staticOption, dynamicOption, name, workId,   status4Id,  callTypeId,  autoConditions, commonConditions, isDisabled, timeout)
+                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoConditions, @CommonConditions, @IsDisabled, @Timeout);""", orm, tr)
 
                     rt.Id <- Some callId
                     orm.Id <- Some callId
@@ -225,8 +225,8 @@ module internal DbInsertModule =
                     let arrowCallId =
                         conn.Insert(
                             $"""INSERT INTO {Tn.ArrowCall}
-                                       ( source, target,   typeId, workId,   guid, parameter,                     name)
-                                VALUES (@Source, @Target, @TypeId, @WorkId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
+                                       ( source, target,   typeId, workId,   guid, parameter,                     staticOption, dynamicOption, name)
+                                VALUES (@Source, @Target, @TypeId, @WorkId, @Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name);"""
                             , ormArrow, tr)
 
                     rt.Id <- Some arrowCallId
@@ -240,8 +240,8 @@ module internal DbInsertModule =
                     let arrowWorkId =
                         conn.Insert(
                             $"""INSERT INTO {Tn.ArrowWork}
-                                       (source,   target,  typeId,  systemId,  guid,  parameter,                    name)
-                                VALUES (@Source, @Target, @TypeId, @SystemId, @Guid, @Parameter{dbApi.DapperJsonB}, @Name);"""
+                                       (source,   target,  typeId,  systemId,  guid,  parameter,                    staticOption, dynamicOption, name)
+                                VALUES (@Source, @Target, @TypeId, @SystemId, @Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name);"""
                             , orm, tr)
 
                     rt.Id <- Some arrowWorkId
@@ -320,5 +320,4 @@ module internal DbInsertModule =
             assert (dbApi.DDic.Get<DuplicateBag>().OldGuid2NewObjectMap.Any())
 
             rTryCommitSystemToDBHelper dbApi x)
-
 

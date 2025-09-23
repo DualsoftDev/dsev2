@@ -29,7 +29,7 @@ module rec AasExtensions =
                     | Some semanticId when semanticId = k.Value -> true
                     | _ -> false)
 
-    type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
+    type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option; StaticOption: int64; DynamicOption: int64 }
 
     type SMEsExtension = // CollectChildrenSMCWithSemanticKey, CollectChildrenSMEWithSemanticKey, GetPropValue, ReadUniqueInfo, TryFindChildSMC, TryFindChildSME, TryGetPropValue, TryGetPropValue<'T>, TryGetPropValueByCategory, TryGetPropValueBySemanticKey
         [<Extension>]
@@ -98,11 +98,13 @@ module rec AasExtensions =
 
         [<Extension>]
         static member ReadUniqueInfo(smc:ISubmodelElement seq) =
-            let name      = smc.TryGetPropValue "Name"      |? null
-            let guid      = smc.GetPropValue    "Guid"      |> Guid.Parse
-            let parameter = smc.TryGetPropValue "Parameter" |? null
-            let id        = smc.TryGetPropValue "Id"        |-> Id.Parse
-            { Name=name; Guid=guid; Parameter=parameter; Id=id }
+            let name         = smc.TryGetPropValue "Name"         |? null
+            let guid         = smc.GetPropValue    "Guid"         |> Guid.Parse
+            let parameter    = smc.TryGetPropValue "Parameter"    |? null
+            let id           = smc.TryGetPropValue "Id"           |-> Id.Parse
+            let staticOption = smc.TryGetPropValue<int64> "StaticOption"  |? 0L
+            let dynamicOption= smc.TryGetPropValue<int64> "DynamicOption" |? 0L
+            { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption }
 
 
     let private nonnullize(values:ResizeArray<ISubmodelElement>) = if values = null then ResizeArray<ISubmodelElement>() else values
@@ -359,4 +361,3 @@ module AasXModule =
             File.Delete(backupPath)
         File.Move(originalPath, backupPath)
         File.Move(newPath, originalPath)
-

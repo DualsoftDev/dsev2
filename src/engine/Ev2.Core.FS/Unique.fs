@@ -10,6 +10,7 @@ open PropertyChanged
 open System.ComponentModel
 open System.Reactive.Subjects
 
+#nowarn FS0044 // obsolete 사용 허용
 
 [<AutoOpen>]
 module Interfaces =
@@ -69,11 +70,15 @@ module Interfaces =
         [<JsonIgnore>] member val StaticOptionBits = LockedBits<int64>.Create() with get, set
         [<JsonIgnore>] member val DynamicOptionBits = LockedBits<int64>.Create() with get, set
 
-        // 일반 인터페이스용 uint64 속성 (JSON, DB API)
-        member internal x.StaticOption
+        /// 일반 인터페이스용 int64 속성 (JSON, AASX, DB API 전용)
+        [<Obsolete("직접 사용 금지: StaticOptionBits를 사용하세요.")>]
+        [<EditorBrowsable(EditorBrowsableState.Never)>]
+        member x.StaticOption
             with get() : int64 = x.StaticOptionBits.Read()
             and set(v : int64) = x.StaticOptionBits.Write(v)
-        member internal x.DynamicOption
+        [<Obsolete("직접 사용 금지: DynamicOptionBits를 사용하세요.")>]
+        [<EditorBrowsable(EditorBrowsableState.Never)>]
+        member x.DynamicOption
             with get() : int64 = x.DynamicOptionBits.Read()
             and set(v : int64) = x.DynamicOptionBits.Write(v)
 
@@ -103,6 +108,8 @@ module Interfaces =
             dst.Parameter <- x.Parameter
             dst.Guid      <- x.Guid
             dst.RawParent <- x.RawParent
+            dst.StaticOption <- x.StaticOption
+            dst.DynamicOption <- x.DynamicOption
 
         // { 내부 구현 전용.  serialize 대상에서 제외됨
         member val internal ORMObject = Option<IORMUnique>.None with get, set
@@ -158,4 +165,3 @@ module internal UniqueHelpers =
     let uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
     let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
     let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst
-
