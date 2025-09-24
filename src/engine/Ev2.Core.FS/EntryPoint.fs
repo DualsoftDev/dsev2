@@ -42,6 +42,17 @@ module ModuleInitializer =
                     if isItNull settings.DbProvider || settings.DbProvider.ConnectionString.IsNullOrEmpty() then
                         failwith "Database setting is missing or incorrect in appSettings.json")
 
+
+            setDapperTypeMapping<Project>()
+            setDapperTypeMapping<DsSystem>()
+            setDapperTypeMapping<Flow>()
+            setDapperTypeMapping<Work>()
+            setDapperTypeMapping<Call>()
+            setDapperTypeMapping<ApiCall>()
+            setDapperTypeMapping<ApiDef>()
+            setDapperTypeMapping<ArrowBetweenCalls>()
+            setDapperTypeMapping<ArrowBetweenWorks>()
+
             let dbApi = AppDbApi(appSettings.DbProvider)
             dbApi.With(fun (conn, tr) ->
                 conn.Execute($"DELETE FROM {Tn.TableHistory}", null, tr) |> ignore
