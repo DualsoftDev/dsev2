@@ -3,12 +3,10 @@ namespace Ev2.Core.FS
 open System
 open System.Linq
 open System.Data
+open Newtonsoft.Json
 
 open Dual.Common.Base
-open Dual.Common.Core.FS
 open Dual.Common.Db.FS
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
 
 [<AbstractClass>]
@@ -47,6 +45,8 @@ and [<AbstractClass>] DsSystemEntity() =
     member x.System  = x.RawParent >>= tryCast<DsSystem>
     member x.Project = x.RawParent >>= _.RawParent >>= tryCast<Project>
 
+
+/// Flow 를 갖는 DsSystem 속성: Work
 and [<AbstractClass>] DsSystemEntityWithFlow() =
     inherit DsSystemEntity()
     interface ISystemEntityWithFlow
@@ -135,14 +135,6 @@ and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
 and Project() = // Create, Initialize, OnSaved, OnLoaded
     inherit RtUnique()
 
-    static member Create() = createExtended<Project>()
-
-    /// Creates a Project with the specified systems using parameterless constructor + Initialize pattern
-    static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProject:INjProject) =
-        let project = createExtended<Project>()
-        project.Initialize(activeSystems, passiveSystems, njProject)
-
-
     interface IRtProject with
         member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
     interface IParameterContainer
@@ -170,7 +162,11 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
     member x.Systems = (x.PassiveSystems @ x.ActiveSystems) |> toList
     // } Runtime/DB 용
 
-    member x.Initialize(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProj:INjProject): Project =
+    static member Create() = createExtended<Project>()
+
+    /// Creates a Project with the specified systems using parameterless constructor + Initialize pattern
+    static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProject:INjProject) =
+        let x = createExtended<Project>()
         // Clear existing systems
         x.RawActiveSystems.Clear()
         x.RawPassiveSystems.Clear()
@@ -183,7 +179,6 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
             x.RawPassiveSystems.Add(s)
             setParentI x s)
         x
-
 
     abstract OnSaved : IDbConnection * IDbTransaction  -> unit
     /// DB 저장 직후에 호출되는 메서드

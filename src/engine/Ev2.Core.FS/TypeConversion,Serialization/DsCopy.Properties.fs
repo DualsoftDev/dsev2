@@ -202,6 +202,7 @@ module internal DsCopyModule =
 
         // Other ISystemEntityWithFlow types (Flow, Work)
         | :? ISystemEntityWithFlow ->
+            failwith "ERROR"
             let s =
                 match sbx with
                 | :? DsSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
