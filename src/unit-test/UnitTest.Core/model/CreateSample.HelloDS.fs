@@ -23,14 +23,14 @@ module CreateSampleWithHelloDsModule =
 
         // UI 요소들 생성
         let buttons = [
-            NewDsButton.Create(Name="AutoSelect")
-            NewDsButton.Create(Name="ManualSelect")
-            NewDsButton.Create(Name="DrivePushBtn")
-            NewDsButton.Create(Name="EmergencyBtn")
+            DsButton.Create(Name="AutoSelect")
+            DsButton.Create(Name="ManualSelect")
+            DsButton.Create(Name="DrivePushBtn")
+            DsButton.Create(Name="EmergencyBtn")
         ]
-        let lamps = [ NewLamp.Create(Name="MyLamp1") ]
-        let conditions = [ NewDsCondition.Create(Name="MyCondition1") ]
-        let actions = [ NewDsAction.Create(Name="MyAction1") ]
+        let lamps = [ Lamp.Create(Name="MyLamp1") ]
+        let conditions = [ DsCondition.Create(Name="MyCondition1") ]
+        let actions = [ DsAction.Create(Name="MyAction1") ]
         buttons    |> iter (fun b -> b.Flows.Add hdsFlow)
         lamps      |> iter (fun l -> l.Flows.Add hdsFlow |> ignore)
         conditions |> iter (fun c -> c.Flows.Add hdsFlow |> ignore)

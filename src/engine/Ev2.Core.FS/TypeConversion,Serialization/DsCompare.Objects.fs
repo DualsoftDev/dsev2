@@ -272,10 +272,10 @@ module rec DsCompareObjects =
                 | (:? ApiDef   as u), (:? ApiDef   as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? ApiCall  as u), (:? ApiCall  as v)  -> yield! u.ComputeDiff(v, criteria)
 
-                | (:? NewDsButton    as u), (:? NewDsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? NewLamp        as u), (:? NewLamp        as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? NewDsCondition as u), (:? NewDsCondition as v)  -> yield! u.ComputeDiff(v, criteria)
-                | (:? NewDsAction    as u), (:? NewDsAction    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsButton    as u), (:? DsButton    as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? Lamp        as u), (:? Lamp        as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsCondition as u), (:? DsCondition as v)  -> yield! u.ComputeDiff(v, criteria)
+                | (:? DsAction    as u), (:? DsAction    as v)  -> yield! u.ComputeDiff(v, criteria)
 
                 | (:? ArrowBetweenWorks as u), (:? ArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? ArrowBetweenCalls as u), (:? ArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)

@@ -20,7 +20,7 @@ open Newtonsoft.Json
 
 [<AutoOpen>]
 module Schema =
-    let testDataDir() = Path.Combine(__SOURCE_DIRECTORY__, @"..\test-data")
+    let testDataDir() = Path.Combine(__SOURCE_DIRECTORY__, @"..\test-data") |> Path.GetFullPath
     let dbFilePath = Path.Combine(testDataDir(), "test.sqlite3")
     let path2ConnectionString (dbFilePath:string) =
         $"Data Source='{dbFilePath}.sqlite3';Version=3;BusyTimeout=20000"
@@ -459,6 +459,11 @@ module Schema =
 
                 rtProject.RTryCommitToDB(dbApi).IsOk === true )
 
+
+            dbApi.With(fun (conn, tr) ->
+                conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Project}", null, tr) === 1
+            ) |> ignore
+
             let emptyCheckTables = [ Tn.Project; Tn.MapProject2System; Tn.System;
                                 Tn.Flow; Tn.Work; Tn.Call; Tn.ApiCall; Tn.ApiDef ]
 
@@ -485,6 +490,12 @@ module Schema =
             ) |> ShouldFailWithSubstringT "Aborting"
             checkDone === true
 
+            dbApi.With(fun (conn, tr) ->
+                // 위의 삭제 시도에서 abort 해서 rollback 되었으므로 기존 project 는 그대로 남아 있어야 한다.
+                conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Project}", null, tr) === 1
+            ) |> ignore
+
+
 
             checkDone <- false
             (* FK test *)
@@ -501,7 +512,7 @@ module Schema =
                         conn.Insert(
                             $"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
                                 SELECT
-                                    guid || '_copy',          -- guid 중복 방지 (예: "_copy" 붙임)
+                                    '{newGuid() |> guid2str}',
                                     dateTime,
                                     name || ' 복사본',
                                     author,
@@ -512,14 +523,12 @@ module Schema =
                                 ;""", null, tr)
 
                     let mapId =
-                        conn.ExecuteScalar<int>(
-                            $"""SELECT id FROM {Tn.MapProject2System}
-                                WHERE id = (SELECT MIN(id) FROM {Tn.MapProject2System})""", null, tr)
+                        conn.ExecuteScalar<int>( $"SELECT MIN(id) FROM {Tn.MapProject2System}", null, tr)
 
                     conn.Execute(
                         $"""INSERT INTO {Tn.MapProject2System} (guid, projectId, systemId, loadedName)
                             SELECT
-                                guid || '_copy',          -- UNIQUE 제약을 피하기 위해 guid 수정
+                                '{newGuid() |> guid2str}',
                                 {newProjId},              -- 새로 만든 project id
                                 systemId,
                                 loadedName
@@ -528,12 +537,23 @@ module Schema =
                             ;
                             """, null, tr) |> ignore
 
-                    conn.Execute($"DELETE FROM {Tn.Project} WHERE id = 1", null, tr) |> ignore
+                    let dbProjs1 = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project}", null, tr) |> toArray
+                    let numProjects1 = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Project}", null, tr)
+                    let numMap1 = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.MapProject2System}", null, tr)
+                    numProjects1 === 2
+                    numMap1 === 6
+
+                    conn.Execute($"DELETE FROM {Tn.Project} WHERE id = {newProjId}", null, tr) |> ignore
+
+                    let dbProjs2 = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project}", null, tr) |> toArray
+                    let numProjects2 = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Project}", null, tr)
+                    let numMap2 = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.MapProject2System}", null, tr)
 
                     // 현재 transaction 내에서는 임의 추가한 porject 와 System 이 하나씩 남아 있어야 한다.
-                    for t in emptyCheckTables do
+                    for t in emptyCheckTables.Except([Tn.System; Tn.MapProject2System]) do
                         tracefn $"Checking table {t} for empty"
-                        conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", null, tr) =!= 0
+                        let count = conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {t}", null, tr)
+                        count =!= 0
 
                     checkDone <- true
                     // transaction 강제 rollback 유도
@@ -717,7 +737,7 @@ module Schema =
                 w.AddArrows([arrow])
 
                 let f = sys2.Flows[0]
-                let button = new NewDsButton(Name="NewButton")
+                let button = new DsButton(Name="NewButton")
                 button.Flows.Add f
                 sys2.AddEntitiy button
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList

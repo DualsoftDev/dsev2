@@ -26,10 +26,10 @@ module CreateSampleModule =
     let mutable rtCall1b   = getNull<Call>()
     let mutable rtCall2a   = getNull<Call>()
     let mutable rtCall2b   = getNull<Call>()
-    let mutable rtPolyButton = getNull<NewDsButton>()
-    let mutable rtPolyLamp = getNull<NewLamp>()
-    let mutable rtPolyCondition = getNull<NewDsCondition>()
-    let mutable rtPolyAction = getNull<NewDsAction>()
+    let mutable rtPolyButton = getNull<DsButton>()
+    let mutable rtPolyLamp = getNull<Lamp>()
+    let mutable rtPolyCondition = getNull<DsCondition>()
+    let mutable rtPolyAction = getNull<DsAction>()
 
     let createEditableProject() =
         if isItNull rtProject then
@@ -74,10 +74,10 @@ module CreateSampleModule =
                 Flow.Create(Name = "MainFlow")
 
             // UI 요소들 생성
-            let button1 = NewDsButton.Create(Name="MyButton1")
-            let lamp1 = NewLamp.Create(Name="MyLamp1")
-            let condition1 = NewDsCondition.Create(Name="MyCondition1")
-            let action1 = NewDsAction.Create(Name="MyAction1")
+            let button1 = DsButton.Create(Name="MyButton1")
+            let lamp1 = Lamp.Create(Name="MyLamp1")
+            let condition1 = DsCondition.Create(Name="MyCondition1")
+            let action1 = DsAction.Create(Name="MyAction1")
 
             // UI 요소들의 Flow 설정
             button1.Flows.Add rtFlow
@@ -90,28 +90,28 @@ module CreateSampleModule =
 
             // Polymorphic UI 요소들 생성 및 등록
             rtPolyButton <-
-                NewDsButton.Create()
+                DsButton.Create()
                 |> tee (fun z ->
                     let inTag = TagWithSpec<bool>("PolyButtonIn", "I0.2", ValueSpec<bool>.Single false)
                     let outTag = TagWithSpec<bool>("PolyButtonOut", "Q0.2", ValueSpec<bool>.Single true)
                     z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
             rtPolyLamp <-
-                NewLamp.Create()
+                Lamp.Create()
                 |> tee (fun z ->
                     let inTag = TagWithSpec<int>("PolyLampIn", "DB20.DBW0", ValueSpec<int>.Single 128)
                     let outTag = TagWithSpec<int>("PolyLampOut", "DB20.DBW2", ValueSpec<int>.Single 255)
                     z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
             rtPolyCondition <-
-                NewDsCondition.Create()
+                DsCondition.Create()
                 |> tee (fun z ->
                     let inTag = TagWithSpec<string>("PolyConditionIn", "Condition.Input", ValueSpec<string>.Single "RUN")
                     let outTag = TagWithSpec<string>("PolyConditionOut", "Condition.Output", ValueSpec<string>.Single "OK")
                     z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
             rtPolyAction <-
-                NewDsAction.Create()
+                DsAction.Create()
                 |> tee (fun z ->
                     let inTag = TagWithSpec<double>("PolyActionIn", "Action.Input", ValueSpec<double>.Single 1.5)
                     let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)

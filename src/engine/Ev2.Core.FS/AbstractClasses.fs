@@ -22,6 +22,7 @@ type RtUnique() = // ToNjObj, ToNj
 
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
+/// 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
     inherit RtUnique()
     interface IWithTagWithSpecs
@@ -30,6 +31,7 @@ type [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = false
+/// 다형성(polymorphic)을 갖는 system entity
 type Polys = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>
 
 // Entity base classes
@@ -206,10 +208,10 @@ and DsSystem() = // Create
     member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
     member x.AddEntities(entities:SystemEntityWithJsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
     member x.RemoveEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
-    member x.Buttons    = x.Entities.OfType<NewDsButton>()    |> toArray
-    member x.Lamps      = x.Entities.OfType<NewLamp>()        |> toArray
-    member x.Conditions = x.Entities.OfType<NewDsCondition>() |> toArray
-    member x.Actions    = x.Entities.OfType<NewDsAction>()    |> toArray
+    member x.Buttons    = x.Entities.OfType<DsButton>()    |> toArray
+    member x.Lamps      = x.Entities.OfType<Lamp>()        |> toArray
+    member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
+    member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
@@ -289,29 +291,29 @@ and Flow() = // Create
     static member Create() = createExtended<Flow>()
 
 
-and NewDsButton() = // Create
+and DsButton() = // Create
     inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtButton
-    static member Create() = createExtended<NewDsButton>()
+    static member Create() = createExtended<DsButton>()
 
-and NewLamp() = // Create
+and Lamp() = // Create
     inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtLamp
-    static member Create() = createExtended<NewLamp>()
+    static member Create() = createExtended<Lamp>()
 
-and NewDsCondition() = // Create
+and DsCondition() = // Create
     inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtCondition
-    static member Create() = createExtended<NewDsCondition>()
+    static member Create() = createExtended<DsCondition>()
 
-and NewDsAction() = // Create
+and DsAction() = // Create
     inherit SystemEntityWithJsonPolymorphic()
 
     interface IRtAction
-    static member Create() = createExtended<NewDsAction>()
+    static member Create() = createExtended<DsAction>()
 
 
 
