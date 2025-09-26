@@ -32,7 +32,7 @@ type [<AbstractClass>] BLCABase() =
     [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
     override x.ShouldSerializeId() = false
-    override x.ShouldSerializeGuid() = false
+    override x.ShouldSerializeGuid() = true
 
 // Entity base classes
 [<AbstractClass>]

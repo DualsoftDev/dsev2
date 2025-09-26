@@ -40,7 +40,8 @@ type DbCheckoutResult<'T> = Result<'T, ErrorMessage>
 
 [<CLIMutable>]
 type private SystemEntityRow =
-    { Type: string
+    { Guid: Guid
+      Type: string
       Json: string }
 
 [<AutoOpen>]
@@ -71,11 +72,11 @@ module internal Db2DsImpl =
             let entitySelectSql =
                 match dbApi.DbProvider with
                 | DbProvider.Postgres _ ->
-                    $"SELECT \"type\" AS Type, \"json\" AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
+                    $"SELECT \"guid\" AS Guid, \"type\" AS Type, \"json\" AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
                 | _ ->
-                    $"SELECT type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
+                    $"SELECT guid AS Guid, type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
 
-            let ormEntities = conn.Query<SystemEntityRow>(entitySelectSql, sys, tr)
+            let ormEntities = conn.Query<SystemEntityRow>(entitySelectSql, sys, tr).ToArray()
 
             if ormEntities.Any() then
                 let serialized = JArray()
@@ -83,10 +84,16 @@ module internal Db2DsImpl =
                     let jobj = JObject.Parse(row.Json)
                     if isNull (jobj.Property("$type")) then
                         jobj.AddFirst(JProperty("$type", JValue(row.Type)))
+                    if isNull (jobj.Property("Guid")) then
+                        jobj.Add(JProperty("Guid", JValue(row.Guid)))
                     serialized.Add(jobj)
                 s.PolymorphicJsonEntities.SerializedItems <- serialized
                 s.PolymorphicJsonEntities.SyncToValues()
-                ()
+
+                let runtimeEntities = s.Entities |> Seq.toArray
+                verify(runtimeEntities.Length = ormEntities.Length)
+                for idx = 0 to runtimeEntities.Length - 1 do
+                    runtimeEntities[idx].Guid <- ormEntities[idx].Guid
 
             // Load Flows
             let rtFlows = [
@@ -347,6 +354,5 @@ module internal Db2DsImpl =
 
                 rTryCheckoutSystemFromDBHelper ormSystem dbApi
         )
-
 
 

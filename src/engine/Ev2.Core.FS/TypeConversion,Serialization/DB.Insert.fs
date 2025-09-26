@@ -110,12 +110,16 @@ module internal DbInsertModule =
                     rt.Arrows |> iter _.InsertToDB(dbApi)
 
                     // polymorphic system entities 저장
+                    let runtimeEntities = rt.Entities |> Seq.toArray
                     let serializedEntities = rt.PolymorphicJsonEntities.JsonizeArray()
+                    verify(runtimeEntities.Length = serializedEntities.Length)
 
-                    for (typeName, entityJsonText) in serializedEntities do
+                    for idx = 0 to serializedEntities.Length - 1 do
+                        let entity = runtimeEntities[idx]
+                        let typeName, entityJsonText = serializedEntities[idx]
                         conn.Execute(
-                            $"INSERT INTO {Tn.SystemEntity} (systemId, type, json) VALUES (@SystemId, @Type, @Json)",
-                            {| SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
+                            $"INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json) VALUES (@Guid, @SystemId, @Type, @Json)",
+                            {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
                         |> ignore
 
                     // system 의 apiDefs 를 삽입
@@ -320,4 +324,3 @@ module internal DbInsertModule =
             assert (dbApi.DDic.Get<DuplicateBag>().OldGuid2NewObjectMap.Any())
 
             rTryCommitSystemToDBHelper dbApi x)
-

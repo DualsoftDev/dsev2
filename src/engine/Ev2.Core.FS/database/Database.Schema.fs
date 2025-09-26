@@ -288,6 +288,7 @@ CREATE TABLE {k Tn.MapProject2System}( {sqlUniq()}
 
 CREATE TABLE {k Tn.SystemEntity}(
     {k "id"}              {autoincPrimaryKey}
+    , {k "guid"}          {guid} NOT NULL {guidUniqSpec}
     , {k "systemId"}       {intKeyType} NOT NULL
     , {k "type"}        TEXT NOT NULL   -- $type
     , {k "json"}        TEXT NOT NULL
@@ -782,7 +783,6 @@ CREATE TABLE {k Tn.TableDescription} (
 -- End of database schema
 --
 """
-
 
 
 
