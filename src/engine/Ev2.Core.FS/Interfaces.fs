@@ -114,7 +114,6 @@ module InterfaceModule =
     type IORMLog        = inherit IORMUnique
 
     type ISystemEntity = interface end
-    type ISystemEntityWithFlow = inherit ISystemEntity
 
     /// TagWithSpec 을 갖는 type: ApiCall, Action, Condition, Button, Lamp
     type IWithTagWithSpecs = interface end

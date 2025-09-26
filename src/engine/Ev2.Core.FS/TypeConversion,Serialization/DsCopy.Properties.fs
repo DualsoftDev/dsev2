@@ -199,23 +199,6 @@ module internal DsCopyModule =
             | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid
             | _ -> failwith "ERROR"
 
-
-        // Other ISystemEntityWithFlow types (Flow, Work)
-        | :? ISystemEntityWithFlow ->
-            failwith "ERROR"
-            let s =
-                match sbx with
-                | :? DsSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid; FlowId=s.FlowId |}
-                | :? NjSystemEntityWithFlow  as s -> {| FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid; FlowId=None |}
-                | :? ORMSystemEntityWithFlow as s -> {| FlowGuid=None; FlowId=s.FlowId |}
-                | _ -> failwith "ERROR"
-
-            match dbx with
-            | :? DsSystemEntityWithFlow  as d -> d.FlowGuid<-s.FlowGuid; d.FlowId<-s.FlowId
-            | :? NjSystemEntityWithFlow  as d -> d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
-            | :? ORMSystemEntityWithFlow as d -> d.FlowId<-s.FlowId
-            | _ -> failwith "ERROR"
-
         // ArrowBetweenCalls, ArrowBetweenWorks
         // ORMArrowCall, ORMArrowWork
         // NjArrow,

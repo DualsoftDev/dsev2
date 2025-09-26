@@ -58,42 +58,13 @@ module rec NewtonsoftJsonObjects =
         inherit NjUnique()
         [<JsonIgnore>] member x.Project = x.RawParent >>= tryCast<NjProject>
 
-    /// NjSystem 객체에 포함되는 member 들이 상속할 base class.  e.g NjFlow, NjWork, NjArrowBetweenWorks, NjApiDef, NjApiCall
+    /// NjSystem 객체에 포함되는 member 들이 상속할 base class.  e.g NjFlow, NjWork, NjApiDef, NjApiCall
     [<AbstractClass>]
     type NjSystemEntity() =
         inherit NjUnique()
         interface ISystemEntity
         [<JsonIgnore>] member x.System  = x.RawParent >>= tryCast<NjSystem>
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= tryCast<NjProject>
-
-    [<AbstractClass>]
-    type NjSystemEntityWithFlow() =
-        inherit NjSystemEntity()
-        interface ISystemEntityWithFlow
-        member val FlowGuid = null:string with get, set
-        [<JsonIgnore>] member x.Flow = x.System |-> (fun s -> s.Flows |> tryFind(fun (f:NjFlow) -> f.Guid.ToString() = x.FlowGuid))
-
-    [<AbstractClass>]
-    type NjFlowEntity() =
-        inherit NjUnique()
-        [<JsonIgnore>] member x.Flow    = x.RawParent >>= tryCast<NjFlow>
-        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
-        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
-
-    [<AbstractClass>]
-    type NjWorkEntity() =
-        inherit NjUnique()
-        [<JsonIgnore>] member x.Work    = x.RawParent >>= tryCast<NjWork>
-        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
-        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
-
-    [<AbstractClass>]
-    type NjCallEntity() =
-        inherit NjUnique()
-        [<JsonIgnore>] member x.Call    = x.RawParent >>= tryCast<NjCall>
-        [<JsonIgnore>] member x.Work    = x.RawParent >>= _.RawParent >>= tryCast<NjWork>
-        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjSystem>
-        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent >>= _.RawParent >>= _.RawParent >>= tryCast<NjProject>
 
     type NjProject() = // Create, Initialize
         inherit NjUnique()
@@ -254,7 +225,10 @@ module rec NewtonsoftJsonObjects =
 
 
     type NjCall() = // Create, Initialize, ShouldSerializeApiCalls, ShouldSerializeAutoConditions, ShouldSerializeCallType, ShouldSerializeCommonConditions, ShouldSerializeIsDisabled, ShouldSerializeStatus, ShouldSerializeTimeout
-        inherit NjWorkEntity()
+        inherit NjUnique()
+        [<JsonIgnore>] member x.Work    = x.RawParent >>= tryCast<NjWork>
+        [<JsonIgnore>] member x.System  = x.RawParent >>= _.RawParent >>= tryCast<NjSystem>
+        [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
 
         interface INjCall
         [<JsonProperty(Order = 101)>]

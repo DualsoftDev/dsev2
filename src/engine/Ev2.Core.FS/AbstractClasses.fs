@@ -45,18 +45,6 @@ and [<AbstractClass>] DsSystemEntity() =
     member x.System  = x.RawParent >>= tryCast<DsSystem>
     member x.Project = x.RawParent >>= _.RawParent >>= tryCast<Project>
 
-
-/// Flow 를 갖는 DsSystem 속성: Work
-and [<AbstractClass>] DsSystemEntityWithFlow() =
-    inherit DsSystemEntity()
-    interface ISystemEntityWithFlow
-    member val FlowGuid = noneGuid with get, set
-    member val FlowId = Option<Id>.None with get, set
-    member x.Flow:Flow option =
-        match x.FlowId with
-        | Some id -> x.System |-> _.Flows >>= tryFind(fun f -> f.Id = Some id)
-        | None -> x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
-
 and [<AbstractClass>] FlowEntity() =
     inherit RtUnique()
     member x.Flow    = x.RawParent >>= tryCast<Flow>
@@ -314,7 +302,7 @@ and DsAction() = // Create
 
 // see static member Create
 and Work() = // Create
-    inherit DsSystemEntityWithFlow()
+    inherit DsSystemEntity()
 
     interface IRtWork
     member val internal RawCalls  = ResizeArray<Call>() with get, set
@@ -332,6 +320,13 @@ and Work() = // Create
 
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
+
+    member val FlowGuid = noneGuid with get, set
+    member val FlowId = Option<Id>.None with get, set
+    member x.Flow:Flow option =
+        match x.FlowId with
+        | Some id -> x.System |-> _.Flows >>= tryFind(fun f -> f.Id = Some id)
+        | None -> x.System |-> _.Flows >>= tryFind(fun f -> (Some f.Guid) = x.FlowGuid)
 
     static member Create() = createExtended<Work>()
     static member Create(calls: Call seq, arrows: ArrowBetweenCalls seq, flowGuid: Guid option) =

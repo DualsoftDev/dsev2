@@ -2,10 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 
-open Dual.Common.Core.FS
-open Dual.Common.Db.FS
 open Dual.Common.Base
-open Newtonsoft.Json
 
 [<AutoOpen>]
 module ORMTypesModule =
@@ -18,46 +15,19 @@ module ORMTypesModule =
         /// Parent Id
         member val ParentId = Option<Id>.None with get, set
 
-    [<AbstractClass>]
-    type ORMProjectEntity(?projectId:Id) =
-        inherit ORMUnique(ParentId=projectId)
-        member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
+    /// System 하부 entities: {ORMWork, ORMApiCall, OMRApiDef}
     [<AbstractClass>]
     type ORMSystemEntity(systemId:Id) =
         inherit ORMUnique(ParentId=Some systemId)
         interface ISystemEntity
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
-    [<AbstractClass>]
-    type ORMSystemEntityWithFlow(systemId:Id, flowId:Id option) =
-        inherit ORMSystemEntity(systemId)
-        interface ISystemEntityWithFlow
-        member val FlowId = flowId with get, set
-
-    [<AbstractClass>]
-    type ORMFlowEntity(flowId:Id) =
-        inherit ORMUnique(ParentId=Some flowId)
-        member x.FlowId with get() = x.ParentId and set v = x.ParentId <- v
-
+    /// Work 하부 entities: {ORMFlow, ORMCall}
     [<AbstractClass>]
     type ORMWorkEntity(workId:Id) =
         inherit ORMUnique(ParentId=Some workId)
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
-
-    [<AbstractClass>]
-    type ORMCallEntity(callId:Id) =
-        inherit ORMUnique(ParentId=Some callId)
-        member x.CallId with get() = x.ParentId and set v = x.ParentId <- v
-
-
-
-
-
-
-
-
-
 
 
     [<AbstractClass>]
@@ -118,7 +88,8 @@ module ORMTypesModule =
         , description:string, dateTime
         , polys: Polys    // Button, Lamp, Condition, Action
     ) =
-        inherit ORMProjectEntity()
+        inherit ORMUnique(ParentId=ownerProjectId)
+        member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
         new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate, Polys())
         interface IORMSystem with
@@ -156,36 +127,6 @@ module ORMTypesModule =
             runtime.CopyUniqueProperties(x)
             x.SystemId <- runtime.System |-> _.Id |? None
             x
-
-
-    type ORMButton(systemId:Id, flowId:Id option, ioTagsJson:string) =
-        inherit ORMSystemEntityWithFlow(systemId, flowId)
-
-        new() = new ORMButton(-1, None, nullString)
-        interface IORMButton
-        member val IOTagsJson = ioTagsJson with get, set
-
-    type ORMLamp(systemId:Id, flowId:Id option, ioTagsJson:string) =
-        inherit ORMSystemEntityWithFlow(systemId, flowId)
-
-        new() = new ORMLamp(-1, None, nullString)
-        interface IORMLamp
-        member val IOTagsJson = ioTagsJson with get, set
-
-    type ORMCondition(systemId:Id, flowId:Id option, ioTagsJson:string) =
-        inherit ORMSystemEntityWithFlow(systemId, flowId)
-
-        new() = new ORMCondition(-1, None, nullString)
-        interface IORMCondition
-        member val IOTagsJson = ioTagsJson with get, set
-
-    type ORMAction(systemId:Id, flowId:Id option, ioTagsJson:string) =
-        inherit ORMSystemEntityWithFlow(systemId, flowId)
-
-        new() = new ORMAction(-1, None, nullString)
-        interface IORMAction
-        member val IOTagsJson = ioTagsJson with get, set
-
 
     type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option, flowGuid:Guid option) = // Initialize
         inherit ORMSystemEntity(systemId)
