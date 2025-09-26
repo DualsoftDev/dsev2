@@ -114,19 +114,17 @@ module internal DbInsertModule =
 
                     let existingEntities =
                         conn.Query<SystemEntityDbRow>(
-                            $"SELECT guid AS Guid, type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId",
+                            $"SELECT * FROM {Tn.SystemEntity} WHERE systemId = @SystemId",
                             {| SystemId = sysId |}, tr)
-                        |> Seq.map (fun row -> struct(row.Guid, row.Type, row.Json))
-                        |> Seq.toArray
+                        |> toArray
 
                     let newGuids = runtimeEntities |-> _.Guid |> HashSet
 
                     existingEntities
-                    |> Array.filter (fun struct(guid, _, _) -> not (newGuids.Contains guid))
+                    |> filter (fun row -> not (newGuids.Contains row.Guid))
                     |> iter (fun row ->
-                        let struct(guid, _, _) = row
                         conn.Execute($"DELETE FROM {Tn.SystemEntity} WHERE systemId = @SystemId AND guid = @Guid",
-                            {| SystemId = sysId; Guid = guid |}, tr) |> ignore)
+                            {| SystemId = sysId; Guid = row.Guid |}, tr) |> ignore)
 
                     let upsertSql =
                         match dbApi.DbProvider with
@@ -138,7 +136,7 @@ module internal DbInsertModule =
                                DO UPDATE SET systemId = EXCLUDED.systemId, type = EXCLUDED.type, json = EXCLUDED.json"
                         | _ -> nullString
 
-                    let existingByGuid = existingEntities |> Seq.map (fun struct(guid, typ, json) -> guid, (typ, json)) |> dict
+                    let existingByGuid = existingEntities |> Seq.map (fun row -> row.Guid, (row.Type, row.Json)) |> dict
 
                     for idx = 0 to serializedEntities.Length - 1 do
                         let entity = runtimeEntities[idx]
