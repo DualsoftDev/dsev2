@@ -37,10 +37,10 @@ module CreateSampleWithHelloDsModule =
         actions    |> iter (fun a -> a.Flows.Add hdsFlow |> ignore)
 
         // System에 UI 요소들 추가
-        buttons    .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
-        lamps      .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
-        conditions .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
-        actions    .Cast<SystemEntityWithJsonPolymorphic>() |> hdsSystem.AddEntities
+        buttons    .Cast<JsonPolymorphic>() |> hdsSystem.AddEntities
+        lamps      .Cast<JsonPolymorphic>() |> hdsSystem.AddEntities
+        conditions .Cast<JsonPolymorphic>() |> hdsSystem.AddEntities
+        actions    .Cast<JsonPolymorphic>() |> hdsSystem.AddEntities
 
         let createWork name =
             Work.Create()

@@ -86,12 +86,12 @@ module ORMTypesModule =
     type ORMSystem(ownerProjectId:Id option // Initialize
         , iri:string, author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
-        , polys: Polys    // Button, Lamp, Condition, Action
+        , polys: PolymorphicJsonCollection<JsonPolymorphic>    // Button, Lamp, Condition, Action
     ) =
         inherit ORMUnique(ParentId=ownerProjectId)
         member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
-        new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate, Polys())
+        new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate, PolymorphicJsonCollection<JsonPolymorphic>())
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 

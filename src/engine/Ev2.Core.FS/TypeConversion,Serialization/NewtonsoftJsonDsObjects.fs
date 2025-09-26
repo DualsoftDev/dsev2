@@ -109,7 +109,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
 
         [<JsonIgnore>]
-        member val PolymorphicJsonEntities = Polys() with get, set
+        member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
         [<JsonProperty("Entities")>]
         member this.SerializedEntities
             with get () : JArray = this.PolymorphicJsonEntities.SerializedItems

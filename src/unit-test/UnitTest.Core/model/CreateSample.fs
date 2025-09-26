@@ -86,7 +86,7 @@ module CreateSampleModule =
             action1.Flows.Add rtFlow
 
             // System에 UI 요소들 추가
-            [button1 :> SystemEntityWithJsonPolymorphic; lamp1; condition1; action1] |> rtSystem.AddEntities
+            [button1 :> JsonPolymorphic; lamp1; condition1; action1] |> rtSystem.AddEntities
 
             // Polymorphic UI 요소들 생성 및 등록
             rtPolyButton <-
@@ -117,10 +117,10 @@ module CreateSampleModule =
                     let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)
                     z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
-            [ rtPolyButton :> SystemEntityWithJsonPolymorphic
-              rtPolyLamp :> SystemEntityWithJsonPolymorphic
-              rtPolyCondition :> SystemEntityWithJsonPolymorphic
-              rtPolyAction :> SystemEntityWithJsonPolymorphic ]
+            [ rtPolyButton :> BLCABase
+              rtPolyLamp :> BLCABase
+              rtPolyCondition :> BLCABase
+              rtPolyAction :> BLCABase ]
             |> iter rtSystem.AddEntitiy
 
             rtWork1 <-

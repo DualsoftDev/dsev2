@@ -95,10 +95,10 @@ module MiniSample =
                 let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)
                 z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
-        [   rtPolyButton :> SystemEntityWithJsonPolymorphic
-            rtPolyLamp :> SystemEntityWithJsonPolymorphic
-            rtPolyCondition :> SystemEntityWithJsonPolymorphic
-            rtPolyAction :> SystemEntityWithJsonPolymorphic ]
+        [   rtPolyButton :> BLCABase
+            rtPolyLamp :> BLCABase
+            rtPolyCondition :> BLCABase
+            rtPolyAction :> BLCABase ]
         |> iter system.AddEntitiy
 
         // Work 생성

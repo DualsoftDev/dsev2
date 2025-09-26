@@ -21,16 +21,18 @@ type RtUnique() = // ToNjObj, ToNj
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
 /// 다형성(polymorphic)을 갖는 system entity
-type [<AbstractClass>] SystemEntityWithJsonPolymorphic() =
+type [<AbstractClass>] JsonPolymorphic() =
     inherit RtUnique()
+
+/// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
+type [<AbstractClass>] BLCABase() =
+    inherit JsonPolymorphic()
     interface IWithTagWithSpecs
     member val IOTags = IOTagsWithSpec() with get, set
     [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = false
-/// 다형성(polymorphic)을 갖는 system entity
-type Polys = PolymorphicJsonCollection<SystemEntityWithJsonPolymorphic>
 
 // Entity base classes
 [<AbstractClass>]
@@ -186,11 +188,11 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 and DsSystem() = // Create
     inherit ProjectEntity()
 
-    member val PolymorphicJsonEntities = Polys() with get, set
+    member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
-    member x.AddEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
-    member x.AddEntities(entities:SystemEntityWithJsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
-    member x.RemoveEntitiy(entity:SystemEntityWithJsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
+    member x.AddEntitiy(entity:JsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
+    member x.AddEntities(entities:JsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
+    member x.RemoveEntitiy(entity:JsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
     member x.Buttons    = x.Entities.OfType<DsButton>()    |> toArray
     member x.Lamps      = x.Entities.OfType<Lamp>()        |> toArray
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
@@ -275,25 +277,25 @@ and Flow() = // Create
 
 
 and DsButton() = // Create
-    inherit SystemEntityWithJsonPolymorphic()
+    inherit BLCABase()
 
     interface IRtButton
     static member Create() = createExtended<DsButton>()
 
 and Lamp() = // Create
-    inherit SystemEntityWithJsonPolymorphic()
+    inherit BLCABase()
 
     interface IRtLamp
     static member Create() = createExtended<Lamp>()
 
 and DsCondition() = // Create
-    inherit SystemEntityWithJsonPolymorphic()
+    inherit BLCABase()
 
     interface IRtCondition
     static member Create() = createExtended<DsCondition>()
 
 and DsAction() = // Create
-    inherit SystemEntityWithJsonPolymorphic()
+    inherit BLCABase()
 
     interface IRtAction
     static member Create() = createExtended<DsAction>()

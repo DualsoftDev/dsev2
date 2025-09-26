@@ -111,7 +111,7 @@ module Schema =
 
             dsProject.EnumerateRtObjects()
             |> iter (fun dsobj ->
-                if dsobj :? SystemEntityWithJsonPolymorphic then
+                if dsobj :? BLCABase then
                     ()
                 else
                     if dsobj.Id.IsNone then
