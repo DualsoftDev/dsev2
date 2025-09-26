@@ -24,6 +24,16 @@ type RtUnique() = // ToNjObj, ToNj
 type [<AbstractClass>] JsonPolymorphic() =
     inherit RtUnique()
 
+type DsSystemProperties() =
+    inherit JsonPolymorphic()
+    // 이하는 sample attributes. // TODO: remove samples
+    member val Boolean = false with get, set
+    member val Integer = 0     with get, set
+    member val UInt64  = 0UL   with get, set
+    member val Single  = 0.0f  with get, set
+    member val Double  = 0.0   with get, set
+    member val Text    = nullString with get, set
+
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
     inherit JsonPolymorphic()
@@ -33,6 +43,11 @@ type [<AbstractClass>] BLCABase() =
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = true
+
+
+
+
+
 
 // Entity base classes
 [<AbstractClass>]
@@ -184,7 +199,6 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 
     static member FromJson(json:string): Project = fwdProjectFromJson json :?> Project
 
-
 and DsSystem() = // Create
     inherit ProjectEntity()
 
@@ -197,6 +211,7 @@ and DsSystem() = // Create
     member x.Lamps      = x.Entities.OfType<Lamp>()        |> toArray
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
+    member x.Properties = x.Entities.OfType<DsSystemProperties>() |> tryHead |? getNull<DsSystemProperties>()
 
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)

@@ -94,11 +94,13 @@ module MiniSample =
                 let inTag = TagWithSpec<double>("PolyActionIn", "Action.Input", ValueSpec<double>.Single 1.5)
                 let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)
                 z.IOTags <- IOTagsWithSpec(inTag, outTag))
+        let rtProperties = new DsSystemProperties(Text="Sample string member")
 
-        [   rtPolyButton :> BLCABase
-            rtPolyLamp :> BLCABase
-            rtPolyCondition :> BLCABase
-            rtPolyAction :> BLCABase ]
+        [   rtPolyButton :> JsonPolymorphic
+            rtPolyLamp
+            rtPolyCondition
+            rtPolyAction
+            rtProperties ]
         |> iter system.AddEntitiy
 
         // Work 생성
