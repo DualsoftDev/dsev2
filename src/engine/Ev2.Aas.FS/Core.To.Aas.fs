@@ -63,6 +63,10 @@ module CoreToAas =
                         let serialized = sys.PolymorphicJsonEntities.SerializedItems
                         if isNull serialized || serialized.Count = 0 then null else serialized.ToString()
                     JObj().TrySetProperty(entitiesJson, "Entities")
+                    let propertiesJson =
+                        if isNull (box sys.Properties) then null
+                        else sys.Properties.ToJson()
+                    JObj().TrySetProperty(propertiesJson, "Properties")
 
                 | :? NjApiCall as apiCall ->
                     JObj().TrySetProperty(apiCall.ApiDef,     nameof apiCall.ApiDef)       // Guid

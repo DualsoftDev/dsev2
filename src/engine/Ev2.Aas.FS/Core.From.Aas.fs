@@ -121,7 +121,12 @@ module CoreFromAas =
                 if entitiesJson.NonNullAny() then
                     let arr = JArray.Parse(entitiesJson)
                     system.PolymorphicJsonEntities.SerializedItems <- arr
-                    system.PolymorphicJsonEntities.SyncToValues())
+                    system.PolymorphicJsonEntities.SyncToValues()
+
+                let propertiesJson = smc.TryGetPropValue "Properties" |? null
+                if propertiesJson.NonNullAny() then
+                    let props = JsonPolymorphic.FromJson<DsSystemProperties>(propertiesJson)
+                    system.Properties <- props)
 
     type NjArrow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =

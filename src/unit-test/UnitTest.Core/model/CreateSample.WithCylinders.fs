@@ -39,7 +39,13 @@ module CreateSampleWithCylinderModule =
                         Some <| Multiple [1; 2; 3]
                     )
 
-            edSystemCyl  <- DsSystem.Create() |> tee (fun z -> z.Name <- "Cylinder")
+            edSystemCyl  <-
+                DsSystem.Create()
+                |> tee (fun z ->
+                    z.Name <- "Cylinder"
+                    z.IRI  <- "urn:ev2:system:Cylinder"
+                    z.Properties.Integer <- 999
+                    z.Properties.Text <- "Hello Cylinder")
             edFlowCyl    <- Flow.Create(Name = "CylFlow")
             edWork1Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork1")
             edWork2Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork2")
@@ -82,4 +88,3 @@ module CreateSampleWithCylinderModule =
                 // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
                 edObj.Id.IsNone === true
             )
-

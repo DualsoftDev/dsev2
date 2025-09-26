@@ -42,6 +42,7 @@ module AasSemantics =
             ("LangVersion",      "https://dualsoft.com/aas/system/langVersion")
             ("Description",      "https://dualsoft.com/aas/system/description")
             ("DateTime",         "https://dualsoft.com/aas/system/dateTime")
+            ("Properties",       "https://dualsoft.com/aas/system/Properties")
 
             ("ApiDefs",          "https://dualsoft.com/aas/plural/apiDefs")
             ("ApiCalls",         "https://dualsoft.com/aas/plural/apiCalls")
