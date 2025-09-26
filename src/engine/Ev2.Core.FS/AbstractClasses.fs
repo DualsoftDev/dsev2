@@ -24,25 +24,18 @@ type RtUnique() = // ToNjObj, ToNj
 type [<AbstractClass>] JsonPolymorphic() =
     inherit RtUnique()
 
-    static member private createDefaultSettings() =
-        let settings = EmJson.CreateDefaultSettings()
-        settings.DateFormatString <- DateFormatString
-        settings
+    static member private getSettings(settings:JsonSerializerSettings option) =
+        settings |?? (fun () -> EmJson.CreateDefaultSettings(DateFormatString = DateFormatString))
 
-    member x.ToJson(?settings:JsonSerializerSettings) =
-        let settings = defaultArg settings (JsonPolymorphic.createDefaultSettings())
-        EmJson.ToJson(x, settings)
+    member x.ToJson(?settings:JsonSerializerSettings) = EmJson.ToJson(x, JsonPolymorphic.getSettings(settings))
 
     static member FromJson<'T when 'T :> JsonPolymorphic>(json:string, ?settings:JsonSerializerSettings) : 'T =
-        if String.IsNullOrWhiteSpace json then
-            invalidArg "json" "Json 문자열이 비어 있습니다."
-        let settings = defaultArg settings (JsonPolymorphic.createDefaultSettings())
-        EmJson.FromJson<'T>(json, settings)
+        EmJson.FromJson<'T>(json, JsonPolymorphic.getSettings(settings))
 
     static member internal FromJson(json:string, targetType:Type, ?settings:JsonSerializerSettings) : JsonPolymorphic =
         if isNull targetType then invalidArg "targetType" "타겟 타입이 null 입니다."
         if String.IsNullOrWhiteSpace json then invalidArg "json" "Json 문자열이 비어 있습니다."
-        let settings = defaultArg settings (JsonPolymorphic.createDefaultSettings())
+        let settings = JsonPolymorphic.getSettings(settings)
         JsonConvert.DeserializeObject(json, targetType, settings) :?> JsonPolymorphic
 
     member x.DeepClone<'T when 'T :> JsonPolymorphic>() : 'T =
@@ -225,9 +218,6 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 and DsSystem() as this = // Create
     inherit ProjectEntity()
 
-    let mutable properties = new DsSystemProperties()
-    do setParentI this properties
-
     member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
     member x.AddEntitiy(entity:JsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
@@ -238,17 +228,12 @@ and DsSystem() as this = // Create
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
-    member x.Properties
-        with get() = properties
-        and set value =
-            let props = value |> toOption |?? (fun () -> new DsSystemProperties())
-            setParentI x props
-            properties <- props
+    member val Properties = new DsSystemProperties(RawParent = Some this) with get, set
 
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props = json |> String.toOption |-> JsonPolymorphic.FromJson<DsSystemProperties> |?? (fun () -> new DsSystemProperties())
+            let props = json |> String.toOption |-> JsonPolymorphic.FromJson<DsSystemProperties> |?? (fun () -> new DsSystemProperties(RawParent = Some this))
             x.Properties <- props
 
 

@@ -401,10 +401,7 @@ module DsObjectUtilsModule =
             system.RawApiDefs.AddRange(apiDefs)
             system.RawApiCalls.AddRange(apiCalls)
             system.PolymorphicJsonEntities <- polys
-            let clonedProperties =
-                if isItNull properties then DsSystemProperties()
-                else properties.ToJson() |> JsonPolymorphic.FromJson<DsSystemProperties>
-            system.Properties <- clonedProperties
+            system.Properties <- properties.DeepClone<DsSystemProperties>()
             // parent 관계 설정 추가
             flows    |> iter (setParentI system)
             works    |> iter (setParentI system)

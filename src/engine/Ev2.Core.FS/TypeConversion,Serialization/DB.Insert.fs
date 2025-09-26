@@ -16,6 +16,7 @@ open Dual.Common.Db.FS
 [<AutoOpen>]
 module internal DbInsertModule =
 
+    [<CLIMutable>]
     type private SystemEntityDbRow = { Guid: Guid; Type: string; Json: string }
 
     type Project with // InsertSystemMapToDB
@@ -97,12 +98,6 @@ module internal DbInsertModule =
                     // flows 삽입 (먼저 삽입하여 Id 획득)
                     rt.Flows |> iter _.InsertToDB(dbApi)
 
-                    //// Button, Lamp, Condition, Action 삽입 (DsSystem에 속하며 Flow.Id 참조)
-                    //rt.Buttons    |> iter _.InsertToDB(dbApi)
-                    //rt.Lamps      |> iter _.InsertToDB(dbApi)
-                    //rt.Conditions |> iter _.InsertToDB(dbApi)
-                    //rt.Actions    |> iter _.InsertToDB(dbApi)
-
                     // system 의 apiCalls 를 삽입
                     rt.ApiCalls |> iter _.InsertToDB(dbApi)
 
@@ -124,9 +119,7 @@ module internal DbInsertModule =
                         |> Seq.map (fun row -> struct(row.Guid, row.Type, row.Json))
                         |> Seq.toArray
 
-                    let newGuids =
-                        runtimeEntities
-                        |> Array.fold (fun (set:HashSet<Guid>) entity -> set.Add(entity.Guid) |> ignore; set) (HashSet<Guid>())
+                    let newGuids = runtimeEntities |-> _.Guid |> HashSet
 
                     existingEntities
                     |> Array.filter (fun struct(guid, _, _) -> not (newGuids.Contains guid))
