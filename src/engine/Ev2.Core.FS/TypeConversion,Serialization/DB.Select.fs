@@ -66,6 +66,8 @@ module internal Db2DsImpl =
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
 
+            s.PropertiesJson <- ormSystem.PropertiesJson
+
             let sys = {| SystemId = ormSystem.Id.Value |}
 
             // Load polymorphic system entities
@@ -354,5 +356,4 @@ module internal Db2DsImpl =
 
                 rTryCheckoutSystemFromDBHelper ormSystem dbApi
         )
-
 

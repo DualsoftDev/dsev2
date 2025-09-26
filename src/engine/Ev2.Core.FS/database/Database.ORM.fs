@@ -87,16 +87,21 @@ module ORMTypesModule =
         , iri:string, author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
         , polys: PolymorphicJsonCollection<JsonPolymorphic>    // Button, Lamp, Condition, Action
+        , propertiesJson:string
     ) =
         inherit ORMUnique(ParentId=ownerProjectId)
         member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
-        new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate, PolymorphicJsonCollection<JsonPolymorphic>())
+        new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate, PolymorphicJsonCollection<JsonPolymorphic>(), nullString)
         interface IORMSystem with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
         member val PolymorphicJsonEntities = polys with get, set
         member val OwnerProjectId = ownerProjectId with get, set
+        member val Properties = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
         member val IRI           = iri           with get, set
         member val Author        = author        with get, set
@@ -114,6 +119,7 @@ module ORMTypesModule =
             x.LangVersion <- runtime.LangVersion
             x.Description <- runtime.Description
             x.OwnerProjectId <- runtime.OwnerProjectId
+            x.Properties <- runtime.PropertiesJson
             x
 
     type ORMFlow(systemId:Id) = // Initialize
@@ -250,4 +256,3 @@ module ORMTypesModule =
         member val Name     = name            with get, set
         member val Category = category        with get, set
         member val Value    = value           with get, set
-

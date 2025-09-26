@@ -107,6 +107,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
+        [<JsonProperty(Order = 99)>] member val Properties = DsSystemProperties() with get, set
 
         [<JsonIgnore>]
         member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
@@ -364,10 +365,12 @@ module rec NewtonsoftJsonObjects =
                 njp.Database <- rtp.Database
 
             | :? NjSystem as njs ->
-                //if isItNotNull njs.RuntimeObject then
-                //    njs.RuntimeObject |> replicateProperties njs |> ignore
-
                 let rts = njs |> getRuntimeObject<DsSystem>
+                let propsClone =
+                    if isItNull rts.Properties then DsSystemProperties()
+                    else rts.Properties.DeepClone<DsSystemProperties>()
+                setParentI njs propsClone
+                njs.Properties <- propsClone
                 njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities.DeepClone()
                 njs.PolymorphicJsonEntities.SyncToSerialized()
                 njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
@@ -430,6 +433,7 @@ module rec NewtonsoftJsonObjects =
             njs.Works    |> iter (fun z -> z.RawParent <- Some njs)
             njs.ApiDefs  |> iter (fun z -> z.RawParent <- Some njs)
             njs.ApiCalls |> iter (fun z -> z.RawParent <- Some njs)
+            if isItNotNull njs.Properties then setParentI njs njs.Properties
 
             // 하부 구조에 대해서 재귀적으로 호출 : dependancy 가 적은 것부터 먼저 생성할 것.
             njs.ApiDefs  |> iter onNsJsonDeserialized
@@ -477,10 +481,15 @@ module rec NewtonsoftJsonObjects =
             let apiCalls   = njs.ApiCalls   |-> getRuntimeObject<ApiCall>
 
             let rts =
-                DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, njs.PolymorphicJsonEntities)
+                let propsForRuntime =
+                    if isItNull njs.Properties then DsSystemProperties()
+                    else njs.Properties.DeepClone<DsSystemProperties>()
+                DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, njs.PolymorphicJsonEntities, propsForRuntime)
                 |> replicateProperties njs
             rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities.DeepClone()
             rts.PolymorphicJsonEntities.SyncToValues()
+            if isItNotNull njs.Properties then
+                rts.Properties <- njs.Properties.DeepClone<DsSystemProperties>()
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
@@ -692,6 +701,9 @@ module Ds2JsonModule =
                         let apiDefs    = rt.ApiDefs    |-> _.ToNj<NjApiDef>()    |> toArray
                         let apiCalls   = rt.ApiCalls   |-> _.ToNj<NjApiCall>()   |> toArray
                         z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
+                        let propsClone = rt.PropertiesJson |> JsonPolymorphic.FromJson<DsSystemProperties>
+                        setParentI z propsClone
+                        z.Properties <- propsClone
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
 

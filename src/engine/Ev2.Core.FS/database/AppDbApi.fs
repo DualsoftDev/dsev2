@@ -240,7 +240,7 @@ module ORMTypeConversionModule =
                     (* System 소유주 project 지정.  *)
                     let ownerProjectId = rt.Project >>= _.Id
 
-                    new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime, rt.PolymorphicJsonEntities)
+                    new ORMSystem(ownerProjectId, rt.IRI, rt.Author, rt.LangVersion, rt.EngineVersion, rt.Description, rt.DateTime, rt.PolymorphicJsonEntities, rt.PropertiesJson)
                     |> ormReplicateProperties rt
 
                 | :? Flow as rt ->
@@ -318,4 +318,3 @@ module ORMTypeConversionModule =
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
         member x.ToORM(dbApi:AppDbApi): ORMSystem =
             rt2Orm dbApi x :?> ORMSystem
-

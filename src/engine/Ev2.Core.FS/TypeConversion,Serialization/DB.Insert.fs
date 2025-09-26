@@ -2,6 +2,7 @@ namespace Ev2.Core.FS
 
 open System
 open System.Linq
+open System.Collections.Generic
 open System.Diagnostics
 open Dapper
 open Newtonsoft.Json
@@ -14,6 +15,8 @@ open Dual.Common.Db.FS
 
 [<AutoOpen>]
 module internal DbInsertModule =
+
+    type private SystemEntityDbRow = { Guid: Guid; Type: string; Json: string }
 
     type Project with // InsertSystemMapToDB
         // project 하부에 연결된 passive system 을 DB 에 저장
@@ -84,8 +87,8 @@ module internal DbInsertModule =
                     let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
 
                     let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                            (guid, parameter,                     staticOption, dynamicOption, dateTime,  name,  iri, author,     langVersion, engineVersion, description,  ownerProjectId)
-                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @OwnerProjectId);""",
+                                            (guid, parameter,                     staticOption, dynamicOption, dateTime,  name,  iri, author,     langVersion, engineVersion, description,  properties,                      ownerProjectId)
+                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @DateTime, @Name, @IRI, @Author, @LangVersion, @EngineVersion, @Description, @PropertiesJson{dbApi.DapperJsonB}, @OwnerProjectId);""",
                                     ormSystem, tr)
 
                     rt.Id <- Some sysId
@@ -109,18 +112,70 @@ module internal DbInsertModule =
                     // system 의 arrows 를 삽입 (works 간 연결)
                     rt.Arrows |> iter _.InsertToDB(dbApi)
 
-                    // polymorphic system entities 저장
+                    // polymorphic system entities 저장 (동기화)
                     let runtimeEntities = rt.Entities |> Seq.toArray
                     let serializedEntities = rt.PolymorphicJsonEntities.JsonizeArray()
                     verify(runtimeEntities.Length = serializedEntities.Length)
 
+                    let existingEntities =
+                        conn.Query<SystemEntityDbRow>(
+                            $"SELECT guid AS Guid, type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId",
+                            {| SystemId = sysId |}, tr)
+                        |> Seq.map (fun row -> struct(row.Guid, row.Type, row.Json))
+                        |> Seq.toArray
+
+                    let newGuids =
+                        runtimeEntities
+                        |> Array.fold (fun (set:HashSet<Guid>) entity -> set.Add(entity.Guid) |> ignore; set) (HashSet<Guid>())
+
+                    existingEntities
+                    |> Array.filter (fun struct(guid, _, _) -> not (newGuids.Contains guid))
+                    |> iter (fun row ->
+                        let struct(guid, _, _) = row
+                        conn.Execute($"DELETE FROM {Tn.SystemEntity} WHERE systemId = @SystemId AND guid = @Guid",
+                            {| SystemId = sysId; Guid = guid |}, tr) |> ignore)
+
+                    let upsertSql =
+                        match dbApi.DbProvider with
+                        | DbProvider.Postgres _
+                        | DbProvider.Sqlite _ ->
+                            $"INSERT INTO {Tn.SystemEntity}(guid, systemId, type, json)
+                               VALUES (@Guid, @SystemId, @Type, @Json)
+                             ON CONFLICT(guid)
+                               DO UPDATE SET systemId = EXCLUDED.systemId, type = EXCLUDED.type, json = EXCLUDED.json"
+                        | _ -> nullString
+
+                    let existingByGuid = existingEntities |> Seq.map (fun struct(guid, typ, json) -> guid, (typ, json)) |> dict
+
                     for idx = 0 to serializedEntities.Length - 1 do
                         let entity = runtimeEntities[idx]
                         let typeName, entityJsonText = serializedEntities[idx]
-                        conn.Execute(
-                            $"INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json) VALUES (@Guid, @SystemId, @Type, @Json)",
-                            {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
-                        |> ignore
+                        if String.IsNullOrWhiteSpace upsertSql then
+                            match existingByGuid.TryGetValue(entity.Guid) with
+                            | true, (existingType, existingJson) when existingType = typeName && existingJson = entityJsonText -> ()
+                            | true, _ ->
+                                conn.Execute(
+                                    $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, type = @Type, json = @Json WHERE guid = @Guid",
+                                    {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr) |> ignore
+                            | _ ->
+                                // 기존 행이 없으면 삽입; guid 충돌 시 삭제 후 삽입
+                                let updated = conn.Execute($"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, type = @Type, json = @Json WHERE guid = @Guid",
+                                    {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
+                                if updated = 0 then
+                                    try
+                                        conn.Execute(
+                                            $"INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json) VALUES (@Guid, @SystemId, @Type, @Json)",
+                                            {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr) |> ignore
+                                    with _ ->
+                                        conn.Execute($"DELETE FROM {Tn.SystemEntity} WHERE guid = @Guid",
+                                            {| Guid = entity.Guid |}, tr) |> ignore
+                                        conn.Execute(
+                                            $"INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json) VALUES (@Guid, @SystemId, @Type, @Json)",
+                                            {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr) |> ignore
+                        else
+                            conn.Execute(upsertSql,
+                                {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
+                            |> ignore
 
                     // system 의 apiDefs 를 삽입
                     rt.ApiDefs |> iter _.InsertToDB(dbApi)

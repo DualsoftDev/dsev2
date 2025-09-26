@@ -163,6 +163,7 @@ module rec DsCompareObjects =
                 if x.EngineVersion <> y.EngineVersion then yield Diff(nameof x.EngineVersion, x, y, null)
                 if x.LangVersion   <> y.LangVersion   then yield Diff(nameof x.LangVersion, x, y, null)
                 if x.Description   <> y.Description   then yield Diff(nameof x.Description, x, y, null)
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, null)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
                     yield Diff(nameof x.DateTime, x, y, null)
             }

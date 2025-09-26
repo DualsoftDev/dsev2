@@ -260,6 +260,7 @@ CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "engineVersion"} TEXT NOT NULL
     , {k "description"}   TEXT
     , {k "dateTime"}      {datetime}
+    , {k "properties"}    {jsonb}
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_iri_uniq UNIQUE (iri)
     -- , CONSTRAINT {Tn.System}_name_uniq UNIQUE (name)    -- system 이름 전체적으로 고유해야 함.
@@ -549,6 +550,7 @@ CREATE VIEW {k Vn.SupervisedSystem} AS
         , s.{k "name"}  AS systemName
         , s.{k "parameter"}
         , s.{k "iri"}
+        , s.{k "properties"}
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
     FROM {k Tn.System} s
@@ -563,6 +565,7 @@ CREATE VIEW {k Vn.DeviceSystem} AS
         , s.{k "name"}  AS systemName
         , s.{k "parameter"}
         , s.{k "iri"}
+        , s.{k "properties"}
         , psm.{k "loadedName"}
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
@@ -783,8 +786,6 @@ CREATE TABLE {k Tn.TableDescription} (
 -- End of database schema
 --
 """
-
-
 
 
 

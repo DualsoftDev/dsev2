@@ -72,11 +72,27 @@ module internal DsCopyModule =
                 | :? NjSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
                 | :? ORMSystem as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
                 | _ -> failwith "ERROR"
+            let sourcePropertiesJson =
+                match sbx with
+                | :? DsSystem  as src -> src.PropertiesJson
+                | :? NjSystem  as src -> src.Properties.ToJson()
+                | :? ORMSystem as src -> src.PropertiesJson
+                | _ -> nullString
 
             match dbx with
-            | :? DsSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-            | :? NjSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-            | :? ORMSystem as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+            | :? DsSystem  as d ->
+                d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+                d.PropertiesJson <- sourcePropertiesJson
+            | :? NjSystem  as d ->
+                d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+                let props =
+                    if sourcePropertiesJson.IsNullOrEmpty() then DsSystemProperties()
+                    else JsonPolymorphic.FromJson<DsSystemProperties>(sourcePropertiesJson)
+                setParentI d props
+                d.Properties <- props
+            | :? ORMSystem as d ->
+                d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
+                d.PropertiesJson <- sourcePropertiesJson
             | _ -> failwith "ERROR"
 
 
@@ -250,4 +266,5 @@ module internal DsCopyModule =
     let getPropertyNameForDB(dbApi:DbApi, propertyName: string) : string =
         match propertyName with
         | "Parameter" | "ValueSpec" -> $"{propertyName}{dbApi.DapperJsonB}"
+        | "properties" -> $"PropertiesJson{dbApi.DapperJsonB}"
         | _ -> propertyName

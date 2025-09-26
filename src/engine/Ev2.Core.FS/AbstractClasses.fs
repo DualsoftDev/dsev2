@@ -24,6 +24,33 @@ type RtUnique() = // ToNjObj, ToNj
 type [<AbstractClass>] JsonPolymorphic() =
     inherit RtUnique()
 
+    static member private createDefaultSettings() =
+        let settings = EmJson.CreateDefaultSettings()
+        settings.DateFormatString <- DateFormatString
+        settings
+
+    member x.ToJson(?settings:JsonSerializerSettings) =
+        let settings = defaultArg settings (JsonPolymorphic.createDefaultSettings())
+        EmJson.ToJson(x, settings)
+
+    static member FromJson<'T when 'T :> JsonPolymorphic>(json:string, ?settings:JsonSerializerSettings) : 'T =
+        if String.IsNullOrWhiteSpace json then
+            invalidArg "json" "Json 문자열이 비어 있습니다."
+        let settings = defaultArg settings (JsonPolymorphic.createDefaultSettings())
+        EmJson.FromJson<'T>(json, settings)
+
+    static member internal FromJson(json:string, targetType:Type, ?settings:JsonSerializerSettings) : JsonPolymorphic =
+        if isNull targetType then invalidArg "targetType" "타겟 타입이 null 입니다."
+        if String.IsNullOrWhiteSpace json then invalidArg "json" "Json 문자열이 비어 있습니다."
+        let settings = defaultArg settings (JsonPolymorphic.createDefaultSettings())
+        JsonConvert.DeserializeObject(json, targetType, settings) :?> JsonPolymorphic
+
+    member x.DeepClone<'T when 'T :> JsonPolymorphic>() : 'T =
+        x.ToJson() |> JsonPolymorphic.FromJson<'T>
+
+    member x.DeepClone() : JsonPolymorphic =
+        x.ToJson() |> fun json -> JsonPolymorphic.FromJson(json, x.GetType())
+
 type DsSystemProperties() =
     inherit JsonPolymorphic()
     // 이하는 sample attributes. // TODO: remove samples
@@ -33,6 +60,8 @@ type DsSystemProperties() =
     member val Single  = 0.0f  with get, set
     member val Double  = 0.0   with get, set
     member val Text    = nullString with get, set
+    override x.ShouldSerializeId() = false
+    override x.ShouldSerializeGuid() = false
 
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
@@ -41,12 +70,6 @@ type [<AbstractClass>] BLCABase() =
     member val IOTags = IOTagsWithSpec() with get, set
     [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
-    override x.ShouldSerializeId() = false
-    override x.ShouldSerializeGuid() = true
-
-
-
-
 
 
 // Entity base classes
@@ -199,8 +222,11 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 
     static member FromJson(json:string): Project = fwdProjectFromJson json :?> Project
 
-and DsSystem() = // Create
+and DsSystem() as this = // Create
     inherit ProjectEntity()
+
+    let mutable properties = new DsSystemProperties()
+    do setParentI this properties
 
     member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
@@ -211,7 +237,19 @@ and DsSystem() = // Create
     member x.Lamps      = x.Entities.OfType<Lamp>()        |> toArray
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
-    member x.Properties = x.Entities.OfType<DsSystemProperties>() |> tryHead |? getNull<DsSystemProperties>()
+
+    member x.Properties
+        with get() = properties
+        and set value =
+            let props = value |> toOption |?? (fun () -> new DsSystemProperties())
+            setParentI x props
+            properties <- props
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            let props = json |> String.toOption |-> JsonPolymorphic.FromJson<DsSystemProperties> |?? (fun () -> new DsSystemProperties())
+            x.Properties <- props
 
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)

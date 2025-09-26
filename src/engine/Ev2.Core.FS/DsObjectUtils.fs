@@ -385,7 +385,7 @@ module DsObjectUtilsModule =
     type DsSystem with // Create
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[],
-            polys: PolymorphicJsonCollection<JsonPolymorphic>
+            polys: PolymorphicJsonCollection<JsonPolymorphic>, properties: DsSystemProperties
         ) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let system = createExtended<DsSystem>()
@@ -401,6 +401,10 @@ module DsObjectUtilsModule =
             system.RawApiDefs.AddRange(apiDefs)
             system.RawApiCalls.AddRange(apiCalls)
             system.PolymorphicJsonEntities <- polys
+            let clonedProperties =
+                if isItNull properties then DsSystemProperties()
+                else properties.ToJson() |> JsonPolymorphic.FromJson<DsSystemProperties>
+            system.Properties <- clonedProperties
             // parent 관계 설정 추가
             flows    |> iter (setParentI system)
             works    |> iter (setParentI system)

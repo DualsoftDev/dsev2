@@ -32,7 +32,8 @@ module internal rec DsObjectCopyImpl =
         /// DsSystem 복제. 지정된 newSystem 객체에 현재 시스템의 내용을 복사
         member x.replicate() =
             // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            DsSystem.Create([], [], [], [], [])
+            let emptyPolys = PolymorphicJsonCollection<JsonPolymorphic>()
+            DsSystem.Create([||], [||], [||], [||], [||], emptyPolys, DsSystemProperties())
             |> tee(fun newSystem ->
                 // flow, work 상호 참조때문에 일단 flow 만 shallow copy
                 let apiDefs    = x.ApiDefs    |-> _.replicate() |> toArray
@@ -54,6 +55,8 @@ module internal rec DsObjectCopyImpl =
                 // UI 요소들도 복제
                 newSystem.PolymorphicJsonEntities <- x.PolymorphicJsonEntities.DeepClone()
                 newSystem.PolymorphicJsonEntities.SyncToValues()
+                let propsClone = x.PropertiesJson |> JsonPolymorphic.FromJson<DsSystemProperties>
+                newSystem.Properties <- propsClone
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 flows      |> iter (setParentI newSystem)
