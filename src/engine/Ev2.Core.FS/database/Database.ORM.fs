@@ -188,8 +188,8 @@ module ORMTypesModule =
             x.IsDisabled <- runtime.IsDisabled
             x.Timeout <- runtime.Timeout
             // ApiCallValueSpecs를 JSON 문자열로 변환
-            x.AutoConditions <- if runtime.AutoConditions.Count = 0 then null else runtime.AutoConditions.ToJson()
-            x.CommonConditions <- if runtime.CommonConditions.Count = 0 then null else runtime.CommonConditions.ToJson()
+            x.AutoConditions   <- runtime.AutoConditions.ToJson()
+            x.CommonConditions <- runtime.CommonConditions.ToJson()
             x
 
 

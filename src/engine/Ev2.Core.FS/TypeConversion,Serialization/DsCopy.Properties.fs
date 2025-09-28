@@ -41,6 +41,7 @@ module internal DsCopyModule =
 
 
     /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
+    // 시각적 구분을 위해서 길어지더라도 한줄로 표현 할 것.
     let replicatePropertiesImpl (src:#Unique) (dst:#Unique) : #Unique =
 
         linkUniq src dst |> ignore
@@ -102,67 +103,26 @@ module internal DsCopyModule =
             | _ -> failwith "ERROR"
 
         | :? IDsCall ->
-            // Call, NjCall, ORMCall // 미처리 : ApiCalls, Status4
-
-            /// From Json
-            let fj (s:string) = if s.IsNullOrEmpty() then ResizeArray() else EmJson.FromJson<ResizeArray<string>> s
-            /// To Json
-            let tj obj = EmJson.ToJson obj
-
             // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
             match sbx with
             | :? Call as s ->
                 match dbx with
-                | :? Call as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
-                    d.Status4<-s.Status4
-                | :? NjCall as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // Call의 ApiCallValueSpecs를 NjCall의 object properties로 복사
-                    d.AutoConditionsObj<-s.AutoConditions; d.CommonConditionsObj<-s.CommonConditions
-                    d.Status4<-s.Status4
-                | :? ORMCall as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // ApiCallValueSpecs를 JSON 문자열로 변환
-                    d.AutoConditions<-if s.AutoConditions.Count = 0 then null else s.AutoConditions.ToJson()
-                    d.CommonConditions<-if s.CommonConditions.Count = 0 then null else s.CommonConditions.ToJson()
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;         d.Status4<-s.Status4
+                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;       d.CommonConditionsObj<-s.CommonConditions;      d.Status4<-s.Status4
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson();
                 | _ -> failwith "ERROR"
             | :? NjCall as s ->
                 match dbx with
-                | :? Call as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // NjCall의 object properties를 Call의 ApiCallValueSpecs로 복사
-                    d.AutoConditions<-s.AutoConditionsObj; d.CommonConditions<-s.CommonConditionsObj
-                    d.Status4<-s.Status4
-                | :? NjCall as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // NjCall 간 object properties 복사
-                    d.AutoConditionsObj<-s.AutoConditionsObj; d.CommonConditionsObj<-s.CommonConditionsObj
-                    d.Status4<-s.Status4
-                | :? ORMCall as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // object properties를 JSON 문자열로 변환
-                    d.AutoConditions   <- if s.AutoConditionsObj.Count   = 0 then null else s.AutoConditionsObj.ToJson()
-                    d.CommonConditions <- if s.CommonConditionsObj.Count = 0 then null else s.CommonConditionsObj.ToJson()
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4
+                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;       d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson()
                 | _ -> failwith "ERROR"
             | :? ORMCall as s ->
+                let fj conditions = ApiCallValueSpecs.FromJson(conditions)
                 match dbx with
-                | :? Call as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // JSON 문자열을 ApiCallValueSpecs로 역직렬화
-                    d.AutoConditions   <- if s.AutoConditions.IsNullOrEmpty()   then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
-                    d.CommonConditions <- if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
-                    d.Status4<-None
-                | :? NjCall as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    // JSON 문자열을 object properties로 역직렬화
-                    d.AutoConditionsObj   <- if s.AutoConditions.IsNullOrEmpty()   then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.AutoConditions)
-                    d.CommonConditionsObj <- if s.CommonConditions.IsNullOrEmpty() then ApiCallValueSpecs() else ApiCallValueSpecs.FromJson(s.CommonConditions)
-                    d.Status4<-None
-                | :? ORMCall as d ->
-                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout
-                    d.AutoConditions<-s.AutoConditions; d.CommonConditions<-s.CommonConditions
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions<-fj s.CommonConditions;    d.Status4<-None
+                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions; d.Status4<-None
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions<-s.CommonConditions
                 | _ -> failwith "ERROR"
             | _ -> failwith "ERROR"
 

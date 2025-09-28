@@ -209,8 +209,8 @@ module ORMTypeConversionModule =
             let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType)
             let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
             // ApiCallValueSpecs를 JSON 문자열로 변환
-            let autoConditionsJson = if autoConditions.Count = 0 then null else autoConditions.ToJson()
-            let commonConditionsJson = if commonConditions.Count = 0 then null else commonConditions.ToJson()
+            let autoConditionsJson   = autoConditions.ToJson()
+            let commonConditionsJson = commonConditions.ToJson()
             new ORMCall(workId, status4Id, callTypeId, autoConditionsJson, commonConditionsJson, isDisabled, timeout)
 
     /// runtime object -> ORM object 변환

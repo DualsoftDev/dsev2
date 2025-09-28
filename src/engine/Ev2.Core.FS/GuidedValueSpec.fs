@@ -47,11 +47,14 @@ module GuidedValueSpecModule =
         // ToJson: ApiCallValueSpecs를 JSON 문자열로 직렬화
         // 현재는 단순히 문자열 배열로 저장하고, 향후 확장 가능
         member x.ToJson() =
-            // 각 spec을 객체로 직접 직렬화 (이중 escape 방지)
-            let objects =
-                x |-> (fun spec -> JObject.Parse(spec.Jsonize()))
-                  |> toArray
-            JsonConvert.SerializeObject(objects)
+            if x.Count = 0 then
+                null
+            else
+                // 각 spec을 객체로 직접 직렬화 (이중 escape 방지)
+                let objects =
+                    x |-> (fun spec -> JObject.Parse(spec.Jsonize()))
+                      |> toArray
+                JsonConvert.SerializeObject(objects)
 
         // FromJson: JSON 문자열에서 ApiCallValueSpecs로 역직렬화
         // ToJson()에서 저장한 객체 배열을 다시 읽어옴

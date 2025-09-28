@@ -107,7 +107,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
-        [<JsonProperty(Order = 99)>] member val Properties = DsSystemProperties() with get, set
+        [<JsonProperty(Order = 99)>] member val Properties = new DsSystemProperties() with get, set
 
         [<JsonIgnore>]
         member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
