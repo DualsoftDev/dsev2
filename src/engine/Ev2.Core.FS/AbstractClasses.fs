@@ -30,7 +30,9 @@ type [<AbstractClass>] JsonPolymorphic() =
     member x.ToJson(?settings:JsonSerializerSettings) = EmJson.ToJson(x, JsonPolymorphic.getSettings(settings))
 
     static member FromJson<'T when 'T :> JsonPolymorphic>(json:string, ?settings:JsonSerializerSettings) : 'T =
-        EmJson.FromJson<'T>(json, JsonPolymorphic.getSettings(settings))
+        json |> String.toOption
+        |-> (fun json -> EmJson.FromJson<'T>(json, JsonPolymorphic.getSettings settings))
+        |?? (fun () -> Unchecked.defaultof<'T>)
 
     static member internal FromJson(json:string, targetType:Type, ?settings:JsonSerializerSettings) : JsonPolymorphic =
         if isNull targetType then invalidArg "targetType" "타겟 타입이 null 입니다."

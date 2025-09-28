@@ -68,31 +68,15 @@ module internal DsCopyModule =
             // System, NjSystem, ORMSystem
             let s =
                 match sbx with
-                | :? DsSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
-                | :? NjSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
-                | :? ORMSystem as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime |}
+                | :? DsSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.PropertiesJson |}
+                | :? NjSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.Properties.ToJson() |}
+                | :? ORMSystem as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.PropertiesJson |}
                 | _ -> failwith "ERROR"
-            let sourcePropertiesJson =
-                match sbx with
-                | :? DsSystem  as src -> src.PropertiesJson
-                | :? NjSystem  as src -> src.Properties.ToJson()
-                | :? ORMSystem as src -> src.PropertiesJson
-                | _ -> nullString
 
             match dbx with
-            | :? DsSystem  as d ->
-                d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-                d.PropertiesJson <- sourcePropertiesJson
-            | :? NjSystem  as d ->
-                d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-                let props =
-                    if sourcePropertiesJson.IsNullOrEmpty() then DsSystemProperties()
-                    else JsonPolymorphic.FromJson<DsSystemProperties>(sourcePropertiesJson)
-                setParentI d props
-                d.Properties <- props
-            | :? ORMSystem as d ->
-                d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime
-                d.PropertiesJson <- sourcePropertiesJson
+            | :? DsSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
+            | :? NjSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.Properties <- JsonPolymorphic.FromJson<DsSystemProperties>(s.Properties)
+            | :? ORMSystem as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
             | _ -> failwith "ERROR"
 
 
