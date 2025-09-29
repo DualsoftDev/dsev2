@@ -23,6 +23,16 @@ module ORMTypesModule =
         interface ISystemEntity
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
 
+    /// Json 직렬화되는 System 하부 entities: {Buttons, Lamps, Conditions, Actions}
+    [<CLIMutable>]
+    type ORMJsonSystemEntity = {
+        Id        : Option<Id>
+        Guid      : Guid
+        SystemId  : Id
+        Type      : string
+        Json      : string
+    }
+
     /// Work 하부 entities: {ORMFlow, ORMCall}
     [<AbstractClass>]
     type ORMWorkEntity(workId:Id) =

@@ -291,7 +291,7 @@ CREATE TABLE {k Tn.SystemEntity}(
     {k "id"}              {autoincPrimaryKey}
     , {k "guid"}          {guid} NOT NULL {guidUniqSpec}
     , {k "systemId"}      {intKeyType} NOT NULL
-    , {k "entityType"}    TEXT NOT NULL   -- $type
+    , {k "type"}        TEXT NOT NULL   -- $type : "DsButton", "Lamp", "DsCondition", "DsAction"
     , {k "json"}        TEXT NOT NULL
     , FOREIGN KEY(systemId) REFERENCES {Tn.System}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
 );

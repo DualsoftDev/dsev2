@@ -256,10 +256,10 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:BLCABase, criteria:Cc): Cr seq =
             seq {
                 if x.ComputeDiffUnique(y, criteria).Any() || x.IOTagsJson <> y.IOTagsJson then
-                    let systemId = y.RawParent >>= tryCast<DsSystem> |-> _.Id |?? (fun () -> failwith "ERROR")
-                    let obj = {|SystemId=systemId; Json=y.ToJson(); EntityType=y.GetType().Name; Guid=y.Guid|}
+                    let systemId = y.RawParent >>= tryCast<DsSystem> |-> _.Id |?? (fun () -> failwith "ERROR") |> Option.get
+                    let obj:ORMJsonSystemEntity = { Id=y.Id; SystemId=systemId; Json=y.ToJson(); Type=y.GetType().Name; Guid=y.Guid }
                     //assert(y.IOTagsJson.NonNullAny())
-                    let sql = $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, entityType = @EntityType, json = @Json WHERE guid = @Guid"
+                    let sql = $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, type = @Type, json = @Json WHERE guid = @Guid"
                     yield Diff(y.GetType().Name, x, y, (sql, obj))
             }
 

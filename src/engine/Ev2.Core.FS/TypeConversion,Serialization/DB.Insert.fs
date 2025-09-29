@@ -8,19 +8,8 @@ open Dapper
 open Dual.Common.Base
 open Dual.Common.Db.FS
 
-
 [<AutoOpen>]
 module internal DbInsertModule =
-
-    //[<CLIMutable>]
-    //type private SystemEntityDbRow = { Guid: Guid; SystemId:Id; Type: string; Json: string }
-
-    type SystemEntityDbRow() =
-        member val Id = Option<Id>.None with get, set
-        member val SystemId:Id = -1  with get, set
-        member val Guid: Guid = Guid.Empty with get, set
-        member val EntityType: string = null with get, set
-        member val Json: string = null with get, set
 
 
     type Project with // InsertSystemMapToDB
@@ -117,7 +106,7 @@ module internal DbInsertModule =
                     verify(runtimeEntities.Length = serializedEntities.Length)
 
                     let existingEntities =
-                        conn.Query<SystemEntityDbRow>(
+                        conn.Query<ORMJsonSystemEntity>(
                             $"SELECT * FROM {Tn.SystemEntity} WHERE systemId = @SystemId",
                             {| SystemId = sysId |}, tr)
                         |> toArray
@@ -134,39 +123,23 @@ module internal DbInsertModule =
                         let entity = runtimeEntities[idx]
                         let typeName, entityJsonText = serializedEntities[idx]
 
-                        let paramtersUnused =
-                            SystemEntityDbRow(
-                                Id = entity.Id
-                                , Guid     = entity.Guid
-                                , SystemId = sysId
-                                , EntityType     = typeName
-                                , Json     = entityJsonText
-                                ) |> box
+                        let param:ORMJsonSystemEntity = {
+                            Id = entity.Id
+                            Guid     = entity.Guid
+                            SystemId = sysId
+                            Type     = typeName
+                            Json     = entityJsonText
+                        }
 
                         match entity.Id with
                         | Some id ->
-                            conn.Execute(
-                                $"UPDATE {Tn.SystemEntity} SET guid=@Guid, systemId = @SystemId, entityType = @EntityType, Json=@Json WHERE id = @Id",
-                                //param = paramters,
-                                param = box {|
-                                    Id = entity.Id
-                                    Guid = entity.Guid
-                                    SystemId = sysId
-                                    EntityType = typeName
-                                    Json = entityJsonText |},   // 이름 4개를 딱 맞춤
-                                transaction = tr)
-                                |> ignore
+                            conn.Execute( $"UPDATE {Tn.SystemEntity} SET guid=@Guid, systemId = @SystemId, type = @Type, Json=@Json WHERE id = @Id",
+                                param, tr) |> ignore
                         | None ->
                             entity.Id <-
                                 Some <| conn.Insert(
-                                    $"""INSERT INTO {Tn.SystemEntity} (guid, systemId, entityType, json)
-                                        VALUES (@Guid, @SystemId, @EntityType, @Json)""",
-                                    param = box {| Guid = entity.Guid
-                                                   SystemId = sysId
-                                                   EntityType = typeName
-                                                   Json = entityJsonText |},   // 이름 4개를 딱 맞춤
-                                    transaction = tr
-                                )
+                                    $"""INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json)
+                                        VALUES (@Guid, @SystemId, @Type, @Json)""", param, tr)
                         noop()
 
                     rt.PolymorphicJsonEntities.UpdateSerialized()
