@@ -33,7 +33,7 @@ module internal rec DsObjectCopyImpl =
         member x.replicate() =
             // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
             let emptyPolys = PolymorphicJsonCollection<JsonPolymorphic>()
-            DsSystem.Create([||], [||], [||], [||], [||], emptyPolys, new DsSystemProperties())
+            DsSystem.Create([||], [||], [||], [||], [||], emptyPolys, DsSystemProperties.Create())
             |> tee(fun newSystem ->
                 // flow, work 상호 참조때문에 일단 flow 만 shallow copy
                 let apiDefs    = x.ApiDefs    |-> _.replicate() |> toArray

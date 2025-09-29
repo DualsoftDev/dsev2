@@ -107,7 +107,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
-        [<JsonProperty(Order = 99)>] member val Properties = new DsSystemProperties() with get, set
+        [<JsonProperty(Order = 99)>] member val Properties = DsSystemProperties.Create() with get, set
 
         [<JsonIgnore>]
         member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
@@ -367,7 +367,7 @@ module rec NewtonsoftJsonObjects =
             | :? NjSystem as njs ->
                 let rts = njs |> getRuntimeObject<DsSystem>
 
-                njs.Properties <- rts.Properties |> toOption |-> _.DeepClone<DsSystemProperties>() |?? (fun () -> new DsSystemProperties())
+                njs.Properties <- rts.Properties |> toOption |-> _.DeepClone<DsSystemProperties>() |?? (fun () -> DsSystemProperties.Create())
                 njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities.DeepClone()
                 njs.PolymorphicJsonEntities.SyncToSerialized()
                 njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
@@ -478,7 +478,7 @@ module rec NewtonsoftJsonObjects =
             let apiCalls   = njs.ApiCalls   |-> getRuntimeObject<ApiCall>
 
             let rts =
-                let propsForRuntime = njs.Properties |> toOption |-> _.DeepClone<DsSystemProperties>() |?? (fun () -> new DsSystemProperties())
+                let propsForRuntime = njs.Properties |> toOption |-> _.DeepClone<DsSystemProperties>() |?? (fun () -> DsSystemProperties.Create())
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, njs.PolymorphicJsonEntities, propsForRuntime)
                 |> replicateProperties njs
             rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities.DeepClone()

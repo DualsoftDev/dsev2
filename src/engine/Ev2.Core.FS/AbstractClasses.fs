@@ -57,6 +57,7 @@ type DsSystemProperties() =
     member val Text    = nullString with get, set
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = false
+    static member Create(?dsSystem:IRtSystem) = createExtended<DsSystemProperties>() |> tee (fun p -> p.RawParent <- dsSystem.Cast<Unique>())
 
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
@@ -231,12 +232,15 @@ and DsSystem() as this = // Create
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
-    member val Properties = new DsSystemProperties(RawParent = Some this) with get, set
+    member val Properties = DsSystemProperties.Create(this) with get, set
 
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props = json |> String.toOption |-> JsonPolymorphic.FromJson<DsSystemProperties> |?? (fun () -> new DsSystemProperties(RawParent = Some this))
+            let props =
+                json |> String.toOption
+                |-> JsonPolymorphic.FromJson<DsSystemProperties>
+                |?? (fun () -> DsSystemProperties.Create(this))
             x.Properties <- props
 
 

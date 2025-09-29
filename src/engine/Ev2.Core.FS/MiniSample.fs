@@ -10,6 +10,8 @@ module MiniSample =
     let createCylinder(name:string) =
         let sys = DsSystem.Create(Name=name)
 
+        sys.Properties.Text <- "Sample Cylinder in mini sample"
+
         let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylAdvanceStart")
         let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylReturnStart")
         let flow = Flow.Create(Name="CylFlow")
@@ -94,13 +96,11 @@ module MiniSample =
                 let inTag = TagWithSpec<double>("PolyActionIn", "Action.Input", ValueSpec<double>.Single 1.5)
                 let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)
                 z.IOTags <- IOTagsWithSpec(inTag, outTag))
-        let rtProperties = new DsSystemProperties(Text="Sample string member")
 
         [   rtPolyButton :> JsonPolymorphic
             rtPolyLamp
             rtPolyCondition
-            rtPolyAction
-            rtProperties ]
+            rtPolyAction ]
         |> iter system.AddEntitiy
 
         // Work 생성
