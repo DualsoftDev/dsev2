@@ -8,6 +8,7 @@ open System.Runtime.CompilerServices
 open System.IO
 open Newtonsoft.Json
 open System.Runtime.InteropServices
+open Dual.Common.Db.FS
 
 
 [<AutoOpen>]
@@ -232,7 +233,7 @@ type AppDbApiCsExtensions = // CsFindEnumValueId, CsFindEnumValue, CsTryFindEnum
     [<Extension>]
     static member CsFindEnumValue<'TEnum when 'TEnum : struct and 'TEnum : enum<int> and 'TEnum : (new : unit -> 'TEnum) and 'TEnum :> ValueType>
         (dbApi:AppDbApi, enumId:int64) : 'TEnum =
-        match dbApi.TryFindEnumValue<'TEnum>(enumId) with
+        match DbApi.TryGetEnumValue<'TEnum>(enumId) with
         | Some enumValue -> enumValue
         | None -> failwith $"Enum id {enumId} not found in database"
 
@@ -247,6 +248,6 @@ type AppDbApiCsExtensions = // CsFindEnumValueId, CsFindEnumValue, CsTryFindEnum
     [<Extension>]
     static member CsTryFindEnumValue<'TEnum when 'TEnum : struct and 'TEnum : enum<int> and 'TEnum : (new : unit -> 'TEnum) and 'TEnum :> ValueType>
         (dbApi:AppDbApi, enumId:int64) : bool * 'TEnum * string =
-        match dbApi.TryFindEnumValue<'TEnum>(enumId) with
+        match DbApi.TryGetEnumValue<'TEnum>(enumId) with
         | Some enumValue -> (true, enumValue, "")
         | None -> (false, new 'TEnum(), $"Enum id {enumId} not found in database")

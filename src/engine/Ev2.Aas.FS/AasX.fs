@@ -14,6 +14,7 @@ open Dual.Common.Core.FS
 open Dapper
 open Ev2.Core.FS
 open Dual.Common.Base
+open Dual.Common.Db.FS
 
 
 [<AutoOpen>]
@@ -213,7 +214,7 @@ module AasXModule2 =
                     let ormWorks = conn.QueryRows<ORMWork>(Tn.Work, "id", workIds, tr)
                     for ormWork in ormWorks do
                         match workDict.TryGetValue(ormWork.Id.Value) with
-                        | true, work -> work.Status4 <- ormWork.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                        | true, work -> work.Status4 <- ormWork.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4>
                         | false, _ -> ()
 
                 // 2. calls 에 대해 call 테이블에서 데이터 읽어서 Status4 update (Status4Id 에 해당하는 Call 객체의 Status4 속성 업데이트)
@@ -222,7 +223,7 @@ module AasXModule2 =
                     let ormCalls = conn.QueryRows<ORMCall>(Tn.Call, "id", callIds, tr)
                     for ormCall in ormCalls do
                         match callDict.TryGetValue(ormCall.Id.Value) with
-                        | true, call -> call.Status4 <- ormCall.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4>
+                        | true, call -> call.Status4 <- ormCall.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4>
                         | false, _ -> ()
             )
 

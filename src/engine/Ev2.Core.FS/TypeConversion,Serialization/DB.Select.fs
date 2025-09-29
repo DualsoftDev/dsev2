@@ -151,7 +151,7 @@ module internal Db2DsImpl =
                     |> tee(fun w ->
                         w.FlowGuid <- rtFlows |> tryFind(fun f -> f.Id = orm.FlowId) |-> _.Guid
                         w.FlowId <- orm.FlowId
-                        w.Status4  <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+                        w.Status4  <- orm.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4> )
 
             ]
             s.addWorks(rtWorks, false)
@@ -164,7 +164,7 @@ module internal Db2DsImpl =
 
                     for orm in orms do
 
-                        let callType = orm.CallTypeId.Value |> dbApi.TryFindEnumValue |> Option.get
+                        let callType = orm.CallTypeId.Value |> DbApi.TryGetEnumValue |> Option.get
                         let apiCallGuids =
                             conn.Query<Guid>(
                             $"""SELECT ac.guid
@@ -188,7 +188,7 @@ module internal Db2DsImpl =
                         |> replicateProperties orm
                         |> tee handleAfterSelect
                         |> setParent w
-                        |> tee(fun c -> c.Status4 <- orm.Status4Id >>= dbApi.TryFindEnumValue<DbStatus4> )
+                        |> tee(fun c -> c.Status4 <- orm.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4> )
                 ]
                 w.addCalls(rtCalls, false)
 
@@ -200,7 +200,7 @@ module internal Db2DsImpl =
                             {| WorkId = w.Id.Value |}, tr)
 
                     for orm in orms do
-                        let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                        let arrowType = DbApi.TryGetEnumValue<DbArrowType> orm.TypeId |> Option.get
                         let src = rtCalls |> find(fun c -> c.Id.Value = orm.Source)
                         let tgt = rtCalls |> find(fun c -> c.Id.Value = orm.Target)
                         orm.XSourceGuid <- src.Guid
@@ -226,7 +226,7 @@ module internal Db2DsImpl =
                         , {| SystemId = s.Id.Value |}, tr)
 
                 for orm in orms do
-                    let arrowType = dbApi.TryFindEnumValue<DbArrowType> orm.TypeId |> Option.get
+                    let arrowType = DbApi.TryGetEnumValue<DbArrowType> orm.TypeId |> Option.get
                     let src = rtWorks |> find(fun w -> w.Id.Value = orm.Source)
                     let tgt = rtWorks |> find(fun w -> w.Id.Value = orm.Target)
                     orm.XSourceGuid <- src.Guid

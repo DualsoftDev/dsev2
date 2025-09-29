@@ -366,11 +366,8 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjSystem as njs ->
                 let rts = njs |> getRuntimeObject<DsSystem>
-                let propsClone =
-                    if isItNull rts.Properties then DsSystemProperties()
-                    else rts.Properties.DeepClone<DsSystemProperties>()
-                setParentI njs propsClone
-                njs.Properties <- propsClone
+
+                njs.Properties <- rts.Properties |> toOption |-> _.DeepClone<DsSystemProperties>() |?? (fun () -> new DsSystemProperties())
                 njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities.DeepClone()
                 njs.PolymorphicJsonEntities.SyncToSerialized()
                 njs.Works    <- rts.Works    |-> _.ToNj<NjWork>()    |> toArray
@@ -481,9 +478,7 @@ module rec NewtonsoftJsonObjects =
             let apiCalls   = njs.ApiCalls   |-> getRuntimeObject<ApiCall>
 
             let rts =
-                let propsForRuntime =
-                    if isItNull njs.Properties then DsSystemProperties()
-                    else njs.Properties.DeepClone<DsSystemProperties>()
+                let propsForRuntime = njs.Properties |> toOption |-> _.DeepClone<DsSystemProperties>() |?? (fun () -> new DsSystemProperties())
                 DsSystem.Create((*protoGuid, *)flows, works, arrows, apiDefs, apiCalls, njs.PolymorphicJsonEntities, propsForRuntime)
                 |> replicateProperties njs
             rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities.DeepClone()

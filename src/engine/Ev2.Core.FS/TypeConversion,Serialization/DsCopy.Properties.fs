@@ -107,7 +107,7 @@ module internal DsCopyModule =
             // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
             //let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= theDbApi.TryFindEnumValueId<DbStatus4>
             let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= DbApi.TryGetEnumId<DbStatus4>
-            let getStatus    (s4:Id option):DbStatus4 option = s4 >>= theDbApi.TryFindEnumValue<DbStatus4>
+            let getStatus    (s4:Id option):DbStatus4 option = s4 >>= DbApi.TryGetEnumValue<DbStatus4>
             match sbx with
             | :? Call as s ->
                 match dbx with

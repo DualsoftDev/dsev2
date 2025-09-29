@@ -179,10 +179,12 @@ type AppDbApi(dbProvider:DbProvider) = // CallCache, CheckDatabaseChange, ClearA
 [<AutoOpen>]
 module ORMTypeConversionModule =
     // see insertEnumValues also.  e.g let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(DbCallType.Call)
+    // see DbApi.TryGetEnumId, DbApi.TryGetEnumValue
     type AppDbApi with
         /// DB 에서 enum value 의 id 를 찾는다.  e.g. DbCallType.Call -> 1
         ///
         /// Cache 를 이용하려면, static method 를 사용: DbApi.TryGetEnumId<'TEunm>(enumValue)
+        [<Obsolete("Use DbApi.TryGetEnumId<'TEunm>(enumValue) instead")>]
         member dbApi.TryFindEnumValueIdFromDatabase<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : Id option =
             let category = typeof<'TEnum>.Name
             let name = enumValue.ToString()
@@ -191,10 +193,13 @@ module ORMTypeConversionModule =
                 $"SELECT * FROM {Tn.Enum} WHERE category = @Category AND name = @Name",
                 {| Category = category; Name = name |}
             ) >>= _.Id
+        [<Obsolete("Use DbApi.TryGetEnumId<'TEunm>(enumValue) instead")>]
         member dbApi.FindEnumValueIdFromDatabase<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : Id = dbApi.TryFindEnumValueIdFromDatabase enumValue |> Option.get
 
+
         /// DB 의 enum id 에 해당하는 enum value 를 찾는다.  e.g. 1 -> DbCallType.Call
-        member dbApi.TryFindEnumValue<'TEnum
+        [<Obsolete("Use DbApi.TryGetEnumValue<'TEunm>(enumId) instead")>]
+        member dbApi.TryFindEnumValueFromDatabase<'TEnum
                 when 'TEnum : struct
                 and 'TEnum : enum<int>
                 and 'TEnum : (new : unit -> 'TEnum)
