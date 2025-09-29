@@ -224,7 +224,7 @@ type AppDbApiCsExtensions = // CsFindEnumValueId, CsFindEnumValue, CsTryFindEnum
     /// C# exception 기반 FindEnumValueId - 실패시 예외 발생
     [<Extension>]
     static member CsFindEnumValueId<'TEnum when 'TEnum : enum<int>>(dbApi:AppDbApi, enumValue:'TEnum) : int64 =
-        match dbApi.TryFindEnumValueId<'TEnum>(enumValue) with
+        match AppDbApi.TryGetEnumId<'TEnum>(enumValue) with
         | Some id -> id
         | None -> failwith $"Enum value {enumValue} not found in database"
 
@@ -239,7 +239,7 @@ type AppDbApiCsExtensions = // CsFindEnumValueId, CsFindEnumValue, CsTryFindEnum
     /// C# 친화적인 TryFindEnumValueId - (성공여부, Id값, 에러메시지) 반환
     [<Extension>]
     static member CsTryFindEnumValueId<'TEnum when 'TEnum : enum<int>>(dbApi:AppDbApi, enumValue:'TEnum) : bool * int64 * string =
-        match dbApi.TryFindEnumValueId<'TEnum>(enumValue) with
+        match AppDbApi.TryGetEnumId<'TEnum>(enumValue) with
         | Some id -> (true, id, "")
         | None -> (false, -1L, $"Enum value {enumValue} not found in database")
 

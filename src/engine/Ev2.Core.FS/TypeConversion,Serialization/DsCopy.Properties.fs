@@ -43,6 +43,7 @@ module internal DsCopyModule =
     /// src Unique 객체의 속성정보 (Id, Name, Guid, DateTime)를 복사해서 dst 의 Unique 객체에 저장
     // 시각적 구분을 위해서 길어지더라도 한줄로 표현 할 것.
     let replicatePropertiesImpl (src:#Unique) (dst:#Unique) : #Unique =
+        let theDbApi = AppDbApi.TheAppDbApi
 
         linkUniq src dst |> ignore
 
@@ -104,25 +105,28 @@ module internal DsCopyModule =
 
         | :? IDsCall ->
             // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
+            //let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= theDbApi.TryFindEnumValueId<DbStatus4>
+            let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= DbApi.TryGetEnumId<DbStatus4>
+            let getStatus    (s4:Id option):DbStatus4 option = s4 >>= theDbApi.TryFindEnumValue<DbStatus4>
             match sbx with
             | :? Call as s ->
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;         d.Status4<-s.Status4
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;       d.CommonConditionsObj<-s.CommonConditions;      d.Status4<-s.Status4
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson();
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;          d.Status4<-s.Status4
+                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;          d.CommonConditionsObj<-s.CommonConditions;       d.Status4<-s.Status4
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson(); d.Status4Id<-getStatus4Id s.Status4
                 | _ -> failwith "ERROR"
             | :? NjCall as s ->
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;       d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson()
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4
+                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;          d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson(); d.Status4Id<-getStatus4Id s.Status4
                 | _ -> failwith "ERROR"
             | :? ORMCall as s ->
                 let fj conditions = ApiCallValueSpecs.FromJson(conditions)
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions<-fj s.CommonConditions;    d.Status4<-None
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions; d.Status4<-None
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions<-s.CommonConditions
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions   <-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id
+                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions   <-s.CommonConditions;       d.Status4Id<-s.Status4Id
                 | _ -> failwith "ERROR"
             | _ -> failwith "ERROR"
 
@@ -134,14 +138,14 @@ module internal DsCopyModule =
             let s =
                 match sbx with
                 | :? ApiCall    as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; IOTags=s.IOTags; (*ApiDef;*) |}
-                | :? NjApiCall  as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; IOTags=s.IOTags; (*ApiDef;*) |}
-                | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec; IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
+                | :? NjApiCall  as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec;                         IOTags=s.IOTags; (*ApiDef;*) |}
+                | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec;                         IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
                 | _ -> failwith "ERROR"
 
             match dbx with
             | :? ApiCall    as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType; d.IOTags<-s.IOTags
-            | :? NjApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTags<-s.IOTags
-            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
+            | :? NjApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec;                                         d.IOTags<-s.IOTags
+            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec;                                         d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> failwith "ERROR"
 
         | :? IDsApiDef ->

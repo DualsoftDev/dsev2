@@ -181,7 +181,9 @@ module ORMTypeConversionModule =
     // see insertEnumValues also.  e.g let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(DbCallType.Call)
     type AppDbApi with
         /// DB 에서 enum value 의 id 를 찾는다.  e.g. DbCallType.Call -> 1
-        member dbApi.TryFindEnumValueId<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : Id option =
+        ///
+        /// Cache 를 이용하려면, static method 를 사용: DbApi.TryGetEnumId<'TEunm>(enumValue)
+        member dbApi.TryFindEnumValueIdFromDatabase<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : Id option =
             let category = typeof<'TEnum>.Name
             let name = enumValue.ToString()
             use conn = dbApi.CreateConnection()
@@ -189,6 +191,7 @@ module ORMTypeConversionModule =
                 $"SELECT * FROM {Tn.Enum} WHERE category = @Category AND name = @Name",
                 {| Category = category; Name = name |}
             ) >>= _.Id
+        member dbApi.FindEnumValueIdFromDatabase<'TEnum when 'TEnum : enum<int>> (enumValue: 'TEnum) : Id = dbApi.TryFindEnumValueIdFromDatabase enumValue |> Option.get
 
         /// DB 의 enum id 에 해당하는 enum value 를 찾는다.  e.g. 1 -> DbCallType.Call
         member dbApi.TryFindEnumValue<'TEnum
@@ -206,8 +209,8 @@ module ORMTypeConversionModule =
         static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
             autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
         ): ORMUnique =
-            let callTypeId = dbApi.TryFindEnumValueId<DbCallType>(dbCallType)
-            let status4Id = status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
+            let callTypeId = AppDbApi.TryGetEnumId<DbCallType>(dbCallType)
+            let status4Id = status4 >>= AppDbApi.TryGetEnumId<DbStatus4>
             // ApiCallValueSpecs를 JSON 문자열로 변환
             let autoConditionsJson   = autoConditions.ToJson()
             let commonConditionsJson = commonConditions.ToJson()
@@ -249,7 +252,7 @@ module ORMTypeConversionModule =
 
                 | :? Work as rt ->
                     let flowId = (rt.Flow >>= _.Id)
-                    let status4Id = rt.Status4 >>= dbApi.TryFindEnumValueId<DbStatus4>
+                    let status4Id = rt.Status4 >>= AppDbApi.TryGetEnumId<DbStatus4>
                     new ORMWork(pid, status4Id, flowId, rt.FlowGuid)
                     |> ormReplicateProperties rt
 
@@ -262,7 +265,7 @@ module ORMTypeConversionModule =
                     let srcGuid, tgtGuid = rt.Source.Guid, rt.Target.Guid
                     let parentId = (rt.RawParent >>= _.Id).Value
                     let arrowTypeId =
-                        dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
+                        AppDbApi.TryGetEnumId<DbArrowType>(rt.Type)
                         |? int DbArrowType.None
 
                     new ORMArrowWork(src, tgt, parentId, arrowTypeId, srcGuid, tgtGuid)
@@ -273,7 +276,7 @@ module ORMTypeConversionModule =
                     let srcGuid, tgtGuid = rt.Source.Guid, rt.Target.Guid
                     let parentId = (rt.RawParent >>= _.Id).Value
                     let arrowTypeId =
-                        dbApi.TryFindEnumValueId<DbArrowType>(rt.Type)
+                        AppDbApi.TryGetEnumId<DbArrowType>(rt.Type)
                         |? int DbArrowType.None
 
                     new ORMArrowCall(src, tgt, parentId, arrowTypeId, srcGuid, tgtGuid)

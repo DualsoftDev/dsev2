@@ -4,7 +4,7 @@ open System
 open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 open Newtonsoft.Json
-open Dual.Common.Core.FS
+open Dual.Common.Base
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
