@@ -144,18 +144,6 @@ module rec DsCompareObjects =
                 yield! (x.ApiDefs   , y.ApiDefs   , criteria) |||> computeDiffRecursively
                 yield! (x.ApiCalls  , y.ApiCalls  , criteria) |||> computeDiffRecursively
 
-                //// TODO: Polymorphic 비교
-                //let xj, yj = x.PolymorphicJsonEntities.Jsonize(), y.PolymorphicJsonEntities.Jsonize()
-                //if xj <> yj then
-
-                //    let xxx_xjs = x.PolymorphicJsonEntities.JsonizeArray()
-                //    let xxx_yjs = y.PolymorphicJsonEntities.JsonizeArray()
-                //    for i in [0..xxx_xjs.Length-1] do
-                //        if (xxx_xjs[i] <> xxx_yjs[i]) then
-                //            noop()
-
-
-                //    yield Diff("Entities", x, y, null)
                 yield! (x.Buttons   , y.Buttons   , criteria) |||> computeDiffRecursively
                 yield! (x.Lamps     , y.Lamps     , criteria) |||> computeDiffRecursively
                 yield! (x.Conditions, y.Conditions, criteria) |||> computeDiffRecursively
@@ -273,9 +261,6 @@ module rec DsCompareObjects =
                     //assert(y.IOTagsJson.NonNullAny())
                     let sql = $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, entityType = @EntityType, json = @Json WHERE guid = @Guid"
                     yield Diff(y.GetType().Name, x, y, (sql, obj))
-                //if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTags, x, y, $"UPDATE {Tn.SystemEntity} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
-                //if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, $"UPDATE {Tn.ArrowCall} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
-                //if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, nullUpdateSql)
             }
 
     type IRtUnique with // IsEqual
@@ -306,7 +291,5 @@ module rec DsCompareObjects =
             }
         member x.IsEqual(y:Project, ?criteria:Cc) =
             let criteria = criteria |? Cc()
-            let xxx = x.ComputeDiff(y, criteria) |> toArray
-
             x.ComputeDiff(y, criteria)
             |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working

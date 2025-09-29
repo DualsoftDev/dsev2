@@ -3,13 +3,9 @@ namespace Ev2.Core.FS
 open System
 open System.Linq
 open System.Collections.Generic
-open System.Diagnostics
 open Dapper
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
 open Dual.Common.Base
-open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 
 
@@ -134,66 +130,11 @@ module internal DbInsertModule =
                         conn.Execute($"DELETE FROM {Tn.SystemEntity} WHERE systemId = @SystemId AND guid = @Guid",
                             {| SystemId = sysId; Guid = row.Guid |}, tr) |> ignore)
 
-                    //let existingByGuid = existingEntities |> Seq.map (fun row -> row.Guid, (row.Type, row.Json)) |> dict
-
-                    //let upsertSql =
-                    //    match dbApi.DbProvider with
-                    //    | DbProvider.Postgres _
-                    //    | DbProvider.Sqlite _ ->
-                    //        $"INSERT INTO {Tn.SystemEntity}(guid, systemId, type, json)
-                    //           VALUES (@Guid, @SystemId, @Type, @Json)
-                    //         ON CONFLICT(guid)
-                    //           DO UPDATE SET systemId = EXCLUDED.systemId, type = EXCLUDED.type, json = EXCLUDED.json"
-                    //    | _ -> nullString
-
-
                     for idx = 0 to serializedEntities.Length - 1 do
                         let entity = runtimeEntities[idx]
                         let typeName, entityJsonText = serializedEntities[idx]
-                        //if String.IsNullOrWhiteSpace upsertSql then
-                        //    match existingByGuid.TryGetValue(entity.Guid) with
-                        //    | true, (existingType, existingJson) when existingType = typeName && existingJson = entityJsonText -> ()
-                        //    | true, _ ->
-                        //        conn.Execute(
-                        //            $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, type = @Type, json = @Json WHERE guid = @Guid",
-                        //            {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr) |> ignore
-                        //    | _ ->
-                        //        // 기존 행이 없으면 삽입; guid 충돌 시 삭제 후 삽입
-                        //        let updated = conn.Execute($"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, type = @Type, json = @Json WHERE guid = @Guid",
-                        //            {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
-                        //        if updated = 0 then
-                        //            try
-                        //                conn.Execute(
-                        //                    $"INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json) VALUES (@Guid, @SystemId, @Type, @Json)",
-                        //                    {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr) |> ignore
-                        //            with _ ->
-                        //                conn.Execute($"DELETE FROM {Tn.SystemEntity} WHERE guid = @Guid",
-                        //                    {| Guid = entity.Guid |}, tr) |> ignore
-                        //                conn.Execute(
-                        //                    $"INSERT INTO {Tn.SystemEntity} (guid, systemId, type, json) VALUES (@Guid, @SystemId, @Type, @Json)",
-                        //                    {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr) |> ignore
-                        //else
-                        //    conn.Execute(upsertSql,
-                        //        {| Guid = entity.Guid; SystemId = sysId; Type = typeName; Json = entityJsonText |}, tr)
-                        //    |> ignore
 
-                        //conn.Upsert(
-                        //    tr, Tn.SystemEntity,
-                        //    [|
-                        //        "guid",      box entity.Guid
-                        //        "systemId",  box sysId
-                        //        "type",      box typeName
-                        //        "json",      box entityJsonText
-                        //    |],
-                        //    conflictKeys = [|"guid"|])
-                        //|> ignore
-
-                        //let paramters:SystemEntityDbRow = {
-                        //    Guid     = entity.Guid
-                        //    SystemId = sysId
-                        //    Type     = typeName
-                        //    Json     = entityJsonText }
-                        let paramters =
+                        let paramtersUnused =
                             SystemEntityDbRow(
                                 Id = entity.Id
                                 , Guid     = entity.Guid
@@ -204,16 +145,15 @@ module internal DbInsertModule =
 
                         match entity.Id with
                         | Some id ->
-                            let xxx = conn.Query<SystemEntityDbRow>($"SELECT * FROM {Tn.SystemEntity} WHERE id = @Id", entity).ToArray()
                             conn.Execute(
                                 $"UPDATE {Tn.SystemEntity} SET guid=@Guid, systemId = @SystemId, entityType = @EntityType, Json=@Json WHERE id = @Id",
-                                param = paramters,
-                                //param = box {|
-                                //    Id = entity.Id
-                                //    Guid = entity.Guid
-                                //    SystemId = sysId
-                                //    EntityType = typeName
-                                //    Json = entityJsonText |},   // 이름 4개를 딱 맞춤
+                                //param = paramters,
+                                param = box {|
+                                    Id = entity.Id
+                                    Guid = entity.Guid
+                                    SystemId = sysId
+                                    EntityType = typeName
+                                    Json = entityJsonText |},   // 이름 4개를 딱 맞춤
                                 transaction = tr)
                                 |> ignore
                         | None ->

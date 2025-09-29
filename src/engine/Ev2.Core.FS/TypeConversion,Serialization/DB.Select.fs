@@ -71,17 +71,6 @@ module internal Db2DsImpl =
 
             let sys = {| SystemId = ormSystem.Id.Value |}
 
-            //// Load polymorphic system entities
-            //let entitySelectSql =
-            //    match dbApi.DbProvider with
-            //    | DbProvider.Postgres _ ->
-            //        $"SELECT \"guid\" AS Guid, \"type\" AS Type, \"json\" AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
-            //    | _ ->
-            //        $"SELECT guid AS Guid, type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
-
-            //let ormEntities = conn.Query<SystemEntityRow>(entitySelectSql, sys, tr).ToArray()
-
-
             // Load polymorphic system entities
             let ormEntities = conn.Query<SystemEntityRow>($"SELECT * FROM {Tn.SystemEntity} WHERE systemId = @SystemId", sys, tr).ToArray()
 
