@@ -40,7 +40,8 @@ type DbCheckoutResult<'T> = Result<'T, ErrorMessage>
 
 [<CLIMutable>]
 type private SystemEntityRow =
-    { Guid: Guid
+    { Id: Id
+      Guid: Guid
       Type: string
       Json: string }
 
@@ -70,15 +71,19 @@ module internal Db2DsImpl =
 
             let sys = {| SystemId = ormSystem.Id.Value |}
 
-            // Load polymorphic system entities
-            let entitySelectSql =
-                match dbApi.DbProvider with
-                | DbProvider.Postgres _ ->
-                    $"SELECT \"guid\" AS Guid, \"type\" AS Type, \"json\" AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
-                | _ ->
-                    $"SELECT guid AS Guid, type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
+            //// Load polymorphic system entities
+            //let entitySelectSql =
+            //    match dbApi.DbProvider with
+            //    | DbProvider.Postgres _ ->
+            //        $"SELECT \"guid\" AS Guid, \"type\" AS Type, \"json\" AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
+            //    | _ ->
+            //        $"SELECT guid AS Guid, type AS Type, json AS Json FROM {Tn.SystemEntity} WHERE systemId = @SystemId"
 
-            let ormEntities = conn.Query<SystemEntityRow>(entitySelectSql, sys, tr).ToArray()
+            //let ormEntities = conn.Query<SystemEntityRow>(entitySelectSql, sys, tr).ToArray()
+
+
+            // Load polymorphic system entities
+            let ormEntities = conn.Query<SystemEntityRow>($"SELECT * FROM {Tn.SystemEntity} WHERE systemId = @SystemId", sys, tr).ToArray()
 
             if ormEntities.Any() then
                 let serialized = JArray()
@@ -96,6 +101,8 @@ module internal Db2DsImpl =
                 verify(runtimeEntities.Length = ormEntities.Length)
                 for idx = 0 to runtimeEntities.Length - 1 do
                     runtimeEntities[idx].Guid <- ormEntities[idx].Guid
+                    runtimeEntities[idx].Id <- Some ormEntities[idx].Id
+                    runtimeEntities[idx].RawParent <- Some s
 
             // Load Flows
             let rtFlows = [

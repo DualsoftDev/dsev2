@@ -26,7 +26,11 @@ module ModuleInitializer =
 
             fwdReplicateProperties <- replicatePropertiesImpl
 
-            fwdProjectFromJson <- fun json -> Project.fromJson json
+            fwdProjectFromJson <-
+                fun json ->
+                    let proj = Project.fromJson json
+                    proj.Systems |> iter (fun sys -> sys.Entities |> iter (fun entity -> entity.RawParent <- Some sys ))
+                    proj
             fwdEnumerateRtObjects <- fun (rtObj: IRtUnique) -> (rtObj :?> RtUnique).EnumerateRtObjects().Cast<IRtUnique>()
 
             fwdValueSpecFromString <- fun text -> ValueRangeModule.parseValueSpec text

@@ -252,9 +252,10 @@ module Schema =
         [<Test>]
         member x.upsertTest() =
             use conn = sqliteDbApi().CreateConnection()
+            let nullTransaction = null
             tracefn $"SQL version: {conn.GetVersionString()}"
             let r1 = conn.Upsert(
-                "flow",
+                nullTransaction, "flow",
                 [|
                    "name", box "Alice"
                    "systemId", 1
@@ -265,13 +266,13 @@ module Schema =
 
             let row = {| id = 1; name = "Bob"; systemId = 1; guid = "b544dcdc-ca2f-43db-9d90-93843269bd3f" |}
             let r2 = conn.Upsert(
-                "flow", row, [ "name"; "systemId"; "guid" ],
+                nullTransaction, "flow", row, [ "name"; "systemId"; "guid" ],
                 [|"id"|]
             )
 
             let row = { Id = Nullable(); Name = "Tom"; SystemId = 1; Guid = guid2str <| Guid.NewGuid() }
             let r3 = conn.Upsert(
-                "flow", row, [ "Name"; "SystemId"; "Guid" ],
+                nullTransaction, "flow", row, [ "Name"; "SystemId"; "Guid" ],
                 [|"id"|],
                 onInserted = fun id -> row.Id <- Nullable id
             )
@@ -454,7 +455,7 @@ module Schema =
             json === json2
 
             let dbApi = sqliteDbApi()
-            dbApi.WithConn(fun conn ->
+            dbApi.With(fun (conn, tr) ->
                 conn.Execute("DELETE FROM project") |> ignore
 
                 rtProject.RTryCommitToDB(dbApi).IsOk === true )
@@ -723,9 +724,9 @@ module Schema =
                 w2.Parameter <- """{"Age": 3}"""
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs.Length === 3
-                diffs |> contains (Diff("Name",      w, w2, null)) === true
-                diffs |> contains (Diff("Parameter", w, w2, null)) === true
-                diffs |> contains (Diff("Motion",    w, w2, null)) === true
+                diffs |> contains (Diff("Name",      w, w2, nullUpdateSql)) === true
+                diffs |> contains (Diff("Parameter", w, w2, nullUpdateSql)) === true
+                diffs |> contains (Diff("Motion",    w, w2, nullUpdateSql)) === true
 
             do
                 // 추가한 개체 (arrow) detect 가능해야 한다.
@@ -742,7 +743,7 @@ module Schema =
                 sys2.AddEntitiy button
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs |> contains (RightOnly(arrow)) === true
-                diffs |> contains (Diff("Entities", sys, sys2, null)) === true
+                diffs |> contains (RightOnly(button)) === true
                 noop()
 
             do
@@ -778,12 +779,12 @@ module Schema =
 
             let diffs = rtProject.ComputeDiff(dsProject) |> toList
             (diffs.Length = 6 || diffs.Length = 7) === true
-            diffs |> contains (Diff ("Guid", rtProject, dsProject, null)) === true
+            diffs |> contains (Diff ("Guid", rtProject, dsProject, nullUpdateSql)) === true
 
             // 시간은 초 미만 절삭으로 동일하게 설정될 수도 있다.
             //diffs |> contains (Diff ("DateTime", rtProject, dsProject, null)) === true
 
-            diffs |> contains (Diff ("Name", rtProject, dsProject, null)) === true
+            diffs |> contains (Diff ("Name", rtProject, dsProject, nullUpdateSql)) === true
             diffs |> contains (LeftOnly rtProject.Systems[0]) === true
             diffs |> contains (RightOnly dsProject.Systems[0]) === true
 
@@ -797,15 +798,15 @@ module Schema =
                 diffs |> contains (LeftOnly src) === true
                 diffs |> contains (RightOnly cc) === true
                 let diffs2 = src.ComputeDiff cc |> toArray
-                diffs2 |> contains (Diff ("Guid", src, cc, null)) === true
+                diffs2 |> contains (Diff ("Guid", src, cc, nullUpdateSql)) === true
                 diffs2
                 |> forall(fun d ->
                     match d with
-                    | Diff("Guid",      x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("IRI",       x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Name",      x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("DateTime",  x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Parent",    x, y, null) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Guid",      x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("IRI",       x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Name",      x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("DateTime",  x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Parent",    x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
                     | (   LeftOnly (:? Flow)
                         | LeftOnly (:? Work)
                         | LeftOnly (:? ArrowBetweenWorks)

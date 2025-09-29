@@ -55,8 +55,7 @@ module internal rec DsObjectCopyImpl =
                 // UI 요소들도 복제
                 newSystem.PolymorphicJsonEntities <- x.PolymorphicJsonEntities.DeepClone()
                 newSystem.PolymorphicJsonEntities.SyncToValues()
-                let propsClone = x.PropertiesJson |> JsonPolymorphic.FromJson<DsSystemProperties>
-                newSystem.Properties <- propsClone
+                newSystem.Properties <- x.PropertiesJson |> JsonPolymorphic.FromJson<DsSystemProperties>
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 flows      |> iter (setParentI newSystem)
@@ -64,6 +63,7 @@ module internal rec DsObjectCopyImpl =
                 arrows     |> iter (setParentI newSystem)
                 apiDefs    |> iter (setParentI newSystem)
                 apiCalls   |> iter (setParentI newSystem)
+                newSystem.Entities |> iter (setParentI newSystem)
 
                 // 검증
                 arrows

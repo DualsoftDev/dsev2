@@ -44,14 +44,17 @@ module rec DsCompareObjects =
         member val EngineVersion        = true with get, set
         member val LangVersion          = true with get, set
 
+
+    let nullUpdateSql = (null, null)
+
     /// 객체 비교 결과 반환용....
     [<DebuggerDisplay("{ToString()}")>]
     type CompareResult =
         | Equal
         | LeftOnly of IRtUnique
         | RightOnly of IRtUnique
-        /// (diff property name) * left * right * updateSql
-        | Diff of Name * IRtUnique * IRtUnique * string
+        /// (diff property name) * left * right * (updateSql*param)
+        | Diff of Name * IRtUnique * IRtUnique * (string*obj)
     with
         interface ICompareResult
         override x.ToString() =
@@ -64,7 +67,7 @@ module rec DsCompareObjects =
                 let r = $"{right.Name}/{right.Id}/{guid2str right.Guid}"
                 $"Diff({name}): {l} <> {r}"
             | _ -> failwith "ERROR: CompareResult.ToString()"
-        static member CreateDiff(name, left, right) = Diff(name, left, right, null)
+        static member CreateDiff(name, left, right) = Diff(name, left, right, nullUpdateSql)
 
     /// abberviation
     type internal Cc = CompareCriteria
@@ -74,17 +77,17 @@ module rec DsCompareObjects =
         member internal x.ComputeDiffUnique(y:IRtUnique, ?criteria:Cc): Cr seq =
             let c = criteria |? Cc()
             seq {
-                if x.GetName() <> y.GetName() then yield Diff("Name", x, y, null)
-                if c.Id        && x.TryGetId()     <> y.TryGetId()     then yield Diff("Id", x, y, null)
-                if c.Guid      && x.GetGuid()      <> y.GetGuid()      then yield Diff("Guid", x, y, null)
+                if x.GetName() <> y.GetName() then yield Diff("Name", x, y, nullUpdateSql)
+                if c.Id        && x.TryGetId()     <> y.TryGetId()     then yield Diff("Id", x, y, nullUpdateSql)
+                if c.Guid      && x.GetGuid()      <> y.GetGuid()      then yield Diff("Guid", x, y, nullUpdateSql)
 
                 if (c.Parameter && !! EmJson.IsJsonEquals(x.GetParameter(), y.GetParameter())) then
-                    yield Diff("Parameter", x, y, null)
+                    yield Diff("Parameter", x, y, nullUpdateSql)
 
                 let xp = x.TryGetRawParent() |-> _.GetGuid()
                 let yp = y.TryGetRawParent() |-> _.GetGuid()
                 if c.ParentGuid && ( xp <> yp ) then
-                    yield Diff("Parent", x, y, null)
+                    yield Diff("Parent", x, y, nullUpdateSql)
             }
 
     let private sortByGuid (xs:#IRtUnique list): #IRtUnique list = xs |> List.sortBy (fun x -> x.GetGuid())
@@ -124,9 +127,9 @@ module rec DsCompareObjects =
 
                 (* 기타 속성 비교 *)
                 // AasXml 멤버 제거됨
-                if criteria.Author && x.Author <> y.Author then yield Diff(nameof x.Author, x, y, null)
+                if criteria.Author && x.Author <> y.Author then yield Diff(nameof x.Author, x, y, nullUpdateSql)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
-                    yield Diff(nameof x.DateTime, x, y, null)
+                    yield Diff(nameof x.DateTime, x, y, nullUpdateSql)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -141,31 +144,31 @@ module rec DsCompareObjects =
                 yield! (x.ApiDefs   , y.ApiDefs   , criteria) |||> computeDiffRecursively
                 yield! (x.ApiCalls  , y.ApiCalls  , criteria) |||> computeDiffRecursively
 
-                // TODO: Polymorphic 비교
-                let xj, yj = x.PolymorphicJsonEntities.Jsonize(), y.PolymorphicJsonEntities.Jsonize()
-                if xj <> yj then
+                //// TODO: Polymorphic 비교
+                //let xj, yj = x.PolymorphicJsonEntities.Jsonize(), y.PolymorphicJsonEntities.Jsonize()
+                //if xj <> yj then
 
-                    let xxx_xjs = x.PolymorphicJsonEntities.JsonizeArray()
-                    let xxx_yjs = y.PolymorphicJsonEntities.JsonizeArray()
-                    for i in [0..xxx_xjs.Length-1] do
-                        if (xxx_xjs[i] <> xxx_yjs[i]) then
-                            noop()
+                //    let xxx_xjs = x.PolymorphicJsonEntities.JsonizeArray()
+                //    let xxx_yjs = y.PolymorphicJsonEntities.JsonizeArray()
+                //    for i in [0..xxx_xjs.Length-1] do
+                //        if (xxx_xjs[i] <> xxx_yjs[i]) then
+                //            noop()
 
 
-                    yield Diff("Entities", x, y, null)
-                ////yield! (x.Buttons   , y.Buttons   , criteria) |||> computeDiffRecursively
-                ////yield! (x.Lamps     , y.Lamps     , criteria) |||> computeDiffRecursively
-                ////yield! (x.Conditions, y.Conditions, criteria) |||> computeDiffRecursively
-                ////yield! (x.Actions   , y.Actions   , criteria) |||> computeDiffRecursively
+                //    yield Diff("Entities", x, y, null)
+                yield! (x.Buttons   , y.Buttons   , criteria) |||> computeDiffRecursively
+                yield! (x.Lamps     , y.Lamps     , criteria) |||> computeDiffRecursively
+                yield! (x.Conditions, y.Conditions, criteria) |||> computeDiffRecursively
+                yield! (x.Actions   , y.Actions   , criteria) |||> computeDiffRecursively
 
-                if x.Author        <> y.Author        then yield Diff(nameof x.Author, x, y, null)
-                if x.IRI           <> y.IRI           then yield Diff(nameof x.IRI, x, y, null)
-                if x.EngineVersion <> y.EngineVersion then yield Diff(nameof x.EngineVersion, x, y, null)
-                if x.LangVersion   <> y.LangVersion   then yield Diff(nameof x.LangVersion, x, y, null)
-                if x.Description   <> y.Description   then yield Diff(nameof x.Description, x, y, null)
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, null)
+                if x.Author        <> y.Author        then yield Diff(nameof x.Author, x, y, nullUpdateSql)
+                if x.IRI           <> y.IRI           then yield Diff(nameof x.IRI, x, y, nullUpdateSql)
+                if x.EngineVersion <> y.EngineVersion then yield Diff(nameof x.EngineVersion, x, y, nullUpdateSql)
+                if x.LangVersion   <> y.LangVersion   then yield Diff(nameof x.LangVersion, x, y, nullUpdateSql)
+                if x.Description   <> y.Description   then yield Diff(nameof x.Description, x, y, nullUpdateSql)
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, nullUpdateSql)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
-                    yield Diff(nameof x.DateTime, x, y, null)
+                    yield Diff(nameof x.DateTime, x, y, nullUpdateSql)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -174,7 +177,7 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:Flow, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y, null)
+                if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y, nullUpdateSql)
             }
 
     type Work with // ComputeDiff
@@ -182,22 +185,22 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
-                if (x.System |-> _.Guid) <> (y.System |-> _.Guid) then yield Diff("OwnerSystem", x, y, null)
+                if (x.System |-> _.Guid) <> (y.System |-> _.Guid) then yield Diff("OwnerSystem", x, y, nullUpdateSql)
 
                 let xp = x.FlowGuid
                 let yp = y.FlowGuid
                 if xp <> yp then
                     let updateSql = $"UPDATE {Tn.Work} SET flowId = {y.Flow.Value.Id.Value} WHERE id = {x.Id.Value};"
-                    yield Diff("FlowId", x, y, updateSql)
+                    yield Diff("FlowId", x, y, (updateSql, null))
 
-                if x.Motion        <> y.Motion        then yield Diff(nameof x.Motion,        x, y, null)
-                if x.Script        <> y.Script        then yield Diff(nameof x.Script,        x, y, null)
-                if x.ExternalStart <> y.ExternalStart then yield Diff(nameof x.ExternalStart, x, y, null)
-                if x.IsFinished    <> y.IsFinished    then yield Diff(nameof x.IsFinished,    x, y, null)
-                if x.NumRepeat     <> y.NumRepeat     then yield Diff(nameof x.NumRepeat,     x, y, null)
-                if x.Period        <> y.Period        then yield Diff(nameof x.Period,        x, y, null)
-                if x.Delay         <> y.Delay         then yield Diff(nameof x.Delay,         x, y, null)
-                if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y, null)
+                if x.Motion        <> y.Motion        then yield Diff(nameof x.Motion,        x, y, nullUpdateSql)
+                if x.Script        <> y.Script        then yield Diff(nameof x.Script,        x, y, nullUpdateSql)
+                if x.ExternalStart <> y.ExternalStart then yield Diff(nameof x.ExternalStart, x, y, nullUpdateSql)
+                if x.IsFinished    <> y.IsFinished    then yield Diff(nameof x.IsFinished,    x, y, nullUpdateSql)
+                if x.NumRepeat     <> y.NumRepeat     then yield Diff(nameof x.NumRepeat,     x, y, nullUpdateSql)
+                if x.Period        <> y.Period        then yield Diff(nameof x.Period,        x, y, nullUpdateSql)
+                if x.Delay         <> y.Delay         then yield Diff(nameof x.Delay,         x, y, nullUpdateSql)
+                if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y, nullUpdateSql)
 
                 yield! (x.Calls,  y.Calls,  criteria) |||> computeDiffRecursively
                 yield! (x.Arrows, y.Arrows, criteria) |||> computeDiffRecursively
@@ -208,57 +211,71 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
 
-                if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff(nameof x.Work, x, y, null)
+                if (x.Work |-> _.Guid)  <> (y.Work |-> _.Guid)  then yield Diff(nameof x.Work, x, y, nullUpdateSql)
                 // ApiCallValueSpecs 비교를 위해 JSON으로 변환하여 비교
-                if x.AutoConditions.ToJson() <> y.AutoConditions.ToJson() then yield Diff(nameof x.AutoConditions, x, y, null)
-                if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, null)
-                if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y, null)
-                if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, null)
-                if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, null)
-                if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, null)
+                if x.AutoConditions.ToJson() <> y.AutoConditions.ToJson() then yield Diff(nameof x.AutoConditions, x, y, nullUpdateSql)
+                if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, nullUpdateSql)
+                if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y, nullUpdateSql)
+                if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, nullUpdateSql)
+                if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, nullUpdateSql)
+                if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, nullUpdateSql)
 
                 let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
-                if d1 then yield Diff("ApiCalls", x, y, null)
+                if d1 then yield Diff("ApiCalls", x, y, nullUpdateSql)
             }
 
     type ApiDef with // ComputeDiff
         member x.ComputeDiff(y:ApiDef, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.IsPush <> y.IsPush then yield Diff(nameof x.IsPush, x, y, null)
-                if x.TxGuid <> y.TxGuid then yield Diff(nameof x.TxGuid, x, y, $"UPDATE {Tn.ApiDef} SET txId={y.TX.Id.Value} WHERE id={y.Id.Value}")
-                if x.RxGuid <> y.RxGuid then yield Diff(nameof x.RxGuid, x, y, $"UPDATE {Tn.ApiDef} SET rxId={y.RX.Id.Value} WHERE id={y.Id.Value}")
+                if x.IsPush <> y.IsPush then yield Diff(nameof x.IsPush, x, y, nullUpdateSql)
+                if x.TxGuid <> y.TxGuid then yield Diff(nameof x.TxGuid, x, y, ($"UPDATE {Tn.ApiDef} SET txId={y.TX.Id.Value} WHERE id={y.Id.Value}", null))
+                if x.RxGuid <> y.RxGuid then yield Diff(nameof x.RxGuid, x, y, ($"UPDATE {Tn.ApiDef} SET rxId={y.RX.Id.Value} WHERE id={y.Id.Value}", null))
             }
 
     type ApiCall with // ComputeDiff
         member x.ComputeDiff(y:ApiCall, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.ApiDefGuid <> y.ApiDefGuid then yield Diff(nameof x.ApiDefGuid, x, y, null)
-                if x.InAddress  <> y.InAddress  then yield Diff(nameof x.InAddress, x, y, null)
-                if x.OutAddress <> y.OutAddress then yield Diff(nameof x.OutAddress, x, y, null)
-                if x.InSymbol   <> y.InSymbol   then yield Diff(nameof x.InSymbol, x, y, null)
-                if x.OutSymbol  <> y.OutSymbol  then yield Diff(nameof x.OutSymbol, x, y, null)
-                if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y, null)
-                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, null)
+                if x.ApiDefGuid <> y.ApiDefGuid then yield Diff(nameof x.ApiDefGuid, x, y, nullUpdateSql)
+                if x.InAddress  <> y.InAddress  then yield Diff(nameof x.InAddress, x, y, nullUpdateSql)
+                if x.OutAddress <> y.OutAddress then yield Diff(nameof x.OutAddress, x, y, nullUpdateSql)
+                if x.InSymbol   <> y.InSymbol   then yield Diff(nameof x.InSymbol, x, y, nullUpdateSql)
+                if x.OutSymbol  <> y.OutSymbol  then yield Diff(nameof x.OutSymbol, x, y, nullUpdateSql)
+                if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y, nullUpdateSql)
+                if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, nullUpdateSql)
             }
 
     type ArrowBetweenWorks with // ComputeDiff
         member x.ComputeDiff(y:ArrowBetweenWorks, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.XSourceGuid <> y.XSourceGuid then yield Diff(nameof x.XSourceGuid, x, y, $"UPDATE {Tn.ArrowWork} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
-                if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, $"UPDATE {Tn.ArrowWork} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
-                if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, null)
+                if x.XSourceGuid <> y.XSourceGuid then yield Diff(nameof x.XSourceGuid, x, y, ($"UPDATE {Tn.ArrowWork} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}", null))
+                if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, ($"UPDATE {Tn.ArrowWork} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}", null))
+                if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, nullUpdateSql)
             }
 
     type ArrowBetweenCalls with // ComputeDiff
         member x.ComputeDiff(y:ArrowBetweenCalls, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.XSourceGuid <> y.XSourceGuid then yield Diff(nameof x.XSourceGuid, x, y, $"UPDATE {Tn.ArrowCall} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
-                if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, $"UPDATE {Tn.ArrowCall} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
-                if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, null)
+                if x.XSourceGuid <> y.XSourceGuid then yield Diff(nameof x.XSourceGuid, x, y, ($"UPDATE {Tn.ArrowCall} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}", null))
+                if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, ($"UPDATE {Tn.ArrowCall} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}", null))
+                if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, nullUpdateSql)
+            }
+
+    type BLCABase with
+        member x.ComputeDiff(y:BLCABase, criteria:Cc): Cr seq =
+            seq {
+                if x.ComputeDiffUnique(y, criteria).Any() || x.IOTagsJson <> y.IOTagsJson then
+                    let systemId = y.RawParent >>= tryCast<DsSystem> |-> _.Id |?? (fun () -> failwith "ERROR")
+                    let obj = {|SystemId=systemId; Json=y.ToJson(); EntityType=y.GetType().Name; Guid=y.Guid|}
+                    //assert(y.IOTagsJson.NonNullAny())
+                    let sql = $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, entityType = @EntityType, json = @Json WHERE guid = @Guid"
+                    yield Diff(y.GetType().Name, x, y, (sql, obj))
+                //if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTags, x, y, $"UPDATE {Tn.SystemEntity} SET source={y.Source.Id.Value} WHERE id={y.Id.Value}")
+                //if x.XTargetGuid <> y.XTargetGuid then yield Diff(nameof x.XTargetGuid, x, y, $"UPDATE {Tn.ArrowCall} SET target={y.Target.Id.Value} WHERE id={y.Id.Value}")
+                //if x.XTypeId <> y.XTypeId then yield Diff(nameof x.XTypeId, x, y, nullUpdateSql)
             }
 
     type IRtUnique with // IsEqual

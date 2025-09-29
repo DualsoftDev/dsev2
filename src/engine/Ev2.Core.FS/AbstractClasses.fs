@@ -215,16 +215,17 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
     /// DB load 이후에 호출되는 메서드
     default this.OnLoaded(conn:IDbConnection, tr:IDbTransaction) = ()
 
-    static member FromJson(json:string): Project = fwdProjectFromJson json :?> Project
+    static member FromJson(json:string): Project =
+        fwdProjectFromJson json :?> Project
 
 and DsSystem() as this = // Create
     inherit ProjectEntity()
 
     member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
-    member x.AddEntitiy(entity:JsonPolymorphic) = x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
-    member x.AddEntities(entities:JsonPolymorphic seq) = x.PolymorphicJsonEntities.AddItems entities
-    member x.RemoveEntitiy(entity:JsonPolymorphic) = x.PolymorphicJsonEntities.RemoveItem entity
+    member x.AddEntitiy(entity:JsonPolymorphic) = entity.RawParent <- Some x;  x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
+    member x.AddEntities(entities:JsonPolymorphic seq) = entities |> iter x.AddEntitiy
+    member x.RemoveEntitiy(entity:JsonPolymorphic) = entity.RawParent <- None; x.PolymorphicJsonEntities.RemoveItem entity
     member x.Buttons    = x.Entities.OfType<DsButton>()    |> toArray
     member x.Lamps      = x.Entities.OfType<Lamp>()        |> toArray
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
