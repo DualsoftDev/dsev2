@@ -53,7 +53,7 @@ module CoreFromAas =
 
         static member FromISubmodel(submodel:ISubmodel): NjProject =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = project.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = project.ReadUniqueInfo()
 
             let database    = project.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider> |? Prelude.getNull<DbProvider>()
             let dateTime    = project.GetPropValue    "DateTime"    |> DateTime.Parse
@@ -67,9 +67,6 @@ module CoreFromAas =
 
             NjProject.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
-                , StaticOption = staticOption
-                , DynamicOption = dynamicOption
-
                 , DateTime       = dateTime
                 , Database       = database
                 , Author         = author
@@ -88,7 +85,7 @@ module CoreFromAas =
 
     type NjSystem with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjSystem =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
             let dateTime      = smc.GetPropValue "DateTime"  |> DateTime.Parse
             let iri           = smc.TryGetPropValue "IRI" |?? (fun () -> logWarn $"No IRI on system {name}"; null)
             let engineVersion = smc.TryGetPropValue "EngineVersion" |-> Version.Parse |? Version(0, 0)
@@ -105,9 +102,6 @@ module CoreFromAas =
 
             NjSystem.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
-                , StaticOption = staticOption
-                , DynamicOption = dynamicOption
-
                 , DateTime = dateTime
                 , IRI = iri
                 , Author = author
@@ -136,21 +130,21 @@ module CoreFromAas =
 
     type NjArrow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
             let src = smc.GetPropValue "Source"
             let tgt = smc.GetPropValue "Target"
             let typ = smc.GetPropValue "Type"
-            NjArrow.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, StaticOption=staticOption, DynamicOption=dynamicOption, Source=src, Target=tgt, Type=typ)
+            NjArrow.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, Source=src, Target=tgt, Type=typ)
             |> tee (readAasExtensionProperties smc)
 
 
     type NjFlow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjFlow =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
             // Flow는 이제 UI 요소를 직접 소유하지 않음
 
-            NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter, StaticOption=staticOption, DynamicOption=dynamicOption)
+            NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter)
             |> tee (fun flow ->
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then
@@ -162,7 +156,7 @@ module CoreFromAas =
 
     type NjWork with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjWork =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
             let flowGuid      = smc.TryGetPropValue       "FlowGuid"      |? null
             let motion        = smc.TryGetPropValue       "Motion"        |? null
@@ -179,8 +173,6 @@ module CoreFromAas =
             let arrows = smc.TryFindChildSMC "Arrows" |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Arrow") |? [||] |-> NjArrow.FromSMC
 
             NjWork.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , StaticOption = staticOption
-                , DynamicOption = dynamicOption
                 , FlowGuid = flowGuid
                 , Motion = motion
                 , Script = script
@@ -202,7 +194,7 @@ module CoreFromAas =
 
     type NjCall with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
             let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
             // JSON 문자열로 저장된 조건들을 ApiCallValueSpecs로 변환
             let commonConditionsStr = smc.TryGetPropValue "CommonConditions" |? null
@@ -230,8 +222,6 @@ module CoreFromAas =
             // Status4 는 저장 안함.  DB 전용
 
             let njCall = NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , StaticOption = staticOption
-                , DynamicOption = dynamicOption
                 , IsDisabled = isDisabled
                 , Timeout = timeout
                 , CallType = callType
@@ -252,12 +242,12 @@ module CoreFromAas =
 
     type NjApiDef with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjApiDef =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
             let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
             let txGuid = smc.GetPropValue          "TxGuid" |> Guid.Parse
             let rxGuid = smc.GetPropValue          "RxGuid" |> Guid.Parse
 
-            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, StaticOption=staticOption, DynamicOption=dynamicOption, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
+            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
             |> tee (fun apiDef ->
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then
@@ -268,7 +258,7 @@ module CoreFromAas =
 
     type NjApiCall with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjApiCall =
-            let { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption } = smc.ReadUniqueInfo()
+            let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
 
             let apiDef     = smc.GetPropValue    "ApiDef"     |> Guid.Parse
             let inAddress  = smc.TryGetPropValue "InAddress"  |? null
@@ -280,8 +270,6 @@ module CoreFromAas =
             let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
 
             let apiCall = NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , StaticOption = staticOption
-                , DynamicOption = dynamicOption
                 , ApiDef = apiDef
                 , InAddress = inAddress
                 , OutAddress = outAddress

@@ -29,7 +29,7 @@ module rec AasExtensions =
                     | Some semanticId when semanticId = k.Value -> true
                     | _ -> false)
 
-    type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option; StaticOption: int64; DynamicOption: int64 }
+    type UniqueInfo = { Name: string; Guid: Guid; Parameter: string; Id: Id option }
 
     type SMEsExtension = // CollectChildrenSMCWithSemanticKey, CollectChildrenSMEWithSemanticKey, GetPropValue, ReadUniqueInfo, TryFindChildSMC, TryFindChildSME, TryGetPropValue, TryGetPropValue<'T>, TryGetPropValueByCategory, TryGetPropValueBySemanticKey
         [<Extension>]
@@ -102,9 +102,7 @@ module rec AasExtensions =
             let guid         = smc.GetPropValue    "Guid"         |> Guid.Parse
             let parameter    = smc.TryGetPropValue "Parameter"    |? null
             let id           = smc.TryGetPropValue "Id"           |-> Id.Parse
-            let staticOption = smc.TryGetPropValue<int64> "StaticOption"  |? 0L
-            let dynamicOption= smc.TryGetPropValue<int64> "DynamicOption" |? 0L
-            { Name=name; Guid=guid; Parameter=parameter; Id=id; StaticOption=staticOption; DynamicOption=dynamicOption }
+            { Name=name; Guid=guid; Parameter=parameter; Id=id }
 
 
     let private nonnullize(values:ResizeArray<ISubmodelElement>) = if values = null then ResizeArray<ISubmodelElement>() else values

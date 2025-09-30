@@ -22,10 +22,6 @@ module CoreToAas =
                     JObj().TrySetProperty(x.Parameter, nameof x.Parameter)
                 if x.Id.IsSome then
                     JObj().TrySetProperty(x.Id.Value, nameof x.Id)
-                if x.StaticOption <> 0L then
-                    JObj().TrySetProperty(x.StaticOption, nameof x.StaticOption)
-                if x.DynamicOption <> 0L then
-                    JObj().TrySetProperty(x.DynamicOption, nameof x.DynamicOption)
             }
 
         /// 확장 타입별 특수 속성 수집 (AAS용)
