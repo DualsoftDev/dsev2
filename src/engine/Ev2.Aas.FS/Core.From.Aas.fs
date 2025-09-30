@@ -77,7 +77,7 @@ module CoreFromAas =
             |> tee (fun njp ->
                 if propertiesJson.NonNullAny() then
                     let props = JsonPolymorphic.FromJson<ProjectProperties>(propertiesJson)
-                    props.RawParent <- Some (njp :> Unique)
+                    props.RawParent <- Some njp
                     njp.Properties <- props)
             |> tee (readAasExtensionProperties project)
 
@@ -149,7 +149,7 @@ module CoreFromAas =
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then
                     let props = JsonPolymorphic.FromJson<FlowProperties>(propertiesJson)
-                    props.RawParent <- Some (flow :> Unique)
+                    props.RawParent <- Some flow
                     flow.Properties <- props)
             |> tee (readAasExtensionProperties smc)
 
@@ -233,7 +233,7 @@ module CoreFromAas =
             let propertiesJson = smc.TryGetPropValue "Properties" |? null
             if propertiesJson.NonNullAny() then
                 let props = JsonPolymorphic.FromJson<CallProperties>(propertiesJson)
-                props.RawParent <- Some (njCall :> Unique)
+                props.RawParent <- Some njCall
                 njCall.Properties <- props
             njCall
             |> tee (readAasExtensionProperties smc)
@@ -252,7 +252,7 @@ module CoreFromAas =
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then
                     let props = JsonPolymorphic.FromJson<ApiDefProperties>(propertiesJson)
-                    props.RawParent <- Some (apiDef :> Unique)
+                    props.RawParent <- Some apiDef
                     apiDef.Properties <- props)
             |> tee (readAasExtensionProperties smc)
 
@@ -283,6 +283,6 @@ module CoreFromAas =
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then
                     let props = JsonPolymorphic.FromJson<ApiCallProperties>(propertiesJson)
-                    props.RawParent <- Some (apiCall :> Unique)
+                    props.RawParent <- Some apiCall
                     apiCall.Properties <- props)
             |> tee (readAasExtensionProperties smc)

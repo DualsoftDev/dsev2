@@ -257,7 +257,7 @@ and Flow() as this = // Create
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> FlowProperties.Create(this)) json
+            x.Properties <- assignFromJson x (fun () -> FlowProperties.Create this) json
 
     member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flows |> Seq.contains x)) |? [||]
     member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flows.Contains x)) |? [||]
@@ -324,7 +324,7 @@ and Work() as this = // Create
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> WorkProperties.Create(this)) json
+            x.Properties <- assignFromJson x (fun () -> WorkProperties.Create this) json
 
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
@@ -395,7 +395,7 @@ and Call() as this = // Create
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> CallProperties.Create(this)) json
+            x.Properties <- assignFromJson x (fun () -> CallProperties.Create this) json
 
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
@@ -419,12 +419,12 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
     member val IOTags = IOTagsWithSpec() with get, set
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
-    member val Properties = ApiCallProperties.Create(this) with get, set
+    member val Properties = ApiCallProperties.Create this with get, set
 
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> ApiCallProperties.Create(this)) json
+            x.Properties <- assignFromJson x (fun () -> ApiCallProperties.Create this) json
 
     /// system 에서 현재 ApiCall 을 호출하는 Call 들
     member x.Callers:Call[] =
@@ -474,12 +474,12 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
-    member val Properties = ApiDefProperties.Create(this) with get, set
+    member val Properties = ApiDefProperties.Create this with get, set
 
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> ApiDefProperties.Create(this)) json
+            x.Properties <- assignFromJson x (fun () -> ApiDefProperties.Create this) json
 
     // system 에서 현재 ApiDef 을 사용하는 ApiCall 들
     member x.ApiUsers:ApiCall[] =
