@@ -62,15 +62,7 @@ module internal DsCopyModule =
                 | _ -> failwith "ERROR"
             match dbx with
             | :? Project    as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; d.Database<-s.Database; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
-            | :? NjProject  as d ->
-                d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; d.Database<-s.Database; d.DateTime<-s.DateTime
-                let props =
-                    s.Properties
-                    |> String.toOption
-                    |-> JsonPolymorphic.FromJson<ProjectProperties>
-                    |?? ProjectProperties.Create
-                if isItNotNull props then setParentI d props
-                d.Properties <- props
+            | :? NjProject  as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; d.Database<-s.Database; d.DateTime<-s.DateTime; d.Properties <- JsonPolymorphic.FromJson<ProjectProperties>(s.Properties)
             | :? ORMProject as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; (*d.Database<-s.Database;*) d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
             | _ -> failwith "ERROR"
 
