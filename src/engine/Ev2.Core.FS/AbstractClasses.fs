@@ -4,6 +4,7 @@ open System
 open System.Linq
 open System.Data
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 open Dual.Common.Base
 open Dual.Common.Db.FS
@@ -29,10 +30,26 @@ type [<AbstractClass>] JsonPolymorphic() =
 
     member x.ToJson(?settings:JsonSerializerSettings) = EmJson.ToJson(x, JsonPolymorphic.getSettings(settings))
 
-    static member FromJson<'T when 'T :> JsonPolymorphic>(json:string, ?settings:JsonSerializerSettings) : 'T =
-        json |> String.toOption
-        |-> (fun json -> EmJson.FromJson<'T>(json, JsonPolymorphic.getSettings settings))
-        |?? (fun () -> Unchecked.defaultof<'T>)
+    static member FromJson<'T when 'T :> JsonPolymorphic and 'T :> IUnique and 'T : (new : unit -> 'T) and 'T : not struct>(json:string, ?settings:JsonSerializerSettings) : 'T =
+        match json |> String.toOption with
+        | None -> Unchecked.defaultof<'T>
+        | Some json ->
+            let settings = JsonPolymorphic.getSettings settings
+            match JToken.Parse(json) with
+            | :? JObject as jobj ->
+                let mutable typeToken = Unchecked.defaultof<JToken>
+                let hasTypeMetadata =
+                    jobj.TryGetValue("$type", StringComparison.Ordinal, &typeToken)
+                    && typeToken.Type = JTokenType.String
+                    && not (String.IsNullOrWhiteSpace(typeToken.Value<string>()))
+
+                if hasTypeMetadata then
+                    EmJson.FromJson<'T>(json, settings)
+                else
+                    let instance = createExtended<'T>()
+                    JsonConvert.PopulateObject(json, instance, settings)
+                    instance
+            | _ -> EmJson.FromJson<'T>(json, settings)
 
     static member internal FromJson(json:string, targetType:Type, ?settings:JsonSerializerSettings) : JsonPolymorphic =
         if isNull targetType then invalidArg "targetType" "타겟 타입이 null 입니다."
@@ -40,7 +57,7 @@ type [<AbstractClass>] JsonPolymorphic() =
         let settings = JsonPolymorphic.getSettings(settings)
         JsonConvert.DeserializeObject(json, targetType, settings) :?> JsonPolymorphic
 
-    member x.DeepClone<'T when 'T :> JsonPolymorphic>() : 'T =
+    member x.DeepClone<'T when 'T :> JsonPolymorphic and 'T :> IUnique and 'T : (new : unit -> 'T) and 'T : not struct>() : 'T =
         x.ToJson() |> JsonPolymorphic.FromJson<'T>
 
     member x.DeepClone() : JsonPolymorphic =
