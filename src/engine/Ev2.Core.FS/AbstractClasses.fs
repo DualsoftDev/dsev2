@@ -107,23 +107,12 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     inherit RtUnique()
 
     interface IRtProject with
-        member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+        member x.DateTime
+            with get() = x.Properties.DateTime
+            and set v = x.Properties.DateTime <- v
     interface IParameterContainer
 
     // { JSON 용
-    /// 마지막 저장 db 에 대한 connection string
-    member val Database = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
-    member val AasxPath = nullString with get, set // AASX 파일 경로.
-
-    member val Author        = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
-    member val Version       = Version()  with get, set
-    //member val LangVersion   = langVersion   |? Version()  with get, set
-    //member val EngineVersion = engineVersion |? Version()  with get, set
-    member val Description   = nullString with get, set
-
-    /// DateTime: 메모리에 최초 객체 생성시 생성
-    member val DateTime = now().TruncateToSecond() with get, set
-
     member val internal RawActiveSystems    = ResizeArray<DsSystem>() with get, set
     member val internal RawPassiveSystems   = ResizeArray<DsSystem>() with get, set
     // { Runtime/DB 용

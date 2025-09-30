@@ -62,15 +62,15 @@ module internal DbInsertModule =
 
                     let projId =
                         conn.Insert($"""INSERT INTO {Tn.Project}
-                                    (guid,   parameter,                   properties,                          dateTime,  name,  author,  version,  description)
-                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @PropertiesJson{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @Version, @Description);""", orm, tr)
+                                    (guid,   parameter,                   properties,                          name)
+                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @PropertiesJson{dbApi.DapperJsonB}, @Name);""", orm, tr)
 
                     rt.Id <- Some projId
 
                     (rt.PassiveSystems @ rt.ActiveSystems) |> iter _.InsertToDB(dbApi)  // 시스템 하부에 연결된 시스템들을 삽입 (재귀적 호출, prototype 은 제외됨)
                     //proj.Id <- Some projId
                     orm.Id <- Some projId
-                    rt.Database <- dbApi.DbProvider
+                    rt.Properties.Database <- dbApi.DbProvider
 
                     rt.InsertSystemMapToDB(dbApi)
                     rt.OnSaved(conn, tr)

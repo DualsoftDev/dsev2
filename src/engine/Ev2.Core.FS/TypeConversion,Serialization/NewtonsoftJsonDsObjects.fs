@@ -69,17 +69,12 @@ module rec NewtonsoftJsonObjects =
     type NjProject() = // Create, Initialize
         inherit NjUnique()
         interface INjProject with
-            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+            member x.DateTime
+                with get() = x.Properties.DateTime
+                and set v = x.Properties.DateTime <- v
 
         static member Create() = createExtended<NjProject>()
 
-        member val Database    = getNull<DbProvider>() with get, set // DB 연결 문자열.  JSON 저장시에는 사용하지 않음.  DB 저장시에는 사용됨
-        member val AasxPath    = nullString with get, set // AASX 파일 경로.
-
-        member val Description = null:string with get, set
-        member val Author      = null:string with get, set
-        member val Version     = Version()   with get, set
-        member val DateTime    = minDate     with get, set
         [<JsonProperty(Order = 99)>] member val Properties = ProjectProperties.Create() with get, set
 
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
@@ -368,8 +363,6 @@ module rec NewtonsoftJsonObjects =
 
                 njp.ActiveSystems  <- rtp.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                 njp.PassiveSystems <- rtp.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
-
-                njp.Database <- rtp.Database
                 njp.Properties <- DsPropertiesHelper.cloneProperties njp rtp.Properties ProjectProperties.Create
 
             | :? NjSystem as njs ->
@@ -696,16 +689,13 @@ module Ds2JsonModule =
                 match rtObj with
                 | :? Project as p  ->
                     let rt = p
-                    NjProject.Create(Database=rt.Database
-                        , Author=rt.Author
-                        , Version=rt.Version
-                        , Description=rt.Description)
+                    NjProject.Create()
                     |> replicateProperties rt
                     |> tee (fun z ->
+                        z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties ProjectProperties.Create
                         let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                         let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
                         z.Initialize(activeSystems, passiveSystems, rt, isDeserialization=false) |> ignore)
-                    |> tee (fun z -> z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties ProjectProperties.Create )
                     |> tee(fun n ->
                         // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
                         if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt

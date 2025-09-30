@@ -70,6 +70,12 @@ type [<AbstractClass>] DsPropertiesBase() =
 
 type ProjectProperties() =
     inherit DsPropertiesBase()
+    member val Database = getNull<DbProvider>() with get, set
+    member val AasxPath = nullString with get, set
+    member val Author = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
+    member val Version = Version() with get, set
+    member val Description = nullString with get, set
+    member val DateTime = now().TruncateToSecond() with get, set
     member val ProjectMemo = nullString with get, set
     static member Create(?project:IRtProject) =
         createExtended<ProjectProperties>()
@@ -134,4 +140,3 @@ module internal DsPropertiesHelper =
       =
         source |> toOption |-> _.DeepClone<'T>() |?? create
         |> tee ( setParentI owner )
-

@@ -49,36 +49,38 @@ module CoreFromAas =
 
             // 확장 타입 정보를 사용하여 적절한 NjProject 생성
             let project = NjProject.FromISubmodel(projectSubmodel)
-            project |> tee(fun z -> z.AasxPath <- aasxPath)
+            project |> tee(fun z -> z.Properties.AasxPath <- aasxPath)
 
         static member FromISubmodel(submodel:ISubmodel): NjProject =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = project.ReadUniqueInfo()
 
-            let database    = project.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider> |? Prelude.getNull<DbProvider>()
-            let dateTime    = project.GetPropValue    "DateTime"    |> DateTime.Parse
-            let author      = project.TryGetPropValue "Author"      |? null
-            let description = project.TryGetPropValue "Description" |? null
-            let version     = project.TryGetPropValue "Version"     |-> Version.Parse |? Version(0, 0)
-            let propertiesJson = project.TryGetPropValue "Properties" |? null
+            let database    = project.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider>
+            let dateTime    = project.TryGetPropValue "DateTime"    |-> DateTime.Parse
+            let author      = project.TryGetPropValue "Author"
+            let description = project.TryGetPropValue "Description"
+            let version     = project.TryGetPropValue "Version"     |-> Version.Parse
+            let propertiesJsonOpt = project.TryGetPropValue "Properties"
 
             let activeSystems   = project.GetSMC "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
             let passiveSystems  = project.GetSMC "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
 
             NjProject.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
-                , DateTime       = dateTime
-                , Database       = database
-                , Author         = author
-                , Version        = version
-                , Description    = description
                 , ActiveSystems  = activeSystems
                 , PassiveSystems = passiveSystems)
             |> tee (fun njp ->
-                if propertiesJson.NonNullAny() then
-                    let props = JsonPolymorphic.FromJson<ProjectProperties>(propertiesJson)
-                    props.RawParent <- Some njp
-                    njp.Properties <- props)
+                let props =
+                    propertiesJsonOpt
+                    |-> JsonPolymorphic.FromJson<ProjectProperties>
+                    |?? ProjectProperties.Create
+                props.RawParent <- Some njp
+                database |> iter (fun db -> props.Database <- db)
+                author |> iter (fun v -> props.Author <- v)
+                version |> iter (fun v -> props.Version <- v)
+                description |> iter (fun v -> props.Description <- v)
+                dateTime |> iter (fun v -> props.DateTime <- v)
+                njp.Properties <- props)
             |> tee (readAasExtensionProperties project)
 
 

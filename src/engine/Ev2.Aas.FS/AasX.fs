@@ -118,7 +118,7 @@ module AasXModule2 =
                 Xmlization.Serialize.To(env, writer)
                 writer.Flush()
 
-            prj.AasxPath <- outputPath
+            prj.Properties.AasxPath <- outputPath
 
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
@@ -177,7 +177,7 @@ module AasXModule2 =
 
             // 5. 파일 교체 (백업 포함)
             replaceFileWithBackup aasxPath tempPath
-            prj.AasxPath <- aasxPath
+            prj.Properties.AasxPath <- aasxPath
 
     type Project with // ExportToAasxFile, FromAasxFile, InjectToExistingAasxFile, ReadRuntimeDataFromDatabase, UpdateDbAasXml
         /// AASX 파일에서 aas submodel xml 파일을 읽어서 database 의 project table 의 aasXml column 을 update
@@ -236,7 +236,7 @@ module AasXModule2 =
             njProj.RuntimeObject <- x // Runtime 객체들을 NjProject에 복사
             NewtonsoftJsonObjects.onNsJsonSerializing njProj
             njProj.ExportToAasxFile(outputPath)
-            x.AasxPath <- outputPath
+            x.Properties.AasxPath <- outputPath
 
         /// 기존의 aasx 파일에서 Project submodel 만 교체해서 저장
         member x.InjectToExistingAasxFile(aasxPath: string) =

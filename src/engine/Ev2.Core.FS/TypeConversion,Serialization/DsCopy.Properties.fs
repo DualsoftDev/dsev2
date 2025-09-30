@@ -54,16 +54,16 @@ module internal DsCopyModule =
         match sbx with
         | :? IDsProject ->
             // Project, NjProject, ORMProject
-            let s =
+            let propertiesJson =
                 match sbx with
-                | :? Project    as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; AasxPath=s.AasxPath; Database=s.Database; DateTime=s.DateTime; Properties=s.PropertiesJson |}
-                | :? NjProject  as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; AasxPath=s.AasxPath; Database=s.Database; DateTime=s.DateTime; Properties=s.Properties.ToJson() |}
-                | :? ORMProject as s -> {| Author=s.Author; Version=s.Version; Description=s.Description; AasxPath=s.AasxPath; Database=getNull<DbProvider>(); DateTime=s.DateTime; Properties=s.PropertiesJson |}
+                | :? Project    as s -> s.PropertiesJson
+                | :? NjProject  as s -> s.Properties.ToJson()
+                | :? ORMProject as s -> s.PropertiesJson
                 | _ -> failwith "ERROR"
             match dbx with
-            | :? Project    as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; d.Database<-s.Database; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
-            | :? NjProject  as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; d.Database<-s.Database; d.DateTime<-s.DateTime; d.Properties <- JsonPolymorphic.FromJson<ProjectProperties>(s.Properties)
-            | :? ORMProject as d -> d.Author<-s.Author; d.Version<-s.Version; d.Description<-s.Description; d.AasxPath<-s.AasxPath; (*d.Database<-s.Database;*) d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
+            | :? Project    as d -> d.PropertiesJson <- propertiesJson
+            | :? NjProject  as d -> d.Properties <- JsonPolymorphic.FromJson<ProjectProperties>(propertiesJson)
+            | :? ORMProject as d -> d.PropertiesJson <- propertiesJson
             | _ -> failwith "ERROR"
 
         | :? IDsSystem ->

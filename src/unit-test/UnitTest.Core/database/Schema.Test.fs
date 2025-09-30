@@ -297,8 +297,8 @@ module Schema =
             let prjGuid = newGuid()
             let prjName = "MainProject"
             let prjId = conn.Insert(
-                            $"INSERT INTO {Tn.Project} (guid, name, author, version) VALUES (@Guid, @Name, @Author, @Version)",
-                            {| Guid=prjGuid; Name=prjName; Author=Environment.UserName; Version=ver|})
+                            $"INSERT INTO {Tn.Project} (guid, name, properties) VALUES (@Guid, @Name, @Properties)",
+                            {| Guid=prjGuid; Name=prjName; Properties="{}" |})
 
 
             // system 삽입
@@ -511,14 +511,13 @@ module Schema =
 
                     let newProjId =
                         conn.Insert(
-                            $"""INSERT INTO {Tn.Project} (guid, dateTime, name, author, version, description)
+                            $"""INSERT INTO {Tn.Project} (guid, parameter, name, properties, aasXml)
                                 SELECT
                                     '{newGuid() |> guid2str}',
-                                    dateTime,
+                                    parameter,
                                     name || ' 복사본',
-                                    author,
-                                    version,
-                                    description
+                                    properties,
+                                    aasXml
                                 FROM project
                                 WHERE id = {projId}
                                 ;""", null, tr)

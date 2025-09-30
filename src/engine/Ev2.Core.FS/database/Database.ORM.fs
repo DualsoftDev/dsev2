@@ -71,30 +71,52 @@ module ORMTypesModule =
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime, propertiesJson:string) = // Initialize
+    type ORMProject(propertiesJson:string) = // Initialize
         inherit ORMUnique()
 
-        new() = new ORMProject(Environment.UserName, nullVersion, nullString, minDate, nullString)
-        interface IORMProject with
-            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+        let createProperties json =
+            json
+            |> String.toOption
+            |-> JsonPolymorphic.FromJson<ProjectProperties>
+            |?? ProjectProperties.Create
 
-        member val AasxPath    = nullString with get, set // AASX 파일 경로.
-        member val Author      = author      with get, set
-        member val Version     = version     with get, set
-        member val Description = description with get, set
-        member val DateTime    = dateTime    with get, set
-        member val Properties  = propertiesJson with get, set
+        let mutable propertiesObj = createProperties propertiesJson
+        let mutable propertiesStr = propertiesJson
+
+        let syncFromObj () = propertiesStr <- propertiesObj.ToJson()
+        let syncFromJson json =
+            propertiesStr <- json
+            propertiesObj <- createProperties json
+
+        new() = new ORMProject(nullString)
+        interface IORMProject with
+            member _.DateTime
+                with get() = propertiesObj.DateTime
+                and set v =
+                    propertiesObj.DateTime <- v
+                    syncFromObj()
+
+        member x.Properties
+            with get() = propertiesStr
+            and set value = syncFromJson value
+
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
 
+        member x.ProjectProperties
+            with get() = propertiesObj
+            and set value =
+                propertiesObj <- (value |> Option.ofObj |? ProjectProperties.Create())
+                syncFromObj()
+
+        member private x.UpdateProjectProperties(update:ProjectProperties -> unit) =
+            update propertiesObj
+            syncFromObj()
+
         member x.Initialize(runtime:Project) =
             runtime.CopyUniqueProperties(x)
-            x.DateTime <- runtime.DateTime
-            x.Author <- runtime.Author
-            x.Version <- runtime.Version
-            x.Description <- runtime.Description
-            x.Properties <- runtime.PropertiesJson
+            x.ProjectProperties <- createProperties runtime.PropertiesJson
             x
 
 

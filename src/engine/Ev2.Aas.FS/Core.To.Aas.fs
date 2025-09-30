@@ -41,12 +41,6 @@ module CoreToAas =
 
                 match x with
                 | :? NjProject as prj ->
-                    if isItNotNull prj.Database then
-                        JObj().TrySetProperty(prj.Database.ToString(), nameof prj.Database)
-                    JObj().TrySetProperty(prj.Description,         nameof prj.Description)
-                    JObj().TrySetProperty(prj.Author,              nameof prj.Author)
-                    JObj().TrySetProperty(prj.Version.ToString(),  nameof prj.Version)
-                    JObj().TrySetProperty(prj.DateTime,            nameof prj.DateTime)
                     let propertiesJson =
                         if isNull (box prj.Properties) then null
                         else prj.Properties.ToJson()
