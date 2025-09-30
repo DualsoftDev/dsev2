@@ -149,12 +149,13 @@ module ORMTypesModule =
 
         member x.Initialize(runtime:DsSystem) =
             runtime.CopyUniqueProperties(x)
-            x.DateTime <- runtime.DateTime
+            let rp = runtime.Properties
+            x.DateTime <- rp.DateTime
             x.IRI <- runtime.IRI
-            x.Author <- runtime.Author
-            x.EngineVersion <- runtime.EngineVersion
-            x.LangVersion <- runtime.LangVersion
-            x.Description <- runtime.Description
+            x.Author <- rp.Author
+            x.EngineVersion <- rp.EngineVersion
+            x.LangVersion <- rp.LangVersion
+            x.Description <- rp.Description
             x.OwnerProjectId <- runtime.OwnerProjectId
             x.Properties <- runtime.PropertiesJson
             x

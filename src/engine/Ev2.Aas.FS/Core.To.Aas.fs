@@ -47,12 +47,13 @@ module CoreToAas =
                     JObj().TrySetProperty(propertiesJson, "Properties")
 
                 | :? NjSystem as sys ->
+                    let sp = sys.Properties
                     JObj().TrySetProperty(sys.IRI,                      nameof sys.IRI)
-                    JObj().TrySetProperty(sys.Author,                   nameof sys.Author)
-                    JObj().TrySetProperty(sys.EngineVersion.ToString(), nameof sys.EngineVersion)
-                    JObj().TrySetProperty(sys.LangVersion.ToString(),   nameof sys.LangVersion)
-                    JObj().TrySetProperty(sys.Description,              nameof sys.Description)
-                    JObj().TrySetProperty(sys.DateTime,                 nameof sys.DateTime)
+                    JObj().TrySetProperty(sp.Author,                   "Author")
+                    JObj().TrySetProperty(sp.EngineVersion.ToString(), "EngineVersion")
+                    JObj().TrySetProperty(sp.LangVersion.ToString(),   "LangVersion")
+                    JObj().TrySetProperty(sp.Description,              "Description")
+                    JObj().TrySetProperty(sp.DateTime,                 "DateTime")
                     let entitiesJson =
                         let serialized = sys.PolymorphicJsonEntities.SerializedItems
                         if isNull serialized || serialized.Count = 0 then null else serialized.ToString()

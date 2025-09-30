@@ -96,7 +96,9 @@ module rec NewtonsoftJsonObjects =
     type NjSystem() = // Create, Initialize, OnDeserializedMethod, OnSerializingMethod, ShouldSerializeApiCalls, ShouldSerializeApiDefs, ShouldSerializeArrows, ShouldSerializeFlows, ShouldSerializeWorks
         inherit NjProjectEntity()
         interface INjSystem with
-            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+            member x.DateTime
+                with get() = x.Properties.DateTime
+                and set v = x.Properties.DateTime <- v
 
         [<JsonProperty(Order = 101)>] member val Flows    = [||]:NjFlow[]    with get, set
         [<JsonProperty(Order = 102)>] member val Works    = [||]:NjWork[]    with get, set
@@ -124,11 +126,27 @@ module rec NewtonsoftJsonObjects =
 
         member val OriginGuid    = Option<Guid>.None with get, set
         member val IRI           = nullString with get, set
-        member val Author        = nullString with get, set
-        member val EngineVersion = Version()  with get, set
-        member val LangVersion   = Version()  with get, set
-        member val Description   = nullString with get, set
-        member val DateTime      = minDate    with get, set
+        (*** 직행 접근자는 Properties 로 이동 완료. 필요 시 Properties.Author 등으로 직접 사용하세요.
+        member x.Author
+            with get() = x.Properties.Author
+            and set value = x.Properties.Author <- value
+        member x.EngineVersion
+            with get() = x.Properties.EngineVersion
+            and set value =
+                let v = value |> Option.ofObj |? Version()
+                x.Properties.EngineVersion <- v
+        member x.LangVersion
+            with get() = x.Properties.LangVersion
+            and set value =
+                let v = value |> Option.ofObj |? Version()
+                x.Properties.LangVersion <- v
+        member x.Description
+            with get() = x.Properties.Description
+            and set value = x.Properties.Description <- value
+        member x.DateTime
+            with get() = x.Properties.DateTime
+            and set value = x.Properties.DateTime <- value
+        ***)
 
         abstract member OnLoaded: unit -> unit
         /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
@@ -704,14 +722,17 @@ module Ds2JsonModule =
 
                 | :? DsSystem as s ->
                     let rt = s
+                    let rp = rt.Properties
                     NjSystem.Create(IRI=rt.IRI
-                        , Author=rt.Author
-                        , LangVersion=rt.LangVersion
-                        , EngineVersion=rt.EngineVersion
-                        , Description=rt.Description
                         , PolymorphicJsonEntities=rt.PolymorphicJsonEntities.DeepClone())
                     |> replicateProperties rt
                     |> tee (fun z ->
+                        let zp = z.Properties
+                        zp.Author <- rp.Author
+                        zp.EngineVersion <- rp.EngineVersion
+                        zp.LangVersion <- rp.LangVersion
+                        zp.Description <- rp.Description
+                        zp.DateTime <- rp.DateTime
                         let flows      = rt.Flows      |-> _.ToNj<NjFlow>()      |> toArray
                         let works      = rt.Works      |-> _.ToNj<NjWork>()      |> toArray
                         let arrows     = rt.Arrows     |-> _.ToNj<NjArrow>()     |> toArray

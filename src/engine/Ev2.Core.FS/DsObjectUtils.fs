@@ -87,7 +87,9 @@ module rec TmpCompatibility =
             let dateTime = dateTime |?? (fun () -> now().TruncateToSecond())
             match x with
             | :? Project as prj -> prj.Properties.DateTime <- dateTime
-            | :? DsSystem as sys -> sys.DateTime <- dateTime; sys.Project |> iter (fun p -> p.Properties.DateTime <- dateTime)
+            | :? DsSystem as sys ->
+                sys.Properties.DateTime <- dateTime
+                sys.Project |> iter (fun p -> p.Properties.DateTime <- dateTime)
             | _ -> ()
 
 

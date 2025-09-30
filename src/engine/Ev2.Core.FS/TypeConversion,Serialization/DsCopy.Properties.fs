@@ -70,14 +70,35 @@ module internal DsCopyModule =
             // System, NjSystem, ORMSystem
             let s =
                 match sbx with
-                | :? DsSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.PropertiesJson |}
-                | :? NjSystem  as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.Properties.ToJson() |}
+                | :? DsSystem  as s ->
+                    let p = s.Properties
+                    {| IRI=s.IRI; Author=p.Author; EngineVersion=p.EngineVersion; LangVersion=p.LangVersion; Description=p.Description; DateTime=p.DateTime; Properties=s.PropertiesJson |}
+                | :? NjSystem  as s ->
+                    let p = s.Properties
+                    {| IRI=s.IRI; Author=p.Author; EngineVersion=p.EngineVersion; LangVersion=p.LangVersion; Description=p.Description; DateTime=p.DateTime; Properties=p.ToJson() |}
                 | :? ORMSystem as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.PropertiesJson |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? DsSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
-            | :? NjSystem  as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.Properties <- JsonPolymorphic.FromJson<DsSystemProperties>(s.Properties)
+            | :? DsSystem  as d ->
+                let p = d.Properties
+                d.IRI<-s.IRI
+                p.Author<-s.Author
+                p.EngineVersion<-s.EngineVersion
+                p.LangVersion<-s.LangVersion
+                p.Description<-s.Description
+                p.DateTime<-s.DateTime
+                d.PropertiesJson <- s.Properties
+            | :? NjSystem  as d ->
+                d.IRI<-s.IRI
+                let props = JsonPolymorphic.FromJson<DsSystemProperties>(s.Properties)
+                props.RawParent <- Some (d :> Unique)
+                props.Author<-s.Author
+                props.EngineVersion<-s.EngineVersion
+                props.LangVersion<-s.LangVersion
+                props.Description<-s.Description
+                props.DateTime<-s.DateTime
+                d.Properties <- props
             | :? ORMSystem as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
             | _ -> failwith "ERROR"
 

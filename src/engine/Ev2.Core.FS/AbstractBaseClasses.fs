@@ -83,6 +83,11 @@ type ProjectProperties() =
 
 type DsSystemProperties() =
     inherit DsPropertiesBase()
+    member val Author = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
+    member val EngineVersion = Version() with get, set
+    member val LangVersion = Version() with get, set
+    member val Description = nullString with get, set
+    member val DateTime = now().TruncateToSecond() with get, set
     // 이하는 sample attributes. // TODO: remove samples
     member val Boolean = false with get, set
     member val Integer = 0     with get, set

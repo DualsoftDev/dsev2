@@ -104,19 +104,15 @@ module CoreFromAas =
 
             NjSystem.Create(
                 Name=name, Guid=guid, Id=id, Parameter=parameter
-                , DateTime = dateTime
                 , IRI = iri
-                , Author = author
-                , EngineVersion = engineVersion
-                , LangVersion = langVersion
-                , Description = description
 
                 , Flows = flows
                 , Works = works
                 , Arrows = arrows
                 , ApiDefs = apiDefs
                 , ApiCalls = apiCalls
-            ) |> tee (fun system ->
+            )
+            |> tee (fun system ->
                 readAasExtensionProperties smc system |> ignore
                 // UI 요소들 읽기
                 let entitiesJson = smc.TryGetPropValue "Entities" |? null
@@ -128,7 +124,15 @@ module CoreFromAas =
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then
                     let props = JsonPolymorphic.FromJson<DsSystemProperties>(propertiesJson)
-                    system.Properties <- props)
+                    props.RawParent <- Some (system :> Unique)
+                    system.Properties <- props
+
+                let sp = system.Properties
+                author |> Option.ofObj |> iter (fun v -> sp.Author <- v)
+                sp.EngineVersion <- engineVersion
+                sp.LangVersion <- langVersion
+                description |> Option.ofObj |> iter (fun v -> sp.Description <- v)
+                sp.DateTime <- dateTime)
 
     type NjArrow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =

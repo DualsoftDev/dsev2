@@ -148,14 +148,14 @@ module rec DsCompareObjects =
                 yield! (x.Conditions, y.Conditions, criteria) |||> computeDiffRecursively
                 yield! (x.Actions   , y.Actions   , criteria) |||> computeDiffRecursively
 
-                if x.Author        <> y.Author        then yield Diff(nameof x.Author, x, y, nullUpdateSql)
                 if x.IRI           <> y.IRI           then yield Diff(nameof x.IRI, x, y, nullUpdateSql)
-                if x.EngineVersion <> y.EngineVersion then yield Diff(nameof x.EngineVersion, x, y, nullUpdateSql)
-                if x.LangVersion   <> y.LangVersion   then yield Diff(nameof x.LangVersion, x, y, nullUpdateSql)
-                if x.Description   <> y.Description   then yield Diff(nameof x.Description, x, y, nullUpdateSql)
+                //if x.Properties.Author        <> y.Properties.Author        then yield Diff("Author", x, y, nullUpdateSql)
+                //if x.Properties.EngineVersion <> y.Properties.EngineVersion then yield Diff("EngineVersion", x, y, nullUpdateSql)
+                //if x.Properties.LangVersion   <> y.Properties.LangVersion   then yield Diff("LangVersion", x, y, nullUpdateSql)
+                //if x.Properties.Description   <> y.Properties.Description   then yield Diff("Description", x, y, nullUpdateSql)
+                //if criteria.DateTime && !! x.Properties.DateTime.IsEqualTime(y.Properties.DateTime) then
+                //    yield Diff("DateTime", x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
-                if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
-                    yield Diff(nameof x.DateTime, x, y, nullUpdateSql)
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
