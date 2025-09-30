@@ -20,6 +20,15 @@ module rec DsCompareObjects =
         member x.TryGetId():Id option = x |> tryCast<Unique> >>= _.Id
         member x.TryGetRawParent():Unique option = x.tryGet() >>= _.RawParent
 
+    type Unique with // GetGuid, GetName, GetParameter, TryGetId, TryGetRawParent
+        member private current.findRoot () =
+            match current.RawParent with
+            | Some parent -> parent.findRoot()
+            | None -> current
+        /// parent tree 를 따라 최상의 parent 객체 반환.
+        member x.Root = x.findRoot()
+
+
     type CompareCriteria(?id:bool, ?guid:bool, ?dateTime:bool, ?parentGuid, ?parameter, ?runtimeStatus) =
         let id         = id         |? true
         let guid       = guid       |? true
@@ -45,8 +54,25 @@ module rec DsCompareObjects =
         member val LangVersion          = true with get, set
 
 
+    type IRtUnique with // getTableName
+        member x.getTableName() =
+            match x with
+            | :? Project     -> Tn.Project
+            | :? DsSystem    -> Tn.System
+            | :? Flow        -> Tn.Flow
+            | :? ApiDef      -> Tn.ApiDef
+            | :? ApiCall     -> Tn.ApiCall
+            | :? Work        -> Tn.Work
+            | :? Call        -> Tn.Call
+            | :? ArrowBetweenCalls -> Tn.ArrowCall
+            | :? ArrowBetweenWorks -> Tn.ArrowWork
+            | _ -> failwith $"Unknown RtUnique type: {x.GetType().Name}"
+
     let nullUpdateSql = (null, null)
-    let updatePropertiesSql = $"UPDATE {Tn.Project} SET properties=@PropertiesJson WHERE id=@Id"
+    let getUpdatePropertiesSql (entity:IRtUnique) =
+        let tableName = entity.getTableName()
+        let supportsJsonB = (entity :?> Unique).Root |> tryCast<Project> >>= _.DbApi |-> _.DapperJsonB |? ""
+        $"UPDATE {tableName} SET properties=@PropertiesJson{supportsJsonB} WHERE id=@Id"
 
     /// 객체 비교 결과 반환용....
     [<DebuggerDisplay("{ToString()}")>]
@@ -126,9 +152,11 @@ module rec DsCompareObjects =
                 yield! (x.ActiveSystems,  y.ActiveSystems,  criteria) |||> computeDiffRecursively
                 yield! (x.PassiveSystems, y.PassiveSystems, criteria) |||> computeDiffRecursively
 
+                let xxx = x.Properties.Database
+                let yyy = y.Properties.Database
                 (* 기타 속성 비교 *)
                 // AasXml 멤버 제거됨
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -155,7 +183,7 @@ module rec DsCompareObjects =
                 //if x.Properties.Description   <> y.Properties.Description   then yield Diff("Description", x, y, nullUpdateSql)
                 //if criteria.DateTime && !! x.Properties.DateTime.IsEqualTime(y.Properties.DateTime) then
                 //    yield Diff("DateTime", x, y, nullUpdateSql)
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
 
@@ -165,7 +193,7 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y, nullUpdateSql)
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
             }
 
     type Work with // ComputeDiff
@@ -189,7 +217,7 @@ module rec DsCompareObjects =
                 if x.Period        <> y.Period        then yield Diff(nameof x.Period,        x, y, nullUpdateSql)
                 if x.Delay         <> y.Delay         then yield Diff(nameof x.Delay,         x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y, nullUpdateSql)
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
 
                 yield! (x.Calls,  y.Calls,  criteria) |||> computeDiffRecursively
                 yield! (x.Arrows, y.Arrows, criteria) |||> computeDiffRecursively
@@ -208,7 +236,7 @@ module rec DsCompareObjects =
                 if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, nullUpdateSql)
                 if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, nullUpdateSql)
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
 
                 let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
                 if d1 then yield Diff("ApiCalls", x, y, nullUpdateSql)
@@ -221,7 +249,7 @@ module rec DsCompareObjects =
                 if x.IsPush <> y.IsPush then yield Diff(nameof x.IsPush, x, y, nullUpdateSql)
                 if x.TxGuid <> y.TxGuid then yield Diff(nameof x.TxGuid, x, y, ($"UPDATE {Tn.ApiDef} SET txId={y.TX.Id.Value} WHERE id={y.Id.Value}", null))
                 if x.RxGuid <> y.RxGuid then yield Diff(nameof x.RxGuid, x, y, ($"UPDATE {Tn.ApiDef} SET rxId={y.RX.Id.Value} WHERE id={y.Id.Value}", null))
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
             }
 
     type ApiCall with // ComputeDiff
@@ -235,7 +263,7 @@ module rec DsCompareObjects =
                 if x.OutSymbol  <> y.OutSymbol  then yield Diff(nameof x.OutSymbol, x, y, nullUpdateSql)
                 if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y, nullUpdateSql)
                 if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, nullUpdateSql)
-                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (updatePropertiesSql, y))
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff(nameof x.Properties, x, y, (getUpdatePropertiesSql x, y))
             }
 
     type ArrowBetweenWorks with // ComputeDiff

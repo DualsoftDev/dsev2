@@ -5,24 +5,11 @@ open Dapper
 open Dual.Common.Core.FS
 open System.Diagnostics
 open Dual.Common.Base
+open System
 
 [<AutoOpen>]
 module internal rec DbUpdateImpl =
-
-    type IRtUnique with // getTableName, rTryUpdateProjectToDB
-        member x.getTableName() =
-            match x with
-            | :? Project     -> Tn.Project
-            | :? DsSystem    -> Tn.System
-            | :? Flow        -> Tn.Flow
-            | :? ApiDef      -> Tn.ApiDef
-            | :? ApiCall     -> Tn.ApiCall
-            | :? Work        -> Tn.Work
-            | :? Call        -> Tn.Call
-            | :? ArrowBetweenCalls -> Tn.ArrowCall
-            | :? ArrowBetweenWorks -> Tn.ArrowWork
-            | _ -> failwith $"Unknown RtUnique type: {x.GetType().Name}"
-
+    type IRtUnique with // rTryUpdateProjectToDB
         /// Runtime 객체의 변경된 부분(diff result) 만 DB에 반영
         member x.rTryUpdateProjectToDB (dbApi:AppDbApi, diffs:CompareResult []): DbCommitResult =
             assert (diffs.any())
@@ -58,7 +45,31 @@ module internal rec DbUpdateImpl =
                     let sql = updateSql |> Option.ofObj |?? (fun () -> $"UPDATE {dbEntity.getTableName()} SET {dbColumnName}=@{propertyName} WHERE id=@Id")
                     let parameter = parameter |> Option.ofObj |? newEntity
                     let count = conn.Execute(sql, parameter, tr)
-                    verify(count > 0 )
+                    if count <= 0 then
+                        let tableName = dbEntity.getTableName()
+                        let entityId = dbEntity |> tryCast<Unique> >>= _.Id
+                        let debugLine =
+                            match parameter with
+                            | :? Project as p -> sprintf "project properties=%s id=%A" p.PropertiesJson p.Id
+                            | :? DsSystem as s -> sprintf "system properties=%s id=%A" s.PropertiesJson s.Id
+                            | :? Flow as f -> sprintf "flow properties=%s id=%A" f.PropertiesJson f.Id
+                            | :? Work as w -> sprintf "work properties=%s id=%A" w.PropertiesJson w.Id
+                            | :? Call as c -> sprintf "call properties=%s id=%A" c.PropertiesJson c.Id
+                            | :? ApiCall as ac -> sprintf "apiCall properties=%s id=%A" ac.PropertiesJson ac.Id
+                            | :? ApiDef as ad -> sprintf "apiDef properties=%s id=%A" ad.PropertiesJson ad.Id
+                            | _ -> sprintf "parameter=%A" parameter
+                        try System.IO.File.AppendAllText("/tmp/ds_update_debug.log", debugLine + Environment.NewLine) with _ -> ()
+                        match parameter with
+                        | :? Project as p -> printfn "[DB.Update] project diff failure. properties=%s id=%A" p.PropertiesJson p.Id
+                        | :? DsSystem as s -> printfn "[DB.Update] system diff failure. properties=%s id=%A" s.PropertiesJson s.Id
+                        | :? Flow as f -> printfn "[DB.Update] flow diff failure. properties=%s id=%A" f.PropertiesJson f.Id
+                        | :? Work as w -> printfn "[DB.Update] work diff failure. properties=%s id=%A" w.PropertiesJson w.Id
+                        | :? Call as c -> printfn "[DB.Update] call diff failure. properties=%s id=%A" c.PropertiesJson c.Id
+                        | :? ApiCall as ac -> printfn "[DB.Update] apiCall diff failure. properties=%s id=%A" ac.PropertiesJson ac.Id
+                        | :? ApiDef as ad -> printfn "[DB.Update] apiDef diff failure. properties=%s id=%A" ad.PropertiesJson ad.Id
+                        | _ -> printfn "[DB.Update] diff failure. parameter=%A" parameter
+                        printfn "[DB.Update] No rows updated: table=%s column=%s id=%A" tableName dbColumnName entityId
+                        failwithf "Update affected no rows. table=%s column=%s id=%A" tableName dbColumnName entityId
                     Ok (Updated [|x|])
 
                 // DB 삭제
@@ -74,4 +85,3 @@ module internal rec DbUpdateImpl =
                 | _ ->
                     failwith $"ERROR: Unknown CompareResult type: {x.GetType().Name}"
             )
-

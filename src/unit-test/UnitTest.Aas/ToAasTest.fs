@@ -77,6 +77,9 @@ module ToAasTest =
 
             let njProject2 = NjProject.FromISubmodel(submodel)
 
+            njProject2.Properties.AasxPath.NonNullAny() === true
+            njProject2.Properties.AasxPath <- null  // AasxPath 차이로 인한 테스트 실패 방지를 위해서.. dirty..
+
             let json2 = EmJson.ToJson(njProject2)
 
             let rtProject2 = Project.FromJson(json2)

@@ -112,6 +112,8 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
             and set v = x.Properties.DateTime <- v
     interface IParameterContainer
 
+    member val DbApi = Option<DbApi>.None with get, set
+
     // { JSON 용
     member val internal RawActiveSystems    = ResizeArray<DsSystem>() with get, set
     member val internal RawPassiveSystems   = ResizeArray<DsSystem>() with get, set

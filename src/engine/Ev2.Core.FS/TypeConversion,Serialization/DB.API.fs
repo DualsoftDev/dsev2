@@ -13,6 +13,9 @@ module Ds2SqliteModule =
 
     type Project with // CheckoutFromDB, RTryCheckoutFromDB, RTryCommitToDB, RTryRemoveFromDB
         member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
+            x.DbApi <- Some dbApi
+            x.Properties.Database <- dbApi.DbProvider
+
             dbApi.With(fun (conn, tr) ->
                 let dbProjs = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project} WHERE id = @Id OR guid = @Guid", x, tr) |> toList
                 match dbProjs with
@@ -51,6 +54,7 @@ module Ds2SqliteModule =
                     failwith "ERROR" )
 
         member x.RTryRemoveFromDB(dbApi:AppDbApi): DbCommitResult =
+            x.DbApi <- Some dbApi
             dbApi.With(fun (conn, tr) ->
                     rTryDo(fun () ->
                         let id = x.Id |? failwith "Project Id is not set"
