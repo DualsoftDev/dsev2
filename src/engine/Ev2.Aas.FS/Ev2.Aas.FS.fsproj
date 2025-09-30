@@ -12,7 +12,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="devdoc\**\*.md" />
 		<Content Include="AasSyntax.md" />
 		<Content Include="maximal.json" />
 		<Content Include="minimal.json" />
@@ -23,12 +22,9 @@
 		<Compile Include="Core.From.Aas.fs" />
 		<Compile Include="AasX.fs" />
 		<Compile Include="Ev2AasExtensionForCSharp.fs" />
-		<None Include="devdoc\**\*.md" />
-		<Content Include="devdoc\SampleAASFolder\aasx\aas\aas.aas.xml" />
-		<None Include="devdoc\SampleAASFolder\aasx\aasx-origin" />
-		<None Include="devdoc\SampleAASFolder\aasx\_rels\aasx-origin.rels" />
-		<None Include="devdoc\SampleAASFolder\_rels\.rels" />
-		<Content Include="devdoc\SampleAASFolder\[Content_Types].xml" />
+		<None Include="..\..\..\docs\devdoc\*.md">
+			<Link>devdoc\%(Filename)%(Extension)</Link>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
