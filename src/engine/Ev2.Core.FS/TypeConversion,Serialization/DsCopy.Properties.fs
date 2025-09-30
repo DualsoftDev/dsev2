@@ -83,24 +83,44 @@ module internal DsCopyModule =
 
 
         | :? IDsFlow  ->
-            // Flow, NjFlow, ORMFlow
-            // 특별히 복사할 것 없음.
-            ()
+            let s =
+                match sbx with
+                | :? Flow    as f -> {| Properties = f.PropertiesJson |}
+                | :? NjFlow  as f -> {| Properties = f.Properties.ToJson() |}
+                | :? ORMFlow as f -> {| Properties = f.PropertiesJson |}
+                | _ -> failwith "ERROR"
+
+            match dbx with
+            | :? Flow    as d -> d.PropertiesJson <- s.Properties
+            | :? NjFlow  as d ->
+                let props =
+                    s.Properties
+                    |> String.toOption
+                    |-> JsonPolymorphic.FromJson<FlowProperties>
+                    |?? FlowProperties.Create
+                if isItNotNull props then setParentI d props
+                d.Properties <- props
+            | :? ORMFlow as d -> d.PropertiesJson <- s.Properties
+            | _ -> failwith "ERROR"
 
         | :? IDsWork ->
             // Work, NjWork, ORMWork
             noop()
             let s =
                 match sbx with
-                | :? Work    as s -> {| Motion=s.Motion; Script=s.Script; ExternalStart=s.ExternalStart; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) FlowGuid=s.FlowGuid |}
-                | :? NjWork  as s -> {| Motion=s.Motion; Script=s.Script; ExternalStart=s.ExternalStart; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) FlowGuid=s.FlowGuid |> Option.ofObj |-> s2guid |}
-                | :? ORMWork as s -> {| Motion=s.Motion; Script=s.Script; ExternalStart=s.ExternalStart; IsFinished=s.IsFinished; NumRepeat=s.NumRepeat; Period=s.Period; Delay=s.Delay; (*Status4=s.Status4*) FlowGuid=s.FlowGuid|}
+                | :? Work    as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid; Properties=w.PropertiesJson |}
+                | :? NjWork  as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid |> Option.ofObj |-> s2guid; Properties=w.Properties.ToJson() |}
+                | :? ORMWork as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid; Properties=w.PropertiesJson |}
                 | _ -> failwith "ERROR"
 
             match dbx with
-            | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid
-            | :? NjWork  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
-            | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid
+            | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid; d.PropertiesJson <- s.Properties
+            | :? NjWork  as d ->
+                d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj
+                let props = s.Properties |> String.toOption |-> JsonPolymorphic.FromJson<WorkProperties> |?? WorkProperties.Create
+                if isItNotNull props then setParentI d props
+                d.Properties <- props
+            | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid; d.PropertiesJson <- s.Properties
             | _ -> failwith "ERROR"
 
         | :? IDsCall ->
@@ -111,22 +131,38 @@ module internal DsCopyModule =
             match sbx with
             | :? Call as s ->
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;          d.Status4<-s.Status4
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;          d.CommonConditionsObj<-s.CommonConditions;       d.Status4<-s.Status4
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson(); d.Status4Id<-getStatus4Id s.Status4
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;          d.Status4<-s.Status4; d.PropertiesJson <- s.PropertiesJson
+                | :? NjCall  as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;          d.CommonConditionsObj<-s.CommonConditions;       d.Status4<-s.Status4
+                    let props = s.PropertiesJson |> String.toOption |-> JsonPolymorphic.FromJson<CallProperties> |?? CallProperties.Create
+                    if isItNotNull props then setParentI d props
+                    d.Properties <- props
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.PropertiesJson
                 | _ -> failwith "ERROR"
             | :? NjCall as s ->
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;          d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson(); d.Status4Id<-getStatus4Id s.Status4
+                | :? Call    as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4
+                    d.PropertiesJson <- s.Properties.ToJson()
+                | :? NjCall  as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;          d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4
+                    let props = s.Properties.ToJson() |> String.toOption |-> JsonPolymorphic.FromJson<CallProperties> |?? CallProperties.Create
+                    if isItNotNull props then setParentI d props
+                    d.Properties <- props
+                | :? ORMCall as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson(); d.Status4Id<-getStatus4Id s.Status4
+                    d.PropertiesJson <- s.Properties.ToJson()
                 | _ -> failwith "ERROR"
             | :? ORMCall as s ->
                 let fj conditions = ApiCallValueSpecs.FromJson(conditions)
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions   <-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions   <-s.CommonConditions;       d.Status4Id<-s.Status4Id
+                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions   <-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.PropertiesJson <- s.PropertiesJson
+                | :? NjCall  as d ->
+                    d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id
+                    let props = s.PropertiesJson |> String.toOption |-> JsonPolymorphic.FromJson<CallProperties> |?? CallProperties.Create
+                    if isItNotNull props then setParentI d props
+                    d.Properties <- props
+                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions   <-s.CommonConditions;       d.Status4Id<-s.Status4Id; d.PropertiesJson <- s.PropertiesJson
                 | _ -> failwith "ERROR"
             | _ -> failwith "ERROR"
 

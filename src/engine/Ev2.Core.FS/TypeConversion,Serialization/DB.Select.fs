@@ -102,6 +102,7 @@ module internal Db2DsImpl =
                     setParentI s flow
                     flow
                     |> replicateProperties ormFlow
+                    |> tee (fun f -> f.PropertiesJson <- ormFlow.PropertiesJson)
                     |> tee handleAfterSelect
             ]
 
@@ -143,6 +144,7 @@ module internal Db2DsImpl =
                     Work.Create()
                     |> setParent s
                     |> replicateProperties orm
+                    |> tee (fun w -> w.PropertiesJson <- orm.PropertiesJson)
                     |> tee handleAfterSelect
                     |> tee(fun w ->
                         w.FlowGuid <- rtFlows |> tryFind(fun f -> f.Id = orm.FlowId) |-> _.Guid
@@ -182,6 +184,7 @@ module internal Db2DsImpl =
                                 ApiCallValueSpecs.FromJson(orm.CommonConditions)
                         Call.Create(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
                         |> replicateProperties orm
+                        |> tee (fun c -> c.PropertiesJson <- orm.PropertiesJson)
                         |> tee handleAfterSelect
                         |> setParent w
                         |> tee(fun c -> c.Status4 <- orm.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4> )
@@ -352,4 +355,3 @@ module internal Db2DsImpl =
 
                 rTryCheckoutSystemFromDBHelper ormSystem dbApi
         )
-

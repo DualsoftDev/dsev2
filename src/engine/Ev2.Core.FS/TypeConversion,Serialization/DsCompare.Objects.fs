@@ -167,6 +167,7 @@ module rec DsCompareObjects =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
                 if (x.System |-> _.Guid) <> (y.System |-> _.Guid)   then yield Diff("OwnerSystem", x, y, nullUpdateSql)
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, nullUpdateSql)
             }
 
     type Work with // ComputeDiff
@@ -190,6 +191,7 @@ module rec DsCompareObjects =
                 if x.Period        <> y.Period        then yield Diff(nameof x.Period,        x, y, nullUpdateSql)
                 if x.Delay         <> y.Delay         then yield Diff(nameof x.Delay,         x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y, nullUpdateSql)
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, nullUpdateSql)
 
                 yield! (x.Calls,  y.Calls,  criteria) |||> computeDiffRecursively
                 yield! (x.Arrows, y.Arrows, criteria) |||> computeDiffRecursively
@@ -208,6 +210,7 @@ module rec DsCompareObjects =
                 if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, nullUpdateSql)
                 if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, nullUpdateSql)
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, nullUpdateSql)
 
                 let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
                 if d1 then yield Diff("ApiCalls", x, y, nullUpdateSql)

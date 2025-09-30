@@ -321,6 +321,7 @@ CREATE TABLE {k Tn.SystemEntity}(
 
 CREATE TABLE {k Tn.Flow}( {sqlUniqWithName()}
     , {k "systemId"}      {intKeyType} NOT NULL
+    , {k "properties"}    {jsonb}
     , FOREIGN KEY(systemId)   REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , CONSTRAINT {Tn.Flow}_uniq UNIQUE (systemId, name)
 );
@@ -346,6 +347,7 @@ CREATE TABLE {k Tn.Work}( {sqlUniqWithName()}
     , {k "period"}      {int32} NOT NULL DEFAULT 0  -- 주기
     , {k "delay"}       {int32} NOT NULL DEFAULT 0  -- 지연
     , {k "status4Id"}   {intKeyType} DEFAULT NULL
+    , {k "properties"}   {jsonb}
     , FOREIGN KEY(systemId)  REFERENCES {Tn.System}(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)    REFERENCES {Tn.Flow}(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
     , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
@@ -391,6 +393,7 @@ CREATE TABLE {k Tn.Call}( {sqlUniqWithName()}
     , {k "timeout"}       INT   -- ms
     , {k "autoConditions"}   TEXT
     , {k "commonConditions"} TEXT
+    , {k "properties"}    {jsonb}
     , {k "isDisabled"}    {boolean} NOT NULL DEFAULT {falseValue}   -- 0: 활성화, 1: 비활성화
     , {k "workId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
@@ -787,5 +790,3 @@ CREATE TABLE {k Tn.TableDescription} (
 -- End of database schema
 --
 """
-
-

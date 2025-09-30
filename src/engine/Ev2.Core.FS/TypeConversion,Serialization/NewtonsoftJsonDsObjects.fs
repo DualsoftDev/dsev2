@@ -168,11 +168,14 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntity()
         interface INjFlow
 
+        [<JsonProperty(Order = 99)>] member val Properties = FlowProperties.Create() with get, set
+
         static member Create() = createExtended<NjFlow>()
 
     type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
         inherit NjSystemEntity()
         interface INjWork
+        [<JsonProperty(Order = 99)>] member val Properties = WorkProperties.Create() with get, set
         member val FlowGuid      = null:string with get, set
         member val Motion        = nullString  with get, set
         member val Script        = nullString  with get, set
@@ -233,6 +236,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonIgnore>] member x.Project = x.RawParent >>= _.RawParent>>= _.RawParent >>= tryCast<NjProject>
 
         interface INjCall
+        [<JsonProperty(Order = 99)>] member val Properties = CallProperties.Create() with get, set
         [<JsonProperty(Order = 101)>]
         member val CallType = DbCallType.Normal.ToString() with get, set
         /// Json serialize 용 API call 에 대한 Guid
@@ -392,6 +396,14 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjWork as njw ->
                 let rtw = njw |> getRuntimeObject<Work>
+                let propsClone =
+                    rtw.Properties
+                    |> toOption
+                    |-> _.DeepClone<WorkProperties>()
+                    |?? (fun () -> WorkProperties.Create())
+                if isItNotNull propsClone then
+                    setParentI njw propsClone
+                    njw.Properties <- propsClone
                 njw.Calls <- rtw.Calls |-> _.ToNj<NjCall>() |> toArray
 
 
@@ -400,9 +412,27 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjCall as njc ->
                 let rtc = njc |> getRuntimeObject<Call>
-                ()
+                let propsClone =
+                    rtc.Properties
+                    |> toOption
+                    |-> _.DeepClone<CallProperties>()
+                    |?? (fun () -> CallProperties.Create())
+                if isItNotNull propsClone then
+                    setParentI njc propsClone
+                    njc.Properties <- propsClone
 
-            | ( (:? NjFlow) | (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
+            | :? NjFlow as njf ->
+                let rtf = njf |> getRuntimeObject<Flow>
+                let propsClone =
+                    rtf.Properties
+                    |> toOption
+                    |-> _.DeepClone<FlowProperties>()
+                    |?? (fun () -> FlowProperties.Create())
+                if isItNotNull propsClone then
+                    setParentI njf propsClone
+                    njf.Properties <- propsClone
+
+            | ( (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
                 ()
 
@@ -468,6 +498,14 @@ module rec NewtonsoftJsonObjects =
 
                     // Status4 속성 복사
                     dsWork.Status4 <- njw.Status4
+                    let workProps =
+                        njw.Properties
+                        |> toOption
+                        |-> _.DeepClone<WorkProperties>()
+                        |?? (fun () -> WorkProperties.Create(dsWork))
+                    if isItNotNull workProps then
+                        setParentI dsWork workProps
+                        dsWork.Properties <- workProps
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork
@@ -500,11 +538,18 @@ module rec NewtonsoftJsonObjects =
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
-            // Flow는 이제 UI 요소를 직접 소유하지 않음
             let rtFlow =
                 Flow.Create()
                 |> replicateProperties njf
-
+                |> tee (fun flow ->
+                    let props =
+                        njf.Properties
+                        |> toOption
+                        |-> _.DeepClone<FlowProperties>()
+                        |?? (fun () -> FlowProperties.Create(flow))
+                    if isItNotNull props then
+                        setParentI flow props
+                        flow.Properties <- props)
             njf.RuntimeObject <- rtFlow
             ()
 
@@ -541,6 +586,15 @@ module rec NewtonsoftJsonObjects =
                 let ccs = njc.CommonConditionsObj
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
+                |> tee (fun call ->
+                    let callProps =
+                        njc.Properties
+                        |> toOption
+                        |-> _.DeepClone<CallProperties>()
+                        |?? (fun () -> CallProperties.Create(call))
+                    if isItNotNull callProps then
+                        setParentI call callProps
+                        call.Properties <- callProps)
             ()
 
         | :? NjApiCall as njac ->
@@ -727,6 +781,15 @@ module Ds2JsonModule =
                     let rt = f
                     NjFlow.Create()
                     |> replicateProperties rt
+                    |> tee (fun z ->
+                        let propsClone =
+                            rt.Properties
+                            |> toOption
+                            |-> _.DeepClone<FlowProperties>()
+                            |?? FlowProperties.Create
+                        if isItNotNull propsClone then
+                            setParentI z propsClone
+                            z.Properties <- propsClone)
                     :> INjUnique
 
                 | :? Work as w ->
@@ -738,7 +801,15 @@ module Ds2JsonModule =
                         let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
                         let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
                         z.Initialize(calls, arrows, flowGuid) |> ignore
-                        z.Status4 <- rt.Status4)
+                        z.Status4 <- rt.Status4
+                        let propsClone =
+                            rt.Properties
+                            |> toOption
+                            |-> _.DeepClone<WorkProperties>()
+                            |?? WorkProperties.Create
+                        if isItNotNull propsClone then
+                            setParentI z propsClone
+                            z.Properties <- propsClone)
                     :> INjUnique
 
 
@@ -751,7 +822,15 @@ module Ds2JsonModule =
                     |> tee (fun z ->
                         let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
                         z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
-                        z.Status4 <- rt.Status4)
+                        z.Status4 <- rt.Status4
+                        let propsClone =
+                            rt.Properties
+                            |> toOption
+                            |-> _.DeepClone<CallProperties>()
+                            |?? CallProperties.Create
+                        if isItNotNull propsClone then
+                            setParentI z propsClone
+                            z.Properties <- propsClone)
                     :> INjUnique
 
 

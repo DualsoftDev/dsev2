@@ -101,6 +101,10 @@ module CoreToAas =
                     JObj().TrySetProperty(sprintf "%A" call.ApiCalls, nameof call.ApiCalls)      // Guid[] type
                     if call.Status.NonNullAny() then
                         JObj().TrySetProperty(call.Status, nameof call.Status)
+                    let callPropsJson =
+                        if isNull (box call.Properties) then null
+                        else call.Properties.ToJson()
+                    JObj().TrySetProperty(callPropsJson, "Properties")
 
                 | :? NjArrow as arrow ->
                     JObj().TrySetProperty(arrow.Source, nameof arrow.Source)
@@ -118,14 +122,21 @@ module CoreToAas =
                     JObj().TrySetProperty(work.Delay,      nameof work.Delay)
                     if work.Status.NonNullAny() then
                         JObj().TrySetProperty(work.Status, nameof work.Status)
+                    let workPropsJson =
+                        if isNull (box work.Properties) then null
+                        else work.Properties.ToJson()
+                    JObj().TrySetProperty(workPropsJson, "Properties")
 
                 | :? NjApiDef as apiDef ->
                     JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
                     JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
                     JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
 
-                | (:? NjFlow) ->
-                    ()
+                | :? NjFlow as flow ->
+                    let flowPropsJson =
+                        if isNull (box flow.Properties) then null
+                        else flow.Properties.ToJson()
+                    JObj().TrySetProperty(flowPropsJson, "Properties")
                 | unknown ->
                     failwith $"ERROR: Unknown type {unknown.GetType().Name}"
 

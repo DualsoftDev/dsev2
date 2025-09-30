@@ -137,22 +137,27 @@ module ORMTypesModule =
             x.Properties <- runtime.PropertiesJson
             x
 
-    type ORMFlow(systemId:Id) = // Initialize
+    type ORMFlow(systemId:Id, propertiesJson:string) = // Initialize
         inherit ORMWorkEntity(systemId)
 
-        new() = new ORMFlow(-1)
+        new() = new ORMFlow(-1, nullString)
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
+        member val Properties = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
         member x.Initialize(runtime:Flow) =
             runtime.CopyUniqueProperties(x)
             x.SystemId <- runtime.System |-> _.Id |? None
+            x.Properties <- runtime.PropertiesJson
             x
 
-    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option, flowGuid:Guid option) = // Initialize
+    type ORMWork(systemId:Id, status4Id:Id option, flowId:Id option, flowGuid:Guid option, propertiesJson:string) = // Initialize
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMWork(-1, None, None, noneGuid)
+        new() = new ORMWork(-1, None, None, noneGuid, nullString)
         interface IORMWork
 
         member val FlowId     = flowId     with get, set
@@ -165,6 +170,10 @@ module ORMTypesModule =
         member val Period     = 0          with get, set
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
+        member val Properties = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
         member x.Initialize(runtime:Work) =
             runtime.CopyUniqueProperties(x)
@@ -177,14 +186,15 @@ module ORMTypesModule =
             x.Delay <- runtime.Delay
             x.FlowId <- runtime.Flow |-> _.Id |? None
             x.Status4Id <- runtime.Status4 |-> int64
+            x.Properties <- runtime.PropertiesJson
             x
 
     type ORMCall(workId:Id, status4Id:Id option // Initialize
-        , callTypeId:Id option, autoConditions: string, commonConditions: string, isDisabled:bool, timeout:int option
+        , callTypeId:Id option, autoConditions: string, commonConditions: string, isDisabled:bool, timeout:int option, propertiesJson:string
     ) =
         inherit ORMWorkEntity(workId)
 
-        new() = new ORMCall(-1, None, None, null, null, false, None)
+        new() = new ORMCall(-1, None, None, null, null, false, None, nullString)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set
@@ -193,6 +203,10 @@ module ORMTypesModule =
         member val Timeout    = timeout    with get, set
         member val AutoConditions   = autoConditions   with get, set
         member val CommonConditions = commonConditions with get, set
+        member val Properties = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
         member x.Initialize(runtime:Call) =
             runtime.CopyUniqueProperties(x)
@@ -205,6 +219,7 @@ module ORMTypesModule =
             // ApiCallValueSpecs를 JSON 문자열로 변환
             x.AutoConditions   <- runtime.AutoConditions.ToJson()
             x.CommonConditions <- runtime.CommonConditions.ToJson()
+            x.Properties <- runtime.PropertiesJson
             x
 
 

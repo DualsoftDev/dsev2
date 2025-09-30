@@ -212,14 +212,14 @@ module ORMTypeConversionModule =
 
     type ORMCall with // Create
         static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
-            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
+            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option, propertiesJson:string
         ): ORMUnique =
             let callTypeId = AppDbApi.TryGetEnumId<DbCallType>(dbCallType)
             let status4Id = status4 >>= AppDbApi.TryGetEnumId<DbStatus4>
             // ApiCallValueSpecs를 JSON 문자열로 변환
             let autoConditionsJson   = autoConditions.ToJson()
             let commonConditionsJson = commonConditions.ToJson()
-            new ORMCall(workId, status4Id, callTypeId, autoConditionsJson, commonConditionsJson, isDisabled, timeout)
+            new ORMCall(workId, status4Id, callTypeId, autoConditionsJson, commonConditionsJson, isDisabled, timeout, propertiesJson)
 
     /// runtime object -> ORM object 변환
     /// 주의 사항 : 하부에서 dbApi.With() 사용 금지.  dbApi.TryFindEnumValueId 함수 이용 용도로만 제한
@@ -254,15 +254,16 @@ module ORMTypeConversionModule =
                 | :? Flow as rt ->
                     new ORMFlow()
                     |> ormReplicateProperties rt
+                    |> tee(fun orm -> (orm :?> ORMFlow).Properties <- rt.PropertiesJson)
 
                 | :? Work as rt ->
                     let flowId = (rt.Flow >>= _.Id)
                     let status4Id = rt.Status4 >>= AppDbApi.TryGetEnumId<DbStatus4>
-                    new ORMWork(pid, status4Id, flowId, rt.FlowGuid)
+                    new ORMWork(pid, status4Id, flowId, rt.FlowGuid, rt.PropertiesJson)
                     |> ormReplicateProperties rt
 
                 | :? Call as rt ->
-                    ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout)
+                    ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout, rt.PropertiesJson)
                     |> ormReplicateProperties rt
 
                 | :? ArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.

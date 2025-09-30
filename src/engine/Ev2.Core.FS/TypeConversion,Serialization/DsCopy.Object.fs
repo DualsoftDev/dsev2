@@ -90,6 +90,7 @@ module internal rec DsObjectCopyImpl =
 
                 // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
                 newWork |> replicateProperties x |> ignore
+                newWork.PropertiesJson <- x.PropertiesJson
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 calls  |> iter (setParentI newWork)
@@ -113,7 +114,8 @@ module internal rec DsObjectCopyImpl =
                 // UI 요소들은 System 레벨에서 복제됨
 
                 // 속성 복사 (GUID 포함)
-                newFlow |> replicateProperties x |> ignore )
+                newFlow |> replicateProperties x |> ignore
+                newFlow.PropertiesJson <- x.PropertiesJson )
 
 
     //type DsButton with // replicate
@@ -144,7 +146,8 @@ module internal rec DsObjectCopyImpl =
                 newCall
                 |> replicateProperties x
                 |> tee(fun c ->
-                    c.Status4 <- x.Status4))
+                    c.Status4 <- x.Status4
+                    c.PropertiesJson <- x.PropertiesJson))
 
 
     type ApiCall with // replicate

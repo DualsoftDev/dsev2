@@ -10,12 +10,15 @@ module MiniSample =
     let createCylinder(name:string) =
         let sys = DsSystem.Create(Name=name)
 
-        sys.Properties.Text <- "Sample Cylinder in mini sample"
-
         let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylAdvanceStart")
         let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylReturnStart")
         let flow = Flow.Create(Name="CylFlow")
         flow.AddWorks [workAdv; workRet]
+
+        sys.Properties.Text <- "Sample System Properties in mini sample"
+        flow.Properties.FlowMemo <- "Sample Flow Properties in mini sample"
+        workAdv.Properties.WorkMemo <- "Sample Work(ADV) Properties in mini sample"
+        workRet.Properties.WorkMemo <- "Sample Work(RET) Properties in mini sample"
 
         workAdv.StaticOptionBits.SetBits(15) |> ignore
         workAdv.DynamicOptionBits.SetBits(Int64.MaxValue) |> ignore

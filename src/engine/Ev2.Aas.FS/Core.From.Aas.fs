@@ -151,6 +151,12 @@ module CoreFromAas =
             // Flow는 이제 UI 요소를 직접 소유하지 않음
 
             NjFlow.Create( Name=name, Guid=guid, Id=id, Parameter=parameter, StaticOption=staticOption, DynamicOption=dynamicOption)
+            |> tee (fun flow ->
+                let propertiesJson = smc.TryGetPropValue "Properties" |? null
+                if propertiesJson.NonNullAny() then
+                    let props = JsonPolymorphic.FromJson<FlowProperties>(propertiesJson)
+                    props.RawParent <- Some (flow :> Unique)
+                    flow.Properties <- props)
             |> tee (readAasExtensionProperties smc)
 
 
@@ -186,6 +192,12 @@ module CoreFromAas =
                 , Calls = calls
                 , Status4 = status4
                 , Arrows = arrows)
+            |> tee (fun work ->
+                let propertiesJson = smc.TryGetPropValue "Properties" |? null
+                if propertiesJson.NonNullAny() then
+                    let props = JsonPolymorphic.FromJson<WorkProperties>(propertiesJson)
+                    props.RawParent <- Some (work :> Unique)
+                    work.Properties <- props)
             |> tee (readAasExtensionProperties smc)
 
     type NjCall with // FromSMC
@@ -228,6 +240,11 @@ module CoreFromAas =
             // object properties 설정
             njCall.AutoConditionsObj <- autoConditions
             njCall.CommonConditionsObj <- commonConditions
+            let propertiesJson = smc.TryGetPropValue "Properties" |? null
+            if propertiesJson.NonNullAny() then
+                let props = JsonPolymorphic.FromJson<CallProperties>(propertiesJson)
+                props.RawParent <- Some (njCall :> Unique)
+                njCall.Properties <- props
             njCall
             |> tee (readAasExtensionProperties smc)
 

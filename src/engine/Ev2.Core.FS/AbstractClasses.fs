@@ -256,12 +256,25 @@ and DsSystem() as this = // Create
 
 
 
-and Flow() = // Create
+and Flow() as this = // Create
     inherit DsSystemEntity()
 
     interface IRtFlow
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
+
+    member val Properties = FlowProperties.Create(this) with get, set
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            let props =
+                json
+                |> String.toOption
+                |-> JsonPolymorphic.FromJson<FlowProperties>
+                |?? (fun () -> FlowProperties.Create(this))
+            if isItNotNull props then setParentI x props
+            x.Properties <- props
 
     member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flows |> Seq.contains x)) |? [||]
     member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flows.Contains x)) |? [||]
@@ -306,7 +319,7 @@ and DsAction() = // Create
 
 
 // see static member Create
-and Work() = // Create
+and Work() as this = // Create
     inherit DsSystemEntity()
 
     interface IRtWork
@@ -322,6 +335,19 @@ and Work() = // Create
     member val Delay        = 0          with get, set
 
     member val Status4 = Option<DbStatus4>.None with get, set
+
+    member val Properties = WorkProperties.Create(this) with get, set
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            let props =
+                json
+                |> String.toOption
+                |-> JsonPolymorphic.FromJson<WorkProperties>
+                |?? (fun () -> WorkProperties.Create(this))
+            if isItNotNull props then setParentI x props
+            x.Properties <- props
 
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
@@ -350,7 +376,7 @@ and ApiCallValueSpecs(specs:IApiCallValueSpec seq) =
     new() = ApiCallValueSpecs([])
 
 // see static member Create
-and Call() = // Create
+and Call() as this = // Create
     inherit WorkEntity()
 
     interface IRtCall
@@ -387,6 +413,19 @@ and Call() = // Create
 
         call
 
+    member val Properties = CallProperties.Create(this) with get, set
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            let props =
+                json
+                |> String.toOption
+                |-> JsonPolymorphic.FromJson<CallProperties>
+                |?? (fun () -> CallProperties.Create(this))
+            if isItNotNull props then setParentI x props
+            x.Properties <- props
+
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
     inSymbol:string, outSymbol:string,
@@ -408,7 +447,6 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
     member val ValueSpec = valueSpec with get, set
     member val IOTags = IOTagsWithSpec() with get, set
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
-
 
     /// system 에서 현재 ApiCall 을 호출하는 Call 들
     member x.Callers:Call[] =
