@@ -66,6 +66,11 @@ module CoreToAas =
                     let propertiesJson =
                         if isNull (box sys.Properties) then null
                         else sys.Properties.ToJson()
+
+                    (* AASX 내에 Properties 에 대한 type 정보 $type 등이 없어도
+                       JsonPolymorphic.FromJson<'T>가 직접 createExtended<'T>()를 호출해
+                       실제 인스턴스를 먼저 만든 뒤 JsonConvert.PopulateObject로 값을 채우므로 확장 가능.
+                     *)
                     JObj().TrySetProperty(propertiesJson, "Properties")
 
                 | :? NjApiCall as apiCall ->

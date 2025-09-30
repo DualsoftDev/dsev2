@@ -23,6 +23,7 @@
 		<!-- Extension System (새로 추가) -->
 		<!-- TypeFactory는 Extension 모듈 이후에 위치 -->
 		<Compile Include="TypeFactory.fs" />
+		<Compile Include="AbstractBaseClasses.fs" />
 		<Compile Include="AbstractClasses.fs" />
 		<Compile Include="GuidedValueSpec.fs" />
 		<Compile Include="DsObjectUtils.fs" />
