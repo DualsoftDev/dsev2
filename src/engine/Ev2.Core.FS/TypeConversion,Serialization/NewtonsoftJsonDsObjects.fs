@@ -396,14 +396,7 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjWork as njw ->
                 let rtw = njw |> getRuntimeObject<Work>
-                let propsClone =
-                    rtw.Properties
-                    |> toOption
-                    |-> _.DeepClone<WorkProperties>()
-                    |?? (fun () -> WorkProperties.Create())
-                if isItNotNull propsClone then
-                    setParentI njw propsClone
-                    njw.Properties <- propsClone
+                njw.Properties <- DsPropertiesHelper.cloneProperties (njw :> Unique) rtw.Properties (fun () -> WorkProperties.Create())
                 njw.Calls <- rtw.Calls |-> _.ToNj<NjCall>() |> toArray
 
 
@@ -412,25 +405,11 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjCall as njc ->
                 let rtc = njc |> getRuntimeObject<Call>
-                let propsClone =
-                    rtc.Properties
-                    |> toOption
-                    |-> _.DeepClone<CallProperties>()
-                    |?? (fun () -> CallProperties.Create())
-                if isItNotNull propsClone then
-                    setParentI njc propsClone
-                    njc.Properties <- propsClone
+                njc.Properties <- DsPropertiesHelper.cloneProperties (njc :> Unique) rtc.Properties (fun () -> CallProperties.Create())
 
             | :? NjFlow as njf ->
                 let rtf = njf |> getRuntimeObject<Flow>
-                let propsClone =
-                    rtf.Properties
-                    |> toOption
-                    |-> _.DeepClone<FlowProperties>()
-                    |?? (fun () -> FlowProperties.Create())
-                if isItNotNull propsClone then
-                    setParentI njf propsClone
-                    njf.Properties <- propsClone
+                njf.Properties <- DsPropertiesHelper.cloneProperties (njf :> Unique) rtf.Properties (fun () -> FlowProperties.Create())
 
             | ( (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
@@ -498,14 +477,7 @@ module rec NewtonsoftJsonObjects =
 
                     // Status4 속성 복사
                     dsWork.Status4 <- njw.Status4
-                    let workProps =
-                        njw.Properties
-                        |> toOption
-                        |-> _.DeepClone<WorkProperties>()
-                        |?? (fun () -> WorkProperties.Create(dsWork))
-                    if isItNotNull workProps then
-                        setParentI dsWork workProps
-                        dsWork.Properties <- workProps
+                    dsWork.Properties <- DsPropertiesHelper.cloneProperties (dsWork :> Unique) njw.Properties (fun () -> WorkProperties.Create(dsWork))
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork
@@ -542,14 +514,7 @@ module rec NewtonsoftJsonObjects =
                 Flow.Create()
                 |> replicateProperties njf
                 |> tee (fun flow ->
-                    let props =
-                        njf.Properties
-                        |> toOption
-                        |-> _.DeepClone<FlowProperties>()
-                        |?? (fun () -> FlowProperties.Create(flow))
-                    if isItNotNull props then
-                        setParentI flow props
-                        flow.Properties <- props)
+                    flow.Properties <- DsPropertiesHelper.cloneProperties (flow :> Unique) njf.Properties (fun () -> FlowProperties.Create(flow)))
             njf.RuntimeObject <- rtFlow
             ()
 
@@ -587,14 +552,7 @@ module rec NewtonsoftJsonObjects =
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
                 |> tee (fun call ->
-                    let callProps =
-                        njc.Properties
-                        |> toOption
-                        |-> _.DeepClone<CallProperties>()
-                        |?? (fun () -> CallProperties.Create(call))
-                    if isItNotNull callProps then
-                        setParentI call callProps
-                        call.Properties <- callProps)
+                    call.Properties <- DsPropertiesHelper.cloneProperties (call :> Unique) njc.Properties (fun () -> CallProperties.Create(call)))
             ()
 
         | :? NjApiCall as njac ->

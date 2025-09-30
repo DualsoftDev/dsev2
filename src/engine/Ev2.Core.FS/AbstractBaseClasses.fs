@@ -110,4 +110,29 @@ type [<AbstractClass>] BLCABase() =
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
 
 
+[<AutoOpen>]
+module internal DsPropertiesHelper =
+    let inline assignFromJson<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
+        (owner:'TOwner)
+        (create: unit -> 'T)
+        (json:string)
+        : 'T =
+        let props =
+            json
+            |> String.toOption
+            |-> JsonPolymorphic.FromJson<'T>
+            |?? create
+        if isItNotNull props then setParentI (owner :> Unique) props
+        props
+
+    let inline cloneProperties<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
+        (owner:'TOwner)
+        (source:'T)
+        (create: unit -> 'T)
+        : 'T =
+        source
+        |> toOption
+        |-> _.DeepClone<'T>()
+        |?? create
+        |> tee (fun cloned -> if isItNotNull cloned then setParentI (owner :> Unique) cloned)
 

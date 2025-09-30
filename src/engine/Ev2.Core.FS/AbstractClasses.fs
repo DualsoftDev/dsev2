@@ -268,13 +268,7 @@ and Flow() as this = // Create
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props =
-                json
-                |> String.toOption
-                |-> JsonPolymorphic.FromJson<FlowProperties>
-                |?? (fun () -> FlowProperties.Create(this))
-            if isItNotNull props then setParentI x props
-            x.Properties <- props
+            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> FlowProperties.Create(this)) json
 
     member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flows |> Seq.contains x)) |? [||]
     member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flows.Contains x)) |? [||]
@@ -341,13 +335,7 @@ and Work() as this = // Create
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props =
-                json
-                |> String.toOption
-                |-> JsonPolymorphic.FromJson<WorkProperties>
-                |?? (fun () -> WorkProperties.Create(this))
-            if isItNotNull props then setParentI x props
-            x.Properties <- props
+            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> WorkProperties.Create(this)) json
 
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
@@ -418,13 +406,7 @@ and Call() as this = // Create
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props =
-                json
-                |> String.toOption
-                |-> JsonPolymorphic.FromJson<CallProperties>
-                |?? (fun () -> CallProperties.Create(this))
-            if isItNotNull props then setParentI x props
-            x.Properties <- props
+            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> CallProperties.Create(this)) json
 
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
