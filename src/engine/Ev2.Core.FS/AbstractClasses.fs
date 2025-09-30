@@ -120,7 +120,6 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     //member val LangVersion   = langVersion   |? Version()  with get, set
     //member val EngineVersion = engineVersion |? Version()  with get, set
     member val Description   = nullString with get, set
-    member val Properties    = ProjectProperties.Create(this) with get, set
 
     /// DateTime: 메모리에 최초 객체 생성시 생성
     member val DateTime = now().TruncateToSecond() with get, set
@@ -134,15 +133,11 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     member x.Systems = (x.PassiveSystems @ x.ActiveSystems) |> toList
     // } Runtime/DB 용
 
+    member val Properties    = ProjectProperties.Create(this) with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props =
-                json |> String.toOption
-                |-> JsonPolymorphic.FromJson<ProjectProperties>
-                |?? (fun () -> ProjectProperties.Create(this))
-            if isItNotNull props then setParentI x props
-            x.Properties <- props
+            x.Properties <- DsPropertiesHelper.assignFromJson x (fun () -> ProjectProperties.Create(this)) json
 
     static member Create() = createExtended<Project>()
 
@@ -191,16 +186,10 @@ and DsSystem() as this = // Create
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
     member val Properties = DsSystemProperties.Create(this) with get, set
-
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
-            let props =
-                json |> String.toOption
-                |-> JsonPolymorphic.FromJson<DsSystemProperties>
-                |?? (fun () -> DsSystemProperties.Create(this))
-            x.Properties <- props
-
+            x.Properties <- DsPropertiesHelper.assignFromJson x (fun () -> DsSystemProperties.Create(this)) json
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
