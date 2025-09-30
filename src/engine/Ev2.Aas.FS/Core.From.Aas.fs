@@ -60,6 +60,7 @@ module CoreFromAas =
             let author      = project.TryGetPropValue "Author"      |? null
             let description = project.TryGetPropValue "Description" |? null
             let version     = project.TryGetPropValue "Version"     |-> Version.Parse |? Version(0, 0)
+            let propertiesJson = project.TryGetPropValue "Properties" |? null
 
             let activeSystems   = project.GetSMC "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
             let passiveSystems  = project.GetSMC "PassiveSystems" >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
@@ -76,6 +77,11 @@ module CoreFromAas =
                 , Description    = description
                 , ActiveSystems  = activeSystems
                 , PassiveSystems = passiveSystems)
+            |> tee (fun njp ->
+                if propertiesJson.NonNullAny() then
+                    let props = JsonPolymorphic.FromJson<ProjectProperties>(propertiesJson)
+                    props.RawParent <- Some (njp :> Unique)
+                    njp.Properties <- props)
             |> tee (readAasExtensionProperties project)
 
 

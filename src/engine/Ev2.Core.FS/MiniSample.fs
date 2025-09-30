@@ -38,6 +38,7 @@ module MiniSample =
     let create() =
         // Project 생성
         let project = Project.Create(Name = "TestProject")
+        project.Properties.ProjectMemo <- "Sample Project in mini sample"
         let cyl = createCylinder "Cylinder1"
         project.AddPassiveSystem cyl
 

@@ -80,6 +80,7 @@ module rec NewtonsoftJsonObjects =
         member val Author      = null:string with get, set
         member val Version     = Version()   with get, set
         member val DateTime    = minDate     with get, set
+        [<JsonProperty(Order = 99)>] member val Properties = ProjectProperties.Create() with get, set
 
         [<JsonProperty(Order = 101)>] member val ActiveSystems    = [||]:NjSystem[] with get, set
         [<JsonProperty(Order = 102)>] member val PassiveSystems   = [||]:NjSystem[] with get, set
@@ -363,6 +364,14 @@ module rec NewtonsoftJsonObjects =
                 njp.PassiveSystems <- rtp.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
 
                 njp.Database <- rtp.Database
+                let propsClone =
+                    rtp.Properties
+                    |> toOption
+                    |-> _.DeepClone<ProjectProperties>()
+                    |?? (fun () -> ProjectProperties.Create())
+                if isItNotNull propsClone then
+                    setParentI njp propsClone
+                    njp.Properties <- propsClone
 
             | :? NjSystem as njs ->
                 let rts = njs |> getRuntimeObject<DsSystem>
@@ -415,6 +424,9 @@ module rec NewtonsoftJsonObjects =
         | :? NjProject as njp ->
             let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
             let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
+
+            if isItNotNull njp.Properties then
+                setParentI njp njp.Properties
 
             let rtp =
                 Project.Create(actives, passives, njp)
@@ -674,6 +686,15 @@ module Ds2JsonModule =
                         let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                         let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
                         z.Initialize(activeSystems, passiveSystems, rt, isDeserialization=false) |> ignore)
+                    |> tee (fun z ->
+                        let propsClone =
+                            rt.Properties
+                            |> toOption
+                            |-> _.DeepClone<ProjectProperties>()
+                            |?? (fun () -> ProjectProperties.Create())
+                        if isItNotNull propsClone then
+                            setParentI z propsClone
+                            z.Properties <- propsClone)
                     |> tee(fun n ->
                         // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
                         if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt

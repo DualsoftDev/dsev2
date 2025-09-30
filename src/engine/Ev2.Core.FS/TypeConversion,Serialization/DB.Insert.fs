@@ -62,8 +62,8 @@ module internal DbInsertModule =
 
                     let projId =
                         conn.Insert($"""INSERT INTO {Tn.Project}
-                                    (guid,   parameter,                     staticOption,  dynamicOption,  dateTime,  name,  author,  version,  description)
-                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @DateTime, @Name, @Author, @Version, @Description);""", orm, tr)
+                                    (guid,   parameter,                     staticOption,  dynamicOption,  properties,                     dateTime,  name,  author,  version,  description)
+                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @PropertiesJson{dbApi.DapperJsonB}, @DateTime, @Name, @Author, @Version, @Description);""", orm, tr)
 
                     rt.Id <- Some projId
 

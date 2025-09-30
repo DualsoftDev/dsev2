@@ -128,6 +128,7 @@ module rec DsCompareObjects =
                 (* 기타 속성 비교 *)
                 // AasXml 멤버 제거됨
                 if criteria.Author && x.Author <> y.Author then yield Diff(nameof x.Author, x, y, nullUpdateSql)
+                if x.PropertiesJson <> y.PropertiesJson then yield Diff("properties", x, y, nullUpdateSql)
                 if criteria.DateTime && !! x.DateTime.IsEqualTime(y.DateTime) then
                     yield Diff(nameof x.DateTime, x, y, nullUpdateSql)
             }

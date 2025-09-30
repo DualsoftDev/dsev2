@@ -71,10 +71,10 @@ module ORMTypesModule =
         member val WorkId = workId with get, set
 
     /// Object Releation Mapper for Asset
-    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime) = // Initialize
+    type ORMProject(author:string, version, (*langVersion, engineVersion,*) description, dateTime, propertiesJson:string) = // Initialize
         inherit ORMUnique()
 
-        new() = new ORMProject(Environment.UserName, nullVersion, nullString, minDate)
+        new() = new ORMProject(Environment.UserName, nullVersion, nullString, minDate, nullString)
         interface IORMProject with
             member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
 
@@ -83,6 +83,10 @@ module ORMTypesModule =
         member val Version     = version     with get, set
         member val Description = description with get, set
         member val DateTime    = dateTime    with get, set
+        member val Properties  = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
         member x.Initialize(runtime:Project) =
             runtime.CopyUniqueProperties(x)
@@ -90,6 +94,7 @@ module ORMTypesModule =
             x.Author <- runtime.Author
             x.Version <- runtime.Version
             x.Description <- runtime.Description
+            x.Properties <- runtime.PropertiesJson
             x
 
 

@@ -103,7 +103,7 @@ and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
     member x.XTypeId:Id = DbApi.GetEnumId x.Type
     //member val TypeId:Id = DbApi.GetEnumId typ with get, set
 
-and Project() = // Create, Initialize, OnSaved, OnLoaded
+and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     inherit RtUnique()
 
     interface IRtProject with
@@ -120,6 +120,7 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
     //member val LangVersion   = langVersion   |? Version()  with get, set
     //member val EngineVersion = engineVersion |? Version()  with get, set
     member val Description   = nullString with get, set
+    member val Properties    = ProjectProperties.Create(this) with get, set
 
     /// DateTime: 메모리에 최초 객체 생성시 생성
     member val DateTime = now().TruncateToSecond() with get, set
@@ -132,6 +133,16 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
     /// Project 내의 systems: 참조되는 PasssiveSystems 을 먼저 배치
     member x.Systems = (x.PassiveSystems @ x.ActiveSystems) |> toList
     // } Runtime/DB 용
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            let props =
+                json |> String.toOption
+                |-> JsonPolymorphic.FromJson<ProjectProperties>
+                |?? (fun () -> ProjectProperties.Create(this))
+            if isItNotNull props then setParentI x props
+            x.Properties <- props
 
     static member Create() = createExtended<Project>()
 
@@ -153,7 +164,7 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 
     abstract OnSaved : IDbConnection * IDbTransaction  -> unit
     /// DB 저장 직후에 호출되는 메서드
-    default this.OnSaved(conn:IDbConnection, tr:IDbTransaction) = ()
+    default _.OnSaved(conn:IDbConnection, tr:IDbTransaction) = ()
 
     abstract member OnLoaded: unit -> unit
     /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
@@ -161,7 +172,7 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 
     abstract OnLoaded : IDbConnection * IDbTransaction  -> unit
     /// DB load 이후에 호출되는 메서드
-    default this.OnLoaded(conn:IDbConnection, tr:IDbTransaction) = ()
+    default _.OnLoaded(conn:IDbConnection, tr:IDbTransaction) = ()
 
     static member FromJson(json:string): Project =
         fwdProjectFromJson json :?> Project

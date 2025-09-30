@@ -71,6 +71,9 @@ type [<AbstractClass>] DsPropertiesBase() =
 type ProjectProperties() =
     inherit DsPropertiesBase()
     member val ProjectMemo = nullString with get, set
+    static member Create(?project:IRtProject) =
+        createExtended<ProjectProperties>()
+        |> tee (fun p -> p.RawParent <- project.Cast<Unique>())
 
 type DsSystemProperties() =
     inherit DsPropertiesBase()

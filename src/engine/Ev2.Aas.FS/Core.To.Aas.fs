@@ -51,6 +51,10 @@ module CoreToAas =
                     JObj().TrySetProperty(prj.Author,              nameof prj.Author)
                     JObj().TrySetProperty(prj.Version.ToString(),  nameof prj.Version)
                     JObj().TrySetProperty(prj.DateTime,            nameof prj.DateTime)
+                    let propertiesJson =
+                        if isNull (box prj.Properties) then null
+                        else prj.Properties.ToJson()
+                    JObj().TrySetProperty(propertiesJson, "Properties")
 
                 | :? NjSystem as sys ->
                     JObj().TrySetProperty(sys.IRI,                      nameof sys.IRI)

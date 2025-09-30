@@ -241,7 +241,7 @@ module ORMTypeConversionModule =
                 match uniq with
                 | :? Project as z ->
                     // TypeFactory를 통해 확장 타입 생성 시도
-                    new ORMProject(z.Author, z.Version, z.Description, z.DateTime)
+                    new ORMProject(z.Author, z.Version, z.Description, z.DateTime, z.PropertiesJson)
                     |> ormReplicateProperties z
 
                 | :? DsSystem as rt ->
