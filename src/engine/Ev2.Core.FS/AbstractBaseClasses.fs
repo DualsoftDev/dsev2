@@ -101,6 +101,16 @@ type CallProperties() =
     member val CallMemo = nullString with get, set
     static member Create(?call:IRtCall) = createExtended<CallProperties>() |> tee (fun p -> p.RawParent <- call.Cast<Unique>())
 
+type ApiCallProperties() =
+    inherit DsPropertiesBase()
+    member val ApiCallMemo = nullString with get, set
+    static member Create(?apiCall:IRtApiCall) = createExtended<ApiCallProperties>() |> tee (fun p -> p.RawParent <- apiCall.Cast<Unique>())
+
+type ApiDefProperties() =
+    inherit DsPropertiesBase()
+    member val ApiDefMemo = nullString with get, set
+    static member Create(?apiDef:IRtApiDef) = createExtended<ApiDefProperties>() |> tee (fun p -> p.RawParent <- apiDef.Cast<Unique>())
+
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
     inherit JsonPolymorphic()

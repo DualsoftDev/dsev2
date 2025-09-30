@@ -321,6 +321,7 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntity()
 
         interface INjApiCall
+        [<JsonProperty(Order = 99)>] member val Properties = ApiCallProperties.Create() with get, set
         member val ApiDef     = emptyGuid  with get, set
         member val InAddress  = nullString with get, set
         member val OutAddress = nullString with get, set
@@ -337,6 +338,7 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntity()
         interface INjApiDef
 
+        [<JsonProperty(Order = 99)>] member val Properties = ApiDefProperties.Create() with get, set
         member val IsPush = false with get, set
         member val TxGuid = emptyGuid with get, set
         member val RxGuid = emptyGuid with get, set
@@ -410,6 +412,14 @@ module rec NewtonsoftJsonObjects =
             | :? NjFlow as njf ->
                 let rtf = njf |> getRuntimeObject<Flow>
                 njf.Properties <- DsPropertiesHelper.cloneProperties (njf :> Unique) rtf.Properties (fun () -> FlowProperties.Create())
+
+            | :? NjApiCall as njac ->
+                let rtac = njac |> getRuntimeObject<ApiCall>
+                njac.Properties <- DsPropertiesHelper.cloneProperties (njac :> Unique) rtac.Properties ApiCallProperties.Create
+
+            | :? NjApiDef as njad ->
+                let rtad = njad |> getRuntimeObject<ApiDef>
+                njad.Properties <- DsPropertiesHelper.cloneProperties (njad :> Unique) rtad.Properties ApiDefProperties.Create
 
             | ( (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
@@ -565,12 +575,16 @@ module rec NewtonsoftJsonObjects =
                 ApiCall.Create(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
                     valueParam)
                 |> replicateProperties njac
-                |> tee(fun ac -> ac.IOTags <- njac.IOTags)
+                |> tee(fun ac ->
+                    ac.IOTags <- njac.IOTags
+                    ac.Properties <- DsPropertiesHelper.cloneProperties (ac :> Unique) njac.Properties (fun () -> ApiCallProperties.Create(ac)))
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
                 ApiDef.Create(njad.IsPush(*, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin*))
                 |> replicateProperties njad
+                |> tee(fun ad ->
+                    ad.Properties <- DsPropertiesHelper.cloneProperties (ad :> Unique) njad.Properties (fun () -> ApiDefProperties.Create(ad)))
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
@@ -818,9 +832,30 @@ module Ds2JsonModule =
                         InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
                         ValueSpec=valueSpec, IOTags=rt.IOTags )
                     |> replicateProperties rt
+                    |> tee (fun z ->
+                        let propsClone =
+                            rt.Properties
+                            |> toOption
+                            |-> _.DeepClone<ApiCallProperties>()
+                            |?? ApiCallProperties.Create
+                        if isItNotNull propsClone then
+                            setParentI z propsClone
+                            z.Properties <- propsClone)
                     :> INjUnique
 
-                | :? ApiDef as ad -> NjApiDef.Create(IsPush=ad.IsPush) |> replicateProperties ad :> INjUnique
+                | :? ApiDef as ad ->
+                    NjApiDef.Create(IsPush=ad.IsPush)
+                    |> replicateProperties ad
+                    |> tee (fun z ->
+                        let propsClone =
+                            ad.Properties
+                            |> toOption
+                            |-> _.DeepClone<ApiDefProperties>()
+                            |?? ApiDefProperties.Create
+                        if isItNotNull propsClone then
+                            setParentI z propsClone
+                            z.Properties <- propsClone)
+                    :> INjUnique
 
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
                 :?> NjUnique

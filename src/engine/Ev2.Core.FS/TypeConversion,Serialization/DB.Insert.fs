@@ -157,8 +157,8 @@ module internal DbInsertModule =
 
                     let apiDefId =
                         conn.Insert($"""INSERT INTO {Tn.ApiDef}
-                                               (guid, parameter,                      staticOption, dynamicOption, name, isPush, txId, rxId, systemId)
-                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @IsPush, @TxId, @RxId, @SystemId);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
+                                               (guid, parameter,                      staticOption, dynamicOption, name, isPush, txId, rxId, systemId, properties)
+                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @IsPush, @TxId, @RxId, @SystemId, @PropertiesJson{dbApi.DapperJsonB});""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
 
                     rt.Id <- Some apiDefId
                     orm.Id <- Some apiDefId
@@ -171,8 +171,8 @@ module internal DbInsertModule =
                     let apiCallId =
                         conn.Insert(
                             $"""INSERT INTO {Tn.ApiCall}
-                                       (guid,   parameter,                     staticOption,  dynamicOption,  name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      ioTagsJson, valueSpecHint)
-                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint);"""
+                                       (guid,   parameter,                     staticOption,  dynamicOption,  name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      ioTagsJson, valueSpecHint, properties)
+                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @StaticOption, @DynamicOption, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint, @PropertiesJson{dbApi.DapperJsonB});"""
                             , orm, tr)
 
                     rt.Id <- Some apiCallId

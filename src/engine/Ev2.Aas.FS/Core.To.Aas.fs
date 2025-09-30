@@ -87,6 +87,10 @@ module CoreToAas =
                     // IOTags 직렬화
                     let ioTagsStr = IOTagsWithSpec.Jsonize apiCall.IOTags
                     JObj().TrySetProperty(ioTagsStr, nameof apiCall.IOTags)
+                    let apiCallPropsJson =
+                        if isNull (box apiCall.Properties) then null
+                        else apiCall.Properties.ToJson()
+                    JObj().TrySetProperty(apiCallPropsJson, "Properties")
 
                 | :? NjCall as call ->
                     JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
@@ -131,6 +135,10 @@ module CoreToAas =
                     JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
                     JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
                     JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
+                    let apiDefPropsJson =
+                        if isNull (box apiDef.Properties) then null
+                        else apiDef.Properties.ToJson()
+                    JObj().TrySetProperty(apiDefPropsJson, "Properties")
 
                 | :? NjFlow as flow ->
                     let flowPropsJson =

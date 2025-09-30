@@ -15,11 +15,6 @@ module MiniSample =
         let flow = Flow.Create(Name="CylFlow")
         flow.AddWorks [workAdv; workRet]
 
-        sys.Properties.Text <- "Sample System Properties in mini sample"
-        flow.Properties.FlowMemo <- "Sample Flow Properties in mini sample"
-        workAdv.Properties.WorkMemo <- "Sample Work(ADV) Properties in mini sample"
-        workRet.Properties.WorkMemo <- "Sample Work(RET) Properties in mini sample"
-
         workAdv.StaticOptionBits.SetBits(15) |> ignore
         workAdv.DynamicOptionBits.SetBits(Int64.MaxValue) |> ignore
 
@@ -28,6 +23,14 @@ module MiniSample =
 
         let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid, Guid=Guid.Parse("30000000-0000-0000-0000-000000000000"))
         let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid, Guid=Guid.Parse("40000000-0000-0000-0000-000000000000"))
+
+        sys      .Properties.Text       <- "Sample System Properties in mini sample"
+        flow     .Properties.FlowMemo   <- "Sample Flow Properties in mini sample"
+        workAdv  .Properties.WorkMemo   <- "Sample Work(ADV) Properties in mini sample"
+        workRet  .Properties.WorkMemo   <- "Sample Work(RET) Properties in mini sample"
+        apiDefAdv.Properties.ApiDefMemo <- "Sample ApiDef(ADV) Properties in mini sample"
+        apiDefRet.Properties.ApiDefMemo <- "Sample ApiDef(RET) Properties in mini sample"
+
 
         sys.AddApiDefs [apiDefAdv; apiDefRet]
 

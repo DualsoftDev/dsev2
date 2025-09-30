@@ -258,6 +258,12 @@ module CoreFromAas =
             let rxGuid = smc.GetPropValue          "RxGuid" |> Guid.Parse
 
             NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, StaticOption=staticOption, DynamicOption=dynamicOption, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
+            |> tee (fun apiDef ->
+                let propertiesJson = smc.TryGetPropValue "Properties" |? null
+                if propertiesJson.NonNullAny() then
+                    let props = JsonPolymorphic.FromJson<ApiDefProperties>(propertiesJson)
+                    props.RawParent <- Some (apiDef :> Unique)
+                    apiDef.Properties <- props)
             |> tee (readAasExtensionProperties smc)
 
     type NjApiCall with // FromSMC
@@ -285,4 +291,10 @@ module CoreFromAas =
             if not (System.String.IsNullOrEmpty(ioTagsStr)) then
                 apiCall.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
             apiCall
+            |> tee (fun apiCall ->
+                let propertiesJson = smc.TryGetPropValue "Properties" |? null
+                if propertiesJson.NonNullAny() then
+                    let props = JsonPolymorphic.FromJson<ApiCallProperties>(propertiesJson)
+                    props.RawParent <- Some (apiCall :> Unique)
+                    apiCall.Properties <- props)
             |> tee (readAasExtensionProperties smc)

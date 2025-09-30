@@ -412,7 +412,7 @@ and Call() as this = // Create
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
     inSymbol:string, outSymbol:string,
     valueSpec:IValueSpec option
-) =
+) as this =
     inherit DsSystemEntity()
 
     new() = new ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
@@ -429,6 +429,13 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
     member val ValueSpec = valueSpec with get, set
     member val IOTags = IOTagsWithSpec() with get, set
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
+
+    member val Properties = ApiCallProperties.Create(this) with get, set
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> ApiCallProperties.Create(this)) json
 
     /// system 에서 현재 ApiCall 을 호출하는 Call 들
     member x.Callers:Call[] =
@@ -453,7 +460,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
+and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
     inherit DsSystemEntity()
 
     let getWork (system:DsSystem option) (guid:Guid): Work =
@@ -477,6 +484,13 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
 
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
+
+    member val Properties = ApiDefProperties.Create(this) with get, set
+
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            x.Properties <- DsPropertiesHelper.assignFromJson (x :> Unique) (fun () -> ApiDefProperties.Create(this)) json
 
     // system 에서 현재 ApiDef 을 사용하는 ApiCall 들
     member x.ApiUsers:ApiCall[] =

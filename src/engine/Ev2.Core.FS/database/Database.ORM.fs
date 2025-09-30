@@ -243,11 +243,11 @@ module ORMTypesModule =
     type ORMApiCall(systemId:Id, apiDefId:Id // ValueSpecHint
         , inAddress:string, outAddress:string
         , inSymbol:string, outSymbol:string
-        , valueSpec:string, ioTagsJson:string
+        , valueSpec:string, ioTagsJson:string, propertiesJson:string
     ) =
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString, nullString)
+        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString, nullString, nullString)
         interface IORMApiCall
         member val ApiDefId = apiDefId with get, set
 
@@ -257,6 +257,10 @@ module ORMTypesModule =
         member val OutSymbol   = outSymbol   with get, set
         member val ValueSpec   = valueSpec with get, set
         member val IOTagsJson  = ioTagsJson with get, set
+        member val Properties  = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
         /// View only.  ValueSpec 에 대한 user friendly 표현.  e.g "3 <= x < 5".   TODO: ValueSpec 값 수정 시, tableHistory 를 통해 모니터링 하다가 update 해야 함.
         member x.ValueSpecHint =
@@ -264,10 +268,10 @@ module ORMTypesModule =
             else x.ValueSpec |> IValueSpec.Deserialize |> _.ToString()
 
 
-    type ORMApiDef(systemId:Id) =
+    type ORMApiDef(systemId:Id, propertiesJson:string) =
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMApiDef(-1)
+        new() = new ORMApiDef(-1, nullString)
         interface IORMApiDef
         member val IsPush = false with get, set
 
@@ -276,6 +280,10 @@ module ORMTypesModule =
 
         member val XTxGuid = emptyGuid with get, set
         member val XRxGuid = emptyGuid with get, set
+        member val Properties = propertiesJson with get, set
+        member x.PropertiesJson
+            with get() = x.Properties
+            and set value = x.Properties <- value
 
     type ORMEnum(name, category, value) =
         interface IORMEnum

@@ -131,6 +131,7 @@ module internal Db2DsImpl =
                     apiCall.IOTags <- ioTags
                     apiCall
                     |> replicateProperties orm
+                    |> tee (fun ac -> ac.PropertiesJson <- orm.PropertiesJson)
                     |> tee handleAfterSelect
             ]
             s.addApiCalls(rtApiCalls, false)
@@ -255,6 +256,7 @@ module internal Db2DsImpl =
 
                     apiDef
                     |> replicateProperties orm
+                    |> tee (fun ad -> ad.PropertiesJson <- orm.PropertiesJson)
                     |> tee handleAfterSelect
 
             ]

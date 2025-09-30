@@ -154,11 +154,13 @@ module internal rec DsObjectCopyImpl =
         member x.replicate() =
             ApiCall.Create(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
             |> replicateProperties x
+            |> tee(fun apiCall -> apiCall.PropertiesJson <- x.PropertiesJson)
 
     type ApiDef with // replicate
         member x.replicate() =
             ApiDef.Create(IsPush=x.IsPush, TxGuid=x.TxGuid, RxGuid=x.RxGuid)
             |> replicateProperties x
+            |> tee(fun apiDef -> apiDef.PropertiesJson <- x.PropertiesJson)
 
     type ArrowBetweenWorks with // replicate
         member x.replicate() =
