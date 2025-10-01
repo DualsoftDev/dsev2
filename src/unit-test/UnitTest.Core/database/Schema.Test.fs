@@ -626,9 +626,7 @@ module Schema =
                     dsProject.RTryCommitToDB(dbApi)
                     |> tee (tracefn "Result2: %A")
                     ==== Ok Inserted
-            )
 
-            dbApi.With(fun (conn, tr) ->
                 do
                     let r = dsProject.RTryCommitToDB(dbApi)
                     tracefn "Result3: %A" r
@@ -648,8 +646,8 @@ module Schema =
                         diffs.Length === 1
                         match diffs[0] with
                         | Diff("Name", dbW, newW, _) when newW = w -> ()
-                        | _ -> failwith "ERROR"
-                    | _ -> failwith "ERROR"
+                        | _ -> fail()
+                    | _ -> fail()
 
                 do
                     // 삭제 후, 다시 commit 하면 LeftOnly 가 나와야 함.  (삭제 이전에 Db, 즉 left 에만 존재했었다는 정보 표현)
@@ -664,10 +662,10 @@ module Schema =
                         diffs.Length.IsOneOf(2, 3, 4) === true
                         match diffs[0] with
                         | LeftOnly dbW when dbW.GetGuid() = w.Guid -> ()
-                        | _ -> failwith "ERROR"
+                        | _ -> fail()
                         match diffs[1] with
                         | LeftOnly dbA when dbA.GetGuid() = sysArrow0.Guid -> ()
-                        | _ -> failwith "ERROR"
+                        | _ -> fail()
 
                         let tail = diffs |> Array.skip 2
                         match tail with
@@ -675,8 +673,8 @@ module Schema =
                         | [|Diff("DateTime", dbSys, newSys, _)|] when dbSys.GetGuid() = newSys.GetGuid() -> ()
                         | [|Diff("DateTime", dbSys, newSys, _); Diff("DateTime", dbProj, newProj, _)|]
                             when dbSys.GetGuid() = newSys.GetGuid() && dbProj.GetGuid() = newProj.GetGuid() -> ()
-                        | _ -> failwith "ERROR"
-                    | _ -> failwith "ERROR"
+                        | _ -> fail()
+                    | _ -> fail()
 
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw - 1
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr) === na - 1
@@ -693,7 +691,7 @@ module Schema =
                         //diffs.Length === 2
                     | Error err ->
                         failwith $"ERROR: {err}"
-                    | _ -> failwith "ERROR"
+                    | _ -> fail()
 
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.Work}",      null, tr) === nw + 1
                     conn.ExecuteScalar<int>($"SELECT COUNT(*) FROM {Tn.ArrowWork}", null, tr) === na + 0  // no change
