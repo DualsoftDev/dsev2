@@ -55,7 +55,14 @@ module Interfaces =
         internal new() = new Unique(nullString, newGuid(), nullString, ?id=None, ?parent=None)
 
         /// DB 저장시의 primary key id.  DB read/write 수행한 경우에만 Non-null
-        [<JsonProperty(Order = -100)>] member val Id = id with get, set
+        [<JsonIgnore>] member val Id = id with get, set
+
+        [<JsonProperty("Id", Order = -100)>]
+        member x.IdJson
+            with get() = x.Id |> Option.toNullable
+            and set (value: Nullable<Id>) = x.Id <- Option.ofNullable value
+
+        member x.ShouldSerializeIdJson() = x.ShouldSerializeId()
 
         [<JsonProperty(Order = -100)>] member val Name = name with get, set
         [<JsonProperty(Order = -97)>]  member val Parameter = parameter with get, set
