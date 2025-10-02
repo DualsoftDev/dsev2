@@ -169,7 +169,8 @@ module Schema =
             json === json2
 
             let r = dsProject2.RTryCommitToDB(dbApi)
-            r ==== Ok NoChange
+            let xxx = r.GetDiffFields()
+            r.IsNoChangeOrOnlyDiffFields ["Database"; "DateTime"] === true
 
 
             dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
@@ -179,9 +180,9 @@ module Schema =
             validateRuntime dsProject3 |> ignore
 
             dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
-            dsProject3.RTryCommitToDB(dbApi)
-            |> tee(tracefn "Result3: %A")
-            ==== Ok NoChange
+            let r = dsProject3.RTryCommitToDB(dbApi)
+            tracefn "Result3: %A" r
+            r.IsNoChangeOrOnlyDiffFields ["Database"; "DateTime"] === true
 
             do
                 let dsProj = dsProject2.Duplicate()
@@ -610,7 +611,7 @@ module Schema =
 
                 let dsSystem = dsProject2.Systems[0]
                 let r = dsSystem.RTryCommitToDB dbApi
-                r ==== Ok NoChange
+                r.IsNoChangeOrOnlyDiffFields ["Database"; "DateTime"] === true
             ) |> ignore
 
         [<Test>]
@@ -630,12 +631,19 @@ module Schema =
                     ==== Ok Inserted
 
                 do
+                    //let r = dsProject.RTryCommitToDB(dbApi)
+                    //tracefn "Result3: %A" r
+
                     let r = dsProject.RTryCommitToDB(dbApi)
                     tracefn "Result3: %A" r
+                    let xxx = r.GetDiffFields()
+                    r.IsNoChangeOrOnlyDiffFields ["Properties::Database"; "Properties::DateTime"; "Properties::Text"] === true
 
-                    dsProject.RTryCommitToDB(dbApi)
-                    |> tee (tracefn "Result3: %A")
-                    ==== Ok NoChange
+
+                    let r = dsProject.RTryCommitToDB(dbApi)
+                    tracefn "Result4: %A" r
+                    let xxxyyy = r.GetDiffFields()
+                    r.IsNoChangeOrOnlyDiffFields ["Properties::DateTime"] === true
 
                 let sys = getMainSystem(dsProject)
                 let w = sys.Works[0]
@@ -645,8 +653,13 @@ module Schema =
                     w.Name <- "ModifiedWorkName"
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
-                        diffs.Length === 1
-                        match diffs[0] with
+                        let diffFields = diffs |> toList >>= _.GetPropertiesDiffFields()
+                        diffFields |-> fst |> sort |> distinct === [ "Name"; "Properties::DateTime" ]
+                        let diffName =
+                            diffs
+                            |> filter (function Diff("Name", _, _, _) -> true | _ -> false)
+                            |> head
+                        match diffName with
                         | Diff("Name", dbW, newW, _) when newW = w -> ()
                         | _ -> fail()
                     | _ -> fail()

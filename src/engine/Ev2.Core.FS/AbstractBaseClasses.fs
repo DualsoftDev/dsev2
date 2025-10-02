@@ -88,13 +88,10 @@ type DsSystemProperties() =
     member val LangVersion = Version() with get, set
     member val Description = nullString with get, set
     member val DateTime = now().TruncateToSecond() with get, set
+
     // 이하는 sample attributes. // TODO: remove samples
-    member val Boolean = false with get, set
-    member val Integer = 0     with get, set
-    member val UInt64  = 0UL   with get, set
-    member val Single  = 0.0f  with get, set
-    member val Double  = 0.0   with get, set
     member val Text    = nullString with get, set
+
     static member Create(?dsSystem:IRtSystem) = createExtended<DsSystemProperties>() |> tee (fun p -> p.RawParent <- dsSystem.Cast<Unique>())
 
 type FlowProperties() =

@@ -7,6 +7,7 @@ open Dual.Common.Db.FS
 open Dual.Common.Base
 open System.ComponentModel
 open System.Diagnostics
+open Newtonsoft.Json.Linq
 
 [<AutoOpen>]
 module rec DsCompareObjects =
@@ -95,6 +96,60 @@ module rec DsCompareObjects =
                 $"Diff({name}): {l} <> {r}"
             | _ -> failwith "ERROR: CompareResult.ToString()"
         static member CreateDiff(name, left, right) = Diff(name, left, right, nullUpdateSql)
+
+        /// Properties Diff인 경우, JSON 내부의 실제 변경된 필드 이름들을 반환
+        member x.GetPropertiesDiffFields() : (string * (JToken * JToken)) list =
+            match x with
+            | Diff("Properties", left, right, _) ->
+                let getPropertiesJson (obj: IRtUnique) =
+                    match obj with
+                    | :? Project  as p -> p.PropertiesJson
+                    | :? DsSystem as s -> s.PropertiesJson
+                    | :? Flow     as f -> f.PropertiesJson
+                    | :? Work     as w -> w.PropertiesJson
+                    | :? Call     as c -> c.PropertiesJson
+                    | :? ApiCall  as a -> a.PropertiesJson
+                    | :? ApiDef   as d -> d.PropertiesJson
+                    | _ -> "{}"
+
+                let p1 = JObject.Parse(getPropertiesJson left)
+                let p2 = JObject.Parse(getPropertiesJson right)
+
+                // p1에 있는 속성 중 p2와 다른 것들
+                let diffs1 =
+                    p1.Properties()
+                    |> Seq.filter (fun prop ->
+                        let p = p2.Property(prop.Name)
+                        let xxx, yyy = prop.Value.ToString(), p.Value.ToString()
+                        if xxx <> yyy then
+                            noop()
+                        //p = null || not (JToken.DeepEquals(prop.Value, p.Value)))
+                        p = null || prop.Value.ToString() <> p.Value.ToString()) //not (JToken.DeepEquals(prop.Value, p.Value)))
+                    |> Seq.map (fun prop -> $"Properties::{prop.Name}", (prop.Value, p2.Property(prop.Name).Value))
+
+                // p2에만 있는 속성들 (p1에 없는 것들)
+                let diffs2 =
+                    p2.Properties()
+                    |> Seq.filter (fun prop ->
+                        let p = p1.Property(prop.Name)
+                        p = null)
+                    |> Seq.map (fun prop -> $"Properties::{prop.Name}", (null, p2.Property(prop.Name).Value))
+
+                Seq.append diffs1 diffs2
+                |> Seq.distinct
+                |> Seq.toList
+            | Diff(cat, left, right, _) -> [cat, (null, null)]
+            | _ -> []
+
+        /// Properties Diff가 지정된 필드들만 다른지 확인
+        member x.IsPropertiesDiffOnly(allowedFields: string seq) : bool =
+            let diffFields = x.GetPropertiesDiffFields() |-> fst
+            diffFields.Length > 0 && diffFields |> List.forall (fun f -> allowedFields |> Seq.contains f)
+
+        /// Properties Diff가 주어진 조건을 만족하는지 확인
+        member x.IsPropertiesDiffSatisfying(predicate: string -> bool) : bool =
+            let diffFields = x.GetPropertiesDiffFields() |-> fst
+            diffFields.Length > 0 && diffFields |> List.forall predicate
 
     /// abberviation
     type internal Cc = CompareCriteria

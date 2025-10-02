@@ -35,7 +35,6 @@ module CreateSampleModule =
         if isItNull rtProject then
             rtProject <- Project.Create(Name = "MainProject")
             rtCylinder <- MiniSample.createCylinder("Cylinder")
-            rtCylinder.Properties.Integer <- 999
             rtCylinder.Properties.Text  <- "Hello Cylinder"
 
 

@@ -44,7 +44,6 @@ module CreateSampleWithCylinderModule =
                 |> tee (fun z ->
                     z.Name <- "Cylinder"
                     z.IRI  <- "urn:ev2:system:Cylinder"
-                    z.Properties.Integer <- 999
                     z.Properties.Text <- "Hello Cylinder")
             edFlowCyl    <- Flow.Create(Name = "CylFlow")
             edWork1Cyl   <- Work.Create() |> tee (fun z -> z.Name <- "BoundedWork1")

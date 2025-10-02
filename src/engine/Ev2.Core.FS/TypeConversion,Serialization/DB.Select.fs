@@ -10,6 +10,7 @@ open Dual.Common.Core.FS
 open Dual.Common.Db.FS
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+open System.Runtime.CompilerServices
 
 type DbObjectIdentifier = //
     | ByGuid of Guid
@@ -35,6 +36,22 @@ type DbCommitSuccessResponse = // Stringify
             | Deleted -> "Deleted"
 
 type DbCommitResult = Result<DbCommitSuccessResponse, ErrorMessage>
+
+type DbCommitResultExtension =
+    [<Extension>]
+    static member GetDiffFields(r:DbCommitResult) =
+        match r with
+        | Ok (Updated diffs) -> diffs |> toList |-> _.GetPropertiesDiffFields()
+        | _ -> []
+    [<Extension>]
+    static member IsNoChangeOrOnlyDiffFields(r:DbCommitResult, fields:string seq) =
+        match r with
+        | Ok NoChange -> true
+        | Ok (Updated diffs) ->
+            let xxx = diffs |> toList |> filter (fun d -> not <| d.IsPropertiesDiffOnly(fields)) >>= _.GetPropertiesDiffFields()
+            diffs |> filter (fun d -> not <| d.IsPropertiesDiffOnly(fields)) |> iter (fun d -> tracefn $"Diff: {d.GetPropertiesDiffFields()}")
+            diffs |> Seq.forall (fun d -> d.IsPropertiesDiffOnly(fields))
+        | _ -> false
 
 type DbCheckoutResult<'T> = Result<'T, ErrorMessage>
 
