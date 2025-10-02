@@ -121,7 +121,8 @@ module ORMTypesModule =
 
 
     type ORMSystem(ownerProjectId:Id option // Initialize
-        , iri:string, author:string, langVersion:Version, engineVersion:Version
+        , iri:string
+        , author:string, langVersion:Version, engineVersion:Version
         , description:string, dateTime
         , polys: PolymorphicJsonCollection<JsonPolymorphic>    // Button, Lamp, Condition, Action
         , propertiesJson:string
@@ -135,7 +136,7 @@ module ORMTypesModule =
 
         member val PolymorphicJsonEntities = polys with get, set
         member val OwnerProjectId = ownerProjectId with get, set
-        member val Properties = propertiesJson with get, set
+        member val Properties:string = propertiesJson with get, set
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value

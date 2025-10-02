@@ -100,12 +100,12 @@ module rec NewtonsoftJsonObjects =
                 with get() = x.Properties.DateTime
                 and set v = x.Properties.DateTime <- v
 
+        [<JsonProperty(Order = 99)>]  member val Properties = DsSystemProperties.Create() with get, set
         [<JsonProperty(Order = 101)>] member val Flows    = [||]:NjFlow[]    with get, set
         [<JsonProperty(Order = 102)>] member val Works    = [||]:NjWork[]    with get, set
         [<JsonProperty(Order = 103)>] member val Arrows   = [||]:NjArrow[]   with get, set
         [<JsonProperty(Order = 104)>] member val ApiDefs  = [||]:NjApiDef[]  with get, set
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
-        [<JsonProperty(Order = 99)>] member val Properties = DsSystemProperties.Create() with get, set
 
         [<JsonIgnore>]
         member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
@@ -126,27 +126,6 @@ module rec NewtonsoftJsonObjects =
 
         member val OriginGuid    = Option<Guid>.None with get, set
         member val IRI           = nullString with get, set
-        (*** 직행 접근자는 Properties 로 이동 완료. 필요 시 Properties.Author 등으로 직접 사용하세요.
-        member x.Author
-            with get() = x.Properties.Author
-            and set value = x.Properties.Author <- value
-        member x.EngineVersion
-            with get() = x.Properties.EngineVersion
-            and set value =
-                let v = value |> Option.ofObj |? Version()
-                x.Properties.EngineVersion <- v
-        member x.LangVersion
-            with get() = x.Properties.LangVersion
-            and set value =
-                let v = value |> Option.ofObj |? Version()
-                x.Properties.LangVersion <- v
-        member x.Description
-            with get() = x.Properties.Description
-            and set value = x.Properties.Description <- value
-        member x.DateTime
-            with get() = x.Properties.DateTime
-            and set value = x.Properties.DateTime <- value
-        ***)
 
         abstract member OnLoaded: unit -> unit
         /// Runtime 객체 생성 및 속성 다 채운 후, validation 수행.  (필요시 추가 작업 수행)
