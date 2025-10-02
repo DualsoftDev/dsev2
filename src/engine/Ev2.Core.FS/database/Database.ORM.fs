@@ -75,24 +75,12 @@ module ORMTypesModule =
     type ORMProject(propertiesJson:string) = // Initialize
         inherit ORMUnique()
 
-        let createProperties json =
-            json
-            |> String.toOption
-            |-> JsonPolymorphic.FromJson<ProjectProperties>
-            |?? ProjectProperties.Create
-
         new() = new ORMProject(nullString)
 
         member val PropertiesJson = propertiesJson with get, set
         member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
 
-        interface IORMProject with
-            member x.DateTime
-                with get() = (createProperties x.PropertiesJson).DateTime
-                and set v =
-                    let props = createProperties x.PropertiesJson
-                    props.DateTime <- v
-                    x.PropertiesJson <- props.ToJson()
+        interface IORMProject
 
         member x.Initialize(runtime:Project) =
             runtime.CopyUniqueProperties(x)
@@ -103,11 +91,7 @@ module ORMTypesModule =
     type ORMSystem(ownerProjectId:Id option, iri:string, propertiesJson:string) = // Initialize
         inherit ORMUnique(ParentId=ownerProjectId)
 
-        let createProperties json =
-            json
-            |> String.toOption
-            |-> JsonPolymorphic.FromJson<DsSystemProperties>
-            |?? DsSystemProperties.Create
+        interface IORMSystem
 
         member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
@@ -115,14 +99,6 @@ module ORMTypesModule =
 
         member val PropertiesJson = propertiesJson with get, set
         member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
-
-        interface IORMSystem with
-            member x.DateTime
-                with get() = (createProperties x.PropertiesJson).DateTime
-                and set v =
-                    let props = createProperties x.PropertiesJson
-                    props.DateTime <- v
-                    x.PropertiesJson <- props.ToJson()
 
         member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
         member val OwnerProjectId = ownerProjectId with get, set

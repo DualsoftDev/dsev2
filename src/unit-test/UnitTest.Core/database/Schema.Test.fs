@@ -439,14 +439,14 @@ module Schema =
 
             let curernt = now()
             let rtProject = edProject.Replicate() |> validateRuntime
-            rtProject |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
+            rtProject |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> fwdSetDateTime z curernt)
             let json =
                 rtProject
                 |> validateRuntime
                 |> _.ToJson(Path.Combine(testDataDir(), "dssystem-with-cylinder.json"))
 
             let rtProject2 = Project.FromJson json
-            rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> z.DateTime <- curernt)
+            rtProject2 |> _.EnumerateRtObjects().OfType<IWithDateTime>() |> iter (fun z -> fwdSetDateTime z curernt)
 
             // 디버깅: GUID 비교
             printfn "rtProject GUID: %A" rtProject.Guid

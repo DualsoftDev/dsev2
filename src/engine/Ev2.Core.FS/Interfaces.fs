@@ -16,10 +16,7 @@ module InterfaceModule =
     /// Guid, Name, DateTime
     type IUnique    = inherit IDsObject
 
-    type IWithDateTime =
-        inherit IDsObject
-        /// DateTime 속성을 가지는 객체 인터페이스
-        abstract member DateTime: DateTime with get, set
+    type IWithDateTime = inherit IDsObject
 
     type IDs1stClass = inherit IUnique inherit IWithDateTime
     type IDs2ndClass = inherit IUnique

@@ -68,10 +68,7 @@ module rec NewtonsoftJsonObjects =
 
     type NjProject() = // Create, Initialize
         inherit NjUnique()
-        interface INjProject with
-            member x.DateTime
-                with get() = x.Properties.DateTime
-                and set v = x.Properties.DateTime <- v
+        interface INjProject
 
         static member Create() = createExtended<NjProject>()
 
@@ -95,10 +92,7 @@ module rec NewtonsoftJsonObjects =
 
     type NjSystem() = // Create, Initialize, OnDeserializedMethod, OnSerializingMethod, ShouldSerializeApiCalls, ShouldSerializeApiDefs, ShouldSerializeArrows, ShouldSerializeFlows, ShouldSerializeWorks
         inherit NjProjectEntity()
-        interface INjSystem with
-            member x.DateTime
-                with get() = x.Properties.DateTime
-                and set v = x.Properties.DateTime <- v
+        interface INjSystem
 
         [<JsonProperty(Order = 99)>]  member val Properties = DsSystemProperties.Create() with get, set
         [<JsonProperty(Order = 101)>] member val Flows    = [||]:NjFlow[]    with get, set

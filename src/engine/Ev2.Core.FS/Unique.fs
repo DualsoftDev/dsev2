@@ -115,6 +115,9 @@ module Interfaces =
         fwdReplicateProperties src dst |> ignore
         dst
 
+    let mutable internal fwdSetDateTime: IWithDateTime -> DateTime -> unit = let dummy (dateTimeContainer:IWithDateTime) (dt:DateTime) = failwith "Should be reimplemented" in dummy
+    let mutable internal fwdGetDateTime: IWithDateTime -> DateTime = let dummy (dateTimeContainer:IWithDateTime) = failwith "Should be reimplemented" in dummy
+
 [<AutoOpen>]
 module internal UniqueHelpers =
     /// Unique 객체의 RawParent 설정.  pipe 지원
@@ -143,7 +146,7 @@ module internal UniqueHelpers =
 
     let private uniqParameter param    (dst:#Unique) = dst.Parameter <- param;    dst
     let uniqId        id       (dst:#Unique) = dst.Id        <- id;       dst
-    let uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> z.DateTime <- dateTime); dst
+    let uniqDateTime  dateTime (dst:#Unique) = dst |> tryCast<IWithDateTime> |> iter (fun z -> fwdSetDateTime z dateTime); dst
     let uniqName      name     (dst:#Unique) = dst.Name      <- name;     dst
     let uniqGuid      guid     (dst:#Unique) = dst.Guid      <- guid;     dst
     let uniqParent    (parent:#Unique option) (dst:#Unique) = dst.RawParent <- parent >>= tryCast<Unique>; dst

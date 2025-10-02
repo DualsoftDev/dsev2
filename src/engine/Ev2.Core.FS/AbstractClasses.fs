@@ -106,10 +106,7 @@ and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
 and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     inherit RtUnique()
 
-    interface IRtProject with
-        member x.DateTime
-            with get() = x.Properties.DateTime
-            and set v = x.Properties.DateTime <- v
+    interface IRtProject
     interface IParameterContainer
 
     member val DbApi = Option<DbApi>.None with get, set
@@ -186,10 +183,7 @@ and DsSystem() as this = // Create
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
-    interface IRtSystem with
-        member x.DateTime
-            with get() = x.Properties.DateTime
-            and set v = x.Properties.DateTime <- v
+    interface IRtSystem
     member val internal RawFlows    = ResizeArray<Flow>() with get, set
     member val internal RawWorks    = ResizeArray<Work>() with get, set
     member val internal RawArrows   = ResizeArray<ArrowBetweenWorks>() with get, set
@@ -199,28 +193,6 @@ and DsSystem() as this = // Create
     member x.OwnerProjectId = x.Project >>= (fun p -> if p.ActiveSystems.Contains(x) then p.Id else None)
 
     member val IRI           = nullString with get, set
-    (*** 기존 직행 접근자는 Properties 로 마이그레이션 완료 후 주석 처리합니다. 필요 시 x.Properties.Author 등으로 직접 접근하세요.
-    member x.Author
-        with get() = x.Properties.Author
-        and set value = x.Properties.Author <- value
-    member x.EngineVersion
-        with get() = x.Properties.EngineVersion
-        and set value =
-            let v = value |> Option.ofObj |? Version()
-            x.Properties.EngineVersion <- v
-    member x.LangVersion
-        with get() = x.Properties.LangVersion
-        and set value =
-            let v = value |> Option.ofObj |? Version()
-            x.Properties.LangVersion <- v
-    member x.Description
-        with get() = x.Properties.Description
-        and set value = x.Properties.Description <- value
-    /// DateTime: 메모리에 최초 객체 생성시 생성
-    member x.DateTime
-        with get() = x.Properties.DateTime
-        and set value = x.Properties.DateTime <- value
-    ***)
 
     member x.Flows      = x.RawFlows      |> toList
     member x.Works      = x.RawWorks      |> toList

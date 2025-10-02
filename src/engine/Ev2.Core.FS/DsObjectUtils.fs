@@ -521,7 +521,7 @@ module DsObjectUtilsModule =
         member x.Validate(bag:DuplicateBag) =
             verify (x.Guid <> emptyGuid)
 
-            x |> tryCast<IWithDateTime> |> iter(fun z -> verify (z.DateTime <> minDate))
+            x |> tryCast<IWithDateTime> |> iter(fun z -> verify (fwdGetDateTime z <> minDate))
             match x with
             | :? Project | :? DsSystem | :? Flow  | :? Work  | :? Call -> verify (x.Name.NonNullAny())
             | _ -> ()

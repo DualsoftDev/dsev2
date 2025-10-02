@@ -10,6 +10,17 @@ open System.IO
 open Dapper
 
 module ModuleInitializer =
+    let private createProjectProperties(json:string) =
+        json
+        |> String.toOption
+        |-> JsonPolymorphic.FromJson<ProjectProperties>
+        |?? ProjectProperties.Create
+    let private createSystemProperties(json:string) =
+        json
+        |> String.toOption
+        |-> JsonPolymorphic.FromJson<DsSystemProperties>
+        |?? DsSystemProperties.Create
+
     let mutable private initailized = false
     let Initialize(logger: ILog) =
         if not initailized then
@@ -35,6 +46,29 @@ module ModuleInitializer =
 
             fwdValueSpecFromString <- fun text -> ValueRangeModule.parseValueSpec text
             fwdValueSpecFromJson <- fun json -> ValueRangeModule.deserializeWithType json
+
+            fwdSetDateTime <-
+                fun (obj: IWithDateTime) (dt: DateTime) ->
+                    match obj with
+                    | :? Project    as z -> z.Properties.DateTime <- dt
+                    | :? DsSystem   as z -> z.Properties.DateTime <- dt
+                    | :? NjProject  as z -> z.Properties.DateTime <- dt
+                    | :? NjSystem   as z -> z.Properties.DateTime <- dt
+                    | :? ORMProject as z -> let props = createProjectProperties z.PropertiesJson in props.DateTime <- dt; z.PropertiesJson <- props.ToJson()
+                    | :? ORMSystem  as z -> let props = createSystemProperties  z.PropertiesJson in props.DateTime <- dt; z.PropertiesJson <- props.ToJson()
+                    | _ -> fail()
+
+            fwdGetDateTime <-
+                fun (obj: IWithDateTime) ->
+                    match obj with
+                    | :? Project    as z -> z.Properties.DateTime
+                    | :? DsSystem   as z -> z.Properties.DateTime
+                    | :? NjProject  as z -> z.Properties.DateTime
+                    | :? NjSystem   as z -> z.Properties.DateTime
+                    | :? ORMProject as z -> (createProjectProperties z.PropertiesJson).DateTime
+                    | :? ORMSystem  as z -> (createSystemProperties z.PropertiesJson).DateTime
+                    | _ -> fail()
+
 
             let appSettings =
                 let json =
