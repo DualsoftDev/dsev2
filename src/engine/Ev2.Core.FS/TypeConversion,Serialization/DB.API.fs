@@ -13,6 +13,7 @@ module Ds2SqliteModule =
 
     open Db2DsImpl
 
+    /// DB에서 새로 읽어온 객체의 필드 값을 기존 런타임 객체에 덮어쓴다. 부모/링크 참조는 유지한다.
     let private replicateIntoRuntime (src:Unique) (dst:Unique) =
         let rawParent = dst.RawParent
         let rtObject = dst.RtObject
@@ -24,6 +25,7 @@ module Ds2SqliteModule =
         dst.NjObject <- njObject
         dst.ORMObject <- ormObject
 
+    /// DB 커밋 후 재조회한 객체 트리의 변경점을 런타임 트리에 반영한다.
     let private syncRuntimeWithRefreshed (runtimeRoot:IRtUnique) (refreshedRoot:IRtUnique) (diffs:CompareResult array) =
         if diffs.Length = 0 then () else
             let refreshedRt = refreshedRoot :?> RtUnique

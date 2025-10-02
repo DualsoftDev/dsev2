@@ -347,7 +347,13 @@ module internal Db2DsImpl =
             Error <| sprintf "Failed to checkout project from DB: %s" ex.Message
 
     let private tryGetORMRowWithId<'T> (conn:IDbConnection) (tr:IDbTransaction) (tableName:string) (id:Id) =
-        conn.TryQuerySingle<'T>($"SELECT * FROM {tableName} WHERE id=@Id", {|Id = id|}, tr)
+        let sql =
+            if typeof<'T>.GetProperty("PropertiesJson") |> isNull |> not then
+                $"SELECT *, properties AS PropertiesJson FROM {tableName} WHERE id=@Id"
+            else
+                $"SELECT * FROM {tableName} WHERE id=@Id"
+
+        conn.TryQuerySingle<'T>(sql, {|Id = id|}, tr)
 
 
     /// Project 의 PK id 로 DB 에서 Project 를 조회하고, 성공 시 DbCheckoutResult<Project> 객체를 반환
