@@ -169,8 +169,14 @@ module Schema =
             json === json2
 
             let r = dsProject2.RTryCommitToDB(dbApi)
-            let xxx = r.GetDiffFields()
-            r.IsNoChangeOrOnlyDiffFields ["Database"; "DateTime"] === true
+            match r with
+            | Ok (Updated _) -> ()
+            | _ -> fail()
+
+            dsProject2.Id.IsSome === true
+            let refreshed = Project.CheckoutFromDB(dsProject2.Id.Value, dbApi)
+            let refreshedDiffs = refreshed.ComputeDiff dsProject2 |> toArray
+            refreshedDiffs |> Array.isEmpty ==== true
 
 
             dsProject2.ToJson(Path.Combine(testDataDir(), "db-inserted-dssystem.json")) |> ignore
@@ -182,7 +188,14 @@ module Schema =
             dsProject3.ToJson(Path.Combine(testDataDir(), "replica-of-db-inserted-dssystem.json")) |> ignore
             let r = dsProject3.RTryCommitToDB(dbApi)
             tracefn "Result3: %A" r
-            r.IsNoChangeOrOnlyDiffFields ["Database"; "DateTime"] === true
+            match r with
+            | Ok (Updated _) -> ()
+            | _ -> fail()
+
+            dsProject3.Id.IsSome === true
+            let refreshed3 = Project.CheckoutFromDB(dsProject3.Id.Value, dbApi)
+            let refreshedDiffs3 = refreshed3.ComputeDiff dsProject3 |> toArray
+            refreshedDiffs3 |> Array.isEmpty ==== true
 
             do
                 let dsProj = dsProject2.Duplicate()
@@ -611,7 +624,16 @@ module Schema =
 
                 let dsSystem = dsProject2.Systems[0]
                 let r = dsSystem.RTryCommitToDB dbApi
-                r.IsNoChangeOrOnlyDiffFields ["Database"; "DateTime"] === true
+                match r with
+                | Ok (Updated _) -> ()
+                | _ -> fail()
+
+                dsSystem.Id.IsSome === true
+                let refreshedSystem = DsSystem.CheckoutFromDB(dsSystem.Id.Value, dbApi)
+                let refreshedSystemDiffs = refreshedSystem.ComputeDiff dsSystem |> toArray
+                refreshedSystemDiffs
+                |> Array.forall (function Diff("Parent", _, _, _) -> true | _ -> false)
+                ==== true
             ) |> ignore
 
         [<Test>]
@@ -631,19 +653,17 @@ module Schema =
                     ==== Ok Inserted
 
                 do
-                    //let r = dsProject.RTryCommitToDB(dbApi)
-                    //tracefn "Result3: %A" r
-
                     let r = dsProject.RTryCommitToDB(dbApi)
                     tracefn "Result3: %A" r
-                    let xxx = r.GetDiffFields()
-                    r.IsNoChangeOrOnlyDiffFields ["Properties::Database"; "Properties::DateTime"; "Properties::Text"] === true
+                    match r with
+                    | Ok NoChange
+                    | Ok (Updated _) -> ()
+                    | _ -> fail()
 
-
-                    let r = dsProject.RTryCommitToDB(dbApi)
-                    tracefn "Result4: %A" r
-                    let xxxyyy = r.GetDiffFields()
-                    r.IsNoChangeOrOnlyDiffFields ["Properties::DateTime"] === true
+                    dsProject.Id.IsSome === true
+                    let refreshed = Project.CheckoutFromDB(dsProject.Id.Value, dbApi)
+                    let refreshedDiffs = refreshed.ComputeDiff dsProject |> toArray
+                    refreshedDiffs |> Array.isEmpty ==== true
 
                 let sys = getMainSystem(dsProject)
                 let w = sys.Works[0]
@@ -654,7 +674,7 @@ module Schema =
                     match dsProject.RTryCommitToDB(dbApi) with
                     | Ok (Updated diffs) ->
                         let diffFields = diffs |> toList >>= _.GetPropertiesDiffFields()
-                        diffFields |-> fst |> sort |> distinct === [ "Name"; "Properties::DateTime" ]
+                        diffFields |-> fst |> sort |> distinct === [ "Name" ]
                         let diffName =
                             diffs
                             |> filter (function Diff("Name", _, _, _) -> true | _ -> false)

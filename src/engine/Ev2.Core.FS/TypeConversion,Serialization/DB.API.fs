@@ -1,5 +1,7 @@
 namespace Ev2.Core.FS
 
+open System
+open System.Collections.Generic
 open Dapper
 
 open Dual.Common.Base
@@ -11,12 +13,50 @@ module Ds2SqliteModule =
 
     open Db2DsImpl
 
+    let private replicateIntoRuntime (src:Unique) (dst:Unique) =
+        let rawParent = dst.RawParent
+        let rtObject = dst.RtObject
+        let njObject = dst.NjObject
+        let ormObject = dst.ORMObject
+        replicateProperties src dst |> ignore
+        dst.RawParent <- rawParent
+        dst.RtObject <- rtObject
+        dst.NjObject <- njObject
+        dst.ORMObject <- ormObject
+
+    let private syncRuntimeWithRefreshed (runtimeRoot:IRtUnique) (refreshedRoot:IRtUnique) (diffs:CompareResult array) =
+        if diffs.Length = 0 then () else
+            let refreshedRt = refreshedRoot :?> RtUnique
+            let objects = Dictionary<Guid, Unique>()
+            let inline addToMap (u:RtUnique) = objects[u.Guid] <- (u :> Unique)
+            addToMap refreshedRt
+            refreshedRt.EnumerateRtObjects()
+            |> Seq.iter addToMap
+
+            let processed = HashSet<Guid>()
+
+            let rec applyRuntime (entity:IRtUnique) =
+                let guid = entity.GetGuid()
+                if processed.Add guid then
+                    match objects.TryGetValue(guid) with
+                    | true, srcUnique -> replicateIntoRuntime srcUnique (entity :?> Unique)
+                    | _ -> ()
+
+            applyRuntime runtimeRoot
+
+            for diff in diffs do
+                match diff with
+                | Diff(_, _, newEntity, _) -> applyRuntime newEntity
+                | RightOnly newEntity -> applyRuntime newEntity
+                | _ -> ()
+
     type Project with // CheckoutFromDB, RTryCheckoutFromDB, RTryCommitToDB, RTryRemoveFromDB
         member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
             x.DbApi <- Some dbApi
             x.Properties.Database <- dbApi.DbProvider
 
-            dbApi.With(fun (conn, tr) ->
+            let result =
+                dbApi.With(fun (conn, tr) ->
                 let dbProjs = conn.Query<ORMProject>($"SELECT * FROM {Tn.Project} WHERE id = @Id OR guid = @Guid", x, tr) |> toList
                 match dbProjs with
                 | [] ->
@@ -53,6 +93,23 @@ module Ds2SqliteModule =
                 | _ ->
                     fail() )
 
+            let inline tryApplyDiffToRuntime (diffs:CompareResult array) =
+                match x.Id with
+                | None -> ()
+                | Some projId ->
+                    match Project.RTryCheckoutFromDB(projId, dbApi) with
+                    | Error err ->
+                        logWarn "Failed to refresh project after commit: %s" err
+                    | Ok refreshed ->
+                        syncRuntimeWithRefreshed (x :> IRtUnique) (refreshed :> IRtUnique) diffs
+                        x.DbApi <- Some dbApi
+
+            match result with
+            | Ok (Updated diffs as updated) ->
+                tryApplyDiffToRuntime diffs
+                Ok updated
+            | other -> other
+
         member x.RTryRemoveFromDB(dbApi:AppDbApi): DbCommitResult =
             x.DbApi <- Some dbApi
             dbApi.With(fun (conn, tr) ->
@@ -82,11 +139,22 @@ module Ds2SqliteModule =
 
     type DsSystem with // CheckoutFromDB, RTryCheckoutFromDB, RTryCommitToDB
         member x.RTryCommitToDB(dbApi:AppDbApi): DbCommitResult =
-            rTryCommitSystemToDB x dbApi
+            let result = rTryCommitSystemToDB x dbApi
+            match result with
+            | Ok (Updated diffs as updated) ->
+                match x.Id with
+                | None -> Ok updated
+                | Some systemId ->
+                    match DsSystem.RTryCheckoutFromDB(systemId, dbApi) with
+                    | Error err ->
+                        logWarn "Failed to refresh system after commit: %s" err
+                        Ok updated
+                    | Ok refreshed ->
+                        syncRuntimeWithRefreshed (x :> IRtUnique) (refreshed :> IRtUnique) diffs
+                        Ok updated
+            | other -> other
 
         static member RTryCheckoutFromDB(id:Id, dbApi:AppDbApi): DbCheckoutResult<DsSystem> =
             rTryCheckoutSystemFromDB id dbApi
 
         static member CheckoutFromDB(id:Id, dbApi:AppDbApi): DsSystem = DsSystem.RTryCheckoutFromDB(id, dbApi) |> Result.toObj
-
-
