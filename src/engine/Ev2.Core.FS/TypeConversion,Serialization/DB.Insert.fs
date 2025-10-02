@@ -224,7 +224,7 @@ module internal DbInsertModule =
 
                     // call - apiCall 에 대한 mapping 정보 삽입
                     for apiCall in rt.ApiCalls do
-                        let apiCallId = apiCall.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+                        let apiCallId = apiCall.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> fail())
 
                         let m = conn.TryQuerySingle<ORMMapCall2ApiCall>(
                                     $"""SELECT * FROM {Tn.MapCall2ApiCall}
@@ -277,7 +277,7 @@ module internal DbInsertModule =
                     ()
 
 
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
 
                 getTypeFactory() |> iter (fun factory -> factory.HandleAfterInsert(x, conn, tr))

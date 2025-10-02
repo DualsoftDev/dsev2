@@ -297,7 +297,7 @@ module ORMTypeConversionModule =
                 | :? ApiCall as rt ->
                     let apiDefId =
                         try
-                            rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> failwith "ERROR")
+                            rt.ApiDef.ORMObject >>= tryCast<ORMUnique> >>= _.Id |?? (fun () -> fail())
                         with _ -> failwith "ERROR: ApiDef not accessible"
                     let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
                     let ioTagsJson = rt.IOTagsJson

@@ -51,7 +51,7 @@ module Ds2SqliteModule =
                     Error msg
 
                 | _ ->
-                    failwith "ERROR" )
+                    fail() )
 
         member x.RTryRemoveFromDB(dbApi:AppDbApi): DbCommitResult =
             x.DbApi <- Some dbApi

@@ -40,7 +40,7 @@ type CopyExtensionForCSharp = // CsCopyTo
         | (:? ApiCall),  (:? NjApiCall)
             -> replicateProperties src dst |> ignore
         | _
-            -> failwith "ERROR"
+            -> fail()
 
 
 

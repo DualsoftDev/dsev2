@@ -440,7 +440,7 @@ module rec NewtonsoftJsonObjects =
         // 공통 처리
         match njObj with
         | :? NjUnique as uniq -> ()
-        | _ -> failwith "ERROR"
+        | _ -> fail()
 
         // 개별 처리
         match njObj with

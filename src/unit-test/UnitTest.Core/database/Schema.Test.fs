@@ -23,7 +23,7 @@ module Schema =
     let testDataDir() = Path.Combine(__SOURCE_DIRECTORY__, @"..\test-data") |> Path.GetFullPath
     let dbFilePath = Path.Combine(testDataDir(), "test.sqlite3")
     let path2ConnectionString (dbFilePath:string) =
-        $"Data Source='{dbFilePath}.sqlite3';Version=3;BusyTimeout=20000"
+        $"Data Source='{dbFilePath}';Version=3;BusyTimeout=20000"
         |> tee(tracefn "ConnectionString='%s'")
 
     [<SetUpFixture>]
@@ -57,12 +57,12 @@ module Schema =
         |> AppDbApi
 
     // sqlite <--> pgsql 전환시마다 dbApi 를 새로 생성해야 함.  SqlMapper 가 다름.
-    let sqliteDbApi() =
-        Path.Combine(testDataDir(), getFuncName(1))
+    let inline sqliteDbApi() =
+        Path.Combine(testDataDir(), $"{getTopFuncName()}.sqlite3")
         |> createSqliteDbApi
 
-    let jsonPath() =
-        Path.Combine(testDataDir(), $"{getFuncName(1)}.json")
+    let inline jsonPath() =
+        Path.Combine(testDataDir(), $"{getTopFuncName()}.json")
         |> createSqliteDbApi
 
 
@@ -242,8 +242,7 @@ module Schema =
             Directory.CreateDirectory(testDataDir()) |> ignore
 
 
-
-            let dbApi = Path.Combine(testDataDir(), "test_dssystem.sqlite3") |> createSqliteDbApi
+            let dbApi = sqliteDbApi()
             let dsProject = Project.CheckoutFromDB("MainProject", dbApi)
             use conn = dbApi.CreateConnection()
             ()
@@ -570,20 +569,19 @@ module Schema =
         [<Test>]
         member x.``설계 문서 위치에 샘플 생성`` () =
             let dsProject = rtProject |> validateRuntime
-            let jsonPath = Path.Combine(testDataDir(), $"{getFuncName(1)}.json")
+            let jsonPath = Path.Combine(testDataDir(), $"{getTopFuncName()}.json")
             dsProject.ToJson jsonPath |> ignore
 
-
-
-            let dbPath = Path.Combine(testDataDir(), getFuncName(1))
-            File.Delete($"{dbPath}.sqlite3") |> ignore
-            let dbApi = createSqliteDbApi dbPath
+            let dbPath = Path.Combine(testDataDir(), $"{getTopFuncName()}.sqlite3")
+            File.Delete(dbPath)
+            let dbApi = sqliteDbApi()
             match dsProject.RTryCommitToDB(dbApi) with
             | Ok _ ->
                 // 설계 문서 위치에 drop
                 File.Delete(Path.Combine(specDir, "dssystem.sqlite3")) |> ignore
                 File.Delete(Path.Combine(specDir, "dssystem.json")) |> ignore
-                File.Copy($"{dbPath}.sqlite3", Path.Combine(specDir, "dssystem.sqlite3"))
+                let targetDbPath = Path.Combine(specDir, "dssystem.sqlite3") |> Path.GetFullPath
+                File.Copy(dbPath, targetDbPath)
                 File.Copy(jsonPath, Path.Combine(specDir, "dssystem.json"))
             | Error err ->
                 failwith err
@@ -670,8 +668,8 @@ module Schema =
                         let tail = diffs |> Array.skip 2
                         match tail with
                         | [||] -> ()
-                        | [|Diff("DateTime", dbSys, newSys, _)|] when dbSys.GetGuid() = newSys.GetGuid() -> ()
-                        | [|Diff("DateTime", dbSys, newSys, _); Diff("DateTime", dbProj, newProj, _)|]
+                        | [|Diff("Properties", dbSys, newSys, _)|] when dbSys.GetGuid() = newSys.GetGuid() -> ()
+                        | [|Diff("Properties", dbSys, newSys, _); Diff("Properties", dbProj, newProj, _)|]
                             when dbSys.GetGuid() = newSys.GetGuid() && dbProj.GetGuid() = newProj.GetGuid() -> ()
                         | _ -> fail()
                     | _ -> fail()
@@ -799,11 +797,11 @@ module Schema =
                 diffs2
                 |> forall(fun d ->
                     match d with
-                    | Diff("Guid",      x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("IRI",       x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Name",      x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("DateTime",  x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Parent",    x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Guid",       x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("IRI",        x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Name",       x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Properties", x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Parent",     x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
                     | (   LeftOnly (:? Flow)
                         | LeftOnly (:? Work)
                         | LeftOnly (:? ArrowBetweenWorks)

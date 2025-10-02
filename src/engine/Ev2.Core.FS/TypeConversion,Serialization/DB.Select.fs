@@ -63,7 +63,7 @@ module internal Db2DsImpl =
             let handleAfterSelect (runtime:IRtUnique) =
                 getTypeFactory() |> iter (fun factory -> factory.HandleAfterSelect(runtime, conn, tr))
 
-            let rtSystem = ormSystem.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR")
+            let rtSystem = ormSystem.RtObject >>= tryCast<DsSystem> |?? (fun () -> fail())
             verify(rtSystem.Guid = ormSystem.Guid)
             let s = rtSystem
 
@@ -307,8 +307,8 @@ module internal Db2DsImpl =
                 let activeSystemIds = projSysMaps |> filter (fun m -> m.IsActiveSystem) |-> _.SystemId |> toArray
                 ormSystems |> Seq.partition(fun s -> activeSystemIds.Contains s.Id.Value)
 
-            let rtActives = ormActiveSystems   |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR"))
-            let rtPassives = ormPassiveSystems |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> failwith "ERROR"))
+            let rtActives = ormActiveSystems   |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> fail()))
+            let rtPassives = ormPassiveSystems |-> (fun os -> os.RtObject >>= tryCast<DsSystem> |?? (fun () -> fail()))
 
             rtActives  |> rtProj.RawActiveSystems.AddRange
             rtPassives |> rtProj.RawPassiveSystems.AddRange

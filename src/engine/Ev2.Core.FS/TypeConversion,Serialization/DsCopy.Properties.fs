@@ -29,13 +29,13 @@ module internal DsCopyModule =
         | :? IRtUnique  as s -> dst.RtObject  <- Some s
         | :? INjUnique  as s -> dst.NjObject  <- Some s
         | :? IORMUnique as s -> dst.ORMObject <- Some s
-        | _  -> failwith "ERROR"
+        | _  -> fail()
 
         match box dst with
         | :? IRtUnique  as d -> src.RtObject  <- Some d
         | :? INjUnique  as d -> src.NjObject  <- Some d
         | :? IORMUnique as d -> src.ORMObject <- Some d
-        | _  -> failwith "ERROR"
+        | _  -> fail()
 
         dst
 
@@ -59,12 +59,12 @@ module internal DsCopyModule =
                 | :? Project    as s -> s.PropertiesJson
                 | :? NjProject  as s -> s.Properties.ToJson()
                 | :? ORMProject as s -> s.PropertiesJson
-                | _ -> failwith "ERROR"
+                | _ -> fail()
             match dbx with
             | :? Project    as d -> d.PropertiesJson <- propertiesJson
             | :? NjProject  as d -> d.Properties <- JsonPolymorphic.FromJson<ProjectProperties>(propertiesJson)
             | :? ORMProject as d -> d.PropertiesJson <- propertiesJson
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         | :? IDsSystem ->
             // System, NjSystem, ORMSystem
@@ -77,7 +77,7 @@ module internal DsCopyModule =
                     let p = s.Properties
                     {| IRI=s.IRI; Author=p.Author; EngineVersion=p.EngineVersion; LangVersion=p.LangVersion; Description=p.Description; DateTime=p.DateTime; Properties=p.ToJson() |}
                 | :? ORMSystem as s -> {| IRI=s.IRI; Author=s.Author; EngineVersion=s.EngineVersion; LangVersion=s.LangVersion; Description=s.Description; DateTime=s.DateTime; Properties=s.PropertiesJson |}
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
             match dbx with
             | :? DsSystem  as d ->
@@ -100,7 +100,7 @@ module internal DsCopyModule =
                 props.DateTime<-s.DateTime
                 d.Properties <- props
             | :? ORMSystem as d -> d.IRI<-s.IRI; d.Author<-s.Author; d.EngineVersion<-s.EngineVersion; d.LangVersion<-s.LangVersion; d.Description<-s.Description; d.DateTime<-s.DateTime; d.PropertiesJson <- s.Properties
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
 
         | :? IDsFlow  ->
@@ -109,13 +109,13 @@ module internal DsCopyModule =
                 | :? Flow    as f -> f.PropertiesJson
                 | :? NjFlow  as f -> f.Properties.ToJson()
                 | :? ORMFlow as f -> f.PropertiesJson
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
             match dbx with
             | :? Flow    as d -> d.PropertiesJson <- propertiesJson
             | :? NjFlow  as d -> d.Properties <- assignFromJson d FlowProperties.Create propertiesJson
             | :? ORMFlow as d -> d.PropertiesJson <- propertiesJson
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         | :? IDsWork ->
             // Work, NjWork, ORMWork
@@ -125,13 +125,13 @@ module internal DsCopyModule =
                 | :? Work    as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid; Properties=w.PropertiesJson |}
                 | :? NjWork  as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid |> Option.ofObj |-> s2guid; Properties=w.Properties.ToJson() |}
                 | :? ORMWork as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid; Properties=w.PropertiesJson |}
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
             match dbx with
             | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid; d.PropertiesJson <- s.Properties
             | :? NjWork  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj; d.Properties <- assignFromJson d WorkProperties.Create s.Properties
             | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid; d.PropertiesJson <- s.Properties
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         | :? IDsCall ->
             // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
@@ -144,21 +144,21 @@ module internal DsCopyModule =
                 | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;          d.Status4<-s.Status4; d.PropertiesJson <- s.PropertiesJson
                 | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;          d.CommonConditionsObj<-s.CommonConditions;       d.Status4<-s.Status4; d.Properties <- assignFromJson d CallProperties.Create s.PropertiesJson
                 | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.PropertiesJson
-                | _ -> failwith "ERROR"
+                | _ -> fail()
             | :? NjCall as s ->
                 match dbx with
                 | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4; d.PropertiesJson <- s.Properties.ToJson()
                 | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;          d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4; d.Properties <- cloneProperties d s.Properties CallProperties.Create
                 | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.Properties.ToJson()
-                | _ -> failwith "ERROR"
+                | _ -> fail()
             | :? ORMCall as s ->
                 let fj conditions = ApiCallValueSpecs.FromJson(conditions)
                 match dbx with
                 | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions   <-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.PropertiesJson <- s.PropertiesJson
                 | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.Properties <- assignFromJson d CallProperties.Create s.PropertiesJson
                 | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions   <-s.CommonConditions;       d.Status4Id<-s.Status4Id; d.PropertiesJson <- s.PropertiesJson
-                | _ -> failwith "ERROR"
-            | _ -> failwith "ERROR"
+                | _ -> fail()
+            | _ -> fail()
 
 
 
@@ -170,13 +170,13 @@ module internal DsCopyModule =
                 | :? ApiCall    as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; IOTags=s.IOTags; (*ApiDef;*) |}
                 | :? NjApiCall  as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec;                         IOTags=s.IOTags; (*ApiDef;*) |}
                 | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec;                         IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
             match dbx with
             | :? ApiCall    as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType; d.IOTags<-s.IOTags
             | :? NjApiCall  as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec;                                         d.IOTags<-s.IOTags
             | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec;                                         d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         | :? IDsApiDef ->
             // ApiDef, NjApiDef, ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
@@ -185,13 +185,13 @@ module internal DsCopyModule =
                 | :? ApiDef    as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
                 | :? NjApiDef  as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
                 | :? ORMApiDef as s -> {| IsPush=s.IsPush; TxGuid=s.XTxGuid; RxGuid=s.XRxGuid |}
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
             match dbx with
             | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
             | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
             | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         // ArrowBetweenCalls, ArrowBetweenWorks
         // ORMArrowCall, ORMArrowWork
@@ -210,7 +210,7 @@ module internal DsCopyModule =
                 | :? ORMArrowWork      as s -> {| SourceGuid=s.XSourceGuid;   TargetGuid=s.XTargetGuid;   Type=s.XType; TypeId=s.TypeId |}
                 | :? ORMArrowCall      as s -> {| SourceGuid=s.XSourceGuid;   TargetGuid=s.XTargetGuid;   Type=s.XType; TypeId=s.TypeId |}
                 | :? NjArrow           as s -> {| SourceGuid=s2guid s.Source; TargetGuid=s2guid s.Target; Type=parseEnum(s.Type); TypeId=getEnumIdFromString(s.Type) |}
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
             match dbx with
             | :? ArrowBetweenWorks as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.Type<-s.Type; //d.TypeId<-s.TypeId
@@ -218,11 +218,11 @@ module internal DsCopyModule =
             | :? ORMArrowWork      as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.XType<-s.Type; d.TypeId<-s.TypeId
             | :? ORMArrowCall      as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.XType<-s.Type; d.TypeId<-s.TypeId
             | :? NjArrow           as d -> d.XSourceGuid<-s.SourceGuid; d.XTargetGuid<-s.TargetGuid; d.Type<-s.Type.ToString(); d.XTypeId<-s.TypeId
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
             ()
 
-        | _ -> failwith "ERROR"
+        | _ -> fail()
 
 
         (* 특별 case 처리 *)

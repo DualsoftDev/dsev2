@@ -485,19 +485,19 @@ module DsObjectUtilsModule =
             match x with
             | :? ArrowBetweenCalls as a -> a.Source
             | :? ArrowBetweenWorks as a -> a.Source
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         member x.GetTarget(): Unique =
             match x with
             | :? ArrowBetweenCalls as a -> a.Target
             | :? ArrowBetweenWorks as a -> a.Target
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
         member x.GetArrowType(): DbArrowType =
             match x with
             | :? ArrowBetweenCalls as a -> a.Type
             | :? ArrowBetweenWorks as a -> a.Type
-            | _ -> failwith "ERROR"
+            | _ -> fail()
 
     type Unique with // EnumerateAncestors, GetFQDN
         member x.EnumerateAncestors(?includeMe): Unique list = [

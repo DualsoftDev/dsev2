@@ -12,7 +12,7 @@ open System.Diagnostics
 module rec DsCompareObjects =
     type IUnique with // GetGuid, GetName, GetParameter, TryGetId, TryGetRawParent
         member private x.tryGet(): Unique option = x |> tryCast<Unique>
-        member private x.get(): Unique = x.tryGet() |?? (fun () -> failwith "ERROR")
+        member private x.get(): Unique = x.tryGet() |?? (fun () -> fail())
 
         member x.GetGuid():Guid       = x.get().Guid
         member x.GetName()            = x.get().Name
@@ -288,7 +288,7 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:BLCABase, criteria:Cc): Cr seq =
             seq {
                 if x.ComputeDiffUnique(y, criteria).Any() || x.IOTagsJson <> y.IOTagsJson then
-                    let systemId = y.RawParent >>= tryCast<DsSystem> |-> _.Id |?? (fun () -> failwith "ERROR") |> Option.get
+                    let systemId = y.RawParent >>= tryCast<DsSystem> |-> _.Id |?? (fun () -> fail()) |> Option.get
                     let obj:ORMJsonSystemEntity = { Id=y.Id; SystemId=systemId; Json=y.ToJson(); Type=y.GetType().Name; Guid=y.Guid }
                     //assert(y.IOTagsJson.NonNullAny())
                     let sql = $"UPDATE {Tn.SystemEntity} SET systemId = @SystemId, type = @Type, json = @Json WHERE guid = @Guid"
@@ -315,7 +315,7 @@ module rec DsCompareObjects =
                 | (:? ArrowBetweenWorks as u), (:? ArrowBetweenWorks as v)  -> yield! u.ComputeDiff(v, criteria)
                 | (:? ArrowBetweenCalls as u), (:? ArrowBetweenCalls as v)  -> yield! u.ComputeDiff(v, criteria)
 
-                | _ -> failwith "ERROR"
+                | _ -> fail()
 
                 match getTypeFactory() with
                 | Some factory -> yield! factory.ComputeExtensionDiff(x, y).Cast<Cr>()
