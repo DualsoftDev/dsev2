@@ -120,43 +120,55 @@ module ORMTypesModule =
             x
 
 
-    type ORMSystem(ownerProjectId:Id option // Initialize
-        , iri:string
-        , author:string, langVersion:Version, engineVersion:Version
-        , description:string, dateTime
-        , polys: PolymorphicJsonCollection<JsonPolymorphic>    // Button, Lamp, Condition, Action
-        , propertiesJson:string
-    ) =
+    type ORMSystem(ownerProjectId:Id option, iri:string, propertiesJson:string) = // Initialize
         inherit ORMUnique(ParentId=ownerProjectId)
+
+        let createProperties json =
+            json
+            |> String.toOption
+            |-> JsonPolymorphic.FromJson<DsSystemProperties>
+            |?? DsSystemProperties.Create
+
+        let mutable propertiesObj = createProperties propertiesJson
+        let mutable propertiesStr = propertiesJson
+
+        let syncFromObj () = propertiesStr <- propertiesObj.ToJson()
+        let syncFromJson json =
+            propertiesStr <- json
+            propertiesObj <- createProperties json
+
         member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
-        new() = new ORMSystem(None, nullString, nullString, nullVersion, nullVersion, nullString, minDate, PolymorphicJsonCollection<JsonPolymorphic>(), nullString)
-        interface IORMSystem with
-            member x.DateTime  with get() = x.DateTime and set v = x.DateTime <- v
+        new() = new ORMSystem(None, nullString, nullString)
 
-        member val PolymorphicJsonEntities = polys with get, set
+        interface IORMSystem with
+            member _.DateTime
+                with get() = propertiesObj.DateTime
+                and set v =
+                    propertiesObj.DateTime <- v
+                    syncFromObj()
+
+        member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
         member val OwnerProjectId = ownerProjectId with get, set
-        member val Properties:string = propertiesJson with get, set
+        member val IRI = iri with get, set
+
+        member x.Properties
+            with get() = propertiesStr
+            and set value = syncFromJson value
+
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
 
-        member val IRI           = iri           with get, set
-        member val Author        = author        with get, set
-        member val EngineVersion = engineVersion with get, set
-        member val LangVersion   = langVersion   with get, set
-        member val Description   = description   with get, set
-        member val DateTime      = dateTime      with get, set
+        member x.SystemProperties
+            with get() = propertiesObj
+            and set value =
+                propertiesObj <- (value |> Option.ofObj |? DsSystemProperties.Create())
+                syncFromObj()
 
         member x.Initialize(runtime:DsSystem) =
             runtime.CopyUniqueProperties(x)
-            let rp = runtime.Properties
-            x.DateTime <- rp.DateTime
             x.IRI <- runtime.IRI
-            x.Author <- rp.Author
-            x.EngineVersion <- rp.EngineVersion
-            x.LangVersion <- rp.LangVersion
-            x.Description <- rp.Description
             x.OwnerProjectId <- runtime.OwnerProjectId
             x.Properties <- runtime.PropertiesJson
             x

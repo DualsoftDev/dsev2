@@ -249,8 +249,8 @@ module ORMTypeConversionModule =
                     (* System 소유주 project 지정.  *)
                     let ownerProjectId = rt.Project >>= _.Id
 
-                    let sp = rt.Properties
-                    new ORMSystem(ownerProjectId, rt.IRI, sp.Author, sp.LangVersion, sp.EngineVersion, sp.Description, sp.DateTime, rt.PolymorphicJsonEntities, rt.PropertiesJson)
+                    new ORMSystem(ownerProjectId, rt.IRI, rt.PropertiesJson)
+                    |> tee (fun orm -> orm.PolymorphicJsonEntities <- rt.PolymorphicJsonEntities)
                     |> ormReplicateProperties rt
 
                 | :? Flow as rt ->

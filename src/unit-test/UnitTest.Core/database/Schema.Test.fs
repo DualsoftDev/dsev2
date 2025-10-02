@@ -303,9 +303,13 @@ module Schema =
             // system 삽입
             let sysGuid = newGuid()
             let sysName = "MainSystem"
+            let sysProperties = DsSystemProperties.Create()
+            sysProperties.Author <- Environment.UserName
+            sysProperties.LangVersion <- Version.Parse(ver)
+            sysProperties.EngineVersion <- Version.Parse(ver)
             let systemId = conn.Insert(
-                            $"INSERT INTO {Tn.System} (guid, name, iri, author, langVersion, engineVersion) VALUES (@Guid, @Name, @IRI, @Author, @LangVersion, @EngineVersion)",
-                            {| Guid=sysGuid; Name=sysName; Author=Environment.UserName;LangVersion = ver; EngineVersion=ver; IRI="http://dualsoft.com/unique/12345"|})
+                            $"INSERT INTO {Tn.System} (guid, name, iri, properties) VALUES (@Guid, @Name, @IRI, @Properties)",
+                            {| Guid=sysGuid; Name=sysName; IRI="http://dualsoft.com/unique/12345"; Properties=sysProperties.ToJson()|})
 
             // flow 삽입
             let flowGuid = newGuid()

@@ -250,11 +250,6 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "ownerProjectId"}   {intKeyType}    -- 현재의 system 을 생성한 project 의 id.
     , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
-    , {k "author"}        TEXT NOT NULL
-    , {k "langVersion"}   TEXT NOT NULL   -- System.Version 형식의 문자열.  e.g. "1.0.0"  -- System 의 언어 버전
-    , {k "engineVersion"} TEXT NOT NULL
-    , {k "description"}   TEXT
-    , {k "dateTime"}      {datetime}
     , {k "properties"}    {jsonb}
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_iri_uniq UNIQUE (iri)
