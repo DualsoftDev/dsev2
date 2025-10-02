@@ -63,7 +63,7 @@ module internal DbInsertModule =
                     let projId =
                         conn.Insert($"""INSERT INTO {Tn.Project}
                                     (guid,   parameter,                   properties,                          name)
-                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @PropertiesJson{dbApi.DapperJsonB}, @Name);""", orm, tr)
+                            VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @PropertiesJsonB, @Name);""", orm, tr)
 
                     rt.Id <- Some projId
 
@@ -81,8 +81,8 @@ module internal DbInsertModule =
                     let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
 
                     let sysId = conn.Insert($"""INSERT INTO {Tn.System}
-                                            (guid, parameter,                     name,  iri, properties,                      ownerProjectId)
-                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IRI, @PropertiesJson{dbApi.DapperJsonB}, @OwnerProjectId);""",
+                                            (guid, parameter,                     name,  iri, properties,         ownerProjectId)
+                                    VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IRI, @PropertiesJsonB, @OwnerProjectId);""",
                                     ormSystem, tr)
 
                     rt.Id <- Some sysId
@@ -158,7 +158,7 @@ module internal DbInsertModule =
                     let apiDefId =
                         conn.Insert($"""INSERT INTO {Tn.ApiDef}
                                                (guid, parameter,                      name, isPush, txId, rxId, systemId, properties)
-                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TxId, @RxId, @SystemId, @PropertiesJson{dbApi.DapperJsonB});""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
+                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TxId, @RxId, @SystemId, @PropertiesJsonB);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
 
                     rt.Id <- Some apiDefId
                     orm.Id <- Some apiDefId
@@ -172,7 +172,7 @@ module internal DbInsertModule =
                         conn.Insert(
                             $"""INSERT INTO {Tn.ApiCall}
                                        (guid,   parameter,                    name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      ioTagsJson, valueSpecHint, properties)
-                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint, @PropertiesJson{dbApi.DapperJsonB});"""
+                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint, @PropertiesJsonB);"""
                             , orm, tr)
 
                     rt.Id <- Some apiCallId
@@ -185,7 +185,7 @@ module internal DbInsertModule =
 
                     let flowId = conn.Insert($"""INSERT INTO {Tn.Flow}
                                             (guid, parameter,                       name, systemId, properties)
-                                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @PropertiesJson{dbApi.DapperJsonB});""", orm, tr)
+                                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @PropertiesJsonB);""", orm, tr)
 
                     rt.Id <- Some flowId
                     orm.Id <- Some flowId
@@ -197,7 +197,7 @@ module internal DbInsertModule =
 
                     let workId = conn.Insert($"""INSERT INTO {Tn.Work}
                                         (guid, parameter,                      name,  systemId,  flowId,  status4Id,  motion,  script,  externalStart,  isFinished,  numRepeat,  period,  delay, properties)
-                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @ExternalStart, @IsFinished, @NumRepeat, @Period, @Delay, @PropertiesJson{dbApi.DapperJsonB});""", orm, tr)
+                                 VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @FlowId, @Status4Id, @Motion, @Script, @ExternalStart, @IsFinished, @NumRepeat, @Period, @Delay, @PropertiesJsonB);""", orm, tr)
 
                     rt.Id <- Some workId
                     orm.Id <- Some workId

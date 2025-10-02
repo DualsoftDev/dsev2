@@ -801,11 +801,11 @@ module Schema =
                 diffs2
                 |> forall(fun d ->
                     match d with
-                    | Diff("Guid",       x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("IRI",        x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Name",       x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Properties", x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
-                    | Diff("Parent",     x, y, nullUpdateSql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Guid",       x, y, sql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("IRI",        x, y, sql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Name",       x, y, sql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Properties", x, y, sql) -> verify (x :? DsSystem && y :? DsSystem); true
+                    | Diff("Parent",     x, y, sql) -> verify (x :? DsSystem && y :? DsSystem); true
                     | (   LeftOnly (:? Flow)
                         | LeftOnly (:? Work)
                         | LeftOnly (:? ArrowBetweenWorks)

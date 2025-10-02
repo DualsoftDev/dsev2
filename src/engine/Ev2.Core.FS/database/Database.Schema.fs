@@ -242,7 +242,7 @@ CREATE VIEW {k Vn.ApiCall} AS
 
         let sqlTables = $"""
 CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
-    , {k "properties"}   {jsonb}
+    , {k "Properties"}   {jsonb}
     , {k "aasXml"}       TEXT                       -- aasx file 내의 모든 submodel xml 파일 내용.  text 이므로 BLOB 일 필요가 없음.
     , CONSTRAINT {Tn.Project}_uniq UNIQUE (name)    -- Project 의 이름은 유일해야 함
 );
@@ -250,7 +250,7 @@ CREATE TABLE {k Tn.Project}( {sqlUniqWithName()}
 CREATE TABLE {k Tn.System}( {sqlUniqWithName()}
     , {k "ownerProjectId"}   {intKeyType}    -- 현재의 system 을 생성한 project 의 id.
     , {k "iri"}           TEXT            -- Internationalized Resource Identifier.  e.g. "http://example.com/system/12345"  -- System 의 이름은 유일해야 함
-    , {k "properties"}    {jsonb}
+    , {k "Properties"}    {jsonb}
     , FOREIGN KEY(ownerProjectId) REFERENCES {Tn.Project}(id) ON DELETE CASCADE     -- 자신을 생성한 project 삭제시, system 도 삭제
     , CONSTRAINT {Tn.System}_iri_uniq UNIQUE (iri)
     -- , CONSTRAINT {Tn.System}_name_uniq UNIQUE (name)    -- system 이름 전체적으로 고유해야 함.

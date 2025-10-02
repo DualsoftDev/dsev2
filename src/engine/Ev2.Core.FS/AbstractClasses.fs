@@ -125,6 +125,7 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     // } Runtime/DB 용
 
     member val Properties    = ProjectProperties.Create(this) with get, set
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
@@ -177,6 +178,7 @@ and DsSystem() as this = // Create
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
     member val Properties = DsSystemProperties.Create(this) with get, set
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
@@ -262,7 +264,7 @@ and Flow() as this = // Create
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
     member val Properties = FlowProperties.Create(this) with get, set
-
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
@@ -329,7 +331,7 @@ and Work() as this = // Create
     member val Status4 = Option<DbStatus4>.None with get, set
 
     member val Properties = WorkProperties.Create(this) with get, set
-
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
@@ -400,7 +402,7 @@ and Call() as this = // Create
         call
 
     member val Properties = CallProperties.Create(this) with get, set
-
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
@@ -429,7 +431,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
     member val Properties = ApiCallProperties.Create this with get, set
-
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
@@ -484,7 +486,7 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
     member val Properties = ApiDefProperties.Create this with get, set
-
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =

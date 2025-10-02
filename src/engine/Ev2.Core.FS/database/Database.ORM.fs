@@ -3,6 +3,7 @@ namespace Ev2.Core.FS
 open System
 
 open Dual.Common.Base
+open Dual.Common.Db.FS
 
 [<AutoOpen>]
 module ORMTypesModule =
@@ -80,43 +81,22 @@ module ORMTypesModule =
             |-> JsonPolymorphic.FromJson<ProjectProperties>
             |?? ProjectProperties.Create
 
-        let mutable propertiesObj = createProperties propertiesJson
-        let mutable propertiesStr = propertiesJson
-
-        let syncFromObj () = propertiesStr <- propertiesObj.ToJson()
-        let syncFromJson json =
-            propertiesStr <- json
-            propertiesObj <- createProperties json
-
         new() = new ORMProject(nullString)
+
+        member val PropertiesJson = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
+
         interface IORMProject with
-            member _.DateTime
-                with get() = propertiesObj.DateTime
+            member x.DateTime
+                with get() = (createProperties x.PropertiesJson).DateTime
                 and set v =
-                    propertiesObj.DateTime <- v
-                    syncFromObj()
-
-        member x.Properties
-            with get() = propertiesStr
-            and set value = syncFromJson value
-
-        member x.PropertiesJson
-            with get() = x.Properties
-            and set value = x.Properties <- value
-
-        member x.ProjectProperties
-            with get() = propertiesObj
-            and set value =
-                propertiesObj <- (value |> Option.ofObj |? ProjectProperties.Create())
-                syncFromObj()
-
-        member private x.UpdateProjectProperties(update:ProjectProperties -> unit) =
-            update propertiesObj
-            syncFromObj()
+                    let props = createProperties x.PropertiesJson
+                    props.DateTime <- v
+                    x.PropertiesJson <- props.ToJson()
 
         member x.Initialize(runtime:Project) =
             runtime.CopyUniqueProperties(x)
-            x.ProjectProperties <- createProperties runtime.PropertiesJson
+            x.PropertiesJson <- runtime.PropertiesJson
             x
 
 
@@ -129,48 +109,30 @@ module ORMTypesModule =
             |-> JsonPolymorphic.FromJson<DsSystemProperties>
             |?? DsSystemProperties.Create
 
-        let mutable propertiesObj = createProperties propertiesJson
-        let mutable propertiesStr = propertiesJson
-
-        let syncFromObj () = propertiesStr <- propertiesObj.ToJson()
-        let syncFromJson json =
-            propertiesStr <- json
-            propertiesObj <- createProperties json
-
         member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
         new() = new ORMSystem(None, nullString, nullString)
 
+        member val PropertiesJson = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
+
         interface IORMSystem with
-            member _.DateTime
-                with get() = propertiesObj.DateTime
+            member x.DateTime
+                with get() = (createProperties x.PropertiesJson).DateTime
                 and set v =
-                    propertiesObj.DateTime <- v
-                    syncFromObj()
+                    let props = createProperties x.PropertiesJson
+                    props.DateTime <- v
+                    x.PropertiesJson <- props.ToJson()
 
         member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
         member val OwnerProjectId = ownerProjectId with get, set
         member val IRI = iri with get, set
 
-        member x.Properties
-            with get() = propertiesStr
-            and set value = syncFromJson value
-
-        member x.PropertiesJson
-            with get() = x.Properties
-            and set value = x.Properties <- value
-
-        member x.SystemProperties
-            with get() = propertiesObj
-            and set value =
-                propertiesObj <- (value |> Option.ofObj |? DsSystemProperties.Create())
-                syncFromObj()
-
         member x.Initialize(runtime:DsSystem) =
             runtime.CopyUniqueProperties(x)
             x.IRI <- runtime.IRI
             x.OwnerProjectId <- runtime.OwnerProjectId
-            x.Properties <- runtime.PropertiesJson
+            x.PropertiesJson <- runtime.PropertiesJson
             x
 
     type ORMFlow(systemId:Id, propertiesJson:string) = // Initialize
@@ -180,6 +142,7 @@ module ORMTypesModule =
         interface IORMFlow
         member x.SystemId with get() = x.ParentId and set v = x.ParentId <- v
         member val Properties = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
@@ -207,6 +170,7 @@ module ORMTypesModule =
         member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
         member val Properties = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
@@ -240,6 +204,7 @@ module ORMTypesModule =
         member val AutoConditions   = autoConditions   with get, set
         member val CommonConditions = commonConditions with get, set
         member val Properties = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
@@ -294,6 +259,7 @@ module ORMTypesModule =
         member val ValueSpec   = valueSpec with get, set
         member val IOTagsJson  = ioTagsJson with get, set
         member val Properties  = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
@@ -317,6 +283,7 @@ module ORMTypesModule =
         member val XTxGuid = emptyGuid with get, set
         member val XRxGuid = emptyGuid with get, set
         member val Properties = propertiesJson with get, set
+        member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
         member x.PropertiesJson
             with get() = x.Properties
             and set value = x.Properties <- value
