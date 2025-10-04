@@ -64,81 +64,78 @@ type [<AbstractClass>] DsPropertiesBase() =
     inherit JsonPolymorphic()
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = false
-
-[<AutoOpen>]
-module PropertiesModule =
-    let internal createExtendedWithProperties<'T when 'T :> DsPropertiesBase and 'T : (new : unit -> 'T) and 'T : not struct>(container:Unique option) : 'T =
+    static member CreateExtended<'T when 'T :> DsPropertiesBase and 'T : (new : unit -> 'T) and 'T : not struct>(container:Unique option) : 'T =
         createExtended<'T>() |> tee (fun p -> p.RawParent <- container)
 
-    type ProjectProperties() =
-        inherit DsPropertiesBase()
-        member val Database = getNull<DbProvider>() with get, set
-        member val AasxPath = nullString with get, set
-        member val Author = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
-        member val Version = Version() with get, set
-        member val Description = nullString with get, set
-        member val DateTime = now().TruncateToSecond() with get, set
-        member val ProjectMemo = nullString with get, set
-        static member Create(?project:IRtProject) = createExtendedWithProperties<ProjectProperties>(project.Cast<Unique>())
+type ProjectProperties() =
+    inherit DsPropertiesBase()
+    member val Database = getNull<DbProvider>() with get, set
+    member val AasxPath = nullString with get, set
+    member val Author = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
+    member val Version = Version() with get, set
+    member val Description = nullString with get, set
+    member val DateTime = now().TruncateToSecond() with get, set
+    member val ProjectMemo = nullString with get, set
+    static member Create(?project:IRtProject) = DsPropertiesBase.CreateExtended<ProjectProperties>(project.Cast<Unique>())
 
-    type DsSystemProperties() =
-        inherit DsPropertiesBase()
-        member val Author = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
-        member val EngineVersion = Version() with get, set
-        member val LangVersion = Version() with get, set
-        member val Description = nullString with get, set
-        member val DateTime = now().TruncateToSecond() with get, set
+type DsSystemProperties() =
+    inherit DsPropertiesBase()
+    member val Author = $"{Environment.UserName}@{Environment.UserDomainName}" with get, set
+    member val EngineVersion = Version() with get, set
+    member val LangVersion = Version() with get, set
+    member val Description = nullString with get, set
+    member val DateTime = now().TruncateToSecond() with get, set
 
-        // 이하는 sample attributes. // TODO: remove samples
-        member val Text    = nullString with get, set
+    // 이하는 sample attributes. // TODO: remove samples
+    member val Text    = nullString with get, set
 
-        static member Create(?dsSystem:IRtSystem) = createExtendedWithProperties<DsSystemProperties>(dsSystem.Cast<Unique>())
+    static member Create(?dsSystem:IRtSystem) = DsPropertiesBase.CreateExtended<DsSystemProperties>(dsSystem.Cast<Unique>())
 
-    type FlowProperties() =
-        inherit DsPropertiesBase()
-        member val FlowMemo = nullString with get, set
-        static member Create(?flow:IRtFlow) = createExtendedWithProperties<FlowProperties>(flow.Cast<Unique>())
+type FlowProperties() =
+    inherit DsPropertiesBase()
+    member val FlowMemo = nullString with get, set
+    static member Create(?flow:IRtFlow) = DsPropertiesBase.CreateExtended<FlowProperties>(flow.Cast<Unique>())
 
-    type WorkProperties() =
-        inherit DsPropertiesBase()
-        member val WorkMemo = nullString with get, set
-        static member Create(?work:IRtWork) = createExtendedWithProperties<WorkProperties>(work.Cast<Unique>())
+type WorkProperties() =
+    inherit DsPropertiesBase()
+    member val WorkMemo = nullString with get, set
+    static member Create(?work:IRtWork) = DsPropertiesBase.CreateExtended<WorkProperties>(work.Cast<Unique>())
 
-    type CallProperties() =
-        inherit DsPropertiesBase()
-        member val CallMemo = nullString with get, set
-        static member Create(?call:IRtCall) = createExtendedWithProperties<CallProperties>(call.Cast<Unique>())
+type CallProperties() =
+    inherit DsPropertiesBase()
+    member val CallMemo = nullString with get, set
+    static member Create(?call:IRtCall) = DsPropertiesBase.CreateExtended<CallProperties>(call.Cast<Unique>())
 
-    type ApiCallProperties() =
-        inherit DsPropertiesBase()
-        member val ApiCallMemo = nullString with get, set
-        static member Create(?apiCall:IRtApiCall) = createExtendedWithProperties<ApiCallProperties>(apiCall.Cast<Unique>())
+type ApiCallProperties() =
+    inherit DsPropertiesBase()
+    member val ApiCallMemo = nullString with get, set
+    static member Create(?apiCall:IRtApiCall) = DsPropertiesBase.CreateExtended<ApiCallProperties>(apiCall.Cast<Unique>())
 
-    type ApiDefProperties() =
-        inherit DsPropertiesBase()
-        member val ApiDefMemo = nullString with get, set
-        static member Create(?apiDef:IRtApiDef) = createExtendedWithProperties<ApiDefProperties>(apiDef.Cast<Unique>())
+type ApiDefProperties() =
+    inherit DsPropertiesBase()
+    member val ApiDefMemo = nullString with get, set
+    static member Create(?apiDef:IRtApiDef) = DsPropertiesBase.CreateExtended<ApiDefProperties>(apiDef.Cast<Unique>())
 
-    /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
-    type [<AbstractClass>] BLCABase() =
-        inherit JsonPolymorphic()
-        interface IWithTagWithSpecs
-        member val IOTags = IOTagsWithSpec() with get, set
-        [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
-        [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
-
-
-    [<AutoOpen>]
-    module internal DsPropertiesHelper =
-        let inline assignFromJson<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
-            (owner:'TOwner) (create: unit -> 'T) (json:string) : 'T
-          =
-            json |> String.toOption |-> JsonPolymorphic.FromJson<'T> |?? create
-            |> tee ( setParentI owner )
+/// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
+type [<AbstractClass>] BLCABase() =
+    inherit JsonPolymorphic()
+    interface IWithTagWithSpecs
+    member val IOTags = IOTagsWithSpec() with get, set
+    [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
+    [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
 
 
-        let inline cloneProperties<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
-            (owner:'TOwner) (source:'T) (create: unit -> 'T) : 'T
-          =
-            source |> toOption |-> _.DeepClone<'T>() |?? create
-            |> tee ( setParentI owner )
+[<AutoOpen>]
+module internal DsPropertiesHelper =
+    let inline assignFromJson<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
+        (owner:'TOwner) (create: unit -> 'T) (json:string) : 'T
+        =
+        json |> String.toOption |-> JsonPolymorphic.FromJson<'T> |?? create
+        |> tee ( setParentI owner )
+
+
+    let inline cloneProperties<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
+        (owner:'TOwner) (source:'T) (create: unit -> 'T) : 'T
+        =
+        source |> toOption |-> _.DeepClone<'T>() |?? create
+        |> tee ( setParentI owner )
