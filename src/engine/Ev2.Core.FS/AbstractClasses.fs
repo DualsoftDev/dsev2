@@ -133,9 +133,6 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     /// Creates a Project with the specified systems using parameterless constructor + Initialize pattern
     static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProject:INjProject) =
         let x = createExtended<Project>()
-        // Clear existing systems
-        x.RawActiveSystems.Clear()
-        x.RawPassiveSystems.Clear()
 
         // Add new systems and set parent relationships
         activeSystems |> iter (fun s ->
@@ -210,13 +207,6 @@ and DsSystem() as this = // Create
     /// Creates a DsSystem with the specified components using parameterless constructor + Initialize pattern
     static member Create(flows: Flow seq, works: Work seq, arrows: ArrowBetweenWorks seq, apiDefs: ApiDef seq, apiCalls: ApiCall seq) =
         let system = createExtended<DsSystem>()
-        // Clear existing components
-        system.RawFlows.Clear()
-        system.RawWorks.Clear()
-        system.RawArrows.Clear()
-        system.RawApiDefs.Clear()
-        system.RawApiCalls.Clear()
-
         // Add new components and set parent relationships
         flows      |> iter (fun f -> system.RawFlows     .Add(f); setParentI system f)
         works      |> iter (fun w -> system.RawWorks     .Add(w); setParentI system w)
