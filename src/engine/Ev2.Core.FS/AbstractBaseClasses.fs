@@ -76,7 +76,7 @@ type ProjectProperties() =
     member val Description = nullString with get, set
     member val DateTime = now().TruncateToSecond() with get, set
     member val ProjectMemo = nullString with get, set
-    static member Create(?project:IRtProject) = DsPropertiesBase.CreateExtended<ProjectProperties>(project.Cast<Unique>())
+    static member Create(?container:IRtProject) = DsPropertiesBase.CreateExtended<ProjectProperties>(container.Cast<Unique>())
 
 type DsSystemProperties() =
     inherit DsPropertiesBase()
@@ -89,32 +89,32 @@ type DsSystemProperties() =
     // 이하는 sample attributes. // TODO: remove samples
     member val Text    = nullString with get, set
 
-    static member Create(?dsSystem:IRtSystem) = DsPropertiesBase.CreateExtended<DsSystemProperties>(dsSystem.Cast<Unique>())
+    static member Create(?container:IRtSystem) = DsPropertiesBase.CreateExtended<DsSystemProperties>(container.Cast<Unique>())
 
 type FlowProperties() =
     inherit DsPropertiesBase()
     member val FlowMemo = nullString with get, set
-    static member Create(?flow:IRtFlow) = DsPropertiesBase.CreateExtended<FlowProperties>(flow.Cast<Unique>())
+    static member Create(?container:IRtFlow) = DsPropertiesBase.CreateExtended<FlowProperties>(container.Cast<Unique>())
 
 type WorkProperties() =
     inherit DsPropertiesBase()
     member val WorkMemo = nullString with get, set
-    static member Create(?work:IRtWork) = DsPropertiesBase.CreateExtended<WorkProperties>(work.Cast<Unique>())
+    static member Create(?container:IRtWork) = DsPropertiesBase.CreateExtended<WorkProperties>(container.Cast<Unique>())
 
 type CallProperties() =
     inherit DsPropertiesBase()
     member val CallMemo = nullString with get, set
-    static member Create(?call:IRtCall) = DsPropertiesBase.CreateExtended<CallProperties>(call.Cast<Unique>())
+    static member Create(?container:IRtCall) = DsPropertiesBase.CreateExtended<CallProperties>(container.Cast<Unique>())
 
 type ApiCallProperties() =
     inherit DsPropertiesBase()
     member val ApiCallMemo = nullString with get, set
-    static member Create(?apiCall:IRtApiCall) = DsPropertiesBase.CreateExtended<ApiCallProperties>(apiCall.Cast<Unique>())
+    static member Create(?container:IRtApiCall) = DsPropertiesBase.CreateExtended<ApiCallProperties>(container.Cast<Unique>())
 
 type ApiDefProperties() =
     inherit DsPropertiesBase()
     member val ApiDefMemo = nullString with get, set
-    static member Create(?apiDef:IRtApiDef) = DsPropertiesBase.CreateExtended<ApiDefProperties>(apiDef.Cast<Unique>())
+    static member Create(?container:IRtApiDef) = DsPropertiesBase.CreateExtended<ApiDefProperties>(container.Cast<Unique>())
 
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
