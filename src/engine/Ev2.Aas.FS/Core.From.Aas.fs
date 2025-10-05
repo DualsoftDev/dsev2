@@ -249,11 +249,8 @@ module CoreFromAas =
     type NjApiDef with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjApiDef =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
-            let isPush = smc.TryGetPropValue<bool> "IsPush" |? false
-            let txGuid = smc.GetPropValue          "TxGuid" |> Guid.Parse
-            let rxGuid = smc.GetPropValue          "RxGuid" |> Guid.Parse
 
-            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, IsPush = isPush, TxGuid=txGuid, RxGuid=rxGuid)
+            NjApiDef.Create(Name=name, Guid=guid, Id=id, Parameter=parameter)
             |> tee (fun apiDef ->
                 let propertiesJson = smc.TryGetPropValue "Properties" |? null
                 if propertiesJson.NonNullAny() then

@@ -123,9 +123,9 @@ module CoreToAas =
                     JObj().TrySetProperty(workPropsJson, "Properties")
 
                 | :? NjApiDef as apiDef ->
-                    JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
-                    JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
-                    JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
+                    //JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
+                    //JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
+                    //JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
                     let apiDefPropsJson =
                         if isNull (box apiDef.Properties) then null
                         else apiDef.Properties.ToJson()

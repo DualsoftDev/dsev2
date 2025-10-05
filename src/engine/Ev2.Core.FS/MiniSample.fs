@@ -18,8 +18,13 @@ module MiniSample =
         sys.AddWorks [workAdv; workRet;]
         sys.AddFlows [flow]
 
-        let apiDefAdv = ApiDef.Create(Name = "ApiDefADV", TxGuid=workAdv.Guid, RxGuid=workAdv.Guid, Guid=Guid.Parse("30000000-0000-0000-0000-000000000000"))
-        let apiDefRet = ApiDef.Create(Name = "ApiDefRET", TxGuid=workRet.Guid, RxGuid=workRet.Guid, Guid=Guid.Parse("40000000-0000-0000-0000-000000000000"))
+        let apiDefAdv =
+            ApiDef.Create(Name = "ApiDefADV", Guid=Guid.Parse("30000000-0000-0000-0000-000000000000"))
+            |> tee (fun ad -> ad.Properties.TxGuid <- workAdv.Guid; ad.Properties.RxGuid <- workAdv.Guid)
+
+        let apiDefRet =
+            ApiDef.Create(Name = "ApiDefRET", Guid=Guid.Parse("40000000-0000-0000-0000-000000000000"))
+            |> tee (fun ad -> ad.Properties.TxGuid <- workRet.Guid; ad.Properties.RxGuid <- workRet.Guid)
 
         sys      .Properties.Text       <- "Sample System Properties in mini sample"
         flow     .Properties.FlowMemo   <- "Sample Flow Properties in mini sample"

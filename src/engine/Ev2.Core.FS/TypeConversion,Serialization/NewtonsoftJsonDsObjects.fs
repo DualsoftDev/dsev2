@@ -324,13 +324,12 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntity()
         interface INjApiDef
 
-        [<JsonProperty(Order = 99)>] member val Properties = ApiDefProperties.Create() with get, set
-        member val IsPush = false with get, set
-        member val TxGuid = emptyGuid with get, set
-        member val RxGuid = emptyGuid with get, set
+        [<JsonProperty(Order = 99)>]
+        member val Properties = ApiDefProperties.Create() with get, set
+
         static member Create() = createExtended<NjApiDef>()
-        member x.ShouldSerializeTxGuid() = x.TxGuid <> Guid.Empty
-        member x.ShouldSerializeRxGuid() = x.RxGuid <> Guid.Empty
+        member x.ShouldSerializeTxGuid() = x.Properties.TxGuid <> Guid.Empty
+        member x.ShouldSerializeRxGuid() = x.Properties.RxGuid <> Guid.Empty
 
 
 
@@ -558,7 +557,7 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
-                ApiDef.Create(njad.IsPush(*, ?topicIndex=njad.TopicIndex, ?isTopicOrigin=njad.IsTopicOrigin*))
+                ApiDef.Create()
                 |> replicateProperties njad
                 |> tee(fun ad ->
                     ad.Properties <- DsPropertiesHelper.cloneProperties ad njad.Properties (fun () -> ApiDefProperties.Create ad))
@@ -783,7 +782,7 @@ module Ds2JsonModule =
                     :> INjUnique
 
                 | :? ApiDef as ad ->
-                    NjApiDef.Create(IsPush=ad.IsPush)
+                    NjApiDef.Create()
                     |> replicateProperties ad
                     |> tee (fun z -> z.Properties <- DsPropertiesHelper.cloneProperties z ad.Properties ApiDefProperties.Create)
                     :> INjUnique

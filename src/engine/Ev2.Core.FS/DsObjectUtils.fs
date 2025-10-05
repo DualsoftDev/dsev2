@@ -411,12 +411,6 @@ module DsObjectUtilsModule =
 
 
     type ApiDef with // Create
-        static member Create(isPush:bool) =
-            // 매개변수가 있는 경우 확장 타입에서 initialize
-            let apiDef = createExtended<ApiDef>()
-            apiDef.IsPush <- isPush
-            apiDef
-
         static member Create() =
             createExtended<ApiDef>()
 

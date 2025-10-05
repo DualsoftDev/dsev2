@@ -152,13 +152,11 @@ module internal DbInsertModule =
                 | :? ApiDef as rt ->
                     let orm = rt.ToORM<ORMApiDef>(dbApi)
                     orm.SystemId <- rt.System >>= _.Id
-                    orm.TxId <- rt.TX.Id
-                    orm.RxId <- rt.RX.Id
 
                     let apiDefId =
                         conn.Insert($"""INSERT INTO {Tn.ApiDef}
-                                               (guid, parameter,                      name, isPush, txId, rxId, systemId, properties)
-                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IsPush, @TxId, @RxId, @SystemId, @PropertiesJsonB);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
+                                               (guid, parameter,                      name,  systemId, properties)
+                                        VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @PropertiesJsonB);""", orm, tr)  // @TopicIndex, @IsTopicOrigin,
 
                     rt.Id <- Some apiDefId
                     orm.Id <- Some apiDefId

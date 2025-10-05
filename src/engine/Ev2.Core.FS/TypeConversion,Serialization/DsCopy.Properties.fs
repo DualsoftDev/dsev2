@@ -172,15 +172,15 @@ module internal DsCopyModule =
             // ApiDef, NjApiDef, ORMApiDef) ->   // 미처리 : ApiApiDefs, Status4
             let s =
                 match sbx with
-                | :? ApiDef    as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
-                | :? NjApiDef  as s -> {| IsPush=s.IsPush; TxGuid=s.TxGuid; RxGuid=s.RxGuid |}
-                | :? ORMApiDef as s -> {| IsPush=s.IsPush; TxGuid=s.XTxGuid; RxGuid=s.XRxGuid |}
+                | :? ApiDef    as s -> s.PropertiesJson
+                | :? NjApiDef  as s -> s.Properties.ToJson()
+                | :? ORMApiDef as s -> s.PropertiesJson
                 | _ -> fail()
 
             match dbx with
-            | :? ApiDef    as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
-            | :? NjApiDef  as d -> d.IsPush<-s.IsPush; d.TxGuid<-s.TxGuid; d.RxGuid<-s.RxGuid
-            | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid
+            | :? ApiDef    as d -> d.PropertiesJson <- s
+            | :? NjApiDef  as d -> d.Properties <- assignFromJson d ApiDefProperties.Create s
+            | :? ORMApiDef as d -> d.PropertiesJson <- s
             | _ -> fail()
 
         | :? BLCABase as srcBlca ->

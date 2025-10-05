@@ -262,16 +262,9 @@ module internal Db2DsImpl =
 
                 let sys = ormSystem.RtObject >>= tryCast<DsSystem> |> Option.get
                 for orm in orms do
-                    let apiDef = ApiDef.Create()
 
-                    // Rt -> ORM : 추후 속성 복사를 원활하게 하기 위해서 Guid 값을 채움 (Id 기반으로 검색해서)
-                    orm.XTxGuid <- sys.Works |> find(fun w -> w.Id = orm.TxId) |> _.Guid
-                    orm.XRxGuid <- sys.Works |> find(fun w -> w.Id = orm.RxId) |> _.Guid
 
-                    // ORM -> Rt
-                    apiDef.IsPush <- orm.IsPush
-
-                    apiDef
+                    ApiDef.Create()
                     |> replicateProperties orm
                     |> tee (fun ad -> ad.PropertiesJson <- orm.PropertiesJson)
                     |> tee handleAfterSelect

@@ -113,6 +113,10 @@ type ApiCallProperties() =
 
 type ApiDefProperties() =
     inherit DsPropertiesBase()
+    member val IsPush = true with get, set
+    member val TxGuid = emptyGuid with get, set
+    member val RxGuid = emptyGuid with get, set
+    member val Period = 0 with get, set
     member val ApiDefMemo = nullString with get, set
     static member Create(?container:IRtApiDef) = DsPropertiesBase.CreateExtended<ApiDefProperties>(container.Cast<Unique>())
 

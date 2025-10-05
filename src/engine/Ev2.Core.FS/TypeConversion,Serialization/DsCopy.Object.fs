@@ -158,7 +158,7 @@ module internal rec DsObjectCopyImpl =
 
     type ApiDef with // replicate
         member x.replicate() =
-            ApiDef.Create(IsPush=x.IsPush, TxGuid=x.TxGuid, RxGuid=x.RxGuid)
+            ApiDef.Create()
             |> replicateProperties x
             |> tee(fun apiDef -> apiDef.PropertiesJson <- x.PropertiesJson)
 
@@ -226,8 +226,8 @@ module DsObjectCopyAPIModule =
             rt.XTargetGuid <- map[rt.XTargetGuid]
 
         | :? ApiDef as rt ->
-            rt.TxGuid <- map[rt.TxGuid]
-            rt.RxGuid <- map[rt.RxGuid]
+            rt.Properties.TxGuid <- map[rt.Properties.TxGuid]
+            rt.Properties.RxGuid <- map[rt.Properties.RxGuid]
 
         | :? Flow as rt ->
             // Flow는 더 이상 UI 요소를 직접 소유하지 않음

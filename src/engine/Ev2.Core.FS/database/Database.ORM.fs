@@ -251,13 +251,6 @@ module ORMTypesModule =
 
         new() = new ORMApiDef(-1, nullString)
         interface IORMApiDef
-        member val IsPush = false with get, set
-
-        member val TxId = Option<Id>.None with get, set
-        member val RxId = Option<Id>.None with get, set
-
-        member val XTxGuid = emptyGuid with get, set
-        member val XRxGuid = emptyGuid with get, set
         member val Properties = propertiesJson with get, set
         member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
         member x.PropertiesJson

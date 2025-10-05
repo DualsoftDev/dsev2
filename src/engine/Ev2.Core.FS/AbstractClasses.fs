@@ -461,25 +461,17 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
     static member Create() = createExtended<ApiDef>()
 
     interface IRtApiDef
-    member val IsPush = isPush with get, set
-
-    member val TxGuid = txGuid with get, set
-    member val RxGuid = rxGuid with get, set
-
-    member x.TX: Work = getWork x.System x.TxGuid
-    member x.RX: Work = getWork x.System x.RxGuid
-
-    member x.Period = x.TX.Period
-
-
-    member x.System = x.RawParent >>= tryCast<DsSystem>
-
     member val Properties = ApiDefProperties.Create this with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) =
             x.Properties <- assignFromJson x (fun () -> ApiDefProperties.Create this) json
+
+    member x.TX: Work = getWork x.System x.Properties.TxGuid
+    member x.RX: Work = getWork x.System x.Properties.RxGuid
+
+    member x.System = x.RawParent >>= tryCast<DsSystem>
 
     // system 에서 현재 ApiDef 을 사용하는 ApiCall 들
     member x.ApiUsers:ApiCall[] =
