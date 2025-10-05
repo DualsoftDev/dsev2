@@ -183,9 +183,17 @@ module internal DsCopyModule =
             | :? ORMApiDef as d -> d.IsPush<-s.IsPush; d.XTxGuid<-s.TxGuid; d.XRxGuid<-s.RxGuid
             | _ -> fail()
 
-        // ArrowBetweenCalls, ArrowBetweenWorks
-        // ORMArrowCall, ORMArrowWork
-        // NjArrow,
+        | :? BLCABase as srcBlca ->
+            match dbx with
+            | :? BLCABase as dstBlca ->
+                dstBlca.SetPropertiesJson(srcBlca.GetPropertiesJson())
+            | _ -> fail()
+
+        (*
+            ArrowBetweenCalls, ArrowBetweenWorks
+            ORMArrowCall, ORMArrowWork
+            NjArrow,
+        *)
         | :? IArrow ->
             let parseEnum (s:string) : DbArrowType =
                 match Enum.TryParse<DbArrowType>(s) with

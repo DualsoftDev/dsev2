@@ -116,6 +116,29 @@ type ApiDefProperties() =
     member val ApiDefMemo = nullString with get, set
     static member Create(?container:IRtApiDef) = DsPropertiesBase.CreateExtended<ApiDefProperties>(container.Cast<Unique>())
 
+
+type ButtonProperties() =
+    inherit DsPropertiesBase()
+    member val ButtonMemo = nullString with get, set
+    static member Create(?container:IRtButton) = DsPropertiesBase.CreateExtended<ButtonProperties>(container.Cast<Unique>())
+
+type LampProperties() =
+    inherit DsPropertiesBase()
+    member val LampMemo = nullString with get, set
+    static member Create(?container:IRtLamp) = DsPropertiesBase.CreateExtended<LampProperties>(container.Cast<Unique>())
+
+type ConditionProperties() =
+    inherit DsPropertiesBase()
+    member val ConditionMemo = nullString with get, set
+    static member Create(?container:IRtCondition) = DsPropertiesBase.CreateExtended<ConditionProperties>(container.Cast<Unique>())
+
+type ActionProperties() =
+    inherit DsPropertiesBase()
+    member val ActionMemo = nullString with get, set
+    static member Create(?container:IRtAction) = DsPropertiesBase.CreateExtended<ActionProperties>(container.Cast<Unique>())
+
+
+
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
     inherit JsonPolymorphic()

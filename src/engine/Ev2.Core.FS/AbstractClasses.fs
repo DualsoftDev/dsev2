@@ -248,31 +248,58 @@ and Flow() as this = // Create
     static member Create() = createExtended<Flow>()
 
 
-and DsButton() = // Create
+and DsButton() as this = // Create
     inherit BLCABase()
 
     interface IRtButton
+
+    [<JsonIgnore>] member val Properties = ButtonProperties.Create(this) with get, set
+    [<JsonProperty("Properties")>]
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) =
+            x.Properties <- assignFromJson x (fun () -> ButtonProperties.Create this) json
+
     static member Create() = createExtended<DsButton>()
 
-and Lamp() = // Create
+and Lamp() as this = // Create
     inherit BLCABase()
 
     interface IRtLamp
+
+    [<JsonIgnore>] member val Properties = LampProperties.Create(this) with get, set
+    [<JsonProperty("Properties")>]
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) = x.Properties <- assignFromJson x (fun () -> LampProperties.Create this) json
+
     static member Create() = createExtended<Lamp>()
 
-and DsCondition() = // Create
+and DsCondition() as this = // Create
     inherit BLCABase()
 
     interface IRtCondition
+
+    [<JsonIgnore>] member val Properties = ConditionProperties.Create(this) with get, set
+    [<JsonProperty("Properties")>]
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) = x.Properties <- assignFromJson x (fun () -> ConditionProperties.Create this) json
+
     static member Create() = createExtended<DsCondition>()
 
-and DsAction() = // Create
+and DsAction() as this = // Create
     inherit BLCABase()
 
     interface IRtAction
+
+    [<JsonIgnore>] member val Properties = ActionProperties.Create(this) with get, set
+    [<JsonProperty("Properties")>]
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) = x.Properties <- assignFromJson x (fun () -> ActionProperties.Create this) json
+
     static member Create() = createExtended<DsAction>()
-
-
 
 // see static member Create
 and Work() as this = // Create
@@ -464,3 +491,23 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
                     with _ -> false)  // ApiDef 접근 실패 시 false
                 |> toArray)
         |? [||]
+
+
+[<AutoOpen>]
+module AbstractClassesExtensions =
+    type BLCABase with
+        member x.GetPropertiesJson() =
+            match x with
+            | :? DsButton    as b -> b.PropertiesJson
+            | :? Lamp        as l -> l.PropertiesJson
+            | :? DsCondition as c -> c.PropertiesJson
+            | :? DsAction    as a -> a.PropertiesJson
+            | _ -> failwithMessage "Unknown BLCABase derived type"
+
+        member x.SetPropertiesJson(json:string) =
+            match x with
+            | :? DsButton    as b -> b.PropertiesJson <- json
+            | :? Lamp        as l -> l.PropertiesJson <- json
+            | :? DsCondition as c -> c.PropertiesJson <- json
+            | :? DsAction    as a -> a.PropertiesJson <- json
+            | _ -> failwithMessage "Unknown BLCABase derived type"

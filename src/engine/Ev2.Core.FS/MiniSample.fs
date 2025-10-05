@@ -61,6 +61,9 @@ module MiniSample =
         let button1 = DsButton.Create(Name = "Button1")
         let lamp1 = Lamp.Create(Name = "Lamp1")
 
+        button1.Properties.ButtonMemo <- "Sample Button Properties in mini sample"
+        lamp1.Properties.LampMemo     <- "Sample Lamp Properties in mini sample"
+
         // UI 요소들의 Flow 설정
         button1.Flows.Add(flow)
         lamp1.Flows.Add(flow)

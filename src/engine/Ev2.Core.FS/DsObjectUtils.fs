@@ -200,15 +200,6 @@ module rec TmpCompatibility =
         member x.RemoveApiCalls(apiCalls:ApiCall seq)         = x.removeApiCalls(apiCalls, true)
 
 
-        //member x.AddButtons      (buttons:NewDsButton seq)       = buttons.Cast<SystemEntityWithJsonPolymorphic>() |> x.AddEntities
-        //member x.RemoveButtons   (buttons:NewDsButton seq)       = buttons.Cast<SystemEntityWithJsonPolymorphic>() |> iter x.RemoveEntitiy
-        //member x.AddLamps        (lamps:NewLamp seq)             = x.addLamps        (lamps, true)
-        //member x.RemoveLamps     (lamps:NewLamp seq)             = x.removeLamps     (lamps, true)
-        //member x.AddConditions   (conditions:NewDsCondition seq) = x.addConditions   (conditions, true)
-        //member x.RemoveConditions(conditions:NewDsCondition seq) = x.removeConditions(conditions, true)
-        //member x.AddActions      (actions:NewDsAction seq)       = x.addActions      (actions, true)
-        //member x.RemoveActions   (actions:NewDsAction seq)       = x.removeActions   (actions, true)
-
 
 
     type Flow with // AddWorks, RemoveWorks (더 이상 Button 등을 관리하지 않음)
@@ -299,29 +290,6 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
     static member CreateApiDef()   = createExtended<ApiDef>()
     static member CreateApiCall()  = createExtended<ApiCall>()
 
-    //static member CreateDsSystem(flows:Flow[], works:Work[],
-    //    arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[],
-    //    blcas: SystemEntityWithJsonPolymorphic[]    // Button, Lamp, Condition, Action
-    //) =
-    //    let system = createExtended<DsSystem>()
-    //    system.RawFlows.Clear()
-    //    system.RawWorks.Clear()
-    //    system.RawArrows.Clear()
-    //    system.RawApiDefs.Clear()
-    //    system.RawApiCalls.Clear()
-    //    system.RawFlows.AddRange(flows)
-    //    system.RawWorks.AddRange(works)
-    //    system.RawArrows.AddRange(arrows)
-    //    system.RawApiDefs.AddRange(apiDefs)
-    //    system.RawApiCalls.AddRange(apiCalls)
-    //    system.PolymorphicJsonEntities.Clear()
-    //    system.PolymorphicJsonEntities.AddItems(blcas)
-    //    flows    |> iter (setParentI system)
-    //    works    |> iter (setParentI system)
-    //    arrows   |> iter (setParentI system)
-    //    apiDefs  |> iter (setParentI system)
-    //    apiCalls |> iter (setParentI system)
-    //    system
 
 
     /// 새로운 패턴: createExtended 사용
@@ -332,8 +300,6 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
         let arrows = arrows |> toList
 
         let work = createExtended<Work>()
-        work.RawCalls.Clear()
-        work.RawArrows.Clear()
         work.RawCalls.AddRange(calls)
         work.RawArrows.AddRange(arrows)
         work.FlowGuid <- flowGuid
@@ -354,7 +320,6 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
         call.CallType <- callType
         call.IsDisabled <- isDisabled
         call.Timeout <- timeout
-        call.ApiCallGuids.Clear()
         call.AutoConditions <- autoConditions
         call.CommonConditions <- commonConditions
         call.ApiCallGuids.AddRange(apiCallGuids)
@@ -373,8 +338,6 @@ module DsObjectUtilsModule =
         static member Create(activeSystems:DsSystem seq, passiveSystems:DsSystem seq) =
             // 매개변수가 있는 경우 직접 생성자 사용하거나 확장 타입에서 initialize
             let project = createExtended<Project>()
-            project.RawActiveSystems.Clear()
-            project.RawPassiveSystems.Clear()
             project.RawActiveSystems.AddRange(activeSystems)
             project.RawPassiveSystems.AddRange(passiveSystems)
             activeSystems  |> iter (setParentI project)
@@ -391,12 +354,6 @@ module DsObjectUtilsModule =
         ) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let system = createExtended<DsSystem>()
-            system.RawFlows.Clear()
-            system.RawWorks.Clear()
-            system.RawArrows.Clear()
-            system.RawApiDefs.Clear()
-            system.RawApiCalls.Clear()
-            system.PolymorphicJsonEntities.Clear()
             system.RawFlows.AddRange(flows)
             system.RawWorks.AddRange(works)
             system.RawArrows.AddRange(arrows)
@@ -420,8 +377,6 @@ module DsObjectUtilsModule =
         static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flowGuid:Guid option) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let work = createExtended<Work>()
-            work.RawCalls.Clear()
-            work.RawArrows.Clear()
             work.RawCalls.AddRange(calls)
             work.RawArrows.AddRange(arrows)
             work.FlowGuid <- flowGuid
@@ -441,7 +396,6 @@ module DsObjectUtilsModule =
             call.CallType <- callType
             call.IsDisabled <- isDisabled
             call.Timeout <- timeout
-            call.ApiCallGuids.Clear()
             call.AutoConditions <- autoConditions
             call.CommonConditions <- commonConditions
             call.ApiCallGuids.AddRange(apiCalls |-> _.Guid)
