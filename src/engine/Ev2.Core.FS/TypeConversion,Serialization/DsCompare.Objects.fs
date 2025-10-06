@@ -264,13 +264,6 @@ module rec DsCompareObjects =
                     let updateSql = $"UPDATE {Tn.Work} SET flowId = {y.Flow.Value.Id.Value} WHERE id = {x.Id.Value};"
                     yield Diff("FlowId", x, y, (updateSql, null))
 
-                if x.Motion        <> y.Motion        then yield Diff(nameof x.Motion,        x, y, nullUpdateSql)
-                if x.Script        <> y.Script        then yield Diff(nameof x.Script,        x, y, nullUpdateSql)
-                if x.ExternalStart <> y.ExternalStart then yield Diff(nameof x.ExternalStart, x, y, nullUpdateSql)
-                if x.IsFinished    <> y.IsFinished    then yield Diff(nameof x.IsFinished,    x, y, nullUpdateSql)
-                if x.NumRepeat     <> y.NumRepeat     then yield Diff(nameof x.NumRepeat,     x, y, nullUpdateSql)
-                if x.Period        <> y.Period        then yield Diff(nameof x.Period,        x, y, nullUpdateSql)
-                if x.Delay         <> y.Delay         then yield Diff(nameof x.Delay,         x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4      then yield Diff("Status", x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))
 

@@ -219,12 +219,6 @@ CREATE TABLE work(
     , name          VARCHAR(128) NOT NULL
     , systemId    BIGINT NOT NULL
     , flowId      BIGINT DEFAULT NULL    -- NULL 허용 (work가 flow에 속하지 않을 수도 있음)
-    , motion      TEXT
-    , script      TEXT
-    , isFinished  BOOLEAN NOT NULL DEFAULT FALSE
-    , numRepeat   INT NOT NULL DEFAULT 0  -- 반복 횟수
-    , period      INT NOT NULL DEFAULT 0  -- 주기
-    , delay       INT NOT NULL DEFAULT 0  -- 지연
     , status4Id   BIGINT DEFAULT NULL
     , FOREIGN KEY(systemId)  REFERENCES system(id) ON DELETE CASCADE
     , FOREIGN KEY(flowId)    REFERENCES flow(id) ON DELETE CASCADE      -- Flow 삭제시 work 삭제, flowId 는 null 허용
@@ -526,12 +520,6 @@ CREATE VIEW vwWork AS
         x.id
         , x.name  AS workName
         , x.parameter
-        , x.motion
-        , x.script
-        , x.isFinished
-        , x.numRepeat
-        , x.period
-        , x.delay
         , e.name  AS status4
         , p.id    AS projectId
         , p.name  AS projectName

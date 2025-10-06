@@ -18,18 +18,23 @@
         member val internal RawArrows = ResizeArray arrows
         member val Flow = flow with get, set
 
-        member val Motion     = nullString with get, set
-        member val Script     = nullString with get, set
-        member val IsFinished = false      with get, set
-        member val NumRepeat  = 0          with get, set
-        member val Period     = 0          with get, set
-        member val Delay      = 0          with get, set
-
+        member val Properties = WorkProperties.Create(this) with get, set
         member val Status4 = Option<DbStatus4>.None with get, set
 
         member x.Calls  = x.RawCalls  |> toList
         member x.Arrows = x.RawArrows |> toList
         member x.System = x.RawParent >>= tryCast<RtSystem>
+
+    and WorkProperties() =
+        inherit DsPropertiesBase()
+        member val Motion        = nullString with get, set
+        member val Script        = nullString with get, set
+        member val ExternalStart = nullString with get, set
+        member val IsFinished    = false      with get, set
+        member val NumRepeat     = 0          with get, set
+        member val Period        = 0          with get, set
+        member val Delay         = 0          with get, set
+        member val WorkMemo      = nullString with get, set
 ```
 
 ---
@@ -42,12 +47,12 @@ let work:RtWork =
     |> tee (fun z ->
         z.Name    <- "BoundedWork1"
         z.Status4 <- Some DbStatus4.Ready
-        z.Motion  <- "PushCylinder"
-        z.Script  <- "auto_push.fsx"
-        z.NumRepeat  <- 1
-        z.IsFinished = false
-        z.Period  <- 500    // ms
-        z.Delay   <- 50     // ms
+        z.Properties.Motion  <- "PushCylinder"
+        z.Properties.Script  <- "auto_push.fsx"
+        z.Properties.NumRepeat  <- 1
+        z.Properties.IsFinished <- false
+        z.Properties.Period  <- 500    // ms
+        z.Properties.Delay   <- 50     // ms
         z.Parameter <- {| Name="kwak"; Company="dualsoft"; Room=510 |} |> EmJson.ToJson)
 
 ```
@@ -61,3 +66,4 @@ let work:RtWork =
 - `DsTime`은 `(주기, 지연)` 구조로, 반복 실행 시 타이밍 제어용입니다.
 - `Finished`는 작업 완료 여부를 수동 또는 외부 트리거로 지정할 수 있습니다.
 - `RepeatCount`는 이 Work 단위를 반복 실행할 횟수를 나타내며, `0`이면 무한 반복으로 간주될 수 있습니다.
+- 위 속성들은 모두 `Work.Properties` 컨테이너에 존재하며 JSON 직렬화 시 `Properties` 블록에 포함됩니다.

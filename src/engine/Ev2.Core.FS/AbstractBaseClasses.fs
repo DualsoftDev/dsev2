@@ -98,6 +98,13 @@ type FlowProperties() =
 
 type WorkProperties() =
     inherit DsPropertiesBase()
+    member val Motion = nullString with get, set
+    member val Script = nullString with get, set
+    member val ExternalStart = nullString with get, set
+    member val IsFinished = false with get, set
+    member val NumRepeat = 0 with get, set
+    member val Period = 0 with get, set
+    member val Delay = 0 with get, set
     member val WorkMemo = nullString with get, set
     static member Create(?container:IRtWork) = DsPropertiesBase.CreateExtended<WorkProperties>(container.Cast<Unique>())
 

@@ -109,18 +109,26 @@ module internal DsCopyModule =
 
         | :? IDsWork ->
             // Work, NjWork, ORMWork
-            noop()
-            let s =
+            let flowGuid, propertiesJson =
                 match sbx with
-                | :? Work    as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid; Properties=w.PropertiesJson |}
-                | :? NjWork  as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid |> Option.ofObj |-> s2guid; Properties=w.Properties.ToJson() |}
-                | :? ORMWork as w -> {| Motion=w.Motion; Script=w.Script; ExternalStart=w.ExternalStart; IsFinished=w.IsFinished; NumRepeat=w.NumRepeat; Period=w.Period; Delay=w.Delay; FlowGuid=w.FlowGuid; Properties=w.PropertiesJson |}
+                | :? Work    as w -> w.FlowGuid, w.PropertiesJson
+                | :? NjWork  as w ->
+                    let flowGuid = w.FlowGuid |> Option.ofObj |-> s2guid
+                    let propsJson = w.Properties.ToJson()
+                    flowGuid, propsJson
+                | :? ORMWork as w -> w.FlowGuid, w.PropertiesJson
                 | _ -> fail()
 
             match dbx with
-            | :? Work    as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid; d.PropertiesJson <- s.Properties
-            | :? NjWork  as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid |-> guid2str |> Option.toObj; d.Properties <- assignFromJson d WorkProperties.Create s.Properties
-            | :? ORMWork as d -> d.Motion<-s.Motion; d.Script<-s.Script; d.ExternalStart<-s.ExternalStart; d.IsFinished<-s.IsFinished; d.NumRepeat<-s.NumRepeat; d.Period<-s.Period; d.Delay<-s.Delay; d.FlowGuid<-s.FlowGuid; d.PropertiesJson <- s.Properties
+            | :? Work    as d ->
+                d.FlowGuid <- flowGuid
+                d.PropertiesJson <- propertiesJson
+            | :? NjWork  as d ->
+                d.FlowGuid <- flowGuid |-> guid2str |> Option.toObj
+                d.Properties <- assignFromJson d WorkProperties.Create propertiesJson
+            | :? ORMWork as d ->
+                d.FlowGuid <- flowGuid
+                d.PropertiesJson <- propertiesJson
             | _ -> fail()
 
         | :? IDsCall ->

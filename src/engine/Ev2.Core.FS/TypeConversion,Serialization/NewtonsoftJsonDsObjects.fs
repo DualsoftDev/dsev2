@@ -158,18 +158,11 @@ module rec NewtonsoftJsonObjects =
 
         static member Create() = createExtended<NjFlow>()
 
-    type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeDelay, ShouldSerializeIsFinished, ShouldSerializeNumRepeat, ShouldSerializePeriod, ShouldSerializeStatus
+    type NjWork () = // Create, Initialize, ShouldSerializeArrows, ShouldSerializeCalls, ShouldSerializeStatus
         inherit NjSystemEntity()
         interface INjWork
         [<JsonProperty(Order = 99)>] member val Properties = WorkProperties.Create() with get, set
         member val FlowGuid      = null:string with get, set
-        member val Motion        = nullString  with get, set
-        member val Script        = nullString  with get, set
-        member val ExternalStart = nullString  with get, set
-        member val IsFinished    = false       with get, set
-        member val NumRepeat     = 0           with get, set
-        member val Period        = 0           with get, set
-        member val Delay         = 0           with get, set
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
@@ -187,10 +180,6 @@ module rec NewtonsoftJsonObjects =
 
         member x.ShouldSerializeCalls()      = x.Calls.NonNullAny()
         member x.ShouldSerializeArrows()     = x.Arrows.NonNullAny()
-        member x.ShouldSerializeIsFinished() = x.IsFinished
-        member x.ShouldSerializeNumRepeat()  = x.NumRepeat > 0
-        member x.ShouldSerializePeriod()     = x.Period > 0
-        member x.ShouldSerializeDelay()      = x.Period > 0
         member x.ShouldSerializeStatus()     = x.Status4.IsSome
 
 

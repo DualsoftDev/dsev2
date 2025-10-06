@@ -130,21 +130,21 @@ module CreateSampleModule =
                 |> tee (fun z ->
                     z.Name      <- "BoundedWork1"
                     z.Status4   <- Some DbStatus4.Ready
-                    z.Motion    <- "Fast my motion"
+                    z.Properties.Motion <- "Fast my motion"
                     z.Parameter <- {|Name="kwak"; Company="dualsoft"; Room=510|} |> JsonConvert.SerializeObject)
             rtWork2 <-
                 Work.Create()
                 |> tee (fun z ->
                     z.Name    <- "BoundedWork2"
                     z.Status4 <- Some DbStatus4.Going
-                    z.Script  <- "My script")
+                    z.Properties.Script  <- "My script")
 
             rtWork3 <-
                 Work.Create()
                 |> tee (fun z ->
                     z.Name <- "FreeWork1"
                     z.Status4 <- Some DbStatus4.Finished
-                    z.IsFinished<-true)
+                    z.Properties.IsFinished <- true)
 
             [rtWork1; rtWork2; rtWork3] |> rtSystem.AddWorks
             [rtFlow] |> rtSystem.AddFlows
@@ -193,5 +193,4 @@ module CreateSampleModule =
                 // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
                 edObj.Id.IsNone === true
             )
-
 

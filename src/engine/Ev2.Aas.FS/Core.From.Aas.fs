@@ -173,29 +173,33 @@ module CoreFromAas =
             let period        = smc.TryGetPropValue<int>  "Period"        |? 0
             let delay         = smc.TryGetPropValue<int>  "Delay"         |? 0
             let status4       = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
+            let propertiesJson = smc.TryGetPropValue "Properties" |? null
 
             (* AAS 구조상 Work/Calls/Call[], Work/Arrows/Arrow[] 형태로 존재 *)
             let calls  = smc.TryFindChildSMC "Calls"  |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Call")  |? [||] |-> NjCall.FromSMC
             let arrows = smc.TryFindChildSMC "Arrows" |-> (fun smc2 -> smc2.CollectChildrenSMCWithSemanticKey "Arrow") |? [||] |-> NjArrow.FromSMC
 
-            NjWork.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , FlowGuid = flowGuid
-                , Motion = motion
-                , Script = script
-                , ExternalStart = externalStart
-                , IsFinished = isFinished
-                , NumRepeat = numRepeat
-                , Period = period
-                , Delay = delay
-                , Calls = calls
-                , Status4 = status4
-                , Arrows = arrows)
+            NjWork.Create(Name=name, Guid=guid, Id=id, Parameter=parameter)
             |> tee (fun work ->
-                let propertiesJson = smc.TryGetPropValue "Properties" |? null
+                work.FlowGuid <- flowGuid
+                work.Status4 <- status4
+                work.Calls <- calls
+                work.Arrows <- arrows
+
                 if propertiesJson.NonNullAny() then
                     let props = JsonPolymorphic.FromJson<WorkProperties>(propertiesJson)
                     props.RawParent <- Some (work :> Unique)
-                    work.Properties <- props)
+                    work.Properties <- props
+                else
+                    let props = work.Properties
+                    props.Motion <- motion
+                    props.Script <- script
+                    props.ExternalStart <- externalStart
+                    props.IsFinished <- isFinished
+                    props.NumRepeat <- numRepeat
+                    props.Period <- period
+                    props.Delay <- delay
+                    props.RawParent <- Some (work :> Unique))
             |> tee (readAasExtensionProperties smc)
 
     type NjCall with // FromSMC

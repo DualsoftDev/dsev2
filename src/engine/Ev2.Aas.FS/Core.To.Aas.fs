@@ -108,13 +108,13 @@ module CoreToAas =
 
                 | :? NjWork as work ->
                     JObj().TrySetProperty(work.FlowGuid,     nameof work.FlowGuid)
-                    JObj().TrySetProperty(work.Motion,       nameof work.Motion)
-                    JObj().TrySetProperty(work.Script,       nameof work.Script)
-                    JObj().TrySetProperty(work.ExternalStart, nameof work.ExternalStart)
-                    JObj().TrySetProperty(work.IsFinished,   nameof work.IsFinished)
-                    JObj().TrySetProperty(work.NumRepeat,  nameof work.NumRepeat)
-                    JObj().TrySetProperty(work.Period,     nameof work.Period)
-                    JObj().TrySetProperty(work.Delay,      nameof work.Delay)
+                    //JObj().TrySetProperty(work.Motion,       nameof work.Motion)
+                    //JObj().TrySetProperty(work.Script,       nameof work.Script)
+                    //JObj().TrySetProperty(work.ExternalStart, nameof work.ExternalStart)
+                    //JObj().TrySetProperty(work.IsFinished,   nameof work.IsFinished)
+                    //JObj().TrySetProperty(work.NumRepeat,  nameof work.NumRepeat)
+                    //JObj().TrySetProperty(work.Period,     nameof work.Period)
+                    //JObj().TrySetProperty(work.Delay,      nameof work.Delay)
                     if work.Status.NonNullAny() then
                         JObj().TrySetProperty(work.Status, nameof work.Status)
                     let workPropsJson =

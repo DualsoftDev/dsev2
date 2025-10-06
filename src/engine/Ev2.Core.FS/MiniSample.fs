@@ -10,8 +10,16 @@ module MiniSample =
     let createCylinder(name:string) =
         let sys = DsSystem.Create(Name=name)
 
-        let workAdv = Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylAdvanceStart")
-        let workRet = Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"), Period=2000, ExternalStart="CylReturnStart")
+        let workAdv =
+            Work.Create(Name="ADVANCE", Guid=Guid.Parse("10000000-0000-0000-0000-000000000000"))
+            |> tee (fun w ->
+                w.Properties.Period <- 2000
+                w.Properties.ExternalStart <- "CylAdvanceStart")
+        let workRet =
+            Work.Create(Name="RETURN",  Guid=Guid.Parse("20000000-0000-0000-0000-000000000000"))
+            |> tee (fun w ->
+                w.Properties.Period <- 2000
+                w.Properties.ExternalStart <- "CylReturnStart")
         let flow = Flow.Create(Name="CylFlow")
         flow.AddWorks [workAdv; workRet]
 
@@ -36,7 +44,7 @@ module MiniSample =
 
         sys.AddApiDefs [apiDefAdv; apiDefRet]
 
-        let arrowW = ArrowBetweenWorks.Create(workAdv, workRet, DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
+        let arrowW = ArrowBetweenWorks.Create(source=workAdv, target=workRet, typ=DbArrowType.Reset, Name="Cyl Work 간 연결 arrow")
         sys.AddArrows [arrowW]
 
         sys.OnLoaded()
@@ -120,7 +128,7 @@ module MiniSample =
             Work.Create()
             |> tee (fun w ->
                 w.Name <- "Work1"
-                w.ExternalStart <- "StartCommand1"
+                w.Properties.ExternalStart <- "StartCommand1"
                 w.Status4 <- Some DbStatus4.Ready
             )
 
@@ -128,7 +136,7 @@ module MiniSample =
             Work.Create()
             |> tee (fun w ->
                 w.Name <- "Work2"
-                w.ExternalStart <- "StartCommand2"
+                w.Properties.ExternalStart <- "StartCommand2"
                 w.Status4 <- Some DbStatus4.Going
             )
 

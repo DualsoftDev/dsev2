@@ -137,13 +137,6 @@ module ORMTypesModule =
 
         member val FlowId     = flowId     with get, set
         member val FlowGuid   = flowGuid   with get, set
-        member val Motion       = nullString with get, set
-        member val Script       = nullString with get, set
-        member val ExternalStart = nullString with get, set
-        member val IsFinished   = false      with get, set
-        member val NumRepeat  = 0          with get, set
-        member val Period     = 0          with get, set
-        member val Delay      = 0          with get, set
         member val Status4Id = status4Id with get, set
         member val Properties = propertiesJson with get, set
         member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
@@ -153,13 +146,6 @@ module ORMTypesModule =
 
         member x.Initialize(runtime:Work) =
             runtime.CopyUniqueProperties(x)
-            x.Motion <- runtime.Motion
-            x.Script <- runtime.Script
-            x.ExternalStart <- runtime.ExternalStart
-            x.IsFinished <- runtime.IsFinished
-            x.NumRepeat <- runtime.NumRepeat
-            x.Period <- runtime.Period
-            x.Delay <- runtime.Delay
             x.FlowId <- runtime.Flow |-> _.Id |? None
             x.Status4Id <- runtime.Status4 |-> int64
             x.Properties <- runtime.PropertiesJson

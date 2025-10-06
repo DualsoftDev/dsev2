@@ -752,13 +752,16 @@ module Schema =
                 let w = sys.Works[0]
                 let w2 = sys2.Works[0]
                 w2.Name <- "ChangedWorkName"
-                w2.Motion <- "MyMotion"
+                w2.Properties.Motion <- "MyMotion"
                 w2.Parameter <- """{"Age": 3}"""
                 let diffs = dsProject.ComputeDiff(dsProject2) |> toList
                 diffs.Length === 3
                 diffs |> contains (Diff("Name",      w, w2, nullUpdateSql)) === true
                 diffs |> contains (Diff("Parameter", w, w2, nullUpdateSql)) === true
-                diffs |> contains (Diff("Motion",    w, w2, nullUpdateSql)) === true
+                diffs |> exists (fun diff ->
+                    match diff with
+                    | Diff("Properties", left, right, _) -> Object.ReferenceEquals(left, w) && Object.ReferenceEquals(right, w2)
+                    | _ -> false) === true
 
             do
                 // 추가한 개체 (arrow) detect 가능해야 한다.
