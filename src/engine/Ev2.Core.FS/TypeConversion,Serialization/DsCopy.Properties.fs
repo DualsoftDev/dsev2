@@ -70,26 +70,15 @@ module internal DsCopyModule =
             // System, NjSystem, ORMSystem
             let s =
                 match sbx with
-                | :? DsSystem  as s ->
-                    {| IRI=s.IRI; Properties=s.PropertiesJson |}
-                | :? NjSystem  as s ->
-                    {| IRI=s.IRI; Properties=s.Properties.ToJson() |}
-                | :? ORMSystem as s ->
-                    {| IRI=s.IRI; Properties=s.PropertiesJson |}
+                | :? DsSystem  as s -> {| IRI=s.IRI; Properties=s.PropertiesJson |}
+                | :? NjSystem  as s -> {| IRI=s.IRI; Properties=s.Properties.ToJson() |}
+                | :? ORMSystem as s -> {| IRI=s.IRI; Properties=s.PropertiesJson |}
                 | _ -> fail()
 
             match dbx with
-            | :? DsSystem  as d ->
-                d.IRI <- s.IRI
-                d.PropertiesJson <- s.Properties
-            | :? NjSystem  as d ->
-                d.IRI <- s.IRI
-                let props = JsonPolymorphic.FromJson<DsSystemProperties>(s.Properties)
-                props.RawParent <- Some (d :> Unique)
-                d.Properties <- props
-            | :? ORMSystem as d ->
-                d.IRI <- s.IRI
-                d.PropertiesJson <- s.Properties
+            | :? DsSystem  as d -> d.IRI <- s.IRI; d.PropertiesJson <- s.Properties
+            | :? NjSystem  as d -> d.IRI <- s.IRI; d.Properties <- JsonPolymorphic.FromJson<DsSystemProperties>(s.Properties)
+            | :? ORMSystem as d -> d.IRI <- s.IRI; d.PropertiesJson <- s.Properties
             | _ -> fail()
 
 
@@ -103,7 +92,7 @@ module internal DsCopyModule =
 
             match dbx with
             | :? Flow    as d -> d.PropertiesJson <- propertiesJson
-            | :? NjFlow  as d -> d.Properties <- assignFromJson d FlowProperties.Create propertiesJson
+            | :? NjFlow  as d -> d.Properties <- JsonPolymorphic.FromJson<FlowProperties> propertiesJson
             | :? ORMFlow as d -> d.PropertiesJson <- propertiesJson
             | _ -> fail()
 

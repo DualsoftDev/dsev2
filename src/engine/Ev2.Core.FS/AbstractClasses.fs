@@ -125,8 +125,7 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson x (fun () -> ProjectProperties.Create(this)) json
+        and set (json:string) = x.Properties <- assignFromJson x (fun () -> ProjectProperties.Create(this)) json
 
     static member Create() = createExtended<Project>()
 
