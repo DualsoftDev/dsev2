@@ -103,7 +103,7 @@ and ArrowBetweenWorks(sourceGuid:Guid, targetGuid:Guid, typ:DbArrowType) = // Cr
     member x.XTypeId:Id = DbApi.GetEnumId x.Type
     //member val TypeId:Id = DbApi.GetEnumId typ with get, set
 
-and Project() as this = // Create, Initialize, OnSaved, OnLoaded
+and Project() = // Create, Initialize, OnSaved, OnLoaded
     inherit RtUnique()
 
     interface IRtProject
@@ -121,11 +121,11 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     member x.Systems = (x.PassiveSystems @ x.ActiveSystems) |> toList
     // } Runtime/DB 용
 
-    member val Properties    = ProjectProperties.Create(this) with get, set
+    member val Properties    = ProjectProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) = x.Properties <- assignFromJson x (fun () -> ProjectProperties.Create(this)) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ProjectProperties> json
 
     static member Create() = createExtended<Project>()
 
@@ -157,25 +157,32 @@ and Project() as this = // Create, Initialize, OnSaved, OnLoaded
     static member FromJson(json:string): Project =
         fwdProjectFromJson json :?> Project
 
-and DsSystem() as this = // Create
+and DsSystem() = // Create
     inherit ProjectEntity()
 
-    member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
+    let mutable xxxx = DsSystemProperties.Create()
+
+    member val PolymorphicJsonEntities = PolymorphicJsonCollection<BLCABase>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
-    member x.AddEntitiy(entity:JsonPolymorphic) = entity.RawParent <- Some x;  x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
-    member x.AddEntities(entities:JsonPolymorphic seq) = entities |> iter x.AddEntitiy
-    member x.RemoveEntitiy(entity:JsonPolymorphic) = entity.RawParent <- None; x.PolymorphicJsonEntities.RemoveItem entity
+    member x.AddEntitiy(entity:BLCABase) = entity.RawParent <- Some x;  x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
+    member x.AddEntities(entities:BLCABase seq) = entities |> iter x.AddEntitiy
+    member x.RemoveEntitiy(entity:BLCABase) = entity.RawParent <- None; x.PolymorphicJsonEntities.RemoveItem entity
     member x.Buttons    = x.Entities.OfType<DsButton>()    |> toArray
     member x.Lamps      = x.Entities.OfType<Lamp>()        |> toArray
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
-    member val Properties = DsSystemProperties.Create(this) with get, set
+    //member val Properties = DsSystemProperties.Create() with get, set
+    member x.Properties
+        with get() = xxxx
+        and set v =
+            if isItNull v then
+                fail()
+            xxxx <- v
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- DsPropertiesHelper.assignFromJson x (fun () -> DsSystemProperties.Create(this)) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<DsSystemProperties> json
 
     (* RtSystem.Name 은 prototype 인 경우, prototype name 을, 아닌 경우 loaded system name 을 의미한다. *)
     interface IParameterContainer
@@ -217,19 +224,18 @@ and DsSystem() as this = // Create
 
 
 
-and Flow() as this = // Create
+and Flow() = // Create
     inherit DsSystemEntity()
 
     interface IRtFlow
 
     member x.System = x.RawParent >>= tryCast<DsSystem>
 
-    member val Properties = FlowProperties.Create(this) with get, set
+    member val Properties = FlowProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- assignFromJson x (fun () -> FlowProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<FlowProperties> json
 
     member x.Buttons    = x.System |-> (fun s -> s.Buttons    |> filter (fun b -> b.Flows |> Seq.contains x)) |? [||]
     member x.Lamps      = x.System |-> (fun s -> s.Lamps      |> filter (fun l -> l.Flows.Contains x)) |? [||]
@@ -247,61 +253,60 @@ and Flow() as this = // Create
     static member Create() = createExtended<Flow>()
 
 
-and DsButton() as this = // Create
+and DsButton() = // Create
     inherit BLCABase()
 
     interface IRtButton
 
-    [<JsonIgnore>] member val Properties = ButtonProperties.Create(this) with get, set
+    [<JsonIgnore>] member val Properties = ButtonProperties.Create() with get, set
     [<JsonProperty("Properties")>]
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- assignFromJson x (fun () -> ButtonProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ButtonProperties> json
 
     static member Create() = createExtended<DsButton>()
 
-and Lamp() as this = // Create
+and Lamp() = // Create
     inherit BLCABase()
 
     interface IRtLamp
 
-    [<JsonIgnore>] member val Properties = LampProperties.Create(this) with get, set
+    [<JsonIgnore>] member val Properties = LampProperties.Create() with get, set
     [<JsonProperty("Properties")>]
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) = x.Properties <- assignFromJson x (fun () -> LampProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<LampProperties> json
 
     static member Create() = createExtended<Lamp>()
 
-and DsCondition() as this = // Create
+and DsCondition() = // Create
     inherit BLCABase()
 
     interface IRtCondition
 
-    [<JsonIgnore>] member val Properties = ConditionProperties.Create(this) with get, set
+    [<JsonIgnore>] member val Properties = ConditionProperties.Create() with get, set
     [<JsonProperty("Properties")>]
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) = x.Properties <- assignFromJson x (fun () -> ConditionProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ConditionProperties> json
 
     static member Create() = createExtended<DsCondition>()
 
-and DsAction() as this = // Create
+and DsAction() = // Create
     inherit BLCABase()
 
     interface IRtAction
 
-    [<JsonIgnore>] member val Properties = ActionProperties.Create(this) with get, set
+    [<JsonIgnore>] member val Properties = ActionProperties.Create() with get, set
     [<JsonProperty("Properties")>]
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) = x.Properties <- assignFromJson x (fun () -> ActionProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ActionProperties> json
 
     static member Create() = createExtended<DsAction>()
 
 // see static member Create
-and Work() as this = // Create
+and Work() = // Create
     inherit DsSystemEntity()
 
     interface IRtWork
@@ -310,12 +315,11 @@ and Work() as this = // Create
 
     member val Status4 = Option<DbStatus4>.None with get, set
 
-    member val Properties = WorkProperties.Create(this) with get, set
+    member val Properties = WorkProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- assignFromJson x (fun () -> WorkProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<WorkProperties> json
 
     member x.Calls  = x.RawCalls  |> toList
     member x.Arrows = x.RawArrows |> toList
@@ -344,7 +348,7 @@ and ApiCallValueSpecs(specs:IApiCallValueSpec seq) =
     new() = ApiCallValueSpecs([])
 
 // see static member Create
-and Call() as this = // Create
+and Call() = // Create
     inherit WorkEntity()
 
     interface IRtCall
@@ -381,18 +385,17 @@ and Call() as this = // Create
 
         call
 
-    member val Properties = CallProperties.Create(this) with get, set
+    member val Properties = CallProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- assignFromJson x (fun () -> CallProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<CallProperties> json
 
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
     inSymbol:string, outSymbol:string,
     valueSpec:IValueSpec option
-) as this =
+) =
     inherit DsSystemEntity()
 
     new() = new ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
@@ -410,13 +413,11 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
     member val IOTags = IOTagsWithSpec() with get, set
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
-    member val Properties = ApiCallProperties.Create this with get, set
+    member val Properties = ApiCallProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- assignFromJson x (fun () -> ApiCallProperties.Create this) json
-
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ApiCallProperties> json
     /// system 에서 현재 ApiCall 을 호출하는 Call 들
     member x.Callers:Call[] =
         x.System
@@ -440,7 +441,7 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
+and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
     inherit DsSystemEntity()
 
     let getWork (system:DsSystem option) (guid:Guid): Work =
@@ -452,12 +453,11 @@ and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) as this = // Create, ApiUsers
     static member Create() = createExtended<ApiDef>()
 
     interface IRtApiDef
-    member val Properties = ApiDefProperties.Create this with get, set
+    member val Properties = ApiDefProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) =
-            x.Properties <- assignFromJson x (fun () -> ApiDefProperties.Create this) json
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ApiDefProperties> json
 
     member x.TX: Work = getWork x.System x.Properties.TxGuid
     member x.RX: Work = getWork x.System x.Properties.RxGuid

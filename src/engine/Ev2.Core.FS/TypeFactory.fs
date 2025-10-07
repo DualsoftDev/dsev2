@@ -62,7 +62,7 @@ module TypeFactoryHelper =
 
     /// 새로운 제네릭 버전 - 매개변수 없는 직접 생성
     /// TypeRegistry 통합 버전
-    let createExtended<'T when 'T : (new : unit -> 'T) and 'T :> IUnique and 'T : not struct>() : 'T =
+    let internal createExtendedHelper<'T when 'T : (new : unit -> 'T) and 'T :> obj and 'T : not struct>() : obj =
         getTypeFactory()
         |-> (fun factory ->
                 let isRuntimeType = typeof<IRtUnique>.IsAssignableFrom(typeof<'T>)
@@ -74,6 +74,10 @@ module TypeFactoryHelper =
                         factory.CreateNj(typeof<'T>) :> IUnique
                     else
                         fail()
-                if isItNull obj then new 'T() else obj :?> 'T)
+                if isItNull obj then new 'T() else obj)
         |?? (fun () -> new 'T())
 
+    let createExtended<'T when 'T : (new : unit -> 'T) and 'T :> IUnique and 'T : not struct>() : 'T =
+        createExtendedHelper<'T>() :?> 'T
+    let createExtendedProperties<'T when 'T : (new : unit -> 'T) and 'T :> IDsProperties and 'T : not struct>() : 'T =
+        createExtendedHelper<'T>() :?> 'T

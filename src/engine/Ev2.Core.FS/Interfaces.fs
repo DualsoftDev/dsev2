@@ -10,6 +10,7 @@ module InterfaceModule =
     type Id = int64
     /// 기본 객체 인터페이스
     type IDsObject  = interface end
+    type IDsProperties  = inherit IDsObject
     type IParameter = inherit IDsObject
     type IParameterContainer = inherit IDsObject
     type IArrow     = inherit IDsObject

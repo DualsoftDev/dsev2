@@ -102,7 +102,7 @@ module rec NewtonsoftJsonObjects =
         [<JsonProperty(Order = 105)>] member val ApiCalls = [||]:NjApiCall[] with get, set
 
         [<JsonIgnore>]
-        member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
+        member val PolymorphicJsonEntities = PolymorphicJsonCollection<BLCABase>() with get, set
         [<JsonProperty("Entities")>]
         member this.SerializedEntities
             with get () : JArray = this.PolymorphicJsonEntities.SerializedItems
@@ -342,11 +342,11 @@ module rec NewtonsoftJsonObjects =
 
                 njp.ActiveSystems  <- rtp.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                 njp.PassiveSystems <- rtp.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
-                njp.Properties <- DsPropertiesHelper.cloneProperties njp rtp.Properties ProjectProperties.Create
+                njp.Properties <- rtp.Properties.DeepClone<ProjectProperties>()
 
             | :? NjSystem as njs ->
                 let rts = njs |> getRuntimeObject<DsSystem>
-                njs.Properties <- DsPropertiesHelper.cloneProperties njs rts.Properties DsSystemProperties.Create
+                njs.Properties <- rts.Properties.DeepClone<DsSystemProperties>()
 
                 njs.PolymorphicJsonEntities <- rts.PolymorphicJsonEntities.DeepClone()
                 njs.PolymorphicJsonEntities.SyncToSerialized()
@@ -363,7 +363,7 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjWork as njw ->
                 let rtw = njw |> getRuntimeObject<Work>
-                njw.Properties <- DsPropertiesHelper.cloneProperties njw rtw.Properties WorkProperties.Create
+                njw.Properties <- rtw.Properties.DeepClone<WorkProperties>()
                 njw.Calls <- rtw.Calls |-> _.ToNj<NjCall>() |> toArray
 
 
@@ -372,19 +372,19 @@ module rec NewtonsoftJsonObjects =
 
             | :? NjCall as njc ->
                 let rtc = njc |> getRuntimeObject<Call>
-                njc.Properties <- DsPropertiesHelper.cloneProperties njc rtc.Properties CallProperties.Create
+                njc.Properties <- rtc.Properties.DeepClone<CallProperties>()
 
             | :? NjFlow as njf ->
                 let rtf = njf |> getRuntimeObject<Flow>
-                njf.Properties <- DsPropertiesHelper.cloneProperties njf rtf.Properties FlowProperties.Create
+                njf.Properties <- rtf.Properties.DeepClone<FlowProperties>()
 
             | :? NjApiCall as njac ->
                 let rtac = njac |> getRuntimeObject<ApiCall>
-                njac.Properties <- DsPropertiesHelper.cloneProperties njac rtac.Properties ApiCallProperties.Create
+                njac.Properties <- rtac.Properties.DeepClone<ApiCallProperties>()
 
             | :? NjApiDef as njad ->
                 let rtad = njad |> getRuntimeObject<ApiDef>
-                njad.Properties <- DsPropertiesHelper.cloneProperties njad rtad.Properties ApiDefProperties.Create
+                njad.Properties <- rtad.Properties.DeepClone<ApiDefProperties>()
 
             | ( (:? NjArrow) | (:? NjApiDef) | (:? NjApiCall) )  ->
                 (* NjXXX.FromDS 에서 이미 다 채운 상태임.. *)
@@ -409,9 +409,6 @@ module rec NewtonsoftJsonObjects =
             let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
             let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
 
-            if isItNotNull njp.Properties then
-                setParentI njp njp.Properties
-
             let rtp =
                 Project.Create(actives, passives, njp)
                 |> replicateProperties njp
@@ -426,7 +423,6 @@ module rec NewtonsoftJsonObjects =
             njs.Works    |> iter (fun z -> z.RawParent <- Some njs)
             njs.ApiDefs  |> iter (fun z -> z.RawParent <- Some njs)
             njs.ApiCalls |> iter (fun z -> z.RawParent <- Some njs)
-            if isItNotNull njs.Properties then setParentI njs njs.Properties
 
             // 하부 구조에 대해서 재귀적으로 호출 : dependancy 가 적은 것부터 먼저 생성할 것.
             njs.ApiDefs  |> iter onNsJsonDeserialized
@@ -452,7 +448,7 @@ module rec NewtonsoftJsonObjects =
 
                     // Status4 속성 복사
                     dsWork.Status4 <- njw.Status4
-                    dsWork.Properties <- DsPropertiesHelper.cloneProperties dsWork njw.Properties (fun () -> WorkProperties.Create(dsWork))
+                    dsWork.Properties <- njw.Properties.DeepClone<WorkProperties>()
 
                     yield dsWork
                     njw.RuntimeObject <- dsWork
@@ -481,15 +477,13 @@ module rec NewtonsoftJsonObjects =
             rts.PolymorphicJsonEntities <- njs.PolymorphicJsonEntities.DeepClone()
             rts.PolymorphicJsonEntities.SyncToValues()
             if isItNotNull njs.Properties then
-                rts.Properties <- njs.Properties.DeepClone<DsSystemProperties>()
+               rts.Properties <- njs.Properties.DeepClone<DsSystemProperties>()
             njs.RuntimeObject <- rts
 
         | :? NjFlow as njf ->
             let rtFlow =
                 Flow.Create()
                 |> replicateProperties njf
-                |> tee (fun flow ->
-                    flow.Properties <- DsPropertiesHelper.cloneProperties flow njf.Properties (fun () -> FlowProperties.Create(flow)))
             njf.RuntimeObject <- rtFlow
             ()
 
@@ -526,8 +520,6 @@ module rec NewtonsoftJsonObjects =
                 let ccs = njc.CommonConditionsObj
                 Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
                 |> replicateProperties njc
-                |> tee (fun call ->
-                    call.Properties <- DsPropertiesHelper.cloneProperties call njc.Properties (fun () -> CallProperties.Create call))
             ()
 
         | :? NjApiCall as njac ->
@@ -541,15 +533,12 @@ module rec NewtonsoftJsonObjects =
                     valueParam)
                 |> replicateProperties njac
                 |> tee(fun ac ->
-                    ac.IOTags <- njac.IOTags
-                    ac.Properties <- DsPropertiesHelper.cloneProperties ac njac.Properties (fun () -> ApiCallProperties.Create ac))
+                    ac.IOTags <- njac.IOTags)
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
                 ApiDef.Create()
                 |> replicateProperties njad
-                |> tee(fun ad ->
-                    ad.Properties <- DsPropertiesHelper.cloneProperties ad njad.Properties (fun () -> ApiDefProperties.Create ad))
             ()
 
         | _ -> failwith "ERROR.  확장 필요?"
@@ -671,7 +660,6 @@ module Ds2JsonModule =
                     NjProject.Create()
                     |> replicateProperties rt
                     |> tee (fun z ->
-                        z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties ProjectProperties.Create
                         let activeSystems  = rt.ActiveSystems  |-> _.ToNj<NjSystem>() |> toArray
                         let passiveSystems = rt.PassiveSystems |-> _.ToNj<NjSystem>() |> toArray
                         z.Initialize(activeSystems, passiveSystems, rt, isDeserialization=false) |> ignore)
@@ -700,9 +688,6 @@ module Ds2JsonModule =
                         let apiDefs    = rt.ApiDefs    |-> _.ToNj<NjApiDef>()    |> toArray
                         let apiCalls   = rt.ApiCalls   |-> _.ToNj<NjApiCall>()   |> toArray
                         z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
-                        let propsClone = rt.PropertiesJson |> JsonPolymorphic.FromJson<DsSystemProperties>
-                        setParentI z propsClone
-                        z.Properties <- propsClone
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
                     :> INjUnique
 
@@ -710,7 +695,6 @@ module Ds2JsonModule =
                     let rt = f
                     NjFlow.Create()
                     |> replicateProperties rt
-                    |> tee (fun z -> z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties FlowProperties.Create )
                     :> INjUnique
 
                 | :? Work as w ->
@@ -722,8 +706,7 @@ module Ds2JsonModule =
                         let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
                         let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
                         z.Initialize(calls, arrows, flowGuid) |> ignore
-                        z.Status4 <- rt.Status4
-                        z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties WorkProperties.Create )
+                        z.Status4 <- rt.Status4)
                     :> INjUnique
 
 
@@ -736,8 +719,7 @@ module Ds2JsonModule =
                     |> tee (fun z ->
                         let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
                         z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
-                        z.Status4 <- rt.Status4
-                        z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties CallProperties.Create )
+                        z.Status4 <- rt.Status4)
                     :> INjUnique
 
 
@@ -767,13 +749,11 @@ module Ds2JsonModule =
                         InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
                         ValueSpec=valueSpec, IOTags=rt.IOTags )
                     |> replicateProperties rt
-                    |> tee (fun z -> z.Properties <- DsPropertiesHelper.cloneProperties z rt.Properties ApiCallProperties.Create)
                     :> INjUnique
 
                 | :? ApiDef as ad ->
                     NjApiDef.Create()
                     |> replicateProperties ad
-                    |> tee (fun z -> z.Properties <- DsPropertiesHelper.cloneProperties z ad.Properties ApiDefProperties.Create)
                     :> INjUnique
 
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"

@@ -24,29 +24,31 @@ type RtUnique() = // ToNjObj, ToNj
 /// 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] JsonPolymorphic() =
     inherit RtUnique()
-
     static member private getSettings(settings:JsonSerializerSettings option) =
         settings |?? (fun () -> EmJson.CreateDefaultSettings(DateFormatString = DateFormatString))
 
     member x.ToJson(?settings:JsonSerializerSettings) = EmJson.ToJson(x, JsonPolymorphic.getSettings(settings))
 
-    static member FromJson<'T when 'T :> JsonPolymorphic and 'T :> IUnique and 'T : (new : unit -> 'T) and 'T : not struct>(json:string, ?settings:JsonSerializerSettings) : 'T =
-        let settings = JsonPolymorphic.getSettings settings
-        match JToken.Parse(json) with
-        | :? JObject as jobj ->
-            let mutable typeToken = Unchecked.defaultof<JToken>
-            let hasTypeMetadata =
-                jobj.TryGetValue("$type", StringComparison.Ordinal, &typeToken)
-                && typeToken.Type = JTokenType.String
-                && not (String.IsNullOrWhiteSpace(typeToken.Value<string>()))
+    static member FromJson<'T when 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>(json:string, ?settings:JsonSerializerSettings) : 'T =
+        match json |> String.toOption with
+        | None -> Unchecked.defaultof<'T>
+        | Some json ->
+            let settings = JsonPolymorphic.getSettings settings
+            match JToken.Parse(json) with
+            | :? JObject as jobj ->
+                let mutable typeToken = Unchecked.defaultof<JToken>
+                let hasTypeMetadata =
+                    jobj.TryGetValue("$type", StringComparison.Ordinal, &typeToken)
+                    && typeToken.Type = JTokenType.String
+                    && not (String.IsNullOrWhiteSpace(typeToken.Value<string>()))
 
-            if hasTypeMetadata then
-                EmJson.FromJson<'T>(json, settings)
-            else
-                let instance = createExtended<'T>()
-                JsonConvert.PopulateObject(json, instance, settings)
-                instance
-        | _ -> EmJson.FromJson<'T>(json, settings)
+                if hasTypeMetadata then
+                    EmJson.FromJson<'T>(json, settings)
+                else
+                    let instance = createExtendedHelper<'T>()
+                    JsonConvert.PopulateObject(json, instance, settings)
+                    instance :?> 'T
+            | _ -> EmJson.FromJson<'T>(json, settings)
 
     static member internal FromJson(json:string, targetType:Type, ?settings:JsonSerializerSettings) : JsonPolymorphic =
         if isNull targetType then invalidArg "targetType" "타겟 타입이 null 입니다."
@@ -62,10 +64,9 @@ type [<AbstractClass>] JsonPolymorphic() =
 
 type [<AbstractClass>] DsPropertiesBase() =
     inherit JsonPolymorphic()
+    interface IDsProperties
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = false
-    static member CreateExtended<'T when 'T :> DsPropertiesBase and 'T : (new : unit -> 'T) and 'T : not struct>(container:Unique option) : 'T =
-        createExtended<'T>() |> tee (fun p -> p.RawParent <- container)
 
 type ProjectProperties() =
     inherit DsPropertiesBase()
@@ -76,7 +77,7 @@ type ProjectProperties() =
     member val Description = nullString with get, set
     member val DateTime = now().TruncateToSecond() with get, set
     member val ProjectMemo = nullString with get, set
-    static member Create(?container:IRtProject) = DsPropertiesBase.CreateExtended<ProjectProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<ProjectProperties>()
 
 type DsSystemProperties() =
     inherit DsPropertiesBase()
@@ -89,12 +90,12 @@ type DsSystemProperties() =
     // 이하는 sample attributes. // TODO: remove samples
     member val Text    = nullString with get, set
 
-    static member Create(?container:IRtSystem) = DsPropertiesBase.CreateExtended<DsSystemProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<DsSystemProperties>()
 
 type FlowProperties() =
     inherit DsPropertiesBase()
     member val FlowMemo = nullString with get, set
-    static member Create(?container:IRtFlow) = DsPropertiesBase.CreateExtended<FlowProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<FlowProperties>()
 
 type WorkProperties() =
     inherit DsPropertiesBase()
@@ -106,17 +107,17 @@ type WorkProperties() =
     member val Period = 0 with get, set
     member val Delay = 0 with get, set
     member val WorkMemo = nullString with get, set
-    static member Create(?container:IRtWork) = DsPropertiesBase.CreateExtended<WorkProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<WorkProperties>()
 
 type CallProperties() =
     inherit DsPropertiesBase()
     member val CallMemo = nullString with get, set
-    static member Create(?container:IRtCall) = DsPropertiesBase.CreateExtended<CallProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<CallProperties>()
 
 type ApiCallProperties() =
     inherit DsPropertiesBase()
     member val ApiCallMemo = nullString with get, set
-    static member Create(?container:IRtApiCall) = DsPropertiesBase.CreateExtended<ApiCallProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<ApiCallProperties>()
 
 type ApiDefProperties() =
     inherit DsPropertiesBase()
@@ -125,28 +126,28 @@ type ApiDefProperties() =
     member val RxGuid = emptyGuid with get, set
     member val Period = 0 with get, set
     member val ApiDefMemo = nullString with get, set
-    static member Create(?container:IRtApiDef) = DsPropertiesBase.CreateExtended<ApiDefProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<ApiDefProperties>()
 
 
 type ButtonProperties() =
     inherit DsPropertiesBase()
     member val ButtonMemo = nullString with get, set
-    static member Create(?container:IRtButton) = DsPropertiesBase.CreateExtended<ButtonProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<ButtonProperties>()
 
 type LampProperties() =
     inherit DsPropertiesBase()
     member val LampMemo = nullString with get, set
-    static member Create(?container:IRtLamp) = DsPropertiesBase.CreateExtended<LampProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<LampProperties>()
 
 type ConditionProperties() =
     inherit DsPropertiesBase()
     member val ConditionMemo = nullString with get, set
-    static member Create(?container:IRtCondition) = DsPropertiesBase.CreateExtended<ConditionProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<ConditionProperties>()
 
 type ActionProperties() =
     inherit DsPropertiesBase()
     member val ActionMemo = nullString with get, set
-    static member Create(?container:IRtAction) = DsPropertiesBase.CreateExtended<ActionProperties>(container.Cast<Unique>())
+    static member Create() = createExtendedProperties<ActionProperties>()
 
 
 
@@ -154,22 +155,23 @@ type ActionProperties() =
 type [<AbstractClass>] BLCABase() =
     inherit JsonPolymorphic()
     interface IWithTagWithSpecs
+    interface IDsObject
     member val IOTags = IOTagsWithSpec() with get, set
     [<JsonIgnore>] member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
 
 
-[<AutoOpen>]
-module internal DsPropertiesHelper =
-    let inline assignFromJson<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
-        (owner:'TOwner) (create: unit -> 'T) (json:string) : 'T
-        =
-        json |> String.toOption |-> JsonPolymorphic.FromJson<'T> |?? create
-        |> tee ( setParentI owner )
+//[<AutoOpen>]
+//module internal DsPropertiesHelper =
+//    let inline assignFromJson<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
+//        (owner:'TOwner) (create: unit -> 'T) (json:string) : 'T
+//        =
+//        json |> String.toOption |-> JsonPolymorphic.FromJson<'T> |?? create
+//        |> tee ( setParentI owner )
 
 
-    let inline cloneProperties<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
-        (owner:'TOwner) (source:'T) (create: unit -> 'T) : 'T
-        =
-        source |> toOption |-> _.DeepClone<'T>() |?? create
-        |> tee ( setParentI owner )
+//    let inline cloneProperties<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
+//        (owner:'TOwner) (source:'T) (create: unit -> 'T) : 'T
+//        =
+//        source |> toOption |-> _.DeepClone<'T>() |?? create
+//        |> tee ( setParentI owner )

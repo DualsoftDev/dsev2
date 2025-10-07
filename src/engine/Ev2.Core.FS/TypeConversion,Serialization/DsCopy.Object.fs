@@ -32,7 +32,7 @@ module internal rec DsObjectCopyImpl =
         /// DsSystem 복제. 지정된 newSystem 객체에 현재 시스템의 내용을 복사
         member x.replicate() =
             // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let emptyPolys = PolymorphicJsonCollection<JsonPolymorphic>()
+            let emptyPolys = PolymorphicJsonCollection<BLCABase>()
             DsSystem.Create([||], [||], [||], [||], [||], emptyPolys, DsSystemProperties.Create())
             |> tee(fun newSystem ->
                 // flow, work 상호 참조때문에 일단 flow 만 shallow copy

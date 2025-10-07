@@ -90,17 +90,19 @@ module ORMTypesModule =
 
     type ORMSystem(ownerProjectId:Id option, iri:string, propertiesJson:string) = // Initialize
         inherit ORMUnique(ParentId=ownerProjectId)
+        do
+            noop()
 
         interface IORMSystem
 
         member x.ProjectId with get() = x.ParentId and set v = x.ParentId <- v
 
-        new() = new ORMSystem(None, nullString, nullString)
+        new() = new ORMSystem(None, nullString, "{}")
 
         member val PropertiesJson = propertiesJson with get, set
         member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
 
-        member val PolymorphicJsonEntities = PolymorphicJsonCollection<JsonPolymorphic>() with get, set
+        member val PolymorphicJsonEntities = PolymorphicJsonCollection<BLCABase>() with get, set
         member val OwnerProjectId = ownerProjectId with get, set
         member val IRI = iri with get, set
 

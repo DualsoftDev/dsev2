@@ -88,7 +88,7 @@ module CreateSampleModule =
             action1.Flows.Add rtFlow
 
             // System에 UI 요소들 추가
-            [button1 :> JsonPolymorphic; lamp1; condition1; action1] |> rtSystem.AddEntities
+            [button1 :> BLCABase; lamp1; condition1; action1] |> rtSystem.AddEntities
 
             // Polymorphic UI 요소들 생성 및 등록
             rtPolyButton <-

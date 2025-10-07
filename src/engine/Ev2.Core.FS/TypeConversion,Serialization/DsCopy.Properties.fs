@@ -114,7 +114,7 @@ module internal DsCopyModule =
                 d.PropertiesJson <- propertiesJson
             | :? NjWork  as d ->
                 d.FlowGuid <- flowGuid |-> guid2str |> Option.toObj
-                d.Properties <- assignFromJson d WorkProperties.Create propertiesJson
+                d.Properties <- JsonPolymorphic.FromJson<WorkProperties> propertiesJson
             | :? ORMWork as d ->
                 d.FlowGuid <- flowGuid
                 d.PropertiesJson <- propertiesJson
@@ -128,22 +128,22 @@ module internal DsCopyModule =
             match sbx with
             | :? Call as s ->
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;          d.Status4<-s.Status4; d.PropertiesJson <- s.PropertiesJson
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditions;          d.CommonConditionsObj<-s.CommonConditions;       d.Status4<-s.Status4; d.Properties <- assignFromJson d CallProperties.Create s.PropertiesJson
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.PropertiesJson
+                | :? Call    as d -> d.AutoConditions   <-s.AutoConditions;          d.CommonConditions<-s.CommonConditions;          d.Status4<-s.Status4; d.PropertiesJson <- s.PropertiesJson
+                | :? NjCall  as d -> d.AutoConditionsObj<-s.AutoConditions;          d.CommonConditionsObj<-s.CommonConditions;       d.Status4<-s.Status4; d.Properties <- JsonPolymorphic.FromJson<CallProperties> s.PropertiesJson
+                | :? ORMCall as d -> d.AutoConditions   <-s.AutoConditions.ToJson(); d.CommonConditions<-s.CommonConditions.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.PropertiesJson
                 | _ -> fail()
             | :? NjCall as s ->
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4; d.PropertiesJson <- s.Properties.ToJson()
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-s.AutoConditionsObj;          d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4; d.Properties <- cloneProperties d s.Properties CallProperties.Create
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions   <-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.Properties.ToJson()
+                | :? Call    as d -> d.AutoConditions   <-s.AutoConditionsObj;          d.CommonConditions<-s.CommonConditionsObj;       d.Status4<-s.Status4; d.PropertiesJson <- s.Properties.ToJson()
+                | :? NjCall  as d -> d.AutoConditionsObj<-s.AutoConditionsObj;          d.CommonConditionsObj<-s.CommonConditionsObj;    d.Status4<-s.Status4; d.Properties <- s.Properties.DeepClone<CallProperties>()
+                | :? ORMCall as d -> d.AutoConditions   <-s.AutoConditionsObj.ToJson(); d.CommonConditions<-s.CommonConditionsObj.ToJson(); d.Status4Id<-getStatus4Id s.Status4; d.PropertiesJson <- s.Properties.ToJson()
                 | _ -> fail()
             | :? ORMCall as s ->
                 let fj conditions = ApiCallValueSpecs.FromJson(conditions)
                 match dbx with
-                | :? Call    as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions   <-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.PropertiesJson <- s.PropertiesJson
-                | :? NjCall  as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.Properties <- assignFromJson d CallProperties.Create s.PropertiesJson
-                | :? ORMCall as d -> d.IsDisabled<-s.IsDisabled; d.Timeout<-s.Timeout; d.AutoConditions<-s.AutoConditions;       d.CommonConditions   <-s.CommonConditions;       d.Status4Id<-s.Status4Id; d.PropertiesJson <- s.PropertiesJson
+                | :? Call    as d -> d.AutoConditions<-fj s.AutoConditions;    d.CommonConditions   <-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.PropertiesJson <- s.PropertiesJson
+                | :? NjCall  as d -> d.AutoConditionsObj<-fj s.AutoConditions; d.CommonConditionsObj<-fj s.CommonConditions;    d.Status4<-getStatus s.Status4Id; d.Properties <- JsonPolymorphic.FromJson<CallProperties> s.PropertiesJson
+                | :? ORMCall as d -> d.AutoConditions<-s.AutoConditions;       d.CommonConditions   <-s.CommonConditions;       d.Status4Id<-s.Status4Id; d.PropertiesJson <- s.PropertiesJson
                 | _ -> fail()
             | _ -> fail()
 
@@ -176,7 +176,7 @@ module internal DsCopyModule =
 
             match dbx with
             | :? ApiDef    as d -> d.PropertiesJson <- s
-            | :? NjApiDef  as d -> d.Properties <- assignFromJson d ApiDefProperties.Create s
+            | :? NjApiDef  as d -> d.Properties <- JsonPolymorphic.FromJson<ApiDefProperties> s
             | :? ORMApiDef as d -> d.PropertiesJson <- s
             | _ -> fail()
 

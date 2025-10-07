@@ -350,7 +350,7 @@ module DsObjectUtilsModule =
     type DsSystem with // Create
         static member Create(flows:Flow[], works:Work[],
             arrows:ArrowBetweenWorks[], apiDefs:ApiDef[], apiCalls:ApiCall[],
-            polys: PolymorphicJsonCollection<JsonPolymorphic>, properties: DsSystemProperties
+            polys: PolymorphicJsonCollection<BLCABase>, properties: DsSystemProperties
         ) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
             let system = createExtended<DsSystem>()

@@ -117,7 +117,7 @@ module MiniSample =
                 let outTag = TagWithSpec<double>("PolyActionOut", "Action.Output", ValueSpec<double>.Single 2.5)
                 z.IOTags <- IOTagsWithSpec(inTag, outTag))
 
-        [   rtPolyButton :> JsonPolymorphic
+        [   rtPolyButton :> BLCABase
             rtPolyLamp
             rtPolyCondition
             rtPolyAction ]
