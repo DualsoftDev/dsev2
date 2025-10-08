@@ -169,7 +169,7 @@ module MiniSample =
                 c.Name <- "Call1"
                 c.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(apiCall, ValueSpec<int>.Single 1); ApiCallValueSpec(apiCall, Multiple [1.1; 2.2; 3.3])])
                 c.Status4 <- Some DbStatus4.Ready
-                c.CallType <- DbCallType.Parallel
+                c.Properties.CallType <- DbCallType.Parallel
             )
 
         let call2 =
@@ -177,7 +177,7 @@ module MiniSample =
             |> tee (fun c ->
                 c.Name <- "Call2"
                 c.Status4 <- Some DbStatus4.Going
-                c.CallType <- DbCallType.Repeat
+                c.Properties.CallType <- DbCallType.Repeat
             )
 
         // Call을 Work에 추가

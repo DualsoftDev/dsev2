@@ -280,13 +280,13 @@ module rec DsCompareObjects =
                 // ApiCallValueSpecs 비교를 위해 JSON으로 변환하여 비교
                 if x.AutoConditions.ToJson() <> y.AutoConditions.ToJson() then yield Diff(nameof x.AutoConditions, x, y, nullUpdateSql)
                 if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, nullUpdateSql)
-                if x.CallType   <> y.CallType    then yield Diff(nameof x.CallType, x, y, nullUpdateSql)
-                if x.IsDisabled <> y.IsDisabled  then yield Diff(nameof x.IsDisabled, x, y, nullUpdateSql)
-                if x.Timeout    <> y.Timeout     then yield Diff(nameof x.Timeout, x, y, nullUpdateSql)
+                if x.Properties.CallType   <> y.Properties.CallType    then yield Diff(nameof (Unchecked.defaultof<CallProperties>.CallType), x, y, nullUpdateSql)
+                if x.Properties.IsDisabled <> y.Properties.IsDisabled  then yield Diff(nameof (Unchecked.defaultof<CallProperties>.IsDisabled), x, y, nullUpdateSql)
+                if x.Properties.Timeout    <> y.Properties.Timeout     then yield Diff(nameof (Unchecked.defaultof<CallProperties>.Timeout), x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))
 
-                let d1 = (x.ApiCallGuids, y.ApiCallGuids) ||> setEqual |> not
+                let d1 = (x.Properties.ApiCallGuids, y.Properties.ApiCallGuids) ||> setEqual |> not
                 if d1 then yield Diff("ApiCalls", x, y, nullUpdateSql)
             }
 

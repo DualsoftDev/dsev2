@@ -161,19 +161,19 @@ module CreateSampleModule =
                 |> tee(fun z ->
                     z.Name     <- "Call1a"
                     z.Status4  <- Some DbStatus4.Ready
-                    z.CallType <- DbCallType.Parallel
+                    z.Properties.CallType <- DbCallType.Parallel
                     z.AutoConditions <- ApiCallValueSpecs([ApiCallValueSpec(rtApiCall1a, Single 999); ApiCallValueSpec(rtApiCall1b, Multiple [1.1; 2.2; 3.3]); ])
                     z.CommonConditions <- ApiCallValueSpecs()
-                    z.Timeout  <- Some 30
+                    z.Properties.Timeout  <- Some 30
                     z.Parameter <- {|Type="call"; Count=3; Pi=3.14|} |> JsonConvert.SerializeObject
-                    z.ApiCallGuids.AddRange [rtApiCall1a.Guid] )
+                    z.Properties.ApiCallGuids.AddRange [rtApiCall1a.Guid] )
 
             rtCall1b  <-
                 Call.Create()
                 |> tee (fun z ->
                     z.Name <- "Call1b"
                     z.Status4 <- Some DbStatus4.Finished
-                    z.CallType <- DbCallType.Repeat)
+                    z.Properties.CallType <- DbCallType.Repeat)
 
             rtWork1.AddCalls [rtCall1a; rtCall1b]
             rtCall2a  <- Call.Create() |> tee (fun z -> z.Name <- "Call2a"; z.Status4 <- Some DbStatus4.Homing)
@@ -193,4 +193,3 @@ module CreateSampleModule =
                 // 최초 생성시, DB 삽입 전이므로 Id 가 None 이어야 함
                 edObj.Id.IsNone === true
             )
-

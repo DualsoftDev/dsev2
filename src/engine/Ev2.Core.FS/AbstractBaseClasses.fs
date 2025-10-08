@@ -111,6 +111,10 @@ type WorkProperties() =
 
 type CallProperties() =
     inherit DsPropertiesBase()
+    member val CallType = DbCallType.Normal with get, set
+    member val IsDisabled = false with get, set
+    member val Timeout = Option<int>.None with get, set
+    member val ApiCallGuids = ResizeArray<Guid>() with get, set
     member val CallMemo = nullString with get, set
     static member Create() = createExtendedProperties<CallProperties>()
 

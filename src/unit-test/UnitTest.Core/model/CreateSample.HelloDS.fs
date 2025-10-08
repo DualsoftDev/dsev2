@@ -145,9 +145,9 @@ module CreateSampleWithHelloDsModule =
                 Call.Create()
                 |> tee(fun z ->
                     z.Name     <- $"Device{dev}_{name}"
-                    z.CallType <- DbCallType.Parallel
-                    z.Timeout  <- Some 30
-                    z.ApiCallGuids.AddRange [findApiCall $"apiCallDev{dev}{name}" |> _.Guid] )
+                    z.Properties.CallType <- DbCallType.Parallel
+                    z.Properties.Timeout  <- Some 30
+                    z.Properties.ApiCallGuids.AddRange [findApiCall $"apiCallDev{dev}{name}" |> _.Guid] )
             let call1Adv = createCall 1 "ADV"
             let call1Ret = createCall 1 "RET"
             let call2Adv = createCall 2 "ADV"

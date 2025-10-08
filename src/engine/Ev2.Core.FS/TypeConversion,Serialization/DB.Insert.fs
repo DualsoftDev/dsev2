@@ -213,8 +213,8 @@ module internal DbInsertModule =
 
                     let callId =
                         conn.Insert($"""INSERT INTO {Tn.Call}
-                                    (guid,  parameter,                     name, workId,   status4Id,  callTypeId,  autoConditions, commonConditions, isDisabled, timeout, properties)
-                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @WorkId, @Status4Id, @CallTypeId, @AutoConditions, @CommonConditions, @IsDisabled, @Timeout, @PropertiesJson{dbApi.DapperJsonB});""", orm, tr)
+                                    (guid,  parameter,                     name, workId,   status4Id,  autoConditions, commonConditions, properties)
+                             VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @WorkId, @Status4Id, @AutoConditions, @CommonConditions, @PropertiesJson{dbApi.DapperJsonB});""", orm, tr)
 
                     rt.Id <- Some callId
                     orm.Id <- Some callId

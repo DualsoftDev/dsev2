@@ -180,7 +180,6 @@ module internal Db2DsImpl =
 
                     for orm in orms do
 
-                        let callType = orm.CallTypeId.Value |> DbApi.TryGetEnumValue |> Option.get
                         let apiCallGuids =
                             conn.Query<Guid>(
                             $"""SELECT ac.guid
@@ -200,7 +199,16 @@ module internal Db2DsImpl =
                                 ApiCallValueSpecs()
                             else
                                 ApiCallValueSpecs.FromJson(orm.CommonConditions)
-                        Call.Create(callType, apiCallGuids, acs, ccs, orm.IsDisabled, orm.Timeout)
+                        let properties =
+                            orm.PropertiesJson
+                            |> String.toOption
+                            |-> JsonPolymorphic.FromJson<CallProperties>
+                            |?? CallProperties.Create
+                            |> tee(fun p ->
+                                p.ApiCallGuids.Clear()
+                                p.ApiCallGuids.AddRange(apiCallGuids))
+
+                        Call.Create(acs, ccs, properties)
                         |> replicateProperties orm
                         |> tee (fun c -> c.PropertiesJson <- orm.PropertiesJson)
                         |> tee handleAfterSelect

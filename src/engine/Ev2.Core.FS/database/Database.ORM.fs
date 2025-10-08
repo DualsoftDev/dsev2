@@ -154,17 +154,14 @@ module ORMTypesModule =
             x
 
     type ORMCall(workId:Id, status4Id:Id option // Initialize
-        , callTypeId:Id option, autoConditions: string, commonConditions: string, isDisabled:bool, timeout:int option, propertiesJson:string
+        , autoConditions: string, commonConditions: string, propertiesJson:string
     ) =
         inherit ORMWorkEntity(workId)
 
-        new() = new ORMCall(-1, None, None, null, null, false, None, nullString)
+        new() = new ORMCall(-1, None, null, null, nullString)
         interface IORMCall
         member x.WorkId with get() = x.ParentId and set v = x.ParentId <- v
         member val Status4Id  = status4Id  with get, set
-        member val CallTypeId = callTypeId with get, set
-        member val IsDisabled = isDisabled with get, set
-        member val Timeout    = timeout    with get, set
         member val AutoConditions   = autoConditions   with get, set
         member val CommonConditions = commonConditions with get, set
         member val Properties = propertiesJson with get, set
@@ -176,11 +173,8 @@ module ORMTypesModule =
         member x.Initialize(runtime:Call) =
             runtime.CopyUniqueProperties(x)
             (* 다음의 enum 에 대한 id 설정은 dbApi 가 있을 때 해결되어야 한다. *)
-            //x.CallTypeId <- runtime.CallType |> int64 |> Some
             //x.Status4Id <- runtime.Status4 |-> int64
 
-            x.IsDisabled <- runtime.IsDisabled
-            x.Timeout <- runtime.Timeout
             // ApiCallValueSpecs를 JSON 문자열로 변환
             x.AutoConditions   <- runtime.AutoConditions.ToJson()
             x.CommonConditions <- runtime.CommonConditions.ToJson()

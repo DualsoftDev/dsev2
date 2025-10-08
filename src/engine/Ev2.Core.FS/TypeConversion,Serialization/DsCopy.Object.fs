@@ -126,22 +126,32 @@ module internal rec DsObjectCopyImpl =
         /// Call 복제. 지정된 newCall 객체에 현재 호출의 내용을 복사
         member x.replicate() =
             // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            Call.Create(x.CallType, x.ApiCallGuids |> toList, x.AutoConditions, x.CommonConditions, x.IsDisabled, x.Timeout)
+            let properties =
+                x.Properties.DeepClone<CallProperties>()
+                |> tee(fun p ->
+                    p.CallType <- x.Properties.CallType
+                    p.IsDisabled <- x.Properties.IsDisabled
+                    p.Timeout <- x.Properties.Timeout
+                    p.ApiCallGuids.Clear()
+                    p.ApiCallGuids.AddRange(x.Properties.ApiCallGuids))
+            let autoConditions = ApiCallValueSpecs(x.AutoConditions :> seq<_>)
+            let commonConditions = ApiCallValueSpecs(x.CommonConditions :> seq<_>)
+            Call.Create(autoConditions, commonConditions, properties)
             |> tee(fun newCall ->
                 // ApiCall들은 시스템 레벨에서 복제되므로 그대로 유지
-                let apiCallGuids = x.ApiCallGuids |> toList
+                let apiCallGuids = x.Properties.ApiCallGuids |> toList
 
                 // 복제된 데이터를 newCall에 설정
-                newCall.CallType   <- x.CallType
-                newCall.IsDisabled <- x.IsDisabled
-                newCall.Timeout    <- x.Timeout
+                newCall.Properties.CallType   <- x.Properties.CallType
+                newCall.Properties.IsDisabled <- x.Properties.IsDisabled
+                newCall.Properties.Timeout    <- x.Properties.Timeout
 
                 newCall.AutoConditions.Clear()
                 newCall.CommonConditions.Clear()
-                newCall.ApiCallGuids.Clear()
+                newCall.Properties.ApiCallGuids.Clear()
                 newCall.AutoConditions.AddRange(x.AutoConditions)
                 newCall.CommonConditions.AddRange(x.CommonConditions)
-                newCall.ApiCallGuids.AddRange(apiCallGuids)
+                newCall.Properties.ApiCallGuids.AddRange(apiCallGuids)
 
                 newCall
                 |> replicateProperties x
@@ -214,12 +224,12 @@ module DsObjectCopyAPIModule =
             rt.XTargetGuid <- map[rt.XTargetGuid]
 
         | :? Call as rt ->
-            rt.ApiCallGuids
+            rt.Properties.ApiCallGuids
             |> List.ofSeq
             |> List.map (fun g -> map[g])
             |> fun gs ->
-                rt.ApiCallGuids.Clear()
-                rt.ApiCallGuids.AddRange gs
+                rt.Properties.ApiCallGuids.Clear()
+                rt.Properties.ApiCallGuids.AddRange gs
 
         | :? ArrowBetweenCalls as rt ->
             rt.XSourceGuid <- map[rt.XSourceGuid]

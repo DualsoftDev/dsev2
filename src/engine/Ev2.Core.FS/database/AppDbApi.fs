@@ -211,15 +211,16 @@ module ORMTypeConversionModule =
             >>= (fun z -> Enum.TryParse<'TEnum>(z.Name) |> tryParseToOption)
 
     type ORMCall with // Create
-        static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option, dbCallType:DbCallType,
-            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option, propertiesJson:string
+        static member Create(dbApi:AppDbApi, workId:Id, status4:DbStatus4 option,
+            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, properties: CallProperties, propertiesJson:string
         ): ORMUnique =
-            let callTypeId = AppDbApi.TryGetEnumId<DbCallType>(dbCallType)
+            if isNull (box properties) then invalidArg "properties" "CallProperties 인스턴스가 null 입니다."
+
             let status4Id = status4 >>= AppDbApi.TryGetEnumId<DbStatus4>
             // ApiCallValueSpecs를 JSON 문자열로 변환
             let autoConditionsJson   = autoConditions.ToJson()
             let commonConditionsJson = commonConditions.ToJson()
-            new ORMCall(workId, status4Id, callTypeId, autoConditionsJson, commonConditionsJson, isDisabled, timeout, propertiesJson)
+            new ORMCall(workId, status4Id, autoConditionsJson, commonConditionsJson, propertiesJson)
 
     /// runtime object -> ORM object 변환
     /// 주의 사항 : 하부에서 dbApi.With() 사용 금지.  dbApi.TryFindEnumValueId 함수 이용 용도로만 제한
@@ -264,7 +265,7 @@ module ORMTypeConversionModule =
                     |> ormReplicateProperties rt
 
                 | :? Call as rt ->
-                    ORMCall.Create(dbApi, pid, rt.Status4, rt.CallType, rt.AutoConditions, rt.CommonConditions, rt.IsDisabled, rt.Timeout, rt.PropertiesJson)
+                    ORMCall.Create(dbApi, pid, rt.Status4, rt.AutoConditions, rt.CommonConditions, rt.Properties, rt.PropertiesJson)
                     |> ormReplicateProperties rt
 
                 | :? ArrowBetweenWorks as rt ->  // arrow 삽입 전에 parent 및 양 끝점 node(call, work 등) 가 먼저 삽입되어 있어야 한다.

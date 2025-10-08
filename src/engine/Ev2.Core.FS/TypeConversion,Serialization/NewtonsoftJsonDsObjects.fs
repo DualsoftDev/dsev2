@@ -518,7 +518,15 @@ module rec NewtonsoftJsonObjects =
             njc.RuntimeObject <-
                 let acs = njc.AutoConditionsObj
                 let ccs = njc.CommonConditionsObj
-                Call.Create(callType, njc.ApiCalls, acs, ccs, njc.IsDisabled, njc.Timeout)
+                let properties =
+                    njc.Properties.DeepClone<CallProperties>()
+                    |> tee(fun p ->
+                        p.CallType <- callType
+                        p.IsDisabled <- njc.IsDisabled
+                        p.Timeout <- njc.Timeout
+                        p.ApiCallGuids.Clear()
+                        p.ApiCallGuids.AddRange(njc.ApiCalls))
+                Call.Create(acs, ccs, properties)
                 |> replicateProperties njc
             ()
 
@@ -717,8 +725,8 @@ module Ds2JsonModule =
                     NjCall.Create()
                     |> replicateProperties rt
                     |> tee (fun z ->
-                        let apiCalls = rt.ApiCalls |-> _.Guid |> toArray
-                        z.Initialize(rt.CallType.ToString(), apiCalls, ac, cc, rt.IsDisabled, rt.Timeout) |> ignore
+                        let apiCalls = rt.Properties.ApiCallGuids |> toArray
+                        z.Initialize(rt.Properties.CallType.ToString(), apiCalls, ac, cc, rt.Properties.IsDisabled, rt.Properties.Timeout) |> ignore
                         z.Status4 <- rt.Status4)
                     :> INjUnique
 

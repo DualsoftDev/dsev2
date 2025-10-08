@@ -254,7 +254,7 @@ module rec TmpCompatibility =
         member internal x.addApiCalls(apiCalls:ApiCall seq, updateDateTime:bool) =
             if updateDateTime then x.UpdateDateTime()
             //apiCalls |> iter (setParentI x)
-            apiCalls |> iter (fun z -> x.ApiCallGuids.Add z.Guid)
+            apiCalls |> iter (fun z -> x.Properties.ApiCallGuids.Add z.Guid)
 
         member x.AddApiCalls (apiCalls:ApiCall seq)         = x.addApiCalls (apiCalls, true)
 
@@ -314,15 +314,14 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
     static member CreateCall(callType:DbCallType, apiCalls:ApiCall seq,
         autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
     ) =
-        let apiCallGuids = apiCalls |-> _.Guid
-
         let call = createExtended<Call>()
-        call.CallType <- callType
-        call.IsDisabled <- isDisabled
-        call.Timeout <- timeout
+        call.Properties.CallType <- callType
+        call.Properties.IsDisabled <- isDisabled
+        call.Properties.Timeout <- timeout
         call.AutoConditions <- autoConditions
         call.CommonConditions <- commonConditions
-        call.ApiCallGuids.AddRange(apiCallGuids)
+        let apiCallGuids = apiCalls |-> _.Guid
+        call.Properties.ApiCallGuids.AddRange(apiCallGuids)
         apiCalls |> iter (setParentI call)
         call
 
@@ -387,18 +386,16 @@ module DsObjectUtilsModule =
         static member Create() = createExtended<Work>()
 
 
+
     type Call with // Create
-        static member Create(callType:DbCallType, apiCalls:ApiCall seq,
-            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
-        ) =
+        static member Create(autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, properties: CallProperties) =
             // 매개변수가 있는 경우 확장 타입에서 initialize
+            if isNull (box properties) then invalidArg "properties" "CallProperties 인스턴스가 null 입니다."
+
             let call = createExtended<Call>()
-            call.CallType <- callType
-            call.IsDisabled <- isDisabled
-            call.Timeout <- timeout
             call.AutoConditions <- autoConditions
             call.CommonConditions <- commonConditions
-            call.ApiCallGuids.AddRange(apiCalls |-> _.Guid)
+            call.Properties <- properties
             call
 
         static member Create() = createExtended<Call>()

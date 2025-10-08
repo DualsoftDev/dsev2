@@ -352,12 +352,15 @@ and Call() = // Create
     inherit WorkEntity()
 
     interface IRtCall
-    member val CallType         = DbCallType.Normal      with get, set    // 호출 유형 (예: "Normal", "Parallel", "Repeat")
-    member val IsDisabled       = false                  with get, set
-    member val Timeout          = Option<int>.None       with get, set    // 실행 타임아웃(ms)
+    member val Properties = CallProperties.Create() with get, set
+    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
+    member x.PropertiesJson
+        with get() = x.Properties.ToJson()
+        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<CallProperties> json
+
+
     member val AutoConditions   = ApiCallValueSpecs()    with get, set    // 사전 조건 식 (자동 실행 조건)
     member val CommonConditions = ApiCallValueSpecs()    with get, set    // 안전 조건 식 (실행 보호조건)
-    member val ApiCallGuids     = ResizeArray<Guid>()    with get, set    // DB 저장시에는 callId 로 저장
     member val Status4          = Option<DbStatus4>.None with get, set
 
     member x.ApiCalls =
@@ -365,31 +368,22 @@ and Call() = // Create
         | Some parent ->
             match parent with
             | :? DsSystem as sys ->
-                sys.ApiCalls |> filter(fun ac -> x.ApiCallGuids |> contains ac.Guid ) |> toList
+                sys.ApiCalls |> filter(fun ac -> x.Properties.ApiCallGuids |> contains ac.Guid ) |> toList
             | _ -> []  // NjSystem 등 다른 타입인 경우 빈 리스트 반환
         | None -> []
 
     static member Create() = createExtended<Call>()
 
     /// Creates a Call with the specified parameters using parameterless constructor + Initialize pattern
-    static member Create(callType: DbCallType, apiCallGuids: Guid seq, autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled: bool, timeout: int option) =
+    static member Create(autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, properties: CallProperties) =
+        if isNull (box properties) then invalidArg "properties" "CallProperties 인스턴스가 null 입니다."
+
         let call = createExtended<Call>()
-        // Set call properties
-        call.CallType   <- callType
-        call.IsDisabled <- isDisabled
-        call.Timeout    <- timeout
         call.AutoConditions <- autoConditions
         call.CommonConditions <- commonConditions
-
-        apiCallGuids     |> iter call.ApiCallGuids.Add
+        call.Properties <- properties
 
         call
-
-    member val Properties = CallProperties.Create() with get, set
-    member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
-    member x.PropertiesJson
-        with get() = x.Properties.ToJson()
-        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<CallProperties> json
 
 
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef

@@ -367,16 +367,12 @@ CREATE TABLE {k Tn.ApiDef}( {sqlUniqWithName()}
 
 
 CREATE TABLE {k Tn.Call}( {sqlUniqWithName()}
-    , {k "callTypeId"}    {intKeyType} -- NOT NULL         -- 호출 유형: e.g "Normal", "Parallel", "Repeat"
     , {k "status4Id"}     {intKeyType} DEFAULT NULL
-    , {k "timeout"}       INT   -- ms
     , {k "autoConditions"}   TEXT
     , {k "commonConditions"} TEXT
     , {k "properties"}    {jsonb}
-    , {k "isDisabled"}    {boolean} NOT NULL DEFAULT {falseValue}   -- 0: 활성화, 1: 비활성화
     , {k "workId"}        {intKeyType} NOT NULL
     , FOREIGN KEY(workId)     REFERENCES {Tn.Work}(id) ON DELETE CASCADE      -- Work 삭제시 Call 도 삭제
-    , FOREIGN KEY(callTypeId) REFERENCES {Tn.Enum}(id) ON DELETE RESTRICT
     , FOREIGN KEY(status4Id) REFERENCES {Tn.Enum}(id) ON DELETE SET NULL
     , CONSTRAINT {Tn.Call}_uniq UNIQUE (workId, name)
     -- , {k "apiCallId"}     {intKeyType} NOT NULL  -- call 이 복수개의 apiCall 을 가지므로, {Tn.MapCall2ApiCall} 에 저장
@@ -616,10 +612,8 @@ CREATE VIEW {k Vn.Call} AS
         , c.{k "name"}  AS callName
         , e.{k "name"}  AS status4
         , c.{k "parameter"}
-        , c.{k "timeout"}
         , c.{k "autoConditions"}
         , c.{k "commonConditions"}
-        , c.{k "isDisabled"}
         , p.{k "id"}    AS projectId
         , p.{k "name"}  AS projectName
         , s.{k "id"}    AS systemId

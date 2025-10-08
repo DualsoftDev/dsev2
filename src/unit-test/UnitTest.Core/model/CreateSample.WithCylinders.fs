@@ -63,18 +63,18 @@ module CreateSampleWithCylinderModule =
                 Call.Create()
                 |> tee(fun z ->
                     z.Name     <- "Call1a"
-                    z.CallType <- DbCallType.Parallel
+                    z.Properties.CallType <- DbCallType.Parallel
                     z.AutoConditions <- ApiCallValueSpecs()
                     z.CommonConditions <- ApiCallValueSpecs()
-                    z.Timeout  <- Some 30
-                    z.ApiCallGuids.AddRange [edApiCall1aCyl.Guid] )
+                    z.Properties.Timeout  <- Some 30
+                    z.Properties.ApiCallGuids.AddRange [edApiCall1aCyl.Guid] )
 
 
             edCall1bCyl <-
                 Call.Create()
                 |> tee (fun z ->
                     z.Name <- "Call1bCyl"
-                    z.CallType <- DbCallType.Repeat)
+                    z.Properties.CallType <- DbCallType.Repeat)
 
             edWork1Cyl.AddCalls [edCall1aCyl; edCall1bCyl]
             edFlowCyl.AddWorks([edWork1Cyl])
