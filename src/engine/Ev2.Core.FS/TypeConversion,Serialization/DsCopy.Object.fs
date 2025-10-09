@@ -1,9 +1,7 @@
 namespace Ev2.Core.FS
 
-open Dual.Common.Core.FS
-open Dual.Common.Base
 open System
-open Newtonsoft.Json.Linq
+open Dual.Common.Base
 
 /// Exact copy version: Guid, DateTime, Id 모두 동일하게 복제
 [<AutoOpen>]
@@ -116,22 +114,9 @@ module internal rec DsObjectCopyImpl =
 
 
     type Call with // replicate
-        /// Call 복제. 지정된 newCall 객체에 현재 호출의 내용을 복사
         member x.replicate() =
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
-            let properties =
-                x.Properties.DeepClone<CallProperties>()
-                |> tee(fun p ->
-                    p.CallType <- x.Properties.CallType
-                    p.IsDisabled <- x.Properties.IsDisabled
-                    p.Timeout <- x.Properties.Timeout
-                    p.ApiCallGuids.Clear()
-                    p.ApiCallGuids.AddRange(x.Properties.ApiCallGuids))
-            let autoConditions = ApiCallValueSpecs(x.AutoConditions :> seq<_>)
-            let commonConditions = ApiCallValueSpecs(x.CommonConditions :> seq<_>)
-            Call.Create(autoConditions, commonConditions, properties)
+            Call.Create()
             |> replicateProperties x
-
 
     type ApiCall with // replicate
         member x.replicate() =
@@ -179,11 +164,10 @@ module DsObjectCopyAPIModule =
             rt.Works      |> iter proc
             rt.Arrows     |> iter proc
 
-            // TODO: PolymorphicJsonCollection 에 대한 RtUnique 처리
-            //rt.Buttons    |> iter proc
-            //rt.Lamps      |> iter proc
-            //rt.Conditions |> iter proc
-            //rt.Actions    |> iter proc
+            rt.Buttons    |> iter proc
+            rt.Lamps      |> iter proc
+            rt.Conditions |> iter proc
+            rt.Actions    |> iter proc
 
         | :? Work as rt ->
             rt.Calls    |> iter proc
@@ -211,7 +195,9 @@ module DsObjectCopyAPIModule =
             rt.Properties.RxGuid <- map[rt.Properties.RxGuid]
 
         | :? Flow as rt ->
-            // Flow는 더 이상 UI 요소를 직접 소유하지 않음
+            ()
+
+        | :? BLCABase as blca ->
             ()
 
         | :? ApiCall as rt ->
