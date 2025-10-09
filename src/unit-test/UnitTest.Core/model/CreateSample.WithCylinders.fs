@@ -29,12 +29,12 @@ module CreateSampleWithCylinderModule =
             edApiCall1aCyl <-
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- edApiDef1Cyl.Guid
+                    z.Properties.ApiDefGuid <- edApiDef1Cyl.Guid
                     z.Name       <- "ApiCall1aCyl"
-                    z.InAddress  <- "InAddressX0"
-                    z.OutAddress <- "OutAddress1"
-                    z.InSymbol   <- "XTag1"
-                    z.OutSymbol  <- "YTag2"
+                    z.Properties.InAddress  <- "InAddressX0"
+                    z.Properties.OutAddress <- "OutAddress1"
+                    z.Properties.InSymbol   <- "XTag1"
+                    z.Properties.OutSymbol  <- "YTag2"
                     z.ValueSpec <-
                         Some <| Multiple [1; 2; 3]
                     )

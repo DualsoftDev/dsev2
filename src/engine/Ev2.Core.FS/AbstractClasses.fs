@@ -389,29 +389,42 @@ and Call() = // Create
 and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
     inSymbol:string, outSymbol:string,
     valueSpec:IValueSpec option
-) =
+) as this =
     inherit DsSystemEntity()
+
+    let mutable properties = ApiCallProperties.Create()
+
+    let assignProperties (value:ApiCallProperties) =
+        if isNull (box value) then invalidArg "value" "ApiCallProperties 인스턴스가 null 입니다."
+        value.RawParent <- Some this
+        properties <- value
+
+    do
+        assignProperties properties
+        properties.ApiDefGuid <- apiDefGuid
+        properties.InAddress  <- inAddress
+        properties.OutAddress <- outAddress
+        properties.InSymbol   <- inSymbol
+        properties.OutSymbol  <- outSymbol
 
     new() = new ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
 
     static member Create() = createExtended<ApiCall>()
 
     interface IRtApiCall
-    member val ApiDefGuid = apiDefGuid  with get, set
-    member val InAddress  = inAddress   with get, set
-    member val OutAddress = outAddress  with get, set
-    member val InSymbol   = inSymbol    with get, set
-    member val OutSymbol  = outSymbol   with get, set
+    member x.Properties
+        with get() = properties
+        and set value = assignProperties value
 
     member val ValueSpec = valueSpec with get, set
     member val IOTags = IOTagsWithSpec() with get, set
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
-    member val Properties = ApiCallProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
-        and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ApiCallProperties> json
+        and set (json:string) =
+            x.Properties <- JsonPolymorphic.FromJson<ApiCallProperties> json
     /// system 에서 현재 ApiCall 을 호출하는 Call 들
     member x.Callers:Call[] =
         x.System
@@ -429,10 +442,10 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
             |-> (fun proj ->
                     fwdEnumerateRtObjects proj
                     |> _.OfType<ApiDef>()
-                    |> tryFind (fun ad -> ad.Guid = x.ApiDefGuid )
-                    |?? (fun () -> failwith $"ApiDef with Guid {x.ApiDefGuid} not found in System") )
+                    |> tryFind (fun ad -> ad.Guid = x.Properties.ApiDefGuid )
+                    |?? (fun () -> failwith $"ApiDef with Guid {x.Properties.ApiDefGuid} not found in System") )
             |?? (fun () -> failwith "Parent is not DsSystem type")
-        and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
+        and set (v:ApiDef) = x.Properties.ApiDefGuid <- v.Guid
 
 
 and ApiDef() = // Create, ApiUsers

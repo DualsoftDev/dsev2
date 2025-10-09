@@ -120,6 +120,11 @@ type CallProperties() =
 
 type ApiCallProperties() =
     inherit DsPropertiesBase()
+    member val ApiDefGuid = emptyGuid with get, set
+    member val InAddress = nullString with get, set
+    member val OutAddress = nullString with get, set
+    member val InSymbol = nullString with get, set
+    member val OutSymbol = nullString with get, set
     member val ApiCallMemo = nullString with get, set
     static member Create() = createExtendedProperties<ApiCallProperties>()
 

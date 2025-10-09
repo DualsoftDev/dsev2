@@ -329,16 +329,25 @@ module DsObjectUtilsModule =
 
 
     type ApiCall with // Create
-       static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
-           // 매개변수가 있는 경우 확장 타입에서 initialize
+       static member Create(properties: ApiCallProperties, valueSpec:IValueSpec option) =
+           if isNull (box properties) then invalidArg "properties" "ApiCallProperties 인스턴스가 null 입니다."
            let apiCall = createExtended<ApiCall>()
-           apiCall.ApiDefGuid <- apiDefGuid
-           apiCall.InAddress <- inAddress
-           apiCall.OutAddress <- outAddress
-           apiCall.InSymbol <- inSymbol
-           apiCall.OutSymbol <- outSymbol
+           let cloned = properties.DeepClone<ApiCallProperties>()
+           apiCall.Properties <- cloned
            apiCall.ValueSpec <- valueSpec
            apiCall
+
+       static member Create(properties: ApiCallProperties) =
+           ApiCall.Create(properties, Option<IValueSpec>.None)
+
+       static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
+           let props = ApiCallProperties.Create()
+           props.ApiDefGuid <- apiDefGuid
+           props.InAddress <- inAddress
+           props.OutAddress <- outAddress
+           props.InSymbol <- inSymbol
+           props.OutSymbol <- outSymbol
+           ApiCall.Create(props, valueSpec)
 
     type IArrow with // GetArrowType, GetSource, GetTarget
         member x.GetSource(): Unique =
@@ -405,7 +414,7 @@ module DsObjectUtilsModule =
                             c.ApiCalls |> forall (fun z -> sys.ApiCalls |> contains z) |> verify
                             for ac in c.ApiCalls do
                                 try
-                                    ac.ApiDef.Guid = ac.ApiDefGuid |> verify
+                                    ac.ApiDef.Guid = ac.Properties.ApiDefGuid |> verify
                                     match sys.Project with
                                     | Some proj -> proj.EnumerateRtObjectsT<ApiDef>() |> contains ac.ApiDef |> verify
                                     | None -> sys.ApiDefs |> contains ac.ApiDef |> verify

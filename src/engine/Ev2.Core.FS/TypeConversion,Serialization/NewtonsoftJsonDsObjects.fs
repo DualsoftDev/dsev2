@@ -297,16 +297,31 @@ module rec NewtonsoftJsonObjects =
 
         interface INjApiCall
         [<JsonProperty(Order = 99)>] member val Properties = ApiCallProperties.Create() with get, set
-        member val ApiDef     = emptyGuid  with get, set
-        member val InAddress  = nullString with get, set
-        member val OutAddress = nullString with get, set
-        member val InSymbol   = nullString with get, set
-        member val OutSymbol  = nullString with get, set
+        member x.ApiDef
+            with get() = x.Properties.ApiDefGuid
+            and set value = x.Properties.ApiDefGuid <- value
+        member x.InAddress
+            with get() = x.Properties.InAddress
+            and set value = x.Properties.InAddress <- value
+        member x.OutAddress
+            with get() = x.Properties.OutAddress
+            and set value = x.Properties.OutAddress <- value
+        member x.InSymbol
+            with get() = x.Properties.InSymbol
+            and set value = x.Properties.InSymbol <- value
+        member x.OutSymbol
+            with get() = x.Properties.OutSymbol
+            and set value = x.Properties.OutSymbol <- value
         [<JsonConverter(typeof<RawJsonConverter>)>]
         member val ValueSpec  = nullString with get, set
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjApiCall>()
         member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
+        member x.ShouldSerializeApiDef() = false
+        member x.ShouldSerializeInAddress() = false
+        member x.ShouldSerializeOutAddress() = false
+        member x.ShouldSerializeInSymbol() = false
+        member x.ShouldSerializeOutSymbol() = false
 
 
     type NjApiDef() = // Create
@@ -536,8 +551,10 @@ module rec NewtonsoftJsonObjects =
                     match njac.ValueSpec with
                     | null | "" -> None
                     | p -> deserializeWithType p |> Some
-                noop()
-                ApiCall.Create()
+                let properties = njac.Properties.DeepClone<ApiCallProperties>()
+                let apiCall = ApiCall.Create(properties, valueParam)
+                apiCall.IOTags <- njac.IOTags
+                apiCall
                 |> replicateProperties njac
 
         | :? NjApiDef as njad ->
@@ -750,9 +767,15 @@ module Ds2JsonModule =
                 | :? ApiCall as ac ->
                     let rt = ac
                     let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
-                    NjApiCall.Create(ApiDef=rt.ApiDefGuid, InAddress=rt.InAddress, OutAddress=rt.OutAddress,
-                        InSymbol=rt.InSymbol, OutSymbol=rt.OutSymbol,
-                        ValueSpec=valueSpec, IOTags=rt.IOTags )
+                    let nj = NjApiCall.Create()
+                    nj.Properties.ApiDefGuid <- rt.Properties.ApiDefGuid
+                    nj.Properties.InAddress <- rt.Properties.InAddress
+                    nj.Properties.OutAddress <- rt.Properties.OutAddress
+                    nj.Properties.InSymbol <- rt.Properties.InSymbol
+                    nj.Properties.OutSymbol <- rt.Properties.OutSymbol
+                    nj.ValueSpec <- valueSpec
+                    nj.IOTags <- rt.IOTags
+                    nj
                     |> replicateProperties rt
                     :> INjUnique
 

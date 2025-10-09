@@ -301,11 +301,11 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:ApiCall, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.ApiDefGuid <> y.ApiDefGuid then yield Diff(nameof x.ApiDefGuid, x, y, nullUpdateSql)
-                if x.InAddress  <> y.InAddress  then yield Diff(nameof x.InAddress, x, y, nullUpdateSql)
-                if x.OutAddress <> y.OutAddress then yield Diff(nameof x.OutAddress, x, y, nullUpdateSql)
-                if x.InSymbol   <> y.InSymbol   then yield Diff(nameof x.InSymbol, x, y, nullUpdateSql)
-                if x.OutSymbol  <> y.OutSymbol  then yield Diff(nameof x.OutSymbol, x, y, nullUpdateSql)
+                if x.Properties.ApiDefGuid <> y.Properties.ApiDefGuid then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.ApiDefGuid), x, y, nullUpdateSql)
+                if x.Properties.InAddress  <> y.Properties.InAddress  then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.InAddress), x, y, nullUpdateSql)
+                if x.Properties.OutAddress <> y.Properties.OutAddress then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.OutAddress), x, y, nullUpdateSql)
+                if x.Properties.InSymbol   <> y.Properties.InSymbol   then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.InSymbol), x, y, nullUpdateSql)
+                if x.Properties.OutSymbol  <> y.Properties.OutSymbol  then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.OutSymbol), x, y, nullUpdateSql)
                 if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y, nullUpdateSql)
                 if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))

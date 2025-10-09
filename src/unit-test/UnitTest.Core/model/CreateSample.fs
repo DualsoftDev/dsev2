@@ -53,23 +53,23 @@ module CreateSampleModule =
             rtApiCall1a <-
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- rtApiDef1.Guid
+                    z.Properties.ApiDefGuid <- rtApiDef1.Guid
                     z.Name      <- "ApiCall1a"
-                    z.InAddress <- "InAddressX0"
-                    z.OutAddress<- "OutAddress1"
-                    z.InSymbol  <- "XTag1"
-                    z.OutSymbol <- "YTag2"
+                    z.Properties.InAddress <- "InAddressX0"
+                    z.Properties.OutAddress<- "OutAddress1"
+                    z.Properties.InSymbol  <- "XTag1"
+                    z.Properties.OutSymbol <- "YTag2"
                     z.ValueSpec <- Some valueSpec
                     )
             rtApiCall1b <-
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- rtApiDef2.Guid
+                    z.Properties.ApiDefGuid <- rtApiDef2.Guid
                     z.Name      <- "ApiCall1b"
-                    z.InAddress <- "X0"
-                    z.OutAddress<- "Y1"
-                    z.InSymbol  <- "XTag2"
-                    z.OutSymbol <- "YTag2")
+                    z.Properties.InAddress <- "X0"
+                    z.Properties.OutAddress<- "Y1"
+                    z.Properties.InSymbol  <- "XTag2"
+                    z.Properties.OutSymbol <- "YTag2")
             [rtApiCall1a; rtApiCall1b] |> rtSystem.AddApiCalls
 
             rtFlow <-

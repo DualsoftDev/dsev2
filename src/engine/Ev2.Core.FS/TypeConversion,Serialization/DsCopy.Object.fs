@@ -103,30 +103,19 @@ module internal rec DsObjectCopyImpl =
 
     /// flow 는 이제 UI 요소를 직접 소유하지 않음 (System이 소유)
     type Flow with // replicate
-        /// Flow 복제. 지정된 newFlow 객체에 현재 플로우의 내용을 복사
-        member x.replicate() =
-            Flow.Create()
-            |> replicateProperties x
-
-
-    //type DsButton with // replicate
-    //    member x.replicate() = DsButton.Create() |> replicateProperties x
-
+        member x.replicate() = Flow.Create() |> replicateProperties x
 
     type Call with // replicate
-        member x.replicate() =
-            Call.Create()
-            |> replicateProperties x
+        member x.replicate() = Call.Create() |> replicateProperties x
 
     type ApiCall with // replicate
         member x.replicate() =
-            ApiCall.Create(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
+            let props = x.Properties.DeepClone<ApiCallProperties>()
+            ApiCall.Create(props, x.ValueSpec)
             |> replicateProperties x
 
     type ApiDef with // replicate
-        member x.replicate() =
-            ApiDef.Create()
-            |> replicateProperties x
+        member x.replicate() = ApiDef.Create() |> replicateProperties x
 
     type ArrowBetweenWorks with // replicate
         member x.replicate() =
@@ -201,7 +190,7 @@ module DsObjectCopyAPIModule =
             ()
 
         | :? ApiCall as rt ->
-            rt.ApiDefGuid <- map[rt.ApiDefGuid]
+            rt.Properties.ApiDefGuid <- map[rt.Properties.ApiDefGuid]
             ()
 
 

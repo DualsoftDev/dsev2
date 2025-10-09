@@ -301,7 +301,7 @@ module ORMTypeConversionModule =
                         with _ -> failwith "ERROR: ApiDef not accessible"
                     let valueParam = rt.ValueSpec |-> _.Jsonize() |? null
                     let ioTagsJson = rt.IOTagsJson
-                    new ORMApiCall(pid, apiDefId, rt.InAddress, rt.OutAddress, rt.InSymbol, rt.OutSymbol, valueParam, ioTagsJson, rt.PropertiesJson)
+                    new ORMApiCall(pid, apiDefId, rt.Properties.InAddress, rt.Properties.OutAddress, rt.Properties.InSymbol, rt.Properties.OutSymbol, valueParam, ioTagsJson, rt.PropertiesJson)
                     |> ormReplicateProperties rt
 
                 | _ -> failwith $"Not yet for conversion into ORM.{x.GetType()}={x}"

@@ -276,13 +276,13 @@ module CoreFromAas =
             // IOTags 역직렬화
             let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
 
-            let apiCall = NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , ApiDef = apiDef
-                , InAddress = inAddress
-                , OutAddress = outAddress
-                , InSymbol = inSymbol
-                , OutSymbol = outSymbol
-                , ValueSpec = valueSpec)
+            let apiCall = NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter)
+            apiCall.Properties.ApiDefGuid <- apiDef
+            apiCall.Properties.InAddress <- inAddress
+            apiCall.Properties.OutAddress <- outAddress
+            apiCall.Properties.InSymbol <- inSymbol
+            apiCall.Properties.OutSymbol <- outSymbol
+            apiCall.ValueSpec <- valueSpec
             if not (System.String.IsNullOrEmpty(ioTagsStr)) then
                 apiCall.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)
             apiCall

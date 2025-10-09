@@ -66,71 +66,71 @@ module CreateSampleWithHelloDsModule =
             let apiCallDev1Adv =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev1.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
+                    z.Properties.ApiDefGuid <- dev1.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
                     z.Name      <- "apiCallDev1ADV"
-                    z.InAddress <- "P00000"
-                    z.OutAddress<- "P00040")
+                    z.Properties.InAddress <- "P00000"
+                    z.Properties.OutAddress<- "P00040")
 
             let apiCallDev1Ret =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev1.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
+                    z.Properties.ApiDefGuid <- dev1.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
                     z.Name      <- "apiCallDev1RET"
-                    z.InAddress <- "P00001"
-                    z.OutAddress<- "P00041")
+                    z.Properties.InAddress <- "P00001"
+                    z.Properties.OutAddress<- "P00041")
 
             //
             let apiCallDev2Adv =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev2.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
+                    z.Properties.ApiDefGuid <- dev2.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
                     z.Name      <- "apiCallDev2ADV"
-                    z.InAddress <- "P00000"
-                    z.OutAddress<- "P00040")
+                    z.Properties.InAddress <- "P00000"
+                    z.Properties.OutAddress<- "P00040")
 
             let apiCallDev2Ret =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev2.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
+                    z.Properties.ApiDefGuid <- dev2.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
                     z.Name      <- "apiCallDev2RET"
-                    z.InAddress <- "P00001"
-                    z.OutAddress<- "P00041")
+                    z.Properties.InAddress <- "P00001"
+                    z.Properties.OutAddress<- "P00041")
 
 
             //
             let apiCallDev3Adv =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev3.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
+                    z.Properties.ApiDefGuid <- dev3.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
                     z.Name      <- "apiCallDev3ADV"
-                    z.InAddress <- "P00000"
-                    z.OutAddress<- "P00040")
+                    z.Properties.InAddress <- "P00000"
+                    z.Properties.OutAddress<- "P00040")
 
             let apiCallDev3Ret =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev3.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
+                    z.Properties.ApiDefGuid <- dev3.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
                     z.Name      <- "apiCallDev3RET"
-                    z.InAddress <- "P00001"
-                    z.OutAddress<- "P00041")
+                    z.Properties.InAddress <- "P00001"
+                    z.Properties.OutAddress<- "P00041")
 
 
             //
             let apiCallDev4Adv =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev4.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
+                    z.Properties.ApiDefGuid <- dev4.ApiDefs.Find(fun x -> x.Name = "ApiDefADV").Guid
                     z.Name      <- "apiCallDev4ADV"
-                    z.InAddress <- "P00000"
-                    z.OutAddress<- "P00040")
+                    z.Properties.InAddress <- "P00000"
+                    z.Properties.OutAddress<- "P00040")
 
             let apiCallDev4Ret =
                 ApiCall.Create()
                 |> tee (fun z ->
-                    z.ApiDefGuid <- dev4.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
+                    z.Properties.ApiDefGuid <- dev4.ApiDefs.Find(fun x -> x.Name = "ApiDefRET").Guid
                     z.Name      <- "apiCallDev4RET"
-                    z.InAddress <- "P00001"
-                    z.OutAddress<- "P00041")
+                    z.Properties.InAddress <- "P00001"
+                    z.Properties.OutAddress<- "P00041")
 
             [
                 apiCallDev1Adv; apiCallDev1Ret

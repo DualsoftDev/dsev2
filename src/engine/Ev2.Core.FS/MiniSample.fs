@@ -150,11 +150,11 @@ module MiniSample =
             ApiCall.Create()
             |> tee (fun a ->
                 a.Name <- "TestApiCall"
-                a.ApiDefGuid <- apiDefAdv.Guid
-                a.InAddress <- "X0"
-                a.OutAddress <- "Y0"
-                a.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
-                a.OutSymbol <- "Y0" // OutSymbol 추가 (NOT NULL constraint)
+                a.Properties.ApiDefGuid <- apiDefAdv.Guid
+                a.Properties.InAddress <- "X0"
+                a.Properties.OutAddress <- "Y0"
+                a.Properties.InSymbol <- "X0"  // InSymbol 추가 (NOT NULL constraint)
+                a.Properties.OutSymbol <- "Y0" // OutSymbol 추가 (NOT NULL constraint)
                 // ApiCall에 IOTags 샘플 추가
                 a.IOTags <-
                     let inTag = TagWithSpec<int>("ApiCallIn", "DB10.DBW0", ValueSpec<int>.Single 25)

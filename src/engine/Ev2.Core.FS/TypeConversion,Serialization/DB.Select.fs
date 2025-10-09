@@ -137,15 +137,16 @@ module internal Db2DsImpl =
                     let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
 
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
-                    let ioTags = IOTagsWithSpec.FromJson orm.IOTagsJson
-                    let apiCall = ApiCall.Create()
-                    apiCall.ApiDefGuid <- apiDefGuid
-                    apiCall.InAddress <- orm.InAddress
-                    apiCall.OutAddress <- orm.OutAddress
-                    apiCall.InSymbol <- orm.InSymbol
-                    apiCall.OutSymbol <- orm.OutSymbol
-                    apiCall.ValueSpec <- valueParam
-                    apiCall.IOTags <- ioTags
+                    let properties =
+                        ApiCallProperties.Create()
+                        |> tee(fun p ->
+                            p.ApiDefGuid <- apiDefGuid
+                            p.InAddress <- orm.InAddress
+                            p.OutAddress <- orm.OutAddress
+                            p.InSymbol <- orm.InSymbol
+                            p.OutSymbol <- orm.OutSymbol)
+                    let apiCall = ApiCall.Create(properties, valueParam)
+                    apiCall.IOTags <- IOTagsWithSpec.FromJson orm.IOTagsJson
                     apiCall
                     |> replicateProperties orm
                     |> tee (fun ac -> ac.PropertiesJson <- orm.PropertiesJson)
