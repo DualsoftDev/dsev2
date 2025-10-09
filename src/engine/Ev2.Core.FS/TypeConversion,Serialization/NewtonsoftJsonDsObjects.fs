@@ -485,12 +485,12 @@ module rec NewtonsoftJsonObjects =
 
         | :? NjApiCall as njac ->
             njac.RuntimeObject <-
-                let valueParam =
+                let valueSpec =
                     match njac.ValueSpec with
                     | null | "" -> None
                     | p -> deserializeWithType p |> Some
                 let properties = njac.Properties.DeepClone<ApiCallProperties>()
-                let apiCall = ApiCall.Create(properties, valueParam)
+                let apiCall = ApiCall.Create(properties, valueSpec)
                 apiCall.IOTags <- njac.IOTags
                 apiCall
                 |> replicateProperties njac

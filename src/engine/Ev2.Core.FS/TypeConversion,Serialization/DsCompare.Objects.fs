@@ -120,11 +120,7 @@ module rec DsCompareObjects =
                     p1.Properties()
                     |> Seq.filter (fun prop ->
                         let p = p2.Property(prop.Name)
-                        let xxx, yyy = prop.Value.ToString(), p.Value.ToString()
-                        if xxx <> yyy then
-                            noop()
-                        //p = null || not (JToken.DeepEquals(prop.Value, p.Value)))
-                        p = null || prop.Value.ToString() <> p.Value.ToString()) //not (JToken.DeepEquals(prop.Value, p.Value)))
+                        p = null || prop.Value.ToString() <> p.Value.ToString())
                     |> Seq.map (fun prop -> $"Properties::{prop.Name}", (prop.Value, p2.Property(prop.Name).Value))
 
                 // p2에만 있는 속성들 (p1에 없는 것들)
@@ -171,8 +167,6 @@ module rec DsCompareObjects =
                 if c.ParentGuid && ( xp <> yp ) then
                     yield Diff("Parent", x, y, nullUpdateSql)
             }
-
-    let private sortByGuid (xs:#IRtUnique list): #IRtUnique list = xs |> List.sortBy (fun x -> x.GetGuid())
 
     /// xs 와 ys 의 collection 간 비교
     let private computeDiffRecursively<'T when 'T :> IRtUnique>
@@ -276,9 +270,6 @@ module rec DsCompareObjects =
                 if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))
-
-                let d1 = (x.Properties.ApiCallGuids, y.Properties.ApiCallGuids) ||> setEqual |> not
-                if d1 then yield Diff("ApiCalls", x, y, nullUpdateSql)
             }
 
     type ApiDef with // ComputeDiff
@@ -354,6 +345,5 @@ module rec DsCompareObjects =
             }
         member x.IsEqual(y:Project, ?criteria:Cc) =
             let criteria = criteria |? Cc()
-            let xxx = x.ComputeDiff(y, criteria) |> toArray
             x.ComputeDiff(y, criteria)
             |> forall (function Equal -> true | _-> false)      // _.IsEqual() : not working

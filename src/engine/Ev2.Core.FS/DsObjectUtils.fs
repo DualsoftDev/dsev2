@@ -329,7 +329,7 @@ module DsObjectUtilsModule =
 
 
     type ApiCall with // Create
-       static member Create(properties: ApiCallProperties, valueSpec:IValueSpec option) =
+        static member Create(properties: ApiCallProperties, valueSpec:IValueSpec option) =
            if isNull (box properties) then invalidArg "properties" "ApiCallProperties 인스턴스가 null 입니다."
            let apiCall = createExtended<ApiCall>()
            let cloned = properties.DeepClone<ApiCallProperties>()
@@ -337,17 +337,6 @@ module DsObjectUtilsModule =
            apiCall.ValueSpec <- valueSpec
            apiCall
 
-       static member Create(properties: ApiCallProperties) =
-           ApiCall.Create(properties, Option<IValueSpec>.None)
-
-       static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
-           let props = ApiCallProperties.Create()
-           props.ApiDefGuid <- apiDefGuid
-           props.InAddress <- inAddress
-           props.OutAddress <- outAddress
-           props.InSymbol <- inSymbol
-           props.OutSymbol <- outSymbol
-           ApiCall.Create(props, valueSpec)
 
     type IArrow with // GetArrowType, GetSource, GetTarget
         member x.GetSource(): Unique =

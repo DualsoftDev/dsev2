@@ -160,8 +160,6 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
 and DsSystem() = // Create
     inherit ProjectEntity()
 
-    let mutable xxxx = DsSystemProperties.Create()
-
     member val PolymorphicJsonEntities = PolymorphicJsonCollection<BLCABase>() with get, set
     member x.Entities = x.PolymorphicJsonEntities.Items
     member x.AddEntitiy(entity:BLCABase) = entity.RawParent <- Some x;  x.PolymorphicJsonEntities.AddItem entity//; x.UpdateDateTime()
@@ -172,13 +170,7 @@ and DsSystem() = // Create
     member x.Conditions = x.Entities.OfType<DsCondition>() |> toArray
     member x.Actions    = x.Entities.OfType<DsAction>()    |> toArray
 
-    //member val Properties = DsSystemProperties.Create() with get, set
-    member x.Properties
-        with get() = xxxx
-        and set v =
-            if isItNull v then
-                fail()
-            xxxx <- v
+    member val Properties = DsSystemProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
@@ -258,8 +250,7 @@ and DsButton() = // Create
 
     interface IRtButton
 
-    [<JsonIgnore>] member val Properties = ButtonProperties.Create() with get, set
-    [<JsonProperty("Properties")>]
+    member val Properties = ButtonProperties.Create() with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ButtonProperties> json
@@ -271,8 +262,7 @@ and Lamp() = // Create
 
     interface IRtLamp
 
-    [<JsonIgnore>] member val Properties = LampProperties.Create() with get, set
-    [<JsonProperty("Properties")>]
+    member val Properties = LampProperties.Create() with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<LampProperties> json
@@ -284,8 +274,7 @@ and DsCondition() = // Create
 
     interface IRtCondition
 
-    [<JsonIgnore>] member val Properties = ConditionProperties.Create() with get, set
-    [<JsonProperty("Properties")>]
+    member val Properties = ConditionProperties.Create() with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ConditionProperties> json
@@ -297,8 +286,7 @@ and DsAction() = // Create
 
     interface IRtAction
 
-    [<JsonIgnore>] member val Properties = ActionProperties.Create() with get, set
-    [<JsonProperty("Properties")>]
+    member val Properties = ActionProperties.Create() with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
         and set (json:string) = x.Properties <- JsonPolymorphic.FromJson<ActionProperties> json
@@ -386,40 +374,20 @@ and Call() = // Create
         call
 
 
-and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Callers, ApiDef
-    inSymbol:string, outSymbol:string,
-    valueSpec:IValueSpec option
-) as this =
+and ApiCall(valueSpec:IValueSpec option) =
     inherit DsSystemEntity()
 
-    let mutable properties = ApiCallProperties.Create()
-
-    let assignProperties (value:ApiCallProperties) =
-        if isNull (box value) then invalidArg "value" "ApiCallProperties 인스턴스가 null 입니다."
-        value.RawParent <- Some this
-        properties <- value
-
-    do
-        assignProperties properties
-        properties.ApiDefGuid <- apiDefGuid
-        properties.InAddress  <- inAddress
-        properties.OutAddress <- outAddress
-        properties.InSymbol   <- inSymbol
-        properties.OutSymbol  <- outSymbol
-
-    new() = new ApiCall(emptyGuid, nullString, nullString, nullString, nullString, Option<IValueSpec>.None)
+    new() = new ApiCall(Option<IValueSpec>.None)
 
     static member Create() = createExtended<ApiCall>()
 
     interface IRtApiCall
-    member x.Properties
-        with get() = properties
-        and set value = assignProperties value
 
     member val ValueSpec = valueSpec with get, set
     member val IOTags = IOTagsWithSpec() with get, set
     member x.IOTagsJson = IOTagsWithSpec.Jsonize x.IOTags
 
+    member val Properties = ApiCallProperties.Create() with get, set
     member x.PropertiesJsonB = x.PropertiesJson |> JsonbString
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
