@@ -3,10 +3,8 @@ namespace rec Dual.Ev2.Aas
 (* Core 를 AAS Json/Xml 로 변환하기 위한 실제 코드 *)
 
 
-open Dual.Common.Core.FS
 open Dual.Common.Base
 open Ev2.Core.FS
-open Newtonsoft.Json
 
 #nowarn FS0044 // obsolete 사용 허용
 
@@ -41,32 +39,20 @@ module CoreToAas =
 
                 match x with
                 | :? NjProject as prj ->
-                    let propertiesJson =
-                        if isNull (box prj.Properties) then null
-                        else prj.Properties.ToJson()
-                    JObj().TrySetProperty(propertiesJson, "Properties")
+                    JObj().TrySetProperty(prj.Properties.ToJson(), "Properties")
 
                 | :? NjSystem as sys ->
                     let sp = sys.Properties
-                    JObj().TrySetProperty(sys.IRI,                      nameof sys.IRI)
-                    JObj().TrySetProperty(sp.Author,                   "Author")
-                    JObj().TrySetProperty(sp.EngineVersion.ToString(), "EngineVersion")
-                    JObj().TrySetProperty(sp.LangVersion.ToString(),   "LangVersion")
-                    JObj().TrySetProperty(sp.Description,              "Description")
-                    JObj().TrySetProperty(sp.DateTime,                 "DateTime")
+                    JObj().TrySetProperty(sys.IRI, nameof sys.IRI)
                     let entitiesJson =
                         let serialized = sys.PolymorphicJsonEntities.SerializedItems
                         if isNull serialized || serialized.Count = 0 then null else serialized.ToString()
                     JObj().TrySetProperty(entitiesJson, "Entities")
-                    let propertiesJson =
-                        if isNull (box sys.Properties) then null
-                        else sys.Properties.ToJson()
-
                     (* AASX 내에 Properties 에 대한 type 정보 $type 등이 없어도
                        JsonPolymorphic.FromJson<'T>가 직접 createExtended<'T>()를 호출해
                        실제 인스턴스를 먼저 만든 뒤 JsonConvert.PopulateObject로 값을 채우므로 확장 가능.
                      *)
-                    JObj().TrySetProperty(propertiesJson, "Properties")
+                    JObj().TrySetProperty(sys.Properties.ToJson(), "Properties")
 
                 | :? NjApiCall as apiCall ->
                     JObj().TrySetProperty(apiCall.ApiDef,     nameof apiCall.ApiDef)       // Guid
@@ -78,28 +64,20 @@ module CoreToAas =
                     // IOTags 직렬화
                     let ioTagsStr = IOTagsWithSpec.Jsonize apiCall.IOTags
                     JObj().TrySetProperty(ioTagsStr, nameof apiCall.IOTags)
-                    let apiCallPropsJson =
-                        if isNull (box apiCall.Properties) then null
-                        else apiCall.Properties.ToJson()
-                    JObj().TrySetProperty(apiCallPropsJson, "Properties")
+                    JObj().TrySetProperty(apiCall.Properties.ToJson(), "Properties")
 
                 | :? NjCall as call ->
-                    JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
+                    //JObj().TrySetProperty(call.IsDisabled,       nameof call.IsDisabled)
                     // JSON 문자열로 변환하여 AASX에 저장
                     let commonConditionsStr = if call.CommonConditionsObj.Count = 0 then null else call.CommonConditionsObj.ToJson()
                     let autoConditionsStr   = if call.AutoConditionsObj.Count = 0 then null else call.AutoConditionsObj.ToJson()
                     JObj().TrySetProperty(commonConditionsStr, nameof call.CommonConditions)
                     JObj().TrySetProperty(autoConditionsStr,   nameof call.AutoConditions)
-                    if call.Timeout.IsSome then
-                        JObj().TrySetProperty(call.Timeout.Value,     nameof call.Timeout)
-                    JObj().TrySetProperty(call.CallType.ToString(),   nameof call.CallType)
-                    JObj().TrySetProperty(sprintf "%A" call.ApiCalls, nameof call.ApiCalls)      // Guid[] type
-                    if call.Status.NonNullAny() then
-                        JObj().TrySetProperty(call.Status, nameof call.Status)
-                    let callPropsJson =
-                        if isNull (box call.Properties) then null
-                        else call.Properties.ToJson()
-                    JObj().TrySetProperty(callPropsJson, "Properties")
+
+                    //JObj().TrySetProperty(sprintf "%A" call.ApiCalls, nameof call.ApiCalls)      // Guid[] type
+                    JObj().TrySetProperty(call.Status, nameof call.Status)
+
+                    JObj().TrySetProperty(call.Properties.ToJson(), "Properties")
 
                 | :? NjArrow as arrow ->
                     JObj().TrySetProperty(arrow.Source, nameof arrow.Source)
@@ -108,34 +86,14 @@ module CoreToAas =
 
                 | :? NjWork as work ->
                     JObj().TrySetProperty(work.FlowGuid,     nameof work.FlowGuid)
-                    //JObj().TrySetProperty(work.Motion,       nameof work.Motion)
-                    //JObj().TrySetProperty(work.Script,       nameof work.Script)
-                    //JObj().TrySetProperty(work.ExternalStart, nameof work.ExternalStart)
-                    //JObj().TrySetProperty(work.IsFinished,   nameof work.IsFinished)
-                    //JObj().TrySetProperty(work.NumRepeat,  nameof work.NumRepeat)
-                    //JObj().TrySetProperty(work.Period,     nameof work.Period)
-                    //JObj().TrySetProperty(work.Delay,      nameof work.Delay)
-                    if work.Status.NonNullAny() then
-                        JObj().TrySetProperty(work.Status, nameof work.Status)
-                    let workPropsJson =
-                        if isNull (box work.Properties) then null
-                        else work.Properties.ToJson()
-                    JObj().TrySetProperty(workPropsJson, "Properties")
+                    JObj().TrySetProperty(work.Status, nameof work.Status)
+                    JObj().TrySetProperty(work.Properties.ToJson(), "Properties")
 
                 | :? NjApiDef as apiDef ->
-                    //JObj().TrySetProperty(apiDef.IsPush,   nameof apiDef.IsPush)
-                    //JObj().TrySetProperty(apiDef.TxGuid,   nameof apiDef.TxGuid)
-                    //JObj().TrySetProperty(apiDef.RxGuid,   nameof apiDef.RxGuid)
-                    let apiDefPropsJson =
-                        if isNull (box apiDef.Properties) then null
-                        else apiDef.Properties.ToJson()
-                    JObj().TrySetProperty(apiDefPropsJson, "Properties")
+                    JObj().TrySetProperty(apiDef.Properties.ToJson(), "Properties")
 
                 | :? NjFlow as flow ->
-                    let flowPropsJson =
-                        if isNull (box flow.Properties) then null
-                        else flow.Properties.ToJson()
-                    JObj().TrySetProperty(flowPropsJson, "Properties")
+                    JObj().TrySetProperty(flow.Properties.ToJson(), "Properties")
                 | unknown ->
                     failwith $"ERROR: Unknown type {unknown.GetType().Name}"
 

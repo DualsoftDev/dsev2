@@ -88,13 +88,7 @@ module CoreFromAas =
     type NjSystem with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjSystem =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
-            let dateTime      = smc.GetPropValue "DateTime"  |> DateTime.Parse
             let iri           = smc.TryGetPropValue "IRI" |?? (fun () -> logWarn $"No IRI on system {name}"; null)
-            let engineVersion = smc.TryGetPropValue "EngineVersion" |-> Version.Parse |? Version(0, 0)
-            let langVersion   = smc.TryGetPropValue "LangVersion"   |-> Version.Parse |? Version(0, 0)
-            let author        = smc.TryGetPropValue "Author" |? null
-            let description   = smc.TryGetPropValue "Description" |? null
-
 
             let apiDefs  = smc.GetSMC "ApiDefs"  >>= (_.GetSMC("ApiDef"))  |-> NjApiDef.FromSMC
             let apiCalls = smc.GetSMC "ApiCalls" >>= (_.GetSMC("ApiCall")) |-> NjApiCall.FromSMC
@@ -126,13 +120,7 @@ module CoreFromAas =
                     let props = JsonPolymorphic.FromJson<DsSystemProperties>(propertiesJson)
                     props.RawParent <- Some (system :> Unique)
                     system.Properties <- props
-
-                let sp = system.Properties
-                author |> Option.ofObj |> iter (fun v -> sp.Author <- v)
-                sp.EngineVersion <- engineVersion
-                sp.LangVersion <- langVersion
-                description |> Option.ofObj |> iter (fun v -> sp.Description <- v)
-                sp.DateTime <- dateTime)
+                )
 
     type NjArrow with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjArrow =
@@ -232,9 +220,6 @@ module CoreFromAas =
             // Status4 는 저장 안함.  DB 전용
 
             let njCall = NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , IsDisabled = isDisabled
-                , Timeout = timeout
-                , CallType = callType
                 , Status4 = status4
                 , ApiCalls = apiCalls)     // Guid[] type
             // object properties 설정
@@ -267,21 +252,12 @@ module CoreFromAas =
         static member FromSMC(smc: SubmodelElementCollection): NjApiCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id} = smc.ReadUniqueInfo()
 
-            let apiDef     = smc.GetPropValue    "ApiDef"     |> Guid.Parse
-            let inAddress  = smc.TryGetPropValue "InAddress"  |? null
-            let outAddress = smc.TryGetPropValue "OutAddress" |? null
-            let inSymbol   = smc.TryGetPropValue "InSymbol"   |? null
-            let outSymbol  = smc.TryGetPropValue "OutSymbol"  |? null
             let valueSpec  = smc.TryGetPropValue "ValueSpec"  |? null
             // IOTags 역직렬화
             let ioTagsStr = smc.TryGetPropValue "IOTags" |? null
 
             let apiCall = NjApiCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter)
-            apiCall.Properties.ApiDefGuid <- apiDef
-            apiCall.Properties.InAddress <- inAddress
-            apiCall.Properties.OutAddress <- outAddress
-            apiCall.Properties.InSymbol <- inSymbol
-            apiCall.Properties.OutSymbol <- outSymbol
+
             apiCall.ValueSpec <- valueSpec
             if not (System.String.IsNullOrEmpty(ioTagsStr)) then
                 apiCall.IOTags <- JsonConvert.DeserializeObject<IOTagsWithSpec>(ioTagsStr)

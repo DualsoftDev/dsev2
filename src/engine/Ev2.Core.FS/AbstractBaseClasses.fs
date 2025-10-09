@@ -5,6 +5,7 @@ open System.Linq
 open System.Data
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+open Newtonsoft.Json.Converters;
 
 open Dual.Common.Base
 open Dual.Common.Db.FS
@@ -111,16 +112,21 @@ type WorkProperties() =
 
 type CallProperties() =
     inherit DsPropertiesBase()
-    member val CallType = DbCallType.Normal with get, set
+    [<JsonConverter(typeof<StringEnumConverter>)>] member val CallType = DbCallType.Normal with get, set
     member val IsDisabled = false with get, set
     member val Timeout = Option<int>.None with get, set
-    member val ApiCallGuids = ResizeArray<Guid>() with get, set
+    [<JsonProperty("ApiCalls")>]member val ApiCallGuids = ResizeArray<Guid>() with get, set
     member val CallMemo = nullString with get, set
     static member Create() = createExtendedProperties<CallProperties>()
+    member x.ShouldSerializeApiCalls()         = x.ApiCallGuids.NonNullAny()
+    member x.ShouldSerializeCallType()         = x.CallType <> DbCallType.Normal
+    member x.ShouldSerializeIsDisabled()       = x.IsDisabled
+    member x.ShouldSerializeTimeout()          = x.Timeout.IsSome
+
 
 type ApiCallProperties() =
     inherit DsPropertiesBase()
-    member val ApiDefGuid = emptyGuid with get, set
+    [<JsonProperty("ApiDef")>] member val ApiDefGuid = emptyGuid with get, set
     member val InAddress = nullString with get, set
     member val OutAddress = nullString with get, set
     member val InSymbol = nullString with get, set
@@ -170,17 +176,3 @@ type [<AbstractClass>] BLCABase() =
     [<JsonIgnore>] member val Flows = ResizeArray<IRtFlow>() with get, set
 
 
-//[<AutoOpen>]
-//module internal DsPropertiesHelper =
-//    let inline assignFromJson<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
-//        (owner:'TOwner) (create: unit -> 'T) (json:string) : 'T
-//        =
-//        json |> String.toOption |-> JsonPolymorphic.FromJson<'T> |?? create
-//        |> tee ( setParentI owner )
-
-
-//    let inline cloneProperties<'TOwner,'T when 'TOwner :> Unique and 'T :> DsPropertiesBase and 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>
-//        (owner:'TOwner) (source:'T) (create: unit -> 'T) : 'T
-//        =
-//        source |> toOption |-> _.DeepClone<'T>() |?? create
-//        |> tee ( setParentI owner )

@@ -229,10 +229,6 @@ module rec NewtonsoftJsonObjects =
         member val AutoConditionsObj   = ApiCallValueSpecs() with get, set
         [<JsonIgnore>]
         member val CommonConditionsObj = ApiCallValueSpecs() with get, set
-        [<JsonProperty(Order = 105)>]
-        member val IsDisabled = false            with get, set
-        [<JsonProperty(Order = 106)>]
-        member val Timeout    = Option<int>.None with get, set
 
         [<JsonIgnore>]
         member val Status4 = Option<DbStatus4>.None with get, set
@@ -244,13 +240,9 @@ module rec NewtonsoftJsonObjects =
         static member Create() = createExtended<NjCall>()
 
         (* 특별한 조건일 때에만 json 표출 *)
-        member x.ShouldSerializeApiCalls()         = x.ApiCalls.NonNullAny()
-        member x.ShouldSerializeIsDisabled()       = x.IsDisabled
-        member x.ShouldSerializeCallType()         = x.CallType <> DbCallType.Normal.ToString()
         member x.ShouldSerializeStatus()           = x.Status4.IsSome
         member x.ShouldSerializeAutoConditions()   = x.AutoConditionsObj.NonNullAny()
         member x.ShouldSerializeCommonConditions() = x.CommonConditionsObj.NonNullAny()
-        member x.ShouldSerializeTimeout()          = x.Timeout.IsSome
 
         [<OnSerializing>]
         member x.OnSerializingMethod (ctx: StreamingContext) =
@@ -277,20 +269,6 @@ module rec NewtonsoftJsonObjects =
                 x.CommonConditionsObj <- ApiCallValueSpecs.FromJson(x.CommonConditions)
 
             fwdOnNsJsonDeserialized x
-
-        member x.Initialize(
-            callType:string, apiCalls:Guid[],
-            autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs,
-            isDisabled:bool, timeout:int option
-        ) =
-            x.CallType   <- callType
-            x.ApiCalls   <- apiCalls
-            x.IsDisabled <- isDisabled
-            x.Timeout    <- timeout
-            x.AutoConditionsObj <- autoConditions
-            x.CommonConditionsObj <- commonConditions
-            x
-
 
     type NjApiCall() = // Create
         inherit NjSystemEntity()
@@ -533,14 +511,7 @@ module rec NewtonsoftJsonObjects =
             njc.RuntimeObject <-
                 let acs = njc.AutoConditionsObj
                 let ccs = njc.CommonConditionsObj
-                let properties =
-                    njc.Properties.DeepClone<CallProperties>()
-                    |> tee(fun p ->
-                        p.CallType <- callType
-                        p.IsDisabled <- njc.IsDisabled
-                        p.Timeout <- njc.Timeout
-                        p.ApiCallGuids.Clear()
-                        p.ApiCallGuids.AddRange(njc.ApiCalls))
+                let properties = njc.Properties.DeepClone<CallProperties>()
                 Call.Create(acs, ccs, properties)
                 |> replicateProperties njc
             ()
@@ -737,14 +708,7 @@ module Ds2JsonModule =
                     let ac = rt.AutoConditions
                     let cc = rt.CommonConditions
                     NjCall.Create()
-                    |> replicateProperties rt
-                    |> tee (fun z ->
-                        let apiCalls = rt.Properties.ApiCallGuids |> toArray
-                        z.Initialize(rt.Properties.CallType.ToString(), apiCalls, ac, cc, rt.Properties.IsDisabled, rt.Properties.Timeout) |> ignore
-                        z.Status4 <- rt.Status4)
-                    :> INjUnique
-
-
+                    |> replicateProperties rt :> INjUnique
 
 
                 | (:? ArrowBetweenWorks | :? ArrowBetweenCalls) ->
@@ -768,11 +732,6 @@ module Ds2JsonModule =
                     let rt = ac
                     let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
                     let nj = NjApiCall.Create()
-                    nj.Properties.ApiDefGuid <- rt.Properties.ApiDefGuid
-                    nj.Properties.InAddress <- rt.Properties.InAddress
-                    nj.Properties.OutAddress <- rt.Properties.OutAddress
-                    nj.Properties.InSymbol <- rt.Properties.InSymbol
-                    nj.Properties.OutSymbol <- rt.Properties.OutSymbol
                     nj.ValueSpec <- valueSpec
                     nj.IOTags <- rt.IOTags
                     nj
