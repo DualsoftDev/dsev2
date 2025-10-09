@@ -281,8 +281,7 @@ module rec NewtonsoftJsonObjects =
         inherit NjSystemEntity()
         interface INjApiDef
 
-        [<JsonProperty(Order = 99)>]
-        member val Properties = ApiDefProperties.Create() with get, set
+        [<JsonProperty(Order = 99)>] member val Properties = ApiDefProperties.Create() with get, set
 
         static member Create() = createExtended<NjApiDef>()
 

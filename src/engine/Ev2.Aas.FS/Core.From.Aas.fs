@@ -55,11 +55,6 @@ module CoreFromAas =
             let project = submodel.GetSMCWithSemanticKey "Project" |> head
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = project.ReadUniqueInfo()
 
-            let database    = project.TryGetPropValue "Database"    >>= DU.tryParse<DbProvider>
-            let dateTime    = project.TryGetPropValue "DateTime"    |-> DateTime.Parse
-            let author      = project.TryGetPropValue "Author"
-            let description = project.TryGetPropValue "Description"
-            let version     = project.TryGetPropValue "Version"     |-> Version.Parse
             let propertiesJsonOpt = project.TryGetPropValue "Properties"
 
             let activeSystems   = project.GetSMC "ActiveSystems"  >>= (_.GetSMC("System")) |-> NjSystem.FromSMC
@@ -74,12 +69,6 @@ module CoreFromAas =
                     propertiesJsonOpt
                     |-> JsonPolymorphic.FromJson<ProjectProperties>
                     |?? ProjectProperties.Create
-                props.RawParent <- Some njp
-                database |> iter (fun db -> props.Database <- db)
-                author |> iter (fun v -> props.Author <- v)
-                version |> iter (fun v -> props.Version <- v)
-                description |> iter (fun v -> props.Description <- v)
-                dateTime |> iter (fun v -> props.DateTime <- v)
                 njp.Properties <- props)
             |> tee (readAasExtensionProperties project)
 
@@ -153,13 +142,6 @@ module CoreFromAas =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
 
             let flowGuid      = smc.TryGetPropValue       "FlowGuid"      |? null
-            let motion        = smc.TryGetPropValue       "Motion"        |? null
-            let script        = smc.TryGetPropValue       "Script"        |? null
-            let externalStart = smc.TryGetPropValue       "ExternalStart" |? null
-            let isFinished    = smc.TryGetPropValue<bool> "IsFinished"    |? false
-            let numRepeat     = smc.TryGetPropValue<int>  "NumRepeat"     |? 0
-            let period        = smc.TryGetPropValue<int>  "Period"        |? 0
-            let delay         = smc.TryGetPropValue<int>  "Delay"         |? 0
             let status4       = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
             let propertiesJson = smc.TryGetPropValue "Properties" |? null
 
@@ -180,13 +162,6 @@ module CoreFromAas =
                     work.Properties <- props
                 else
                     let props = work.Properties
-                    props.Motion <- motion
-                    props.Script <- script
-                    props.ExternalStart <- externalStart
-                    props.IsFinished <- isFinished
-                    props.NumRepeat <- numRepeat
-                    props.Period <- period
-                    props.Delay <- delay
                     props.RawParent <- Some (work :> Unique))
             |> tee (readAasExtensionProperties smc)
 
