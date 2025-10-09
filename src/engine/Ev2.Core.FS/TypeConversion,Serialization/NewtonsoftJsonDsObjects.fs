@@ -212,11 +212,6 @@ module rec NewtonsoftJsonObjects =
 
         interface INjCall
         [<JsonProperty(Order = 99)>] member val Properties = CallProperties.Create() with get, set
-        [<JsonProperty(Order = 101)>]
-        member val CallType = DbCallType.Normal.ToString() with get, set
-        /// Json serialize 용 API call 에 대한 Guid
-        [<JsonProperty(Order = 102)>]
-        member val ApiCalls   = [||]:Guid[]     with get, set
 
         // JSON 에는 RGFH 상태값 을 저장하지 않는다.   member val Status4    = DbStatus4.Ready with get, set
 
@@ -275,31 +270,11 @@ module rec NewtonsoftJsonObjects =
 
         interface INjApiCall
         [<JsonProperty(Order = 99)>] member val Properties = ApiCallProperties.Create() with get, set
-        member x.ApiDef
-            with get() = x.Properties.ApiDefGuid
-            and set value = x.Properties.ApiDefGuid <- value
-        member x.InAddress
-            with get() = x.Properties.InAddress
-            and set value = x.Properties.InAddress <- value
-        member x.OutAddress
-            with get() = x.Properties.OutAddress
-            and set value = x.Properties.OutAddress <- value
-        member x.InSymbol
-            with get() = x.Properties.InSymbol
-            and set value = x.Properties.InSymbol <- value
-        member x.OutSymbol
-            with get() = x.Properties.OutSymbol
-            and set value = x.Properties.OutSymbol <- value
         [<JsonConverter(typeof<RawJsonConverter>)>]
         member val ValueSpec  = nullString with get, set
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjApiCall>()
         member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
-        member x.ShouldSerializeApiDef() = false
-        member x.ShouldSerializeInAddress() = false
-        member x.ShouldSerializeOutAddress() = false
-        member x.ShouldSerializeInSymbol() = false
-        member x.ShouldSerializeOutSymbol() = false
 
 
     type NjApiDef() = // Create
@@ -310,8 +285,6 @@ module rec NewtonsoftJsonObjects =
         member val Properties = ApiDefProperties.Create() with get, set
 
         static member Create() = createExtended<NjApiDef>()
-        member x.ShouldSerializeTxGuid() = x.Properties.TxGuid <> Guid.Empty
-        member x.ShouldSerializeRxGuid() = x.Properties.RxGuid <> Guid.Empty
 
 
 
@@ -502,12 +475,6 @@ module rec NewtonsoftJsonObjects =
             ()
 
         | :? NjCall as njc ->
-            let callType =
-                njc.CallType
-                |> Enum.TryParse<DbCallType>
-                |> tryParseToOption
-                |? DbCallType.Normal
-
             njc.RuntimeObject <-
                 let acs = njc.AutoConditionsObj
                 let ccs = njc.CommonConditionsObj
@@ -552,8 +519,7 @@ module Ds2JsonModule =
         /// DsProject 를 JSON 문자열로 변환
         member x.ToJson():string =
             (* Withh context version *)
-            let settings = EmJson.CreateDefaultSettings()
-            settings.DateFormatString <- DateFormatString
+            let settings = EmJson.CreateDefaultSettings(DateFormatString = DateFormatString)
             // Json deserialize 중에 필요한 담을 그릇 준비
             //settings.Context <- new StreamingContext(StreamingContextStates.All, Nj2RtBag())
 
@@ -604,8 +570,7 @@ module Ds2JsonModule =
     type NjSystem with // ExportToJson, ExportToJsonFile, ImportFromJson
         /// DsSystem 를 JSON 문자열로 변환
         member x.ExportToJson(): string =
-            let settings = EmJson.CreateDefaultSettings()
-            settings.DateFormatString <- DateFormatString
+            let settings = EmJson.CreateDefaultSettings(DateFormatString = DateFormatString)
             EmJson.ToJson(x, settings)
         member x.ExportToJsonFile(jsonFilePath:string): string =
             x.ExportToJson()
@@ -660,7 +625,7 @@ module Ds2JsonModule =
                         // TypeFactory로 생성된 경우 RuntimeObject가 설정되지 않을 수 있음
                         if not (isItNotNull n.RuntimeObject) then n.RuntimeObject <- rt
                         verify (n.RuntimeObject = rt)) // serialization 연결 고리
-                    :> INjUnique
+                    :> NjUnique
 
                 | :? DsSystem as s ->
                     let rt = s
@@ -669,12 +634,6 @@ module Ds2JsonModule =
                         , PolymorphicJsonEntities=rt.PolymorphicJsonEntities.DeepClone())
                     |> replicateProperties rt
                     |> tee (fun z ->
-                        let zp = z.Properties
-                        zp.Author <- rp.Author
-                        zp.EngineVersion <- rp.EngineVersion
-                        zp.LangVersion <- rp.LangVersion
-                        zp.Description <- rp.Description
-                        zp.DateTime <- rp.DateTime
                         let flows      = rt.Flows      |-> _.ToNj<NjFlow>()      |> toArray
                         let works      = rt.Works      |-> _.ToNj<NjWork>()      |> toArray
                         let arrows     = rt.Arrows     |-> _.ToNj<NjArrow>()     |> toArray
@@ -682,13 +641,9 @@ module Ds2JsonModule =
                         let apiCalls   = rt.ApiCalls   |-> _.ToNj<NjApiCall>()   |> toArray
                         z.Initialize(flows, works, arrows, apiDefs, apiCalls) |> ignore
                     ) |> tee(fun n -> verify (n.RuntimeObject = rt)) // serialization 연결 고리
-                    :> INjUnique
+                    :> NjUnique
 
-                | :? Flow as f ->
-                    let rt = f
-                    NjFlow.Create()
-                    |> replicateProperties rt
-                    :> INjUnique
+                | :? Flow as f ->  NjFlow.Create() |> replicateProperties f :> NjUnique
 
                 | :? Work as w ->
                     let rt = w
@@ -700,15 +655,10 @@ module Ds2JsonModule =
                         let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
                         z.Initialize(calls, arrows, flowGuid) |> ignore
                         z.Status4 <- rt.Status4)
-                    :> INjUnique
+                    :> NjUnique
 
 
-                | :? Call as c ->
-                    let rt = c
-                    let ac = rt.AutoConditions
-                    let cc = rt.CommonConditions
-                    NjCall.Create()
-                    |> replicateProperties rt :> INjUnique
+                | :? Call as c -> NjCall.Create() |> replicateProperties c :> NjUnique
 
 
                 | (:? ArrowBetweenWorks | :? ArrowBetweenCalls) ->
@@ -725,26 +675,14 @@ module Ds2JsonModule =
                             z.Target <- guid2str (arrow.GetTarget().Guid)
                             z.Type <- arrow.GetArrowType().ToString()
                         | _ -> ()
-                    ) :> INjUnique
+                    ) :> NjUnique
 
 
-                | :? ApiCall as ac ->
-                    let rt = ac
-                    let valueSpec = rt.ValueSpec |-> _.Jsonize() |? null
-                    let nj = NjApiCall.Create()
-                    nj.ValueSpec <- valueSpec
-                    nj.IOTags <- rt.IOTags
-                    nj
-                    |> replicateProperties rt
-                    :> INjUnique
+                | :? ApiCall as ac -> NjApiCall.Create() |> replicateProperties ac :> NjUnique
 
-                | :? ApiDef as ad ->
-                    NjApiDef.Create()
-                    |> replicateProperties ad
-                    :> INjUnique
+                | :? ApiDef  as ad -> NjApiDef.Create() |> replicateProperties ad :> NjUnique
 
                 | _ -> failwith $"Unsupported runtime type: {rtObj.GetType().Name}"
-                :?> NjUnique
 
             njObj.RuntimeObject <- rtObj // serialization 연결 고리
             onNsJsonSerializing njObj

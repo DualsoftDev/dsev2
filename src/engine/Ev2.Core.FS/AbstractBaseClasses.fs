@@ -142,6 +142,8 @@ type ApiDefProperties() =
     member val Period = 0 with get, set
     member val ApiDefMemo = nullString with get, set
     static member Create() = createExtendedProperties<ApiDefProperties>()
+    member x.ShouldSerializeTxGuid() = x.TxGuid <> Guid.Empty
+    member x.ShouldSerializeRxGuid() = x.RxGuid <> Guid.Empty
 
 
 type ButtonProperties() =

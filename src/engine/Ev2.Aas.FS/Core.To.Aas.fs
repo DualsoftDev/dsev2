@@ -55,11 +55,6 @@ module CoreToAas =
                     JObj().TrySetProperty(sys.Properties.ToJson(), "Properties")
 
                 | :? NjApiCall as apiCall ->
-                    JObj().TrySetProperty(apiCall.ApiDef,     nameof apiCall.ApiDef)       // Guid
-                    JObj().TrySetProperty(apiCall.Properties.InAddress,  nameof apiCall.Properties.InAddress)
-                    JObj().TrySetProperty(apiCall.Properties.OutAddress, nameof apiCall.Properties.OutAddress)
-                    JObj().TrySetProperty(apiCall.Properties.InSymbol,   nameof apiCall.Properties.InSymbol)
-                    JObj().TrySetProperty(apiCall.Properties.OutSymbol,  nameof apiCall.Properties.OutSymbol)
                     JObj().TrySetProperty(apiCall.ValueSpec,  nameof apiCall.ValueSpec)
                     // IOTags 직렬화
                     let ioTagsStr = IOTagsWithSpec.Jsonize apiCall.IOTags

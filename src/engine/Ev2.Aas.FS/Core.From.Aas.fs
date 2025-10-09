@@ -193,12 +193,9 @@ module CoreFromAas =
     type NjCall with // FromSMC
         static member FromSMC(smc: SubmodelElementCollection): NjCall =
             let { Name=name; Guid=guid; Parameter=parameter; Id=id } = smc.ReadUniqueInfo()
-            let isDisabled       = smc.TryGetPropValue<bool> "IsDisabled"       |? false
             // JSON 문자열로 저장된 조건들을 ApiCallValueSpecs로 변환
             let commonConditionsStr = smc.TryGetPropValue "CommonConditions" |? null
             let autoConditionsStr   = smc.TryGetPropValue "AutoConditions"   |? null
-            let timeout  = smc.TryGetPropValue<int>    "Timeout"
-            let callType = smc.TryGetPropValue         "CallType" |? null
             let status4  = smc.TryGetPropValue<string> "Status"   >>= (Enum.TryParse<DbStatus4> >> tryParseToOption)
             let commonConditions =
                 if commonConditionsStr.IsNullOrEmpty() then ApiCallValueSpecs()
@@ -208,20 +205,9 @@ module CoreFromAas =
                 else ApiCallValueSpecs.FromJson(autoConditionsStr)
 
 
-            let apiCalls =
-                match smc.TryGetPropValue "ApiCalls" with
-                | Some guids ->
-                    let inner = guids.Trim().TrimStart('[', '|').TrimEnd('|', ']').Trim()
-                    if String.IsNullOrEmpty(inner) then [||]
-                    else inner.Split(';') |-> Guid.Parse
-                | None -> [||]
-
-
             // Status4 는 저장 안함.  DB 전용
 
-            let njCall = NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter
-                , Status4 = status4
-                , ApiCalls = apiCalls)     // Guid[] type
+            let njCall = NjCall.Create(Name=name, Guid=guid, Id=id, Parameter=parameter, Status4 = status4)
             // object properties 설정
             njCall.AutoConditionsObj <- autoConditions
             njCall.CommonConditionsObj <- commonConditions

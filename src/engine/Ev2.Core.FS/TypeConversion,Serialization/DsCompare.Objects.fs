@@ -232,12 +232,6 @@ module rec DsCompareObjects =
                 yield! (x.Actions   , y.Actions   , criteria) |||> computeDiffRecursively
 
                 if x.IRI           <> y.IRI           then yield Diff(nameof x.IRI, x, y, nullUpdateSql)
-                //if x.Properties.Author        <> y.Properties.Author        then yield Diff("Author", x, y, nullUpdateSql)
-                //if x.Properties.EngineVersion <> y.Properties.EngineVersion then yield Diff("EngineVersion", x, y, nullUpdateSql)
-                //if x.Properties.LangVersion   <> y.Properties.LangVersion   then yield Diff("LangVersion", x, y, nullUpdateSql)
-                //if x.Properties.Description   <> y.Properties.Description   then yield Diff("Description", x, y, nullUpdateSql)
-                //if criteria.DateTime && !! x.Properties.DateTime.IsEqualTime(y.Properties.DateTime) then
-                //    yield Diff("DateTime", x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))
             }
         member x.ComputeDiff(y) = x.ComputeDiff(y, Cc())
@@ -280,9 +274,6 @@ module rec DsCompareObjects =
                 // ApiCallValueSpecs 비교를 위해 JSON으로 변환하여 비교
                 if x.AutoConditions.ToJson() <> y.AutoConditions.ToJson() then yield Diff(nameof x.AutoConditions, x, y, nullUpdateSql)
                 if x.CommonConditions.ToJson() <> y.CommonConditions.ToJson() then yield Diff(nameof x.CommonConditions, x, y, nullUpdateSql)
-                if x.Properties.CallType   <> y.Properties.CallType    then yield Diff(nameof (Unchecked.defaultof<CallProperties>.CallType), x, y, nullUpdateSql)
-                if x.Properties.IsDisabled <> y.Properties.IsDisabled  then yield Diff(nameof (Unchecked.defaultof<CallProperties>.IsDisabled), x, y, nullUpdateSql)
-                if x.Properties.Timeout    <> y.Properties.Timeout     then yield Diff(nameof (Unchecked.defaultof<CallProperties>.Timeout), x, y, nullUpdateSql)
                 if criteria.RuntimeStatus && x.Status4 <> y.Status4 then yield Diff("Status", x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))
 
@@ -301,11 +292,6 @@ module rec DsCompareObjects =
         member x.ComputeDiff(y:ApiCall, criteria:Cc): Cr seq =
             seq {
                 yield! x.ComputeDiffUnique(y, criteria)
-                if x.Properties.ApiDefGuid <> y.Properties.ApiDefGuid then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.ApiDefGuid), x, y, nullUpdateSql)
-                if x.Properties.InAddress  <> y.Properties.InAddress  then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.InAddress), x, y, nullUpdateSql)
-                if x.Properties.OutAddress <> y.Properties.OutAddress then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.OutAddress), x, y, nullUpdateSql)
-                if x.Properties.InSymbol   <> y.Properties.InSymbol   then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.InSymbol), x, y, nullUpdateSql)
-                if x.Properties.OutSymbol  <> y.Properties.OutSymbol  then yield Diff(nameof (Unchecked.defaultof<ApiCallProperties>.OutSymbol), x, y, nullUpdateSql)
                 if x.ValueSpec  <> y.ValueSpec  then yield Diff(nameof x.ValueSpec, x, y, nullUpdateSql)
                 if x.IOTagsJson <> y.IOTagsJson then yield Diff(nameof x.IOTagsJson, x, y, nullUpdateSql)
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))
