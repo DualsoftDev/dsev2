@@ -134,7 +134,9 @@ module internal Db2DsImpl =
                 for orm in orms do
 
                     // orm.ApiDefId -> rtApiDef -> _.Guid
-                    let apiDefGuid = rtApiDefs.First(fun z -> z.Id = Some orm.ApiDefId).Guid
+                    let apiDefGuid =
+                        let ormProperties = orm.PropertiesJson |> JsonPolymorphic.FromJson<ApiCallProperties>
+                        rtApiDefs.First(fun z -> z.Guid = ormProperties.ApiDefGuid).Guid
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
                     ApiCall.Create(ApiCallProperties.Create(), valueParam)
                     |> replicateProperties orm

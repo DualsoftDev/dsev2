@@ -199,21 +199,13 @@ module ORMTypesModule =
         member val ApiCallId = apiCallId with get, set
 
     //type ORMApiCall(systemId:Id) =
-    type ORMApiCall(systemId:Id, apiDefId:Id // ValueSpecHint
-        , inAddress:string, outAddress:string
-        , inSymbol:string, outSymbol:string
-        , valueSpec:string, ioTagsJson:string, propertiesJson:string
+    type ORMApiCall(systemId:Id, apiDefId:Id, valueSpec:string, ioTagsJson:string, propertiesJson:string
     ) =
         inherit ORMSystemEntity(systemId)
 
-        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString, nullString, nullString, nullString, nullString)
+        new() = new ORMApiCall(-1, -1, nullString, nullString, nullString)
         interface IORMApiCall
         member val ApiDefId = apiDefId with get, set
-
-        member val InAddress   = inAddress   with get, set
-        member val OutAddress  = outAddress  with get, set
-        member val InSymbol    = inSymbol    with get, set
-        member val OutSymbol   = outSymbol   with get, set
         member val ValueSpec   = valueSpec with get, set
         member val IOTagsJson  = ioTagsJson with get, set
         member val Properties  = propertiesJson with get, set

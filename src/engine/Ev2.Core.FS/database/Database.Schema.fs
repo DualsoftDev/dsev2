@@ -212,10 +212,6 @@ CREATE VIEW {k Vn.ApiCall} AS
         x.{k "id"}
         , x.{k "name"}
         , x.{k "parameter"}
-        , x.{k "inAddress"}
-        , x.{k "outAddress"}
-        , x.{k "inSymbol"}
-        , x.{k "outSymbol"}
         , x.{k "valueSpec"}
         , x.{k "valueSpecHint"}
         {jsonbColumns}
@@ -343,11 +339,6 @@ CREATE TABLE {k Tn.Work}( {sqlUniqWithName()}
 
 CREATE TABLE {k Tn.ApiCall}( {sqlUniqWithName()}
     , {k "systemId"}        {intKeyType} NOT NULL
-    , {k "inAddress"}       TEXT NOT NULL
-    , {k "outAddress"}      TEXT NOT NULL
-    , {k "inSymbol"}        TEXT NOT NULL
-    , {k "outSymbol"}       TEXT NOT NULL
-
     -- Value 에 대해서는 Database column 에 욱여넣기 힘듦.  문자열 규약이 필요.  e.g. "1.0", "(1, 10)", "(, 3.14)", "[5, 10)",
     , {k "valueSpec"}       {jsonb}
     , {k "valueSpecHint"}   TEXT

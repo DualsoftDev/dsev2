@@ -274,7 +274,7 @@ module rec NewtonsoftJsonObjects =
         member val ValueSpec  = nullString with get, set
         member val IOTags = IOTagsWithSpec() with get, set
         static member Create() = createExtended<NjApiCall>()
-        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag)
+        member x.ShouldSerializeIOTags() = isItNotNull(x.IOTags) && (isItNotNull(x.IOTags.InTag) || isItNotNull(x.IOTags.OutTag))
 
 
     type NjApiDef() = // Create

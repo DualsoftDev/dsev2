@@ -127,6 +127,7 @@ type CallProperties() =
 type ApiCallProperties() =
     inherit DsPropertiesBase()
     [<JsonProperty("ApiDef")>] member val ApiDefGuid = emptyGuid with get, set
+    member val ApiDefId = Option<Id>.None with get, set
     member val InAddress = nullString with get, set
     member val OutAddress = nullString with get, set
     member val InSymbol = nullString with get, set

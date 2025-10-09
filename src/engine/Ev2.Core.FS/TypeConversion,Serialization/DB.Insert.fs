@@ -169,8 +169,8 @@ module internal DbInsertModule =
                     let apiCallId =
                         conn.Insert(
                             $"""INSERT INTO {Tn.ApiCall}
-                                       (guid,   parameter,                    name, systemId,  apiDefId,  inAddress,   outAddress, inSymbol,   outSymbol, valueSpec,                      ioTagsJson, valueSpecHint, properties)
-                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @InAddress, @OutAddress, @InSymbol, @OutSymbol, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint, @PropertiesJsonB);"""
+                                       (guid,   parameter,                    name, systemId,   apiDefId,  valueSpec,                      ioTagsJson, valueSpecHint, properties)
+                                VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @SystemId, @ApiDefId, @ValueSpec{dbApi.DapperJsonB}, @IOTagsJson, @ValueSpecHint, @PropertiesJsonB);"""
                             , orm, tr)
 
                     rt.Id <- Some apiCallId

@@ -154,15 +154,15 @@ module internal DsCopyModule =
             // ApiCall, NjApiCall, ORMApiCall ->   // 미처리 : ApiDefGuid, Status4
             let s =
                 match sbx with
-                | :? ApiCall    as s -> {| InAddress=s.Properties.InAddress; OutAddress=s.Properties.OutAddress; InSymbol=s.Properties.InSymbol; OutSymbol=s.Properties.OutSymbol; ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; IOTags=s.IOTags; (*ApiDef;*) |}
-                | :? NjApiCall  as s -> {| InAddress=s.Properties.InAddress; OutAddress=s.Properties.OutAddress; InSymbol=s.Properties.InSymbol; OutSymbol=s.Properties.OutSymbol; ValueSpec=s.ValueSpec; IOTags=s.IOTags; (*ApiDef;*) |}
-                | :? ORMApiCall as s -> {| InAddress=s.InAddress; OutAddress=s.OutAddress; InSymbol=s.InSymbol; OutSymbol=s.OutSymbol; ValueSpec=s.ValueSpec;                         IOTags=IOTagsWithSpec.FromJson s.IOTagsJson |}
+                | :? ApiCall    as s -> {| ValueSpec=s.ValueSpec |-> _.Jsonize() |? null; IOTags=s.IOTags; (*ApiDef;*)                 Properties=s.PropertiesJson|}
+                | :? NjApiCall  as s -> {| ValueSpec=s.ValueSpec;                         IOTags=s.IOTags; (*ApiDef;*)                 Properties=s.Properties.ToJson()|}
+                | :? ORMApiCall as s -> {| ValueSpec=s.ValueSpec;                         IOTags=IOTagsWithSpec.FromJson s.IOTagsJson; Properties=s.PropertiesJson|}
                 | _ -> fail()
 
             match dbx with
-            | :? ApiCall    as d -> d.Properties.InAddress<-s.InAddress; d.Properties.OutAddress<-s.OutAddress; d.Properties.InSymbol<-s.InSymbol; d.Properties.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType; d.IOTags<-s.IOTags
-            | :? NjApiCall  as d -> d.Properties.InAddress<-s.InAddress; d.Properties.OutAddress<-s.OutAddress; d.Properties.InSymbol<-s.InSymbol; d.Properties.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec; d.IOTags<-s.IOTags
-            | :? ORMApiCall as d -> d.InAddress<-s.InAddress; d.OutAddress<-s.OutAddress; d.InSymbol<-s.InSymbol; d.OutSymbol<-s.OutSymbol; d.ValueSpec<-s.ValueSpec;                                         d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
+            | :? ApiCall    as d -> d.Properties<-JsonPolymorphic.FromJson<ApiCallProperties> s.Properties; d.ValueSpec<-s.ValueSpec |> Option.ofObj |-> deserializeWithType; d.IOTags<-s.IOTags
+            | :? NjApiCall  as d -> d.Properties<-JsonPolymorphic.FromJson<ApiCallProperties> s.Properties; d.ValueSpec<-s.ValueSpec;                                         d.IOTags<-s.IOTags
+            | :? ORMApiCall as d -> d.Properties<-s.Properties;                                             d.ValueSpec<-s.ValueSpec;                                         d.IOTagsJson<-IOTagsWithSpec.Jsonize s.IOTags
             | _ -> fail()
 
         | :? IDsApiDef ->
