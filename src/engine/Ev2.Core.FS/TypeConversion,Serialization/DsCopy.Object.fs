@@ -107,15 +107,8 @@ module internal rec DsObjectCopyImpl =
     type Flow with // replicate
         /// Flow 복제. 지정된 newFlow 객체에 현재 플로우의 내용을 복사
         member x.replicate() =
-            // 원본 객체와 동일한 타입으로 복제 (확장 속성 유지)
             Flow.Create()
-            |> tee(fun newFlow ->
-                // Flow는 이제 UI 요소를 직접 소유하지 않으므로 속성 복사만 수행
-                // UI 요소들은 System 레벨에서 복제됨
-
-                // 속성 복사 (GUID 포함)
-                newFlow |> replicateProperties x |> ignore
-                newFlow.PropertiesJson <- x.PropertiesJson )
+            |> replicateProperties x
 
 
     //type DsButton with // replicate
@@ -137,40 +130,18 @@ module internal rec DsObjectCopyImpl =
             let autoConditions = ApiCallValueSpecs(x.AutoConditions :> seq<_>)
             let commonConditions = ApiCallValueSpecs(x.CommonConditions :> seq<_>)
             Call.Create(autoConditions, commonConditions, properties)
-            |> tee(fun newCall ->
-                // ApiCall들은 시스템 레벨에서 복제되므로 그대로 유지
-                let apiCallGuids = x.Properties.ApiCallGuids |> toList
-
-                // 복제된 데이터를 newCall에 설정
-                newCall.Properties.CallType   <- x.Properties.CallType
-                newCall.Properties.IsDisabled <- x.Properties.IsDisabled
-                newCall.Properties.Timeout    <- x.Properties.Timeout
-
-                newCall.AutoConditions.Clear()
-                newCall.CommonConditions.Clear()
-                newCall.Properties.ApiCallGuids.Clear()
-                newCall.AutoConditions.AddRange(x.AutoConditions)
-                newCall.CommonConditions.AddRange(x.CommonConditions)
-                newCall.Properties.ApiCallGuids.AddRange(apiCallGuids)
-
-                newCall
-                |> replicateProperties x
-                |> tee(fun c ->
-                    c.Status4 <- x.Status4
-                    c.PropertiesJson <- x.PropertiesJson))
+            |> replicateProperties x
 
 
     type ApiCall with // replicate
         member x.replicate() =
             ApiCall.Create(x.ApiDefGuid, x.InAddress, x.OutAddress, x.InSymbol, x.OutSymbol, x.ValueSpec)
             |> replicateProperties x
-            |> tee(fun apiCall -> apiCall.PropertiesJson <- x.PropertiesJson)
 
     type ApiDef with // replicate
         member x.replicate() =
             ApiDef.Create()
             |> replicateProperties x
-            |> tee(fun apiDef -> apiDef.PropertiesJson <- x.PropertiesJson)
 
     type ArrowBetweenWorks with // replicate
         member x.replicate() =

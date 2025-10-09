@@ -435,14 +435,12 @@ and ApiCall(apiDefGuid:Guid, inAddress:string, outAddress:string, // Create, Cal
         and set (v:ApiDef) = x.ApiDefGuid <- v.Guid
 
 
-and ApiDef(isPush:bool, txGuid:Guid, rxGuid:Guid) = // Create, ApiUsers
+and ApiDef() = // Create, ApiUsers
     inherit DsSystemEntity()
 
     let getWork (system:DsSystem option) (guid:Guid): Work =
         system >>= (fun s -> s.Works |> tryFind (fun w -> w.Guid = guid))
         |? getNull<Work>()
-
-    new() = new ApiDef(true, emptyGuid, emptyGuid)
 
     static member Create() = createExtended<ApiDef>()
 

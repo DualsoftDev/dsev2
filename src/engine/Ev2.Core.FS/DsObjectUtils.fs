@@ -261,15 +261,6 @@ module rec TmpCompatibility =
 
 
 
-
-
-
-
-
-
-
-
-
 // C# 친화적인 정적 팩토리 클래스 - C#에서 직접 접근 가능
 type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExtended, CreateDsSystem, CreateDsSystemExtended, CreateFlow, CreateProject, CreateWork, CreateWorkExtended, InitializeAppSettings
 
@@ -289,41 +280,6 @@ type DsObjectFactory = // CreateApiCall, CreateApiDef, CreateCall, CreateCallExt
     static member CreateFlow()     = createExtended<Flow>()
     static member CreateApiDef()   = createExtended<ApiDef>()
     static member CreateApiCall()  = createExtended<ApiCall>()
-
-
-
-    /// 새로운 패턴: createExtended 사용
-    static member CreateWorkExtended() = createExtended<Work>()
-
-    static member CreateWork(calls:Call seq, arrows:ArrowBetweenCalls seq, flowGuid:Guid option) =
-        let calls = calls |> toList
-        let arrows = arrows |> toList
-
-        let work = createExtended<Work>()
-        work.RawCalls.AddRange(calls)
-        work.RawArrows.AddRange(arrows)
-        work.FlowGuid <- flowGuid
-        calls  |> iter (setParentI work)
-        arrows |> iter (setParentI work)
-        work
-
-
-    /// 새로운 패턴: createExtended 사용
-    static member CreateCallExtended() = createExtended<Call>()
-
-    static member CreateCall(callType:DbCallType, apiCalls:ApiCall seq,
-        autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, isDisabled:bool, timeout:int option
-    ) =
-        let call = createExtended<Call>()
-        call.Properties.CallType <- callType
-        call.Properties.IsDisabled <- isDisabled
-        call.Properties.Timeout <- timeout
-        call.AutoConditions <- autoConditions
-        call.CommonConditions <- commonConditions
-        let apiCallGuids = apiCalls |-> _.Guid
-        call.Properties.ApiCallGuids.AddRange(apiCallGuids)
-        apiCalls |> iter (setParentI call)
-        call
 
 
 
@@ -372,58 +328,17 @@ module DsObjectUtilsModule =
         static member Create() = createExtended<DsSystem>()
 
 
-    type Work with // Create
-        static member Create(calls:Call seq, arrows:ArrowBetweenCalls seq, flowGuid:Guid option) =
-            // 매개변수가 있는 경우 확장 타입에서 initialize
-            let work = createExtended<Work>()
-            work.RawCalls.AddRange(calls)
-            work.RawArrows.AddRange(arrows)
-            work.FlowGuid <- flowGuid
-            calls  |> iter (setParentI work)
-            arrows |> iter (setParentI work)
-            work
-
-        static member Create() = createExtended<Work>()
-
-
-
-    type Call with // Create
-        static member Create(autoConditions: ApiCallValueSpecs, commonConditions: ApiCallValueSpecs, properties: CallProperties) =
-            // 매개변수가 있는 경우 확장 타입에서 initialize
-            if isNull (box properties) then invalidArg "properties" "CallProperties 인스턴스가 null 입니다."
-
-            let call = createExtended<Call>()
-            call.AutoConditions <- autoConditions
-            call.CommonConditions <- commonConditions
-            call.Properties <- properties
-            call
-
-        static member Create() = createExtended<Call>()
-
-
-    // Flow는 더 이상 Create 메서드로 Button 등을 받지 않음
-
-    type Flow with
-        static member Create() = createExtended<Flow>()
-
-
-    type ApiDef with // Create
-        static member Create() =
-            createExtended<ApiDef>()
-
     type ApiCall with // Create
-        static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
-            // 매개변수가 있는 경우 확장 타입에서 initialize
-            let apiCall = createExtended<ApiCall>()
-            apiCall.ApiDefGuid <- apiDefGuid
-            apiCall.InAddress <- inAddress
-            apiCall.OutAddress <- outAddress
-            apiCall.InSymbol <- inSymbol
-            apiCall.OutSymbol <- outSymbol
-            apiCall.ValueSpec <- valueSpec
-            apiCall
-
-        static member Create() = createExtended<ApiCall>()
+       static member Create(apiDefGuid:Guid, inAddress:string, outAddress:string, inSymbol:string, outSymbol:string, valueSpec:IValueSpec option) =
+           // 매개변수가 있는 경우 확장 타입에서 initialize
+           let apiCall = createExtended<ApiCall>()
+           apiCall.ApiDefGuid <- apiDefGuid
+           apiCall.InAddress <- inAddress
+           apiCall.OutAddress <- outAddress
+           apiCall.InSymbol <- inSymbol
+           apiCall.OutSymbol <- outSymbol
+           apiCall.ValueSpec <- valueSpec
+           apiCall
 
     type IArrow with // GetArrowType, GetSource, GetTarget
         member x.GetSource(): Unique =

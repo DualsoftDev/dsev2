@@ -537,11 +537,8 @@ module rec NewtonsoftJsonObjects =
                     | null | "" -> None
                     | p -> deserializeWithType p |> Some
                 noop()
-                ApiCall.Create(njac.ApiDef, njac.InAddress, njac.OutAddress, njac.InSymbol, njac.OutSymbol,
-                    valueParam)
+                ApiCall.Create()
                 |> replicateProperties njac
-                |> tee(fun ac ->
-                    ac.IOTags <- njac.IOTags)
 
         | :? NjApiDef as njad ->
             njad.RuntimeObject <-
