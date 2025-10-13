@@ -248,8 +248,6 @@ and Flow() = // Create
 and DsButton() = // Create
     inherit BLCABase()
 
-    interface IRtButton
-
     member val Properties = ButtonProperties.Create() with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
@@ -259,8 +257,6 @@ and DsButton() = // Create
 
 and Lamp() = // Create
     inherit BLCABase()
-
-    interface IRtLamp
 
     member val Properties = LampProperties.Create() with get, set
     member x.PropertiesJson
@@ -272,8 +268,6 @@ and Lamp() = // Create
 and DsCondition() = // Create
     inherit BLCABase()
 
-    interface IRtCondition
-
     member val Properties = ConditionProperties.Create() with get, set
     member x.PropertiesJson
         with get() = x.Properties.ToJson()
@@ -283,8 +277,6 @@ and DsCondition() = // Create
 
 and DsAction() = // Create
     inherit BLCABase()
-
-    interface IRtAction
 
     member val Properties = ActionProperties.Create() with get, set
     member x.PropertiesJson

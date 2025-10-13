@@ -65,12 +65,6 @@ module InterfaceModule =
     type IRtApiCall = inherit IRtUnique inherit IDsApiCall
     type IRtApiDef  = inherit IRtUnique inherit IDsApiDef
 
-    type IRtButton    = inherit IRtUnique inherit IDsButton
-    type IRtLamp      = inherit IRtUnique inherit IDsLamp
-    type IRtCondition = inherit IRtUnique inherit IDsCondition
-    type IRtAction    = inherit IRtUnique inherit IDsAction
-
-
     type INjProject = inherit INjUnique inherit IDsProject inherit IWithDateTime
     type INjSystem  = inherit INjUnique inherit IDsSystem inherit IWithDateTime
     type INjFlow    = inherit INjUnique inherit IDsFlow
