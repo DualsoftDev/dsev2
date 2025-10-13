@@ -1,0 +1,479 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="Ev2AasFS-Architecture" name="Ev2.Aas.FS Architecture">
+    <mxGraphModel dx="2400" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Ev2.Aas.FS - AAS 통합 타입 계층 구조" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             AasCore.Aas3_0 External Library Section
+             ======================================================================== -->
+        <mxCell id="aas-external-section" value="AasCore.Aas3_0 (External Library)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1F5FE;strokeColor=#01579B;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="360" height="620" as="geometry" />
+        </mxCell>
+
+        <!-- IClass Interface -->
+        <mxCell id="iclass" value="&lt;&lt;interface&gt;&gt;&#xa;IClass" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFF9C4;strokeColor=#F57F17;" vertex="1" parent="aas-external-section">
+          <mxGeometry x="20" y="40" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="iclass-methods" value="+ ToJson(): string&#xa;+ ToXml(): string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iclass">
+          <mxGeometry y="40" width="320" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Environment Class -->
+        <mxCell id="environment" value="Environment" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#B3E5FC;strokeColor=#01579B;" vertex="1" parent="aas-external-section">
+          <mxGeometry x="20" y="150" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="environment-props" value="+ Submodels: ISubmodel list&#xa;+ AssetAdministrationShells: IAssetAdministrationShell list&#xa;+ ConceptDescriptions: IConceptDescription list" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="environment">
+          <mxGeometry y="30" width="320" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Submodel Class -->
+        <mxCell id="submodel" value="Submodel" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#B3E5FC;strokeColor=#01579B;" vertex="1" parent="aas-external-section">
+          <mxGeometry x="20" y="290" width="320" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="submodel-props" value="+ Id: string&#xa;+ IdShort: string&#xa;+ SubmodelElements: ISubmodelElement list&#xa;+ SemanticId: IReference" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="submodel">
+          <mxGeometry y="30" width="320" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- SubmodelElementCollection Class -->
+        <mxCell id="smc" value="SubmodelElementCollection" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#B3E5FC;strokeColor=#01579B;" vertex="1" parent="aas-external-section">
+          <mxGeometry x="20" y="440" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="smc-props" value="+ IdShort: string&#xa;+ Value: ISubmodelElement list&#xa;+ SemanticId: IReference" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="smc">
+          <mxGeometry y="30" width="320" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Inheritance arrows for AAS types -->
+        <mxCell id="env-impl-iclass" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;endArrow=block;endFill=0;strokeWidth=2;" edge="1" parent="aas-external-section" source="environment" target="iclass">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="submodel-impl-iclass" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;dashed=1;endArrow=block;endFill=0;strokeWidth=2;" edge="1" parent="aas-external-section" source="submodel" target="iclass">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="smc-impl-iclass" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;dashed=1;endArrow=block;endFill=0;strokeWidth=2;" edge="1" parent="aas-external-section" source="smc" target="iclass">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             AAS Semantics Section
+             ======================================================================== -->
+        <mxCell id="semantics-section" value="AAS Semantics (의미론적 ID 매핑)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFF9C4;strokeColor=#F57F17;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="440" y="80" width="440" height="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aas-semantics" value="AasSemantics" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFFDE7;strokeColor=#F57F17;" vertex="1" parent="semantics-section">
+          <mxGeometry x="20" y="40" width="400" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="semantics-map" value="+ {static} map: Dictionary&lt;string, string&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontStyle=1" vertex="1" parent="aas-semantics">
+          <mxGeometry y="30" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="semantics-note" value="Semantic ID 매핑 예시:&#xa;&quot;Project&quot; → &quot;https://dualsoft.com/aas/project&quot;&#xa;&quot;System&quot; → &quot;https://dualsoft.com/aas/system&quot;&#xa;&quot;Work&quot; → &quot;https://dualsoft.com/aas/singular/work&quot;&#xa;&quot;Call&quot; → &quot;https://dualsoft.com/aas/singular/call&quot;&#xa;&quot;ApiDef&quot; → &quot;https://dualsoft.com/aas/singular/apiDef&quot;&#xa;&quot;ApiCall&quot; → &quot;https://dualsoft.com/aas/singular/apiCall&quot;" style="text;html=1;strokeColor=#F57F17;fillColor=#FFFDE7;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;spacingLeft=4;" vertex="1" parent="semantics-section">
+          <mxGeometry x="20" y="120" width="400" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             JSON Extensions Section
+             ======================================================================== -->
+        <mxCell id="json-extensions-section" value="JSON Extensions (JSON 확장 모듈)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="920" y="80" width="500" height="620" as="geometry" />
+        </mxCell>
+
+        <!-- Enums -->
+        <mxCell id="category-enum" value="&lt;&lt;enumeration&gt;&gt;&#xa;Category" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="json-extensions-section">
+          <mxGeometry x="20" y="40" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="category-values" value="PARAMETER&#xa;CONSTANT&#xa;VARIABLE" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="category-enum">
+          <mxGeometry y="40" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="modeltype-enum" value="&lt;&lt;enumeration&gt;&gt;&#xa;ModelType" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="json-extensions-section">
+          <mxGeometry x="260" y="40" width="220" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="modeltype-values" value="Property&#xa;Submodel&#xa;SubmodelElement&#xa;SubmodelElementCollection" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="modeltype-enum">
+          <mxGeometry y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="semanticidtype-enum" value="&lt;&lt;enumeration&gt;&gt;&#xa;SemanticIdType" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="json-extensions-section">
+          <mxGeometry x="20" y="160" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="semanticidtype-values" value="ExternalReference&#xa;GlobalReference&#xa;ModelReference" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="semanticidtype-enum">
+          <mxGeometry y="40" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="keytype-enum" value="&lt;&lt;enumeration&gt;&gt;&#xa;KeyType" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="json-extensions-section">
+          <mxGeometry x="260" y="180" width="220" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="keytype-values" value="ConceptDescription&#xa;Property&#xa;Submodel&#xa;SubmodelElementList" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="keytype-enum">
+          <mxGeometry y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- JsonObject Extensions -->
+        <mxCell id="jsonobject-ext" value="JsonObjectExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="json-extensions-section">
+          <mxGeometry x="20" y="320" width="460" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="jsonobject-methods" value="+ {static} Set(key: N, value): JObj&#xa;+ {static} SetValues(values): JObj&#xa;+ {static} AddValues(values): JObj&#xa;+ {static} SetTypedValue&lt;T&gt;(value): JObj option&#xa;+ {static} SetModelType(modelType): JObj&#xa;+ {static} SetSemantic(semanticKey): JObj&#xa;+ {static} TrySetProperty&lt;T&gt;(value, name): JObj option&#xa;+ {static} ToSjSMC(semanticKey, values): JObj" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="jsonobject-ext">
+          <mxGeometry y="30" width="460" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- J Helper Class -->
+        <mxCell id="j-helper" value="J (JSON 헬퍼 클래스)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#C8E6C9;strokeColor=#2E7D32;" vertex="1" parent="json-extensions-section">
+          <mxGeometry x="20" y="520" width="460" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="j-methods" value="+ {static} CreateJArr(jns): JArr&#xa;+ {static} CreateIClassFromJson&lt;T&gt;(json): T&#xa;+ {static} CreateIClassFromXml&lt;T&gt;(xml): T" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="j-helper">
+          <mxGeometry y="30" width="460" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             Core.To.Aas (Serialization) Section
+             ======================================================================== -->
+        <mxCell id="to-aas-section" value="Core.To.Aas (Serialization - 직렬화)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFE0B2;strokeColor=#E65100;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="740" width="500" height="620" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njunique-to-aas" value="NjUniqueToAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCCBC;strokeColor=#E65100;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="40" width="460" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="njunique-to-aas-methods" value="+ {static} CollectProperties(x: NjUnique): JNode[]&#xa;+ {static} tryCollectPropertiesNjUnique(x): JObj option seq&#xa;+ {static} tryCollectExtensionProperties(x): JObj option seq" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njunique-to-aas">
+          <mxGeometry y="30" width="460" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njproject-to-aas" value="NjProjectToAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCCBC;strokeColor=#E65100;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="160" width="460" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="njproject-to-aas-methods" value="+ {static} ToSjSMC(x: NjProject): JNode&#xa;+ {static} ToSjSubmodel(x: NjProject): JNode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njproject-to-aas">
+          <mxGeometry y="30" width="460" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njsystem-to-aas" value="NjSystemToAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCCBC;strokeColor=#E65100;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="260" width="460" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njsystem-to-aas-methods" value="+ {static} ToSjSMC(x: NjSystem): JNode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njsystem-to-aas">
+          <mxGeometry y="30" width="460" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njflow-to-aas" value="NjFlowToAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCCBC;strokeColor=#E65100;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="340" width="460" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njflow-to-aas-methods" value="+ {static} ToSjSMC(x: NjFlow): JNode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njflow-to-aas">
+          <mxGeometry y="30" width="460" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njwork-to-aas" value="NjWorkToAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCCBC;strokeColor=#E65100;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="420" width="460" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njwork-to-aas-methods" value="+ {static} ToSjSMC(x: NjWork): JNode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njwork-to-aas">
+          <mxGeometry y="30" width="460" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njcall-to-aas" value="NjCallToAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCCBC;strokeColor=#E65100;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="500" width="460" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njcall-to-aas-methods" value="+ {static} ToSjSMC(x: NjCall): JNode" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njcall-to-aas">
+          <mxGeometry y="30" width="460" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="to-aas-note" value="ToSjSMC: To System Json SubModel element Collection&#xa;NjProject → JNode (SubmodelElementCollection 형태)" style="text;html=1;strokeColor=#E65100;fillColor=#FFCCBC;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;spacingLeft=4;" vertex="1" parent="to-aas-section">
+          <mxGeometry x="20" y="580" width="460" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             Core.From.Aas (Deserialization) Section
+             ======================================================================== -->
+        <mxCell id="from-aas-section" value="Core.From.Aas (Deserialization - 역직렬화)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#F3E5F5;strokeColor=#4A148C;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="580" y="740" width="520" height="760" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njproject-from-aas" value="NjProjectFromAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1BEE7;strokeColor=#4A148C;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="40" width="480" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="njproject-from-aas-methods" value="+ {static} FromAasxFile(aasxPath): NjProject&#xa;+ {static} FromISubmodel(submodel): NjProject" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njproject-from-aas">
+          <mxGeometry y="30" width="480" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njsystem-from-aas" value="NjSystemFromAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1BEE7;strokeColor=#4A148C;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="140" width="480" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njsystem-from-aas-methods" value="+ {static} FromSMC(smc: SubmodelElementCollection): NjSystem" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njsystem-from-aas">
+          <mxGeometry y="30" width="480" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njflow-from-aas" value="NjFlowFromAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1BEE7;strokeColor=#4A148C;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="220" width="480" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njflow-from-aas-methods" value="+ {static} FromSMC(smc: SubmodelElementCollection): NjFlow" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njflow-from-aas">
+          <mxGeometry y="30" width="480" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njwork-from-aas" value="NjWorkFromAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1BEE7;strokeColor=#4A148C;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="300" width="480" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njwork-from-aas-methods" value="+ {static} FromSMC(smc: SubmodelElementCollection): NjWork" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njwork-from-aas">
+          <mxGeometry y="30" width="480" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njcall-from-aas" value="NjCallFromAasExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1BEE7;strokeColor=#4A148C;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="380" width="480" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="njcall-from-aas-methods" value="+ {static} FromSMC(smc: SubmodelElementCollection): NjCall" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njcall-from-aas">
+          <mxGeometry y="30" width="480" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="smc-extensions" value="SubmodelElementCollectionExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#E1BEE7;strokeColor=#4A148C;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="460" width="480" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="smc-extensions-methods" value="+ {static} ReadUniqueInfo(smc): UniqueInfo&#xa;+ {static} GetPropValue(smc, key): string&#xa;+ {static} TryGetPropValue(smc, key): string option&#xa;+ {static} GetSMC(smc, semanticKey): SubmodelElementCollection[]&#xa;+ {static} TryFindChildSMC(smc, semanticKey): SubmodelElementCollection option&#xa;+ {static} CollectChildrenSMCWithSemanticKey(smc, key): SubmodelElementCollection[]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="smc-extensions">
+          <mxGeometry y="30" width="480" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="from-aas-note" value="FromAasxFile: AASX 파일 → NjProject&#xa;FromISubmodel: AAS Submodel → NjProject&#xa;FromSMC: SubmodelElementCollection → NjXXX 객체" style="text;html=1;strokeColor=#4A148C;fillColor=#E1BEE7;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;spacingLeft=4;" vertex="1" parent="from-aas-section">
+          <mxGeometry x="20" y="640" width="480" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             AasX (AASX File Handling) Section
+             ======================================================================== -->
+        <mxCell id="aasx-section" value="AasX (AASX File Handling)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFEBEE;strokeColor=#B71C1C;strokeWidth=2;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="740" width="560" height="760" as="geometry" />
+        </mxCell>
+
+        <mxCell id="njproject-aasx" value="NjProjectAasxExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCDD2;strokeColor=#B71C1C;" vertex="1" parent="aasx-section">
+          <mxGeometry x="20" y="40" width="520" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="njproject-aasx-methods" value="+ {static} ToSjENV(x: NjProject): JObj&#xa;+ {static} ToAasJsonStringENV(x: NjProject): string&#xa;+ {static} ToENV(x: NjProject): Environment&#xa;+ {static} ExportToAasxFile(x: NjProject, outputPath): unit&#xa;+ {static} InjectToExistingAasxFile(x: NjProject, aasxPath): unit" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="njproject-aasx">
+          <mxGeometry y="30" width="520" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="project-aasx" value="ProjectAasxExtensions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCDD2;strokeColor=#B71C1C;" vertex="1" parent="aasx-section">
+          <mxGeometry x="20" y="200" width="520" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="project-aasx-methods" value="+ {static} ExportToAasxFile(x: Project, outputPath, ?dbApi): unit&#xa;+ {static} FromAasxFile(aasxPath): Project&#xa;+ {static} InjectToExistingAasxFile(x: Project, aasxPath): unit&#xa;+ {static} UpdateDbAasXml(x: Project, aasxPath, dbApi): unit&#xa;+ {static} ReadRuntimeDataFromDatabase(x: Project, dbApi): unit" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="project-aasx">
+          <mxGeometry y="30" width="520" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aasx-module" value="AasXModule" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#FFCDD2;strokeColor=#B71C1C;" vertex="1" parent="aasx-section">
+          <mxGeometry x="20" y="370" width="520" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="aasx-module-methods" value="+ {static} readEnvironmentFromAasx(aasxPath): AasFileInfo&#xa;+ {static} getAasXmlFromAasxFile(aasxPath): string&#xa;+ {static} createUpdatedAasxFile(originalPath, xmlPath, env): string&#xa;+ {static} replaceFileWithBackup(targetPath, sourcePath): unit&#xa;+ {static} updateSubmodels(env, newSubmodel): ISubmodel list&#xa;+ {static} updateAssetAdministrationShells(...): IAssetAdministrationShell list" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="aasx-module">
+          <mxGeometry y="30" width="520" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aasx-notes" value="AASX 파일 처리:&#xa;- ExportToAasxFile: 새 AASX 파일 생성&#xa;- InjectToExistingAasxFile: 기존 AASX 업데이트&#xa;- readEnvironmentFromAasx: AASX → Environment 읽기&#xa;&#xa;AASX 저수준 처리:&#xa;- ZIP 압축/해제&#xa;- XML 직렬화/역직렬화&#xa;- 파일 구조 관리" style="text;html=1;strokeColor=#B71C1C;fillColor=#FFCDD2;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;spacingLeft=4;" vertex="1" parent="aasx-section">
+          <mxGeometry x="20" y="550" width="520" height="190" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             Conversion Flow Diagram
+             ======================================================================== -->
+        <mxCell id="conversion-title" value="변환 흐름 (Conversion Flow)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1760" y="80" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rt-type" value="Runtime Types&#xa;(Project, DsSystem)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#01579B;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1760" y="130" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nj-type" value="JSON Types&#xa;(NjProject, NjSystem)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1980" y="130" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aas-json" value="AAS JSON&#xa;(JNode, JObj)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1760" y="230" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aas-type" value="AAS Types&#xa;(Submodel, SMC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#4A148C;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1980" y="230" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aasx-file" value="AASX File&#xa;(ZIP Package)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#B71C1C;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1870" y="330" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Conversion Arrows -->
+        <mxCell id="rt-to-nj" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="rt-type" target="nj-type">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rt-to-nj-label" value="ToNjObj()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="rt-to-nj">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="nj-to-aas-json" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="nj-type" target="aas-type">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nj-to-aas-json-label" value="ToSjSMC()&#xa;ToSjSubmodel()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="nj-to-aas-json">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint y="5" as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="rt-to-aas-json" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="rt-type" target="aas-json">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aas-json-to-type" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="aas-json" target="aas-type">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aas-json-to-type-label" value="J.CreateIClassFromJson()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="aas-json-to-type">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="aas-type-to-file" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1" source="aas-type" target="aasx-file">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aas-type-to-file-label" value="ExportToAasxFile()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="aas-type-to-file">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="file-to-aas-type" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="aasx-file" target="aas-type">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2220" y="360" />
+              <mxPoint x="2220" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="file-to-aas-type-label" value="readEnvironmentFromAasx()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="file-to-aas-type">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint x="-10" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="aas-type-to-nj" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="aas-type" target="nj-type">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1950" y="260" />
+              <mxPoint x="1950" y="160" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="aas-type-to-nj-label" value="FromISubmodel()&#xa;FromAasxFile()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="aas-type-to-nj">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint x="10" y="-15" as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="nj-to-rt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;endArrow=classic;endFill=1;dashed=1;" edge="1" parent="1" source="nj-type" target="rt-type">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nj-to-rt-label" value="ToJson() → FromJson()" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontStyle=1" vertex="1" connectable="0" parent="nj-to-rt">
+          <mxGeometry x="-0.1" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========================================================================
+             Design Patterns Section
+             ======================================================================== -->
+        <mxCell id="patterns-title" value="주요 설계 패턴" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1760" y="420" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="patterns-note" value="&lt;b&gt;1. Extension Method Pattern&lt;/b&gt;&#xa;   - F# type extensions로 기존 타입에 새로운 메서드 추가&#xa;   - C# interop을 위한 별도 wrapper 제공&#xa;&#xa;&lt;b&gt;2. Semantic ID Mapping&lt;/b&gt;&#xa;   - 의미론적 URL 기반 식별&#xa;   - AasSemantics.map으로 중앙 관리&#xa;&#xa;&lt;b&gt;3. Triple Conversion Chain&lt;/b&gt;&#xa;   - Runtime ↔ JSON ↔ AAS&#xa;   - 각 단계별 명확한 책임 분리&#xa;&#xa;&lt;b&gt;4. SubmodelElementCollection 패턴&lt;/b&gt;&#xa;   - 계층적 데이터 구조 표현&#xa;   - ToSjSMC/FromSMC 패턴 일관성&#xa;&#xa;&lt;b&gt;5. TypeFactory 확장 지원&lt;/b&gt;&#xa;   - Third Party 확장 속성 처리&#xa;   - getTypeFactory() 통한 동적 확장" style="text;html=1;strokeColor=#455A64;fillColor=#ECEFF1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="1760" y="470" width="400" height="340" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             AASX File Structure Section
+             ======================================================================== -->
+        <mxCell id="aasx-structure-title" value="AASX 파일 구조" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="2200" y="80" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="aasx-structure" value="AASX (ZIP)&#xa;├── [Content_Types].xml         # MIME 타입 정의&#xa;├── _rels/&#xa;│   └── .rels                   # 최상위 관계 정의&#xa;├── aasx/&#xa;│   ├── aasx-origin             # 원본 표시 (빈 파일)&#xa;│   ├── _rels/&#xa;│   │   └── aasx-origin.rels    # AAS XML 관계 정의&#xa;│   └── aas/&#xa;│       └── aas.aas.xml         # 실제 AAS XML 데이터" style="text;html=1;strokeColor=#B71C1C;fillColor=#FFEBEE;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=12;fontFamily=Courier New;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="130" width="500" height="240" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             Key Features Section
+             ======================================================================== -->
+        <mxCell id="features-title" value="주요 특징" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="2200" y="400" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="features-note" value="✅ &lt;b&gt;AAS 3.0 표준 준수&lt;/b&gt;: Industry 4.0 표준 완벽 지원&#xa;&#xa;✅ &lt;b&gt;의미론적 ID&lt;/b&gt;: URL 기반 semantic ID로 명확한 식별&#xa;&#xa;✅ &lt;b&gt;계층적 구조&lt;/b&gt;: SubmodelElementCollection으로 복잡한 구조 표현&#xa;&#xa;✅ &lt;b&gt;확장성&lt;/b&gt;: TypeFactory를 통한 Third Party 확장 지원&#xa;&#xa;✅ &lt;b&gt;양방향 변환&lt;/b&gt;: Runtime ↔ AAS 완벽한 왕복 변환&#xa;&#xa;✅ &lt;b&gt;AASX 패키징&lt;/b&gt;: ZIP 기반 표준 패키지 형식 지원&#xa;&#xa;✅ &lt;b&gt;C# 호환&lt;/b&gt;: F# 타입 확장을 C#에서도 사용 가능" style="text;html=1;strokeColor=#1B5E20;fillColor=#E8F5E9;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=12;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="450" width="500" height="280" as="geometry" />
+        </mxCell>
+
+        <!-- ========================================================================
+             Legend Section
+             ======================================================================== -->
+        <mxCell id="legend-title" value="범례 (Legend)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="2200" y="760" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-external" value="외부 라이브러리 (AasCore.Aas3_0)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#01579B;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="810" width="280" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-semantics" value="AAS Semantics (의미론적 매핑)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F57F17;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="860" width="280" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-json" value="JSON Extensions (JSON 확장)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="910" width="280" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-serialize" value="Serialization (직렬화)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#E65100;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="960" width="280" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-deserialize" value="Deserialization (역직렬화)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#4A148C;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="1010" width="280" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-aasx" value="AASX File Handling" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#B71C1C;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="1060" width="280" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-impl" value="구현 관계 (implements)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;endFill=0;strokeWidth=2;fontSize=12;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2200" y="1140" as="sourcePoint" />
+            <mxPoint x="2320" y="1140" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="legend-conversion" value="변환 관계 (conversion)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;strokeWidth=2;fontSize=12;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2200" y="1180" as="sourcePoint" />
+            <mxPoint x="2320" y="1180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="legend-back-conversion" value="역변환 관계 (back-conversion)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=classic;endFill=1;strokeWidth=2;fontSize=12;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2200" y="1220" as="sourcePoint" />
+            <mxPoint x="2320" y="1220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========================================================================
+             Notes Section
+             ======================================================================== -->
+        <mxCell id="notes-title" value="변환 흐름 상세" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="2200" y="1280" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="serialize-note" value="&lt;b&gt;Serialization (직렬화)&lt;/b&gt;&#xa;&#xa;1. Project/DsSystem (Runtime Type)&#xa;   ↓ ToNjObj()&#xa;2. NjProject/NjSystem (JSON Type)&#xa;   ↓ ToSjSubmodel() / ToSjSMC()&#xa;3. JNode/JObj (AAS JSON)&#xa;   ↓ J.CreateIClassFromJson&lt;Submodel&gt;()&#xa;4. Submodel (AAS Type)&#xa;   ↓ ExportToAasxFile()&#xa;5. AASX File (ZIP Package)" style="text;html=1;strokeColor=#E65100;fillColor=#FFE0B2;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontFamily=Courier New;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="2200" y="1330" width="480" height="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="deserialize-note" value="&lt;b&gt;Deserialization (역직렬화)&lt;/b&gt;&#xa;&#xa;1. AASX File (ZIP Package)&#xa;   ↓ readEnvironmentFromAasx()&#xa;2. Environment → Submodel (AAS Type)&#xa;   ↓ FromISubmodel()&#xa;3. NjProject (JSON Type)&#xa;   ↓ ToJson() → Project.FromJson()&#xa;4. Project (Runtime Type)" style="text;html=1;strokeColor=#4A148C;fillColor=#F3E5F5;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontFamily=Courier New;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="2720" y="1330" width="480" height="210" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,869 @@
+@startuml Ev2.Core.FS Class Diagram
+
+title Ev2.Core.FS - 타입 상속 관계
+
+' 스타일 설정
+skinparam class {
+    BackgroundColor<<interface>> LightYellow
+    BackgroundColor<<abstract>> LightBlue
+    BackgroundColor<<runtime>> LightCyan
+    BackgroundColor<<json>> Wheat
+    BackgroundColor<<orm>> Lavender
+    BackgroundColor<<properties>> LightGreen
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam groupInheritance 2
+
+' ============================================================================
+' 최상위 인터페이스
+' ============================================================================
+package "Core Interfaces" {
+    interface IDsObject <<interface>>
+
+    interface IDsProperties <<interface>>
+    interface IParameter <<interface>>
+    interface IParameterContainer <<interface>>
+    interface IArrow <<interface>>
+    interface IUnique <<interface>>
+    interface IWithDateTime <<interface>>
+
+    IDsObject <|-- IDsProperties
+    IDsObject <|-- IParameter
+    IDsObject <|-- IParameterContainer
+    IDsObject <|-- IArrow
+    IDsObject <|-- IUnique
+    IDsObject <|-- IWithDateTime
+}
+
+' ============================================================================
+' 1급/2급 객체 인터페이스
+' ============================================================================
+package "Classification Interfaces" {
+    interface IDs1stClass <<interface>> {
+        + Guid
+        + Name
+        + DateTime
+    }
+
+    interface IDs2ndClass <<interface>> {
+        + Guid
+        + Name
+    }
+
+    IUnique <|-- IDs1stClass
+    IWithDateTime <|-- IDs1stClass
+    IUnique <|-- IDs2ndClass
+}
+
+' ============================================================================
+' 도메인 타입 인터페이스
+' ============================================================================
+package "Domain Interfaces" {
+    interface IDsProject <<interface>>
+    interface IDsSystem <<interface>>
+    interface IDsFlow <<interface>>
+    interface IDsWork <<interface>>
+    interface IDsCall <<interface>>
+    interface IDsApiCall <<interface>>
+    interface IDsApiDef <<interface>>
+    interface IDsButton <<interface>>
+    interface IDsLamp <<interface>>
+    interface IDsCondition <<interface>>
+    interface IDsAction <<interface>>
+
+    IDs1stClass <|-- IDsProject
+    IDs1stClass <|-- IDsSystem
+    IDs2ndClass <|-- IDsFlow
+    IDs2ndClass <|-- IDsWork
+    IDs2ndClass <|-- IDsCall
+    IDs2ndClass <|-- IDsApiCall
+    IDs2ndClass <|-- IDsApiDef
+    IDs2ndClass <|-- IDsButton
+    IDs2ndClass <|-- IDsLamp
+    IDs2ndClass <|-- IDsCondition
+    IDs2ndClass <|-- IDsAction
+}
+
+' ============================================================================
+' Runtime 인터페이스
+' ============================================================================
+package "Runtime Interfaces" {
+    interface IRtObject <<interface>>
+    interface IRtUnique <<interface>>
+    interface IRtParameter <<interface>>
+    interface IRtParameterContainer <<interface>>
+    interface IRtArrow <<interface>>
+    interface IRtProject <<interface>>
+    interface IRtSystem <<interface>>
+    interface IRtFlow <<interface>>
+    interface IRtWork <<interface>>
+    interface IRtCall <<interface>>
+    interface IRtApiCall <<interface>>
+    interface IRtApiDef <<interface>>
+
+    IUnique <|-- IRtObject
+    IRtObject <|-- IRtUnique
+
+    IRtUnique <|-- IRtParameter
+    IParameter <|-- IRtParameter
+
+    IRtUnique <|-- IRtParameterContainer
+    IParameterContainer <|-- IRtParameterContainer
+
+    IRtUnique <|-- IRtArrow
+    IArrow <|-- IRtArrow
+
+    IRtUnique <|-- IRtProject
+    IDsProject <|-- IRtProject
+    IWithDateTime <|-- IRtProject
+
+    IRtUnique <|-- IRtSystem
+    IDsSystem <|-- IRtSystem
+    IWithDateTime <|-- IRtSystem
+
+    IRtUnique <|-- IRtFlow
+    IDsFlow <|-- IRtFlow
+
+    IRtUnique <|-- IRtWork
+    IDsWork <|-- IRtWork
+
+    IRtUnique <|-- IRtCall
+    IDsCall <|-- IRtCall
+
+    IRtUnique <|-- IRtApiCall
+    IDsApiCall <|-- IRtApiCall
+
+    IRtUnique <|-- IRtApiDef
+    IDsApiDef <|-- IRtApiDef
+}
+
+' ============================================================================
+' Runtime 구현 클래스 - 기반 클래스
+' ============================================================================
+package "Runtime Base Classes" <<runtime>> {
+    abstract class DisposableBase <<abstract>> {
+        + Dispose()
+        # DisposeCore()
+    }
+
+    abstract class UniqueWithFody <<abstract>> {
+        + PropertyChangedSubject
+        - propertyChangedHandler
+    }
+
+    abstract class Unique <<abstract>> {
+        + Id: Id option
+        + Name: string
+        + Parameter: string
+        + Guid: Guid
+        + RawParent: Unique option
+        + ORMObject: IORMUnique option
+        + NjObject: INjUnique option
+        + RtObject: IRtUnique option
+        + CopyUniqueProperties()
+        {static} + isDuplicated()
+    }
+
+    abstract class RtUnique <<abstract>> {
+        + ToNjObj(): INjUnique
+        + ToNj<T>(): T
+    }
+
+    abstract class JsonPolymorphic <<abstract>> {
+        + ToJson(): string
+        {static} + FromJson<T>(): T
+        + DeepClone<T>(): T
+    }
+
+    DisposableBase <|-- UniqueWithFody
+    UniqueWithFody <|-- Unique
+    Unique <|-- RtUnique
+    RtUnique <|-- JsonPolymorphic
+
+    IUnique <|.. Unique
+    IRtUnique <|.. RtUnique
+}
+
+' ============================================================================
+' Runtime Entity 클래스
+' ============================================================================
+package "Runtime Entity Classes" <<runtime>> {
+    abstract class ProjectEntity <<abstract>> {
+        + Project: Project option
+    }
+
+    abstract class DsSystemEntity <<abstract>> {
+        + System: DsSystem option
+        + Project: Project option
+    }
+
+    abstract class FlowEntity <<abstract>> {
+        + Flow: Flow option
+        + System: DsSystem option
+        + Project: Project option
+    }
+
+    abstract class WorkEntity <<abstract>> {
+        + Work: Work option
+        + System: DsSystem option
+        + Project: Project option
+    }
+
+    abstract class CallEntity <<abstract>> {
+        + Call: Call option
+        + Work: Work option
+        + System: DsSystem option
+        + Project: Project option
+    }
+
+    RtUnique <|-- ProjectEntity
+    RtUnique <|-- DsSystemEntity
+    RtUnique <|-- FlowEntity
+    RtUnique <|-- WorkEntity
+    RtUnique <|-- CallEntity
+}
+
+' ============================================================================
+' Runtime 메인 도메인 클래스
+' ============================================================================
+package "Runtime Domain Classes" <<runtime>> {
+    class Project <<runtime>> {
+        + ActiveSystems: DsSystem list
+        + PassiveSystems: DsSystem list
+        + Systems: DsSystem list
+        + Properties: ProjectProperties
+        + PropertiesJson: string
+        + DbApi: DbApi option
+        {static} + Create()
+        {static} + FromJson()
+        + OnSaved()
+        + OnLoaded()
+    }
+
+    class DsSystem <<runtime>> {
+        + Flows: Flow list
+        + Works: Work list
+        + Arrows: ArrowBetweenWorks list
+        + ApiDefs: ApiDef list
+        + ApiCalls: ApiCall list
+        + Entities: BLCABase seq
+        + Buttons: DsButton[]
+        + Lamps: Lamp[]
+        + Conditions: DsCondition[]
+        + Actions: DsAction[]
+        + Properties: DsSystemProperties
+        + PropertiesJson: string
+        + IRI: string
+        {static} + Create()
+        + OnLoaded()
+    }
+
+    class Flow <<runtime>> {
+        + Properties: FlowProperties
+        + PropertiesJson: string
+        + Works: Work[]
+        + Buttons: DsButton[]
+        + Lamps: Lamp[]
+        + Conditions: DsCondition[]
+        + Actions: DsAction[]
+        {static} + Create()
+    }
+
+    class Work <<runtime>> {
+        + Calls: Call list
+        + Arrows: ArrowBetweenCalls list
+        + Properties: WorkProperties
+        + PropertiesJson: string
+        + FlowGuid: Guid option
+        + FlowId: Id option
+        + Flow: Flow option
+        + Status4: DbStatus4 option
+        {static} + Create()
+    }
+
+    class Call <<runtime>> {
+        + AutoConditions: ApiCallValueSpecs
+        + CommonConditions: ApiCallValueSpecs
+        + Properties: CallProperties
+        + PropertiesJson: string
+        + Status4: DbStatus4 option
+        + ApiCalls: ApiCall list
+        {static} + Create()
+    }
+
+    class ApiCall <<runtime>> {
+        + ValueSpec: IValueSpec option
+        + IOTags: IOTagsWithSpec
+        + Properties: ApiCallProperties
+        + PropertiesJson: string
+        + ApiDef: ApiDef
+        + Callers: Call[]
+        {static} + Create()
+    }
+
+    class ApiDef <<runtime>> {
+        + Properties: ApiDefProperties
+        + PropertiesJson: string
+        + TX: Work
+        + RX: Work
+        + ApiUsers: ApiCall[]
+        {static} + Create()
+    }
+
+    class ArrowBetweenWorks <<runtime>> {
+        + XSourceGuid: Guid
+        + XTargetGuid: Guid
+        + Type: DbArrowType
+        + Source: Work
+        + Target: Work
+        {static} + Create()
+    }
+
+    class ArrowBetweenCalls <<runtime>> {
+        + XSourceGuid: Guid
+        + XTargetGuid: Guid
+        + Type: DbArrowType
+        + Source: Call
+        + Target: Call
+        {static} + Create()
+    }
+
+    RtUnique <|-- Project
+    IRtProject <|.. Project
+    IParameterContainer <|.. Project
+
+    ProjectEntity <|-- DsSystem
+    IRtSystem <|.. DsSystem
+    IParameterContainer <|.. DsSystem
+
+    DsSystemEntity <|-- Flow
+    IRtFlow <|.. Flow
+
+    DsSystemEntity <|-- Work
+    IRtWork <|.. Work
+
+    WorkEntity <|-- Call
+    IRtCall <|.. Call
+
+    DsSystemEntity <|-- ApiCall
+    IRtApiCall <|.. ApiCall
+
+    DsSystemEntity <|-- ApiDef
+    IRtApiDef <|.. ApiDef
+
+    DsSystemEntity <|-- ArrowBetweenWorks
+    IRtArrow <|.. ArrowBetweenWorks
+
+    WorkEntity <|-- ArrowBetweenCalls
+    IRtArrow <|.. ArrowBetweenCalls
+}
+
+' ============================================================================
+' BLCA (Button, Lamp, Condition, Action) 클래스
+' ============================================================================
+package "BLCA Classes" <<runtime>> {
+    abstract class BLCABase <<abstract>> {
+        + IOTags: IOTagsWithSpec
+        + Flows: ResizeArray<IRtFlow>
+        + GetPropertiesJson(): string
+        + SetPropertiesJson(string)
+    }
+
+    class DsButton <<runtime>> {
+        + Properties: ButtonProperties
+        + PropertiesJson: string
+        {static} + Create()
+    }
+
+    class Lamp <<runtime>> {
+        + Properties: LampProperties
+        + PropertiesJson: string
+        {static} + Create()
+    }
+
+    class DsCondition <<runtime>> {
+        + Properties: ConditionProperties
+        + PropertiesJson: string
+        {static} + Create()
+    }
+
+    class DsAction <<runtime>> {
+        + Properties: ActionProperties
+        + PropertiesJson: string
+        {static} + Create()
+    }
+
+    JsonPolymorphic <|-- BLCABase
+    BLCABase <|-- DsButton
+    BLCABase <|-- Lamp
+    BLCABase <|-- DsCondition
+    BLCABase <|-- DsAction
+}
+
+' ============================================================================
+' Properties 클래스
+' ============================================================================
+package "Properties Classes" <<properties>> {
+    abstract class DsPropertiesBase <<abstract>> {
+        + ShouldSerializeId(): bool
+        + ShouldSerializeGuid(): bool
+    }
+
+    class ProjectProperties <<properties>> {
+        + Database: DbProvider
+        + AasxPath: string
+        + Author: string
+        + Version: Version
+        + Description: string
+        + DateTime: DateTime
+        + ProjectMemo: string
+        {static} + Create()
+    }
+
+    class DsSystemProperties <<properties>> {
+        + Author: string
+        + EngineVersion: Version
+        + LangVersion: Version
+        + Description: string
+        + DateTime: DateTime
+        + Text: string
+        {static} + Create()
+    }
+
+    class FlowProperties <<properties>> {
+        + FlowMemo: string
+        {static} + Create()
+    }
+
+    class WorkProperties <<properties>> {
+        + Motion: string
+        + Script: string
+        + ExternalStart: string
+        + IsFinished: bool
+        + NumRepeat: int
+        + Period: int
+        + Delay: int
+        + WorkMemo: string
+        {static} + Create()
+    }
+
+    class CallProperties <<properties>> {
+        + CallType: DbCallType
+        + IsDisabled: bool
+        + Timeout: int option
+        + ApiCallGuids: ResizeArray<Guid>
+        + CallMemo: string
+        {static} + Create()
+    }
+
+    class ApiCallProperties <<properties>> {
+        + ApiDefGuid: Guid
+        + ApiDefId: Id option
+        + InAddress: string
+        + OutAddress: string
+        + InSymbol: string
+        + OutSymbol: string
+        + ApiCallMemo: string
+        {static} + Create()
+    }
+
+    class ApiDefProperties <<properties>> {
+        + IsPush: bool
+        + TxGuid: Guid
+        + RxGuid: Guid
+        + Period: int
+        + ApiDefMemo: string
+        {static} + Create()
+    }
+
+    class ButtonProperties <<properties>> {
+        + ButtonMemo: string
+        {static} + Create()
+    }
+
+    class LampProperties <<properties>> {
+        + LampMemo: string
+        {static} + Create()
+    }
+
+    class ConditionProperties <<properties>> {
+        + ConditionMemo: string
+        {static} + Create()
+    }
+
+    class ActionProperties <<properties>> {
+        + ActionMemo: string
+        {static} + Create()
+    }
+
+    JsonPolymorphic <|-- DsPropertiesBase
+    IDsProperties <|.. DsPropertiesBase
+    DsPropertiesBase <|-- ProjectProperties
+    DsPropertiesBase <|-- DsSystemProperties
+    DsPropertiesBase <|-- FlowProperties
+    DsPropertiesBase <|-- WorkProperties
+    DsPropertiesBase <|-- CallProperties
+    DsPropertiesBase <|-- ApiCallProperties
+    DsPropertiesBase <|-- ApiDefProperties
+    DsPropertiesBase <|-- ButtonProperties
+    DsPropertiesBase <|-- LampProperties
+    DsPropertiesBase <|-- ConditionProperties
+    DsPropertiesBase <|-- ActionProperties
+}
+
+' ============================================================================
+' JSON 인터페이스
+' ============================================================================
+package "JSON Interfaces" {
+    interface INjObject <<interface>>
+    interface INjUnique <<interface>>
+    interface INjProject <<interface>>
+    interface INjSystem <<interface>>
+    interface INjFlow <<interface>>
+    interface INjWork <<interface>>
+    interface INjCall <<interface>>
+    interface INjApiCall <<interface>>
+    interface INjApiDef <<interface>>
+    interface INjArrow <<interface>>
+
+    IUnique <|-- INjObject
+    INjObject <|-- INjUnique
+
+    INjUnique <|-- INjProject
+    IDsProject <|-- INjProject
+    IWithDateTime <|-- INjProject
+
+    INjUnique <|-- INjSystem
+    IDsSystem <|-- INjSystem
+    IWithDateTime <|-- INjSystem
+
+    INjUnique <|-- INjFlow
+    IDsFlow <|-- INjFlow
+
+    INjUnique <|-- INjWork
+    IDsWork <|-- INjWork
+
+    INjUnique <|-- INjCall
+    IDsCall <|-- INjCall
+
+    INjUnique <|-- INjApiCall
+    IDsApiCall <|-- INjApiCall
+
+    INjUnique <|-- INjApiDef
+    IDsApiDef <|-- INjApiDef
+
+    INjUnique <|-- INjArrow
+    IArrow <|-- INjArrow
+}
+
+' ============================================================================
+' JSON 구현 클래스
+' ============================================================================
+package "JSON Classes" <<json>> {
+    abstract class NjUnique <<abstract>> {
+        + RuntimeObject: Unique
+        - RuntimeType: string
+    }
+
+    abstract class NjProjectEntity <<abstract>> {
+        + Project: NjProject option
+    }
+
+    abstract class NjSystemEntity <<abstract>> {
+        + System: NjSystem option
+        + Project: NjProject option
+    }
+
+    class NjProject <<json>> {
+        + ActiveSystems: NjSystem[]
+        + PassiveSystems: NjSystem[]
+        + Properties: ProjectProperties
+        {static} + Create()
+        {static} + FromJson()
+        + ToJson(): string
+        + OnLoaded()
+    }
+
+    class NjSystem <<json>> {
+        + Flows: NjFlow[]
+        + Works: NjWork[]
+        + Arrows: NjArrow[]
+        + ApiDefs: NjApiDef[]
+        + ApiCalls: NjApiCall[]
+        + Properties: DsSystemProperties
+        + IRI: string
+        {static} + Create()
+        + ExportToJson(): string
+        + OnLoaded()
+    }
+
+    class NjFlow <<json>> {
+        + Properties: FlowProperties
+        {static} + Create()
+    }
+
+    class NjWork <<json>> {
+        + Calls: NjCall[]
+        + Arrows: NjArrow[]
+        + Properties: WorkProperties
+        + FlowGuid: string
+        + Status4: DbStatus4 option
+        {static} + Create()
+    }
+
+    class NjCall <<json>> {
+        + AutoConditions: string
+        + CommonConditions: string
+        + Properties: CallProperties
+        + Status4: DbStatus4 option
+        {static} + Create()
+    }
+
+    class NjApiCall <<json>> {
+        + ValueSpec: string
+        + IOTags: IOTagsWithSpec
+        + Properties: ApiCallProperties
+        {static} + Create()
+    }
+
+    class NjApiDef <<json>> {
+        + Properties: ApiDefProperties
+        {static} + Create()
+    }
+
+    class NjArrow <<json>> {
+        + Source: string
+        + Target: string
+        + Type: string
+        {static} + Create()
+    }
+
+    Unique <|-- NjUnique
+    INjUnique <|.. NjUnique
+
+    NjUnique <|-- NjProjectEntity
+    NjUnique <|-- NjSystemEntity
+
+    NjUnique <|-- NjProject
+    INjProject <|.. NjProject
+
+    NjProjectEntity <|-- NjSystem
+    INjSystem <|.. NjSystem
+
+    NjSystemEntity <|-- NjFlow
+    INjFlow <|.. NjFlow
+
+    NjSystemEntity <|-- NjWork
+    INjWork <|.. NjWork
+
+    NjUnique <|-- NjCall
+    INjCall <|.. NjCall
+
+    NjSystemEntity <|-- NjApiCall
+    INjApiCall <|.. NjApiCall
+
+    NjSystemEntity <|-- NjApiDef
+    INjApiDef <|.. NjApiDef
+
+    NjUnique <|-- NjArrow
+    INjArrow <|.. NjArrow
+}
+
+' ============================================================================
+' ORM 인터페이스
+' ============================================================================
+package "ORM Interfaces" {
+    interface IORMObject <<interface>>
+    interface IORMUnique <<interface>>
+    interface IORMProject <<interface>>
+    interface IORMSystem <<interface>>
+    interface IORMFlow <<interface>>
+    interface IORMWork <<interface>>
+    interface IORMCall <<interface>>
+    interface IORMArrow <<interface>>
+    interface IORMArrowWork <<interface>>
+    interface IORMArrowCall <<interface>>
+    interface IORMApiCall <<interface>>
+    interface IORMApiDef <<interface>>
+
+    IUnique <|-- IORMObject
+    IORMObject <|-- IORMUnique
+
+    IORMUnique <|-- IORMProject
+    IDsProject <|-- IORMProject
+    IWithDateTime <|-- IORMProject
+
+    IORMUnique <|-- IORMSystem
+    IDsSystem <|-- IORMSystem
+    IWithDateTime <|-- IORMSystem
+
+    IORMUnique <|-- IORMFlow
+    IDsFlow <|-- IORMFlow
+
+    IORMUnique <|-- IORMWork
+    IDsWork <|-- IORMWork
+
+    IORMUnique <|-- IORMCall
+    IDsCall <|-- IORMCall
+
+    IORMUnique <|-- IORMArrow
+    IArrow <|-- IORMArrow
+
+    IORMArrow <|-- IORMArrowWork
+    IORMArrow <|-- IORMArrowCall
+
+    IORMUnique <|-- IORMApiCall
+    IDsApiCall <|-- IORMApiCall
+
+    IORMUnique <|-- IORMApiDef
+    IDsApiDef <|-- IORMApiDef
+}
+
+' ============================================================================
+' ORM 구현 클래스
+' ============================================================================
+package "ORM Classes" <<orm>> {
+    abstract class ORMUnique <<abstract>> {
+        + ParentId: Id option
+    }
+
+    abstract class ORMSystemEntity <<abstract>> {
+        + SystemId: Id
+    }
+
+    abstract class ORMWorkEntity <<abstract>> {
+        + WorkId: Id
+    }
+
+    abstract class ORMArrowBase <<abstract>> {
+        + Source: Id
+        + Target: Id
+        + TypeId: Id
+        + XSourceGuid: Guid
+        + XTargetGuid: Guid
+        + XType: DbArrowType
+    }
+
+    class ORMProject <<orm>> {
+        + PropertiesJson: string
+        + Initialize()
+    }
+
+    class ORMSystem <<orm>> {
+        + ProjectId: Id option
+        + IRI: string
+        + PropertiesJson: string
+        + OwnerProjectId: Id option
+        + Initialize()
+    }
+
+    class ORMFlow <<orm>> {
+        + SystemId: Id
+        + PropertiesJson: string
+        + Initialize()
+    }
+
+    class ORMWork <<orm>> {
+        + FlowId: Id option
+        + FlowGuid: Guid option
+        + Status4Id: Id option
+        + PropertiesJson: string
+        + Initialize()
+    }
+
+    class ORMCall <<orm>> {
+        + WorkId: Id
+        + Status4Id: Id option
+        + AutoConditions: string
+        + CommonConditions: string
+        + PropertiesJson: string
+        + Initialize()
+    }
+
+    class ORMApiCall <<orm>> {
+        + ApiDefId: Id
+        + ValueSpec: string
+        + IOTagsJson: string
+        + PropertiesJson: string
+    }
+
+    class ORMApiDef <<orm>> {
+        + PropertiesJson: string
+    }
+
+    class ORMArrowWork <<orm>> {
+        + SystemId: Id
+    }
+
+    class ORMArrowCall <<orm>> {
+        + WorkId: Id
+    }
+
+    Unique <|-- ORMUnique
+    IORMUnique <|.. ORMUnique
+
+    ORMUnique <|-- ORMSystemEntity
+    ORMUnique <|-- ORMWorkEntity
+    ORMUnique <|-- ORMArrowBase
+
+    ORMUnique <|-- ORMProject
+    IORMProject <|.. ORMProject
+
+    ORMUnique <|-- ORMSystem
+    IORMSystem <|.. ORMSystem
+
+    ORMWorkEntity <|-- ORMFlow
+    IORMFlow <|.. ORMFlow
+
+    ORMSystemEntity <|-- ORMWork
+    IORMWork <|.. ORMWork
+
+    ORMWorkEntity <|-- ORMCall
+    IORMCall <|.. ORMCall
+
+    ORMSystemEntity <|-- ORMApiCall
+    IORMApiCall <|.. ORMApiCall
+
+    ORMSystemEntity <|-- ORMApiDef
+    IORMApiDef <|.. ORMApiDef
+
+    ORMArrowBase <|-- ORMArrowWork
+    IORMArrowWork <|.. ORMArrowWork
+
+    ORMArrowBase <|-- ORMArrowCall
+    IORMArrowCall <|.. ORMArrowCall
+}
+
+' ============================================================================
+' 관계 표시
+' ============================================================================
+note top of Project
+  최상위 컨테이너
+  ActiveSystems와 PassiveSystems 포함
+end note
+
+note top of DsSystem
+  자동화 시스템
+  Flows, Works, ApiDefs, ApiCalls 포함
+  Button, Lamp, Condition, Action 엔티티 관리
+end note
+
+note top of BLCABase
+  Button, Lamp, Condition, Action의
+  공통 베이스 클래스
+  다형성 컬렉션으로 관리
+end note
+
+note top of NjUnique
+  JSON 직렬화 타입
+  RuntimeObject와 연결
+end note
+
+note top of ORMUnique
+  ORM 데이터베이스 매핑 타입
+  Dapper와 함께 사용
+end note
+
+@enduml

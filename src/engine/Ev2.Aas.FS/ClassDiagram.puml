@@ -1,0 +1,502 @@
+@startuml Ev2.Aas.FS Class Diagram
+
+title Ev2.Aas.FS - AAS 통합 타입 계층 구조
+
+' 스타일 설정
+skinparam class {
+    BackgroundColor<<aas>> LightCyan
+    BackgroundColor<<extension>> LightYellow
+    BackgroundColor<<enum>> LightGreen
+    BackgroundColor<<helper>> Wheat
+    BackgroundColor<<converter>> LightSalmon
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam groupInheritance 2
+
+' ============================================================================
+' AasCore.Aas3_0 외부 라이브러리 타입들
+' ============================================================================
+package "AasCore.Aas3_0 (External Library)" <<aas>> {
+    interface IClass <<interface>> {
+        + ToJson(): string
+        + ToXml(): string
+    }
+
+    class Environment <<aas>> {
+        + Submodels: ISubmodel list
+        + AssetAdministrationShells: IAssetAdministrationShell list
+        + ConceptDescriptions: IConceptDescription list
+    }
+
+    interface ISubmodel <<interface>>
+    interface IAssetAdministrationShell <<interface>>
+    interface ISubmodelElement <<interface>>
+
+    class Submodel <<aas>> {
+        + Id: string
+        + IdShort: string
+        + SubmodelElements: ISubmodelElement list
+        + SemanticId: IReference
+    }
+
+    class AssetAdministrationShell <<aas>> {
+        + Id: string
+        + IdShort: string
+        + AssetInformation: AssetInformation
+        + Submodels: IReference list
+    }
+
+    class SubmodelElementCollection <<aas>> {
+        + IdShort: string
+        + Value: ISubmodelElement list
+        + SemanticId: IReference
+    }
+
+    class Property <<aas>> {
+        + IdShort: string
+        + Value: string
+        + ValueType: string
+        + SemanticId: IReference
+    }
+
+    class Reference <<aas>> {
+        + Type: ReferenceTypes
+        + Keys: Key list
+    }
+
+    class Key <<aas>> {
+        + Type: KeyTypes
+        + Value: string
+    }
+
+    IClass <|.. Environment
+    IClass <|.. Submodel
+    IClass <|.. AssetAdministrationShell
+    IClass <|.. SubmodelElementCollection
+    IClass <|.. Property
+    IClass <|.. Reference
+    IClass <|.. Key
+
+    ISubmodel <|.. Submodel
+    IAssetAdministrationShell <|.. AssetAdministrationShell
+    ISubmodelElement <|.. SubmodelElementCollection
+    ISubmodelElement <|.. Property
+}
+
+' ============================================================================
+' Ev2.Core.FS 타입들 (간소화)
+' ============================================================================
+package "Ev2.Core.FS (Core Types)" {
+    class NjProject {
+        + ActiveSystems: NjSystem[]
+        + PassiveSystems: NjSystem[]
+        + Properties: ProjectProperties
+    }
+
+    class NjSystem {
+        + Flows: NjFlow[]
+        + Works: NjWork[]
+        + Arrows: NjArrow[]
+        + ApiDefs: NjApiDef[]
+        + ApiCalls: NjApiCall[]
+    }
+
+    class NjFlow
+    class NjWork
+    class NjCall
+    class NjArrow
+    class NjApiDef
+    class NjApiCall
+
+    class Project {
+        + ActiveSystems: DsSystem list
+        + PassiveSystems: DsSystem list
+    }
+
+    class DsSystem
+}
+
+' ============================================================================
+' AAS 의미론적 정의 (Semantic IDs)
+' ============================================================================
+package "AAS Semantics" <<helper>> {
+    class AasSemantics <<helper>> {
+        {static} + map: Dictionary<string, string>
+    }
+
+    note right of AasSemantics
+        Semantic ID 매핑 테이블
+        예: "Project" → "https://dualsoft.com/aas/project"
+            "System" → "https://dualsoft.com/aas/system"
+            "Work" → "https://dualsoft.com/aas/singular/work"
+    end note
+}
+
+' ============================================================================
+' JSON 확장 모듈
+' ============================================================================
+package "JSON Extensions" <<extension>> {
+    ' 열거형 타입들
+    enum Category <<enum>> {
+        PARAMETER
+        CONSTANT
+        VARIABLE
+    }
+
+    enum SemanticIdType <<enum>> {
+        ExternalReference
+        GlobalReference
+        ModelReference
+    }
+
+    enum KeyType <<enum>> {
+        ConceptDescription
+        AssetAdministrationShell
+        Blob
+        Property
+        Submodel
+        SubmodelElementList
+    }
+
+    enum ModelType <<enum>> {
+        Property
+        Submodel
+        SubmodelElement
+        SubmodelElementCollection
+        SubmodelElementList
+        ...
+        + ToString(): string
+    }
+
+    enum KindType <<enum>> {
+        Template
+        Instance
+        TemplateQualifier
+    }
+
+    ' JSON 노드 타입
+    enum N <<enum>> {
+        AssetKind
+        Category
+        SemanticId
+        Keys
+        Value
+        ValueType
+        ModelType
+        IdShort
+        SubmodelElements
+        ...
+        + ToString(): string
+    }
+
+    ' JSON 확장 메서드
+    class JsonObjectExtensions <<extension>> {
+        {static} + Set(key: N, value): JObj
+        {static} + SetValues(values): JObj
+        {static} + AddValues(values): JObj
+        {static} + SetTypedValue<T>(value): JObj option
+        {static} + SetModelType(modelType): JObj
+        {static} + SetSemantic(semanticKey): JObj
+        {static} + TrySetProperty<T>(value, name): JObj option
+        {static} + SetKeys(keyType, keyValue): JObj
+        {static} + AddProperties(...): JObj
+        {static} + ToSjSMC(semanticKey, values): JObj
+    }
+
+    class JsonNodeExtensions <<extension>> {
+        {static} + Stringify(settings): string
+    }
+
+    ' JSON 헬퍼 클래스
+    class J <<helper>> {
+        {static} + CreateJArr(jns): JArr
+        {static} + CreateIClassFromJson<T>(json): T
+        {static} + CreateIClassFromXml<T>(xml): T
+    }
+
+    note right of J
+        JSON/XML ↔ AAS IClass 변환 헬퍼
+        모든 AAS 타입에 대한 역직렬화 지원
+    end note
+}
+
+' ============================================================================
+' AAS 확장 모듈
+' ============================================================================
+package "AAS Extensions" <<extension>> {
+    class IClassExtensions <<extension>> {
+        {static} + ToJson(x: IClass): string
+        {static} + ToXml(x: IClass): string
+    }
+
+    note right of IClassExtensions
+        AasCore.Aas3_0.IClass에 대한
+        F# 확장 메서드
+    end note
+}
+
+' ============================================================================
+' Core → AAS 변환 (ToAas)
+' ============================================================================
+package "Core.To.Aas (Serialization)" <<converter>> {
+    class NjUniqueToAasExtensions <<extension>> {
+        {static} + CollectProperties(x: NjUnique): JNode[]
+        {static} + tryCollectPropertiesNjUnique(x): JObj option seq
+        {static} + tryCollectExtensionProperties(x): JObj option seq
+    }
+
+    class NjProjectToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjProject): JNode
+        {static} + ToSjSubmodel(x: NjProject): JNode
+    }
+
+    class NjSystemToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjSystem): JNode
+    }
+
+    class NjFlowToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjFlow): JNode
+    }
+
+    class NjWorkToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjWork): JNode
+    }
+
+    class NjCallToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjCall): JNode
+    }
+
+    class NjArrowToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjArrow): JNode
+    }
+
+    class NjApiDefToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjApiDef): JNode
+    }
+
+    class NjApiCallToAasExtensions <<extension>> {
+        {static} + ToSjSMC(x: NjApiCall): JNode
+    }
+
+    note bottom of NjProjectToAasExtensions
+        ToSjSMC: To System Json SubModel element Collection
+        NjProject → JNode (SubmodelElementCollection 형태)
+    end note
+}
+
+' ============================================================================
+' AAS → Core 변환 (FromAas)
+' ============================================================================
+package "Core.From.Aas (Deserialization)" <<converter>> {
+    class NjProjectFromAasExtensions <<extension>> {
+        {static} + FromAasxFile(aasxPath): NjProject
+        {static} + FromISubmodel(submodel): NjProject
+    }
+
+    class NjSystemFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjSystem
+    }
+
+    class NjFlowFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjFlow
+    }
+
+    class NjWorkFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjWork
+    }
+
+    class NjCallFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjCall
+    }
+
+    class NjArrowFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjArrow
+    }
+
+    class NjApiDefFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjApiDef
+    }
+
+    class NjApiCallFromAasExtensions <<extension>> {
+        {static} + FromSMC(smc: SubmodelElementCollection): NjApiCall
+    }
+
+    class SubmodelElementCollectionExtensions <<extension>> {
+        {static} + ReadUniqueInfo(smc): UniqueInfo
+        {static} + GetPropValue(smc, key): string
+        {static} + TryGetPropValue(smc, key): string option
+        {static} + GetSMC(smc, semanticKey): SubmodelElementCollection[]
+        {static} + TryFindChildSMC(smc, semanticKey): SubmodelElementCollection option
+        {static} + CollectChildrenSMCWithSemanticKey(smc, key): SubmodelElementCollection[]
+    }
+
+    note bottom of NjProjectFromAasExtensions
+        FromAasxFile: AASX 파일 → NjProject
+        FromISubmodel: AAS Submodel → NjProject
+    end note
+}
+
+' ============================================================================
+' AASX 파일 처리 모듈
+' ============================================================================
+package "AasX (AASX File Handling)" <<converter>> {
+    class NjProjectAasxExtensions <<extension>> {
+        {static} + ToSjENV(x: NjProject): JObj
+        {static} + ToAasJsonStringENV(x: NjProject): string
+        {static} + ToENV(x: NjProject): Environment
+        {static} + ExportToAasxFile(x: NjProject, outputPath): unit
+        {static} + InjectToExistingAasxFile(x: NjProject, aasxPath): unit
+    }
+
+    class ProjectAasxExtensions <<extension>> {
+        {static} + ExportToAasxFile(x: Project, outputPath, ?dbApi): unit
+        {static} + FromAasxFile(aasxPath): Project
+        {static} + InjectToExistingAasxFile(x: Project, aasxPath): unit
+        {static} + UpdateDbAasXml(x: Project, aasxPath, dbApi): unit
+        {static} + ReadRuntimeDataFromDatabase(x: Project, dbApi): unit
+    }
+
+    class AasXModule <<helper>> {
+        {static} + readEnvironmentFromAasx(aasxPath): AasFileInfo
+        {static} + getAasXmlFromAasxFile(aasxPath): string
+        {static} + createUpdatedAasxFile(originalPath, xmlPath, env): string
+        {static} + replaceFileWithBackup(targetPath, sourcePath): unit
+        {static} + updateSubmodels(env, newSubmodel): ISubmodel list
+        {static} + updateAssetAdministrationShells(shells, newSubmodel, env): IAssetAdministrationShell list
+    }
+
+    class AasFileInfo <<helper>> {
+        + Environment: Environment
+        + FilePath: string
+    }
+
+    note right of NjProjectAasxExtensions
+        AASX 파일 생성/읽기/주입
+        - ExportToAasxFile: 새 AASX 파일 생성
+        - InjectToExistingAasxFile: 기존 AASX 업데이트
+    end note
+
+    note right of AasXModule
+        AASX 파일 저수준 처리
+        - ZIP 압축/해제
+        - XML 직렬화/역직렬화
+        - 파일 구조 관리
+    end note
+}
+
+' ============================================================================
+' C# 상호운용성
+' ============================================================================
+package "C# Interop" <<extension>> {
+    class Ev2AasExtensionForCSharp <<extension>> {
+        {static} + CsXXX(...): ReturnType
+    }
+
+    note right of Ev2AasExtensionForCSharp
+        F# 확장 메서드를 C#에서
+        접근 가능하도록 wrapping
+    end note
+}
+
+' ============================================================================
+' 변환 흐름 다이어그램
+' ============================================================================
+together {
+    class "NjProject\n(JSON Type)" as NjProj
+    class "Project\n(Runtime Type)" as RtProj
+    class "JNode/JObj\n(AAS JSON)" as AasJson
+    class "Submodel\n(AAS Type)" as AasSubmodel
+    class "AASX File\n(ZIP Package)" as AasxFile
+}
+
+NjProj ..> AasJson : ToSjSMC()\nToSjSubmodel()
+AasJson ..> AasSubmodel : J.CreateIClassFromJson<>()
+AasSubmodel ..> AasxFile : ExportToAasxFile()
+AasxFile ..> AasSubmodel : readEnvironmentFromAasx()
+AasSubmodel ..> AasJson : Jsonization.Serialize()
+AasJson ..> NjProj : FromISubmodel()\nFromAasxFile()
+NjProj ..> RtProj : RuntimeObject\nToJson() → FromJson()
+RtProj ..> NjProj : ToNjObj()
+
+' ============================================================================
+' 주요 관계
+' ============================================================================
+NjProject --> NjProjectToAasExtensions : uses
+NjProject --> NjProjectFromAasExtensions : uses
+NjProject --> NjProjectAasxExtensions : uses
+
+Project --> ProjectAasxExtensions : uses
+
+AasXModule --> Environment : manipulates
+AasXModule --> Submodel : manipulates
+AasXModule --> SubmodelElementCollection : manipulates
+
+JsonObjectExtensions --> ModelType : uses
+JsonObjectExtensions --> Category : uses
+JsonObjectExtensions --> KindType : uses
+JsonObjectExtensions --> SemanticIdType : uses
+JsonObjectExtensions --> KeyType : uses
+JsonObjectExtensions --> N : uses
+
+J --> IClass : converts
+
+SubmodelElementCollectionExtensions --> SubmodelElementCollection : extends
+
+' ============================================================================
+' 노트 및 설명
+' ============================================================================
+note top of Environment
+    AAS 표준 Environment 타입
+    AASX 파일의 최상위 컨테이너
+end note
+
+note top of Submodel
+    AAS 표준 Submodel 타입
+    실제 데이터를 담는 컨테이너
+end note
+
+note top of SubmodelElementCollection
+    AAS 표준 요소 컬렉션
+    구조화된 데이터 표현
+end note
+
+note as N1
+    <b>변환 흐름 (Serialization)</b>
+    1. Project/DsSystem (Runtime)
+    2. → ToNjObj() → NjProject (JSON Type)
+    3. → ToSjSubmodel() → JNode (AAS JSON)
+    4. → J.CreateIClassFromJson() → Submodel (AAS Type)
+    5. → ExportToAasxFile() → AASX File (ZIP)
+end note
+
+note as N2
+    <b>변환 흐름 (Deserialization)</b>
+    1. AASX File (ZIP)
+    2. → readEnvironmentFromAasx() → Environment
+    3. → FromISubmodel() → NjProject (JSON Type)
+    4. → ToJson() → FromJson() → Project (Runtime)
+end note
+
+note as N3
+    <b>주요 설계 패턴</b>
+
+    1. <b>Extension Method Pattern</b>
+       - F# type extensions으로 구현
+       - C# interop을 위한 별도 wrapper 제공
+
+    2. <b>Semantic ID Mapping</b>
+       - 의미론적 URL 기반 식별
+       - AasSemantics.map으로 중앙 관리
+
+    3. <b>Triple Conversion</b>
+       - Runtime ↔ JSON ↔ AAS
+       - 각 단계별 명확한 책임 분리
+
+    4. <b>SubmodelElementCollection</b>
+       - 계층적 데이터 구조 표현
+       - ToSjSMC/FromSMC 패턴 일관성
+end note
+
+@enduml
