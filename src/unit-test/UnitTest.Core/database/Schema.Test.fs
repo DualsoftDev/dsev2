@@ -609,9 +609,7 @@ module Schema =
 
         [<Test>]
         member x.``[Sqlite] DB System 수정 commit`` () =
-            let xxx = rtProject
             let dsProject = rtProject.Replicate() |> validateRuntime
-            let diffs = dsProject.ComputeDiff rtProject |> toArray
 
             let dbApi = sqliteDbApi()
             dbApi.With(fun (conn, tr) ->

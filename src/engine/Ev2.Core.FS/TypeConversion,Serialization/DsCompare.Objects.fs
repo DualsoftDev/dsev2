@@ -201,8 +201,6 @@ module rec DsCompareObjects =
                 yield! (x.ActiveSystems,  y.ActiveSystems,  criteria) |||> computeDiffRecursively
                 yield! (x.PassiveSystems, y.PassiveSystems, criteria) |||> computeDiffRecursively
 
-                let xxx = x.Properties.Database
-                let yyy = y.Properties.Database
                 (* 기타 속성 비교 *)
                 // AasXml 멤버 제거됨
                 if x.PropertiesJson <> y.PropertiesJson then yield Diff("Properties", x, y, (getUpdatePropertiesSql x, y))

@@ -78,8 +78,6 @@ module internal DbInsertModule =
                 | :? DsSystem as rt ->
                     let ormSystem = rt.ToORM<ORMSystem>(dbApi)
 
-                    let xxx = conn.Query<ORMSystem>($"SELECT * FROM {Tn.System}").ToArray()
-
                     let sysId = conn.Insert($"""INSERT INTO {Tn.System}
                                             (guid, parameter,                     name,  iri, properties,         ownerProjectId)
                                     VALUES (@Guid, @Parameter{dbApi.DapperJsonB}, @Name, @IRI, @PropertiesJsonB, @OwnerProjectId);""",

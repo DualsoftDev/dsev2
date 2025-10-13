@@ -48,7 +48,6 @@ type DbCommitResultExtension =
         match r with
         | Ok NoChange -> true
         | Ok (Updated diffs) ->
-            let xxx = diffs |> toList |> filter (fun d -> not <| d.IsPropertiesDiffOnly(fields)) >>= _.GetPropertiesDiffFields()
             diffs |> filter (fun d -> not <| d.IsPropertiesDiffOnly(fields)) |> iter (fun d -> tracefn $"Diff: {d.GetPropertiesDiffFields()}")
             diffs |> Seq.forall (fun d -> d.IsPropertiesDiffOnly(fields))
         | _ -> false
