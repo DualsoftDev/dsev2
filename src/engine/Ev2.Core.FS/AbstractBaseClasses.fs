@@ -1,10 +1,7 @@
 namespace Ev2.Core.FS
 
 open System
-open System.Linq
-open System.Data
 open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 open Newtonsoft.Json.Converters;
 
 open Dual.Common.Base
@@ -23,48 +20,19 @@ type RtUnique() = // ToNjObj, ToNj
     member x.ToNj<'T when 'T :> INjUnique>() : 'T = x.ToNjObj() :?> 'T
 
 /// 다형성(polymorphic)을 갖는 system entity
-type [<AbstractClass>] JsonPolymorphic() =
+type [<AbstractClass>] DsJsonPolymorphic() =
     inherit RtUnique()
-    static member private getSettings(settings:JsonSerializerSettings option) =
+
+    let getSettings(settings:JsonSerializerSettings option) =
         settings |?? (fun () -> EmJson.CreateDefaultSettings(DateFormatString = DateFormatString))
 
-    member x.ToJson(?settings:JsonSerializerSettings) = EmJson.ToJson(x, JsonPolymorphic.getSettings(settings))
+    interface IJsonPolymorphic with
+        member x.ToJson(?settings:JsonSerializerSettings) = x.ToJson(?settings=settings)
+    member x.ToJson(?settings:JsonSerializerSettings) = EmJson.ToJson(x, getSettings(settings))
 
-    static member FromJson<'T when 'T :> JsonPolymorphic and 'T : (new : unit -> 'T) and 'T : not struct>(json:string, ?settings:JsonSerializerSettings) : 'T =
-        match json |> String.toOption with
-        | None -> Unchecked.defaultof<'T>
-        | Some json ->
-            let settings = JsonPolymorphic.getSettings settings
-            match JToken.Parse(json) with
-            | :? JObject as jobj ->
-                let mutable typeToken = Unchecked.defaultof<JToken>
-                let hasTypeMetadata =
-                    jobj.TryGetValue("$type", StringComparison.Ordinal, &typeToken)
-                    && typeToken.Type = JTokenType.String
-                    && not (String.IsNullOrWhiteSpace(typeToken.Value<string>()))
-
-                if hasTypeMetadata then
-                    EmJson.FromJson<'T>(json, settings)
-                else
-                    let instance = createExtendedHelper<'T>()
-                    JsonConvert.PopulateObject(json, instance, settings)
-                    instance :?> 'T
-            | _ -> EmJson.FromJson<'T>(json, settings)
-
-    static member internal FromJson(json:string, targetType:Type, ?settings:JsonSerializerSettings) : JsonPolymorphic =
-        if isNull targetType then invalidArg "targetType" "타겟 타입이 null 입니다."
-        if String.IsNullOrWhiteSpace json then invalidArg "json" "Json 문자열이 비어 있습니다."
-        let settings = JsonPolymorphic.getSettings(settings)
-        JsonConvert.DeserializeObject(json, targetType, settings) :?> JsonPolymorphic
-
-    member x.DeepClone<'T when 'T :> JsonPolymorphic and 'T :> IUnique and 'T : (new : unit -> 'T) and 'T : not struct>() : 'T =
-        x.ToJson() |> JsonPolymorphic.FromJson<'T>
-
-    member x.DeepClone() : JsonPolymorphic =
-        x.ToJson() |> fun json -> JsonPolymorphic.FromJson(json, x.GetType())
 
 type [<AbstractClass>] DsPropertiesBase() =
-    inherit JsonPolymorphic()
+    inherit DsJsonPolymorphic()
     interface IDsProperties
     override x.ShouldSerializeId() = false
     override x.ShouldSerializeGuid() = false
@@ -171,7 +139,7 @@ type ActionProperties() =
 
 /// Button, Lamp, Condition, Action 의 base class: 다형성(polymorphic)을 갖는 system entity
 type [<AbstractClass>] BLCABase() =
-    inherit JsonPolymorphic()
+    inherit DsJsonPolymorphic()
     interface IWithTagWithSpecs
     interface IDsObject
     member val IOTags = IOTagsWithSpec() with get, set
