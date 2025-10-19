@@ -118,7 +118,6 @@ module internal Db2DsImpl =
                     setParentI s flow
                     flow
                     |> replicateProperties ormFlow
-                    |> tee (fun f -> f.PropertiesJson <- ormFlow.PropertiesJson)
                     |> tee handleAfterSelect
             ]
 
@@ -129,17 +128,12 @@ module internal Db2DsImpl =
 
                 /// orm.ApiDefId -> RtApiDef : rtSystem 하부의 RtApiDef 타입 객체들
                 let container = rtSystem.Project >>= tryCast<RtUnique> |? (rtSystem :> RtUnique)
-                let rtApiDefs = container.EnumerateRtObjects().OfType<ApiDef>().ToArray()
                 for orm in orms do
 
                     // orm.ApiDefId -> rtApiDef -> _.Guid
-                    let apiDefGuid =
-                        let ormProperties = orm.PropertiesJson |> JsonPolymorphic.FromJson<ApiCallProperties>
-                        rtApiDefs.First(fun z -> z.Guid = ormProperties.ApiDefGuid).Guid
                     let valueParam = IValueSpec.TryDeserialize orm.ValueSpec
                     ApiCall.Create(ApiCallProperties.Create(), valueParam)
                     |> replicateProperties orm
-                    |> tee (fun ac -> ac.Properties.ApiDefGuid <- apiDefGuid )
                     |> tee handleAfterSelect
             ]
             s.addApiCalls(rtApiCalls, false)
@@ -153,13 +147,11 @@ module internal Db2DsImpl =
                     Work.Create()
                     |> setParent s
                     |> replicateProperties orm
-                    |> tee (fun w -> w.PropertiesJson <- orm.PropertiesJson)
                     |> tee handleAfterSelect
                     |> tee(fun w ->
-                        w.FlowGuid <- rtFlows |> tryFind(fun f -> f.Id = orm.FlowId) |-> _.Guid
                         w.FlowId <- orm.FlowId
-                        w.Status4  <- orm.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4> )
-
+                        w.FlowGuid <- rtFlows.TryFind(fun f -> f.Id = orm.FlowId) |-> _.Guid
+                    )
             ]
             s.addWorks(rtWorks, false)
 
@@ -201,10 +193,8 @@ module internal Db2DsImpl =
 
                         Call.Create(acs, ccs, properties)
                         |> replicateProperties orm
-                        |> tee (fun c -> c.PropertiesJson <- orm.PropertiesJson)
                         |> tee handleAfterSelect
                         |> setParent w
-                        |> tee(fun c -> c.Status4 <- orm.Status4Id >>= DbApi.TryGetEnumValue<DbStatus4> )
                 ]
                 w.addCalls(rtCalls, false)
 
@@ -265,7 +255,6 @@ module internal Db2DsImpl =
 
                     ApiDef.Create()
                     |> replicateProperties orm
-                    |> tee (fun ad -> ad.PropertiesJson <- orm.PropertiesJson)
                     |> tee handleAfterSelect
 
             ]

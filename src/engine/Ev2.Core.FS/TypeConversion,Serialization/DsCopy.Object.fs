@@ -88,7 +88,6 @@ module internal rec DsObjectCopyImpl =
 
                 // 먼저 bag에 등록하고 속성 복사 (GUID 포함)
                 newWork |> replicateProperties x |> ignore
-                newWork.PropertiesJson <- x.PropertiesJson
 
                 // 그 다음 parent 설정 - GUID가 확정된 후에 설정해야 함
                 calls  |> iter (setParentI newWork)

@@ -1,10 +1,8 @@
 namespace Ev2.Core.FS
 
 open System
-open Dual.Common.Core.FS
 open Dual.Common.Base
 open Dual.Common.Db.FS
-open Newtonsoft.Json
 
 [<AutoOpen>]
 module internal DsCopyModule =
@@ -44,6 +42,10 @@ module internal DsCopyModule =
     // 시각적 구분을 위해서 길어지더라도 한줄로 표현 할 것.
     let replicatePropertiesImpl (src:#Unique) (dst:#Unique) : #Unique =
         let theDbApi = AppDbApi.TheAppDbApi
+        // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
+        //let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= theDbApi.TryFindEnumValueId<DbStatus4>
+        let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= DbApi.TryGetEnumId<DbStatus4>
+        let getStatus    (s4:Id option):DbStatus4 option = s4 >>= DbApi.TryGetEnumValue<DbStatus4>
 
         linkUniq src dst |> ignore
 
@@ -96,35 +98,22 @@ module internal DsCopyModule =
             | :? ORMFlow as d -> d.PropertiesJson <- propertiesJson
             | _ -> fail()
 
-        | :? IDsWork ->
+        | :? IDsWork ->     // FlowId 는 추후에 채워 줘야 함.
             // Work, NjWork, ORMWork
-            let flowGuid, propertiesJson =
+            let flowGuid, propertiesJson, status4 =
                 match sbx with
-                | :? Work    as w -> w.FlowGuid, w.PropertiesJson
-                | :? NjWork  as w ->
-                    let flowGuid = w.FlowGuid |> Option.ofObj |-> s2guid
-                    let propsJson = w.Properties.ToJson()
-                    flowGuid, propsJson
-                | :? ORMWork as w -> w.FlowGuid, w.PropertiesJson
+                | :? Work    as w -> w.FlowGuid,                            w.PropertiesJson, w.Status4
+                | :? NjWork  as w -> w.FlowGuid |> Option.ofObj |-> s2guid, w.Properties.ToJson(), w.Status4
+                | :? ORMWork as w -> w.FlowGuid,                            w.PropertiesJson, w.Status4Id |> getStatus
                 | _ -> fail()
 
             match dbx with
-            | :? Work    as d ->
-                d.FlowGuid <- flowGuid
-                d.PropertiesJson <- propertiesJson
-            | :? NjWork  as d ->
-                d.FlowGuid <- flowGuid |-> guid2str |> Option.toObj
-                d.Properties <- JsonPolymorphic.FromJson<WorkProperties> propertiesJson
-            | :? ORMWork as d ->
-                d.FlowGuid <- flowGuid
-                d.PropertiesJson <- propertiesJson
+            | :? Work    as d -> d.FlowGuid <- flowGuid;                              d.PropertiesJson <- propertiesJson;                                       d.Status4 <- status4;
+            | :? NjWork  as d -> d.FlowGuid <- flowGuid |-> guid2str |> Option.toObj; d.Properties <- JsonPolymorphic.FromJson<WorkProperties> propertiesJson;  d.Status4 <- status4;
+            | :? ORMWork as d -> d.FlowGuid <- flowGuid;                              d.PropertiesJson <- propertiesJson;                                       d.Status4Id <- getStatus4Id status4;
             | _ -> fail()
 
         | :? IDsCall ->
-            // sbx와 dbx 타입에 따라 속성 복사 및 타입 변환 처리
-            //let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= theDbApi.TryFindEnumValueId<DbStatus4>
-            let getStatus4Id (s4:DbStatus4 option):Id option = s4 >>= DbApi.TryGetEnumId<DbStatus4>
-            let getStatus    (s4:Id option):DbStatus4 option = s4 >>= DbApi.TryGetEnumValue<DbStatus4>
             match sbx with
             | :? Call as s ->
                 match dbx with

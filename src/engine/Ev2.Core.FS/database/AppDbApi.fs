@@ -1,7 +1,6 @@
 namespace Ev2.Core.FS
 
 open System
-open System.Linq
 open System.Data
 open System.IO
 open Dapper
@@ -146,14 +145,6 @@ type AppDbApi(dbProvider:DbProvider) = // CallCache, CheckDatabaseChange, ClearA
         x.EnumCache.Reset() |> ignore
 
     member x.CreateConnection() = conn()
-
-    member private x.EnumerateRows<'T>(tableName:string, criteriaName:string, criteriaIds:int[]) =
-        use conn = x.CreateConnection()
-        conn.QueryRows<'T>(tableName, criteriaName, criteriaIds, tr=null) |> toArray
-
-    member x.EnumerateWorks       (?systemIds:int[]) = x.EnumerateRows<ORMWork>(Tn.Work, "systemId", systemIds |? [||])
-    member x.EnumerateWorksOfFlows(?flowIds:int[])   = x.EnumerateRows<ORMWork>(Tn.Work, "flowId",   flowIds   |? [||])
-    member x.EnumerateCalls       (?workIds:int[])   = x.EnumerateRows<ORMCall>(Tn.Call, "systemId", workIds   |? [||])
 
     // UI 에 의해서 변경되는 DB 항목을 windows service 구동되는 tiaApp 에서 감지하기 위한 용도.
     // UI 내에서는 변경감지를 하지 않고 refresh 를 통해서 DB 를 갱신한다.
@@ -319,15 +310,12 @@ module ORMTypeConversionModule =
 
     type IDsObject with // ToORM
         /// Rt object 를 DB 에 기록하기 위한 ORM object 로 변환.  e.g RtProject -> ORMProject
-        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi) =
-            rt2Orm dbApi x :?> 'T
+        member x.ToORM<'T when 'T :> ORMUnique>(dbApi:AppDbApi) = rt2Orm dbApi x :?> 'T
 
     type Project with // ToORM
         /// RtProject 를 DB 에 기록하기 위한 ORMProject 로 변환.
-        member x.ToORM(dbApi:AppDbApi): ORMProject =
-            rt2Orm dbApi x :?> ORMProject
+        member x.ToORM(dbApi:AppDbApi): ORMProject = rt2Orm dbApi x :?> ORMProject
 
     type DsSystem with // ToORM
         /// RtSystem 를 DB 에 기록하기 위한 ORMSystem 로 변환.
-        member x.ToORM(dbApi:AppDbApi): ORMSystem =
-            rt2Orm dbApi x :?> ORMSystem
+        member x.ToORM(dbApi:AppDbApi): ORMSystem = rt2Orm dbApi x :?> ORMSystem

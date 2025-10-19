@@ -652,8 +652,7 @@ module Ds2JsonModule =
                         let calls    = rt.Calls   |-> _.ToNj<NjCall>()  |> toArray
                         let arrows   = rt.Arrows  |-> _.ToNj<NjArrow>() |> toArray
                         let flowGuid = rt.Flow |-> (fun flow -> guid2str flow.Guid) |? null
-                        z.Initialize(calls, arrows, flowGuid) |> ignore
-                        z.Status4 <- rt.Status4)
+                        z.Initialize(calls, arrows, flowGuid) |> ignore)
                     :> NjUnique
 
 
