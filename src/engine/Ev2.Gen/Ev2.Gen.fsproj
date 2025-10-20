@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <None Include="devdoc\**\*.md" />
+	  <Compile Include="IR\IR.Common.fs" />
+	  <Compile Include="IR\IR.Project.fs" />
+	  <Compile Include="IR\IR.Devices.fs" />
+	  <Compile Include="IR\IR.IO.fs" />
+	  <Compile Include="IR\IR.DataTypes.fs" />
+	  <Compile Include="IR\IR.Variables.fs" />
+	  <Compile Include="IR\IR.Tasks.fs" />
+	  <Compile Include="IR\IR.POUs.fs" />
+	  <Compile Include="IR\IR.Motion.fs" />
+	  <Compile Include="IR\IR.Safety.fs" />
+	  <Compile Include="IR\IR.Communication.fs" />
+	  <Compile Include="IR\IR.HMI.fs" />
+	  <Compile Include="IR\IR.Metadata.fs" />
+	  <Compile Include="IR\IR.Root.fs" />
+  </ItemGroup>
+
+</Project>
