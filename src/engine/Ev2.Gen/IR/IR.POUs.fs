@@ -5,31 +5,17 @@ open System
 [<AutoOpen>]
 module IRPOUs =
 
-    /// POU Kind
-    type PouKind =
-        | Program
-        | Function
-        | FunctionBlock
-
-    /// Programming Language
-    type PouLanguage =
-        | LD   // Ladder Diagram
-        | FBD  // Function Block Diagram
-        | ST   // Structured Text (확장용)
-        | SFC  // Sequential Function Chart (확장용)
-        | IL   // Instruction List (확장용)
-
-    /// FBD Node Type
-    type FbdNodeType =
-        | FB of fbType: string  // Function Block instance
+    /// Function Block Node Type
+    type FunctionBlockNodeType =
         | VAR of varName: string  // Variable reference
         | CONST of value: obj  // Constant value
+        | FB of fbType: string  // Function Block instance
         | OP of operator: string  // Operator (AND, OR, ADD, etc.)
 
-    /// FBD Node
-    type FbdNode = {
+    /// Function Block Node
+    type FunctionBlockNode = {
         Id: string
-        NodeType: FbdNodeType
+        NodeType: FunctionBlockNodeType
         Position: Position option
     } with
         // Type Extension
@@ -48,10 +34,41 @@ module IRPOUs =
             | FB _ | OP _ -> true
             | _ -> false
 
-    /// FBD Diagram
-    type FbdDiagram = {
-        Nodes: FbdNode list
+    /// Function Block Diagram (그래픽 표현)
+    type FunctionBlockDiagram = {
+        Nodes: FunctionBlockNode list
         Wires: Wire list
+    }
+
+    /// Function Block Body (상태를 갖는 인스턴스 기반 구현)
+    type FunctionBlockBody = {
+        Diagram: FunctionBlockDiagram
+    }
+
+    /// Function Expression for algorithmic POUs (순수 계산 표현)
+    type FunctionExpression =
+        | Literal of obj
+        | Variable of string
+        | Call of name: string * arguments: FunctionExpression list
+        | Unary of operator: string * operand: FunctionExpression
+        | Binary of left: FunctionExpression * operator: string * right: FunctionExpression
+
+    /// Function Statement (지역 계산 또는 제어 흐름)
+    type FunctionStatement =
+        | Assignment of target: string * expression: FunctionExpression
+        | Invoke of name: string * arguments: FunctionExpression list
+        | Return of FunctionExpression option
+
+    /// Function 구현 유형
+    type FunctionImplementation =
+        | Expression of FunctionExpression
+        | Statements of FunctionStatement list
+
+    /// Function Body (인스턴스 없이 결과값을 반환하는 순수 함수)
+    type FunctionBody = {
+        ReturnType: string
+        ReturnVariable: string
+        Implementation: FunctionImplementation
     }
 
     /// LD Contact Type
@@ -233,7 +250,8 @@ module IRPOUs =
     /// POU Body (언어별 구현)
     type PouBody =
         | LD of LdDiagram
-        | FBD of FbdDiagram
+        | FunctionBlock of FunctionBlockBody
+        | Function of FunctionBody
         | ST of code: string  // Structured Text (확장용)
         | SFC of json: string  // SFC는 복잡하므로 일단 JSON 문자열로 (확장용)
         | IL of code: string  // Instruction List (확장용)
@@ -263,7 +281,7 @@ module IRPOUs =
     /// POU (Program Organization Unit)
     type POU = {
         Name: string
-        Kind: PouKind
+        Kind: PouType
         Language: PouLanguage
         Interface: PouInterface
         Body: PouBody
@@ -365,8 +383,8 @@ module IRPOUs =
                 Comment = comment
             }
 
-    /// FBD Helper 함수들
-    module FbdHelper =
+    /// Function Block Helper 함수들
+    module FunctionBlockHelper =
 
         /// FB Node 생성
         let fbNode fbType =
@@ -405,4 +423,45 @@ module IRPOUs =
             {
                 From = { Node = fromNode; Port = fromPort }
                 To = { Node = toNode; Port = toPort }
+            }
+
+        /// Function Block Body 생성
+        let createBody nodes wires =
+            {
+                Diagram = {
+                    Nodes = nodes
+                    Wires = wires
+                }
+            }
+
+    /// Function Helper 함수들
+    module FunctionHelper =
+
+        let literal value = Literal value
+
+        let variable name = Variable name
+
+        let call name arguments = Call(name, arguments)
+
+        let unary operator operand = Unary(operator, operand)
+
+        let binary left operator right = Binary(left, operator, right)
+
+        let assignment target expression = Assignment(target, expression)
+
+        let invoke name arguments = Invoke(name, arguments)
+
+        let returnValue expression = Return(Some expression)
+
+        let returnVoid = Return None
+
+        let implementationFromExpression expression = Expression expression
+
+        let implementationFromStatements statements = Statements statements
+
+        let create returnType returnVariable implementation =
+            {
+                ReturnType = returnType
+                ReturnVariable = returnVariable
+                Implementation = implementation
             }

@@ -221,8 +221,8 @@ Rung: --[A]--+--[B]--+--( Out )--
 ```
 
 이걸 표현하려면:
+### 방법 1: Wire로 병렬 표현 (full coverage)
 ```fsharp
-// 방법 1: Wire로 병렬 표현
 {
     Elements = [
         Contact "A"    // E1
@@ -237,8 +237,11 @@ Rung: --[A]--+--[B]--+--( Out )--
         { From = {Node="C"; Port="Out"}; To = {Node="Out"; Port="In"} }
     ]
 }
+```
 
-// 방법 2: Network 구조 (더 직관적)
+### 방법 2: Network 구조 (더 직관적)
+- 단일 입력 / 단일 출력일 때만 가능
+```fsharp
 type LdNetwork =
     | Series of LdNetwork list
     | Parallel of LdNetwork list

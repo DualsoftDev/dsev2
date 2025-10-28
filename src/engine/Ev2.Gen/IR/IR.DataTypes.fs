@@ -9,7 +9,6 @@ module IRDataTypes =
     type StructField = {
         Name: string
         FieldType: string  // Type은 F# 예약어이므로 FieldType 사용
-        Unit: string option
         DefaultValue: obj option
     }
 
