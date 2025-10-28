@@ -10,7 +10,7 @@ open System.Collections.Generic
 [<AllowNullLiteral>] type IVariable = inherit ITerminal
 [<AllowNullLiteral>] type ILiteral = inherit ITerminal
 [<AllowNullLiteral>] type IFunctionCall = inherit IExpression
-[<AllowNullLiteral>] type IFBInstance = interface end
+[<AllowNullLiteral>] type IFBCall = interface end
 
 [<AllowNullLiteral>] type IVariable<'T> = inherit IVariable
 [<AllowNullLiteral>] type ILiteral<'T> = inherit ILiteral
@@ -121,7 +121,7 @@ module TimerCounterModule =
 
     type TimerCall(timerType:TimerType, rungIn: IExpression<bool>, reset:IExpression<bool>, preset:IVariable<bool>) =
         let ts = TimerStruct(timerType, nullString, rungIn, null, null, preset, null, reset, null)
-        interface IFBInstance
+        interface IFBCall
         new() = TimerCall(TimerType.Undefined, null, null, null)        // for serialization
         member val TimerType = timerType with get, set
         member val RungIn = rungIn with get, set
@@ -160,36 +160,102 @@ module TimerCounterModule =
     }
 
 
-type ExtendedFunction =
-    | ForLoop of counter:IExpression<uint16>
-    | Next
-    | Break of exp:IExpression<bool>
+type ISnippet = interface end
+type IStatement = interface end
 
-    | Call of exp:IExpression<bool> * funcCall:IFunctionCall        // Call - End
-    | End
+[<AbstractClass>]
+type Snippet(body:IStatement[]) =
+    interface ISnippet
+    member x.Body = body
 
-    | SBRT of exp:IExpression<bool>     // SBRT - RET
-    | Ret
+type ForLoopSnippet(counter:IExpression<uint16>, body:IStatement[]) =   // NEXT 로 종료
+    inherit Snippet(body)
+    member x.Counter = counter
 
-type Statement =
-    | Assign of exp:IExpression<bool> * lValue: IVariable<bool>
-    | SetCoil of exp:IExpression<bool> * coil: IVariable<bool>
-    | ResetCoil of exp:IExpression<bool> * coil: IVariable<bool>
-    | Timer of timerType:TimerType * rungIn: IExpression<bool> * reset:IExpression<bool> * preset: IExpression<CountUnitType>
+type SubroutineSnippet(name:string, body:IStatement[]) =    // RET 로 종료
+    inherit Snippet(body)
+    member x.Name = name
 
-and FunctionBody =
-    | StatementsBody of Statement list
-    | ExpressionBody of IExpression
-    interface IProgram
 
-and FunctionCall(name:string, arguments:IExpression list, returnType:DataType) =
-    interface IFunctionCall
+//type ExtendedFunction =
+//    | ForLoop of counter:IExpression<uint16>
+//    | Next
+
+//    | Call of exp:IExpression<bool> * funcCall:IFunctionCall        // Call - End
+//    | End
+
+//    | SBRT of exp:IExpression<bool>     // SBRT - RET
+//    | Ret
+
+
+
+//and FunctionBody =
+//    | StatementsBody of Statement list
+//    | ExpressionBody of IExpression
+//    interface IProgram
+
+/// XGK 기준 대소 비교 등.
+type OperatorCall(name:string, arguments:IExpression list, returnType:DataType) =
     interface IExpression
-    new() = FunctionCall(nullString, [], DtUndefined)        // for serialization
+    new() = OperatorCall(nullString, [], DtUndefined)        // for serialization
     member val Name = name with get, set
     member val Arguments = arguments with get, set
     member val ReturnType = returnType with get, set
 
+// Function/Fuction Block 의 Call Box
+type CallBox(inputs:IExpression[], outputs:IExpression[]) =
+    member val Inputs = inputs with get, set
+    member val Outputs = outputs with get, set
+
+    member x.EN = x.Inputs[0]
+    member x.ENO = x.Outputs[0]
+
+/// XGI 기준 함수 호출.  expression 이 아니다.
+type FunctionCall(name:string, inputs:IExpression[], outputs:IExpression[]) =
+    inherit CallBox(inputs, outputs)
+    interface IFunctionCall
+    new() = FunctionCall(nullString, [||], [||])        // for serialization
+    member val Name = name with get, set
+
+/// XGI 기준 함수 호출.  expression 이 아니다.
+type FBCall(name:string, inputs:IExpression[], outputs:IExpression[]) =
+    inherit CallBox(inputs, outputs)
+    interface IFBCall
+    new() = FBCall(nullString, [||], [||])        // for serialization
+    member val Name = name with get, set
+
+type Statement =
+    | StAssign of exp:IExpression<bool> * lValue: IVariable<bool>
+    | StSetCoil of exp:IExpression<bool> * coil: IVariable<bool>
+    | StResetCoil of exp:IExpression<bool> * coil: IVariable<bool>
+    | StTimer of timerType:TimerType * rungIn: IExpression<bool> * reset:IExpression<bool> * preset: IExpression<CountUnitType>
+    | StBreak of exp:IExpression<bool>    // for loop 내에서 사용
+    | StSubroutineCall of exp:IExpression<bool> * subroutine:SubroutineSnippet
+    | StFunctionCall of FunctionCall
+    | StFBCall of FBCall
+    interface IStatement
+
+
+
+type ProgramType =
+    | PtScanProgram
+    | PtFunction
+    | PtFunctionBlock
+
+
+[<AbstractClass>]
+type Program() =
+    interface IProgram
+    member val Name = nullString with get, set
+    member val Statements = [] : Statement list with get, set
+    member val SubroutineSnippets = [] : SubroutineSnippet list with get, set
+
+type ScanProgram() =
+   inherit Program()
+type FunctionDefinition() =
+   inherit Program()
+type FBDefinition() =
+   inherit Program()
 
 
 
