@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+
+		<IsPackable>false</IsPackable>
+		<GenerateProgramFile>false</GenerateProgramFile>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="..\..\engine\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<None Include="..\..\engine\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="CreateMemoryInstance.fs" />
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<PackageReference Include="FsUnit" Version="6.0.0" />
+		<PackageReference Include="FsUnit.xUnit" Version="6.0.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
+		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
+		<ProjectReference Include="..\..\engine\Ev2.Gen\Ev2.Gen.fsproj" />
+	</ItemGroup>
+
+</Project>
