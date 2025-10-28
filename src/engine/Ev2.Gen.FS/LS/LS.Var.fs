@@ -77,6 +77,8 @@ type Variable<'T>(name) =
     member val Hmi = false with get, set
     member val Eip = false with get, set    // EIP/OPC UA
 
+/// 구조체 변수.
+// - 산전 기준으로는 Struct 내에 Struct 는 허용하지 않음
 type Struct(name:string, fields:IVariable[]) =
     let fieldDic = fields |> Array.map (fun f -> f.Name, f) |> dict
 

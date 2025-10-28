@@ -25,25 +25,26 @@ module InstanceCreationTestModule =
 
     [<Test>]
     let ``Create Struct`` () =
-        //let contactStruct =
-        //    let fields:IVariable[] = [|
-        //        new Var<string>("Address") :> IVariable
-        //        new Var<int>("Postal")
-        //        new Var<string>("Mobile")
-        //    |]
+        let contactStruct =
+            let fields:IVariable[] = [|
+                new Var<string>("Address") :> IVariable
+                new Var<int>("Postal")
+                new Var<string>("Mobile")
+            |]
 
-        //    new Struct("Contact", fields)
+            new Struct("Contact", fields)
 
 
         let fields:IVariable[] = [|
             new Var<string>("Name") :> IVariable
             new Var<int>("Age")
             new Array<string>("Favorites", [| Ev2.Gen.Range(0, 10) |])
+            contactStruct :> IVariable
         |]
 
         let person = new Struct("Person", fields)
         person.Name === "Person"
-        person.Fields.Length === 3
+        person.Fields.Length === 4
         let name = person.GetField("Name")
         name.DataType === typeof<string>
         let age = person.GetField("Age")
@@ -52,3 +53,9 @@ module InstanceCreationTestModule =
         let fav = person.GetField("Favorites")
         fav.DataType === typeof<Array<string>>
         (fav :?> Array<string>).InnerDataType === typeof<string>
+
+        let contact = person.GetField("Contact") :?> Struct
+        contact.DataType === typeof<Struct>
+        contact.GetField("Address").DataType === typeof<string>
+        contact.GetField("Postal").DataType === typeof<int>
+        contact.GetField("Mobile").DataType === typeof<string>

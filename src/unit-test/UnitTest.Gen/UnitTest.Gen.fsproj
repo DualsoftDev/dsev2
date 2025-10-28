@@ -31,7 +31,7 @@
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
 		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
-		<ProjectReference Include="..\..\engine\Ev2.Gen\Ev2.Gen.fsproj" />
+		<ProjectReference Include="..\..\engine\Ev2.Gen.FS\Ev2.Gen.FS.fsproj" />
 	</ItemGroup>
 
 </Project>
