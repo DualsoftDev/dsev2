@@ -32,7 +32,11 @@ type StructTest() =
                 [|
                     new Var<string>("Name", Value="Kim") :> IVariable
                     new Var<int>("Age", Value=16)
-                    new Array<string>("Favorites", [| Ev2.Gen.Range(0, 10) |])
+                    new Array<string>(
+                        "Favorites",
+                        [| Ev2.Gen.Range(0, 10) |],
+                        Value = [| "코딩"; "음악"; "여행" |]
+                    )
                     new Struct(
                         "Contact",
                         [|
@@ -53,10 +57,22 @@ type StructTest() =
 
         let fav = person.GetField("Favorites")
         fav.DataType === typeof<Array<string>>
-        (fav :?> Array<string>).InnerDataType === typeof<string>
+        let favArray = fav :?> Array<string>
+        favArray.ElementDataType === typeof<string>
+        match favArray.Value with
+        | null ->
+            Assert.Fail("Favorites 배열의 초기값이 설정되지 않았습니다.")
+        | value ->
+            value.GetType() === typeof<string[]>
+            let initValues = value :?> string[]
+            initValues.Length === 3
+            initValues[0] === "코딩"
+            initValues[1] === "음악"
+            initValues[2] === "여행"
 
         let contact = person.GetField("Contact") :?> Struct
         contact.DataType === typeof<Struct>
         contact.GetField("Address").DataType === typeof<string>
         contact.GetField("Postal").DataType === typeof<int>
         contact.GetField("Mobile").DataType === typeof<string>
+

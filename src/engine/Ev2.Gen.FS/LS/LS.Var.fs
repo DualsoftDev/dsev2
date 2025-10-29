@@ -101,11 +101,12 @@ type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
     new() = Array<'T>(nullString, [||])
     member x.Dimensions = dimensions
     member x.DataType = typeof<Array<'T>>
-    member x.InnerDataType = typeof<'T>
+    member x.ElementDataType = typeof<'T>
+    member val Value: obj = null with get, set   // 'T[], 'T[,] or 'T[,,] ...
 
     interface IArray with
         member x.Dimensions = x.Dimensions
-        member x.DataType = x.InnerDataType
+        member x.DataType = x.ElementDataType
     interface IVariable with
         member x.Name = name
         member x.DataType = x.DataType
@@ -115,5 +116,4 @@ type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
 
 type Storage() =
     inherit Dictionary<string, IVariable>(StringComparer.OrdinalIgnoreCase)
-
 
