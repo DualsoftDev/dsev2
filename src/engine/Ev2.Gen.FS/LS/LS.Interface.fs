@@ -23,6 +23,7 @@ type IArray =
 type ITerminal =
     inherit IExpression
     abstract DataType : System.Type
+    abstract Value    : obj
 
 [<AllowNullLiteral>]
 type IVariable =

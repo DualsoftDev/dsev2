@@ -23,32 +23,33 @@ module InstanceCreationTestModule =
         pi.DataType === typeof<double>
         pi.Value === 3.14
 
+type StructTest() =
     [<Test>]
-    let ``Create Struct`` () =
-        let contactStruct =
-            let fields:IVariable[] = [|
-                new Var<string>("Address") :> IVariable
-                new Var<int>("Postal")
-                new Var<string>("Mobile")
-            |]
-
-            new Struct("Contact", fields)
-
-
-        let fields:IVariable[] = [|
-            new Var<string>("Name") :> IVariable
-            new Var<int>("Age")
-            new Array<string>("Favorites", [| Ev2.Gen.Range(0, 10) |])
-            contactStruct :> IVariable
-        |]
-
-        let person = new Struct("Person", fields)
+    member _.``Create Struct``() =
+        let person =
+            new Struct(
+                "Person",
+                [|
+                    new Var<string>("Name", Value="Kim") :> IVariable
+                    new Var<int>("Age", Value=16)
+                    new Array<string>("Favorites", [| Ev2.Gen.Range(0, 10) |])
+                    new Struct(
+                        "Contact",
+                        [|
+                            new Var<string>("Address", Value="서울") :> IVariable
+                            new Var<int>("Postal", Value=12345)
+                            new Var<string>("Mobile", Value="010-1234-5678")
+                        |]
+                    )
+                |])
         person.Name === "Person"
         person.Fields.Length === 4
         let name = person.GetField("Name")
         name.DataType === typeof<string>
+        name.Value === "Kim"
         let age = person.GetField("Age")
         age.DataType === typeof<int>
+        age.Value === 16
 
         let fav = person.GetField("Favorites")
         fav.DataType === typeof<Array<string>>

@@ -2,6 +2,7 @@ namespace Ev2.Gen
 
 open System
 open System.Collections.Generic
+open Dual.Common.Base
 
 (*
  * 글로벌/직접 변수: VAR_GLOBAL, VAR_GLOBAL_CONST
@@ -56,6 +57,7 @@ type Literal<'T>(value:'T) =
     member val Value = value with get, set
     interface ILiteral<'T> with
         member x.DataType = x.DataType
+        member x.Value = x.Value
 
 type Var<'T>(name:string) =
     member x.Name = name
@@ -65,6 +67,7 @@ type Var<'T>(name:string) =
     interface IVariable<'T> with
         member x.Name = x.Name
         member x.DataType = x.DataType
+        member x.Value = x.Value
 
 type Variable<'T>(name) =
     inherit Var<'T>(name)
@@ -92,6 +95,7 @@ type Struct(name:string, fields:IVariable[]) =
     interface IVariable with
         member x.Name = x.Name
         member x.DataType = x.DataType
+        member x.Value = x
 
 type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
     new() = Array<'T>(nullString, [||])
@@ -105,6 +109,7 @@ type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
     interface IVariable with
         member x.Name = name
         member x.DataType = x.DataType
+        member x.Value = fail()
 
 
 
