@@ -2,6 +2,7 @@ namespace Ev2.Gen
 
 open System
 open System.Collections.Generic
+open Dual.Common.Base
 
 
 [<AutoOpen>]
@@ -83,7 +84,12 @@ module POUModule =
     type Rung = {
         Statement:Statement
         Comment:string
-    }
+    } with
+        static member Create(statement:Statement, ?comment:string) =
+            {
+                Statement = statement
+                Comment = comment |? nullString
+            }
 
 
 

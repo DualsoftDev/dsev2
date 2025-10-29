@@ -1,6 +1,7 @@
-namespace Ev2.Gen
+namespace Ev2.Gen.IR.Unused
 
 open System
+open Ev2.Gen
 
 [<AutoOpen>]
 module IRPOUs =

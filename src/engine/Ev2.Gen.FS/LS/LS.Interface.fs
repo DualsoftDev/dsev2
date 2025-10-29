@@ -32,9 +32,9 @@ type IVariable =
 
 [<AllowNullLiteral>] type ILiteral = inherit ITerminal
 
-[<AllowNullLiteral>] type IVariable<'T>   = inherit IVariable
-[<AllowNullLiteral>] type ILiteral<'T>    = inherit ILiteral
 [<AllowNullLiteral>] type IExpression<'T> = inherit IExpression
+[<AllowNullLiteral>] type IVariable<'T>   = inherit IVariable   inherit IExpression<'T>
+[<AllowNullLiteral>] type ILiteral<'T>    = inherit ILiteral    inherit IExpression<'T>
 //[<AllowNullLiteral>] type IStorage      = interface end
 
 

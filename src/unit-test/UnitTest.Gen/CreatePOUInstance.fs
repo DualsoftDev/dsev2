@@ -3,23 +3,19 @@ namespace T
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Gen
-open Ev2.Gen.POUModule
-open Ev2.Gen.ProgramBlockModule
 
-type private PouBoolExpression(value: bool) =
-    member _.Value = value
-    interface IExpression<bool>
+[<AutoOpen>]
+module private PouTestHelperModule =
+    let trueValue  = Literal<bool>(true)
+    let falseValue = Literal<bool>(false)
+    let coil name  = Var<bool>(name) :> IVariable<bool>
 
-module private PouTestHelpers =
-    let boolExpr value = PouBoolExpression(value) :> IExpression<bool>
-    let coil name = new Var<bool>(name) :> IVariable<bool>
-    let rung comment statement = { Statement = statement; Comment = comment }
 
 type PouInstanceTest() =
     [<Test>]
     member _.``ScanProgram 생성``() =
-        let mainRung = PouTestHelpers.rung "메인 스캔" (StSetCoil(PouTestHelpers.boolExpr true, PouTestHelpers.coil "MainCoil"))
-        let subroutineBody: IRung[] = [| StBreak(PouTestHelpers.boolExpr false) :> IRung |]
+        let mainRung = Rung.Create(StSetCoil(trueValue, coil "MainCoil"), "메인 스캔")
+        let subroutineBody: IRung[] = [| StBreak(falseValue) :> IRung |]
         let stopRoutine = SubroutineSnippet("StopRoutine", subroutineBody)
 
         let program = ScanProgram("MainProgram", [| mainRung |], [| stopRoutine |])
@@ -35,8 +31,8 @@ type PouInstanceTest() =
 
     [<Test>]
     member _.``FunctionProgram 생성``() =
-        let returnRung = PouTestHelpers.rung "반환 설정" (StAssign(PouTestHelpers.boolExpr true, PouTestHelpers.coil "Return"))
-        let helperRoutine = SubroutineSnippet("Helper", [| StBreak(PouTestHelpers.boolExpr true) :> IRung |])
+        let returnRung = Rung.Create(StAssign(trueValue, coil "Return"), "반환 설정")
+        let helperRoutine = SubroutineSnippet("Helper", [| StBreak(trueValue) :> IRung |])
 
         let funcProgram = FunctionProgram("Calculate", [| returnRung |], [| helperRoutine |])
         funcProgram.ReturnType <- typeof<int>
@@ -49,7 +45,7 @@ type PouInstanceTest() =
 
     [<Test>]
     member _.``POU 레코드 및 Project 구성``() =
-        let rung = PouTestHelpers.rung "FB 호출" (StFBCall(FBCall("Mixer", [||], [||])))
+        let rung = Rung.Create(StFBCall(FBCall("Mixer", [||], [||])), "FB 호출")
         let fbProgram = FBProgram("MixerProgram", [| rung |], [||])
         let storage = Storage()
         storage.Add("MixerReady", new Var<bool>("MixerReady") :> IVariable)
