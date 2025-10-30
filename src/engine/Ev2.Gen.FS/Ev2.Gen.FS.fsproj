@@ -24,7 +24,7 @@
 	  <Compile Include="IR\IR.Root.fs" />
 	  <Compile Include="ls\LS.Interface.fs" />
 	  <Compile Include="LS\LS.Var.fs" />
-	  <Compile Include="ls\LS.Function.fs" />
+	  <Compile Include="ls\LS.Operator.fs" />
 	  <Compile Include="ls\LS.ComplexTypes.fs" />
 	  <Compile Include="ls\LS.Timer.Counter.fs" />
 	  <Compile Include="ls\LS.POU.fs" />

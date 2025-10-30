@@ -7,7 +7,7 @@ open Ev2.Gen
 type PouInstanceTest() =
     [<Test>]
     member _.``ScanProgram 생성``() =
-        let mainRung = Rung.Create(StSetCoil(trueValue, coil "MainCoil"), "메인 스캔")
+        let mainRung = Rung.Create(StSetCoil(trueValue, boolContact "MainCoil"), "메인 스캔")
         let subroutineBody: IRung[] = [| StBreak(falseValue) :> IRung |]
         let stopRoutine = Subroutine("StopRoutine", subroutineBody)
 
@@ -24,7 +24,7 @@ type PouInstanceTest() =
 
     [<Test>]
     member _.``FunctionProgram 생성``() =
-        let returnRung = Rung.Create(StAssign(trueValue, coil "Return"), "반환 설정")
+        let returnRung = Rung.Create(StAssign(trueValue, boolContact "Return"), "반환 설정")
         let helperRoutine = Subroutine("Helper", [| StBreak(trueValue) :> IRung |])
 
         let funcProgram = FunctionProgram("Calculate", [| returnRung |], [| helperRoutine |])

@@ -2,6 +2,7 @@ namespace Ev2.Gen
 
 open System
 open System.Collections.Generic
+open Dual.Common.Base
 
 (*
  * 글로벌/직접 변수: VAR_GLOBAL, VAR_GLOBAL_CONST
@@ -57,16 +58,18 @@ type Literal<'T>(value:'T) =
     interface ILiteral<'T> with
         member x.DataType = x.DataType
         member x.Value = x.Value
+        member x.TValue = x.Value
 
-type Var<'T>(name:string) =
+type Var<'T>(name:string, ?value:'T) =
     member x.Name = name
     member x.DataType = typeof<'T>
     member val Comment = null:string with get, set
-    member val Value = Unchecked.defaultof<'T> with get, set
+    member val Value = value |? Unchecked.defaultof<'T> with get, set
     interface IVariable<'T> with
         member x.Name = x.Name
         member x.DataType = x.DataType
         member x.Value = x.Value
+        member x.TValue = x.Value
 
 type Variable<'T>(name) =
     inherit Var<'T>(name)
@@ -74,7 +77,7 @@ type Variable<'T>(name) =
 
     member val Retain = false with get, set
     member val Address = null:string with get, set
-    member val Init: obj option = None with get, set
+    //member val Init: obj option = None with get, set
 
     member val Hmi = false with get, set
     member val Eip = false with get, set    // EIP/OPC UA

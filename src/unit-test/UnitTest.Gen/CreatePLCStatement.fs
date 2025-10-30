@@ -4,14 +4,6 @@ open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Gen
 
-
-[<AutoOpen>]
-module internal PouTestHelperModule =
-    let trueValue  = Literal<bool>(true)
-    let falseValue = Literal<bool>(false)
-    let coil name  = Var<bool>(name) :> IVariable<bool>
-
-
 type PlcStatementTest() =
     [<Test>]
     member _.``StAssign 생성``() =

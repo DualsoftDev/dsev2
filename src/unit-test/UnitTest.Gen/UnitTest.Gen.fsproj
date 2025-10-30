@@ -16,6 +16,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Include="TestCommon.fs" />
+		<Compile Include="Arithmatics.fs" />
 		<Compile Include="CreatePLCStatement.fs" />
 		<Compile Include="CreatePOUInstance.fs" />
 		<Compile Include="CreateMemoryInstance.fs" />
