@@ -19,11 +19,12 @@ module ProgramBlockModule =
         inherit Snippet(body)
         member x.Counter = counter
 
-    type SubroutineSnippet(name:string, body:IRung[]) =    // RET 로 종료
+    /// Subroutine code snippet
+    type Subroutine(name:string, body:IRung[]) =    // RET 로 종료
         inherit Snippet(body)
         member x.Name = name
 
-    // Function/Fuction Block 의 Call Box
+    /// Function/Fuction Block 의 Call Box
     type CallBox(inputs:IExpression[], outputs:IExpression[]) =
         member val Inputs = inputs with get, set
         member val Outputs = outputs with get, set
@@ -54,12 +55,12 @@ module XGKBasedModule =
         member val Arguments = arguments with get, set
         member x.Expression = exp
 
-    /// XGK 기준 대소 비교 등.
-    type OperatorCall(name:string, exp:IExpression<bool>, arguments:IExpression[], returnType:Type) =
-        inherit OperatorCallOrCommand(name, exp, arguments)
-        interface IExpression
-        new() = OperatorCall(nullString, null, [||], typeof<bool>)
-        member val ReturnType = returnType with get, set
+    ///// XGK 기준 대소 비교 등.
+    //type OperatorCall(name:string, exp:IExpression<bool>, arguments:IExpression[], returnType:Type) =
+    //    inherit OperatorCallOrCommand(name, exp, arguments)
+    //    interface IExpression
+    //    new() = OperatorCall(nullString, null, [||], typeof<bool>)
+    //    member val ReturnType = returnType with get, set
 
     type Command(name:string, exp:IExpression<bool>, arguments:IExpression[]) =
         inherit OperatorCallOrCommand(name, exp, arguments)
@@ -76,7 +77,7 @@ module POUModule =
         | StTimer of TimerCall      // timerType:TimerType * rungIn: IExpression<bool> * reset:IExpression<bool> * preset: IExpression<CountUnitType>
         | StCounter of CounterCall  // counterType:CounterType * rungIn: IExpression<bool> * reset:IExpression<bool> * preset: IExpression<CountUnitType>
         | StBreak of exp:IExpression<bool>    // for loop 내에서 사용
-        | StSubroutineCall of exp:IExpression<bool> * subroutine:SubroutineSnippet
+        | StSubroutineCall of exp:IExpression<bool> * subroutine:Subroutine
         | StFunctionCall of FunctionCall
         | StFBCall of FBCall
         interface IRung
@@ -103,7 +104,7 @@ module POUModule =
     //    member x.Subroutines = subroutines
 
     [<AbstractClass>]
-    type Program(name:string, rungs:Rung[], subroutines:SubroutineSnippet[]) =
+    type Program(name:string, rungs:Rung[], subroutines:Subroutine[]) =
         interface IProgram
         member x.Name = name
         member x.Rungs = rungs
@@ -111,19 +112,19 @@ module POUModule =
         member val Comment = null:string with get, set
 
     [<AbstractClass>]
-    type SubProgram(name:string, rungs:Rung[], subroutines:SubroutineSnippet[]) =
+    type SubProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
         inherit Program(name, rungs, subroutines)
         member val UseEnEno = true with get, set
         member val ColumnWidth = 1 with get, set
 
-    type ScanProgram(name:string, rungs:Rung[], subroutines:SubroutineSnippet[]) =
+    type ScanProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
         inherit Program(name, rungs, subroutines)
 
-    type FunctionProgram(name:string, rungs:Rung[], subroutines:SubroutineSnippet[]) =
+    type FunctionProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
         inherit SubProgram(name, rungs, subroutines)
         member val ReturnType: Type = typeof<bool> with get, set
 
-    type FBProgram(name:string, rungs:Rung[], subroutines:SubroutineSnippet[]) =
+    type FBProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
         inherit SubProgram(name, rungs, subroutines)
 
     type POU = {

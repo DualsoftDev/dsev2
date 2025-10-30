@@ -4,19 +4,12 @@ open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Gen
 
-[<AutoOpen>]
-module private PouTestHelperModule =
-    let trueValue  = Literal<bool>(true)
-    let falseValue = Literal<bool>(false)
-    let coil name  = Var<bool>(name) :> IVariable<bool>
-
-
 type PouInstanceTest() =
     [<Test>]
     member _.``ScanProgram 생성``() =
         let mainRung = Rung.Create(StSetCoil(trueValue, coil "MainCoil"), "메인 스캔")
         let subroutineBody: IRung[] = [| StBreak(falseValue) :> IRung |]
-        let stopRoutine = SubroutineSnippet("StopRoutine", subroutineBody)
+        let stopRoutine = Subroutine("StopRoutine", subroutineBody)
 
         let program = ScanProgram("MainProgram", [| mainRung |], [| stopRoutine |])
         program.Comment <- "메인 프로그램"
@@ -32,7 +25,7 @@ type PouInstanceTest() =
     [<Test>]
     member _.``FunctionProgram 생성``() =
         let returnRung = Rung.Create(StAssign(trueValue, coil "Return"), "반환 설정")
-        let helperRoutine = SubroutineSnippet("Helper", [| StBreak(trueValue) :> IRung |])
+        let helperRoutine = Subroutine("Helper", [| StBreak(trueValue) :> IRung |])
 
         let funcProgram = FunctionProgram("Calculate", [| returnRung |], [| helperRoutine |])
         funcProgram.ReturnType <- typeof<int>

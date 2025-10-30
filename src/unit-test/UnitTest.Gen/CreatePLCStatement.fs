@@ -3,34 +3,32 @@ namespace T
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Gen
-open Ev2.Gen.POUModule
-open Ev2.Gen.TimerCounterModule
 
-type private BoolExpression(value: bool) =
-    member _.Value = value
-    interface IExpression<bool>
 
-module private PlcStatementTestHelpers =
-    let inline boolExpr value = BoolExpression(value) :> IExpression<bool>
+[<AutoOpen>]
+module internal PouTestHelperModule =
+    let trueValue  = Literal<bool>(true)
+    let falseValue = Literal<bool>(false)
+    let coil name  = Var<bool>(name) :> IVariable<bool>
+
 
 type PlcStatementTest() =
     [<Test>]
     member _.``StAssign 생성``() =
-        let expr = PlcStatementTestHelpers.boolExpr true
         let targetVar = new Var<bool>("Output", Value=false)
-        let statement = StAssign(expr, targetVar :> IVariable<bool>)
+        let statement = StAssign(trueValue, targetVar :> IVariable<bool>)
 
         match statement with
         | StAssign(exp, lValue) ->
-            obj.ReferenceEquals(expr, exp) === true
+            obj.ReferenceEquals(trueValue, exp) === true
             obj.ReferenceEquals(targetVar :> IVariable<bool>, lValue) === true
         | _ ->
             Assert.Fail("StAssign 생성에 실패했습니다.")
 
     [<Test>]
     member _.``StTimer 생성``() =
-        let rungIn = PlcStatementTestHelpers.boolExpr true
-        let reset = PlcStatementTestHelpers.boolExpr false
+        let rungIn = trueValue
+        let reset = falseValue
         let preset = new Var<bool>("Preset", Value=false) :> IVariable<bool>
 
         let timerCall = TimerCall(TimerType.TON, rungIn, reset, preset)
@@ -47,7 +45,7 @@ type PlcStatementTest() =
 
     [<Test>]
     member _.``Rung 레코드 생성``() =
-        let expr = PlcStatementTestHelpers.boolExpr true
+        let expr = trueValue
         let coil = new Var<bool>("MainCoil") :> IVariable<bool>
         let statement = StSetCoil(expr, coil)
         let rung:Rung = { Statement = statement; Comment = "메인 라인" }
