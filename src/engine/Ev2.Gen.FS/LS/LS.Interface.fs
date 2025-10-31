@@ -14,6 +14,9 @@ type IWithValue =
 
 [<AllowNullLiteral>] type IProject        = interface end
 [<AllowNullLiteral>] type IProgram        = interface end
+[<AllowNullLiteral>] type IFunctionProgram = inherit IProgram inherit IWithType
+[<AllowNullLiteral>] type IFBProgram      = inherit IProgram
+[<AllowNullLiteral>] type IStatement      = interface end
 [<AllowNullLiteral>] type IValue          = interface end
 [<AllowNullLiteral>] type ICommand        = interface end      // copy, move
 [<AllowNullLiteral>] type IStruct         = interface end
@@ -58,6 +61,9 @@ type IVariable<'T> =
 
 [<AllowNullLiteral>] type ILiteral<'T>    = inherit ILiteral  inherit IExpression<'T>
 [<AllowNullLiteral>] type ITerminal<'T>   = inherit ITerminal inherit IExpression<'T>
-//[<AllowNullLiteral>] type IStorage      = interface end
+
+[<AllowNullLiteral>]
+type IStorage =
+    abstract IVariables : IVariable[]
 
 

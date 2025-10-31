@@ -24,27 +24,6 @@ module ProgramBlockModule =
         inherit Snippet(body)
         member x.Name = name
 
-    /// Function/Fuction Block 의 Call Box
-    type CallBox(inputs:IExpression[], outputs:IExpression[]) =
-        member val Inputs = inputs with get, set
-        member val Outputs = outputs with get, set
-
-        member x.EN = x.Inputs[0]
-        member x.ENO = x.Outputs[0]
-
-    /// XGI 기준 함수 호출.  expression 이 아니다.
-    type FunctionCall(name:string, inputs:IExpression[], outputs:IExpression[]) =
-        inherit CallBox(inputs, outputs)
-        interface IFunctionCall
-        new() = FunctionCall(nullString, [||], [||])        // for serialization
-        member val Name = name with get, set
-
-    /// XGI 기준 함수 호출.  expression 이 아니다.
-    type FBCall(name:string, inputs:IExpression[], outputs:IExpression[]) =
-        inherit CallBox(inputs, outputs)
-        interface IFBCall
-        new() = FBCall(nullString, [||], [||])        // for serialization
-        member val Name = name with get, set
 
 [<AutoOpen>]
 module XGKBasedModule =
@@ -80,18 +59,24 @@ module POUModule =
         | StSubroutineCall of exp:IExpression<bool> * subroutine:Subroutine
         | StFunctionCall of FunctionCall
         | StFBCall of FBCall
+        | StUndefined
         interface IRung
 
-    type Rung = {
-        Statement:Statement
-        Comment:string
-    } with
-        static member Create(statement:Statement, ?comment:string) =
-            {
-                Statement = statement
-                Comment = comment |? nullString
-            }
+    //type Rung = {
+    //    Statement:Statement
+    //    Comment:string
+    //} with
+    //    static member Create(statement:Statement, ?comment:string) =
+    //        {
+    //            Statement = statement
+    //            Comment = comment |? nullString
+    //        }
 
+    type Rung(statement:Statement, ?comment:string) =
+        new() = Rung(StUndefined)
+        member x.Statement = statement
+        member x.Comment:string = comment |? nullString
+        interface IRung
 
 
     //type POUType = PtScanProgram | PtFunction | PtFunctionBlock
@@ -104,40 +89,47 @@ module POUModule =
     //    member x.Subroutines = subroutines
 
     [<AbstractClass>]
-    type Program(name:string, rungs:Rung[], subroutines:Subroutine[]) =
+    type Program(name:string, globalStorage:Storage, localStorage:Storage, rungs:Rung[], subroutines:Subroutine[]) =
         interface IProgram
         member x.Name = name
         member x.Rungs = rungs
         member x.Subroutines = subroutines
+        member x.GlobalStorage = globalStorage
+        member x.LocalStorage = localStorage
         member val Comment = null:string with get, set
 
+    type ScanProgram(name, globalStorage, localStorage, rungs, subroutines) =
+        inherit Program(name, globalStorage, localStorage, rungs, subroutines)
+
     [<AbstractClass>]
-    type SubProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
-        inherit Program(name, rungs, subroutines)
+    type SubProgram(name, globalStorage, localStorage, rungs, subroutines) =
+        inherit Program(name, globalStorage, localStorage, rungs, subroutines)
         member val UseEnEno = true with get, set
         member val ColumnWidth = 1 with get, set
 
-    type ScanProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
-        inherit Program(name, rungs, subroutines)
+    type FunctionProgram<'T>(name, globalStorage, localStorage, rungs, subroutines) =
+        inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
+        interface IFunctionProgram with
+            member x.DataType = x.DataType
+        member x.DataType = typeof<'T>
 
-    type FunctionProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
-        inherit SubProgram(name, rungs, subroutines)
-        member val ReturnType: Type = typeof<bool> with get, set
-
-    type FBProgram(name:string, rungs:Rung[], subroutines:Subroutine[]) =
-        inherit SubProgram(name, rungs, subroutines)
+    type FBProgram(name, globalStorage, localStorage, rungs, subroutines) =
+        inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
+        interface IFBProgram
 
     type POU = {
         Storage:Storage
         Program:Program
     }
 
-    type Project() =
+    type Project(globalStorage:Storage) =
         interface IProject
-        member val GlobalVars = Storage() with get, set
+        member x.GlobalVars = globalStorage
+
+    type IECProject(globalStorage:Storage) =
+        inherit Project(globalStorage)
         member val UDTs:Struct[] = [||] with get, set
         member val ScanPrograms:POU[] = [||] with get, set
         member val FunctionPrograms:POU[] = [||] with get, set
         member val FBPrograms:POU[] = [||] with get, set
-
 

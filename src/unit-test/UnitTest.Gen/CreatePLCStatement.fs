@@ -40,7 +40,7 @@ type PlcStatementTest() =
         let expr = trueValue
         let coil = new Var<bool>("MainCoil") :> IVariable<bool>
         let statement = StSetCoil(expr, coil)
-        let rung:Rung = { Statement = statement; Comment = "메인 라인" }
+        let rung = Rung(statement, "메인 라인")
 
         rung.Comment === "메인 라인"
         match rung.Statement with
