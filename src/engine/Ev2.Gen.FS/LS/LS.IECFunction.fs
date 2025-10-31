@@ -31,3 +31,11 @@ module IECFunctionFunctionBlockModule =
         interface IFBCall
         new() = FBCall(null, null, null, [||], [||])        // for serialization
         member x.IFBInstance = fbInstance
+
+
+    type FunctionCallStatement(functionCall:FunctionCall, ?comment:string) =
+        inherit Statement(?comment=comment)
+        member x.FunctionCall = functionCall
+    type FBCallStatement(fbCall:FBCall, ?comment:string) =
+        inherit Statement(?comment=comment)
+        member x.FBCall = fbCall

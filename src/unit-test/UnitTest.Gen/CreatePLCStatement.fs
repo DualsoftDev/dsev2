@@ -6,16 +6,33 @@ open Ev2.Gen
 
 type PlcStatementTest() =
     [<Test>]
-    member _.``StAssign 생성``() =
+    member _.``Assign 문``() =
         let targetVar = new Var<bool>("Output", Value=false)
-        let statement = StAssign(trueValue, targetVar :> IVariable<bool>)
+        let statement = AssignStatement(trueValue, targetVar)
 
-        match statement with
-        | StAssign(exp, lValue) ->
-            obj.ReferenceEquals(trueValue, exp) === true
-            obj.ReferenceEquals(targetVar :> IVariable<bool>, lValue) === true
-        | _ ->
-            Assert.Fail("StAssign 생성에 실패했습니다.")
+        obj.ReferenceEquals(trueValue, statement.TSource) === true
+        obj.ReferenceEquals(targetVar :> IVariable<bool>, statement.TTarget) === true
+        statement.TTarget.TValue === false
+
+        // 대입문 실행 후 값 변경 확인
+        statement.Do()
+        statement.TTarget.TValue === true
+
+
+
+        let targetVar = new Var<int>("Sum", Value= -999)
+        targetVar.Value === -999
+        let stmt = AssignStatement( add [| literal 3; literal 5 |], targetVar)
+        stmt.Do()
+        targetVar.Value === 8
+
+        // condition 이 인 경우, Do() 수행해도 실제 대입이 일어나지 않음
+        let targetVar = new Var<int>("Sum", Value= -999)
+        targetVar.Value === -999
+        let stmt = AssignStatement( add [| literal 3; literal 5 |], targetVar, cond=falseValue)
+        stmt.Do()
+        targetVar.Value === -999
+
 
     [<Test>]
     member _.``StTimer 생성``() =
@@ -23,29 +40,20 @@ type PlcStatementTest() =
         let reset = falseValue
         let preset = new Var<bool>("Preset", Value=false) :> IVariable<bool>
 
-        let timerCall = TimerCall(TimerType.TON, rungIn, reset, preset)
-        let statement = StTimer(timerCall)
-
-        match statement with
-        | StTimer call ->
-            call.TimerType === TimerType.TON
-            obj.ReferenceEquals(rungIn, call.RungIn) === true
-            obj.ReferenceEquals(reset, call.Reset) === true
-            call.Preset.Name === "Preset"
-        | _ ->
-            Assert.Fail("StTimer 생성에 실패했습니다.")
+        let timer = TimerCall(TimerType.TON, rungIn, reset, preset)
+        timer.TimerType === TimerType.TON
+        obj.ReferenceEquals(rungIn, timer.RungIn) === true
+        obj.ReferenceEquals(reset, timer.Reset) === true
+        timer.Preset.Name === "Preset"
+        let statement = TimerStatement timer
+        statement.TimerCall === timer
 
     [<Test>]
     member _.``Rung 레코드 생성``() =
-        let expr = trueValue
+        let cond = trueValue
         let coil = new Var<bool>("MainCoil") :> IVariable<bool>
-        let statement = StSetCoil(expr, coil)
-        let rung = Rung(statement, "메인 라인")
-
-        rung.Comment === "메인 라인"
-        match rung.Statement with
-        | StSetCoil(exp, target) ->
-            obj.ReferenceEquals(expr, exp) === true
-            target.Name === "MainCoil"
-        | _ ->
-            Assert.Fail("Rung Statement가 StSetCoil이 아닙니다.")
+        let statement = SetCoilStatement(cond, coil, "메인 라인")
+        statement.Comment === "메인 라인"
+        obj.ReferenceEquals(cond, statement.Condition) === true
+        obj.ReferenceEquals(coil, statement.Coil) === true
+        statement.Coil.Name === "MainCoil"

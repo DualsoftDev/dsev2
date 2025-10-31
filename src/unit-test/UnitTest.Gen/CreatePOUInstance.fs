@@ -9,8 +9,8 @@ type PouInstanceTest() =
     let localStorage = Storage()
     [<Test>]
     member _.``ScanProgram 생성``() =
-        let mainRung = Rung(StSetCoil(trueValue, boolContact "MainCoil"), "메인 스캔")
-        let subroutineBody: IRung[] = [| StBreak(falseValue) :> IRung |]
+        let mainRung = SetCoilStatement(trueValue, boolContact "MainCoil", "메인 스캔")
+        let subroutineBody = [| BreakStatement(falseValue) :> Statement |]
         let stopRoutine = Subroutine("StopRoutine", subroutineBody)
 
         let program = ScanProgram("MainProgram", globalStorage, localStorage, [| mainRung |], [| stopRoutine |])
@@ -20,14 +20,14 @@ type PouInstanceTest() =
         program.Comment === "메인 프로그램"
         program.Rungs.Length === 1
         program.Subroutines.Length === 1
-        match program.Rungs[0].Statement with
-        | StSetCoil(_, coil) -> coil.Name === "MainCoil"
+        match program.Rungs[0] with
+        | :? SetCoilStatement as st -> st.Coil.Name === "MainCoil"
         | _ -> Assert.Fail("첫 번째 Rung 이 StSetCoil 이 아닙니다.")
 
     [<Test>]
     member _.``FunctionProgram 생성``() =
-        let returnRung = Rung(StAssign(trueValue, boolContact "Return"), "주석:반환 설정")
-        let helperRoutine = Subroutine("Helper", [| StBreak(trueValue) :> IRung |])
+        let returnRung = AssignStatement(trueValue, boolContact "Return", comment="주석:반환 설정")
+        let helperRoutine = Subroutine("Helper", [| BreakStatement(trueValue) :> Statement |])
 
         let funcProgram = FunctionProgram<int>("Calculate", globalStorage, localStorage, [| returnRung |], [| helperRoutine |])
 
@@ -43,10 +43,8 @@ type PouInstanceTest() =
         //let rung = Rung(StFBCall(FBCall("Mixer", [||], [||])), "FB 호출")
         //let fbProgram = FBProgram("MixerProgram", globalStorage, localStorage, [| rung |], [||])
         let fbProgram = FBProgram("MixerProgram", globalStorage, localStorage, [||], [||])
-        let globalStorage = Storage()
-        globalStorage.Add("MixerReady", new Var<bool>("MixerReady") :> IVariable)
+        localStorage.Add("MixerReady", new Var<bool>("MixerReady") :> IVariable)
 
-        let localStorage = Storage()
         let pou = { Storage = localStorage; Program = fbProgram :> Program }
         let project = IECProject(globalStorage)
         project.ScanPrograms <- [| pou |]

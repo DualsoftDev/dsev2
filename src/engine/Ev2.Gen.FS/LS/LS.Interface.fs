@@ -10,13 +10,12 @@ type IWithType =
 [<AllowNullLiteral>]
 type IWithValue =
     /// Opaque Value
-    abstract Value : obj
+    abstract Value : obj with get, set
 
 [<AllowNullLiteral>] type IProject        = interface end
 [<AllowNullLiteral>] type IProgram        = interface end
 [<AllowNullLiteral>] type IFunctionProgram = inherit IProgram inherit IWithType
 [<AllowNullLiteral>] type IFBProgram      = inherit IProgram
-[<AllowNullLiteral>] type IStatement      = interface end
 [<AllowNullLiteral>] type IValue          = interface end
 [<AllowNullLiteral>] type ICommand        = interface end      // copy, move
 [<AllowNullLiteral>] type IStruct         = interface end
@@ -66,4 +65,9 @@ type IVariable<'T> =
 type IStorage =
     abstract IVariables : IVariable[]
 
+
+
+
+
+[<AllowNullLiteral>] type IStatement      = interface end
 

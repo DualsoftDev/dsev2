@@ -57,7 +57,7 @@ type Literal<'T>(value:'T) =
     member val Value = value with get, set
     interface ILiteral<'T> with
         member x.DataType = x.DataType
-        member x.Value = x.Value
+        member x.Value with get() = box x.Value and set(v:obj) = x.Value <- (v :?> 'T)
         member x.TValue = x.Value
 
 type Var<'T>(name:string, ?value:'T) =
@@ -68,7 +68,8 @@ type Var<'T>(name:string, ?value:'T) =
     interface IVariable<'T> with
         member x.Name = x.Name
         member x.DataType = x.DataType
-        member x.Value = x.Value
+        //member x.Value = x.Value
+        member x.Value with get() = box x.Value and set(v:obj) = x.Value <- (v :?> 'T)
         member x.TValue = x.Value
 
 type Variable<'T>(name) =

@@ -14,7 +14,8 @@ type Operator<'T>(name:string, arguments:Arguments) =
     member x.TValue = x.Evaluator(x.Arguments)
     interface IExpression<'T> with
         member x.DataType = x.ReturnType
-        member x.Value = x.TValue
+        //member x.Value = x.TValue
+        member x.Value with get() = box x.TValue and set v = fail()
         member x.TValue = x.TValue
 
 
@@ -37,6 +38,7 @@ module OperatorEvaluators =
     let add_n32 (args:Arguments<int32>)  = createAddFunction<int32> (opaqueArgs args)
     let add_N32 (args:Arguments<uint32>) = createAddFunction<uint32>(opaqueArgs args)
     let add_String (args:Arguments<string>) = createAddFunction<string> (args.Cast<IExpression>().ToArray())
+    let add = add_n32
 
     let sub_n16 (args:Arguments<int16>)  = createSubFunction<int16> (opaqueArgs args)
     let mul_n16 (args:Arguments<int16>)  = createMulFunction<int16> (opaqueArgs args)

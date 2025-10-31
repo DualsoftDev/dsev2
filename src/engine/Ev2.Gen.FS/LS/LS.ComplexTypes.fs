@@ -16,7 +16,7 @@ type Struct(name:string, fields:IVariable[]) =
     interface IVariable with
         member x.Name = x.Name
         member x.DataType = x.DataType
-        member x.Value = x
+        member x.Value with get() = fail() and set v = fail()
 
 type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
     new() = Array<'T>(nullString, [||])
@@ -30,7 +30,7 @@ type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
         //member x.DataType = x.ElementDataType
     interface IVariable with
         member x.Name = name
-        member x.Value = fail()
+        member x.Value with get() = fail() and set v = fail()
     interface IWithType with
         member x.DataType = x.DataType
 
