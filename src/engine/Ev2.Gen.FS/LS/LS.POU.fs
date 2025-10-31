@@ -43,34 +43,10 @@ module POUModule =
 
 
 
-    [<AbstractClass>]
-    type Program(name:string, globalStorage:Storage, localStorage:Storage, rungs:Statement[], subroutines:Subroutine[]) =
-        interface IProgram
-        member x.Name = name
-        member x.Rungs = rungs
-        member x.Subroutines = subroutines
-        member x.GlobalStorage = globalStorage
-        member x.LocalStorage = localStorage
-        member val Comment = null:string with get, set
 
     type ScanProgram(name, globalStorage, localStorage, rungs, subroutines) =
         inherit Program(name, globalStorage, localStorage, rungs, subroutines)
 
-    [<AbstractClass>]
-    type SubProgram(name, globalStorage, localStorage, rungs, subroutines) =
-        inherit Program(name, globalStorage, localStorage, rungs, subroutines)
-        member val UseEnEno = true with get, set
-        member val ColumnWidth = 1 with get, set
-
-    type FunctionProgram<'T>(name, globalStorage, localStorage, rungs, subroutines) =
-        inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
-        interface IFunctionProgram with
-            member x.DataType = x.DataType
-        member x.DataType = typeof<'T>
-
-    type FBProgram(name, globalStorage, localStorage, rungs, subroutines) =
-        inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
-        interface IFBProgram
 
     type POU = {
         Storage:Storage

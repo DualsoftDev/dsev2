@@ -61,10 +61,11 @@ type Literal<'T>(value:'T) =
         member x.TValue = x.Value
 
 [<AbstractClass>]
-type VarBase<'T>(name:string, ?varType:VarType) =
+type VarBase<'T>(name:string, ?varType:VarType, ?initValue:'T) =
     member x.Name = name
     member x.DataType = typeof<'T>
     member x.VarType = varType |? VarType.Var
+    member x.InitValue = initValue
     member val Comment = null:string with get, set
     interface IVariable<'T> with
         member x.Name = x.Name
