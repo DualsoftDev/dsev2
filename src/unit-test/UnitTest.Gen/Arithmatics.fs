@@ -8,6 +8,15 @@ open Ev2.Gen
 [<AutoOpen>]
 type ArithmaticTest() =
     [<Test>]
+    member _.``변수``() =
+        let v1 = VarBindingFB<int>("Var1", initValue=10)
+        v1.Name === "Var1"
+        v1.InitValue === Some 10
+        // 선언용 변수는 값에 접근 불가
+        (fun () -> let v1v = v1 :> IVariable<int> in v1v.Value) |> ShouldFail
+
+
+    [<Test>]
     member _.``Arithmatics``() =
         add_n16 [| literal 3s; literal 5s |]           |> _.TValue === 8s
         add_N16 [| literal 3us; literal 5us |]         |> _.TValue === 8us

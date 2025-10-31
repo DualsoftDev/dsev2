@@ -30,8 +30,8 @@ type StructTest() =
             new Struct(
                 "Person",
                 [|
-                    new Var<string>("Name", Value="Kim") :> IVariable
-                    new Var<int>("Age", Value=16)
+                    Variable<string>("Name", Value="Kim") :> IVariable
+                    Variable<int>("Age", Value=16)
                     new Array<string>(
                         "Favorites",
                         [| Ev2.Gen.Range(0, 10) |],
@@ -40,9 +40,9 @@ type StructTest() =
                     new Struct(
                         "Contact",
                         [|
-                            new Var<string>("Address", Value="서울") :> IVariable
-                            new Var<int>("Postal", Value=12345)
-                            new Var<string>("Mobile", Value="010-1234-5678")
+                            Variable<string>("Address", Value="서울") :> IVariable
+                            Variable<int>("Postal", Value=12345)
+                            Variable<string>("Mobile", Value="010-1234-5678")
                         |]
                     )
                 |])

@@ -41,31 +41,7 @@ module POUModule =
     //    | StUndefined
     //    interface IRung
 
-    //type Rung = {
-    //    Statement:Statement
-    //    Comment:string
-    //} with
-    //    static member Create(statement:Statement, ?comment:string) =
-    //        {
-    //            Statement = statement
-    //            Comment = comment |? nullString
-    //        }
 
-    //type Rung(statement:Statement, ?comment:string) =
-    //    new() = Rung(StUndefined)
-    //    member x.Statement = statement
-    //    member x.Comment:string = comment |? nullString
-    //    interface IRung
-
-
-    //type POUType = PtScanProgram | PtFunction | PtFunctionBlock
-
-    //type Program(pouType:POUType, name:string, statements:Statement[], subroutines:SubroutineSnippet[]) =
-    //    interface IProgram
-    //    member x.POUType = pouType
-    //    member x.Name = name
-    //    member x.Statements = statements
-    //    member x.Subroutines = subroutines
 
     [<AbstractClass>]
     type Program(name:string, globalStorage:Storage, localStorage:Storage, rungs:Statement[], subroutines:Subroutine[]) =
@@ -101,14 +77,14 @@ module POUModule =
         Program:Program
     }
 
-    type Project(globalStorage:Storage) =
+    type Project(globalStorage:Storage, ?scanPrograms:POU[]) =
         interface IProject
+        member val ScanPrograms = scanPrograms |? [||] with get, set
         member x.GlobalVars = globalStorage
 
-    type IECProject(globalStorage:Storage) =
-        inherit Project(globalStorage)
+    type IECProject(globalStorage:Storage, ?scanPrograms:POU[]) =
+        inherit Project(globalStorage, ?scanPrograms=scanPrograms)
         member val UDTs:Struct[] = [||] with get, set
-        member val ScanPrograms:POU[] = [||] with get, set
         member val FunctionPrograms:POU[] = [||] with get, set
         member val FBPrograms:POU[] = [||] with get, set
 

@@ -5,6 +5,21 @@ open Dual.Common.Base
 /// IEC only
 [<AutoOpen>]
 module IECFunctionFunctionBlockModule =
+    /// '로컬변수' section 정의용 var's
+    [<AbstractClass>]
+    type VarBindingBase<'T>(name:string, ?varType) =
+        inherit VarBase<'T>(name, ?varType=varType)
+
+    /// Function 의 '로컬변수' section 정의용 var's
+    type VarBindingF<'T>(name:string, ?varType) =
+        inherit VarBindingBase<'T>(name, ?varType=varType)
+
+    /// Function Block 의 '로컬변수' section 정의용 var's
+    type VarBindingFB<'T>(name:string, ?varType, ?initValue:'T) =
+        inherit VarBindingBase<'T>(name, ?varType=varType)
+        member x.InitValue = initValue
+
+
     [<AllowNullLiteral>]
     type IStorages =
         abstract GlobalStorage : IVariable[]

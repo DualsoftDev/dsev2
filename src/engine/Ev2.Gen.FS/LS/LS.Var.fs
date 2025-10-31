@@ -60,25 +60,30 @@ type Literal<'T>(value:'T) =
         member x.Value with get() = box x.Value and set(v:obj) = x.Value <- (v :?> 'T)
         member x.TValue = x.Value
 
-type Var<'T>(name:string, ?value:'T) =
+[<AbstractClass>]
+type VarBase<'T>(name:string, ?varType:VarType) =
     member x.Name = name
     member x.DataType = typeof<'T>
+    member x.VarType = varType |? VarType.Var
     member val Comment = null:string with get, set
-    member val Value = value |? Unchecked.defaultof<'T> with get, set
     interface IVariable<'T> with
         member x.Name = x.Name
         member x.DataType = x.DataType
-        //member x.Value = x.Value
+        member x.Value with get() = fail() and set v = fail()
+        member x.TValue = fail()
+
+
+type Variable<'T>(name, ?value:'T) =
+    inherit VarBase<'T>(name)
+    new() = Variable<'T>(nullString)
+
+    member val Value = value |? Unchecked.defaultof<'T> with get, set
+    interface IVariable<'T> with
         member x.Value with get() = box x.Value and set(v:obj) = x.Value <- (v :?> 'T)
         member x.TValue = x.Value
 
-type Variable<'T>(name) =
-    inherit Var<'T>(name)
-    new() = Variable<'T>(nullString)
-
     member val Retain = false with get, set
     member val Address = null:string with get, set
-    //member val Init: obj option = None with get, set
 
     member val Hmi = false with get, set
     member val Eip = false with get, set    // EIP/OPC UA

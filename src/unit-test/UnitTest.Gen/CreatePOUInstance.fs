@@ -43,7 +43,7 @@ type PouInstanceTest() =
         //let rung = Rung(StFBCall(FBCall("Mixer", [||], [||])), "FB 호출")
         //let fbProgram = FBProgram("MixerProgram", globalStorage, localStorage, [| rung |], [||])
         let fbProgram = FBProgram("MixerProgram", globalStorage, localStorage, [||], [||])
-        localStorage.Add("MixerReady", new Var<bool>("MixerReady") :> IVariable)
+        localStorage.Add("MixerReady", Variable<bool>("MixerReady") :> IVariable)
 
         let pou = { Storage = localStorage; Program = fbProgram :> Program }
         let project = IECProject(globalStorage)
