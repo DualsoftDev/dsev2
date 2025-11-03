@@ -46,9 +46,9 @@ module private RuntimeHelpers =
         | :? VarBase<_> as varBase -> varBase.InitValue |> Option.map box
         | _ -> None
 
-/// FunctionProgram 실행 시 필요한 정적 정의 모음이다.
+/// FunctionProgram 실행 시 필요한 정적 정의 모음이다. (Authoring 레이어 → Runtime 전환 스냅샷)
 type internal FunctionDefinition =
-    { Program: FunctionProgram
+    { XProgram: FunctionProgram
       Globals: IVariable list
       Parameters: IVariable list
       Locals: IVariable list
@@ -119,7 +119,7 @@ module private DefinitionBuilder =
 type internal ExecutionScope =
     { Resolver: IRuntimeResolver }
 
-/// Function 정의와 Resolver를 묶어 런타임 인스턴스를 제공한다.
+/// Function 정의와 Resolver를 묶어 런타임 인스턴스를 제공한다. (Definition → Call 전용 캐시/공장)
 and internal FunctionRuntimeTemplate(definition: FunctionDefinition, resolver: IRuntimeResolver) =
     member internal _.Definition = definition
 
@@ -150,12 +150,14 @@ and [<AllowNullLiteral>] internal IRuntimeResolver =
     abstract ResolveFunction : IFunctionProgram -> FunctionRuntimeTemplate
     abstract ResolveFBInstance : IFBInstance -> FBInstanceRuntime
 
-/// Function 호출 한 건을 실행하는 로직을 담는다.
-and internal FunctionRuntimeCall
-    ( definition: FunctionDefinition,
-      resolver: IRuntimeResolver,
-      inputMapping: Mapping,
-      outputMapping: Mapping) =
+/// FunctionDefinition을 입력/출력 매핑과 결합해 실제 실행을 담당한다. (한 번의 호출 단위)
+and FunctionRuntime internal
+    (
+        definition: FunctionDefinition,
+        resolver: IRuntimeResolver,
+        inputMapping: Mapping,
+        outputMapping: Mapping
+    ) =
 
     let scope = { Resolver = resolver }
 
@@ -205,19 +207,14 @@ and internal FunctionRuntimeCall
         StatementExecutor.runFunction(definition, scope)
         flushOutputs ()
 
-/// FunctionRuntimeCall을 감싸 단일 실행 API만 노출한다.
-and FunctionRuntime private (call: FunctionRuntimeCall) =
-    member _.Do() = call.Do()
-
     static member internal Create(
         definition: FunctionDefinition,
         resolver: IRuntimeResolver,
         inputMapping: Mapping,
         outputMapping: Mapping) =
-        let call = FunctionRuntimeCall(definition, resolver, inputMapping, outputMapping)
-        FunctionRuntime(call)
+        FunctionRuntime(definition, resolver, inputMapping, outputMapping)
 
-/// FB 정의와 Resolver를 묶어 인스턴스 상태를 생성한다.
+/// FB 정의와 Resolver를 묶어 인스턴스 상태를 생성한다. (Definition → Instance)
 and internal FBInstanceRuntimeTemplate(definition: FBDefinition, resolver: IRuntimeResolver) =
     member internal _.Definition = definition
 
@@ -225,7 +222,7 @@ and internal FBInstanceRuntimeTemplate(definition: FBDefinition, resolver: IRunt
         let state = Dictionary<string, obj>(StringComparer.OrdinalIgnoreCase)
         FBInstanceRuntime(definition, resolver, state)
 
-/// FB 호출 한 건을 수행하고 내부 상태를 유지한다.
+/// FB 호출 한 건을 수행하고 내부 상태를 유지한다. (Instance + Call)
 and internal FBInstanceRuntimeCall
     ( definition: FBDefinition,
       resolver: IRuntimeResolver,
@@ -392,7 +389,7 @@ and internal StatementExecutor =
     static member runFB(definition: FBDefinition, scope: ExecutionScope) =
         StatementExecutor.execute(definition.Body, scope)
 
-/// 프로젝트 단위로 Function/FB 런타임을 생성하고 재사용한다.
+/// 프로젝트 단위로 Function/FB 런타임을 생성하고 재사용한다. (Resolver/Cache 허브)
 type ProjectRuntime(project: IECProject) =
     let functionCache =
         Dictionary<FunctionProgram, FunctionRuntimeTemplate>(ReferenceEqualityComparer<FunctionProgram>())

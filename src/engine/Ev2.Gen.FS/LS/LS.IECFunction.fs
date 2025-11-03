@@ -39,19 +39,6 @@ module IECFunctionFunctionBlockModule =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IFBProgram
 
-    ///// '로컬변수' section 정의용 var's
-    //[<AbstractClass>]
-    //type VarBindingBase<'T>(name:string, ?varType, ?initValue:'T) =
-    //    inherit VarBase<'T>(name, ?varType=varType, ?initValue=initValue)
-
-    ///// Function 의 '로컬변수' section 정의용 var's
-    //type VarBindingF<'T>(name:string, ?varType) =
-    //    inherit VarBindingBase<'T>(name, ?varType=varType)
-
-    ///// Function Block 의 '로컬변수' section 정의용 var's
-    //type VarBindingFB<'T>(name:string, ?varType, ?initValue:'T) =
-    //    inherit VarBindingBase<'T>(name, ?varType=varType, ?initValue=initValue)
-
 
     [<AllowNullLiteral>]
     type IStorages =
@@ -84,6 +71,7 @@ module IECFunctionFunctionBlockModule =
     type FunctionCallStatement(functionCall:FunctionCall, ?comment:string) =
         inherit Statement(?comment=comment)
         member x.FunctionCall = functionCall
+
     type FBCallStatement(fbCall:FBCall, ?comment:string) =
         inherit Statement(?comment=comment)
         member x.FBCall = fbCall
