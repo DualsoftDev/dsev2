@@ -8,19 +8,7 @@ open Dual.Common.Base
 
 [<AutoOpen>]
 module private RuntimeHelpers =
-    let terminalName (terminal: ITerminal) =
-        match terminal with
-        | :? IVariable as variable -> variable.Name |? nullString
-        | _ -> terminal.DataType.Name
-
-    let readTerminal (terminal: ITerminal) = terminal.Value
-
-    let writeTerminal (terminal: ITerminal) (value: obj) =
-        match terminal with
-        | :? ILiteral ->
-            failwith $"터미널 '{terminalName terminal}' 은(는) 상수이므로 값을 쓸 수 없습니다."
-        | _ ->
-            terminal.Value <- value
+    type Mapping = IDictionary<string, ITerminal>
 
     let inline tryGetValue<'T> (dictionary: IDictionary<string, 'T>) (key: string) =
         match dictionary with
@@ -145,15 +133,9 @@ module private DefinitionBuilder =
     let buildFBDefinition (program: FBProgram) : FBDefinition =
         let locals = storageValues program.LocalStorage
         { Program = program
-          Inputs =
-              locals
-              |> List.filter (fun variable -> variable |> RuntimeHelpers.getVarType |> isFBInput)
-          Outputs =
-              locals
-              |> List.filter (fun variable -> variable |> RuntimeHelpers.getVarType |> isFBOutput)
-          Internals =
-              locals
-              |> List.filter (fun variable -> variable |> RuntimeHelpers.getVarType |> isFBInternal)
+          Inputs    = locals |> List.filter (getVarType >> isFBInput)
+          Outputs   = locals |> List.filter (getVarType >> isFBOutput)
+          Internals = locals |> List.filter (getVarType >> isFBInternal)
           Body = program.Rungs }
 
 type internal ExecutionScope =
@@ -163,11 +145,11 @@ and internal FunctionRuntimeTemplate(definition: FunctionDefinition, resolver: I
     member internal _.Definition = definition
 
     member this.CreateRuntime(
-        inputMapping: IDictionary<string, ITerminal>,
-        outputMapping: IDictionary<string, ITerminal>) : FunctionRuntime =
+        inputMapping: Mapping,
+        outputMapping: Mapping) : FunctionRuntime =
         FunctionRuntime.Create(definition, resolver, inputMapping, outputMapping)
 
-    member this.Invoke(inputMapping: IDictionary<string, ITerminal>, outputMapping: IDictionary<string, ITerminal>) =
+    member this.Invoke(inputMapping: Mapping, outputMapping: Mapping) =
         let runtime = this.CreateRuntime(inputMapping, outputMapping)
         runtime.Do()
 
@@ -176,11 +158,11 @@ and internal FBInstanceRuntime(definition: FBDefinition, resolver: IRuntimeResol
     member internal _.State = state
 
     member internal this.CreateCall(
-        inputMapping: IDictionary<string, ITerminal>,
-        outputMapping: IDictionary<string, ITerminal>) =
+        inputMapping: Mapping,
+        outputMapping: Mapping) =
         FBInstanceRuntimeCall(definition, resolver, state, inputMapping, outputMapping)
 
-    member this.Invoke(inputMapping: IDictionary<string, ITerminal>, outputMapping: IDictionary<string, ITerminal>) =
+    member this.Invoke(inputMapping: Mapping, outputMapping: Mapping) =
         this.CreateCall(inputMapping, outputMapping).Do()
 
 and [<AllowNullLiteral>] internal IRuntimeResolver =
@@ -190,8 +172,8 @@ and [<AllowNullLiteral>] internal IRuntimeResolver =
 and internal FunctionRuntimeCall
     ( definition: FunctionDefinition,
       resolver: IRuntimeResolver,
-      inputMapping: IDictionary<string, ITerminal>,
-      outputMapping: IDictionary<string, ITerminal>) =
+      inputMapping: Mapping,
+      outputMapping: Mapping) =
 
     let scope = { Resolver = resolver }
 
@@ -201,41 +183,39 @@ and internal FunctionRuntimeCall
             let varType = getVarType variable
             if isInputVar varType then
                 let source = ensureMapping inputMapping variable.Name
-                let value = readTerminal source
-                writeTerminal (variable :> ITerminal) value
+                variable.Value <- source.Value
             elif isOutputVar varType && not (isInOutVar varType) then
                 let initial = unwrapInitValue (tryGetInitValue variable) variable.DataType
-                writeTerminal (variable :> ITerminal) initial
+                variable.Value <- initial
             else
                 ())
 
         definition.Parameters
-        |> List.filter (fun variable -> variable |> getVarType |> isInOutVar)
+        |> List.filter (getVarType >> isInOutVar)
         |> List.iter (fun variable ->
             let source =
                 ensureMapping (if inputMapping.ContainsKey variable.Name then inputMapping else outputMapping) variable.Name
-            let value = readTerminal source
-            writeTerminal (variable :> ITerminal) value)
+            variable.Value <- source.Value)
 
     let initialiseLocals () =
         definition.Locals
         |> List.iter (fun variable ->
             let initial = unwrapInitValue (tryGetInitValue variable) variable.DataType
-            writeTerminal (variable :> ITerminal) initial)
+            variable.Value <- initial)
 
     let flushOutputs () =
         definition.Parameters
-        |> List.filter (fun variable -> variable |> getVarType |> isOutputVar)
+        |> List.filter (getVarType >> isOutputVar)
         |> List.iter (fun variable ->
-            let value = readTerminal (variable :> ITerminal)
+            let value = variable.Value
             match tryGetValue outputMapping variable.Name with
             | Some terminal ->
-                writeTerminal terminal value
+                terminal.Value <- value
             | None ->
                 let varType = getVarType variable
                 if isInOutVar varType then
                     let source = ensureMapping inputMapping variable.Name
-                    writeTerminal source value
+                    source.Value <- value
                 else
                     failwith $"출력 매핑에서 '{variable.Name}' 을(를) 찾을 수 없습니다.")
 
@@ -251,8 +231,8 @@ and FunctionRuntime private (call: FunctionRuntimeCall) =
     static member internal Create(
         definition: FunctionDefinition,
         resolver: IRuntimeResolver,
-        inputMapping: IDictionary<string, ITerminal>,
-        outputMapping: IDictionary<string, ITerminal>) =
+        inputMapping: Mapping,
+        outputMapping: Mapping) =
         let call = FunctionRuntimeCall(definition, resolver, inputMapping, outputMapping)
         FunctionRuntime(call)
 
@@ -267,8 +247,8 @@ and internal FBInstanceRuntimeCall
     ( definition: FBDefinition,
       resolver: IRuntimeResolver,
       state: Dictionary<string, obj>,
-      inputMapping: IDictionary<string, ITerminal>,
-      outputMapping: IDictionary<string, ITerminal>) =
+      inputMapping: Mapping,
+      outputMapping: Mapping) =
 
     let scope = { Resolver = resolver }
 
@@ -279,45 +259,41 @@ and internal FBInstanceRuntimeCall
                 match tryGetValue state variable.Name with
                 | Some stored -> stored
                 | None -> unwrapInitValue (tryGetInitValue variable) variable.DataType
-            writeTerminal (variable :> ITerminal) value)
+            variable.Value <- value)
 
     let applyInputs () =
         definition.Inputs
         |> List.iter (fun variable ->
             let source = ensureMapping inputMapping variable.Name
-            let value = readTerminal source
-            writeTerminal (variable :> ITerminal) value)
+            variable.Value <- source.Value)
 
         definition.Outputs
         |> List.filter (fun variable -> variable |> getVarType |> isInOutVar)
         |> List.iter (fun variable ->
             let source =
                 ensureMapping (if inputMapping.ContainsKey variable.Name then inputMapping else outputMapping) variable.Name
-            let value = readTerminal source
-            writeTerminal (variable :> ITerminal) value)
+            variable.Value <- source.Value)
 
     let initialiseOutputs () =
         definition.Outputs
         |> List.filter (fun variable -> variable |> getVarType |> isInOutVar |> not)
         |> List.iter (fun variable ->
             let initial = unwrapInitValue (tryGetInitValue variable) variable.DataType
-            writeTerminal (variable :> ITerminal) initial)
+            variable.Value <- initial)
 
     let persistInternals () =
         definition.Internals
-        |> List.iter (fun variable ->
-            let value = readTerminal (variable :> ITerminal)
-            updateDictionary state variable.Name value)
+        |> List.iter (fun variable -> updateDictionary state variable.Name variable.Value)
 
     let flushOutputs () =
         definition.Outputs
         |> List.iter (fun variable ->
-            let value = readTerminal (variable :> ITerminal)
+            let value = variable.Value
             match tryGetValue outputMapping variable.Name with
-            | Some terminal -> writeTerminal terminal value
+            | Some terminal -> terminal.Value <- value
             | None when variable |> getVarType |> isInOutVar ->
                 let source = ensureMapping inputMapping variable.Name
-                writeTerminal source value
+                source.Value <- value
             | None ->
                 failwith $"FB 출력 매핑에서 '{variable.Name}' 을(를) 찾을 수 없습니다.")
 
@@ -348,7 +324,7 @@ and internal StatementExecutor =
     static member private executeAssign (statement: AssignStatementOpaque) =
         if StatementExecutor.evaluateCondition statement.Condition then
             let value = statement.Source.Value
-            writeTerminal (statement.Target :> ITerminal) value
+            statement.Target.Value <- value
 
     static member private trimCallInputs (program: SubProgram) (expressions: IExpression[]) =
         if program.UseEnEno && expressions.Length > 0 then
@@ -390,11 +366,9 @@ and internal StatementExecutor =
             StatementExecutor.trimCallOutputs callee statement.FunctionCall.Outputs
 
         let inputDecls =
-            template.Definition.Parameters
-            |> List.filter (fun variable -> variable |> getVarType |> isInputVar)
+            template.Definition.Parameters |> List.filter (getVarType >> isInputVar)
         let outputDecls =
-            template.Definition.Parameters
-            |> List.filter (fun variable -> variable |> getVarType |> isOutputVar)
+            template.Definition.Parameters |> List.filter (getVarType >> isOutputVar)
 
         let inputMapping = StatementExecutor.buildMapping inputDecls filteredInputs
         let outputMapping = StatementExecutor.buildMapping outputDecls filteredOutputs
@@ -594,29 +568,29 @@ type ProjectRuntime(project: IECProject) =
 
     member this.CreateFunctionRuntime(
         program: IFunctionProgram,
-        inputMapping: IDictionary<string, ITerminal>,
-        outputMapping: IDictionary<string, ITerminal>) =
+        inputMapping: Mapping,
+        outputMapping: Mapping) =
         let template = this.ResolveTemplate program
         template.CreateRuntime(inputMapping, outputMapping)
 
     member this.CreateFunctionRuntime(
         program: FunctionProgram,
-        inputMapping: IDictionary<string, ITerminal>,
-        outputMapping: IDictionary<string, ITerminal>) =
+        inputMapping: Mapping,
+        outputMapping: Mapping) =
         this.CreateFunctionRuntime(program :> IFunctionProgram, inputMapping, outputMapping)
 
     member this.CreateFunctionRuntime<'T>
         (
             program: FunctionProgram<'T>,
-            inputMapping: IDictionary<string, ITerminal>,
-            outputMapping: IDictionary<string, ITerminal>
+            inputMapping: Mapping,
+            outputMapping: Mapping
         ) =
         this.CreateFunctionRuntime(program :> FunctionProgram, inputMapping, outputMapping)
 
     member this.InvokeFBInstance(
         fbInstance: IFBInstance,
-        inputMapping: IDictionary<string, ITerminal>,
-        outputMapping: IDictionary<string, ITerminal>) =
+        inputMapping: Mapping,
+        outputMapping: Mapping) =
         let runtime = this.EnsureFBInstanceRuntime fbInstance
         runtime.Invoke(inputMapping, outputMapping)
 
