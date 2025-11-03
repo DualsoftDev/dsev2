@@ -26,8 +26,8 @@ module GenExtensionModule =
                 printfn "Executing other type of Statement"
                 ()
 
-    type FunctionProgram<'T> with
-        static member Create(name, proj:IECProject, localStorage, rungs, subroutines) =
+    type FunctionProgram with
+        static member Create<'T>(name, proj:IECProject, localStorage, rungs, subroutines) =
             let globalStorage = proj.GlobalStorage
             let returnVar = Variable<'T>(name)
             FunctionProgram<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)

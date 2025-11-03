@@ -21,6 +21,7 @@
 		<Compile Include="CreatePLCStatement.fs" />
 		<Compile Include="CreatePOUInstance.fs" />
 		<Compile Include="CreateMemoryInstance.fs" />
+		<Compile Include="FunctionTest.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 

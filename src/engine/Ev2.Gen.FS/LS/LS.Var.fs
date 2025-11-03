@@ -74,8 +74,8 @@ type VarBase<'T>(name:string, ?varType:VarType, ?initValue:'T) =
         member x.TValue = fail()
 
 
-type Variable<'T>(name, ?value:'T) =
-    inherit VarBase<'T>(name)
+type Variable<'T>(name, ?value:'T, ?varType:VarType) =
+    inherit VarBase<'T>(name, ?varType=varType)
     new() = Variable<'T>(nullString)
 
     member val Value = value |? Unchecked.defaultof<'T> with get, set

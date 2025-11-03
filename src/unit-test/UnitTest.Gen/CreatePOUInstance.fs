@@ -30,7 +30,7 @@ type PouInstanceTest() =
         let returnRung = AssignStatement(trueValue, boolContact "Return", comment="주석:반환 설정")
         let helperRoutine = Subroutine("Helper", [| BreakStatement(trueValue) :> Statement |])
 
-        let funcProgram = FunctionProgram<int>.Create("Calculate", proj, localStorage, [| returnRung |], [| helperRoutine |])
+        let funcProgram = FunctionProgram.Create<int>("Calculate", proj, localStorage, [| returnRung |], [| helperRoutine |])
 
         funcProgram.Name === "Calculate"
         funcProgram.DataType === typeof<int>
