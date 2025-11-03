@@ -41,25 +41,12 @@ module private RuntimeHelpers =
         else
             dictionary.Add(name, value)
 
-    //let getVarType (variable: IVariable) =
-    //    match variable with
-    //    | :? VarBase<_> as varBase -> varBase.VarType
-    //    | _ ->
-    //        let property =
-    //            variable.GetType().GetProperty(
-    //                "VarType",
-    //                BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.FlattenHierarchy)
-    //        if isNull property then VarType.VarUndefined
-    //        else
-    //            match property.GetValue(variable) with
-    //            | :? VarType as value -> value
-    //            | _ -> VarType.VarUndefined
-
     let tryGetInitValue (variable: IVariable) =
         match variable with
         | :? VarBase<_> as varBase -> varBase.InitValue |> Option.map box
         | _ -> None
 
+/// FunctionProgram 실행 시 필요한 정적 정의 모음이다.
 type internal FunctionDefinition =
     { Program: FunctionProgram
       Globals: IVariable list
@@ -67,6 +54,7 @@ type internal FunctionDefinition =
       Locals: IVariable list
       Body: Statement array }
 
+/// FBProgram 실행 시 필요한 정적 정의 모음이다.
 type internal FBDefinition =
     { Program: FBProgram
       Inputs: IVariable list
@@ -74,6 +62,7 @@ type internal FBDefinition =
       Internals: IVariable list
       Body: Statement array }
 
+/// Function/FB 정의를 추출하는 유틸리티 모듈이다.
 module private DefinitionBuilder =
     let private storageValues (storage: Storage) =
         storage.Values |> Seq.toList
@@ -126,9 +115,11 @@ module private DefinitionBuilder =
           Internals = locals |> List.filter isFBInternal
           Body = program.Rungs }
 
+/// 런타임 호출 시 Resolver를 전달하는 컨테이너다.
 type internal ExecutionScope =
     { Resolver: IRuntimeResolver }
 
+/// Function 정의와 Resolver를 묶어 런타임 인스턴스를 제공한다.
 and internal FunctionRuntimeTemplate(definition: FunctionDefinition, resolver: IRuntimeResolver) =
     member internal _.Definition = definition
 
@@ -141,6 +132,7 @@ and internal FunctionRuntimeTemplate(definition: FunctionDefinition, resolver: I
         let runtime = this.CreateRuntime(inputMapping, outputMapping)
         runtime.Do()
 
+/// FB 인스턴스별 상태를 캡슐화한다.
 and internal FBInstanceRuntime(definition: FBDefinition, resolver: IRuntimeResolver, state: Dictionary<string, obj>) =
     member internal _.Definition = definition
     member internal _.State = state
@@ -153,10 +145,12 @@ and internal FBInstanceRuntime(definition: FBDefinition, resolver: IRuntimeResol
     member this.Invoke(inputMapping: Mapping, outputMapping: Mapping) =
         this.CreateCall(inputMapping, outputMapping).Do()
 
+/// Function/FB 호출을 실제 실행 객체로 해석한다.
 and [<AllowNullLiteral>] internal IRuntimeResolver =
     abstract ResolveFunction : IFunctionProgram -> FunctionRuntimeTemplate
     abstract ResolveFBInstance : IFBInstance -> FBInstanceRuntime
 
+/// Function 호출 한 건을 실행하는 로직을 담는다.
 and internal FunctionRuntimeCall
     ( definition: FunctionDefinition,
       resolver: IRuntimeResolver,
@@ -211,6 +205,7 @@ and internal FunctionRuntimeCall
         StatementExecutor.runFunction(definition, scope)
         flushOutputs ()
 
+/// FunctionRuntimeCall을 감싸 단일 실행 API만 노출한다.
 and FunctionRuntime private (call: FunctionRuntimeCall) =
     member _.Do() = call.Do()
 
@@ -222,6 +217,7 @@ and FunctionRuntime private (call: FunctionRuntimeCall) =
         let call = FunctionRuntimeCall(definition, resolver, inputMapping, outputMapping)
         FunctionRuntime(call)
 
+/// FB 정의와 Resolver를 묶어 인스턴스 상태를 생성한다.
 and internal FBInstanceRuntimeTemplate(definition: FBDefinition, resolver: IRuntimeResolver) =
     member internal _.Definition = definition
 
@@ -229,6 +225,7 @@ and internal FBInstanceRuntimeTemplate(definition: FBDefinition, resolver: IRunt
         let state = Dictionary<string, obj>(StringComparer.OrdinalIgnoreCase)
         FBInstanceRuntime(definition, resolver, state)
 
+/// FB 호출 한 건을 수행하고 내부 상태를 유지한다.
 and internal FBInstanceRuntimeCall
     ( definition: FBDefinition,
       resolver: IRuntimeResolver,
@@ -291,11 +288,13 @@ and internal FBInstanceRuntimeCall
         persistInternals ()
         flushOutputs ()
 
+/// 참조 동일성 비교자를 제공한다.
 and ReferenceEqualityComparer<'T when 'T : not struct>() =
     interface IEqualityComparer<'T> with
         member _.Equals(x, y) = obj.ReferenceEquals(x, y)
         member _.GetHashCode(x) = RuntimeHelpers.GetHashCode x
 
+/// Statement 배열을 순차적으로 실행하는 실행기다.
 and internal StatementExecutor =
     static member private evaluateCondition (condition: IExpression) =
         if isNull condition then true
@@ -393,6 +392,7 @@ and internal StatementExecutor =
     static member runFB(definition: FBDefinition, scope: ExecutionScope) =
         StatementExecutor.execute(definition.Body, scope)
 
+/// 프로젝트 단위로 Function/FB 런타임을 생성하고 재사용한다.
 type ProjectRuntime(project: IECProject) =
     let functionCache =
         Dictionary<FunctionProgram, FunctionRuntimeTemplate>(ReferenceEqualityComparer<FunctionProgram>())
