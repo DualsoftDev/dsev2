@@ -26,10 +26,11 @@ type PouInstanceTest() =
 
     [<Test>]
     member _.``FunctionProgram 생성``() =
+        let proj = IECProject()
         let returnRung = AssignStatement(trueValue, boolContact "Return", comment="주석:반환 설정")
         let helperRoutine = Subroutine("Helper", [| BreakStatement(trueValue) :> Statement |])
 
-        let funcProgram = FunctionProgram<int>("Calculate", globalStorage, localStorage, [| returnRung |], [| helperRoutine |])
+        let funcProgram = FunctionProgram<int>.Create("Calculate", proj, localStorage, [| returnRung |], [| helperRoutine |])
 
         funcProgram.Name === "Calculate"
         funcProgram.DataType === typeof<int>
@@ -47,8 +48,8 @@ type PouInstanceTest() =
 
         let pou = { Storage = localStorage; Program = fbProgram :> Program }
         let project = IECProject(globalStorage)
-        project.ScanPrograms <- [| pou |]
+        project.ScanPrograms.Add pou
 
-        project.ScanPrograms.Length === 1
+        project.ScanPrograms.Count === 1
         project.ScanPrograms[0].Program.Name === "MixerProgram"
         project.ScanPrograms[0].Storage.ContainsKey("MixerReady") === true

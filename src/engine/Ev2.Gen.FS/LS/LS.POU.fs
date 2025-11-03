@@ -53,14 +53,14 @@ module POUModule =
         Program:Program
     }
 
-    type Project(globalStorage:Storage, ?scanPrograms:POU[]) =
+    type Project(?globalStorage:Storage, ?scanPrograms:POU seq) =
         interface IProject
-        member val ScanPrograms = scanPrograms |? [||] with get, set
-        member x.GlobalVars = globalStorage
+        member val ScanPrograms = ResizeArray(scanPrograms |? [])
+        member val GlobalStorage = globalStorage |? Storage() with get, set
 
-    type IECProject(globalStorage:Storage, ?scanPrograms:POU[]) =
-        inherit Project(globalStorage, ?scanPrograms=scanPrograms)
-        member val UDTs:Struct[] = [||] with get, set
-        member val FunctionPrograms:POU[] = [||] with get, set
-        member val FBPrograms:POU[] = [||] with get, set
+    type IECProject(?globalStorage:Storage, ?scanPrograms:POU seq, ?udts:Struct seq, ?functions:POU seq, ?functionBlocks:POU seq) =
+        inherit Project(?globalStorage=globalStorage, ?scanPrograms=scanPrograms)
+        member val UDTs = ResizeArray(udts |? [])
+        member val FunctionPrograms = ResizeArray(functions |? [])
+        member val FBPrograms = ResizeArray(functionBlocks |? [])
 

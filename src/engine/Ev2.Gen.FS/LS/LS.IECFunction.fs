@@ -1,6 +1,7 @@
 namespace Ev2.Gen
 open System.Linq
 open Dual.Common.Base
+open System
 
 [<AutoOpen>]
 module ProgramModule =
@@ -23,28 +24,33 @@ module ProgramModule =
 /// IEC only
 [<AutoOpen>]
 module IECFunctionFunctionBlockModule =
-    type FunctionProgram<'T>(name, globalStorage, localStorage, rungs, subroutines) =
+    type FunctionProgram internal (name, globalStorage, localStorage, returnVar:IVariable, dataType:Type, rungs, subroutines) =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IFunctionProgram with
             member x.DataType = x.DataType
-        member x.DataType = typeof<'T>
+        member x.DataType = dataType
+        member x.Return = returnVar
+
+    type FunctionProgram<'T> internal (name, globalStorage, localStorage, returnVar, rungs, subroutines) =
+        inherit FunctionProgram(name, globalStorage, localStorage, returnVar, typeof<'T>, rungs, subroutines)
+        member x.TReturn = returnVar
 
     type FBProgram(name, globalStorage, localStorage, rungs, subroutines) =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IFBProgram
 
-    /// '로컬변수' section 정의용 var's
-    [<AbstractClass>]
-    type VarBindingBase<'T>(name:string, ?varType, ?initValue:'T) =
-        inherit VarBase<'T>(name, ?varType=varType, ?initValue=initValue)
+    ///// '로컬변수' section 정의용 var's
+    //[<AbstractClass>]
+    //type VarBindingBase<'T>(name:string, ?varType, ?initValue:'T) =
+    //    inherit VarBase<'T>(name, ?varType=varType, ?initValue=initValue)
 
-    /// Function 의 '로컬변수' section 정의용 var's
-    type VarBindingF<'T>(name:string, ?varType) =
-        inherit VarBindingBase<'T>(name, ?varType=varType)
+    ///// Function 의 '로컬변수' section 정의용 var's
+    //type VarBindingF<'T>(name:string, ?varType) =
+    //    inherit VarBindingBase<'T>(name, ?varType=varType)
 
-    /// Function Block 의 '로컬변수' section 정의용 var's
-    type VarBindingFB<'T>(name:string, ?varType, ?initValue:'T) =
-        inherit VarBindingBase<'T>(name, ?varType=varType, ?initValue=initValue)
+    ///// Function Block 의 '로컬변수' section 정의용 var's
+    //type VarBindingFB<'T>(name:string, ?varType, ?initValue:'T) =
+    //    inherit VarBindingBase<'T>(name, ?varType=varType, ?initValue=initValue)
 
 
     [<AllowNullLiteral>]

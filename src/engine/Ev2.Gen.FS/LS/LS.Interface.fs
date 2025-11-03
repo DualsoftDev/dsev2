@@ -1,8 +1,5 @@
 namespace Ev2.Gen
 
-open System
-open System.Collections.Generic
-
 [<AllowNullLiteral>]
 type IWithType =
     abstract DataType : System.Type
@@ -53,21 +50,15 @@ type IExpression<'T> =
     inherit IExpression
     inherit TValue<'T>
 
-[<AllowNullLiteral>]
-type IVariable<'T> =
-    inherit IVariable
-    inherit IExpression<'T>
+[<AllowNullLiteral>] type ITerminal<'T> = inherit ITerminal inherit IExpression<'T>
+[<AllowNullLiteral>] type IVariable<'T> = inherit IVariable inherit ITerminal<'T>
+[<AllowNullLiteral>] type ILiteral<'T> = inherit ILiteral inherit ITerminal<'T>
 
-[<AllowNullLiteral>] type ILiteral<'T>    = inherit ILiteral  inherit IExpression<'T>
-[<AllowNullLiteral>] type ITerminal<'T>   = inherit ITerminal inherit IExpression<'T>
-
-[<AllowNullLiteral>]
-type IStorage =
-    abstract IVariables : IVariable[]
+[<AllowNullLiteral>] type IStorage = abstract IVariables : IVariable[]
 
 
 
 
 
-[<AllowNullLiteral>] type IStatement      = interface end
+[<AllowNullLiteral>] type IStatement = interface end
 
