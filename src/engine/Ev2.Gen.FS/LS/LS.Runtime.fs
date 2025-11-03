@@ -31,17 +31,9 @@ module private RuntimeHelpers =
     let inline unwrapInitValue (value: obj option) (dataType: Type) =
         value |? defaultValueOf dataType
 
-    let isInputVar = function
-        | VarType.VarInput
-        | VarType.VarInOut -> true
-        | _ -> false
-
-    let isOutputVar = function
-        | VarType.VarOutput
-        | VarType.VarInOut -> true
-        | _ -> false
-
-    let isInOutVar = (=) VarType.VarInOut
+    let isInputVar  (var:IVariable) = let vt = var.VarType in vt = VarType.VarInput || vt = VarType.VarInOut
+    let isOutputVar (var:IVariable) = let vt = var.VarType in vt = VarType.VarOutput || vt = VarType.VarInOut
+    let isInOutVar  (var:IVariable) = let vt = var.VarType in vt = VarType.VarInOut
 
     let updateDictionary (dictionary: Dictionary<string, obj>) (name: string) (value: obj) =
         if dictionary.ContainsKey name then
@@ -49,19 +41,19 @@ module private RuntimeHelpers =
         else
             dictionary.Add(name, value)
 
-    let getVarType (variable: IVariable) =
-        match variable with
-        | :? VarBase<_> as varBase -> varBase.VarType
-        | _ ->
-            let property =
-                variable.GetType().GetProperty(
-                    "VarType",
-                    BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.FlattenHierarchy)
-            if isNull property then VarType.VarUndefined
-            else
-                match property.GetValue(variable) with
-                | :? VarType as value -> value
-                | _ -> VarType.VarUndefined
+    //let getVarType (variable: IVariable) =
+    //    match variable with
+    //    | :? VarBase<_> as varBase -> varBase.VarType
+    //    | _ ->
+    //        let property =
+    //            variable.GetType().GetProperty(
+    //                "VarType",
+    //                BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.FlattenHierarchy)
+    //        if isNull property then VarType.VarUndefined
+    //        else
+    //            match property.GetValue(variable) with
+    //            | :? VarType as value -> value
+    //            | _ -> VarType.VarUndefined
 
     let tryGetInitValue (variable: IVariable) =
         match variable with
@@ -86,14 +78,14 @@ module private DefinitionBuilder =
     let private storageValues (storage: Storage) =
         storage.Values |> Seq.toList
 
-    let private isLocalVariable varType =
-        match varType with
+    let private isLocalVariable (variable:IVariable) =
+        match variable.VarType with
         | VarType.Var
         | VarType.VarConstant -> true
         | _ -> false
 
-    let private isParameterVariable varType =
-        match varType with
+    let private isParameterVariable (variable:IVariable) =
+        match variable.VarType with
         | VarType.VarInput
         | VarType.VarOutput
         | VarType.VarInOut -> true
@@ -104,28 +96,24 @@ module private DefinitionBuilder =
         let globals = storageValues program.GlobalStorage
         { Program = program
           Globals = globals
-          Parameters =
-              locals
-              |> List.filter (fun variable -> variable |> RuntimeHelpers.getVarType |> isParameterVariable)
-          Locals =
-              locals
-              |> List.filter (fun variable -> variable |> RuntimeHelpers.getVarType |> isLocalVariable)
+          Parameters = locals |> List.filter isParameterVariable
+          Locals = locals |> List.filter isLocalVariable
           Body = program.Rungs }
 
-    let private isFBInput varType =
-        match varType with
+    let private isFBInput (variable:IVariable) =
+        match variable.VarType with
         | VarType.VarInput
         | VarType.VarInOut -> true
         | _ -> false
 
-    let private isFBOutput varType =
-        match varType with
+    let private isFBOutput (variable:IVariable) =
+        match variable.VarType with
         | VarType.VarOutput
         | VarType.VarInOut -> true
         | _ -> false
 
-    let private isFBInternal varType =
-        match varType with
+    let private isFBInternal (variable:IVariable) =
+        match variable.VarType with
         | VarType.Var
         | VarType.VarConstant -> true
         | _ -> false
@@ -133,9 +121,9 @@ module private DefinitionBuilder =
     let buildFBDefinition (program: FBProgram) : FBDefinition =
         let locals = storageValues program.LocalStorage
         { Program = program
-          Inputs    = locals |> List.filter (getVarType >> isFBInput)
-          Outputs   = locals |> List.filter (getVarType >> isFBOutput)
-          Internals = locals |> List.filter (getVarType >> isFBInternal)
+          Inputs    = locals |> List.filter isFBInput
+          Outputs   = locals |> List.filter isFBOutput
+          Internals = locals |> List.filter isFBInternal
           Body = program.Rungs }
 
 type internal ExecutionScope =
@@ -180,18 +168,17 @@ and internal FunctionRuntimeCall
     let initialiseParameters () =
         definition.Parameters
         |> List.iter (fun variable ->
-            let varType = getVarType variable
-            if isInputVar varType then
+            if isInputVar variable then
                 let source = ensureMapping inputMapping variable.Name
                 variable.Value <- source.Value
-            elif isOutputVar varType && not (isInOutVar varType) then
+            elif isOutputVar variable && not (isInOutVar variable) then
                 let initial = unwrapInitValue (tryGetInitValue variable) variable.DataType
                 variable.Value <- initial
             else
                 ())
 
         definition.Parameters
-        |> List.filter (getVarType >> isInOutVar)
+        |> List.filter isInOutVar
         |> List.iter (fun variable ->
             let source =
                 ensureMapping (if inputMapping.ContainsKey variable.Name then inputMapping else outputMapping) variable.Name
@@ -205,15 +192,14 @@ and internal FunctionRuntimeCall
 
     let flushOutputs () =
         definition.Parameters
-        |> List.filter (getVarType >> isOutputVar)
+        |> List.filter isOutputVar
         |> List.iter (fun variable ->
             let value = variable.Value
             match tryGetValue outputMapping variable.Name with
             | Some terminal ->
                 terminal.Value <- value
             | None ->
-                let varType = getVarType variable
-                if isInOutVar varType then
+                if isInOutVar variable then
                     let source = ensureMapping inputMapping variable.Name
                     source.Value <- value
                 else
@@ -268,7 +254,7 @@ and internal FBInstanceRuntimeCall
             variable.Value <- source.Value)
 
         definition.Outputs
-        |> List.filter (fun variable -> variable |> getVarType |> isInOutVar)
+        |> List.filter isInOutVar
         |> List.iter (fun variable ->
             let source =
                 ensureMapping (if inputMapping.ContainsKey variable.Name then inputMapping else outputMapping) variable.Name
@@ -276,7 +262,7 @@ and internal FBInstanceRuntimeCall
 
     let initialiseOutputs () =
         definition.Outputs
-        |> List.filter (fun variable -> variable |> getVarType |> isInOutVar |> not)
+        |> List.filter (isInOutVar >> not)
         |> List.iter (fun variable ->
             let initial = unwrapInitValue (tryGetInitValue variable) variable.DataType
             variable.Value <- initial)
@@ -291,7 +277,7 @@ and internal FBInstanceRuntimeCall
             let value = variable.Value
             match tryGetValue outputMapping variable.Name with
             | Some terminal -> terminal.Value <- value
-            | None when variable |> getVarType |> isInOutVar ->
+            | None when isInOutVar variable ->
                 let source = ensureMapping inputMapping variable.Name
                 source.Value <- value
             | None ->
@@ -338,11 +324,6 @@ and internal StatementExecutor =
         else
             expressions
 
-    static member private toTerminal (expr: IExpression) =
-        match expr with
-        | :? ITerminal as terminal -> terminal
-        | _ -> failwith "입출력 매핑은 ITerminal이어야 합니다."
-
     static member private buildMapping (decls: IVariable list) (expressions: IExpression[]) =
         if decls.Length <> expressions.Length then
             failwith $"매핑 개수가 일치하지 않습니다. 기대: {decls.Length}, 실제: {expressions.Length}"
@@ -350,7 +331,7 @@ and internal StatementExecutor =
         let dictionary = Dictionary<string, ITerminal>(StringComparer.OrdinalIgnoreCase)
         decls
         |> List.iteri (fun index variable ->
-            let terminal = StatementExecutor.toTerminal expressions[index]
+            let terminal = expressions[index] :?> ITerminal
             dictionary.Add(variable.Name, terminal))
         dictionary :> IDictionary<_, _>
 
@@ -366,9 +347,9 @@ and internal StatementExecutor =
             StatementExecutor.trimCallOutputs callee statement.FunctionCall.Outputs
 
         let inputDecls =
-            template.Definition.Parameters |> List.filter (getVarType >> isInputVar)
+            template.Definition.Parameters |> List.filter isInputVar
         let outputDecls =
-            template.Definition.Parameters |> List.filter (getVarType >> isOutputVar)
+            template.Definition.Parameters |> List.filter isOutputVar
 
         let inputMapping = StatementExecutor.buildMapping inputDecls filteredInputs
         let outputMapping = StatementExecutor.buildMapping outputDecls filteredOutputs

@@ -1,5 +1,7 @@
 namespace Ev2.Gen
 
+open System
+
 [<AllowNullLiteral>]
 type IWithType =
     abstract DataType : System.Type
@@ -32,10 +34,32 @@ type ITerminal =
     inherit IExpression
     //abstract Value    : obj
 
+
+(*
+ * 글로벌/직접 변수: VAR_GLOBAL, VAR_GLOBAL_CONST
+ * Program 로컬변수: VAR, VAR_CONST, VAR_EXTERNAL, VAR_EXTERNAL_CONST
+ * FB 로컬변수: VAR, VAR_CONSTANT, VAR_INPUT, VAR_OUTPUT, VAR_IN_OUT, VAR_EXTERNAL, VAR_EXTERNAL_CONSTANT
+ * Func 로컬변수: VAR, VAR_INPUT, VAR_OUTPUT, VAR_IN_OUT, VAR_RETURN
+ *)
+
+/// 변수 종류
+type VarType =
+    | VarUndefined
+    | Var
+    | VarConstant
+    | VarInput
+    | VarOutput
+    | VarInOut
+    | VarExternal
+    | VarExternalConstant
+    | VarGlobal
+    | VarGlobalConstant
+
 [<AllowNullLiteral>]
 type IVariable =
     inherit ITerminal
     abstract Name     : string
+    abstract VarType  : VarType
 
 [<AllowNullLiteral>] type ILiteral = inherit ITerminal
 

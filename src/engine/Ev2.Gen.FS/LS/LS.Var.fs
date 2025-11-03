@@ -4,25 +4,6 @@ open System
 open System.Collections.Generic
 open Dual.Common.Base
 
-(*
- * 글로벌/직접 변수: VAR_GLOBAL, VAR_GLOBAL_CONST
- * Program 로컬변수: VAR, VAR_CONST, VAR_EXTERNAL, VAR_EXTERNAL_CONST
- * FB 로컬변수: VAR, VAR_CONSTANT, VAR_INPUT, VAR_OUTPUT, VAR_IN_OUT, VAR_EXTERNAL, VAR_EXTERNAL_CONSTANT
- * Func 로컬변수: VAR, VAR_INPUT, VAR_OUTPUT, VAR_IN_OUT, VAR_RETURN
- *)
-
-/// 변수 종류
-type VarType =
-    | VarUndefined
-    | Var
-    | VarConstant
-    | VarInput
-    | VarOutput
-    | VarInOut
-    | VarExternal
-    | VarExternalConstant
-    | VarGlobal
-    | VarGlobalConstant
 
 //type DataType =
 //    | DtUndefined
@@ -70,6 +51,7 @@ type VarBase<'T>(name:string, ?varType:VarType, ?initValue:'T) =
     interface IVariable<'T> with
         member x.Name = x.Name
         member x.DataType = x.DataType
+        member x.VarType = x.VarType
         member x.Value with get() = fail() and set v = fail()
         member x.TValue = fail()
 

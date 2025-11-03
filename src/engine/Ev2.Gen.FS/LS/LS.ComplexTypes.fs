@@ -8,6 +8,7 @@ type Struct(name:string, fields:IVariable[]) =
 
     new() = Struct(nullString, [||])
     member x.DataType = typeof<Struct>
+    member val VarType = VarType.VarUndefined with get, set
     member val Name = name with get, set
     member val Fields = fields with get, set
     member x.GetField(fieldName:string): IVariable = fieldDic[fieldName]
@@ -16,12 +17,14 @@ type Struct(name:string, fields:IVariable[]) =
     interface IVariable with
         member x.Name = x.Name
         member x.DataType = x.DataType
+        member x.VarType = x.VarType
         member x.Value with get() = fail() and set v = fail()
 
 type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
     new() = Array<'T>(nullString, [||])
     member x.Dimensions = dimensions
     member x.DataType = typeof<Array<'T>>
+    member val VarType = VarType.VarUndefined with get, set
     member x.ElementDataType = typeof<'T>
     member val Value: obj = null with get, set   // 'T[], 'T[,] or 'T[,,] ...
 
@@ -30,6 +33,7 @@ type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
         //member x.DataType = x.ElementDataType
     interface IVariable with
         member x.Name = name
+        member x.VarType = x.VarType
         member x.Value with get() = fail() and set v = fail()
     interface IWithType with
         member x.DataType = x.DataType
