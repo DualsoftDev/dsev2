@@ -48,7 +48,7 @@ module private RuntimeHelpers =
 
 /// FunctionProgram 실행 시 필요한 정적 정의 모음이다. (Authoring 레이어 → Runtime 전환 스냅샷)
 type internal FunctionDefinition =
-    { XProgram: FunctionProgram
+    { Program: FunctionProgram
       Globals: IVariable list
       Parameters: IVariable list
       Locals: IVariable list
@@ -337,17 +337,13 @@ and internal StatementExecutor =
 
         let template = scope.Resolver.ResolveFunction statement.FunctionCall.IFunctionProgram
         let callee = template.Definition.Program
-        let filteredInputs =
-            StatementExecutor.trimCallInputs callee statement.FunctionCall.Inputs
-        let filteredOutputs =
-            StatementExecutor.trimCallOutputs callee statement.FunctionCall.Outputs
+        let filteredInputs  = StatementExecutor.trimCallInputs  callee statement.FunctionCall.Inputs
+        let filteredOutputs = StatementExecutor.trimCallOutputs callee statement.FunctionCall.Outputs
 
-        let inputDecls =
-            template.Definition.Parameters |> List.filter isInputVar
-        let outputDecls =
-            template.Definition.Parameters |> List.filter isOutputVar
+        let inputDecls  = template.Definition.Parameters |> List.filter isInputVar
+        let outputDecls = template.Definition.Parameters |> List.filter isOutputVar
 
-        let inputMapping = StatementExecutor.buildMapping inputDecls filteredInputs
+        let inputMapping  = StatementExecutor.buildMapping inputDecls  filteredInputs
         let outputMapping = StatementExecutor.buildMapping outputDecls filteredOutputs
         template.CreateRuntime(inputMapping, outputMapping).Do()
 
@@ -356,10 +352,8 @@ and internal StatementExecutor =
         let definition = runtime.Definition
         let callee = definition.Program
 
-        let filteredInputs =
-            StatementExecutor.trimCallInputs callee statement.FBCall.Inputs
-        let filteredOutputs =
-            StatementExecutor.trimCallOutputs callee statement.FBCall.Outputs
+        let filteredInputs  = StatementExecutor.trimCallInputs callee statement.FBCall.Inputs
+        let filteredOutputs = StatementExecutor.trimCallOutputs callee statement.FBCall.Outputs
 
         let inputDecls = definition.Inputs
         let outputDecls = definition.Outputs
@@ -390,6 +384,8 @@ and internal StatementExecutor =
         StatementExecutor.execute(definition.Body, scope)
 
 /// 프로젝트 단위로 Function/FB 런타임을 생성하고 재사용한다. (Resolver/Cache 허브)
+// IECProject는 설계/저장소 관점의 모델이고, ProjectRuntime은 실행을 위한 캐시·Resolver 역할.
+// 둘을 합치면 프로젝트 편집 로직과 실행 캐시 로직이 뒤섞여 유지보수가 어려우므로, 분리
 type ProjectRuntime(project: IECProject) =
     let functionCache =
         Dictionary<FunctionProgram, FunctionRuntimeTemplate>(ReferenceEqualityComparer<FunctionProgram>())
@@ -488,7 +484,7 @@ type ProjectRuntime(project: IECProject) =
                 if isNull instanceObj then "(null)" else fbInstance.GetType().FullName |? "(unknown)"
             failwith $"FB 인스턴스 '{typeName}' 에서 FBProgram 을 찾을 수 없습니다."
 
-    member private this.EnsureFunctionTemplate(program: FunctionProgram) =
+    member private this.EnsureFunctionTemplate(program: FunctionProgram): FunctionRuntimeTemplate =
         match functionCache.TryGetValue program with
         | true, template -> template
         | _ ->
@@ -497,14 +493,14 @@ type ProjectRuntime(project: IECProject) =
             functionCache.Add(program, template)
             template
 
-    member private this.ResolveTemplate(program: IFunctionProgram) =
+    member private this.ResolveTemplate(program: IFunctionProgram): FunctionRuntimeTemplate =
         match program with
         | :? FunctionProgram as concrete -> this.EnsureFunctionTemplate concrete
         | _ ->
             let programName = if isNull program then "(null)" else program.ToString()
             failwith $"프로젝트에서 함수 '{programName}' 을(를) 해석할 수 없습니다."
 
-    member private this.EnsureFBTemplate(program: FBProgram) =
+    member private this.EnsureFBTemplate(program: FBProgram): FBInstanceRuntimeTemplate =
         match fbTemplateCache.TryGetValue program with
         | true, template -> template
         | _ ->
@@ -513,7 +509,7 @@ type ProjectRuntime(project: IECProject) =
             fbTemplateCache.Add(program, template)
             template
 
-    member private this.EnsureFBInstanceRuntime(fbInstance: IFBInstance) =
+    member private this.EnsureFBInstanceRuntime(fbInstance: IFBInstance): FBInstanceRuntime =
         match fbInstanceCache.TryGetValue fbInstance with
         | true, runtime -> runtime
         | _ ->
@@ -544,31 +540,11 @@ type ProjectRuntime(project: IECProject) =
 
             runtime
 
-    member this.CreateFunctionRuntime(
-        program: IFunctionProgram,
-        inputMapping: Mapping,
-        outputMapping: Mapping) =
+    member this.CreateFunctionRuntime( program: IFunctionProgram, inputMapping: Mapping, outputMapping: Mapping) =
         let template = this.ResolveTemplate program
         template.CreateRuntime(inputMapping, outputMapping)
 
-    member this.CreateFunctionRuntime(
-        program: FunctionProgram,
-        inputMapping: Mapping,
-        outputMapping: Mapping) =
-        this.CreateFunctionRuntime(program :> IFunctionProgram, inputMapping, outputMapping)
-
-    member this.CreateFunctionRuntime<'T>
-        (
-            program: FunctionProgram<'T>,
-            inputMapping: Mapping,
-            outputMapping: Mapping
-        ) =
-        this.CreateFunctionRuntime(program :> FunctionProgram, inputMapping, outputMapping)
-
-    member this.InvokeFBInstance(
-        fbInstance: IFBInstance,
-        inputMapping: Mapping,
-        outputMapping: Mapping) =
+    member this.InvokeFBInstance( fbInstance: IFBInstance, inputMapping: Mapping, outputMapping: Mapping) =
         let runtime = this.EnsureFBInstanceRuntime fbInstance
         runtime.Invoke(inputMapping, outputMapping)
 
