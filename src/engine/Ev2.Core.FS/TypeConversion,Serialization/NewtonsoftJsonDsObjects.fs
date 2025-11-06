@@ -374,9 +374,7 @@ module rec NewtonsoftJsonObjects =
             let actives  = njp.ActiveSystems  |-> getRuntimeObject<DsSystem>
             let passives = njp.PassiveSystems |-> getRuntimeObject<DsSystem>
 
-            let rtp =
-                Project.Create(actives, passives, njp)
-                |> replicateProperties njp
+            let rtp = Project.Create(actives, passives) |> replicateProperties njp
 
             actives @ passives |> iter (setParentI rtp)
             njp.RuntimeObject <- rtp

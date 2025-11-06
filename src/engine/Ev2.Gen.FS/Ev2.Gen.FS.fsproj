@@ -30,8 +30,8 @@
 	  <Compile Include="ls\LS.Statement.fs" />
 	  <Compile Include="ls\LS.IECFunction.fs" />
 	  <Compile Include="ls\LS.POU.fs" />
-	  <Compile Include="ls\LS.Runtime.fs" />
 	  <Compile Include="ls\LS.Extension.fs" />
+	  <Compile Include="ls\LS.Runtime.fs" />
   </ItemGroup>
 
   <ItemGroup>

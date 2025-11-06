@@ -21,6 +21,10 @@ module GenExtensionModule =
                 // Implement the logic for FBCallStatement
                 printfn "Executing FBCallStatement with FB instance: %A" fbcs.FBCall.IFBInstance
                 ()
+            | :? TimerStatement
+            | :? CounterStatement
+            | :? BreakStatement
+            | :? SubroutineCallStatement
             | _ ->
                 // Handle other statement types or do nothing
                 printfn "Executing other type of Statement"

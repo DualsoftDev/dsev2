@@ -31,9 +31,16 @@ module private RuntimeHelpers =
     let inline unwrapInitValue (value: obj option) (dataType: Type) =
         value |? defaultValueOf dataType
 
-    let isInputVar  (var:IVariable) = let vt = var.VarType in vt = VarType.VarInput || vt = VarType.VarInOut
-    let isOutputVar (var:IVariable) = let vt = var.VarType in vt = VarType.VarOutput || vt = VarType.VarInOut
-    let isInOutVar  (var:IVariable) = let vt = var.VarType in vt = VarType.VarInOut
+    let isInputVar  (var:IVariable) = var.VarType.IsOneOf(VarType.VarInput, VarType.VarInOut)
+    let isOutputVar (var:IVariable) = var.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut)
+    let isInOutVar  (var:IVariable) = var.VarType = VarType.VarInOut
+
+    let isLocalVariable (var:IVariable) = var.VarType.IsOneOf(VarType.Var, VarType.VarConstant)
+    let isParameterVariable (var:IVariable) = var.VarType.IsOneOf(VarType.VarInput, VarType.VarOutput, VarType.VarInOut)
+
+    let isFBInput (var:IVariable) = var.VarType.IsOneOf(VarType.VarInput, VarType.VarInOut)
+    let isFBOutput (var:IVariable) = var.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut)
+    let isFBInternal (var:IVariable) = var.VarType.IsOneOf(VarType.Var, VarType.VarConstant)
 
     let updateDictionary (dictionary: Dictionary<string, obj>) (name: string) (value: obj) =
         if dictionary.ContainsKey name then
@@ -67,18 +74,6 @@ module private DefinitionBuilder =
     let private storageValues (storage: Storage) =
         storage.Values |> Seq.toList
 
-    let private isLocalVariable (variable:IVariable) =
-        match variable.VarType with
-        | VarType.Var
-        | VarType.VarConstant -> true
-        | _ -> false
-
-    let private isParameterVariable (variable:IVariable) =
-        match variable.VarType with
-        | VarType.VarInput
-        | VarType.VarOutput
-        | VarType.VarInOut -> true
-        | _ -> false
 
     let buildFunctionDefinition (program: FunctionProgram) : FunctionDefinition =
         let locals = storageValues program.LocalStorage
@@ -89,23 +84,6 @@ module private DefinitionBuilder =
           Locals = locals |> List.filter isLocalVariable
           Body = program.Rungs }
 
-    let private isFBInput (variable:IVariable) =
-        match variable.VarType with
-        | VarType.VarInput
-        | VarType.VarInOut -> true
-        | _ -> false
-
-    let private isFBOutput (variable:IVariable) =
-        match variable.VarType with
-        | VarType.VarOutput
-        | VarType.VarInOut -> true
-        | _ -> false
-
-    let private isFBInternal (variable:IVariable) =
-        match variable.VarType with
-        | VarType.Var
-        | VarType.VarConstant -> true
-        | _ -> false
 
     let buildFBDefinition (program: FBProgram) : FBDefinition =
         let locals = storageValues program.LocalStorage
@@ -123,9 +101,7 @@ type internal ExecutionScope =
 and internal FunctionRuntimeTemplate(definition: FunctionDefinition, resolver: IRuntimeResolver) =
     member internal _.Definition = definition
 
-    member this.CreateRuntime(
-        inputMapping: Mapping,
-        outputMapping: Mapping) : FunctionRuntime =
+    member this.CreateRuntime(inputMapping: Mapping, outputMapping: Mapping) : FunctionRuntime =
         FunctionRuntime.Create(definition, resolver, inputMapping, outputMapping)
 
     member this.Invoke(inputMapping: Mapping, outputMapping: Mapping) =
@@ -293,20 +269,9 @@ and ReferenceEqualityComparer<'T when 'T : not struct>() =
 
 /// Statement 배열을 순차적으로 실행하는 실행기다.
 and internal StatementExecutor =
-    static member private evaluateCondition (condition: IExpression) =
-        if isNull condition then true
-        else
-            match condition with
-            | :? IExpression<bool> as boolExpr -> boolExpr.TValue
-            | _ ->
-                match condition.Value with
-                | :? bool as value -> value
-                | _ -> failwith "조건식은 bool 이어야 합니다."
-
     static member private executeAssign (statement: AssignStatementOpaque) =
-        if StatementExecutor.evaluateCondition statement.Condition then
-            let value = statement.Source.Value
-            statement.Target.Value <- value
+        if statement.Condition |> toOption |-> _.TValue |? true then
+            statement.Target.Value <- statement.Source.Value
 
     static member private trimCallInputs (program: SubProgram) (expressions: IExpression[]) =
         if program.UseEnEno && expressions.Length > 0 then
@@ -331,9 +296,7 @@ and internal StatementExecutor =
             dictionary.Add(variable.Name, terminal))
         dictionary :> IDictionary<_, _>
 
-    static member private executeFunctionCall
-        (scope: ExecutionScope)
-        (statement: FunctionCallStatement) =
+    static member private executeFunctionCall (scope: ExecutionScope) (statement: FunctionCallStatement) =
 
         let template = scope.Resolver.ResolveFunction statement.FunctionCall.IFunctionProgram
         let callee = template.Definition.Program
@@ -363,19 +326,25 @@ and internal StatementExecutor =
         runtime.Invoke(inputMapping, outputMapping)
 
     static member private execute(statements: Statement array, scope: ExecutionScope) =
+        let mutable breaked = false
         for statement in statements do
-            match statement with
-            | :? AssignStatementOpaque as assign ->
-                StatementExecutor.executeAssign assign
-            | :? FunctionCallStatement as functionCall ->
-                StatementExecutor.executeFunctionCall scope functionCall
-            | :? FBCallStatement as fbCall ->
-                StatementExecutor.executeFBCall scope fbCall
-            | :? TimerStatement
-            | :? CounterStatement
-            | :? BreakStatement
-            | :? SubroutineCallStatement
-            | _ -> ()
+            if not breaked then
+                match statement with
+                | :? AssignStatementOpaque as assign ->
+                    StatementExecutor.executeAssign assign
+                | :? FunctionCallStatement as functionCall ->
+                    StatementExecutor.executeFunctionCall scope functionCall
+                | :? FBCallStatement as fbCall ->
+                    StatementExecutor.executeFBCall scope fbCall
+                | :? BreakStatement ->
+                    breaked <- true
+                | _ -> statement.Do()
+                //| :? AssignStatementOpaque as assign ->
+                //    StatementExecutor.executeAssign assign
+                //| :? TimerStatement
+                //| :? CounterStatement
+                //| :? SubroutineCallStatement
+                //| _ -> ()
 
     static member runFunction(definition: FunctionDefinition, scope: ExecutionScope) =
         StatementExecutor.execute(definition.Body, scope)
@@ -403,7 +372,8 @@ type ProjectRuntime(project: IECProject) =
             match iface with
             | :? FBProgram as concrete -> Some concrete
             | _ -> None
-        | _ -> None
+        | _ ->
+            None
 
     let tryExtractFBProgram (fbInstance: IFBInstance) =
         let instanceObj = fbInstance :> obj
@@ -472,9 +442,6 @@ type ProjectRuntime(project: IECProject) =
                     else
                         None)
 
-    let buildInstanceNameKey (program: FBProgram) (instanceName: string) =
-        $"{program.Name}|{instanceName}"
-
     let getFBProgram (fbInstance: IFBInstance) =
         let instanceObj = fbInstance :> obj
         match tryExtractFBProgram fbInstance with
@@ -516,6 +483,9 @@ type ProjectRuntime(project: IECProject) =
             let program = getFBProgram fbInstance
             let template = this.EnsureFBTemplate program
             let nameKey =
+                let buildInstanceNameKey (program: FBProgram) (instanceName: string) =
+                    $"{program.Name}|{instanceName}"
+
                 match tryGetInstanceName fbInstance with
                 | Some name -> Some (buildInstanceNameKey program name)
                 | None -> None

@@ -130,7 +130,7 @@ and Project() = // Create, Initialize, OnSaved, OnLoaded
     static member Create() = createExtended<Project>()
 
     /// Creates a Project with the specified systems using parameterless constructor + Initialize pattern
-    static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq, njProject:INjProject) =
+    static member Create(activeSystems: DsSystem seq, passiveSystems: DsSystem seq) =
         let x = createExtended<Project>()
 
         // Add new systems and set parent relationships
