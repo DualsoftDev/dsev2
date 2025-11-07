@@ -8,7 +8,7 @@
   <ItemGroup>
 	  <Compile Include="common\Interfaces.fs" />
 	  <None Include="devdoc\**\*.md" />
-	  <Compile Include="IR\IR.Common.fs" />
+	  <!--<Compile Include="IR\IR.Common.fs" />
 	  <Compile Include="IR\IR.Project.fs" />
 	  <Compile Include="IR\IR.Devices.fs" />
 	  <Compile Include="IR\IR.IO.fs" />
@@ -21,7 +21,7 @@
 	  <Compile Include="IR\IR.Communication.fs" />
 	  <Compile Include="IR\IR.HMI.fs" />
 	  <Compile Include="IR\IR.Metadata.fs" />
-	  <Compile Include="IR\IR.Root.fs" />
+	  <Compile Include="IR\IR.Root.fs" />-->
 	  <Compile Include="ls\LS.Interface.fs" />
 	  <Compile Include="LS\LS.Var.fs" />
 	  <Compile Include="ls\LS.Operator.fs" />

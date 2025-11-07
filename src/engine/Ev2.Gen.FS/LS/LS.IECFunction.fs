@@ -59,18 +59,18 @@ module IECFunctionFunctionBlockModule =
         abstract LocalStorage : IVariable[]
 
     /// Function/Fuction Block 의 Call Box
-    type CallBox(storages:IStorages, en:IExpression<bool>, inputs:IExpression[], outputs:IExpression[]) =
+    type CallBox(inputs:IExpression[], outputs:IExpression[], ?en:IExpression<bool>, ?eno:IVariable<bool>) =
         member val Inputs = inputs with get, set
         member val Outputs = outputs with get, set
 
-        member x.EN = x.Inputs[0]
-        member x.ENO = x.Outputs[0]
+        member val EN = en
+        member x.ENO = eno
 
     /// XGI 기준 함수 호출.  expression 이 아니다.
-    type FunctionCall(storages, funDef:IFunctionProgram, en, inputs, outputs) =
-        inherit CallBox(storages, en, inputs, outputs)
+    type FunctionCall(funDef:IFunctionProgram, inputs, outputs, ?en, ?eno) =
+        inherit CallBox(inputs, outputs, ?en=en, ?eno=eno)
         interface IFunctionCall
-        new() = FunctionCall(null, null, null, [||], [||])        // for serialization
+        new() = FunctionCall(null, [||], [||])        // for serialization
         member x.IFunctionProgram = funDef
 
 
@@ -80,10 +80,10 @@ module IECFunctionFunctionBlockModule =
 
 
     /// XGI 기준 함수 호출.  expression 이 아니다.
-    type FBCall(storages, fbInstance:IFBInstance, en, inputs, outputs) =
-        inherit CallBox(storages, en, inputs, outputs)
+    type FBCall(fbInstance:IFBInstance, inputs, outputs, ?en, ?eno) =
+        inherit CallBox(inputs, outputs, ?en=en, ?eno=eno)
         interface IFBCall
-        new() = FBCall(null, null, null, [||], [||])        // for serialization
+        new() = FBCall(null, [||], [||])        // for serialization
         member x.IFBInstance = fbInstance
 
     type FBCallStatement(fbCall:FBCall, ?comment:string) =
