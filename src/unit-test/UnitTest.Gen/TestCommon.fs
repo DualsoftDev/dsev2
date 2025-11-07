@@ -12,5 +12,5 @@ module internal PouTestHelperModule =
     let falseValue = Literal<bool>(false)
     let boolContact name  = Variable<bool>(name) :> IVariable<bool>
     let coil<'T> name value  = Variable<'T>(name, Value=value) :> IVariable<'T>
-    let literal<'T> (value:'T) = Literal<'T>(value) :> IExpression<'T>
+    let literal<'T> (value:'T) = Literal<'T>(value) :> ITerminal<'T>
 

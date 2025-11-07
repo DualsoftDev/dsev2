@@ -59,4 +59,5 @@ module POUModule =
         member val UDTs = ResizeArray(udts |? [])
         member val FunctionPrograms = ResizeArray(functions |? [])
         member val FBPrograms = ResizeArray(functionBlocks |? [])
-
+        member val internal FBInstanceStates = Dictionary<IFBInstance, Dictionary<string, obj>>() with get
+        member val internal FBInstanceStatesByName = Dictionary<string, Dictionary<string, obj>>(StringComparer.OrdinalIgnoreCase) with get

@@ -1,14 +1,14 @@
 namespace Ev2.Gen
 
-//open System
-//open System.Collections.Generic
-//open System.Reflection
-//open System.Runtime.CompilerServices
-//open Dual.Common.Base
+open System
+open System.Collections.Generic
+open System.Reflection
+open System.Runtime.CompilerServices
+open Dual.Common.Base
 
-//[<AutoOpen>]
-//module private RuntimeHelpers =
-//    type Mapping = IDictionary<string, ITerminal>
+[<AutoOpen>]
+module private RuntimeHelpers =
+//
 
 //    let inline tryGetValue<'T> (dictionary: IDictionary<string, 'T>) (key: string) =
 //        match dictionary with
@@ -524,3 +524,55 @@ namespace Ev2.Gen
 
 //        member this.ResolveFBInstance(fbInstance: IFBInstance) =
 //            this.EnsureFBInstanceRuntime fbInstance
+
+    let test () =
+        let globalStorage = Storage()
+        let project = IECProject(globalStorage)
+
+        let addFunctionProgram: FunctionProgram<int32> =
+            createAdd2Function<int32>(globalStorage, Some "AddTwoIntegers")
+        project.Add(addFunctionProgram)
+
+        let fbInput = Variable<int32>("InValue", varType = VarType.VarInput)
+        let fbOutput = Variable<int32>("Acc", varType = VarType.VarOutput)
+        let fbMemory = Variable<int32>("Buffer", varType = VarType.Var)
+        let fbLocalStorage =
+            Storage.Create([ fbInput :> IVariable; fbOutput; fbMemory ])
+
+        let fbRungs: Statement[] =
+            [|
+                AssignStatement(add<int32> [| fbMemory :> IExpression<int32>; fbInput |], fbMemory :> IVariable<int32>) :> Statement
+                AssignStatement(fbMemory :> IExpression<int32>, fbOutput :> IVariable<int32>)
+            |]
+
+        let accumulatorFb = FBProgram("AccumulatorFB", project.GlobalStorage, fbLocalStorage, fbRungs, [||])
+        project.Add(accumulatorFb)
+
+        let a = Variable<int32>("A", 10)
+        let b = Variable<int32>("B", 20)
+        let sum = Variable<int32>("Sum", 0)
+        let accumulated = Variable<int32>("Accumulated", 0)
+
+        let scanLocalStorage =
+            Storage.Create([ a :> IVariable; b :> IVariable; sum :> IVariable; accumulated :> IVariable ])
+
+        let rung1: Statement =
+            let inputMapping: Mapping =
+                dict [ "Num1", a :> ITerminal
+                       "Num2", b :> ITerminal ]
+
+            let outputMapping: Mapping =
+                dict [ "Sum", sum :> ITerminal ]
+
+            FunctionCallStatement(addFunctionProgram :> IFunctionProgram, inputMapping, outputMapping) :> Statement
+
+        let rung2: Statement =
+            let inputMapping: Mapping = dict [ "InValue", sum :> ITerminal ]
+            let outputMapping: Mapping = dict [ "Acc", accumulated :> ITerminal ]
+            FBCallStatement(accumulatorFb :> IFBProgram, inputMapping, outputMapping, ?instanceName = Some "MainAccumulator") :> Statement
+
+        let scanProgram =
+            ScanProgram("MainScan", project.GlobalStorage, scanLocalStorage, [| rung1; rung2 |], [||])
+
+        project.AddScanProgram(scanProgram)
+        project

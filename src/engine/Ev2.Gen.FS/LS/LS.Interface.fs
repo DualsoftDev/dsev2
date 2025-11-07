@@ -63,6 +63,10 @@ type IVariable =
     abstract Name     : string
     abstract VarType  : VarType
 
+[<AllowNullLiteral>]
+type IInitValueProvider =
+    abstract InitValueObject : obj option
+
 [<AllowNullLiteral>] type ILiteral = inherit ITerminal
 
 
@@ -87,4 +91,3 @@ type IExpression<'T> =
 
 
 [<AllowNullLiteral>] type IStatement = interface end
-
