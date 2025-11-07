@@ -569,7 +569,7 @@ module private RuntimeHelpers =
         let rung2: Statement =
             let inputMapping: Mapping = dict [ "InValue", sum :> ITerminal ]
             let outputMapping: Mapping = dict [ "Acc", accumulated :> ITerminal ]
-            FBCallStatement(accumulatorFb :> IFBProgram, inputMapping, outputMapping, ?instanceName = Some "MainAccumulator") :> Statement
+            FBCallStatement(accumulatorFb, "MainAccumulator", inputMapping, outputMapping) :> Statement
 
         let scanProgram =
             ScanProgram("MainScan", project.GlobalStorage, scanLocalStorage, [| rung1; rung2 |], [||])

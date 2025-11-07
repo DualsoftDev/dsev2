@@ -88,14 +88,14 @@ type PouInstanceTest() =
         let rungMainFb: Statement =
             let inputMapping: Mapping = dict [ "InValue", (literal 1) :> ITerminal ]
             let outputMapping: Mapping = dict [ "Acc", accumulated :> ITerminal ]
-            FBCallStatement(accumulatorFb, inputMapping, outputMapping, ?instanceName = Some "MainAccumulator") :> Statement
+            FBCallStatement(accumulatorFb, "MainAccumulator", inputMapping, outputMapping) :> Statement
         rungMainFb.Do()
         accumulated.Value === 1
 
         let rungSpareFb: Statement =
             let inputMapping: Mapping = dict [ "InValue", (literal 99) :> ITerminal ]
             let outputMapping: Mapping = dict [ "Acc", spareAccumulated :> ITerminal ]
-            FBCallStatement(accumulatorFb, inputMapping, outputMapping, ?instanceName = Some "SpareAccumulator") :> Statement
+            FBCallStatement(accumulatorFb, "SpareAccumulator", inputMapping, outputMapping) :> Statement
 
         rungSpareFb.Do()
         spareAccumulated.Value === 99
@@ -115,7 +115,7 @@ type PouInstanceTest() =
         let rungSpareFb2: Statement =
             let inputMapping: Mapping = dict [ "InValue", (literal 3) :> ITerminal ]
             let outputMapping: Mapping = dict [ "Acc", spareAccumulated :> ITerminal ]
-            FBCallStatement(accumulatorFb, inputMapping, outputMapping, ?instanceName = Some "SpareAccumulator") :> Statement
+            FBCallStatement(accumulatorFb, "SpareAccumulator", inputMapping, outputMapping) :> Statement
         rungSpareFb2.Do()
         spareAccumulated.Value === 201  // 99 + 3
 

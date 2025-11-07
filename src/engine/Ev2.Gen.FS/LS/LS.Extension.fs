@@ -11,7 +11,7 @@ module GenExtensionModule =
     type IFBInstance with
         member this.GetFBProgram() =
             match this with
-            | :? FBInstanceReference as reference -> reference.Program
+            | :? FBInstance as reference -> reference.Program
             | :? IFBProgram as fbProgram ->
                 match fbProgram with
                 | :? FBProgram as concrete -> concrete
@@ -36,7 +36,7 @@ module GenExtensionModule =
                         | :? string as value when not (String.IsNullOrWhiteSpace value) -> Some value
                         | _ -> None)
             match this with
-            | :? FBInstanceReference as reference ->
+            | :? FBInstance as reference ->
                 if String.IsNullOrWhiteSpace reference.InstanceName then None else Some reference.InstanceName
             | _ ->
                 readProperty [| "InstanceName"; "Name" |]
