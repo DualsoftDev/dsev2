@@ -75,3 +75,8 @@ type Variable<'T>(name, ?value:'T, ?varType:VarType) =
 type Storage() =
     inherit Dictionary<string, IVariable>(StringComparer.OrdinalIgnoreCase)
 
+    static member Create(variables:IVariable seq) =
+        Storage()
+        |> tee(fun storage ->
+            for var in variables do
+                storage.Add(var.Name, var))

@@ -22,30 +22,17 @@ type Operator<'T>(name:string, arguments:Arguments) =
 [<AutoOpen>]
 module OperatorEvaluators =
     let inline private opaqueArgs (args:Arguments<'T>) = args.Cast<IExpression>().ToArray()
-    let inline createAddFunction<'T when 'T : (static member (+) : 'T * 'T -> 'T)> (args:Arguments) =
-        Operator<'T>("+", args, Evaluator=fun args -> args.Cast<IExpression<'T>>().Map _.TValue |> Seq.reduce (+) )
-    let inline createSubFunction<'T when 'T : (static member (-) : 'T * 'T -> 'T)> (args:Arguments) =
-        Operator<'T>("-", args, Evaluator=fun args -> args.Cast<IExpression<'T>>().Map _.TValue |> Seq.reduce (-) )
-    let inline createMulFunction<'T when 'T : (static member (*) : 'T * 'T -> 'T)> (args:Arguments) =
-        Operator<'T>("-", args, Evaluator=fun args -> args.Cast<IExpression<'T>>().Map _.TValue |> Seq.reduce (*) )
-    let inline createDivFunction<'T when 'T : (static member (/) : 'T * 'T -> 'T)> (args:Arguments) =
-        Operator<'T>("-", args, Evaluator=fun args -> args.Cast<IExpression<'T>>().Map _.TValue |> Seq.reduce (/) )
+    let inline valueArgs<'T> (args:Arguments) = args.Cast<IExpression<'T>>().Map _.TValue
 
-    let add_f32 (args:Arguments<single>)  = createAddFunction<single> (opaqueArgs args)
-    let add_f64 (args:Arguments<double>)  = createAddFunction<double> (opaqueArgs args)
-    let add_n16 (args:Arguments<int16>)  = createAddFunction<int16> (opaqueArgs args)
-    let add_N16 (args:Arguments<uint16>) = createAddFunction<uint16>(opaqueArgs args)
-    let add_n32 (args:Arguments<int32>)  = createAddFunction<int32> (opaqueArgs args)
-    let add_N32 (args:Arguments<uint32>) = createAddFunction<uint32>(opaqueArgs args)
-    let add_String (args:Arguments<string>) = createAddFunction<string> (args.Cast<IExpression>().ToArray())
-    let add = add_n32
+    let inline add<'T when 'T : (static member (+) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
+        Operator<'T>("+", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (+)) )
+    let inline sub<'T when 'T : (static member (-) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
+        Operator<'T>("-", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (-)) )
+    let inline mul<'T when 'T : (static member (*) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
+        Operator<'T>("*", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (*)) )
+    let inline div<'T when 'T : (static member (/) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
+        Operator<'T>("/", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (/)) )
 
-    let sub_n16 (args:Arguments<int16>)  = createSubFunction<int16> (opaqueArgs args)
-    let mul_n16 (args:Arguments<int16>)  = createMulFunction<int16> (opaqueArgs args)
-    let div_n16 (args:Arguments<int16>)  = createDivFunction<int16> (opaqueArgs args)
-    let sub_n32 (args:Arguments<int32>)  = createSubFunction<int32> (opaqueArgs args)
-    let mul_n32 (args:Arguments<int32>)  = createMulFunction<int32> (opaqueArgs args)
-    let div_n32 (args:Arguments<int32>)  = createDivFunction<int32> (opaqueArgs args)
 
     let inline createGeFunction<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) =
         Operator<bool>(">=", [| a :> IExpression; b |],

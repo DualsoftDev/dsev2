@@ -26,18 +26,26 @@ module ProgramModule =
 module IECFunctionFunctionBlockModule =
     type FunctionProgram internal (name, globalStorage, localStorage, returnVar:IVariable, dataType:Type, rungs, subroutines) =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
+        do
+            assert(name = returnVar.Name)
         interface IFunctionProgram with
             member x.DataType = x.DataType
         member x.DataType = dataType
         member x.Return = returnVar
 
-    type FunctionProgram<'T> internal (name, globalStorage, localStorage, returnVar, rungs, subroutines) =
+    type FunctionProgram<'T> (name, globalStorage, localStorage, returnVar, rungs, subroutines) =
         inherit FunctionProgram(name, globalStorage, localStorage, returnVar, typeof<'T>, rungs, subroutines)
         member x.TReturn = returnVar
 
     type FBProgram(name, globalStorage, localStorage, rungs, subroutines) =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IFBProgram
+
+    type FBInstance(name: string, program: FBProgram) =
+        member _.Name = name
+        member _.Program = program
+        interface IFBInstance
+
 
 
     [<AllowNullLiteral>]

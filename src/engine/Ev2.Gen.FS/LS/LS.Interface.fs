@@ -50,6 +50,7 @@ type VarType =
     | VarInput
     | VarOutput
     | VarInOut
+    | VarReturn         // Function 의 return.  Function 정의의 local 변수
     | VarExternal
     | VarExternalConstant
     | VarGlobal

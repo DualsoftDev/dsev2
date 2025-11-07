@@ -31,8 +31,14 @@ module GenExtensionModule =
                 ()
 
     type FunctionProgram with
-        static member Create<'T>(name, proj:IECProject, localStorage, rungs, subroutines) =
-            let globalStorage = proj.GlobalStorage
-            let returnVar = Variable<'T>(name)
+        static member Create<'T>(name, globalStorage, localStorage, returnVar:IVariable, rungs, subroutines) =
+            assert (returnVar.Name = name)
+            assert (returnVar.VarType=VarType.VarReturn)
+            let xxx = typeof<'T>
             FunctionProgram<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)
-            |> tee(fun _ -> globalStorage.Add(name, returnVar :> IVariable))
+            |> tee(fun _ -> localStorage.Add(name, returnVar))
+
+        static member Create<'T>(name, globalStorage, localStorage, rungs, subroutines) =
+            let returnVar = Variable<'T>(name, varType=VarType.VarReturn)
+            FunctionProgram.Create<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)
+

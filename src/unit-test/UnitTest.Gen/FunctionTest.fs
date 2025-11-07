@@ -13,11 +13,6 @@ module private RuntimeTestHelpers =
             dictionary.Add(key, value)
         dictionary :> IDictionary<_, _>
 
-    type TestFBInstance(name: string, program: FBProgram) =
-        member _.Name = name
-        member _.Program = program
-        interface IFBInstance
-
 open RuntimeTestHelpers
 
 type FunctionRuntimeTest() =
@@ -25,7 +20,6 @@ type FunctionRuntimeTest() =
     [<Test>]
     member _.``FunctionRuntime 입력을 출력으로 전달``() =
         // FunctionProgram 정의 단계
-        let project = IECProject()
         let inputVar = Variable<int>("IN", varType=VarType.VarInput)
         let outputVar = Variable<int>("OUT", varType=VarType.VarOutput)
 
@@ -37,8 +31,9 @@ type FunctionRuntimeTest() =
             AssignStatement(inputVar :> IExpression<int>, outputVar :> IVariable<int>)
             :> Statement
 
+        let project = IECProject()
         let functionProgram =
-            FunctionProgram<int>.Create("EchoFunc", project, localStorage, [| assignStmt |], [||])
+            FunctionProgram<int>.Create("EchoFunc", project.GlobalStorage, localStorage, [| assignStmt |], [||])
 
         project.FunctionPrograms.Add({ Storage = localStorage; Program = functionProgram :> Program })
 
@@ -66,8 +61,7 @@ type FunctionRuntimeTest() =
     [<Test>]
     member _.``FunctionRuntime InOut 매핑은 입력 버퍼를 갱신``() =
         // FunctionProgram 정의 단계
-        let globalStorage = Storage()
-        let project = IECProject(globalStorage)
+        let project = IECProject()
         let inoutVar = Variable<int>("ACC", varType=VarType.VarInOut)
 
         let localStorage = Storage()
@@ -79,7 +73,7 @@ type FunctionRuntimeTest() =
             :> Statement
 
         let functionProgram =
-            FunctionProgram<int>.Create("AccumulateFunc", project, localStorage, [| assignStmt |], [||])
+            FunctionProgram<int>.Create("AccumulateFunc", project.GlobalStorage, localStorage, [| assignStmt |], [||])
 
         project.FunctionPrograms.Add({ Storage = localStorage; Program = functionProgram :> Program })
 
@@ -117,8 +111,8 @@ type FBRuntimeTest() =
         localStorage.Add(outputVar.Name, outputVar :> IVariable)
 
         let assignStmts = [|
-            AssignStatement(add_n32 [| localVar :> IExpression<int>; literal 1 |], localVar) :> Statement
-            AssignStatement(add_n32 [| localVar :> IExpression<int>; inputVar |], outputVar :> IVariable<int>)
+            AssignStatement(add<int32> [| localVar :> IExpression<int>; literal 1 |], localVar) :> Statement
+            AssignStatement(add<int32> [| localVar :> IExpression<int>; inputVar |], outputVar :> IVariable<int>)
         |]
 
         let fbProgram = FBProgram("IncrFB", project.GlobalStorage, localStorage, assignStmts, [||])
@@ -126,7 +120,7 @@ type FBRuntimeTest() =
         let runtimeContext = ProjectRuntime(project)
 
         let invoke name inputValue =
-            let fbInstance = TestFBInstance(name, fbProgram) :> IFBInstance
+            let fbInstance = FBInstance(name, fbProgram) :> IFBInstance
             let externalInput = Variable<int>($"{name}_IN", inputValue)
             let externalOutput = Variable<int>($"{name}_OUT", 0)
 
@@ -180,14 +174,14 @@ type FBRuntimeTest() =
         let outputs = mkDictionary [ outputVar.Name, externalOutput :> ITerminal ]
 
         // 첫 호출: 내부 메모리 초기값이 출력된다.
-        let fbInstanceFirst = TestFBInstance("DelayFBInstance", fbProgram) :> IFBInstance
+        let fbInstanceFirst = FBInstance("DelayFBInstance", fbProgram) :> IFBInstance
         runtimeContext.InvokeFBInstance(fbInstanceFirst, inputs, outputs)
         externalOutput.Value === 0
         internalVar.Value === 10
 
         // 동일한 이름의 새로운 인스턴스를 만들어도 상태가 이어진다.
         externalInput.Value <- 5
-        let fbInstanceSameName = TestFBInstance("DelayFBInstance", fbProgram) :> IFBInstance
+        let fbInstanceSameName = FBInstance("DelayFBInstance", fbProgram) :> IFBInstance
         runtimeContext.InvokeFBInstance(fbInstanceSameName, inputs, outputs)
         externalOutput.Value === 10
         internalVar.Value === 5
@@ -195,7 +189,7 @@ type FBRuntimeTest() =
         // 이름이 다르면 독립된 상태가 생성된다.
         externalInput.Value <- 8
         externalOutput.Value <- 0
-        let fbInstanceOther = TestFBInstance("DelayFBInstance2", fbProgram) :> IFBInstance
+        let fbInstanceOther = FBInstance("DelayFBInstance2", fbProgram) :> IFBInstance
         runtimeContext.InvokeFBInstance(fbInstanceOther, inputs, outputs)
         externalOutput.Value === 0
         internalVar.Value === 8
@@ -203,7 +197,7 @@ type FBRuntimeTest() =
         // 원래 이름으로 다시 호출하면 이전 상태가 유지되어 출력된다.
         externalInput.Value <- 2
         externalOutput.Value <- 0
-        let fbInstanceAgain = TestFBInstance("DelayFBInstance", fbProgram) :> IFBInstance
+        let fbInstanceAgain = FBInstance("DelayFBInstance", fbProgram) :> IFBInstance
         runtimeContext.InvokeFBInstance(fbInstanceAgain, inputs, outputs)
         externalOutput.Value === 5
         internalVar.Value === 2
