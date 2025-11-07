@@ -22,7 +22,7 @@ type Operator<'T>(name:string, arguments:Arguments) =
 [<AutoOpen>]
 module OperatorEvaluators =
     let inline private opaqueArgs (args:Arguments<'T>) = args.Cast<IExpression>().ToArray()
-    let inline valueArgs<'T> (args:Arguments) = args.Cast<IExpression<'T>>().Map _.TValue
+    let inline private valueArgs<'T> (args:Arguments) = args.Cast<IExpression<'T>>().Map _.TValue
 
     let inline add<'T when 'T : (static member (+) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
         Operator<'T>("+", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (+)) )
@@ -34,16 +34,14 @@ module OperatorEvaluators =
         Operator<'T>("/", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (/)) )
 
 
-    let inline createGeFunction<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) =
-        Operator<bool>(">=", [| a :> IExpression; b |],
+    let inline private createComparisonOperator<'T when 'T: comparison> (name, operator:'T -> 'T -> bool) (a:IExpression<'T>, b:IExpression<'T>) =
+        Operator<bool>(name, [| a :> IExpression; b |],
             Evaluator=fun args ->
                         let args = args.Cast<IExpression<'T>>().ToArray()
-                        args[0].TValue >= args[1].TValue)
+                        operator args[0].TValue args[1].TValue)
 
-    let ge_f32    (a:IExpression<single>) (b:IExpression<single>) = createGeFunction<single>     a b
-    let ge_f64    (a:IExpression<double>) (b:IExpression<double>) = createGeFunction<double>     a b
-    let ge_n16    (a:IExpression<int16>)  (b:IExpression<int16>)  = createGeFunction<int16>      a b
-    let ge_N16    (a:IExpression<uint16>) (b:IExpression<uint16>) = createGeFunction<uint16>     a b
-    let ge_n32    (a:IExpression<int32>)  (b:IExpression<int32>)  = createGeFunction<int32>      a b
-    let ge_N32    (a:IExpression<uint32>) (b:IExpression<uint32>) = createGeFunction<uint32>     a b
-    let ge_String (a:IExpression<string>) (b:IExpression<string>) = createGeFunction<string>     a b
+    let ge<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator (">=", (>=)) (a, b)
+    let gt<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator (">",  (>))  (a, b)
+    let eq<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("=",  (=))  (a, b)
+    let lt<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("<",  (<))  (a, b)
+    let le<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("<=", (<=)) (a, b)

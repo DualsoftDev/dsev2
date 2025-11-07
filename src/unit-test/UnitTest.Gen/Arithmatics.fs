@@ -37,6 +37,6 @@ type ArithmaticTest() =
 
     [<Test>]
     member _.``Comparisons``() =
-        ge_n32 (literal 3) (literal 4) |> _.TValue === false
-        ge_n32 (literal 4) (literal 3) |> _.TValue === true
+        ge<int32> (literal 3) (literal 4) |> _.TValue === false
+        ge<int32> (literal 4) (literal 3) |> _.TValue === true
         ()
