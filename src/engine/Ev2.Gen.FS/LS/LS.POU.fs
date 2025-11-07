@@ -44,10 +44,6 @@ module POUModule =
 
 
 
-    type ScanProgram(name, globalStorage, localStorage, rungs, subroutines) =
-        inherit Program(name, globalStorage, localStorage, rungs, subroutines)
-
-
     type POU = {
         Storage:Storage
         Program:Program

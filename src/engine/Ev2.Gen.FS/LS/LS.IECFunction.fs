@@ -25,6 +25,8 @@ module ProgramModule =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IScanProgram
 
+
+
 /// IEC only
 [<AutoOpen>]
 module IECFunctionFunctionBlockModule =
@@ -46,10 +48,10 @@ module IECFunctionFunctionBlockModule =
         interface IFBProgram
 
 
-    type FBInstance(name: string, program: FBProgram) =
-        member _.Name = name
-        member _.Program = program
-        interface IFBInstance
+    //type FBInstance(name: string, program: FBProgram) =
+    //    member _.Name = name
+    //    member _.Program = program
+    //    interface IFBInstance
 
 
 
@@ -58,34 +60,34 @@ module IECFunctionFunctionBlockModule =
         abstract GlobalStorage : IVariable[]
         abstract LocalStorage : IVariable[]
 
-    /// Function/Fuction Block 의 Call Box
-    type CallBox(inputs:IExpression[], outputs:IExpression[], ?en:IExpression<bool>, ?eno:IVariable<bool>) =
-        member val Inputs = inputs with get, set
-        member val Outputs = outputs with get, set
+    ///// Function/Fuction Block 의 Call Box
+    //type CallBox(inputs:IExpression[], outputs:IExpression[], ?en:IExpression<bool>, ?eno:IVariable<bool>) =
+    //    member val Inputs = inputs with get, set
+    //    member val Outputs = outputs with get, set
 
-        member val EN = en
-        member x.ENO = eno
+    //    member val EN = en
+    //    member x.ENO = eno
 
-    /// XGI 기준 함수 호출.  expression 이 아니다.
-    type FunctionCall(funDef:IFunctionProgram, inputs, outputs, ?en, ?eno) =
-        inherit CallBox(inputs, outputs, ?en=en, ?eno=eno)
-        interface IFunctionCall
-        new() = FunctionCall(null, [||], [||])        // for serialization
-        member x.IFunctionProgram = funDef
-
-
-    type FunctionCallStatement(functionCall:FunctionCall, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.FunctionCall = functionCall
+    ///// XGI 기준 함수 호출.  expression 이 아니다.
+    //type FunctionCall(funDef:IFunctionProgram, inputs, outputs, ?en, ?eno) =
+    //    inherit CallBox(inputs, outputs, ?en=en, ?eno=eno)
+    //    interface IFunctionCall
+    //    new() = FunctionCall(null, [||], [||])        // for serialization
+    //    member x.IFunctionProgram = funDef
 
 
-    /// XGI 기준 함수 호출.  expression 이 아니다.
-    type FBCall(fbInstance:IFBInstance, inputs, outputs, ?en, ?eno) =
-        inherit CallBox(inputs, outputs, ?en=en, ?eno=eno)
-        interface IFBCall
-        new() = FBCall(null, [||], [||])        // for serialization
-        member x.IFBInstance = fbInstance
+    //type FunctionCallStatement(functionCall:FunctionCall, ?comment:string) =
+    //    inherit Statement(?comment=comment)
+    //    member x.FunctionCall = functionCall
 
-    type FBCallStatement(fbCall:FBCall, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.FBCall = fbCall
+
+    ///// XGI 기준 함수 호출.  expression 이 아니다.
+    //type FBCall(fbInstance:IFBInstance, inputs, outputs, ?en, ?eno) =
+    //    inherit CallBox(inputs, outputs, ?en=en, ?eno=eno)
+    //    interface IFBCall
+    //    new() = FBCall(null, [||], [||])        // for serialization
+    //    member x.IFBInstance = fbInstance
+
+    //type FBCallStatement(fbCall:FBCall, ?comment:string) =
+    //    inherit Statement(?comment=comment)
+    //    member x.FBCall = fbCall
