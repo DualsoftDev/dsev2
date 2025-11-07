@@ -15,6 +15,7 @@ type IWithValue =
 [<AllowNullLiteral>] type IProgram        = interface end
 [<AllowNullLiteral>] type IFunctionProgram = inherit IProgram inherit IWithType
 [<AllowNullLiteral>] type IFBProgram      = inherit IProgram
+[<AllowNullLiteral>] type IScanProgram    = inherit IProgram
 [<AllowNullLiteral>] type IValue          = interface end
 [<AllowNullLiteral>] type ICommand        = interface end      // copy, move
 [<AllowNullLiteral>] type IStruct         = interface end

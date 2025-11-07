@@ -39,6 +39,20 @@ type PouInstanceTest() =
         funcProgram.Subroutines.Length === 1
 
     [<Test>]
+    member _.``FunctionProgram 생성 후 호출``() =
+        let proj = IECProject()
+        let addProgram = createAdd2Function<int32>(proj.GlobalStorage, Some "AddTwoIntegers")
+        proj.AddFunction(addProgram)
+
+        let scanLocalStorage =
+            let a = Variable<int32>("A", 10)
+            let b = Variable<int32>("B", 20)
+            let sum = Variable<int32>("Sum", 0)
+            Storage.Create( [a; b; sum])
+        let scanProgram = ScanProgram("MainScan", proj.GlobalStorage, scanLocalStorage, [||], [||])
+        proj.AddScanProgram(scanProgram)
+
+    [<Test>]
     member _.``POU 레코드 및 Project 구성``() =
         //let fbInstance =
         //let rung = Rung(StFBCall(FBCall("Mixer", [||], [||])), "FB 호출")

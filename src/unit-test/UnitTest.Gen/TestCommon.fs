@@ -23,5 +23,12 @@ module internal PouTestHelperModule =
         let localStorage = Storage.Create([num1 :> IVariable; num2; sum])
         let stmt1 = AssignStatement( add<'T> [| num1; num2 |], sum) :> Statement
         let stmt2 = AssignStatement( sum, returnVar)
-        FunctionProgram<'T>.Create(name, globalStorage, localStorage, [|stmt1; stmt2|], [||])
+        FunctionProgram.Create<'T>(name, globalStorage, localStorage, [|stmt1; stmt2|], [||])
 
+    type Project with
+        member this.AddScanProgram(program:ScanProgram) =
+            this.ScanPrograms.Add( { Storage = program.LocalStorage; Program = program }:POU )
+
+    type IECProject with
+        member this.AddFunction(funcProgram:FunctionProgram) =
+            this.FunctionPrograms.Add( { Storage = funcProgram.LocalStorage; Program = funcProgram }:POU )

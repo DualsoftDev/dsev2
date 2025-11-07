@@ -21,6 +21,10 @@ module ProgramModule =
         member val UseEnEno = true with get, set
         member val ColumnWidth = 1 with get, set
 
+    type ScanProgram(name, globalStorage, localStorage, rungs, subroutines) =
+        inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
+        interface IScanProgram
+
 /// IEC only
 [<AutoOpen>]
 module IECFunctionFunctionBlockModule =
@@ -40,6 +44,7 @@ module IECFunctionFunctionBlockModule =
     type FBProgram(name, globalStorage, localStorage, rungs, subroutines) =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IFBProgram
+
 
     type FBInstance(name: string, program: FBProgram) =
         member _.Name = name
@@ -68,17 +73,18 @@ module IECFunctionFunctionBlockModule =
         new() = FunctionCall(null, null, null, [||], [||])        // for serialization
         member x.IFunctionProgram = funDef
 
+
+    type FunctionCallStatement(functionCall:FunctionCall, ?comment:string) =
+        inherit Statement(?comment=comment)
+        member x.FunctionCall = functionCall
+
+
     /// XGI 기준 함수 호출.  expression 이 아니다.
     type FBCall(storages, fbInstance:IFBInstance, en, inputs, outputs) =
         inherit CallBox(storages, en, inputs, outputs)
         interface IFBCall
         new() = FBCall(null, null, null, [||], [||])        // for serialization
         member x.IFBInstance = fbInstance
-
-
-    type FunctionCallStatement(functionCall:FunctionCall, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.FunctionCall = functionCall
 
     type FBCallStatement(fbCall:FBCall, ?comment:string) =
         inherit Statement(?comment=comment)

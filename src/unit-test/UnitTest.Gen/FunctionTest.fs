@@ -27,9 +27,7 @@ type FunctionRuntimeTest() =
         localStorage.Add(inputVar.Name, inputVar :> IVariable)
         localStorage.Add(outputVar.Name, outputVar :> IVariable)
 
-        let assignStmt =
-            AssignStatement(inputVar :> IExpression<int>, outputVar :> IVariable<int>)
-            :> Statement
+        let assignStmt = AssignStatement(inputVar :> IExpression<int>, outputVar :> IVariable<int>)
 
         let project = IECProject()
         let functionProgram =
@@ -68,9 +66,7 @@ type FunctionRuntimeTest() =
         localStorage.Add(inoutVar.Name, inoutVar :> IVariable)
 
         let literal = Literal(123)
-        let assignStmt =
-            AssignStatement(literal :> IExpression<int>, inoutVar :> IVariable<int>)
-            :> Statement
+        let assignStmt = AssignStatement(literal :> IExpression<int>, inoutVar :> IVariable<int>)
 
         let functionProgram =
             FunctionProgram<int>.Create("AccumulateFunc", project.GlobalStorage, localStorage, [| assignStmt |], [||])
@@ -85,11 +81,7 @@ type FunctionRuntimeTest() =
         let inputs = mkDictionary [ inoutVar.Name, externalValue :> ITerminal ]
         let outputs = mkDictionary (Seq.empty<string * ITerminal>)
 
-        let functionRuntime =
-            runtimeContext.CreateFunctionRuntime(
-                functionProgram :> IFunctionProgram,
-                inputs,
-                outputs)
+        let functionRuntime = runtimeContext.CreateFunctionRuntime(functionProgram, inputs, outputs)
 
         functionRuntime.Do()
 
@@ -117,6 +109,7 @@ type FBRuntimeTest() =
 
         let fbProgram = FBProgram("IncrFB", project.GlobalStorage, localStorage, assignStmts, [||])
         project.FBPrograms.Add({ Storage = localStorage; Program = fbProgram :> Program })
+
         let runtimeContext = ProjectRuntime(project)
 
         let invoke name inputValue =
