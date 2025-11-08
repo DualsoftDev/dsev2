@@ -12,29 +12,10 @@ module CounterModule =
         | CTUD
         | CTR
 
-    [<AllowNullLiteral>]
-    type ICounterCall =
-        inherit IFBCall
-        abstract CounterType : CounterType
-        abstract Name : string
-        abstract ACC : IVariable
-        abstract PRE : IVariable
-        abstract DN : IVariable<bool>
-        abstract DNDown : IVariable<bool>
-        abstract OV : IVariable<bool>
-        abstract UN : IVariable<bool>
-        abstract CU : IVariable<bool>
-        abstract CD : IVariable<bool>
-        abstract LD : IVariable<bool>
-        abstract RES : IVariable<bool>
-        abstract Evaluate : unit -> unit
-        abstract Reset : unit -> unit
-
+    [<AllowNullLiteral>] type ICounterCall = inherit IFBCall
     [<AllowNullLiteral>]
     type ICounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> =
         inherit ICounterCall
-        abstract TypedACC : IVariable<'T>
-        abstract TypedPRE : IVariable<'T>
 
     type CounterStruct<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
         internal (counterType:CounterType, name:string, preset:'T) =
@@ -42,15 +23,15 @@ module CounterModule =
         let toUInt (value:'T) = Convert.ToUInt32 value
         let ofUInt (value:uint32) : 'T = Convert.ChangeType(value, typeof<'T>) :?> 'T
 
-        let dn = Variable<bool>($"{name}.DN", Value=false)
+        let dn     = Variable<bool>($"{name}.DN",     Value=false)
         let dnDown = Variable<bool>($"{name}.DNDown", Value=false)
-        let ov = Variable<bool>($"{name}.OV", Value=false)
-        let un = Variable<bool>($"{name}.UN", Value=false)
-        let cu = Variable<bool>($"{name}.CU", Value=false)
-        let cd = Variable<bool>($"{name}.CD", Value=false)
-        let ld = Variable<bool>($"{name}.LD", Value=false)
-        let res = Variable<bool>($"{name}.R", Value=false)
-        let pre = Variable<'T>($"{name}.PRE", Value=preset)
+        let ov     = Variable<bool>($"{name}.OV",     Value=false)
+        let un     = Variable<bool>($"{name}.UN",     Value=false)
+        let cu     = Variable<bool>($"{name}.CU",     Value=false)
+        let cd     = Variable<bool>($"{name}.CD",     Value=false)
+        let ld     = Variable<bool>($"{name}.LD",     Value=false)
+        let res    = Variable<bool>($"{name}.R",      Value=false)
+        let pre    = Variable<'T>  ($"{name}.PRE",    Value=preset)
         let initialAcc =
             match counterType with
             | CTD
@@ -176,24 +157,7 @@ module CounterModule =
         (counterType:CounterType, name:string, preset:'T) =
         let cs = CounterStruct(counterType, name, preset)
         interface IFBCall
-        interface ICounterCall with
-            member _.CounterType = counterType
-            member _.Name = cs.Name
-            member _.ACC = cs.ACC :> IVariable
-            member _.PRE = cs.PRE :> IVariable
-            member _.DN = cs.DN
-            member _.DNDown = cs.DNDown
-            member _.OV = cs.OV
-            member _.UN = cs.UN
-            member _.CU = cs.CU
-            member _.CD = cs.CD
-            member _.LD = cs.LD
-            member _.RES = cs.RES
-            member _.Evaluate() = cs.Evaluate()
-            member _.Reset() = cs.Reset()
-        interface ICounterCall<'T> with
-            member _.TypedACC = cs.ACC
-            member _.TypedPRE = cs.PRE
+        interface ICounterCall<'T>
         member _.CounterStruct = cs
         member _.Type = counterType
         member _.Name   = cs.Name

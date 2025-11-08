@@ -10,9 +10,9 @@ module private CounterTestHelpers =
     let inline setBool (variable:IVariable<bool>) value =
         variable.Value <- value
 
-    let inline pulse<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
+    let inline pulse
         (variable:IVariable<bool>)
-        (call:CounterCall<'T>) =
+        (call:CounterCall<_>) =
         setBool variable true
         call.Evaluate()
         setBool variable false
