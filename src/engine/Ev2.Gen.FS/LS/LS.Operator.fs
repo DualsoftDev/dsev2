@@ -3,16 +3,6 @@ open System
 open System.Linq
 open Dual.Common.Base
 
-[<AutoOpen>]
-module private ShiftOperatorExtensions =
-    type Int32 with
-        static member op_LessLessLess(value:int, shift:int) = value <<< shift
-        static member op_GreaterGreaterGreater(value:int, shift:int) = value >>> shift
-
-    type UInt32 with
-        static member op_LessLessLess(value:uint32, shift:int) = value <<< shift
-        static member op_GreaterGreaterGreater(value:uint32, shift:int) = value >>> shift
-
 type Arguments = IExpression[]
 type Arguments<'T> = IExpression<'T>[]
 
@@ -94,3 +84,124 @@ module OperatorEvaluators =
                 | :? uint64 as v -> v >>> shift |> unbox<'T>
                 | _ -> failwithf "지원하지 않는 형식에 대한 ShiftRight 연산입니다: %s" (valueExpr.DataType.FullName)
         )
+
+    type private IntegralBinaryOps = {
+        Int8  : int8   -> int8   -> int8
+        Int16 : int16  -> int16  -> int16
+        Int32 : int32  -> int32  -> int32
+        Int64 : int64  -> int64  -> int64
+        UInt8 : uint8  -> uint8  -> uint8
+        UInt16: uint16 -> uint16 -> uint16
+        UInt32: uint32 -> uint32 -> uint32
+        UInt64: uint64 -> uint64 -> uint64
+    }
+
+    type private IntegralUnaryOps = {
+        Int8  : int8   -> int8
+        Int16 : int16  -> int16
+        Int32 : int32  -> int32
+        Int64 : int64  -> int64
+        UInt8 : uint8  -> uint8
+        UInt16: uint16 -> uint16
+        UInt32: uint32 -> uint32
+        UInt64: uint64 -> uint64
+    }
+
+    let inline private applyIntegralBinary opName (ops:IntegralBinaryOps) (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
+        let leftObj = box lhs.TValue
+        let rightObj = box rhs.TValue
+        match leftObj with
+        | :? int8   -> ops.Int8   (Unchecked.unbox<int8>   leftObj) (Unchecked.unbox<int8>   rightObj) |> box |> unbox<'T>
+        | :? int16  -> ops.Int16  (Unchecked.unbox<int16>  leftObj) (Unchecked.unbox<int16>  rightObj) |> box |> unbox<'T>
+        | :? int32  -> ops.Int32  (Unchecked.unbox<int32>  leftObj) (Unchecked.unbox<int32>  rightObj) |> box |> unbox<'T>
+        | :? int64  -> ops.Int64  (Unchecked.unbox<int64>  leftObj) (Unchecked.unbox<int64>  rightObj) |> box |> unbox<'T>
+        | :? uint8  -> ops.UInt8  (Unchecked.unbox<uint8>  leftObj) (Unchecked.unbox<uint8>  rightObj) |> box |> unbox<'T>
+        | :? uint16 -> ops.UInt16 (Unchecked.unbox<uint16> leftObj) (Unchecked.unbox<uint16> rightObj) |> box |> unbox<'T>
+        | :? uint32 -> ops.UInt32 (Unchecked.unbox<uint32> leftObj) (Unchecked.unbox<uint32> rightObj) |> box |> unbox<'T>
+        | :? uint64 -> ops.UInt64 (Unchecked.unbox<uint64> leftObj) (Unchecked.unbox<uint64> rightObj) |> box |> unbox<'T>
+        | _ -> failwithf "지원하지 않는 형식에 대한 %s 연산입니다: %s" opName (lhs.DataType.FullName)
+
+    let inline private applyIntegralUnary opName (ops:IntegralUnaryOps) (value:IExpression<'T>) =
+        let valueObj = box value.TValue
+        match valueObj with
+        | :? int8   -> ops.Int8   (Unchecked.unbox<int8>   valueObj) |> box |> unbox<'T>
+        | :? int16  -> ops.Int16  (Unchecked.unbox<int16>  valueObj) |> box |> unbox<'T>
+        | :? int32  -> ops.Int32  (Unchecked.unbox<int32>  valueObj) |> box |> unbox<'T>
+        | :? int64  -> ops.Int64  (Unchecked.unbox<int64>  valueObj) |> box |> unbox<'T>
+        | :? uint8  -> ops.UInt8  (Unchecked.unbox<uint8>  valueObj) |> box |> unbox<'T>
+        | :? uint16 -> ops.UInt16 (Unchecked.unbox<uint16> valueObj) |> box |> unbox<'T>
+        | :? uint32 -> ops.UInt32 (Unchecked.unbox<uint32> valueObj) |> box |> unbox<'T>
+        | :? uint64 -> ops.UInt64 (Unchecked.unbox<uint64> valueObj) |> box |> unbox<'T>
+        | _ -> failwithf "지원하지 않는 형식에 대한 %s 연산입니다: %s" opName (value.DataType.FullName)
+
+
+    let private bitwiseAndOps : IntegralBinaryOps = {
+        Int8   = (fun l r -> l &&& r)
+        Int16  = (fun l r -> l &&& r)
+        Int32  = (fun l r -> l &&& r)
+        Int64  = (fun l r -> l &&& r)
+        UInt8  = (fun l r -> l &&& r)
+        UInt16 = (fun l r -> l &&& r)
+        UInt32 = (fun l r -> l &&& r)
+        UInt64 = (fun l r -> l &&& r)
+    }
+
+    let private bitwiseOrOps : IntegralBinaryOps = {
+        Int8   = (fun l r -> l ||| r)
+        Int16  = (fun l r -> l ||| r)
+        Int32  = (fun l r -> l ||| r)
+        Int64  = (fun l r -> l ||| r)
+        UInt8  = (fun l r -> l ||| r)
+        UInt16 = (fun l r -> l ||| r)
+        UInt32 = (fun l r -> l ||| r)
+        UInt64 = (fun l r -> l ||| r)
+    }
+
+    let private bitwiseXorOps : IntegralBinaryOps = {
+        Int8   = (fun l r -> l ^^^ r)
+        Int16  = (fun l r -> l ^^^ r)
+        Int32  = (fun l r -> l ^^^ r)
+        Int64  = (fun l r -> l ^^^ r)
+        UInt8  = (fun l r -> l ^^^ r)
+        UInt16 = (fun l r -> l ^^^ r)
+        UInt32 = (fun l r -> l ^^^ r)
+        UInt64 = (fun l r -> l ^^^ r)
+    }
+
+    let private bitwiseNotOps : IntegralUnaryOps = {
+        Int8   = (fun x -> ~~~x)
+        Int16  = (fun x -> ~~~x)
+        Int32  = (fun x -> ~~~x)
+        Int64  = (fun x -> ~~~x)
+        UInt8  = (fun x -> ~~~x)
+        UInt16 = (fun x -> ~~~x)
+        UInt32 = (fun x -> ~~~x)
+        UInt64 = (fun x -> ~~~x)
+    }
+
+    let band<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
+        Operator<'T>("AND", [| lhs :> IExpression; rhs :> IExpression |],
+            Evaluator = fun args ->
+                let leftExpr = args[0] :?> IExpression<'T>
+                let rightExpr = args[1] :?> IExpression<'T>
+                applyIntegralBinary "Bitwise AND" bitwiseAndOps leftExpr rightExpr)
+
+    let bor<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
+        Operator<'T>("OR", [| lhs :> IExpression; rhs :> IExpression |],
+            Evaluator = fun args ->
+                let leftExpr = args[0] :?> IExpression<'T>
+                let rightExpr = args[1] :?> IExpression<'T>
+                applyIntegralBinary "Bitwise OR" bitwiseOrOps leftExpr rightExpr)
+
+    let bxor<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
+        Operator<'T>("XOR", [| lhs :> IExpression; rhs :> IExpression |],
+            Evaluator = fun args ->
+                let leftExpr = args[0] :?> IExpression<'T>
+                let rightExpr = args[1] :?> IExpression<'T>
+                applyIntegralBinary "Bitwise XOR" bitwiseXorOps leftExpr rightExpr)
+
+    let bnot<'T> (value:IExpression<'T>) =
+        Operator<'T>("NOT", [| value :> IExpression |],
+            Evaluator = fun args ->
+                let valueExpr = args[0] :?> IExpression<'T>
+                applyIntegralUnary "Bitwise NOT" bitwiseNotOps valueExpr)
