@@ -36,21 +36,22 @@ module OperatorEvaluators =
 
 
     let inline private createComparisonOperator<'T when 'T: comparison> (name, operator:'T -> 'T -> bool) (a:IExpression<'T>, b:IExpression<'T>) =
-        Operator<bool>(name, [| a :> IExpression; b |],
+        Operator<bool>(name, [| a; b |],
             Evaluator=fun args ->
                 let args = args.Cast<IExpression<'T>>().ToArray()
                 operator args[0].TValue args[1].TValue)
 
     let ge<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator (">=", (>=)) (a, b)
     let gt<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator (">",  (>))  (a, b)
-    let eq<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("=",  (=))  (a, b)
     let lt<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("<",  (<))  (a, b)
     let le<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("<=", (<=)) (a, b)
+    let eq<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("=",  (=))  (a, b)
+    let ne<'T when 'T: comparison> (a:IExpression<'T>) (b:IExpression<'T>) = createComparisonOperator ("<>",  (<>)) (a, b)
 
 
     /// ShiftLeft 연산자 (<<<) 구현
     let inline shl<'T> (value:IExpression<'T>) (shift:IExpression<int>) =
-        Operator<'T>("SHL", [| value :> IExpression; shift :> IExpression |],
+        Operator<'T>("SHL", [| value; shift |],
             Evaluator = fun args ->
                 let valueExpr = args[0] :?> IExpression< 'T >
                 let shift = args[1] :?> IExpression<int> |> _.TValue
@@ -69,7 +70,7 @@ module OperatorEvaluators =
 
     /// ShiftRight 연산자 (>>>) 구현
     let inline shr<'T> (value:IExpression<'T>) (shift:IExpression<int>) =
-        Operator<'T>("SHR", [| value :> IExpression; shift :> IExpression |],
+        Operator<'T>("SHR", [| value; shift |],
             Evaluator = fun args ->
                 let valueExpr = args[0] :?> IExpression< 'T >
                 let shift = args[1] :?> IExpression<int> |> _.TValue
@@ -179,29 +180,33 @@ module OperatorEvaluators =
         UInt64 = (fun x -> ~~~x)
     }
 
+    /// Bitwise AND 연산자 (&&&) 구현
     let band<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
-        Operator<'T>("AND", [| lhs :> IExpression; rhs :> IExpression |],
+        Operator<'T>("AND", [| lhs; rhs |],
             Evaluator = fun args ->
-                let leftExpr = args[0] :?> IExpression<'T>
+                let leftExpr  = args[0] :?> IExpression<'T>
                 let rightExpr = args[1] :?> IExpression<'T>
                 applyIntegralBinary "Bitwise AND" bitwiseAndOps leftExpr rightExpr)
 
+    /// Bitwise OR 연산자 (|||) 구현
     let bor<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
-        Operator<'T>("OR", [| lhs :> IExpression; rhs :> IExpression |],
+        Operator<'T>("OR", [| lhs; rhs |],
             Evaluator = fun args ->
-                let leftExpr = args[0] :?> IExpression<'T>
+                let leftExpr  = args[0] :?> IExpression<'T>
                 let rightExpr = args[1] :?> IExpression<'T>
                 applyIntegralBinary "Bitwise OR" bitwiseOrOps leftExpr rightExpr)
 
+    /// Bitwise XOR 연산자 (^^^) 구현
     let bxor<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
-        Operator<'T>("XOR", [| lhs :> IExpression; rhs :> IExpression |],
+        Operator<'T>("XOR", [| lhs; rhs |],
             Evaluator = fun args ->
-                let leftExpr = args[0] :?> IExpression<'T>
+                let leftExpr  = args[0] :?> IExpression<'T>
                 let rightExpr = args[1] :?> IExpression<'T>
                 applyIntegralBinary "Bitwise XOR" bitwiseXorOps leftExpr rightExpr)
 
+    /// Bitwise NOT 연산자 (~~~) 구현
     let bnot<'T> (value:IExpression<'T>) =
-        Operator<'T>("NOT", [| value :> IExpression |],
+        Operator<'T>("NOT", [| value |],
             Evaluator = fun args ->
                 let valueExpr = args[0] :?> IExpression<'T>
                 applyIntegralUnary "Bitwise NOT" bitwiseNotOps valueExpr)
