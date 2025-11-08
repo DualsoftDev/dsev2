@@ -1,8 +1,6 @@
 namespace Ev2.Gen
 
 open System
-open System.Collections.Generic
-open System.Reflection
 open Dual.Common.Base
 
 
@@ -21,84 +19,80 @@ module GenExtensionModule =
         member x.ResetValue() = x.Value <- x.InitValue
         member x.IsInternal() = x.VarType.IsOneOf(VarType.Var, VarType.VarConstant)
 
+    type FBInstance with
+        /// Function Block instance 의 state(내부 메모리 state) 를 반환
+        member x.State =
+            let me = x
+            let program = x.Program
+            let project = program.Project :?> IECProject
+            let states = project.FBInstanceStates
+            match states.TryGet x with
+            | Some state -> state
+            | _ ->
+                let key = $"{program.Name}|{x.InstanceName}"
+                match project.FBInstanceStatesByName.TryGet key with
+                | Some cached ->
+                    // 현재 FBInstance 객체 x 에 대한 state 는 없지만, x 와 동일 instance 이름으로 존재하는 state 가 있으면, 이름 동일로 state 공유 연결
+                    states.Add(x, cached)
+                    cached
+                | _ ->
+                    let created = StateDic(StringComparer.OrdinalIgnoreCase)
+                    states.Add(x, created)
+                    project.FBInstanceStatesByName[key] <- created
+                    created
+
     module private StatementRuntime =
         let inline private copyValue (src: ITerminal) (dst: IVariable) =
             dst.Value <- src.Value
 
-        let private getFBState (program: FBProgram) (fbInstance: FBInstance) =
-            let project = program.Project :?> IECProject
-            let states = project.FBInstanceStates
-            match states.TryGetValue fbInstance with
-            | true, state -> state
-            | _ ->
-                let state =
-                    let key = $"{program.Name}|{fbInstance.InstanceName}"
-                    match project.FBInstanceStatesByName.TryGetValue key with
-                    | true, cached ->
-                        states.Add(fbInstance, cached)
-                        cached
-                    | _ ->
-                        let created = StateDic(StringComparer.OrdinalIgnoreCase)
-                        states.Add(fbInstance, created)
-                        project.FBInstanceStatesByName[key] <- created
-                        created
-                state
-
         let private restoreInternals (state: StateDic) (variables: IVariable array) =
-            for variable in variables do
-                if variable.IsInternal() then
-                    match state.TryGetValue variable.Name with
-                    | true, value -> variable.Value <- value
-                    | _ -> variable.Value <- variable.InitValue
+            for v in variables do
+                if v.IsInternal() then
+                    v.Value <- state.TryGet v.Name |? v.InitValue
 
         let private persistInternals (state: StateDic) (variables: IVariable array) =
-            for variable in variables do
-                if variable.IsInternal() then
-                    if state.ContainsKey variable.Name then
-                        state[variable.Name] <- variable.Value
-                    else
-                        state.Add(variable.Name, variable.Value)
+            for v in variables do
+                if v.IsInternal() then
+                    state[v.Name] <- v.Value
 
         let private initialiseFunctionVariables (call: FunctionCall) (locals: IVariable array) =
-            for variable in locals do
-                match variable.VarType with
+            for v in locals do
+                match v.VarType with
                 | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
-                    variable.Value <- call.Inputs[variable.Name].Value
+                    v.Value <- call.Inputs[v.Name].Value
                 | vt when vt = VarType.VarOutput
                        || vt = VarType.VarReturn
                        || vt = VarType.Var
                        || vt = VarType.VarConstant ->
-                    variable.ResetValue()
+                    v.ResetValue()
                 | _ -> ()
 
         let private flushFunctionOutputs (call: FunctionCall) (locals: IVariable array) =
-            for variable in locals do
-                if variable.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut, VarType.VarReturn) then
-                    match call.Outputs.TryGet(variable.Name) with
-                    | Some terminal -> copyValue variable terminal
-                    | None when variable.VarType = VarType.VarInOut ->
-                        match call.Inputs.TryGet(variable.Name) with
-                        | Some (:? IVariable as terminal) -> copyValue variable terminal
+            for v in locals do
+                if v.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut, VarType.VarReturn) then
+                    match call.Outputs.TryGet(v.Name) with
+                    | Some terminal -> copyValue v terminal
+                    | None when v.VarType = VarType.VarInOut ->
+                        match call.Inputs.TryGet(v.Name) with
+                        | Some (:? IVariable as terminal) -> copyValue v terminal
                         | _ -> () // InOut 인데 매핑이 없으면 무시
                     | _ ->
                         () // 반환 값은 출력에 매핑되지 않을 수 있음
 
         let private initialiseFBInputs (call: FBCall) (locals: IVariable array) =
-            for variable in locals do
-                match variable.VarType with
+            for v in locals do
+                match v.VarType with
                 | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
-                    variable.Value <- call.Inputs[variable.Name].Value
+                    v.Value <- call.Inputs[v.Name].Value
                 | vt when vt = VarType.VarOutput ->
-                    variable.ResetValue()
+                    v.ResetValue()
                 | _ -> ()
 
         let private flushFBOutputs (call: FBCall) (locals: IVariable array) =
-            for variable in locals do
-                match variable.VarType with
-                | vt when vt.IsOneOf(VarType.VarOutput, VarType.VarInOut) ->
-                    call.Outputs.TryGet(variable.Name)
-                    |> iter (fun terminal -> copyValue variable terminal)
-                | _ -> ()
+            for v in locals do
+                if v.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut) then
+                    call.Outputs.TryGet(v.Name)
+                    |> iter (fun terminal -> copyValue v terminal)
 
         let rec executeStatement (statement: Statement) =
             let condition = statement.Condition |> toOption |-> _.TValue |? true
@@ -132,7 +126,7 @@ module GenExtensionModule =
             let call = statement.FBCall
             let program = call.FBInstance.Program
             let locals = program.LocalStorage.Values |> toArray
-            let state = getFBState program call.FBInstance
+            let state = call.FBInstance.State
             restoreInternals state locals
             initialiseFBInputs call locals
             runStatements program.Rungs
@@ -155,6 +149,23 @@ module GenExtensionModule =
             let returnVar = Variable<'T>(name, varType=VarType.VarReturn)
             FunctionProgram.Create<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)
 
+    type Project with
+        member this.AddScanProgram(program:ScanProgram) =
+            (program :> Program).Project <- this :> IProject
+            this.ScanPrograms.Add( { Storage = program.LocalStorage; Program = program }:POU )
+
+    type IECProject with
+        /// IEC Project 에 Function 추가.
+        member this.Add(funcProgram:FunctionProgram) =
+            (funcProgram :> Program).Project <- this :> IProject
+            this.FunctionPrograms.Add( { Storage = funcProgram.LocalStorage; Program = funcProgram }:POU )
+
+        /// IEC Project 에 Function Block 추가.
+        member this.Add(fbProgram:FBProgram) =
+            (fbProgram :> Program).Project <- this :> IProject
+            this.FBPrograms.Add( { Storage = fbProgram.LocalStorage; Program = fbProgram}:POU )
+
+
     let inline createAdd2Function<'T when 'T : (static member (+) : 'T * 'T -> 'T)>(globalStorage:Storage, name:string option) =
         let name = name |? $"Add2_{typeof<'T>.Name}"
         let num1 = Variable<'T>("Num1", varType=VarType.VarInput)
@@ -166,15 +177,3 @@ module GenExtensionModule =
         let stmt2 = AssignStatement( sum, returnVar)
         FunctionProgram.Create<'T>(name, globalStorage, localStorage, [|stmt1; stmt2|], [||])
 
-    type Project with
-        member this.AddScanProgram(program:ScanProgram) =
-            (program :> Program).Project <- this :> IProject
-            this.ScanPrograms.Add( { Storage = program.LocalStorage; Program = program }:POU )
-
-    type IECProject with
-        member this.Add(funcProgram:FunctionProgram) =
-            (funcProgram :> Program).Project <- this :> IProject
-            this.FunctionPrograms.Add( { Storage = funcProgram.LocalStorage; Program = funcProgram }:POU )
-        member this.Add(fbProgram:FBProgram) =
-            (fbProgram :> Program).Project <- this :> IProject
-            this.FBPrograms.Add( { Storage = fbProgram.LocalStorage; Program = fbProgram}:POU )
