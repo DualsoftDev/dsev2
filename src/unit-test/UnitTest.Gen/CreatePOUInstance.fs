@@ -73,12 +73,12 @@ type PouInstanceTest() =
             Storage.Create([ a :> IVariable; b; sum; accumulated; spareAccumulated ])
 
         let fcRung: Statement =
-            let inputMapping: Mapping =
+            let inputMapping: InputMapping =
                 dict [ "Num1", a :> ITerminal
                        "Num2", b :> ITerminal ]
 
-            let outputMapping: Mapping =
-                dict [ "Sum", sum :> ITerminal ]
+            let outputMapping: OutputMapping =
+                dict [ "Sum", sum :> IVariable ]
 
             FunctionCallStatement(addFunctionProgram, inputMapping, outputMapping) :> Statement
 
@@ -86,15 +86,15 @@ type PouInstanceTest() =
         sum.Value === 30    // 10 + 20
 
         let rungMainFb: Statement =
-            let inputMapping: Mapping = dict [ "InValue", (literal 1) :> ITerminal ]
-            let outputMapping: Mapping = dict [ "Acc", accumulated :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", (literal 1) :> ITerminal ]
+            let outputMapping: OutputMapping = dict [ "Acc", accumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "MainAccumulator", inputMapping, outputMapping) :> Statement
         rungMainFb.Do()
         accumulated.Value === 1
 
         let rungSpareFb: Statement =
-            let inputMapping: Mapping = dict [ "InValue", (literal 99) :> ITerminal ]
-            let outputMapping: Mapping = dict [ "Acc", spareAccumulated :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", (literal 99) :> ITerminal ]
+            let outputMapping: OutputMapping = dict [ "Acc", spareAccumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "SpareAccumulator", inputMapping, outputMapping) :> Statement
 
         rungSpareFb.Do()
@@ -113,8 +113,8 @@ type PouInstanceTest() =
         spareAccumulated.Value === 198  // 99 + 99
 
         let rungSpareFb2: Statement =
-            let inputMapping: Mapping = dict [ "InValue", (literal 3) :> ITerminal ]
-            let outputMapping: Mapping = dict [ "Acc", spareAccumulated :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", (literal 3) :> ITerminal ]
+            let outputMapping: OutputMapping = dict [ "Acc", spareAccumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "SpareAccumulator", inputMapping, outputMapping) :> Statement
         rungSpareFb2.Do()
         spareAccumulated.Value === 201  // 99 + 3

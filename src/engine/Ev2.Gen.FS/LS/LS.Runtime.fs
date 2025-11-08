@@ -557,18 +557,18 @@ module private RuntimeHelpers =
             Storage.Create([ a :> IVariable; b :> IVariable; sum :> IVariable; accumulated :> IVariable ])
 
         let rung1: Statement =
-            let inputMapping: Mapping =
+            let inputMapping: InputMapping =
                 dict [ "Num1", a :> ITerminal
                        "Num2", b :> ITerminal ]
 
-            let outputMapping: Mapping =
-                dict [ "Sum", sum :> ITerminal ]
+            let outputMapping: OutputMapping =
+                dict [ "Sum", sum :> IVariable ]
 
             FunctionCallStatement(addFunctionProgram :> IFunctionProgram, inputMapping, outputMapping) :> Statement
 
         let rung2: Statement =
-            let inputMapping: Mapping = dict [ "InValue", sum :> ITerminal ]
-            let outputMapping: Mapping = dict [ "Acc", accumulated :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", sum :> ITerminal ]
+            let outputMapping: OutputMapping = dict [ "Acc", accumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "MainAccumulator", inputMapping, outputMapping) :> Statement
 
         let scanProgram =

@@ -55,10 +55,11 @@ module IECFunctionFunctionBlockModule =
         abstract GlobalStorage : IVariable[]
         abstract LocalStorage : IVariable[]
 
-    type Mapping = IDictionary<string, ITerminal>
+    type InputMapping = IDictionary<string, ITerminal>
+    type OutputMapping = IDictionary<string, IVariable>
 
     /// IEC 함수 호출 메타데이터
-    type FunctionCall(program: IFunctionProgram, inputMapping: Mapping, outputMapping: Mapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
+    type FunctionCall(program: IFunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
         let enoVar = eno |? null
 
         member _.EN = en
@@ -69,7 +70,7 @@ module IECFunctionFunctionBlockModule =
         interface IFunctionCall
 
     /// IEC Function 호출 Statement
-    type FunctionCallStatement(program: IFunctionProgram, inputMapping: Mapping, outputMapping: Mapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
+    type FunctionCallStatement(program: IFunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
         inherit Statement(?cond = en, ?comment = comment)
         let call = FunctionCall(program, inputMapping, outputMapping, ?en = en, ?eno = eno)
         member _.FunctionCall = call
@@ -81,7 +82,7 @@ module IECFunctionFunctionBlockModule =
         interface IFBInstance
 
     /// IEC Function Block 호출 메타데이터
-    type FBCall(fbInstance: FBInstance, inputMapping: Mapping, outputMapping: Mapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
+    type FBCall(fbInstance: FBInstance, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
         let enoVar = eno |? null
 
         member _.EN = en
@@ -92,11 +93,11 @@ module IECFunctionFunctionBlockModule =
         interface IFBCall
 
     /// IEC Function Block 호출 Statement
-    type FBCallStatement(fbInstance: FBInstance, inputMapping: Mapping, outputMapping: Mapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
+    type FBCallStatement(fbInstance: FBInstance, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
         inherit Statement(?cond = en, ?comment = comment)
         let call = FBCall(fbInstance, inputMapping, outputMapping, ?en = en, ?eno = eno)
         member _.FBCall = call
 
-        new(fbProgram: FBProgram, instanceName: string, inputMapping: Mapping, outputMapping: Mapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
+        new(fbProgram: FBProgram, instanceName: string, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
             let instance = FBInstance(fbProgram, instanceName)
             FBCallStatement(instance, inputMapping, outputMapping, ?en = en, ?eno = eno, ?comment = comment)

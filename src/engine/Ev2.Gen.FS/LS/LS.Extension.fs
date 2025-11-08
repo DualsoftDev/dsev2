@@ -42,20 +42,6 @@ module GenExtensionModule =
                 readProperty [| "InstanceName"; "Name" |]
 
     module private StatementRuntime =
-        let inline private setEno (eno: IVariable<bool>) value =
-            if not (obj.ReferenceEquals(eno, null)) then
-                (eno :> IVariable).Value <- box value
-
-        let inline private tryFindTerminal (mapping: Mapping) (name: string) =
-            if obj.ReferenceEquals(mapping, null) then None
-            else
-                let mutable terminal = Unchecked.defaultof<ITerminal>
-                if mapping.TryGetValue(name, &terminal) then Some terminal else None
-
-        let inline private ensureTerminal (mapping: Mapping) mapName (name: string) =
-            match tryFindTerminal mapping name with
-            | Some terminal -> terminal
-            | None -> failwith $"'{mapName}' 매핑에서 '{name}' 항목을 찾을 수 없습니다."
 
         let inline private defaultValueOf (dataType: Type) =
             if obj.ReferenceEquals(dataType, null) then null
@@ -71,11 +57,8 @@ module GenExtensionModule =
         let inline private resetVariable (variable: IVariable) =
             variable.Value <- initialValueOf variable
 
-        let inline private copyTerminalToVariable (terminal: ITerminal) (variable: IVariable) =
-            variable.Value <- terminal.Value
-
-        let inline private copyVariableToTerminal (variable: IVariable) (terminal: ITerminal) =
-            terminal.Value <- variable.Value
+        let inline private copyValue (src: ITerminal) (dst: IVariable) =
+            dst.Value <- src.Value
 
         let inline private isInternalVar (variable: IVariable) =
             variable.VarType = VarType.Var || variable.VarType = VarType.VarConstant
@@ -93,13 +76,9 @@ module GenExtensionModule =
         let private resolveFBProgram (fbInstance: IFBInstance) =
             fbInstance.GetFBProgram()
 
-        let private ensureProject (program: Program) =
-            match program.Project with
-            | :? IECProject as project -> project
-            | _ -> failwith "Program 은 IECProject 에 등록되어 있어야 합니다."
 
         let private getFBState (program: FBProgram) (fbInstance: IFBInstance) =
-            let project = ensureProject (program :> Program)
+            let project = program.Project :?> IECProject
             let byInstance = project.FBInstanceStates
             match byInstance.TryGetValue fbInstance with
             | true, state -> state
@@ -141,10 +120,8 @@ module GenExtensionModule =
         let private initialiseFunctionVariables (call: FunctionCall) (locals: IVariable array) =
             for variable in locals do
                 match variable.VarType with
-                | vt when vt = VarType.VarInput ->
-                    copyTerminalToVariable (ensureTerminal call.Inputs "입력" variable.Name) variable
-                | vt when vt = VarType.VarInOut ->
-                    copyTerminalToVariable (ensureTerminal call.Inputs "입력" variable.Name) variable
+                | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
+                    variable.Value <- call.Inputs[variable.Name].Value
                 | vt when vt = VarType.VarOutput
                        || vt = VarType.VarReturn
                        || vt = VarType.Var
@@ -154,30 +131,21 @@ module GenExtensionModule =
 
         let private flushFunctionOutputs (call: FunctionCall) (locals: IVariable array) =
             for variable in locals do
-                match variable.VarType with
-                | vt when vt = VarType.VarOutput ->
-                    match tryFindTerminal call.Outputs variable.Name with
-                    | Some terminal -> copyVariableToTerminal variable terminal
-                    | None -> ()
-                | vt when vt = VarType.VarInOut ->
-                    match tryFindTerminal call.Outputs variable.Name with
-                    | Some terminal -> copyVariableToTerminal variable terminal
-                    | None ->
-                        let terminal = ensureTerminal call.Inputs "입력" variable.Name
-                        copyVariableToTerminal variable terminal
-                | vt when vt = VarType.VarReturn ->
-                    match tryFindTerminal call.Outputs variable.Name with
-                    | Some terminal -> copyVariableToTerminal variable terminal
-                    | None -> ()
-                | _ -> ()
+                if variable.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut, VarType.VarReturn) then
+                    match call.Outputs.TryGet(variable.Name) with
+                    | Some terminal -> copyValue variable terminal
+                    | None when variable.VarType = VarType.VarInOut ->
+                        match call.Inputs.TryGet(variable.Name) with
+                        | Some (:? IVariable as terminal) -> copyValue variable terminal
+                        | _ -> () // InOut 인데 매핑이 없으면 무시
+                    | _ ->
+                        () // 반환 값은 출력에 매핑되지 않을 수 있음
 
         let private initialiseFBInputs (call: FBCall) (locals: IVariable array) =
             for variable in locals do
                 match variable.VarType with
-                | vt when vt = VarType.VarInput ->
-                    copyTerminalToVariable (ensureTerminal call.Inputs "입력" variable.Name) variable
-                | vt when vt = VarType.VarInOut ->
-                    copyTerminalToVariable (ensureTerminal call.Inputs "입력" variable.Name) variable
+                | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
+                    variable.Value <- call.Inputs[variable.Name].Value
                 | vt when vt = VarType.VarOutput ->
                     resetVariable variable
                 | _ -> ()
@@ -185,66 +153,32 @@ module GenExtensionModule =
         let private flushFBOutputs (call: FBCall) (locals: IVariable array) =
             for variable in locals do
                 match variable.VarType with
-                | vt when vt = VarType.VarOutput ->
-                    match tryFindTerminal call.Outputs variable.Name with
-                    | Some terminal -> copyVariableToTerminal variable terminal
-                    | None -> ()
-                | vt when vt = VarType.VarInOut ->
-                    match tryFindTerminal call.Outputs variable.Name with
-                    | Some terminal -> copyVariableToTerminal variable terminal
-                    | None ->
-                        let terminal = ensureTerminal call.Inputs "입력" variable.Name
-                        copyVariableToTerminal variable terminal
+                | vt when vt.IsOneOf(VarType.VarOutput, VarType.VarInOut) ->
+                    call.Outputs.TryGet(variable.Name)
+                    |> iter (fun terminal -> copyValue variable terminal)
                 | _ -> ()
 
-        let rec executeStatement (statement: IStatement) =
-            match statement with
-            | :? AssignStatementOpaque as stmt ->
-                if stmt.Condition |> toOption |-> _.TValue |? true then
+        let rec executeStatement (statement: Statement) =
+            let condition = statement.Condition |> toOption |-> _.TValue |? true
+            if condition then
+                match statement with
+                | :? AssignStatementOpaque as stmt ->
                     stmt.Target.Value <- stmt.Source.Value
-            | :? FunctionCallStatement as fcs ->
-                executeFunctionCall fcs
-            | :? FBCallStatement as fbcs ->
-                executeFBCall fbcs
-            | :? TimerStatement
-            | :? CounterStatement
-            | :? BreakStatement
-            | :? SubroutineCallStatement
-            | _ ->
-                ()
+                | :? FunctionCallStatement as fcs ->
+                    executeFunctionCall fcs
+                | :? FBCallStatement as fbcs ->
+                    executeFBCall fbcs
+                | :? TimerStatement
+                | :? CounterStatement
+                | :? BreakStatement
+                | :? SubroutineCallStatement
+                | _ ->
+                    ()
 
         and runStatements (statements: Statement array) =
-            statements |> Array.iter (fun statement -> executeStatement (statement :> IStatement))
+            statements |> iter executeStatement
 
         and executeFunctionCall (statement: FunctionCallStatement) =
-            let en = statement.Condition |> toOption |-> _.TValue |? true
-            let eno = statement.FunctionCall.ENO
-            if not en then
-                setEno eno false
-            else
-                setEno eno false
-                try
-                    executeFunctionCallInternal statement
-                    setEno eno true
-                with ex ->
-                    setEno eno false
-                    raise ex
-
-        and executeFBCall (statement: FBCallStatement) =
-            let en = statement.Condition |> toOption |-> _.TValue |? true
-            let eno = statement.FBCall.ENO
-            if not en then
-                setEno eno false
-            else
-                setEno eno false
-                try
-                    executeFBCallInternal statement
-                    setEno eno true
-                with ex ->
-                    setEno eno false
-                    raise ex
-
-        and executeFunctionCallInternal (statement: FunctionCallStatement) =
             let call = statement.FunctionCall
             let program = resolveFunctionProgram call.IFunctionProgram
             let locals = storageVariables program.LocalStorage
@@ -252,7 +186,7 @@ module GenExtensionModule =
             runStatements program.Rungs
             flushFunctionOutputs call locals
 
-        and executeFBCallInternal (statement: FBCallStatement) =
+        and executeFBCall (statement: FBCallStatement) =
             let call = statement.FBCall
             let program = resolveFBProgram call.IFBInstance
             let locals = storageVariables program.LocalStorage
@@ -263,7 +197,7 @@ module GenExtensionModule =
             persistInternals state locals
             flushFBOutputs call locals
 
-    type IStatement with
+    type Statement with
         member x.Do() =
             StatementRuntime.executeStatement x
 
