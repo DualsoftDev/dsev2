@@ -24,6 +24,7 @@
 		<Compile Include="FunctionTest.fs" />
 		<Compile Include="BitwiseShiftTest.fs" />
 		<Compile Include="LogicalOperatorTest.fs" />
+		<Compile Include="CounterTest.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 

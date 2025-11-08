@@ -26,7 +26,8 @@
 	  <Compile Include="LS\LS.Var.fs" />
 	  <Compile Include="ls\LS.Operator.fs" />
 	  <Compile Include="ls\LS.ComplexTypes.fs" />
-	  <Compile Include="ls\LS.Timer.Counter.fs" />
+	  <Compile Include="ls\LS.Timer.fs" />
+	  <Compile Include="ls\LS.Counter.fs" />
 	  <Compile Include="ls\LS.Statement.fs" />
 	  <Compile Include="ls\LS.IECFunction.fs" />
 	  <Compile Include="ls\LS.POU.fs" />
