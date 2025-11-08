@@ -180,4 +180,3 @@ module GenExtensionModule =
         let stmt1 = AssignStatement( add<'T> [| num1; num2 |], sum) :> Statement
         let stmt2 = AssignStatement( sum, returnVar)
         FunctionProgram.Create<'T>(name, globalStorage, localStorage, [|stmt1; stmt2|], [||])
-

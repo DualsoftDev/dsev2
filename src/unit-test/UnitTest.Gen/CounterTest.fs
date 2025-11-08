@@ -1,16 +1,21 @@
 namespace T
 
+open System
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Gen
 
 [<AutoOpen>]
 module private CounterTestHelpers =
+    let inline setBool (variable:IVariable<bool>) value =
+        variable.Value <- value
 
-    let inline pulse (variable:IVariable<bool>) (call:CounterCall) =
-        variable.Value <- true
+    let inline pulse<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
+        (variable:IVariable<bool>)
+        (call:CounterCall<'T>) =
+        setBool variable true
         call.Evaluate()
-        variable.Value <- false
+        setBool variable false
         call.Evaluate()
 
 type CounterTest() =
@@ -34,9 +39,9 @@ type CounterTest() =
         ctu.ACC.TValue === 3u
         ctu.OV.TValue === true
 
-        ctu.RES.Value <- true
+        setBool ctu.RES true
         ctu.Evaluate()
-        ctu.RES.Value <- false
+        setBool ctu.RES false
         ctu.Evaluate()
 
         ctu.ACC.TValue === 0u
@@ -93,3 +98,15 @@ type CounterTest() =
         pulse ctud.CD ctud
         ctud.ACC.TValue === 0u
         ctud.UN.TValue === true
+
+    [<Test>]
+    member _.``CounterStatement wraps_call_and_evaluates``() =
+        let call = CounterCall(CTU, "StmtCounter", 1u)
+        let stmt = CounterStatement(call)
+
+        obj.ReferenceEquals(call, stmt.CounterCall) === true
+
+        let typedCall = stmt.CounterCall :?> CounterCall<uint32>
+        pulse typedCall.CU typedCall
+        typedCall.ACC.TValue === 1u
+        typedCall.DN.TValue === true

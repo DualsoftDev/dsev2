@@ -1,34 +1,62 @@
 namespace Ev2.Gen
 
 open System
+
 [<AutoOpen>]
 module CounterModule =
 
-    type CountUnitType = uint32
     type CounterType =
-        Undefined
-        /// UP Counter
+        | Undefined
         | CTU
-        /// DOWN Counter
         | CTD
-        /// UP/DOWN Counter
         | CTUD
-        /// Ring Counter
         | CTR
 
+    [<AllowNullLiteral>]
+    type ICounterCall =
+        inherit IFBCall
+        abstract CounterType : CounterType
+        abstract Name : string
+        abstract ACC : IVariable
+        abstract PRE : IVariable
+        abstract DN : IVariable<bool>
+        abstract DNDown : IVariable<bool>
+        abstract OV : IVariable<bool>
+        abstract UN : IVariable<bool>
+        abstract CU : IVariable<bool>
+        abstract CD : IVariable<bool>
+        abstract LD : IVariable<bool>
+        abstract RES : IVariable<bool>
+        abstract Evaluate : unit -> unit
+        abstract Reset : unit -> unit
 
-    type CounterStruct internal(counterType:CounterType, name:string, preset:CountUnitType) =
+    [<AllowNullLiteral>]
+    type ICounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> =
+        inherit ICounterCall
+        abstract TypedACC : IVariable<'T>
+        abstract TypedPRE : IVariable<'T>
+
+    type CounterStruct<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
+        internal (counterType:CounterType, name:string, preset:'T) =
+
+        let toUInt (value:'T) = Convert.ToUInt32 value
+        let ofUInt (value:uint32) : 'T = Convert.ChangeType(value, typeof<'T>) :?> 'T
+
         let dn = Variable<bool>($"{name}.DN", Value=false)
         let dnDown = Variable<bool>($"{name}.DNDown", Value=false)
         let ov = Variable<bool>($"{name}.OV", Value=false)
         let un = Variable<bool>($"{name}.UN", Value=false)
         let cu = Variable<bool>($"{name}.CU", Value=false)
         let cd = Variable<bool>($"{name}.CD", Value=false)
-        let ld = Variable<bool>($"{name}.LD", Value=false)      // XGI load
+        let ld = Variable<bool>($"{name}.LD", Value=false)
         let res = Variable<bool>($"{name}.R", Value=false)
-        let pre = Variable<CountUnitType>($"{name}.PRE", Value=preset)
-        let initialAcc = match counterType with | CTD | CTR -> preset | _ -> 0u
-        let acc = Variable<CountUnitType>($"{name}.ACC", Value=initialAcc)
+        let pre = Variable<'T>($"{name}.PRE", Value=preset)
+        let initialAcc =
+            match counterType with
+            | CTD
+            | CTR -> toUInt preset
+            | _ -> 0u
+        let acc = Variable<'T>($"{name}.ACC", Value = ofUInt initialAcc)
 
         let mutable accumulator = initialAcc
         let mutable doneUp = false
@@ -38,10 +66,8 @@ module CounterModule =
         let mutable prevCountUp = false
         let mutable prevCountDown = false
 
-        let risingEdge prev current = current && not prev
-
         let rec updateFlags () =
-            let presetVal = pre.Value
+            let presetVal = toUInt pre.Value
             match counterType with
             | CTU ->
                 doneUp <- (presetVal = 0u && accumulator > 0u) || (presetVal <> 0u && accumulator >= presetVal)
@@ -65,10 +91,13 @@ module CounterModule =
             dnDown.Value <- doneDown
             ov.Value <- overflowFlag
             un.Value <- underflowFlag
-            acc.Value <- accumulator
+            acc.Value <- ofUInt accumulator
+
+        let risingEdge prev current = current && not prev
 
         let resetAccumulator () =
-            accumulator <- match counterType with | CTD | CTR -> pre.Value | _ -> 0u
+            let presetVal = toUInt pre.Value
+            accumulator <- match counterType with | CTD | CTR -> presetVal | _ -> 0u
             overflowFlag <- false
             underflowFlag <- false
             doneDown <- false
@@ -84,8 +113,8 @@ module CounterModule =
 
         member _.Type = counterType
         member _.Name = name
-        member _.ACC : IVariable<CountUnitType> = acc
-        member _.PRE : IVariable<CountUnitType> = pre
+        member _.ACC : IVariable<'T> = acc
+        member _.PRE : IVariable<'T> = pre
         member _.DN : IVariable<bool> = dn
         member _.DNDown : IVariable<bool> = dnDown
         member _.OV : IVariable<bool> = ov
@@ -94,14 +123,14 @@ module CounterModule =
         member _.CD : IVariable<bool> = cd
         member _.LD : IVariable<bool> = ld
         member _.RES : IVariable<bool> = res
-        member _.AccumulatorValue = accumulator
+        member _.AccumulatorValue = acc.Value
 
         member _.Evaluate() =
             let countUpSignal = cu.Value
             let countDownSignal = cd.Value
             let resetSignal = res.Value
             let loadSignal = ld.Value
-            let requestedLoadValue = pre.Value
+            let requestedLoadValue = toUInt pre.Value
 
             if resetSignal then
                 resetAccumulator()
@@ -143,9 +172,28 @@ module CounterModule =
         member _.Reset() = resetAccumulator()
 
 
-    type CounterCall(counterType:CounterType, name:string, preset:CountUnitType) =
+    type CounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
+        (counterType:CounterType, name:string, preset:'T) =
         let cs = CounterStruct(counterType, name, preset)
         interface IFBCall
+        interface ICounterCall with
+            member _.CounterType = counterType
+            member _.Name = cs.Name
+            member _.ACC = cs.ACC :> IVariable
+            member _.PRE = cs.PRE :> IVariable
+            member _.DN = cs.DN
+            member _.DNDown = cs.DNDown
+            member _.OV = cs.OV
+            member _.UN = cs.UN
+            member _.CU = cs.CU
+            member _.CD = cs.CD
+            member _.LD = cs.LD
+            member _.RES = cs.RES
+            member _.Evaluate() = cs.Evaluate()
+            member _.Reset() = cs.Reset()
+        interface ICounterCall<'T> with
+            member _.TypedACC = cs.ACC
+            member _.TypedPRE = cs.PRE
         member _.CounterStruct = cs
         member _.Type = counterType
         member _.Name   = cs.Name
@@ -163,7 +211,14 @@ module CounterModule =
         member _.Evaluate() = cs.Evaluate()
         member _.Reset() = cs.Reset()
 
-    let private createCounter counterType name preset = CounterCall(counterType, name, preset)
-    let createCTU name preset = createCounter CTU name preset
-    let createCTD name preset = createCounter CTD name preset
-    let createCTUD name preset = createCounter CTUD name preset
+    let inline private createCounter<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
+        counterType name preset = CounterCall<'T>(counterType, name, preset)
+
+    let inline createCTU<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset =
+        createCounter<'T> CTU name preset
+
+    let inline createCTD<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset =
+        createCounter<'T> CTD name preset
+
+    let inline createCTUD<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset =
+        createCounter<'T> CTUD name preset
