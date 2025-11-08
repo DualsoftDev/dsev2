@@ -39,3 +39,18 @@ type BitwiseShiftTest() =
     member _.``BNOT_int8``() =
         let result = bnot<int8> (literal 0b0000_1111y)
         result.TValue === 0b1111_0000y
+
+    [<Test>]
+    member _.``LogicalAnd_bool``() =
+        logicalAnd (literal true) (literal false) |> _.TValue === false
+        logicalAnd (literal true) (literal true)  |> _.TValue === true
+
+    [<Test>]
+    member _.``LogicalOr_bool``() =
+        logicalOr (literal false) (literal false) |> _.TValue === false
+        logicalOr (literal true)  (literal false) |> _.TValue === true
+
+    [<Test>]
+    member _.``LogicalNot_bool``() =
+        logicalNot (literal true)  |> _.TValue === false
+        logicalNot (literal false) |> _.TValue === true

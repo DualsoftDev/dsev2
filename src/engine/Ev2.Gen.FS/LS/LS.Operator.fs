@@ -210,3 +210,26 @@ module OperatorEvaluators =
             Evaluator = fun args ->
                 let valueExpr = args[0] :?> IExpression<'T>
                 applyIntegralUnary "Bitwise NOT" bitwiseNotOps valueExpr)
+
+    /// Bool Logical AND
+    let logicalAnd (lhs:IExpression<bool>) (rhs:IExpression<bool>) =
+        Operator<bool>("LAND", [| lhs; rhs |],
+            Evaluator = fun args ->
+                let leftExpr  = args[0] :?> IExpression<bool>
+                let rightExpr = args[1] :?> IExpression<bool>
+                leftExpr.TValue && rightExpr.TValue)
+
+    /// Bool Logical OR
+    let logicalOr (lhs:IExpression<bool>) (rhs:IExpression<bool>) =
+        Operator<bool>("LOR", [| lhs; rhs |],
+            Evaluator = fun args ->
+                let leftExpr  = args[0] :?> IExpression<bool>
+                let rightExpr = args[1] :?> IExpression<bool>
+                leftExpr.TValue || rightExpr.TValue)
+
+    /// Bool Logical NOT
+    let logicalNot (value:IExpression<bool>) =
+        Operator<bool>("LNOT", [| value |],
+            Evaluator = fun args ->
+                let valueExpr = args[0] :?> IExpression<bool>
+                not valueExpr.TValue)
