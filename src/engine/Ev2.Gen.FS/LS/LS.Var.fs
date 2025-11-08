@@ -55,7 +55,7 @@ type VarBase<'T>(name:string, ?varType:VarType, ?initValue:'T) =
         member x.Value with get() = fail() and set v = fail()
         member x.TValue = fail()
     interface IInitValueProvider with
-        member x.InitValueObject = x.InitValue |> Option.map box
+        member x.InitValue = x.InitValue |-> box
 
 
 type Variable<'T>(name, ?value:'T, ?varType:VarType) =

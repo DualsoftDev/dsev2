@@ -87,7 +87,7 @@ module IECFunctionFunctionBlockModule =
 
         member _.EN = en
         member _.ENO = enoVar
-        member _.IFBInstance = fbInstance
+        member _.FBInstance = fbInstance
         member val Inputs = inputMapping with get, set
         member val Outputs = outputMapping with get, set
         interface IFBCall

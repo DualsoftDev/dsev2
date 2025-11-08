@@ -8,107 +8,52 @@ open Dual.Common.Base
 
 [<AutoOpen>]
 module GenExtensionModule =
-    type IFBInstance with
-        member this.GetFBProgram() =
-            match this with
-            | :? FBInstance as reference -> reference.Program
-            | :? IFBProgram as fbProgram ->
-                match fbProgram with
-                | :? FBProgram as concrete -> concrete
-                | _ -> failwith "FB 인스턴스에서 FBProgram 을 찾을 수 없습니다."
-            | _ ->
-                let flags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
-                let property = this.GetType().GetProperty("Program", flags)
-                if isNull property then failwith "FB 인스턴스는 Program 속성을 제공해야 합니다."
-                match property.GetValue(this) with
-                | :? FBProgram as concrete -> concrete
-                | _ -> failwith "FB 인스턴스의 Program 속성은 FBProgram 이어야 합니다."
-
-        member this.TryGetInstanceName() =
-            let readProperty names =
-                let flags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
-                names
-                |> Array.tryPick (fun name ->
-                    let prop = this.GetType().GetProperty(name, flags)
-                    if isNull prop then None
-                    else
-                        match prop.GetValue(this) with
-                        | :? string as value when not (String.IsNullOrWhiteSpace value) -> Some value
-                        | _ -> None)
-            match this with
-            | :? FBInstance as reference ->
-                if String.IsNullOrWhiteSpace reference.InstanceName then None else Some reference.InstanceName
-            | _ ->
-                readProperty [| "InstanceName"; "Name" |]
-
-    module private StatementRuntime =
-
-        let inline private defaultValueOf (dataType: Type) =
+    type Type with
+        /// System.Type default 값 반환
+        member dataType.DefaultValue =
             if obj.ReferenceEquals(dataType, null) then null
             elif dataType.IsValueType then Activator.CreateInstance dataType
             else null
 
-        let private initialValueOf (variable: IVariable) =
-            match variable :> obj with
-            | :? IInitValueProvider as provider ->
-                provider.InitValueObject |> Option.defaultValue (defaultValueOf variable.DataType)
-            | _ -> defaultValueOf variable.DataType
+    type IVariable with
+        /// 초기값 제공자(e.g Variable<'T>)에서 초기값을 가져오거나, 없으면 데이터 타입의 기본값을 반환.
+        member x.InitValue = x |> tryCast<IInitValueProvider> >>= _.InitValue |? x.DataType.DefaultValue
+        member x.ResetValue() = x.Value <- x.InitValue
+        member x.IsInternal() = x.VarType.IsOneOf(VarType.Var, VarType.VarConstant)
 
-        let inline private resetVariable (variable: IVariable) =
-            variable.Value <- initialValueOf variable
-
+    module private StatementRuntime =
         let inline private copyValue (src: ITerminal) (dst: IVariable) =
             dst.Value <- src.Value
 
-        let inline private isInternalVar (variable: IVariable) =
-            variable.VarType = VarType.Var || variable.VarType = VarType.VarConstant
-
-        let private resolveFunctionProgram (program: IFunctionProgram) =
-            match program with
-            | :? FunctionProgram as concrete -> concrete
-            | _ ->
-                let name = if isNull program then "(null)" else program.ToString()
-                failwith $"FunctionCallStatement 에서 '{name}' 을 FunctionProgram 으로 변환할 수 없습니다."
-
-        let private resolveFBProgram (fbInstance: IFBInstance) =
-            fbInstance.GetFBProgram()
-
-
-        let private getFBState (program: FBProgram) (fbInstance: IFBInstance) =
+        let private getFBState (program: FBProgram) (fbInstance: FBInstance) =
             let project = program.Project :?> IECProject
-            let byInstance = project.FBInstanceStates
-            match byInstance.TryGetValue fbInstance with
+            let states = project.FBInstanceStates
+            match states.TryGetValue fbInstance with
             | true, state -> state
             | _ ->
                 let state =
-                    match fbInstance.TryGetInstanceName() with
-                    | Some name ->
-                        let key = $"{program.Name}|{name}"
-                        match project.FBInstanceStatesByName.TryGetValue key with
-                        | true, cached ->
-                            byInstance.Add(fbInstance, cached)
-                            cached
-                        | _ ->
-                            let created = Dictionary<string, obj>(StringComparer.OrdinalIgnoreCase)
-                            byInstance.Add(fbInstance, created)
-                            project.FBInstanceStatesByName[key] <- created
-                            created
-                    | None ->
-                        let created = Dictionary<string, obj>(StringComparer.OrdinalIgnoreCase)
-                        byInstance.Add(fbInstance, created)
+                    let key = $"{program.Name}|{fbInstance.InstanceName}"
+                    match project.FBInstanceStatesByName.TryGetValue key with
+                    | true, cached ->
+                        states.Add(fbInstance, cached)
+                        cached
+                    | _ ->
+                        let created = StateDic(StringComparer.OrdinalIgnoreCase)
+                        states.Add(fbInstance, created)
+                        project.FBInstanceStatesByName[key] <- created
                         created
                 state
 
-        let private restoreInternals (state: Dictionary<string, obj>) (variables: IVariable array) =
+        let private restoreInternals (state: StateDic) (variables: IVariable array) =
             for variable in variables do
-                if isInternalVar variable then
+                if variable.IsInternal() then
                     match state.TryGetValue variable.Name with
                     | true, value -> variable.Value <- value
-                    | _ -> variable.Value <- initialValueOf variable
+                    | _ -> variable.Value <- variable.InitValue
 
-        let private persistInternals (state: Dictionary<string, obj>) (variables: IVariable array) =
+        let private persistInternals (state: StateDic) (variables: IVariable array) =
             for variable in variables do
-                if isInternalVar variable then
+                if variable.IsInternal() then
                     if state.ContainsKey variable.Name then
                         state[variable.Name] <- variable.Value
                     else
@@ -123,7 +68,7 @@ module GenExtensionModule =
                        || vt = VarType.VarReturn
                        || vt = VarType.Var
                        || vt = VarType.VarConstant ->
-                    resetVariable variable
+                    variable.ResetValue()
                 | _ -> ()
 
         let private flushFunctionOutputs (call: FunctionCall) (locals: IVariable array) =
@@ -144,7 +89,7 @@ module GenExtensionModule =
                 | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
                     variable.Value <- call.Inputs[variable.Name].Value
                 | vt when vt = VarType.VarOutput ->
-                    resetVariable variable
+                    variable.ResetValue()
                 | _ -> ()
 
         let private flushFBOutputs (call: FBCall) (locals: IVariable array) =
@@ -177,7 +122,7 @@ module GenExtensionModule =
 
         and executeFunctionCall (statement: FunctionCallStatement) =
             let call = statement.FunctionCall
-            let program = resolveFunctionProgram call.IFunctionProgram
+            let program = call.IFunctionProgram :?> FunctionProgram
             let locals = program.LocalStorage.Values |> toArray
             initialiseFunctionVariables call locals
             runStatements program.Rungs
@@ -185,9 +130,9 @@ module GenExtensionModule =
 
         and executeFBCall (statement: FBCallStatement) =
             let call = statement.FBCall
-            let program = resolveFBProgram call.IFBInstance
+            let program = call.FBInstance.Program
             let locals = program.LocalStorage.Values |> toArray
-            let state = getFBState program call.IFBInstance
+            let state = getFBState program call.FBInstance
             restoreInternals state locals
             initialiseFBInputs call locals
             runStatements program.Rungs

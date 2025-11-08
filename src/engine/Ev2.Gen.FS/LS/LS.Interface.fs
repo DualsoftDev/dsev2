@@ -65,7 +65,7 @@ type IVariable =
 
 [<AllowNullLiteral>]
 type IInitValueProvider =
-    abstract InitValueObject : obj option
+    abstract InitValue : obj option
 
 [<AllowNullLiteral>] type ILiteral = inherit ITerminal
 
