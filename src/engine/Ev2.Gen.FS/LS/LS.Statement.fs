@@ -1,6 +1,7 @@
 namespace Ev2.Gen
 open System.Linq
 open Dual.Common.Base
+open System
 
 [<AutoOpen>]
 module ProgramBlockModule =
@@ -29,20 +30,18 @@ module ProgramBlockModule =
         inherit Statement(cond, ?comment=comment)
         member x.Coil = coil
 
+    type TimerStatement(timerCall:TimerCall, ?comment:string) =
+        inherit Statement(?comment=comment)
+        member x.TimerCall = timerCall
 
-    //    | StAssign of exp:IExpression<bool> * lValue: IVariable<bool>
-    //    //| StCommand of exp:IExpression<bool> * command:Command
-    //    | StSetCoil of exp:IExpression<bool> * coil: IVariable<bool>
-    //    | StResetCoil of exp:IExpression<bool> * coil: IVariable<bool>
-    //    | StTimer of TimerCall      // timerType:TimerType * rungIn: IExpression<bool> * reset:IExpression<bool> * preset: IExpression<CountUnitType>
-    //    | StCounter of CounterCall  // counterType:CounterType * rungIn: IExpression<bool> * reset:IExpression<bool> * preset: IExpression<CountUnitType>
-    //    | StBreak of exp:IExpression<bool>    // for loop 내에서 사용
-    //    | StSubroutineCall of exp:IExpression<bool> * subroutine:Subroutine
-    //    | StFunctionCall of FunctionCall
-    //    | StFBCall of FBCall
-    //    | StUndefined
+    type CounterStatement(counterCall:CounterCall, ?comment:string) =
+        inherit Statement(?comment=comment)
+        member x.CounterCall = counterCall
 
 
+[<Obsolete("Non-IEC constructs are deprecated and will be removed in future versions.")>]
+[<AutoOpen>]
+module NonIECModule =
     type ISnippet = interface end
 
     [<AbstractClass>]
@@ -59,16 +58,6 @@ module ProgramBlockModule =
         inherit Snippet(body)
         member x.Name = name
 
-
-
-    type TimerStatement(timerCall:TimerCall, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.TimerCall = timerCall
-
-    type CounterStatement(counterCall:CounterCall, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.CounterCall = counterCall
-
     type BreakStatement(exp:IExpression<bool>, ?comment:string) =
         inherit Statement(?comment=comment)
         member x.Exp = exp
@@ -76,3 +65,4 @@ module ProgramBlockModule =
         inherit Statement(?comment=comment)
         member x.Exp = exp
         member x.Subroutine = subroutine
+

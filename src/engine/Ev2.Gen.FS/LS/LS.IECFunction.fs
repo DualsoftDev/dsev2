@@ -38,8 +38,8 @@ module IECFunctionFunctionBlockModule =
             assert(name = returnVar.Name)
         interface IFunctionProgram with
             member x.DataType = x.DataType
-        member x.DataType = dataType
-        member x.Return = returnVar
+        member _.DataType = dataType
+        member _.Return = returnVar
 
     type FunctionProgram<'T> (name, globalStorage, localStorage, returnVar, rungs, subroutines) =
         inherit FunctionProgram(name, globalStorage, localStorage, returnVar, typeof<'T>, rungs, subroutines)
@@ -59,18 +59,16 @@ module IECFunctionFunctionBlockModule =
     type OutputMapping = IDictionary<string, IVariable>
 
     /// IEC 함수 호출 메타데이터
-    type FunctionCall(program: IFunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
-        let enoVar = eno |? null
-
+    type FunctionCall(program: FunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
         member _.EN = en
-        member _.ENO = enoVar
-        member _.IFunctionProgram = program
+        member _.ENO = eno
+        member _.FunctionProgram = program
         member val Inputs = inputMapping with get, set
         member val Outputs = outputMapping with get, set
         interface IFunctionCall
 
     /// IEC Function 호출 Statement
-    type FunctionCallStatement(program: IFunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
+    type FunctionCallStatement(program: FunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>, ?comment: string) =
         inherit Statement(?cond = en, ?comment = comment)
         let call = FunctionCall(program, inputMapping, outputMapping, ?en = en, ?eno = eno)
         member _.FunctionCall = call
@@ -83,10 +81,8 @@ module IECFunctionFunctionBlockModule =
 
     /// IEC Function Block 호출 메타데이터
     type FBCall(fbInstance: FBInstance, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
-        let enoVar = eno |? null
-
         member _.EN = en
-        member _.ENO = enoVar
+        member _.ENO = eno
         member _.FBInstance = fbInstance
         member val Inputs = inputMapping with get, set
         member val Outputs = outputMapping with get, set

@@ -104,6 +104,8 @@ module GenExtensionModule =
                     executeFunctionCall fcs
                 | :? FBCallStatement as fbcs ->
                     executeFBCall fbcs
+                | :? SetCoilStatement
+                | :? ResetCoilStatement
                 | :? TimerStatement
                 | :? CounterStatement
                 | :? BreakStatement
@@ -116,7 +118,7 @@ module GenExtensionModule =
 
         and executeFunctionCall (statement: FunctionCallStatement) =
             let call = statement.FunctionCall
-            let program = call.IFunctionProgram :?> FunctionProgram
+            let program = call.FunctionProgram :?> FunctionProgram
             let locals = program.LocalStorage.Values |> toArray
 
             initialiseFunctionVariables call locals
