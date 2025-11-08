@@ -22,6 +22,7 @@
 		<Compile Include="CreatePOUInstance.fs" />
 		<Compile Include="CreateMemoryInstance.fs" />
 		<Compile Include="FunctionTest.fs" />
+		<Compile Include="BitwiseShiftTest.fs" />
 		<Compile Include="Program.fs" />
 	</ItemGroup>
 
