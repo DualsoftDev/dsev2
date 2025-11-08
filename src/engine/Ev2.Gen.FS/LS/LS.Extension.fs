@@ -10,12 +10,12 @@ module GenExtensionModule =
         /// System.Type default 값 반환
         member dataType.DefaultValue =
             if obj.ReferenceEquals(dataType, null) then null
-            elif dataType.IsValueType then Activator.CreateInstance dataType
+            elif dataType.IsValueType then Activator.CreateInstance dataType        // Unchecked.defaultof<'T>
             else null
 
     type IVariable with
         /// 초기값 제공자(e.g Variable<'T>)에서 초기값을 가져오거나, 없으면 데이터 타입의 기본값을 반환.
-        member x.InitValue = x |> tryCast<IInitValueProvider> >>= _.InitValue |? x.DataType.DefaultValue
+        member x.InitValue:obj = x |> tryCast<IInitValueProvider> >>= _.InitValue |? x.DataType.DefaultValue
         member x.ResetValue() = x.Value <- x.InitValue
         member x.IsInternal() = x.VarType.IsOneOf(VarType.Var, VarType.VarConstant)
 
@@ -42,8 +42,8 @@ module GenExtensionModule =
                     created
 
     module private StatementRuntime =
-        let inline private copyValue (src: ITerminal) (dst: IVariable) =
-            dst.Value <- src.Value
+        /// src 의 Value 값을 dst 의 Value 에 복사
+        let inline private (:=) (dst: IVariable) (src: IExpression) = dst.Value <- src.Value
 
         let private restoreInternals (state: StateDic) (variables: IVariable array) =
             for v in variables do
@@ -59,7 +59,7 @@ module GenExtensionModule =
             for v in locals do
                 match v.VarType with
                 | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
-                    v.Value <- call.Inputs[v.Name].Value
+                    v := call.Inputs[v.Name]
                 | vt when vt = VarType.VarOutput
                        || vt = VarType.VarReturn
                        || vt = VarType.Var
@@ -71,10 +71,10 @@ module GenExtensionModule =
             for v in locals do
                 if v.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut, VarType.VarReturn) then
                     match call.Outputs.TryGet(v.Name) with
-                    | Some terminal -> copyValue v terminal
+                    | Some terminal -> terminal := v
                     | None when v.VarType = VarType.VarInOut ->
                         match call.Inputs.TryGet(v.Name) with
-                        | Some (:? IVariable as terminal) -> copyValue v terminal
+                        | Some (:? IVariable as terminal) -> terminal := v
                         | _ -> () // InOut 인데 매핑이 없으면 무시
                     | _ ->
                         () // 반환 값은 출력에 매핑되지 않을 수 있음
@@ -83,7 +83,7 @@ module GenExtensionModule =
             for v in locals do
                 match v.VarType with
                 | vt when vt.IsOneOf(VarType.VarInput, VarType.VarInOut) ->
-                    v.Value <- call.Inputs[v.Name].Value
+                    v := call.Inputs[v.Name]
                 | vt when vt = VarType.VarOutput ->
                     v.ResetValue()
                 | _ -> ()
@@ -92,14 +92,14 @@ module GenExtensionModule =
             for v in locals do
                 if v.VarType.IsOneOf(VarType.VarOutput, VarType.VarInOut) then
                     call.Outputs.TryGet(v.Name)
-                    |> iter (fun terminal -> copyValue v terminal)
+                    |> iter (fun terminal -> terminal := v)
 
         let rec executeStatement (statement: Statement) =
             let condition = statement.Condition |> toOption |-> _.TValue |? true
             if condition then
                 match statement with
                 | :? AssignStatementOpaque as stmt ->
-                    stmt.Target.Value <- stmt.Source.Value
+                    stmt.Target := stmt.Source
                 | :? FunctionCallStatement as fcs ->
                     executeFunctionCall fcs
                 | :? FBCallStatement as fbcs ->
@@ -118,6 +118,7 @@ module GenExtensionModule =
             let call = statement.FunctionCall
             let program = call.IFunctionProgram :?> FunctionProgram
             let locals = program.LocalStorage.Values |> toArray
+
             initialiseFunctionVariables call locals
             runStatements program.Rungs
             flushFunctionOutputs call locals
@@ -127,11 +128,12 @@ module GenExtensionModule =
             let program = call.FBInstance.Program
             let locals = program.LocalStorage.Values |> toArray
             let state = call.FBInstance.State
-            restoreInternals state locals
-            initialiseFBInputs call locals
-            runStatements program.Rungs
-            persistInternals state locals
-            flushFBOutputs call locals
+
+            restoreInternals    state locals
+            initialiseFBInputs  call locals
+            runStatements       program.Rungs
+            persistInternals    state locals
+            flushFBOutputs      call locals
 
     type Statement with
         member x.Do() =
@@ -141,7 +143,6 @@ module GenExtensionModule =
         static member Create<'T>(name, globalStorage, localStorage, returnVar:IVariable, rungs, subroutines) =
             assert (returnVar.Name = name)
             assert (returnVar.VarType=VarType.VarReturn)
-            let xxx = typeof<'T>
             FunctionProgram<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)
             |> tee(fun _ -> localStorage.Add(name, returnVar))
 
@@ -166,6 +167,7 @@ module GenExtensionModule =
             this.FBPrograms.Add( { Storage = fbProgram.LocalStorage; Program = fbProgram}:POU )
 
 
+    /// *TEST* 용 add 2 function 생성.   실제로 Runtime 사용시에는 Operator<'T> 를 사용.  Generation 시에 Operator 를 XGI/XGK 함수로 변환함.
     let inline createAdd2Function<'T when 'T : (static member (+) : 'T * 'T -> 'T)>(globalStorage:Storage, name:string option) =
         let name = name |? $"Add2_{typeof<'T>.Name}"
         let num1 = Variable<'T>("Num1", varType=VarType.VarInput)
