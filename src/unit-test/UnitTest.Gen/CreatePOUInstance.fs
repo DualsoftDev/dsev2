@@ -74,8 +74,8 @@ type PouInstanceTest() =
 
         let fcRung: Statement =
             let inputMapping: InputMapping =
-                dict [ "Num1", a :> ITerminal
-                       "Num2", b :> ITerminal ]
+                dict [ "Num1", a :> IExpression
+                       "Num2", b]
 
             let outputMapping: OutputMapping =
                 dict [ "Sum", sum :> IVariable ]
@@ -86,14 +86,14 @@ type PouInstanceTest() =
         sum.Value === 30    // 10 + 20
 
         let rungMainFb: Statement =
-            let inputMapping: InputMapping = dict [ "InValue", (literal 1) :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", (literal 1) :> IExpression ]
             let outputMapping: OutputMapping = dict [ "Acc", accumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "MainAccumulator", inputMapping, outputMapping) :> Statement
         rungMainFb.Do()
         accumulated.Value === 1
 
         let rungSpareFb: Statement =
-            let inputMapping: InputMapping = dict [ "InValue", (literal 99) :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", (literal 99) :> IExpression ]
             let outputMapping: OutputMapping = dict [ "Acc", spareAccumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "SpareAccumulator", inputMapping, outputMapping) :> Statement
 
@@ -113,11 +113,11 @@ type PouInstanceTest() =
         spareAccumulated.Value === 198  // 99 + 99
 
         let rungSpareFb2: Statement =
-            let inputMapping: InputMapping = dict [ "InValue", (literal 3) :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", (add<int32> [|literal 3; literal 4|]) :> IExpression ]
             let outputMapping: OutputMapping = dict [ "Acc", spareAccumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "SpareAccumulator", inputMapping, outputMapping) :> Statement
         rungSpareFb2.Do()
-        spareAccumulated.Value === 201  // 99 + 3
+        spareAccumulated.Value === 205  // 99 + (3 + 4)
 
 
         let scanProgram =

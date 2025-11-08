@@ -55,7 +55,7 @@ module IECFunctionFunctionBlockModule =
         abstract GlobalStorage : IVariable[]
         abstract LocalStorage : IVariable[]
 
-    type InputMapping = IDictionary<string, ITerminal>
+    type InputMapping = IDictionary<string, IExpression>
     type OutputMapping = IDictionary<string, IVariable>
 
     /// IEC 함수 호출 메타데이터

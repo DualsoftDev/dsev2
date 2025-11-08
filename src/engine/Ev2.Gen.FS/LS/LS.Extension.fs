@@ -63,9 +63,6 @@ module GenExtensionModule =
         let inline private isInternalVar (variable: IVariable) =
             variable.VarType = VarType.Var || variable.VarType = VarType.VarConstant
 
-        let inline private storageVariables (storage: Storage) =
-            storage.Values |> Seq.toArray
-
         let private resolveFunctionProgram (program: IFunctionProgram) =
             match program with
             | :? FunctionProgram as concrete -> concrete
@@ -181,7 +178,7 @@ module GenExtensionModule =
         and executeFunctionCall (statement: FunctionCallStatement) =
             let call = statement.FunctionCall
             let program = resolveFunctionProgram call.IFunctionProgram
-            let locals = storageVariables program.LocalStorage
+            let locals = program.LocalStorage.Values |> toArray
             initialiseFunctionVariables call locals
             runStatements program.Rungs
             flushFunctionOutputs call locals
@@ -189,7 +186,7 @@ module GenExtensionModule =
         and executeFBCall (statement: FBCallStatement) =
             let call = statement.FBCall
             let program = resolveFBProgram call.IFBInstance
-            let locals = storageVariables program.LocalStorage
+            let locals = program.LocalStorage.Values |> toArray
             let state = getFBState program call.IFBInstance
             restoreInternals state locals
             initialiseFBInputs call locals

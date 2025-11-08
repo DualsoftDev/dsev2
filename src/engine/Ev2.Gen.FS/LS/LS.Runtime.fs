@@ -558,8 +558,8 @@ module private RuntimeHelpers =
 
         let rung1: Statement =
             let inputMapping: InputMapping =
-                dict [ "Num1", a :> ITerminal
-                       "Num2", b :> ITerminal ]
+                dict [ "Num1", a :> IExpression
+                       "Num2", b ]
 
             let outputMapping: OutputMapping =
                 dict [ "Sum", sum :> IVariable ]
@@ -567,7 +567,7 @@ module private RuntimeHelpers =
             FunctionCallStatement(addFunctionProgram :> IFunctionProgram, inputMapping, outputMapping) :> Statement
 
         let rung2: Statement =
-            let inputMapping: InputMapping = dict [ "InValue", sum :> ITerminal ]
+            let inputMapping: InputMapping = dict [ "InValue", sum :> IExpression ]
             let outputMapping: OutputMapping = dict [ "Acc", accumulated :> IVariable ]
             FBCallStatement(accumulatorFb, "MainAccumulator", inputMapping, outputMapping) :> Statement
 
