@@ -50,14 +50,6 @@ module IECFunctionFunctionBlockModule =
         interface IFBProgram
 
 
-    [<AllowNullLiteral>]
-    type IStorages =
-        abstract GlobalStorage : IVariable[]
-        abstract LocalStorage : IVariable[]
-
-    type InputMapping = IDictionary<string, IExpression>
-    type OutputMapping = IDictionary<string, IVariable>
-
     /// IEC 함수 호출 메타데이터
     type FunctionCall(program: FunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =
         member _.EN = en

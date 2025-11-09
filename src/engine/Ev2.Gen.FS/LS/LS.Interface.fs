@@ -1,6 +1,7 @@
 namespace Ev2.Gen
 
 open System
+open System.Collections.Generic
 
 [<AllowNullLiteral>]
 type IWithType =
@@ -85,6 +86,14 @@ type IExpression<'T> =
 [<AllowNullLiteral>] type ILiteral<'T> = inherit ILiteral inherit ITerminal<'T>
 
 [<AllowNullLiteral>] type IStorage = abstract IVariables : IVariable[]
+
+[<AllowNullLiteral>]
+type IStorages =
+    abstract GlobalStorage : IVariable[]
+    abstract LocalStorage : IVariable[]
+
+type InputMapping = IDictionary<string, IExpression>
+type OutputMapping = IDictionary<string, IVariable>
 
 
 

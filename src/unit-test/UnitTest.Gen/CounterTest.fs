@@ -110,3 +110,47 @@ type CounterTest() =
         pulse typedCall.CU typedCall
         typedCall.ACC.TValue === 1u
         typedCall.DN.TValue === true
+
+    [<Test>]
+    member _.``Counter_allows_input_mapping_for_custom_signals``() =
+        let ctu = createCTU "CTU_InputMap" 1u
+        let externalCu = Variable<bool>("External.CU")
+
+        ctu.Inputs.["CU"] <- externalCu :> IExpression
+
+        pulse externalCu ctu
+
+        ctu.ACC.TValue === 1u
+        ctu.DN.TValue === true
+
+    [<Test>]
+    member _.``Counter_output_mapping_updates_external_variables``() =
+        let ctu = createCTU "CTU_OutputMap" 1u
+        let externalDn = Variable<bool>("External.DN")
+        let externalAcc = Variable<uint32>("External.ACC")
+
+        ctu.Outputs.["DN"] <- externalDn :> IVariable
+        ctu.Outputs.["ACC"] <- externalAcc :> IVariable
+
+        pulse ctu.CU ctu
+
+        ctu.DN.TValue === true
+        externalDn.Value === true
+        externalAcc.Value === 1u
+
+    [<Test>]
+    member _.``Counter_registers_internal_variables_to_global_storage``() =
+        let storage = Storage()
+
+        let autoRegistered = CounterCall(CTU, "AutoCounter", 1u, globalStorage=storage)
+        storage.ContainsKey("AutoCounter.ACC") === true
+        obj.ReferenceEquals(storage.["AutoCounter.ACC"], autoRegistered.ACC) === true
+
+        let manual = createCTU "ManualCounter" 2u
+        let countBefore = storage.Count
+
+        manual.RegisterGlobalVariables(storage)
+        storage.ContainsKey("ManualCounter.DN") === true
+
+        manual.RegisterGlobalVariables(storage)
+        storage.Count === countBefore + 10

@@ -1,6 +1,7 @@
 namespace Ev2.Gen
 
 open System
+open System.Collections.Generic
 
 [<AutoOpen>]
 module CounterModule =
@@ -18,7 +19,7 @@ module CounterModule =
         inherit ICounterCall
 
     type CounterStruct<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
-        internal (counterType:CounterType, name:string, preset:'T) =
+        internal (counterType:CounterType, name:string, preset:'T, ?inputMapping:InputMapping, ?outputMapping:OutputMapping) =
 
         let toUInt (value:'T) = Convert.ToUInt32 value
         let ofUInt (value:uint32) : 'T = Convert.ChangeType(value, typeof<'T>) :?> 'T
@@ -39,6 +40,49 @@ module CounterModule =
             | _ -> 0u
         let acc = Variable<'T>($"{name}.ACC", Value = ofUInt initialAcc)
 
+        let inputDict = Dictionary<string, IExpression>(StringComparer.OrdinalIgnoreCase)
+        let inputs : InputMapping = upcast inputDict
+        let outputDict = Dictionary<string, IVariable>(StringComparer.OrdinalIgnoreCase)
+        let outputs : OutputMapping = upcast outputDict
+
+        let initInput key (expr:IExpression) = inputDict[key] <- expr
+        let initOutput key (variable:IVariable) = outputDict[key] <- variable
+
+        do
+            initInput "CU" (cu :> IExpression)
+            initInput "CD" (cd :> IExpression)
+            initInput "LD" (ld :> IExpression)
+            initInput "RES" (res :> IExpression)
+            initInput "PRE" (pre :> IExpression)
+            initInput "ACC" (acc :> IExpression)
+            initOutput "ACC" (acc :> IVariable)
+            initOutput "DN" (dn :> IVariable)
+            initOutput "DNDown" (dnDown :> IVariable)
+            initOutput "OV" (ov :> IVariable)
+            initOutput "UN" (un :> IVariable)
+            match inputMapping with
+            | Some overrides when not (isNull (overrides :> obj)) ->
+                for kvp in overrides do
+                    inputDict[kvp.Key] <- kvp.Value
+            | _ -> ()
+            match outputMapping with
+            | Some overrides when not (isNull (overrides :> obj)) ->
+                for kvp in overrides do
+                    outputDict[kvp.Key] <- kvp.Value
+            | _ -> ()
+
+        let exposedVariables : IVariable[] =
+            [| acc :> IVariable
+               pre :> IVariable
+               dn :> IVariable
+               dnDown :> IVariable
+               ov :> IVariable
+               un :> IVariable
+               cu :> IVariable
+               cd :> IVariable
+               ld :> IVariable
+               res :> IVariable |]
+
         let mutable accumulator = initialAcc
         let mutable doneUp = false
         let mutable doneDown = false
@@ -46,6 +90,58 @@ module CounterModule =
         let mutable underflowFlag = false
         let mutable prevCountUp = false
         let mutable prevCountDown = false
+
+        let tryGetBoolInput key =
+            match inputDict.TryGetValue key with
+            | true, expr when not (isNull expr) ->
+                match expr with
+                | :? IExpression<bool> as typed -> Some typed.TValue
+                | _ ->
+                    let raw = expr.Value
+                    if isNull raw then None else Some(Convert.ToBoolean raw)
+            | _ -> None
+
+        let tryGetTypedInput key =
+            match inputDict.TryGetValue key with
+            | true, expr when not (isNull expr) ->
+                match expr with
+                | :? IExpression<'T> as typed -> Some typed.TValue
+                | _ ->
+                    let raw = expr.Value
+                    if isNull raw then None else Some(Convert.ChangeType(raw, typeof<'T>) :?> 'T)
+            | _ -> None
+
+        let propagateBoolOutput key (defaultVar:IVariable<bool>) (value:bool) =
+            let boxed = box value
+            defaultVar.Value <- boxed
+            match outputDict.TryGetValue key with
+            | true, (:? IVariable<bool> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
+                mapped.Value <- boxed
+            | _ -> ()
+
+        let propagateTypedOutput key (defaultVar:IVariable<'T>) (value:'T) =
+            let boxed = box value
+            defaultVar.Value <- boxed
+            match outputDict.TryGetValue key with
+            | true, (:? IVariable<'T> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
+                mapped.Value <- boxed
+            | _ -> ()
+
+        let resolveBoolInput key (fallbackVar:IVariable<bool>) =
+            let value =
+                match tryGetBoolInput key with
+                | Some v -> v
+                | None -> fallbackVar.TValue
+            fallbackVar.Value <- box value
+            value
+
+        let resolveTypedInput key (fallbackVar:IVariable<'T>) =
+            let value =
+                match tryGetTypedInput key with
+                | Some v -> v
+                | None -> fallbackVar.TValue
+            fallbackVar.Value <- box value
+            value
 
         let rec updateFlags () =
             let presetVal = toUInt pre.Value
@@ -68,11 +164,11 @@ module CounterModule =
                 doneUp <- false
                 doneDown <- false
                 overflowFlag <- false
-            dn.Value <- doneUp
-            dnDown.Value <- doneDown
-            ov.Value <- overflowFlag
-            un.Value <- underflowFlag
-            acc.Value <- ofUInt accumulator
+            propagateBoolOutput "DN" dn doneUp
+            propagateBoolOutput "DNDown" dnDown doneDown
+            propagateBoolOutput "OV" ov overflowFlag
+            propagateBoolOutput "UN" un underflowFlag
+            propagateTypedOutput "ACC" acc (ofUInt accumulator)
 
         let risingEdge prev current = current && not prev
 
@@ -105,13 +201,24 @@ module CounterModule =
         member _.LD : IVariable<bool> = ld
         member _.RES : IVariable<bool> = res
         member _.AccumulatorValue = acc.Value
+        member _.InternalVariables : IVariable[] = exposedVariables
+
+        member _.RegisterGlobalVariables(globalStorage:Storage) =
+            if isNull (globalStorage :> obj) then invalidArg "globalStorage" "Storage is null"
+            for variable in exposedVariables do
+                match globalStorage.TryGetValue variable.Name with
+                | true, existing when not (obj.ReferenceEquals(existing, variable)) ->
+                    invalidOp ($"Global storage already contains '{variable.Name}' with a different reference")
+                | true, _ -> ()
+                | false, _ -> globalStorage.Add(variable.Name, variable)
 
         member _.Evaluate() =
-            let countUpSignal = cu.Value
-            let countDownSignal = cd.Value
-            let resetSignal = res.Value
-            let loadSignal = ld.Value
-            let requestedLoadValue = toUInt pre.Value
+            let countUpSignal = resolveBoolInput "CU" cu
+            let countDownSignal = resolveBoolInput "CD" cd
+            let resetSignal = resolveBoolInput "RES" res
+            let loadSignal = resolveBoolInput "LD" ld
+            let requestedPreset = resolveTypedInput "PRE" pre
+            let requestedLoadValue = toUInt requestedPreset
 
             if resetSignal then
                 resetAccumulator()
@@ -151,11 +258,19 @@ module CounterModule =
             prevCountDown <- countDownSignal
 
         member _.Reset() = resetAccumulator()
+        member _.Inputs = inputs
+        member _.Outputs = outputs
 
 
-    type CounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
-        (counterType:CounterType, name:string, preset:'T) =
-        let cs = CounterStruct(counterType, name, preset)
+    type CounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> (
+        counterType:CounterType, name:string, preset:'T
+        , ?inputMapping:InputMapping, ?outputMapping:OutputMapping, ?globalStorage:Storage
+    ) =
+        let cs = CounterStruct(counterType, name, preset, ?inputMapping=inputMapping, ?outputMapping=outputMapping)
+        do
+            match globalStorage with
+            | Some storage when not (isNull (storage :> obj)) -> cs.RegisterGlobalVariables(storage)
+            | _ -> ()
         interface IFBCall
         interface ICounterCall<'T>
         member _.CounterStruct = cs
@@ -174,6 +289,10 @@ module CounterModule =
         member _.AccumulatorValue = cs.AccumulatorValue
         member _.Evaluate() = cs.Evaluate()
         member _.Reset() = cs.Reset()
+        member _.Inputs = cs.Inputs
+        member _.Outputs = cs.Outputs
+        member _.InternalVariables = cs.InternalVariables
+        member _.RegisterGlobalVariables(globalStorage:Storage) = cs.RegisterGlobalVariables(globalStorage)
 
     let inline private createCounter<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
         counterType name preset = CounterCall<'T>(counterType, name, preset)
