@@ -13,32 +13,33 @@ module CounterModule =
         | CTUD
         | CTR
 
-    [<AllowNullLiteral>] type ICounterCall = inherit IFBCall
+    [<AllowNullLiteral>] type ICounterInstance = inherit IFBCall
     [<AllowNullLiteral>]
-    type ICounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> =
-        inherit ICounterCall
+    type ICounterInstance<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> =
+        inherit ICounterInstance
 
     type CounterStruct<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
-        internal (counterType:CounterType, name:string, preset:'T, ?inputMapping:InputMapping, ?outputMapping:OutputMapping) =
+        internal (counterType:CounterType, name:string, preset:'T, globalStorage:Storage, ?inputMapping:InputMapping, ?outputMapping:OutputMapping) =
+        do if isNull (globalStorage :> obj) then invalidArg "globalStorage" "Storage is null"
 
         let toUInt (value:'T) = Convert.ToUInt32 value
         let ofUInt (value:uint32) : 'T = Convert.ChangeType(value, typeof<'T>) :?> 'T
 
-        let dn     = Variable<bool>($"{name}.DN",     Value=false)
-        let dnDown = Variable<bool>($"{name}.DNDown", Value=false)
-        let ov     = Variable<bool>($"{name}.OV",     Value=false)
-        let un     = Variable<bool>($"{name}.UN",     Value=false)
-        let cu     = Variable<bool>($"{name}.CU",     Value=false)
-        let cd     = Variable<bool>($"{name}.CD",     Value=false)
-        let ld     = Variable<bool>($"{name}.LD",     Value=false)
-        let res    = Variable<bool>($"{name}.R",      Value=false)
-        let pre    = Variable<'T>  ($"{name}.PRE",    Value=preset)
+        let dn     = Variable<bool>("DN",     Value=false)
+        let dnDown = Variable<bool>("DNDown", Value=false)
+        let ov     = Variable<bool>("OV",     Value=false)
+        let un     = Variable<bool>("UN",     Value=false)
+        let cu     = Variable<bool>("CU",     Value=false)
+        let cd     = Variable<bool>("CD",     Value=false)
+        let ld     = Variable<bool>("LD",     Value=false)
+        let res    = Variable<bool>("RES",    Value=false)
+        let pre    = Variable<'T>  ("PRE",    Value=preset)
         let initialAcc =
             match counterType with
             | CTD
             | CTR -> toUInt preset
             | _ -> 0u
-        let acc = Variable<'T>($"{name}.ACC", Value = ofUInt initialAcc)
+        let acc = Variable<'T>("ACC", Value = ofUInt initialAcc)
 
         let inputDict = Dictionary<string, IExpression>(StringComparer.OrdinalIgnoreCase)
         let inputs : InputMapping = upcast inputDict
@@ -82,6 +83,18 @@ module CounterModule =
                cd :> IVariable
                ld :> IVariable
                res :> IVariable |]
+
+        let containerStruct =
+            let s = Struct(name, exposedVariables)
+            s.VarType <- VarType.VarGlobal
+            s
+
+        do
+            match globalStorage.TryGetValue name with
+            | true, existing when not (obj.ReferenceEquals(existing, containerStruct :> IVariable)) ->
+                invalidOp ($"Global storage already contains '{name}' with a different reference")
+            | true, _ -> ()
+            | false, _ -> globalStorage.Add(name, containerStruct :> IVariable)
 
         let mutable accumulator = initialAcc
         let mutable doneUp = false
@@ -202,15 +215,7 @@ module CounterModule =
         member _.RES : IVariable<bool> = res
         member _.AccumulatorValue = acc.Value
         member _.InternalVariables : IVariable[] = exposedVariables
-
-        member _.RegisterGlobalVariables(globalStorage:Storage) =
-            if isNull (globalStorage :> obj) then invalidArg "globalStorage" "Storage is null"
-            for variable in exposedVariables do
-                match globalStorage.TryGetValue variable.Name with
-                | true, existing when not (obj.ReferenceEquals(existing, variable)) ->
-                    invalidOp ($"Global storage already contains '{variable.Name}' with a different reference")
-                | true, _ -> ()
-                | false, _ -> globalStorage.Add(variable.Name, variable)
+        member _.Container = containerStruct
 
         member _.Evaluate() =
             let countUpSignal = resolveBoolInput "CU" cu
@@ -262,17 +267,13 @@ module CounterModule =
         member _.Outputs = outputs
 
 
-    type CounterCall<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> (
-        counterType:CounterType, name:string, preset:'T
-        , ?inputMapping:InputMapping, ?outputMapping:OutputMapping, ?globalStorage:Storage
+    type CounterInstance<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> (
+        counterType:CounterType, name:string, preset:'T, globalStorage:Storage
+        , ?inputMapping:InputMapping, ?outputMapping:OutputMapping
     ) =
-        let cs = CounterStruct(counterType, name, preset, ?inputMapping=inputMapping, ?outputMapping=outputMapping)
-        do
-            match globalStorage with
-            | Some storage when not (isNull (storage :> obj)) -> cs.RegisterGlobalVariables(storage)
-            | _ -> ()
+        let cs = CounterStruct(counterType, name, preset, globalStorage, ?inputMapping=inputMapping, ?outputMapping=outputMapping)
         interface IFBCall
-        interface ICounterCall<'T>
+        interface ICounterInstance<'T>
         member _.CounterStruct = cs
         member _.Type = counterType
         member _.Name   = cs.Name
@@ -292,16 +293,16 @@ module CounterModule =
         member _.Inputs = cs.Inputs
         member _.Outputs = cs.Outputs
         member _.InternalVariables = cs.InternalVariables
-        member _.RegisterGlobalVariables(globalStorage:Storage) = cs.RegisterGlobalVariables(globalStorage)
+        member _.Container = cs.Container
 
     let inline private createCounter<'T when 'T : struct and 'T :> IConvertible and 'T : comparison>
-        counterType name preset = CounterCall<'T>(counterType, name, preset)
+        counterType name preset globalStorage = CounterInstance<'T>(counterType, name, preset, globalStorage)
 
-    let inline createCTU<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset =
-        createCounter<'T> CTU name preset
+    let inline createCTU<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset globalStorage =
+        createCounter<'T> CTU name preset globalStorage
 
-    let inline createCTD<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset =
-        createCounter<'T> CTD name preset
+    let inline createCTD<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset globalStorage =
+        createCounter<'T> CTD name preset globalStorage
 
-    let inline createCTUD<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset =
-        createCounter<'T> CTUD name preset
+    let inline createCTUD<'T when 'T : struct and 'T :> IConvertible and 'T : comparison> name preset globalStorage =
+        createCounter<'T> CTUD name preset globalStorage

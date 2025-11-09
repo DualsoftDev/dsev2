@@ -12,7 +12,7 @@ module private CounterTestHelpers =
 
     let inline pulse
         (variable:IVariable<bool>)
-        (call:CounterCall<_>) =
+        (call:CounterInstance<_>) =
         setBool variable true
         call.Evaluate()
         setBool variable false
@@ -21,7 +21,8 @@ module private CounterTestHelpers =
 type CounterTest() =
     [<Test>]
     member _.``CTU increments_and_overflow``() =
-        let ctu = createCTU "CTU1" 2u
+        let storage = Storage()
+        let ctu = createCTU "CTU1" 2u storage
 
         ctu.Evaluate()
         ctu.ACC.TValue === 0u
@@ -50,7 +51,8 @@ type CounterTest() =
 
     [<Test>]
     member _.``CTD_counts_down_and_load``() =
-        let ctd = createCTD "CTD1" 3u
+        let storage = Storage()
+        let ctd = createCTD "CTD1" 3u storage
 
         ctd.Evaluate()
         ctd.ACC.TValue === 3u
@@ -77,7 +79,8 @@ type CounterTest() =
 
     [<Test>]
     member _.``CTUD_balances_up_and_down``() =
-        let ctud = createCTUD "CTUD1" 2u
+        let storage = Storage()
+        let ctud = createCTUD "CTUD1" 2u storage
 
         pulse ctud.CU ctud
         ctud.ACC.TValue === 1u
@@ -101,19 +104,21 @@ type CounterTest() =
 
     [<Test>]
     member _.``CounterStatement wraps_call_and_evaluates``() =
-        let call = CounterCall(CTU, "StmtCounter", 1u)
+        let storage = Storage()
+        let call = CounterInstance(CTU, "StmtCounter", 1u, storage)
         let stmt = CounterStatement(call)
 
         obj.ReferenceEquals(call, stmt.CounterCall) === true
 
-        let typedCall = stmt.CounterCall :?> CounterCall<uint32>
+        let typedCall = stmt.CounterCall :?> CounterInstance<uint32>
         pulse typedCall.CU typedCall
         typedCall.ACC.TValue === 1u
         typedCall.DN.TValue === true
 
     [<Test>]
     member _.``Counter_allows_input_mapping_for_custom_signals``() =
-        let ctu = createCTU "CTU_InputMap" 1u
+        let storage = Storage()
+        let ctu = createCTU "CTU_InputMap" 1u storage
         let externalCu = Variable<bool>("External.CU")
 
         ctu.Inputs.["CU"] <- externalCu :> IExpression
@@ -125,7 +130,8 @@ type CounterTest() =
 
     [<Test>]
     member _.``Counter_output_mapping_updates_external_variables``() =
-        let ctu = createCTU "CTU_OutputMap" 1u
+        let storage = Storage()
+        let ctu = createCTU "CTU_OutputMap" 1u storage
         let externalDn = Variable<bool>("External.DN")
         let externalAcc = Variable<uint32>("External.ACC")
 
@@ -142,15 +148,16 @@ type CounterTest() =
     member _.``Counter_registers_internal_variables_to_global_storage``() =
         let storage = Storage()
 
-        let autoRegistered = CounterCall(CTU, "AutoCounter", 1u, globalStorage=storage)
-        storage.ContainsKey("AutoCounter.ACC") === true
-        obj.ReferenceEquals(storage.["AutoCounter.ACC"], autoRegistered.ACC) === true
+        let autoRegistered = CounterInstance(CTU, "AutoCounter", 1u, storage)
+        storage.ContainsKey("AutoCounter") === true
+        let autoStruct = storage.["AutoCounter"] :?> Struct
+        obj.ReferenceEquals(autoStruct.GetField("ACC"), autoRegistered.ACC) === true
 
-        let manual = createCTU "ManualCounter" 2u
         let countBefore = storage.Count
+        let manual = createCTU "ManualCounter" 2u storage
+        storage.Count === countBefore + 1
+        storage.ContainsKey("ManualCounter") === true
+        let manualStruct = storage.["ManualCounter"] :?> Struct
+        obj.ReferenceEquals(manualStruct.GetField("DN"), manual.DN) === true
 
-        manual.RegisterGlobalVariables(storage)
-        storage.ContainsKey("ManualCounter.DN") === true
-
-        manual.RegisterGlobalVariables(storage)
-        storage.Count === countBefore + 10
+        Assert.Throws<InvalidOperationException>(fun () -> createCTU "ManualCounter" 3u storage |> ignore) |> ignore

@@ -37,5 +37,3 @@ type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
         member x.Value with get() = fail() and set v = fail()
     interface IWithType with
         member x.DataType = x.DataType
-
-

@@ -34,7 +34,7 @@ module ProgramBlockModule =
         inherit Statement(?comment=comment)
         member x.TimerCall = timerCall
 
-    type CounterStatement(counterCall:ICounterCall, ?comment:string) =
+    type CounterStatement(counterCall:ICounterInstance, ?comment:string) =
         inherit Statement(?comment=comment)
         member x.CounterCall = counterCall
 
