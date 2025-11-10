@@ -9,26 +9,17 @@ module Statement =
     type DsStmt =
         | Assign of step:int * target:DsTag * expr:DsExpr
         | Command of step:int * condition:DsExpr * action:DsExpr
-        | For of step:int * loopVar:DsTag * startExpr:DsExpr * endExpr:DsExpr * stepExpr:DsExpr option * body:DsStmt list
-        | While of step:int * condition:DsExpr * body:DsStmt list * maxIterations:int option
-        | Break of step:int
 
     /// 스텝 번호 조회
     let getStepNumber = function
         | Assign(step, _, _) -> step
         | Command(step, _, _) -> step
-        | For(step, _, _, _, _, _) -> step
-        | While(step, _, _, _) -> step
-        | Break(step) -> step
 
     /// 스텝 번호 설정
     let withStep step stmt =
         match stmt with
         | Assign(_, target, expr) -> Assign(step, target, expr)
         | Command(_, cond, action) -> Command(step, cond, action)
-        | For(_, loopVar, startExpr, endExpr, stepExpr, body) -> For(step, loopVar, startExpr, endExpr, stepExpr, body)
-        | While(_, condition, body, maxIter) -> While(step, condition, body, maxIter)
-        | Break(_) -> Break(step)
 
     let assignWithStep step target expr = Assign(step, target, expr)
     let commandWithStep step cond action = Command(step, cond, action)
@@ -56,31 +47,11 @@ module Statement =
             match s with
             | Assign(_, _, expr) -> expr.Variables
             | Command(_, cond, action) -> Set.union cond.Variables action.Variables
-            | For(_, loopVar, startExpr, endExpr, stepExpr, body) ->
-                let startVars = startExpr.Variables
-                let endVars = endExpr.Variables
-                let stepVars = stepExpr |> Option.map (fun e -> e.Variables) |> Option.defaultValue Set.empty
-                let bodyVars = body |> List.map (fun stmt -> stmt.ReferencedVars) |> Set.unionMany
-                Set.unionMany [Set.singleton loopVar.Name; startVars; endVars; stepVars; bodyVars]
-            | While(_, condition, body, _) ->
-                let condVars = condition.Variables
-                let bodyVars = body |> List.map (fun stmt -> stmt.ReferencedVars) |> Set.unionMany
-                Set.union condVars bodyVars
-            | Break(_) -> Set.empty
 
         member s.ToText() =
             match s with
             | Assign(_, target, expr) -> sprintf "%s := %s" target.Name (expr.ToText())
             | Command(_, cond, action) -> sprintf "IF %s THEN %s" (cond.ToText()) (action.ToText())
-            | For(_, loopVar, startExpr, endExpr, stepExpr, body) ->
-                let stepText = stepExpr |> Option.map (fun e -> sprintf " BY %s" (e.ToText())) |> Option.defaultValue ""
-                let bodyText = body |> List.map (fun stmt -> "  " + stmt.ToText()) |> String.concat "\n"
-                sprintf "FOR %s := %s TO %s%s DO\n%s\nEND_FOR" loopVar.Name (startExpr.ToText()) (endExpr.ToText()) stepText bodyText
-            | While(_, condition, body, maxIter) ->
-                let maxText = maxIter |> Option.map (fun m -> sprintf " (max: %d)" m) |> Option.defaultValue ""
-                let bodyText = body |> List.map (fun stmt -> "  " + stmt.ToText()) |> String.concat "\n"
-                sprintf "WHILE %s%s DO\n%s\nEND_WHILE" (condition.ToText()) maxText bodyText
-            | Break(_) -> "BREAK"
 
     // === 기본 연산자 ===
     let private makeAssign target expr = Assign(0, target, expr)

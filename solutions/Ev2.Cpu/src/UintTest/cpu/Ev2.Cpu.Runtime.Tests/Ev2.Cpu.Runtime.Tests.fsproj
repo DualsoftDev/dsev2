@@ -16,7 +16,7 @@
     <Compile Include="RelayLifecycle.Tests.fs" />
     <Compile Include="StageThresholds.Tests.fs" />
     <Compile Include="PerformanceProfiler.Test.fs" />
-    <Compile Include="LoopExecutionTests.fs" />
+    <!-- <Compile Include="LoopExecutionTests.fs" /> --> <!-- Disabled: loops removed -->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />

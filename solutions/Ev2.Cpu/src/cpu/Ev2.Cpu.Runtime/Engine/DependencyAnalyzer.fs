@@ -32,9 +32,6 @@ module DependencyAnalyzer =
             match stmt with
             | Assign (step, _, _) -> step
             | Command (step, _, _) -> step
-            | Break step -> step
-            | For (step, _, _, _, _, _) -> step
-            | While (step, _, _, _) -> step
 
         let extractTargetName stmt =
             match stmt with
@@ -53,26 +50,7 @@ module DependencyAnalyzer =
                         | Assign (_, _, expr) -> getExpressionVariables expr
                         | Command (_, condition, action) ->
                             getExpressionVariables condition @ getExpressionVariables action
-                        | For (_, loopVar, startExpr, endExpr, stepExprOpt, body) ->
-                            // MAJOR FIX: Include loop control expressions and body dependencies
-                            let stepVars = match stepExprOpt with | Some e -> getExpressionVariables e | None -> []
-                            let loopControlVars = getExpressionVariables startExpr @ getExpressionVariables endExpr @ stepVars
-                            let bodyVars = body |> List.collect (fun bodyStmt ->
-                                match bodyStmt with
-                                | Assign (_, _, expr) -> getExpressionVariables expr
-                                | Command (_, cond, act) -> getExpressionVariables cond @ getExpressionVariables act
-                                | _ -> [])
-                            loopControlVars @ bodyVars
-                        | While (_, condition, body, _) ->
-                            // MAJOR FIX: Include while condition and body dependencies
-                            let condVars = getExpressionVariables condition
-                            let bodyVars = body |> List.collect (fun bodyStmt ->
-                                match bodyStmt with
-                                | Assign (_, _, expr) -> getExpressionVariables expr
-                                | Command (_, cond, act) -> getExpressionVariables cond @ getExpressionVariables act
-                                | _ -> [])
-                            condVars @ bodyVars
-                        | Break _ -> []
+                        | _ -> []
                     Some (targetName, {
                         Statement = stmt
                         StepNumber = Some (extractStepNumber stmt)
@@ -164,20 +142,12 @@ module DependencyAnalyzer =
                 | _ -> deps
             | _ -> deps
 
-        // HIGH FIX (DEFECT-018-6): Recursive helper to process nested loops
-        // Previous code only analyzed immediate loop bodies, missing nested loop dependencies
-        // Selective mode would skip assignments inside nested loops causing incorrect behavior
+        // Process all statements
         let rec processStatement deps stmt =
             match stmt with
             | Assign (_, target, expr) -> handleAssign deps target expr
             | Command (_, condition, actionExpr) -> handleCommand deps condition actionExpr
-            | For (_, _, _, _, _, body) ->
-                // Recursively analyze all statements in loop body (including nested loops)
-                body |> List.fold processStatement deps
-            | While (_, _, body, _) ->
-                // Recursively analyze all statements in loop body (including nested loops)
-                body |> List.fold processStatement deps
-            | Break _ -> deps
+            | _ -> deps
 
         stmts |> List.fold processStatement Map.empty
 

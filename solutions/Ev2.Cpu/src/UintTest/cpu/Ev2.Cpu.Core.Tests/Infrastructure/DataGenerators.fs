@@ -268,7 +268,6 @@ module DataGenerators =
         "THEN"
         "ELSE"
         "END_IF"
-        "FOR"
         "WHILE"
         "RETURN"
     ]

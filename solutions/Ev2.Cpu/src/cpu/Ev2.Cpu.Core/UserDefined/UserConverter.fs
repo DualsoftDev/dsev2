@@ -184,26 +184,6 @@ module UserStmtConverter =
             let doneTag = DsTag.Create(sprintf "%s.Done" instanceName, typeof<bool>)
             [Assign(nextStep(), doneTag, callExpr)]
 
-        | UFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body) ->
-            // FOR 루프는 Core.DsStmt의 For로 변환
-            let scopedVarName = UserExprConverter.scopeName scope loopVarName
-            let loopTag = DsTag.Create(scopedVarName, loopVarType)
-            let dsStart = userExprToDsExpr scope startExpr
-            let dsEnd = userExprToDsExpr scope endExpr
-            let dsStep = stepExpr |> Option.map (userExprToDsExpr scope)
-            let dsBody = body |> List.collect (userStmtToDsStmts scope)
-            [For(nextStep(), loopTag, dsStart, dsEnd, dsStep, dsBody)]
-
-        | UWhile(condition, body, maxIterations) ->
-            // WHILE 루프는 Core.DsStmt의 While로 변환
-            let dsCond = userExprToDsExpr scope condition
-            let dsBody = body |> List.collect (userStmtToDsStmts scope)
-            [While(nextStep(), dsCond, dsBody, maxIterations)]
-
-        | UBreak ->
-            // BREAK는 Core.DsStmt의 Break로 변환
-            [Break(nextStep())]
-
         | UNoop ->
             // NOOP은 빈 리스트
             []
@@ -238,10 +218,6 @@ module UserStmtConverter =
                 | _ ->
                     None
             | _ -> None
-
-        | Break _ | For _ | While _ ->
-            // Break/For/While statements cannot be converted to UserStmt
-            None
 
 /// 변환 유틸리티
 module ConversionUtils =

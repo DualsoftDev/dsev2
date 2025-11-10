@@ -67,17 +67,6 @@ module StmtEvaluator =
                 let condVars = getExpressionVariables cond
                 let actionVars = getExpressionVariables action
                 condVars @ actionVars
-            | For (_, _, startExpr, endExpr, stepExpr, body) ->
-                let startVars = getExpressionVariables startExpr
-                let endVars = getExpressionVariables endExpr
-                let stepVars = stepExpr |> Option.map getExpressionVariables |> Option.defaultValue []
-                let bodyVars = getStatementVariables body
-                startVars @ endVars @ stepVars @ bodyVars
-            | While (_, cond, body, _) ->
-                let condVars = getExpressionVariables cond
-                let bodyVars = getStatementVariables body
-                condVars @ bodyVars
-            | Break _ -> []
         )
         |> List.distinct
 
@@ -110,26 +99,6 @@ module StmtEvaluator =
 
             (conditionVars @ actionVars) |> hasAnyChanged
 
-        | For (_, _, startExpr, endExpr, stepExpr, body) ->
-            // CRITICAL FIX: FOR loop should execute if start/end/step OR body variables changed (DEFECT-015-1)
-            // Body dependencies must be checked to avoid skipping loops when only internal variables change
-            let startVars = getExpressionVariables startExpr
-            let endVars = getExpressionVariables endExpr
-            let stepVars = stepExpr |> Option.map getExpressionVariables |> Option.defaultValue []
-            let bodyVars = getStatementVariables body  // Check body variables recursively
-            (startVars @ endVars @ stepVars @ bodyVars) |> hasAnyChanged
-
-        | While (_, condition, body, _) ->
-            // CRITICAL FIX: WHILE loop should execute if condition OR body variables changed (DEFECT-015-1)
-            // Body dependencies must be checked to avoid skipping loops when only internal variables change
-            let condVars = getExpressionVariables condition
-            let bodyVars = getStatementVariables body  // Check body variables recursively
-            (condVars @ bodyVars) |> hasAnyChanged
-
-        | Break (_) ->
-            // BREAK always executes if reached
-            true
-
     // ─────────────────────────────────────────────────────────────────────
     // 단일 문장 실행
     // ─────────────────────────────────────────────────────────────────────
@@ -161,40 +130,6 @@ module StmtEvaluator =
                 | Command (_, condition, actionExpr) ->
                     if evalCond ctx condition then
                         runAction ctx actionExpr
-
-                // FOR 루프: FOR loopVar := startExpr TO endExpr STEP stepExpr DO body END_FOR
-                | For (_, loopVar, startExpr, endExpr, stepExpr, body) ->
-                    // MEDIUM FIX: Use per-context LoopContext instead of global singleton
-                    // CRITICAL FIX (DEFECT-016-1): Pass ctx for state checking in loop body
-                    LoopEngine.executeFor
-                        ctx
-                        ctx.LoopContext
-                        loopVar
-                        startExpr
-                        endExpr
-                        stepExpr
-                        body
-                        (ExprEvaluator.eval ctx)
-                        (exec ctx)
-                        (fun name value -> ctx.Memory.Set(name, value))
-
-                // WHILE 루프: WHILE condition DO body END_WHILE
-                | While (_, condition, body, maxIterations) ->
-                    // MEDIUM FIX: Use per-context LoopContext instead of global singleton
-                    // CRITICAL FIX (DEFECT-016-1): Pass ctx for state checking in loop body
-                    LoopEngine.executeWhile
-                        ctx
-                        ctx.LoopContext
-                        condition
-                        body
-                        maxIterations
-                        (ExprEvaluator.eval ctx)
-                        (exec ctx)
-
-                // BREAK: 루프 탈출
-                | Break (_) ->
-                    // MEDIUM FIX: Use per-context LoopContext instead of global singleton
-                    LoopEngine.executeBreak ctx.LoopContext
             with ex ->
                 // Classify exception and log appropriately
                 let severity = ctx.ClassifyException(ex)
@@ -445,8 +380,6 @@ module StmtEvaluator =
                 else checkExpr expr
             | Command (_, cond, act) ->
                 checkExpr cond |> combine (checkExpr act)
-            | Break _ | For _ | While _ ->
-                ok
 
         try checkStmt stmt with ex -> fail ex.Message
 

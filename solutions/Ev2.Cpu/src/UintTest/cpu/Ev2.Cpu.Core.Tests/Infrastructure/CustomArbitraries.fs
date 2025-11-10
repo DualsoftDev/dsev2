@@ -191,40 +191,15 @@ module CustomArbitraries =
             return DsStmt.Command(step, condition, action)
         }
 
-    /// <summary>Generator for Break statement</summary>
-    let breakStmtGen =
-        stepGen |> Gen.map DsStmt.Break
-
     /// <summary>Generator for DsStmt with limited nesting</summary>
     let rec stmtGenWithDepth maxDepth =
         if maxDepth <= 0 then
-            Gen.oneof [simpleStmtGen; commandStmtGen; breakStmtGen]
+            Gen.oneof [simpleStmtGen; commandStmtGen]
         else
             let subStmtGen = stmtGenWithDepth (maxDepth - 1)
             Gen.oneof [
                 simpleStmtGen
                 commandStmtGen
-                breakStmtGen
-
-                // For loop
-                gen {
-                    let! step = stepGen
-                    let! loopVar = intTagGen
-                    let! startExpr = safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, typeof<int>))
-                    let! endExpr = safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, typeof<int>))
-                    let! bodySize = Gen.choose(0, 5)
-                    let! body = Gen.listOfLength bodySize subStmtGen
-                    return DsStmt.For(step, loopVar, startExpr, endExpr, None, body)
-                }
-
-                // While loop
-                gen {
-                    let! step = stepGen
-                    let! condition = exprGen
-                    let! bodySize = Gen.choose(0, 5)
-                    let! body = Gen.listOfLength bodySize subStmtGen
-                    return DsStmt.While(step, condition, body, Some 100) // Max iterations to avoid infinite loops
-                }
             ]
 
     /// <summary>Default stmt generator (max depth = 2)</summary>
@@ -285,22 +260,6 @@ module CustomArbitraries =
             Seq.append
                 (shrinkExpr cond |> Seq.map (fun c -> DsStmt.Command(step, c, action)))
                 (shrinkExpr action |> Seq.map (fun a -> DsStmt.Command(step, cond, a)))
-        | DsStmt.For(step, loopVar, start, end', stepExpr, body) ->
-            seq {
-                // Try empty body
-                yield DsStmt.For(step, loopVar, start, end', stepExpr, [])
-                // Try smaller body
-                if body.Length > 1 then
-                    yield DsStmt.For(step, loopVar, start, end', stepExpr, List.take 1 body)
-            }
-        | DsStmt.While(step, condition, body, maxIter) ->
-            seq {
-                // Try empty body
-                yield DsStmt.While(step, condition, [], maxIter)
-                // Try smaller body
-                if body.Length > 1 then
-                    yield DsStmt.While(step, condition, List.take 1 body, maxIter)
-            }
         | _ -> Seq.empty
 
     // ───────────────────────────────────────────────────────────────────

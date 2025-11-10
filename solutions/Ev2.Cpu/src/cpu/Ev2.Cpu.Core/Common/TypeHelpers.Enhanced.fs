@@ -39,7 +39,7 @@ module TypeHelpers =
     let isIntegerType (t: Type) : bool =
         t = typeof<sbyte> || t = typeof<byte> ||
         t = typeof<int16> || t = typeof<uint16> ||
-        t = typeof<int> || t = typeof<uint> ||1
+        t = typeof<int> || t = typeof<uint> ||
         t = typeof<int64> || t = typeof<uint64>
 
     /// <summary>부호있는 정수 타입인지 검사</summary>

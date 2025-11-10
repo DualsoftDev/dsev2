@@ -402,9 +402,7 @@ type InstrumentedScanEngine(engine: CpuScanEngine, scanMonitor: ScanPerformanceM
                         match stmt with
                         | Assign(_, _, _) -> "Assign"
                         | Command(_, _, _) -> "Command"
-                        | Break(_) -> "Break"
-                        | For(_, _, _, _, _, _) -> "For"
-                        | While(_, _, _, _) -> "While"
+                        | _ -> "Other"
 
                     // 구문 실행 시뮬레이션
                     System.Threading.Thread.Sleep(1) // 1ms 지연
@@ -421,9 +419,7 @@ type InstrumentedScanEngine(engine: CpuScanEngine, scanMonitor: ScanPerformanceM
                         match stmt with
                         | Assign(_, _, _) -> "Assign"
                         | Command(_, _, _) -> "Command"
-                        | Break(_) -> "Break"
-                        | For(_, _, _, _, _, _) -> "For"
-                        | While(_, _, _, _) -> "While"
+                        | _ -> "Other"
                     stmtMonitor.RecordExecutionError(stepNumber, stmtStopwatch.Elapsed, ex.Message, statementType)
             
             stopwatch.Stop()

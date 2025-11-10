@@ -185,25 +185,6 @@ type UserStmt =
     /// 예: UFBCall("Motor1", "MotorControl", inputs)
     | UFBCall of instanceName:string * fbName:string * inputs:Map<string, UserExpr>
 
-    /// FOR 반복문
-    /// loopVar: 루프 변수 (이름과 타입)
-    /// startExpr, endExpr, stepExpr: 시작/종료/증분 표현식
-    /// body: 루프 본문 명령문 리스트
-    /// 예: UFor(("i", typeof<int>), UConst(0), UConst(9), Some(UConst(1)), [stmt1; stmt2])
-    | UFor of loopVar:(string * Type) * startExpr:UserExpr * endExpr:UserExpr * stepExpr:UserExpr option * body:UserStmt list
-
-    /// WHILE 반복문
-    /// condition: 루프 조건 (BOOL)
-    /// body: 루프 본문 명령문 리스트
-    /// maxIterations: 최대 반복 횟수 (안전성)
-    /// 예: UWhile(UParam("running", typeof<bool>), [stmt1; stmt2], Some(1000))
-    | UWhile of condition:UserExpr * body:UserStmt list * maxIterations:int option
-
-    /// 반복문 탈출
-    /// 가장 가까운 FOR/WHILE 루프에서 탈출
-    /// 예: UBreak
-    | UBreak
-
     /// NOOP (아무 동작 안함)
     /// 플레이스홀더 또는 최적화로 제거된 명령문
     | UNoop
@@ -225,27 +206,6 @@ type UserStmt =
                     |> Seq.map (fun (k, v) -> sprintf "%s := %s" k (v.ToText()))
                     |> String.concat ", "
                 sprintf "%s(%s);" inst inputsText
-            | UFor((loopVarName, _), startExpr, endExpr, stepExpr, body) ->
-                let stepText =
-                    match stepExpr with
-                    | Some step -> sprintf " BY %s" (step.ToText())
-                    | None -> ""
-                let bodyText =
-                    body
-                    |> List.map (fun s -> "  " + s.ToText())
-                    |> String.concat "\n"
-                sprintf "FOR %s := %s TO %s%s DO\n%s\nEND_FOR;" loopVarName (startExpr.ToText()) (endExpr.ToText()) stepText bodyText
-            | UWhile(condition, body, maxIterations) ->
-                let maxText =
-                    match maxIterations with
-                    | Some max -> sprintf " (max: %d)" max
-                    | None -> ""
-                let bodyText =
-                    body
-                    |> List.map (fun s -> "  " + s.ToText())
-                    |> String.concat "\n"
-                sprintf "WHILE %s%s DO\n%s\nEND_WHILE;" (condition.ToText()) maxText bodyText
-            | UBreak -> "BREAK;"
             | UNoop -> ""
 
         /// 명령문에 포함된 모든 변수 이름 추출
@@ -258,19 +218,6 @@ type UserStmt =
                 | UFBCall(inst, _, inputs) ->
                     let inputVars = inputs |> Map.toSeq |> Seq.map snd |> Seq.fold (fun s e -> Set.union s (e.GetVariables())) Set.empty
                     Set.add inst (Set.union acc inputVars)
-                | UFor((loopVarName, _), startExpr, endExpr, stepExpr, body) ->
-                    // Loop variable + variables in start/end/step expressions + body variables
-                    let startVars = startExpr.GetVariables()
-                    let endVars = endExpr.GetVariables()
-                    let stepVars = stepExpr |> Option.map (fun e -> e.GetVariables()) |> Option.defaultValue Set.empty
-                    let bodyVars = body |> List.fold collect Set.empty
-                    Set.unionMany [Set.singleton loopVarName; acc; startVars; endVars; stepVars; bodyVars]
-                | UWhile(condition, body, _) ->
-                    // Condition variables + body variables
-                    let condVars = condition.GetVariables()
-                    let bodyVars = body |> List.fold collect Set.empty
-                    Set.unionMany [acc; condVars; bodyVars]
-                | UBreak -> acc
                 | UNoop -> acc
             collect Set.empty this
 
@@ -282,12 +229,6 @@ type UserStmt =
                 | UWhen(cond, action) -> 1 + cond.Complexity() + count action
                 | USequence(stmts) -> 1 + (stmts |> List.sumBy count)
                 | UFBCall(_, _, inputs) -> 1 + (inputs |> Map.toSeq |> Seq.sumBy (snd >> (fun e -> e.Complexity())))
-                | UFor(_, startExpr, endExpr, stepExpr, body) ->
-                    let stepComplexity = stepExpr |> Option.map (fun e -> e.Complexity()) |> Option.defaultValue 0
-                    1 + startExpr.Complexity() + endExpr.Complexity() + stepComplexity + (body |> List.sumBy count)
-                | UWhile(condition, body, _) ->
-                    1 + condition.Complexity() + (body |> List.sumBy count)
-                | UBreak -> 1
                 | UNoop -> 0
             count this
 
@@ -353,16 +294,6 @@ module UserStmtBuilder =
 
     /// FB 호출
     let ufbcall instanceName fbName inputs = UFBCall(instanceName, fbName, inputs)
-
-    /// FOR 루프
-    let ufor loopVarName loopVarType startExpr endExpr stepExpr body =
-        UFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body)
-
-    /// WHILE 루프
-    let uwhile condition body maxIterations = UWhile(condition, body, maxIterations)
-
-    /// BREAK
-    let ubreak = UBreak
 
     /// NOOP
     let unoop = UNoop

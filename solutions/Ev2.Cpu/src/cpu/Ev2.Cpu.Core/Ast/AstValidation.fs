@@ -216,18 +216,6 @@ module AstValidation =
                 Ok ctxWithState
             | Error e -> Error e
 
-        | SBreak ->
-            // Break statement is a control flow instruction, no validation needed
-            Ok ctx
-
-        | SFor _ ->
-            // For loop validation not yet implemented
-            Ok ctx
-
-        | SWhile _ ->
-            // While loop validation not yet implemented
-            Ok ctx
-
     /// Validate program (list of statements)
     let validateProgram (statements: DsStatement list) : Result<unit, ValidationError list> =
         let initialCtx = ValidationContext.Empty

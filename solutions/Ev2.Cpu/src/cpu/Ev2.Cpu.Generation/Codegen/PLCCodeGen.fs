@@ -200,35 +200,6 @@ module PLCCodeGen =
             let actionStr = exprToST action
             sprintf "IF %s THEN\n    %s;\nEND_IF;" condStr actionStr
 
-        | For(_, loopVar, startExpr, endExpr, stepExpr, body) ->
-            let varName = loopVar.Name
-            let startStr = exprToST startExpr
-            let endStr = exprToST endExpr
-            let stepStr =
-                match stepExpr with
-                | Some expr -> sprintf " BY %s" (exprToST expr)
-                | None -> ""
-            let bodyStr =
-                body
-                |> List.map stmtToST
-                |> String.concat "\n    "
-            sprintf "FOR %s := %s TO %s%s DO\n    %s\nEND_FOR;" varName startStr endStr stepStr bodyStr
-
-        | While(_, condition, body, maxIterations) ->
-            let condStr = exprToST condition
-            let bodyStr =
-                body
-                |> List.map stmtToST
-                |> String.concat "\n    "
-            let comment =
-                match maxIterations with
-                | Some max -> sprintf " (* max iterations: %d *)" max
-                | None -> ""
-            sprintf "WHILE %s DO%s\n    %s\nEND_WHILE;" condStr comment bodyStr
-
-        | Break(_) ->
-            "EXIT;"
-
     // ═════════════════════════════════════════════════════════════════════
     // FC (Function) 코드 생성
     // ═════════════════════════════════════════════════════════════════════
