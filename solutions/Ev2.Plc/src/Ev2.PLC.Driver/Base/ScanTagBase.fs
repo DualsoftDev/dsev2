@@ -46,7 +46,7 @@ type DsScanTagBase(name: string, address: string, dataType: PlcTagDataType, ?com
 type ConnectChangedEventArgs =
     {
         Ip: string
-        State: PlcConnectionStatus
+        State: ConnectionStatus
     }
 
 /// Event payload for tag value updates during scanning.

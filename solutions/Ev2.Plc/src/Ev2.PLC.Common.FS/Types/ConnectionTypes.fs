@@ -8,7 +8,7 @@ open System.Net
 // ===================================
 
 /// Connection status for PLC communications
-type ConnectionStatus =
+type PlcConnectionStatus =
     /// Not connected to the PLC
     | Disconnected
     /// Attempting to establish connection
@@ -342,12 +342,12 @@ type ConnectionMetrics = {
 /// Connection state change event
 type ConnectionStateChangedEvent = {
     PlcId: string
-    OldStatus: ConnectionStatus
-    NewStatus: ConnectionStatus
+    OldStatus: PlcConnectionStatus
+    NewStatus: PlcConnectionStatus
     Timestamp: DateTime
     Reason: string option
 } with
-    static member Create(plcId: string, oldStatus: ConnectionStatus, newStatus: ConnectionStatus, ?reason: string) = {
+    static member Create(plcId: string, oldStatus: PlcConnectionStatus, newStatus: PlcConnectionStatus, ?reason: string) = {
         PlcId = plcId
         OldStatus = oldStatus
         NewStatus = newStatus
@@ -359,7 +359,7 @@ type ConnectionStateChangedEvent = {
 type ConnectionInfo = {
     PlcId: string
     Config: ConnectionConfig
-    Status: ConnectionStatus
+    Status: PlcConnectionStatus
     Metrics: ConnectionMetrics
     ReconnectionPolicy: ReconnectionPolicy
     LastStateChange: DateTime
@@ -379,7 +379,7 @@ type ConnectionInfo = {
     member this.CanRead = this.Status.CanRead
     member this.CanWrite = this.Status.CanWrite
 
-    member this.UpdateStatus(newStatus: ConnectionStatus, ?message: string) =
+    member this.UpdateStatus(newStatus: PlcConnectionStatus, ?message: string) =
         let stateChangedEvent = ConnectionStateChangedEvent.Create(
             this.PlcId, 
             this.Status, 

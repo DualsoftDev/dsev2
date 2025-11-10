@@ -26,7 +26,7 @@ type DsScanBase(ip: string, scanDelay: int, isMonitorOnly: bool) =
     member this.RaiseTagChanged(tag: DsScanTagBase) =
         tagChangedEvent.Trigger { Ip = ip; Tag = tag }
 
-    member this.RaiseConnectChanged(state: PlcConnectionStatus) =
+    member this.RaiseConnectChanged(state: ConnectionStatus) =
         connectChangedEvent.Trigger { Ip = ip; State = state }
 
     abstract member ConnectionClose: unit -> unit

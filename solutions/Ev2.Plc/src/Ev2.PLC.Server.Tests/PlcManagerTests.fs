@@ -13,7 +13,7 @@ open Ev2.PLC.Common.Interfaces
 
 /// Simple mock driver for testing PLC Manager
 type MockDriver(plcId: string, connectionConfig: ConnectionConfig) =
-    let mutable connectionStatus = ConnectionStatus.Disconnected
+    let mutable connectionStatus = PlcConnectionStatus.Disconnected
     let mutable testTags = Map.empty<string, PlcValue>
     let connectionStateChangedEvent = Event<ConnectionStateChangedEvent>()
     let tagValueChangedEvent = Event<ScanResult>()
@@ -33,22 +33,22 @@ type MockDriver(plcId: string, connectionConfig: ConnectionConfig) =
     
     interface IPlcDriver with
         member this.PlcId = plcId
-        member this.ConnectionStatus = connectionStatus
+        member this.PlcConnectionStatus = connectionStatus
         member this.ConnectionInfo = ConnectionInfo.Create(plcId, connectionConfig)
         member this.Diagnostics = PlcDiagnostics.Create(plcId)
         member this.Capabilities = DriverCapabilities.Default
         
         member this.ConnectAsync() =
             task {
-                connectionStatus <- ConnectionStatus.Connected
-                connectionStateChangedEvent.Trigger(ConnectionStateChangedEvent.Create(plcId, ConnectionStatus.Disconnected, ConnectionStatus.Connected))
+                connectionStatus <- PlcConnectionStatus.Connected
+                connectionStateChangedEvent.Trigger(ConnectionStateChangedEvent.Create(plcId, PlcConnectionStatus.Disconnected, PlcConnectionStatus.Connected))
                 return Ok ()
             }
         
         member this.DisconnectAsync() =
             task {
-                connectionStatus <- ConnectionStatus.Disconnected
-                connectionStateChangedEvent.Trigger(ConnectionStateChangedEvent.Create(plcId, ConnectionStatus.Connected, ConnectionStatus.Disconnected))
+                connectionStatus <- PlcConnectionStatus.Disconnected
+                connectionStateChangedEvent.Trigger(ConnectionStateChangedEvent.Create(plcId, PlcConnectionStatus.Connected, PlcConnectionStatus.Disconnected))
             }
         
         member this.HealthCheckAsync() = Task.FromResult(true)
@@ -191,7 +191,7 @@ let ``ServerPlcManager should initialize correctly`` () =
     let manager = new ServerPlcManager(config, driver, logger)
     
     manager.Config.PlcId |> should equal "TEST_PLC"
-    manager.ConnectionStatus |> should equal ConnectionStatus.Disconnected
+    manager.PlcConnectionStatus |> should equal PlcConnectionStatus.Disconnected
     manager.Uptime |> should be (greaterThanOrEqualTo TimeSpan.Zero)
 
 [<Fact>]
@@ -207,7 +207,7 @@ let ``ServerPlcManager should connect and disconnect`` () =
         // Test connection
         let! connected = manager.ConnectAsync()
         connected |> should equal true
-        manager.ConnectionStatus |> should equal ConnectionStatus.Connected
+        manager.PlcConnectionStatus |> should equal PlcConnectionStatus.Connected
         
         // Test health check
         let! healthy = manager.HealthCheckAsync()
@@ -215,7 +215,7 @@ let ``ServerPlcManager should connect and disconnect`` () =
         
         // Test disconnection
         do! manager.DisconnectAsync()
-        manager.ConnectionStatus |> should equal ConnectionStatus.Disconnected
+        manager.PlcConnectionStatus |> should equal PlcConnectionStatus.Disconnected
     }
 
 [<Fact>]

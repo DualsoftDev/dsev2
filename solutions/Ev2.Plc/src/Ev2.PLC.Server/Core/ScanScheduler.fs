@@ -153,7 +153,7 @@ type ScanScheduler(
                 match activeManagers.TryGetValue(job.PlcId) with
                 | (true, manager) ->
                     // Check connection
-                    if not manager.ConnectionStatus.IsOperational then
+                    if not manager.PlcConnectionStatus.IsOperational then
                         logger.LogDebug("Connecting to PLC {PlcId} for scan", job.PlcId)
                         let! connected = manager.ConnectAsync()
                         if not connected then

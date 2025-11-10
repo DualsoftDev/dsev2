@@ -15,6 +15,7 @@ open DSPLCServer.PLC
 open DSPLCServer.Core
 // open DSPLCServer.Console
 open Ev2.PLC.Common.Interfaces
+open Ev2.PLC.Common.Types
 
 /// Placeholder PLC driver factory for demonstration
 type PlcDriverFactoryPlaceholder() =

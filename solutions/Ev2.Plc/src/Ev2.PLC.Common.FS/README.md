@@ -27,7 +27,7 @@ This library provides a unified type system and interface definitions that work 
 - **Quality statistics and trend analysis**
 
 ### 3. Connection Management (`ConnectionTypes.fs`)
-- **`ConnectionStatus`** - Universal connection states
+- **`PlcConnectionStatus`** - Universal connection states
 - **`ConnectionConfig`** - Vendor-agnostic connection configuration
 - **Connection metrics and monitoring**
 
