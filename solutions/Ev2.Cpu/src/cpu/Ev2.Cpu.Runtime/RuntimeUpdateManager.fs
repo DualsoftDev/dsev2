@@ -68,12 +68,7 @@ type RuntimeUpdateManager
                     let value =
                         match initValue with
                         | Some v -> v
-                        | None ->
-                            match dataType with
-                            | DsDataType.TBool -> box false
-                            | DsDataType.TInt -> box 0
-                            | DsDataType.TDouble -> box 0.0
-                            | DsDataType.TString -> box ""
+                        | None -> TypeHelpers.getDefaultValue dataType
                     (name, value))
                 |> Map.ofList
             Some newStorage
@@ -86,7 +81,7 @@ type RuntimeUpdateManager
                     match Map.tryFind name oldStorage with
                     | Some existingValue ->
                         // Variable exists in old storage - validate type before reusing
-                        let expectedType = dataType.DotNetType
+                        let expectedType = dataType
 
                         // CRITICAL FIX (DEFECT-017-1): Check for Nullable<T> before rejecting null
                         // Nullable<T> is a value type but allows null - detect generic Nullable
@@ -99,12 +94,7 @@ type RuntimeUpdateManager
                             let value =
                                 match initValue with
                                 | Some v -> v
-                                | None ->
-                                    match dataType with
-                                    | DsDataType.TBool -> box false
-                                    | DsDataType.TInt -> box 0
-                                    | DsDataType.TDouble -> box 0.0
-                                    | DsDataType.TString -> box ""
+                                | None -> TypeHelpers.getDefaultValue dataType
                             (name, value)
                         else
                             // For non-null or reference types, validate type compatibility
@@ -118,24 +108,14 @@ type RuntimeUpdateManager
                             let value =
                                 match initValue with
                                 | Some v -> v
-                                | None ->
-                                    match dataType with
-                                    | DsDataType.TBool -> box false
-                                    | DsDataType.TInt -> box 0
-                                    | DsDataType.TDouble -> box 0.0
-                                    | DsDataType.TString -> box ""
+                                | None -> TypeHelpers.getDefaultValue dataType
                             (name, value)
                     | None ->
                         // New static variable - use init value or default
                         let value =
                             match initValue with
                             | Some v -> v
-                            | None ->
-                                match dataType with
-                                | DsDataType.TBool -> box false
-                                | DsDataType.TInt -> box 0
-                                | DsDataType.TDouble -> box 0.0
-                                | DsDataType.TString -> box ""
+                            | None -> TypeHelpers.getDefaultValue dataType
                         (name, value))
                 |> Map.ofList
             Some newStorage

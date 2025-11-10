@@ -68,11 +68,11 @@ module TimersTests =
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)  // At least Q
 
             // Verify IN parameter exists (Bool)
-            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = typeof<bool>)
                       |> should equal true
 
             // Verify PT parameter exists (Int, for milliseconds)
-            fb.Inputs |> List.exists (fun p -> p.Name = "PT" && p.DataType = DsDataType.TInt)
+            fb.Inputs |> List.exists (fun p -> p.Name = "PT" && p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -85,9 +85,9 @@ module TimersTests =
             fb.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = typeof<bool>)
                       |> should equal true
-            fb.Inputs |> List.exists (fun p -> p.Name = "PT" && p.DataType = DsDataType.TInt)
+            fb.Inputs |> List.exists (fun p -> p.Name = "PT" && p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -100,9 +100,9 @@ module TimersTests =
             fb.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = typeof<bool>)
                       |> should equal true
-            fb.Inputs |> List.exists (fun p -> p.Name = "PT" && p.DataType = DsDataType.TInt)
+            fb.Inputs |> List.exists (fun p -> p.Name = "PT" && p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -115,9 +115,9 @@ module TimersTests =
             fb.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "IN" && p.DataType = typeof<bool>)
                       |> should equal true
-            fb.Inputs |> List.exists (fun p -> p.Name = "R" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "R" && p.DataType = typeof<bool>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"

@@ -27,18 +27,18 @@ module TON =
         let builder = FBBuilder("TON")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("IN", DsDataType.TBool)      // Enable input
-        builder.AddInput("PT", DsDataType.TInt)       // Preset time (ms)
-        builder.AddOutput("Q", DsDataType.TBool)      // Output (TRUE when ET >= PT)
-        builder.AddOutput("ET", DsDataType.TInt)      // Elapsed time (ms)
+        builder.AddInput("IN", typeof<bool>)      // Enable input
+        builder.AddInput("PT", typeof<int>)       // Preset time (ms)
+        builder.AddOutput("Q", typeof<bool>)      // Output (TRUE when ET >= PT)
+        builder.AddOutput("ET", typeof<int>)      // Elapsed time (ms)
 
-        // Static 변수 (NOW() returns Int64, use TDouble to avoid overflow)
-        builder.AddStaticWithInit("Running", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("StartTime", DsDataType.TDouble, box 0.0)
-        builder.AddStaticWithInit("ElapsedTime", DsDataType.TDouble, box 0.0)
+        // Static 변수 (NOW() returns Int64, use typeof<double> to avoid overflow)
+        builder.AddStaticWithInit("Running", typeof<bool>, box false)
+        builder.AddStaticWithInit("StartTime", typeof<double>, box 0.0)
+        builder.AddStaticWithInit("ElapsedTime", typeof<double>, box 0.0)
 
         // Temp 변수
-        builder.AddTemp("CurrentTime", DsDataType.TDouble)
+        builder.AddTemp("CurrentTime", typeof<double>)
 
         let inSig = Terminal(DsTag.Bool("IN"))
         let pt = Terminal(DsTag.Int("PT"))
@@ -53,7 +53,7 @@ module TON =
         // CRITICAL FIX: NOW() returns int64, use TODOUBLE (not DOUBLE) to convert
         let currentTime = Function("TODOUBLE", [Function("NOW", [])])
         builder.AddStatement(
-            assignAuto "CurrentTime" DsDataType.TDouble currentTime
+            assignAuto "CurrentTime" typeof<double> currentTime
         )
 
         // Running := IF risingEdge THEN TRUE ELSIF NOT IN THEN FALSE ELSE Running
@@ -66,7 +66,7 @@ module TON =
                 running
             ])
         ])
-        builder.AddStatement(assignAuto "Running" DsDataType.TBool newRunning)
+        builder.AddStatement(assignAuto "Running" typeof<bool> newRunning)
 
         // CRITICAL FIX (DEFECT-CRIT-13): Move StartTime capture inside rising edge condition
         // Previous code: currentTime evaluated before IF, captures time even when risingEdge=false
@@ -78,7 +78,7 @@ module TON =
             Function("NOW", [])  // Capture NOW() precisely when edge detected
             startTime
         ])
-        builder.AddStatement(assignAuto "StartTime" DsDataType.TDouble newStartTime)
+        builder.AddStatement(assignAuto "StartTime" typeof<double> newStartTime)
 
         // Calculate elapsed time
         let timeCalc = sub (Terminal(DsTag.Double("CurrentTime"))) startTime
@@ -94,16 +94,16 @@ module TON =
                 elapsed
             ])
         ])
-        builder.AddStatement(assignAuto "ElapsedTime" DsDataType.TDouble newElapsed)
+        builder.AddStatement(assignAuto "ElapsedTime" typeof<double> newElapsed)
 
         // 출력 설정
         // Q := (Running AND ET >= PT)
         builder.AddStatement(
-            assignAuto "Q" DsDataType.TBool (and' running (ge elapsed pt))
+            assignAuto "Q" typeof<bool> (and' running (ge elapsed pt))
         )
-        // ET는 TInt 출력이므로 elapsed(TDouble)를 변환
+        // ET는 typeof<int> 출력이므로 elapsed(typeof<double>)를 변환
         builder.AddStatement(
-            assignAuto "ET" DsDataType.TInt (Function("TOINT", [elapsed]))
+            assignAuto "ET" typeof<int> (Function("TOINT", [elapsed]))
         )
 
         builder.SetDescription("On-Delay Timer - Output turns ON after preset time (IEC 61131-3)")

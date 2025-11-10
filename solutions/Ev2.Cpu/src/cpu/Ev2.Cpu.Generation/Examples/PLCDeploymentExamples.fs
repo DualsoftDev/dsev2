@@ -145,18 +145,18 @@ module PLCDeploymentExamples =
 
         // 3. 경보 FB 생성
         let alarmFB = FBBuilder("TemperatureAlarm")
-        alarmFB.AddInput("temperature", DsDataType.TDouble)
-        alarmFB.AddInput("highAlarm", DsDataType.TDouble)
-        alarmFB.AddInput("lowAlarm", DsDataType.TDouble)
-        alarmFB.AddOutput("highAlarmActive", DsDataType.TBool)
-        alarmFB.AddOutput("lowAlarmActive", DsDataType.TBool)
+        alarmFB.AddInput("temperature", typeof<double>)
+        alarmFB.AddInput("highAlarm", typeof<double>)
+        alarmFB.AddInput("lowAlarm", typeof<double>)
+        alarmFB.AddOutput("highAlarmActive", typeof<bool>)
+        alarmFB.AddOutput("lowAlarmActive", typeof<bool>)
 
         let temp = Terminal(DsTag.Double("temperature"))
         let high = Terminal(DsTag.Double("highAlarm"))
         let low = Terminal(DsTag.Double("lowAlarm"))
 
-        alarmFB.AddStatement(assignAuto "highAlarmActive" DsDataType.TBool (gt temp high))
-        alarmFB.AddStatement(assignAuto "lowAlarmActive" DsDataType.TBool (lt temp low))
+        alarmFB.AddStatement(assignAuto "highAlarmActive" typeof<bool> (gt temp high))
+        alarmFB.AddStatement(assignAuto "lowAlarmActive" typeof<bool> (lt temp low))
 
         let alarmBlock = alarmFB.Build()
         registry.RegisterFB(alarmBlock)
@@ -205,12 +205,12 @@ module PLCDeploymentExamples =
 
         // 2. 카운터 FB
         let counterFB = FBBuilder("ProductCounter")
-        counterFB.AddInput("trigger", DsDataType.TBool)
-        counterFB.AddInput("reset", DsDataType.TBool)
-        counterFB.AddInput("preset", DsDataType.TInt)
-        counterFB.AddOutput("count", DsDataType.TInt)
-        counterFB.AddOutput("done", DsDataType.TBool)
-        counterFB.AddStaticWithInit("currentCount", DsDataType.TInt, box 0)
+        counterFB.AddInput("trigger", typeof<bool>)
+        counterFB.AddInput("reset", typeof<bool>)
+        counterFB.AddInput("preset", typeof<int>)
+        counterFB.AddOutput("count", typeof<int>)
+        counterFB.AddOutput("done", typeof<bool>)
+        counterFB.AddStaticWithInit("currentCount", typeof<int>, box 0)
 
         // 리셋
         counterFB.AddStatement(when' (Terminal(DsTag.Bool("reset")))
@@ -224,8 +224,8 @@ module PLCDeploymentExamples =
         counterFB.AddStatement(when' (and' trigger (lt count preset))
             (mov (add count (intExpr 1)) (DsTag.Int("currentCount"))))
 
-        counterFB.AddStatement(assignAuto "count" DsDataType.TInt count)
-        counterFB.AddStatement(assignAuto "done" DsDataType.TBool (ge count preset))
+        counterFB.AddStatement(assignAuto "count" typeof<int> count)
+        counterFB.AddStatement(assignAuto "done" typeof<bool> (ge count preset))
 
         let counter = counterFB.Build()
         registry.RegisterFB(counter)

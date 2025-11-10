@@ -48,15 +48,15 @@ let ``CallSequence - SET RST 흐름`` () =
     // SET 대신 MOV true 확인
     let hasSet target =
         seq |> List.exists (function
-            | Command(_, _, Function("MOV", [Const(v, DsDataType.TBool); Terminal(tag)]))
-                when tag.Name = target && unbox v = true -> true
+            | Command(_, _, Function("MOV", [Const(v, t); Terminal(tag)]))
+                when t = typeof<bool> && tag.Name = target && unbox v = true -> true
             | _ -> false)
 
     // RST 대신 MOV false 확인
     let hasRst target =
         seq |> List.exists (function
-            | Command(_, _, Function("MOV", [Const(v, DsDataType.TBool); Terminal(tag)]))
-                when tag.Name = target && unbox v = false -> true
+            | Command(_, _, Function("MOV", [Const(v, t); Terminal(tag)]))
+                when t = typeof<bool> && tag.Name = target && unbox v = false -> true
             | _ -> false)
 
     hasSet "loader_SC" |> should equal true

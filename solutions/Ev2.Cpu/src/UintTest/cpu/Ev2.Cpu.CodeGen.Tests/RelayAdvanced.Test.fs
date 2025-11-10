@@ -191,7 +191,7 @@ let ``Relay - 타이머 기반 지연`` () =
     let relay = Relay.Create(tag, timerExpr, boolTag "cancel")
 
     match relay.Set with
-    | Function("TON", [_; _; Const(delay, DsDataType.TInt)]) ->
+    | Function("TON", [_; _; Const(delay, t)]) when t = typeof<int> ->
         unbox delay |> should equal 3000
     | _ -> failwith "Expected TON function"
 

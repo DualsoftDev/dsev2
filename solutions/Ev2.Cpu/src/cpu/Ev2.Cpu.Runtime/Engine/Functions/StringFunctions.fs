@@ -12,10 +12,10 @@ open Ev2.Cpu.Core
 module StringFunctions =
 
     let concat (args: obj list) =
-        args |> List.map TypeConverter.toString |> String.concat "" |> box
+        args |> List.map TypeHelpers.toString |> String.concat "" |> box
 
     let length (v: obj) =
-        (TypeConverter.toString v).Length |> box
+        (TypeHelpers.toString v).Length |> box
 
     let substring (args: obj list) =
         match args with
@@ -42,8 +42,8 @@ module StringFunctions =
     let left (args: obj list) =
         match args with
         | [s; len] ->
-            let str = TypeConverter.toString s
-            let length = TypeConverter.toInt len
+            let str = TypeHelpers.toString s
+            let length = TypeHelpers.toInt len
             let actualLen = min length str.Length
             box (str.Substring(0, max 0 actualLen))
         | _ -> failwith "LEFT requires string and int"
@@ -51,8 +51,8 @@ module StringFunctions =
     let right (args: obj list) =
         match args with
         | [s; len] ->
-            let str = TypeConverter.toString s
-            let length = TypeConverter.toInt len
+            let str = TypeHelpers.toString s
+            let length = TypeHelpers.toInt len
             // Clamp actualLen to [0, str.Length] to prevent negative length crash
             let actualLen = max 0 (min length str.Length)
             let startPos = str.Length - actualLen
@@ -62,7 +62,7 @@ module StringFunctions =
     let find (args: obj list) =
         match args with
         | [s; searchStr] ->
-            let str = TypeConverter.toString s
-            let search = TypeConverter.toString searchStr
+            let str = TypeHelpers.toString s
+            let search = TypeHelpers.toString searchStr
             box (str.IndexOf(search))
         | _ -> failwith "FIND requires 2 strings"

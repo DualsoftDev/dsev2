@@ -2,6 +2,7 @@ namespace Ev2.Gen
 open System
 open System.Linq
 open Dual.Common.Base
+open Ev2.Core.FS.IR
 
 type Arguments = IExpression[]
 type Arguments<'T> = IExpression<'T>[]

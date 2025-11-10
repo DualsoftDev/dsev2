@@ -187,7 +187,7 @@ type UserLibrary() =
     // 호출 검증
     // ────────────────────────────────
 
-    member this.ValidateFCCall(fcName: string, argTypes: DsDataType list) : Result<DsDataType, UserDefinitionError> =
+    member this.ValidateFCCall(fcName: string, argTypes: Type list) : Result<Type, UserDefinitionError> =
         let resolved = resolveNamespace fcName
         match this.GetFC(fcName) with
         | None ->
@@ -215,19 +215,18 @@ type UserLibrary() =
                 let mismatched =
                     List.zip argTypes fc.Inputs
                     |> List.tryFind (fun (argType, param) ->
-                        not (argType = param.DataType ||
-                             (argType = DsDataType.TInt && param.DataType = DsDataType.TDouble)))
+                        not (TypeHelpers.areTypesCompatible argType param.DataType))
 
                 match mismatched with
                 | Some (argType, param) ->
                     UserDefinitionError.create "FC.Call.ArgumentTypeMismatch"
-                        (sprintf "Parameter '%s' expects %O but received %O." param.Name param.DataType argType)
+                        (sprintf "Parameter '%s' expects %s but received %s." param.Name (TypeHelpers.getTypeName param.DataType) (TypeHelpers.getTypeName argType))
                         (RegistryHelpers.fcPath resolved ["call"; "param"; RegistryHelpers.normalize param.Name])
                     |> Error
                 | None ->
                     Ok fc.ReturnType
 
-    member this.ValidateFBCall(fbName: string, inputArgs: Map<string, DsDataType>) : Result<unit, UserDefinitionError> =
+    member this.ValidateFBCall(fbName: string, inputArgs: Map<string, Type>) : Result<unit, UserDefinitionError> =
         let resolved = resolveNamespace fbName
         match this.GetFB(fbName) with
         | None ->
@@ -262,14 +261,12 @@ type UserLibrary() =
                                 (sprintf "Input '%s' is not defined on FB '%s'." name resolved)
                                 (RegistryHelpers.fbPath resolved ["call"; "inputs"; RegistryHelpers.normalize name])
                             |> Some
-                        | Some param when argType = param.DataType ->
-                            None
-                        | Some param when argType = DsDataType.TInt && param.DataType = DsDataType.TDouble ->
+                        | Some param when TypeHelpers.areTypesCompatible argType param.DataType ->
                             None
                         | Some param ->
                             UserDefinitionError.create "FB.Call.ArgumentTypeMismatch"
-                                (sprintf "Input '%s' expects %O but received %O."
-                                    param.Name param.DataType argType)
+                                (sprintf "Input '%s' expects %s but received %s."
+                                    param.Name (TypeHelpers.getTypeName param.DataType) (TypeHelpers.getTypeName argType))
                                 (RegistryHelpers.fbPath resolved ["call"; "inputs"; RegistryHelpers.normalize name])
                             |> Some)
 

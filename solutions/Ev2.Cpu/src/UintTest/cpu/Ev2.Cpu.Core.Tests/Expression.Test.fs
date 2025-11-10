@@ -10,16 +10,16 @@ open Ev2.Cpu.Core.Statement
 let ``Expression - 기본 상수 생성`` () =
     clearVariableRegistry()
     let n = num 42
-    n |> should equal (Const(box 42, DsDataType.TInt))
+    n |> should equal (Const(box 42, typeof<int>))
     
     let b = bool true
-    b |> should equal (Const(box true, DsDataType.TBool))
+    b |> should equal (Const(box true, typeof<bool>))
     
     let d = dbl 3.14
-    d |> should equal (Const(box 3.14, DsDataType.TDouble))
+    d |> should equal (Const(box 3.14, typeof<double>))
     
     let s = str "test"
-    s |> should equal (Const(box "test", DsDataType.TString))
+    s |> should equal (Const(box "test", typeof<string>))
 
 [<Fact>]
 let ``Expression - 변수 생성`` () =
@@ -28,14 +28,14 @@ let ``Expression - 변수 생성`` () =
     match v1 with
     | Terminal(tag) -> 
         tag.Name |> should equal "flag"
-        tag.DsDataType |> should equal DsDataType.TBool
+        tag.DataType |> should equal typeof<bool>
     | _ -> failwith "Expected Terminal"
     
     let v2 = intVar "counter"
     match v2 with
     | Terminal(tag) -> 
         tag.Name |> should equal "counter"
-        tag.DsDataType |> should equal DsDataType.TInt
+        tag.DataType |> should equal typeof<int>
     | _ -> failwith "Expected Terminal"
 
 [<Fact>]
@@ -134,13 +134,13 @@ let ``Expression - 체인 연산`` () =
     let c = boolVar "c"
     
     let allExpr = all [a; b; c]
-    allExpr.InferType() |> should equal DsDataType.TBool
+    allExpr.InferType() |> should equal typeof<bool>
     
     let anyExpr = any [a; b; c]
-    anyExpr.InferType() |> should equal DsDataType.TBool
+    anyExpr.InferType() |> should equal typeof<bool>
     
     let noneExpr = none [a; b; c]
-    noneExpr.InferType() |> should equal DsDataType.TBool
+    noneExpr.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Expression - 타입 추론`` () =
@@ -150,17 +150,17 @@ let ``Expression - 타입 추론`` () =
     let flag = boolVar "flag"
     
     // 산술 연산
-    (x .+. y).InferType() |> should equal DsDataType.TInt
-    (x .-. y).InferType() |> should equal DsDataType.TInt
-    (x .*. y).InferType() |> should equal DsDataType.TInt
+    (x .+. y).InferType() |> should equal typeof<int>
+    (x .-. y).InferType() |> should equal typeof<int>
+    (x .*. y).InferType() |> should equal typeof<int>
     
     // 비교 연산
-    (x >>. y).InferType() |> should equal DsDataType.TBool
-    (x ==. y).InferType() |> should equal DsDataType.TBool
+    (x >>. y).InferType() |> should equal typeof<bool>
+    (x ==. y).InferType() |> should equal typeof<bool>
     
     // 논리 연산
-    (flag &&. flag).InferType() |> should equal DsDataType.TBool
-    (!!. flag).InferType() |> should equal DsDataType.TBool
+    (flag &&. flag).InferType() |> should equal typeof<bool>
+    (!!. flag).InferType() |> should equal typeof<bool>
 
 // ═════════════════════════════════════════════════════════════════
 // Phase 2 Enhanced Tests - Property-Based & Edge Cases
@@ -174,7 +174,7 @@ let ``Expression - Constant creation preserves value`` (value: int) =
     clearVariableRegistry()
     let expr = num value
     match expr with
-    | Const(boxedVal, DsDataType.TInt) -> unbox<int> boxedVal = value
+    | Const(boxedVal, t) when t = typeof<int> -> unbox<int> boxedVal = value
     | _ -> false
 
 [<Property>]
@@ -182,7 +182,7 @@ let ``Expression - Double constant creation preserves value`` (value: float) =
     clearVariableRegistry()
     let expr = dbl value
     match expr with
-    | Const(boxedVal, DsDataType.TDouble) ->
+    | Const(boxedVal, t) when t = typeof<double> ->
         let actual = unbox<float> boxedVal
         // Handle NaN specially since NaN <> NaN
         if System.Double.IsNaN(value) then System.Double.IsNaN(actual)
@@ -195,7 +195,7 @@ let ``Expression - String constant creation preserves value`` (value: string) =
     let safeValue = if value = null then "" else value
     let expr = str safeValue
     match expr with
-    | Const(boxedVal, DsDataType.TString) -> unbox<string> boxedVal = safeValue
+    | Const(boxedVal, t) when t = typeof<string> -> unbox<string> boxedVal = safeValue
     | _ -> false
 
 [<Property>]
@@ -203,7 +203,7 @@ let ``Expression - Bool constant creation preserves value`` (value: bool) =
     clearVariableRegistry()
     let expr = bool value
     match expr with
-    | Const(boxedVal, DsDataType.TBool) -> unbox<bool> boxedVal = value
+    | Const(boxedVal, t) when t = typeof<bool> -> unbox<bool> boxedVal = value
     | _ -> false
 
 [<Fact>]
@@ -213,28 +213,28 @@ let ``Expression - Constant creation with boundary values`` () =
     // Int32 boundaries
     let minInt = num System.Int32.MinValue
     match minInt with
-    | Const(v, DsDataType.TInt) -> unbox<int> v |> should equal System.Int32.MinValue
+    | Const(v, t) when t = typeof<int> -> unbox<int> v |> should equal System.Int32.MinValue
     | _ -> failwith "Expected Int32.MinValue constant"
 
     let maxInt = num System.Int32.MaxValue
     match maxInt with
-    | Const(v, DsDataType.TInt) -> unbox<int> v |> should equal System.Int32.MaxValue
+    | Const(v, t) when t = typeof<int> -> unbox<int> v |> should equal System.Int32.MaxValue
     | _ -> failwith "Expected Int32.MaxValue constant"
 
     // Double boundaries
     let nan = dbl System.Double.NaN
     match nan with
-    | Const(v, DsDataType.TDouble) -> System.Double.IsNaN(unbox<float> v) |> should be True
+    | Const(v, t) when t = typeof<double> -> System.Double.IsNaN(unbox<float> v) |> should be True
     | _ -> failwith "Expected NaN constant"
 
     let posInf = dbl System.Double.PositiveInfinity
     match posInf with
-    | Const(v, DsDataType.TDouble) -> unbox<float> v |> should equal System.Double.PositiveInfinity
+    | Const(v, t) when t = typeof<double> -> unbox<float> v |> should equal System.Double.PositiveInfinity
     | _ -> failwith "Expected +Infinity constant"
 
     let negInf = dbl System.Double.NegativeInfinity
     match negInf with
-    | Const(v, DsDataType.TDouble) -> unbox<float> v |> should equal System.Double.NegativeInfinity
+    | Const(v, t) when t = typeof<double> -> unbox<float> v |> should equal System.Double.NegativeInfinity
     | _ -> failwith "Expected -Infinity constant"
 
 [<Fact>]
@@ -244,12 +244,12 @@ let ``Expression - Type inference for mixed Int/Double operations`` () =
     let y = dblVar "y"
 
     // Int + Double => Double (type promotion)
-    (x .+. y).InferType() |> should equal DsDataType.TDouble
-    (y .+. x).InferType() |> should equal DsDataType.TDouble
+    (x .+. y).InferType() |> should equal typeof<double>
+    (y .+. x).InferType() |> should equal typeof<double>
 
     // Double * Int => Double
-    (y .*. x).InferType() |> should equal DsDataType.TDouble
-    (x .*. y).InferType() |> should equal DsDataType.TDouble
+    (y .*. x).InferType() |> should equal typeof<double>
+    (x .*. y).InferType() |> should equal typeof<double>
 
 [<Fact>]
 let ``Expression - Variable names are stored correctly`` () =
@@ -308,13 +308,13 @@ let ``Expression - Comparison operators work with constants`` () =
     clearVariableRegistry()
 
     let expr1 = num 5 >>. num 3
-    expr1.InferType() |> should equal DsDataType.TBool
+    expr1.InferType() |> should equal typeof<bool>
 
     let expr2 = dbl 3.14 ==. dbl 2.71
-    expr2.InferType() |> should equal DsDataType.TBool
+    expr2.InferType() |> should equal typeof<bool>
 
     let expr3 = str "abc" <>. str "def"
-    expr3.InferType() |> should equal DsDataType.TBool
+    expr3.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Expression - Arithmetic with zero`` () =
@@ -324,11 +324,11 @@ let ``Expression - Arithmetic with zero`` () =
 
     // x + 0 should still be a valid expression
     let expr1 = x .+. zero
-    expr1.InferType() |> should equal DsDataType.TInt
+    expr1.InferType() |> should equal typeof<int>
 
     // x * 0 should still be a valid expression
     let expr2 = x .*. zero
-    expr2.InferType() |> should equal DsDataType.TInt
+    expr2.InferType() |> should equal typeof<int>
 
 [<Fact>]
 let ``Expression - Arithmetic with one`` () =
@@ -338,11 +338,11 @@ let ``Expression - Arithmetic with one`` () =
 
     // x * 1 should still be a valid expression
     let expr1 = x .*. one
-    expr1.InferType() |> should equal DsDataType.TInt
+    expr1.InferType() |> should equal typeof<int>
 
     // x / 1 should still be a valid expression
     let expr2 = x ./. one
-    expr2.InferType() |> should equal DsDataType.TInt
+    expr2.InferType() |> should equal typeof<int>
 
 [<Fact>]
 let ``Expression - Function with empty arguments`` () =
@@ -371,13 +371,13 @@ let ``Expression - Chain operations preserve type`` () =
     let flags = [boolVar "a"; boolVar "b"; boolVar "c"; boolVar "d"; boolVar "e"]
 
     let allExpr = all flags
-    allExpr.InferType() |> should equal DsDataType.TBool
+    allExpr.InferType() |> should equal typeof<bool>
 
     let anyExpr = any flags
-    anyExpr.InferType() |> should equal DsDataType.TBool
+    anyExpr.InferType() |> should equal typeof<bool>
 
     let noneExpr = none flags
-    noneExpr.InferType() |> should equal DsDataType.TBool
+    noneExpr.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Expression - Chain operations with single element`` () =
@@ -385,10 +385,10 @@ let ``Expression - Chain operations with single element`` () =
     let flag = boolVar "a"
 
     let allExpr = all [flag]
-    allExpr.InferType() |> should equal DsDataType.TBool
+    allExpr.InferType() |> should equal typeof<bool>
 
     let anyExpr = any [flag]
-    anyExpr.InferType() |> should equal DsDataType.TBool
+    anyExpr.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Expression - Set/Reset with constants`` () =
@@ -398,7 +398,7 @@ let ``Expression - Set/Reset with constants`` () =
 
     // setReset should work with constants
     let srExpr = setReset trueConst falseConst
-    srExpr.InferType() |> should equal DsDataType.TBool
+    srExpr.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Expression - Rising edge on constant`` () =
@@ -408,7 +408,7 @@ let ``Expression - Rising edge on constant`` () =
     // Rising edge should work with constants
     let riseExpr = rising trueConst
     match riseExpr with
-    | Unary(DsOp.Rising, _) -> riseExpr.InferType() |> should equal DsDataType.TBool
+    | Unary(DsOp.Rising, _) -> riseExpr.InferType() |> should equal typeof<bool>
     | _ -> failwith "Expected Rising edge"
 
 [<Fact>]
@@ -419,7 +419,7 @@ let ``Expression - Falling edge on constant`` () =
     // Falling edge should work with constants
     let fallExpr = falling falseConst
     match fallExpr with
-    | Unary(DsOp.Falling, _) -> fallExpr.InferType() |> should equal DsDataType.TBool
+    | Unary(DsOp.Falling, _) -> fallExpr.InferType() |> should equal typeof<bool>
     | _ -> failwith "Expected Falling edge"
 
 [<Fact>]
@@ -433,22 +433,22 @@ let ``Expression - Complex nested expression type inference`` () =
 
     // ((a AND b) OR c) should be Bool
     let logicExpr = (a &&. b) ||. c
-    logicExpr.InferType() |> should equal DsDataType.TBool
+    logicExpr.InferType() |> should equal typeof<bool>
 
     // ((x + y) > 10) should be Bool
     let comparisonExpr = (x .+. y) >>. num 10
-    comparisonExpr.InferType() |> should equal DsDataType.TBool
+    comparisonExpr.InferType() |> should equal typeof<bool>
 
     // (a AND ((x > y) OR b)) should be Bool
     let mixedExpr = a &&. ((x >>. y) ||. b)
-    mixedExpr.InferType() |> should equal DsDataType.TBool
+    mixedExpr.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Expression - Empty string is valid`` () =
     clearVariableRegistry()
     let emptyStr = str ""
     match emptyStr with
-    | Const(v, DsDataType.TString) ->
+    | Const(v, t) when t = typeof<string> ->
         let s = unbox<string> v
         s |> should equal ""
     | _ -> failwith "Expected empty string constant"
@@ -459,7 +459,7 @@ let ``Expression - Very long string is valid`` () =
     let longStr = System.String('X', 10000)
     let expr = str longStr
     match expr with
-    | Const(v, DsDataType.TString) ->
+    | Const(v, t) when t = typeof<string> ->
         let s = unbox<string> v
         s.Length |> should equal 10000
     | _ -> failwith "Expected long string constant"

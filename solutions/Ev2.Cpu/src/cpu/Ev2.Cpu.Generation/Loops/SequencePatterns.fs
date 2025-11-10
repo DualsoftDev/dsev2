@@ -31,15 +31,15 @@ module SequencePatterns =
     ///     END_WHILE;
     ///     IF iterCount >= maxIterations THEN timedOut := TRUE; END_IF
     let waitUntil (condition: DsExpr) (maxIterations: int) (timeoutVarName: string) : DsStmt list =
-        let iterCountTag = DsTag.Create("_wait_count", DsDataType.TInt)
-        let timeoutTag = DsTag.Create(timeoutVarName, DsDataType.TBool)
+        let iterCountTag = DsTag.Create("_wait_count", typeof<int>)
+        let timeoutTag = DsTag.Create(timeoutVarName, typeof<bool>)
 
         // timedOut := FALSE
         let initTimeout =
             Assign(
                 0,
                 timeoutTag,
-                Const(box false, DsDataType.TBool)
+                Const(box false, typeof<bool>)
             )
 
         // iterCount := 0
@@ -47,7 +47,7 @@ module SequencePatterns =
             Assign(
                 0,
                 iterCountTag,
-                Const(box 0, DsDataType.TInt)
+                Const(box 0, typeof<int>)
             )
 
         // WHILE NOT condition AND iterCount < maxIterations
@@ -58,7 +58,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Lt,
                     Terminal iterCountTag,
-                    Const(box maxIterations, DsDataType.TInt)
+                    Const(box maxIterations, typeof<int>)
                 )
             )
 
@@ -70,7 +70,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Add,
                     Terminal iterCountTag,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
 
@@ -87,14 +87,14 @@ module SequencePatterns =
             Binary(
                 DsOp.Ge,
                 Terminal iterCountTag,
-                Const(box maxIterations, DsDataType.TInt)
+                Const(box maxIterations, typeof<int>)
             )
 
         let setTimeoutTrue =
             Assign(
                 0,
                 timeoutTag,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
 
         let timeoutCheck = Command(0, timeoutCondition, Terminal (DsTag.Bool("_dummy")))
@@ -108,15 +108,15 @@ module SequencePatterns =
     ///       IF condition THEN success := TRUE; EXIT; END_IF
     ///     END_FOR
     let pollWithDelay (condition: DsExpr) (checkCount: int) (successVarName: string) : DsStmt list =
-        let indexVar = DsTag.Create("_poll_i", DsDataType.TInt)
-        let successTag = DsTag.Create(successVarName, DsDataType.TBool)
+        let indexVar = DsTag.Create("_poll_i", typeof<int>)
+        let successTag = DsTag.Create(successVarName, typeof<bool>)
 
         // success := FALSE
         let initStmt =
             Assign(
                 0,
                 successTag,
-                Const(box false, DsDataType.TBool)
+                Const(box false, typeof<bool>)
             )
 
         // IF condition THEN success := TRUE; EXIT
@@ -124,7 +124,7 @@ module SequencePatterns =
             Assign(
                 0,
                 successTag,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
 
         let breakStmt = Break(0)
@@ -135,9 +135,9 @@ module SequencePatterns =
             For(
                 0,
                 indexVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box (checkCount - 1), DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box (checkCount - 1), typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 [setSuccess; breakStmt]
             )
 
@@ -157,15 +157,15 @@ module SequencePatterns =
     ///       retryCount := retryCount + 1;
     ///     END_WHILE
     let retryOperation (action: DsStmt list) (checkSuccess: DsExpr) (maxRetries: int) (successVarName: string) : DsStmt list =
-        let retryCountTag = DsTag.Create("_retry_count", DsDataType.TInt)
-        let successTag = DsTag.Create(successVarName, DsDataType.TBool)
+        let retryCountTag = DsTag.Create("_retry_count", typeof<int>)
+        let successTag = DsTag.Create(successVarName, typeof<bool>)
 
         // succeeded := FALSE
         let initSuccess =
             Assign(
                 0,
                 successTag,
-                Const(box false, DsDataType.TBool)
+                Const(box false, typeof<bool>)
             )
 
         // retryCount := 0
@@ -173,7 +173,7 @@ module SequencePatterns =
             Assign(
                 0,
                 retryCountTag,
-                Const(box 0, DsDataType.TInt)
+                Const(box 0, typeof<int>)
             )
 
         // WHILE NOT succeeded AND retryCount < maxRetries
@@ -184,7 +184,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Lt,
                     Terminal retryCountTag,
-                    Const(box maxRetries, DsDataType.TInt)
+                    Const(box maxRetries, typeof<int>)
                 )
             )
 
@@ -193,7 +193,7 @@ module SequencePatterns =
             Assign(
                 0,
                 successTag,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
 
         let checkStmt = Command(0, checkSuccess, Terminal (DsTag.Bool("_dummy")))
@@ -206,7 +206,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Add,
                     Terminal retryCountTag,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
 
@@ -233,18 +233,18 @@ module SequencePatterns =
     ///       FOR delay := 0 TO delayCount DO (* wait *) END_FOR
     ///     END_FOR
     let sequentialStart (equipmentNames: string list) (delayCount: int) : DsStmt =
-        let indexVar = DsTag.Create("_seq_start_i", DsDataType.TInt)
-        let delayVar = DsTag.Create("_seq_delay", DsDataType.TInt)
+        let indexVar = DsTag.Create("_seq_start_i", typeof<int>)
+        let delayVar = DsTag.Create("_seq_delay", typeof<int>)
 
         // 각 장비에 대한 시작 명령 (실제로는 배열 또는 개별 변수 접근)
         // 단순화: equipmentStart[i] := TRUE
-        let equipmentTag = DsTag.Create("equipmentStart", DsDataType.TBool)
+        let equipmentTag = DsTag.Create("equipmentStart", typeof<bool>)
 
         let startCmd =
             Assign(
                 0,
                 equipmentTag,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
 
         // 지연 루프 (빈 루프로 시간 소모)
@@ -252,18 +252,18 @@ module SequencePatterns =
             For(
                 0,
                 delayVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box delayCount, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box delayCount, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 []  // 빈 본문
             )
 
         For(
             0,
             indexVar,
-            Const(box 0, DsDataType.TInt),
-            Const(box (equipmentNames.Length - 1), DsDataType.TInt),
-            Some(Const(box 1, DsDataType.TInt)),
+            Const(box 0, typeof<int>),
+            Const(box (equipmentNames.Length - 1), typeof<int>),
+            Some(Const(box 1, typeof<int>)),
             [startCmd; delayLoop]
         )
 
@@ -274,16 +274,16 @@ module SequencePatterns =
     ///       FOR delay := 0 TO delayCount DO (* wait *) END_FOR
     ///     END_FOR
     let sequentialStop (equipmentNames: string list) (delayCount: int) : DsStmt =
-        let indexVar = DsTag.Create("_seq_stop_i", DsDataType.TInt)
-        let delayVar = DsTag.Create("_seq_delay", DsDataType.TInt)
+        let indexVar = DsTag.Create("_seq_stop_i", typeof<int>)
+        let delayVar = DsTag.Create("_seq_delay", typeof<int>)
 
-        let equipmentTag = DsTag.Create("equipmentStop", DsDataType.TBool)
+        let equipmentTag = DsTag.Create("equipmentStop", typeof<bool>)
 
         let stopCmd =
             Assign(
                 0,
                 equipmentTag,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
 
         // 지연 루프
@@ -291,18 +291,18 @@ module SequencePatterns =
             For(
                 0,
                 delayVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box delayCount, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box delayCount, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 []
             )
 
         For(
             0,
             indexVar,
-            Const(box (equipmentNames.Length - 1), DsDataType.TInt),
-            Const(box 0, DsDataType.TInt),
-            Some(Const(box -1, DsDataType.TInt)),  // 역순
+            Const(box (equipmentNames.Length - 1), typeof<int>),
+            Const(box 0, typeof<int>),
+            Some(Const(box -1, typeof<int>)),  // 역순
             [stopCmd; delayLoop]
         )
 
@@ -317,16 +317,16 @@ module SequencePatterns =
     ///       IF NOT interlock[i] THEN allOK := FALSE; EXIT; END_IF
     ///     END_FOR
     let checkInterlocks (interlockNames: string list) (resultVarName: string) : DsStmt list =
-        let indexVar = DsTag.Create("_interlock_i", DsDataType.TInt)
-        let resultTag = DsTag.Create(resultVarName, DsDataType.TBool)
-        let interlockTag = DsTag.Create("interlock", DsDataType.TBool)
+        let indexVar = DsTag.Create("_interlock_i", typeof<int>)
+        let resultTag = DsTag.Create(resultVarName, typeof<bool>)
+        let interlockTag = DsTag.Create("interlock", typeof<bool>)
 
         // allOK := TRUE
         let initStmt =
             Assign(
                 0,
                 resultTag,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
 
         // IF NOT interlock[i] THEN allOK := FALSE; EXIT
@@ -337,7 +337,7 @@ module SequencePatterns =
             Assign(
                 0,
                 resultTag,
-                Const(box false, DsDataType.TBool)
+                Const(box false, typeof<bool>)
             )
 
         let breakStmt = Break(0)
@@ -348,9 +348,9 @@ module SequencePatterns =
             For(
                 0,
                 indexVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box (interlockNames.Length - 1), DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box (interlockNames.Length - 1), typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 [setFalse; breakStmt]
             )
 
@@ -367,14 +367,14 @@ module SequencePatterns =
     ///       currentStep := currentStep + 1;
     ///     END_WHILE
     let stepSequence (maxSteps: int) (currentStepVarName: string) : DsStmt =
-        let stepTag = DsTag.Create(currentStepVarName, DsDataType.TInt)
+        let stepTag = DsTag.Create(currentStepVarName, typeof<int>)
 
         // WHILE currentStep <= maxSteps
         let whileCondition =
             Binary(
                 DsOp.Le,
                 Terminal stepTag,
-                Const(box maxSteps, DsDataType.TInt)
+                Const(box maxSteps, typeof<int>)
             )
 
         // currentStep := currentStep + 1
@@ -385,7 +385,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Add,
                     Terminal stepTag,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
 
@@ -402,7 +402,7 @@ module SequencePatterns =
     ///       currentStep := nextStep;
     ///     END_IF
     let conditionalStep (currentStepVarName: string) (thisStep: int) (condition: DsExpr) (nextStep: int) : DsStmt =
-        let stepTag = DsTag.Create(currentStepVarName, DsDataType.TInt)
+        let stepTag = DsTag.Create(currentStepVarName, typeof<int>)
 
         // currentStep = thisStep AND condition
         let fullCondition =
@@ -411,7 +411,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Eq,
                     Terminal stepTag,
-                    Const(box thisStep, DsDataType.TInt)
+                    Const(box thisStep, typeof<int>)
                 ),
                 condition
             )
@@ -421,7 +421,7 @@ module SequencePatterns =
             Assign(
                 0,
                 stepTag,
-                Const(box nextStep, DsDataType.TInt)
+                Const(box nextStep, typeof<int>)
             )
 
         Command(0, fullCondition, Terminal (DsTag.Bool("_dummy")))
@@ -437,8 +437,8 @@ module SequencePatterns =
     ///       (* process batch from batchStart to batchEnd *)
     ///     END_FOR
     let batchProcess (totalItems: int) (batchSize: int) (processBatch: DsStmt list) : DsStmt =
-        let batchStartVar = DsTag.Create("_batch_start", DsDataType.TInt)
-        let batchEndVar = DsTag.Create("_batch_end", DsDataType.TInt)
+        let batchStartVar = DsTag.Create("_batch_start", typeof<int>)
+        let batchEndVar = DsTag.Create("_batch_end", typeof<int>)
 
         // batchEnd := MIN(batchStart + batchSize - 1, totalItems - 1)
         let calculateEnd =
@@ -448,7 +448,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Add,
                     Terminal batchStartVar,
-                    Const(box (batchSize - 1), DsDataType.TInt)
+                    Const(box (batchSize - 1), typeof<int>)
                 )
             )
 
@@ -457,9 +457,9 @@ module SequencePatterns =
         For(
             0,
             batchStartVar,
-            Const(box 0, DsDataType.TInt),
-            Const(box (totalItems - 1), DsDataType.TInt),
-            Some(Const(box batchSize, DsDataType.TInt)),
+            Const(box 0, typeof<int>),
+            Const(box (totalItems - 1), typeof<int>),
+            Some(Const(box batchSize, typeof<int>)),
             forBody
         )
 
@@ -477,15 +477,15 @@ module SequencePatterns =
     ///       END_IF
     ///     END_FOR
     let priorityScan (maxPriority: int) (conditionCheck: DsExpr) (resultVarName: string) : DsStmt list =
-        let indexVar = DsTag.Create("_priority_i", DsDataType.TInt)
-        let resultTag = DsTag.Create(resultVarName, DsDataType.TInt)
+        let indexVar = DsTag.Create("_priority_i", typeof<int>)
+        let resultTag = DsTag.Create(resultVarName, typeof<int>)
 
         // selectedIndex := -1
         let initStmt =
             Assign(
                 0,
                 resultTag,
-                Const(box -1, DsDataType.TInt)
+                Const(box -1, typeof<int>)
             )
 
         // IF condition[i] AND selectedIndex = -1
@@ -496,7 +496,7 @@ module SequencePatterns =
                 Binary(
                     DsOp.Eq,
                     Terminal resultTag,
-                    Const(box -1, DsDataType.TInt)
+                    Const(box -1, typeof<int>)
                 )
             )
 
@@ -516,9 +516,9 @@ module SequencePatterns =
             For(
                 0,
                 indexVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box maxPriority, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box maxPriority, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 [assignIndex; breakStmt]
             )
 
@@ -534,8 +534,8 @@ module SequencePatterns =
     ///     (* scan from nextIndex *)
     ///     lastIndex := nextIndex;
     let roundRobinScan (totalItems: int) (lastIndexVarName: string) (nextIndexVarName: string) : DsStmt list =
-        let lastIndexTag = DsTag.Create(lastIndexVarName, DsDataType.TInt)
-        let nextIndexTag = DsTag.Create(nextIndexVarName, DsDataType.TInt)
+        let lastIndexTag = DsTag.Create(lastIndexVarName, typeof<int>)
+        let nextIndexTag = DsTag.Create(nextIndexVarName, typeof<int>)
 
         // nextIndex := (lastIndex + 1) MOD totalItems
         let calculateNext =
@@ -547,9 +547,9 @@ module SequencePatterns =
                     Binary(
                         DsOp.Add,
                         Terminal lastIndexTag,
-                        Const(box 1, DsDataType.TInt)
+                        Const(box 1, typeof<int>)
                     ),
-                    Const(box totalItems, DsDataType.TInt)
+                    Const(box totalItems, typeof<int>)
                 )
             )
 

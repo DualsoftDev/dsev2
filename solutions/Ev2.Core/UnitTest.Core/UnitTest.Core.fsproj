@@ -15,10 +15,10 @@
 	  <EmbeddedResource Remove="Parser\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<Content Include="..\..\engine\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
+		<Content Include="..\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<None Include="..\..\engine\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
+		<None Include="..\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -45,9 +45,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\..\solutions\Ev2.Core\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
-		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 	</ItemGroup>
 
 </Project>

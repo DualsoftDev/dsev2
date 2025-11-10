@@ -35,13 +35,13 @@ module LoopExecutionTests =
     [<Fact>]
     let ``FOR loop - simple counting 0 to 4`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("sum", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("sum", typeof<int>)
         ctx.Memory.Set("sum", box 0)
 
         // FOR i := 0 TO 4 DO sum := sum + i END_FOR
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let sumVar = DsTag.Create("sum", DsDataType.TInt)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let sumVar = DsTag.Create("sum", typeof<int>)
 
         let body = [
             Assign(
@@ -59,9 +59,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 4, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 4, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 body
             )
 
@@ -73,13 +73,13 @@ module LoopExecutionTests =
     [<Fact>]
     let ``FOR loop - counting with step 2`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("count", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("count", typeof<int>)
         ctx.Memory.Set("count", box 0)
 
         // FOR i := 0 TO 10 BY 2 DO count := count + 1 END_FOR
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let countVar = DsTag.Create("count", DsDataType.TInt)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let countVar = DsTag.Create("count", typeof<int>)
 
         let body = [
             Assign(
@@ -88,7 +88,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal countVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -97,9 +97,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 10, DsDataType.TInt),
-                Some(Const(box 2, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 10, typeof<int>),
+                Some(Const(box 2, typeof<int>)),
                 body
             )
 
@@ -111,13 +111,13 @@ module LoopExecutionTests =
     [<Fact>]
     let ``FOR loop - reverse counting 10 to 0`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("product", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("product", typeof<int>)
         ctx.Memory.Set("product", box 1)
 
         // FOR i := 10 TO 0 BY -1 DO product := product * 2 END_FOR
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let productVar = DsTag.Create("product", DsDataType.TInt)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let productVar = DsTag.Create("product", typeof<int>)
 
         let body = [
             Assign(
@@ -126,7 +126,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Mul,
                     Terminal productVar,
-                    Const(box 2, DsDataType.TInt)
+                    Const(box 2, typeof<int>)
                 )
             )
         ]
@@ -135,9 +135,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 10, DsDataType.TInt),
-                Const(box 0, DsDataType.TInt),
-                Some(Const(box -1, DsDataType.TInt)),
+                Const(box 10, typeof<int>),
+                Const(box 0, typeof<int>),
+                Some(Const(box -1, typeof<int>)),
                 body
             )
 
@@ -149,13 +149,13 @@ module LoopExecutionTests =
     [<Fact>]
     let ``FOR loop - empty range`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("counter", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("counter", typeof<int>)
         ctx.Memory.Set("counter", box 0)
 
         // FOR i := 10 TO 0 DO counter := counter + 1 END_FOR (step = 1, 역방향이므로 실행 안 됨)
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let counterVar = DsTag.Create("counter", DsDataType.TInt)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let counterVar = DsTag.Create("counter", typeof<int>)
 
         let body = [
             Assign(
@@ -164,7 +164,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal counterVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -173,9 +173,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 10, DsDataType.TInt),
-                Const(box 0, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),  // step=1이지만 start > end
+                Const(box 10, typeof<int>),
+                Const(box 0, typeof<int>),
+                Some(Const(box 1, typeof<int>)),  // step=1이지만 start > end
                 body
             )
 
@@ -191,8 +191,8 @@ module LoopExecutionTests =
     [<Fact>]
     let ``WHILE loop - simple countdown`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("counter", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("sum", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("counter", typeof<int>)
+        ctx.Memory.DeclareLocal("sum", typeof<int>)
         ctx.Memory.Set("counter", box 5)
         ctx.Memory.Set("sum", box 0)
 
@@ -200,14 +200,14 @@ module LoopExecutionTests =
         //   sum := sum + counter;
         //   counter := counter - 1;
         // END_WHILE
-        let counterVar = DsTag.Create("counter", DsDataType.TInt)
-        let sumVar = DsTag.Create("sum", DsDataType.TInt)
+        let counterVar = DsTag.Create("counter", typeof<int>)
+        let sumVar = DsTag.Create("sum", typeof<int>)
 
         let condition =
             Binary(
                 DsOp.Gt,
                 Terminal counterVar,
-                Const(box 0, DsDataType.TInt)
+                Const(box 0, typeof<int>)
             )
 
         let body = [
@@ -226,7 +226,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Sub,
                     Terminal counterVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -241,16 +241,16 @@ module LoopExecutionTests =
     [<Fact>]
     let ``WHILE loop - condition false from start`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("executed", DsDataType.TBool)
+        ctx.Memory.DeclareLocal("executed", typeof<bool>)
         ctx.Memory.Set("executed", box false)
 
-        let condition = Const(box false, DsDataType.TBool)
+        let condition = Const(box false, typeof<bool>)
 
         let body = [
             Assign(
                 0,
-                DsTag.Create("executed", DsDataType.TBool),
-                Const(box true, DsDataType.TBool)
+                DsTag.Create("executed", typeof<bool>),
+                Const(box true, typeof<bool>)
             )
         ]
 
@@ -264,13 +264,13 @@ module LoopExecutionTests =
     [<Fact>]
     let ``WHILE loop - max iterations limit enforced`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("counter", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("counter", typeof<int>)
         ctx.Memory.Set("counter", box 0)
 
-        let counterVar = DsTag.Create("counter", DsDataType.TInt)
+        let counterVar = DsTag.Create("counter", typeof<int>)
 
         // Condition that's always true (potential infinite loop)
-        let condition = Const(box true, DsDataType.TBool)
+        let condition = Const(box true, typeof<bool>)
 
         let body = [
             Assign(
@@ -279,7 +279,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal counterVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -300,9 +300,9 @@ module LoopExecutionTests =
     [<Fact>]
     let ``BREAK - exit FOR loop early`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("sum", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("shouldBreak", DsDataType.TBool)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("sum", typeof<int>)
+        ctx.Memory.DeclareLocal("shouldBreak", typeof<bool>)
         ctx.Memory.Set("sum", box 0)
         ctx.Memory.Set("shouldBreak", box false)
 
@@ -311,9 +311,9 @@ module LoopExecutionTests =
         //   shouldBreak := (i >= 5);
         // END_FOR
         // Note: This tests that BREAK mechanism works by checking flag after loop
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let sumVar = DsTag.Create("sum", DsDataType.TInt)
-        let breakFlagVar = DsTag.Create("shouldBreak", DsDataType.TBool)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let sumVar = DsTag.Create("sum", typeof<int>)
+        let breakFlagVar = DsTag.Create("shouldBreak", typeof<bool>)
 
         let body = [
             Assign(
@@ -331,7 +331,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Ge,
                     Terminal loopVar,
-                    Const(box 5, DsDataType.TInt)
+                    Const(box 5, typeof<int>)
                 )
             )
         ]
@@ -340,9 +340,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 5, DsDataType.TInt),  // Limited range instead of conditional break
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 5, typeof<int>),  // Limited range instead of conditional break
+                Some(Const(box 1, typeof<int>)),
                 body
             )
 
@@ -354,10 +354,10 @@ module LoopExecutionTests =
     [<Fact>]
     let ``BREAK - exit WHILE loop early`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("counter", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("counter", typeof<int>)
         ctx.Memory.Set("counter", box 0)
 
-        let counterVar = DsTag.Create("counter", DsDataType.TInt)
+        let counterVar = DsTag.Create("counter", typeof<int>)
 
         // WHILE counter < 10 DO counter := counter + 1 END_WHILE
         // Tests limited iterations instead of conditional break
@@ -365,7 +365,7 @@ module LoopExecutionTests =
             Binary(
                 DsOp.Lt,
                 Terminal counterVar,
-                Const(box 10, DsDataType.TInt)
+                Const(box 10, typeof<int>)
             )
 
         let body = [
@@ -375,7 +375,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal counterVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -394,9 +394,9 @@ module LoopExecutionTests =
     [<Fact>]
     let ``Nested FOR loops - 2 levels`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("j", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("sum", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("j", typeof<int>)
+        ctx.Memory.DeclareLocal("sum", typeof<int>)
         ctx.Memory.Set("sum", box 0)
 
         // FOR i := 0 TO 2 DO
@@ -404,9 +404,9 @@ module LoopExecutionTests =
         //     sum := sum + 1
         //   END_FOR
         // END_FOR
-        let iVar = DsTag.Create("i", DsDataType.TInt)
-        let jVar = DsTag.Create("j", DsDataType.TInt)
-        let sumVar = DsTag.Create("sum", DsDataType.TInt)
+        let iVar = DsTag.Create("i", typeof<int>)
+        let jVar = DsTag.Create("j", typeof<int>)
+        let sumVar = DsTag.Create("sum", typeof<int>)
 
         let innerBody = [
             Assign(
@@ -415,7 +415,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal sumVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -424,9 +424,9 @@ module LoopExecutionTests =
             For(
                 0,
                 jVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 2, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 2, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 innerBody
             )
 
@@ -434,9 +434,9 @@ module LoopExecutionTests =
             For(
                 0,
                 iVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 2, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 2, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 [innerLoop]
             )
 
@@ -448,17 +448,17 @@ module LoopExecutionTests =
     [<Fact>]
     let ``Nested loops - limited inner iterations`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("j", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("outerCount", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("innerCount", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("j", typeof<int>)
+        ctx.Memory.DeclareLocal("outerCount", typeof<int>)
+        ctx.Memory.DeclareLocal("innerCount", typeof<int>)
         ctx.Memory.Set("outerCount", box 0)
         ctx.Memory.Set("innerCount", box 0)
 
-        let iVar = DsTag.Create("i", DsDataType.TInt)
-        let jVar = DsTag.Create("j", DsDataType.TInt)
-        let outerCountVar = DsTag.Create("outerCount", DsDataType.TInt)
-        let innerCountVar = DsTag.Create("innerCount", DsDataType.TInt)
+        let iVar = DsTag.Create("i", typeof<int>)
+        let jVar = DsTag.Create("j", typeof<int>)
+        let outerCountVar = DsTag.Create("outerCount", typeof<int>)
+        let innerCountVar = DsTag.Create("innerCount", typeof<int>)
 
         // Inner loop with limited range (0 to 2 = 3 iterations)
         let innerBody = [
@@ -468,7 +468,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal innerCountVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -477,9 +477,9 @@ module LoopExecutionTests =
             For(
                 0,
                 jVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 2, DsDataType.TInt),  // Limited to 3 iterations
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 2, typeof<int>),  // Limited to 3 iterations
+                Some(Const(box 1, typeof<int>)),
                 innerBody
             )
 
@@ -490,7 +490,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal outerCountVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
             innerLoop
@@ -500,9 +500,9 @@ module LoopExecutionTests =
             For(
                 0,
                 iVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 3, DsDataType.TInt),
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 3, typeof<int>),
+                Some(Const(box 1, typeof<int>)),
                 outerBody
             )
 
@@ -521,12 +521,12 @@ module LoopExecutionTests =
     [<Fact>]
     let ``Safety - iteration limit prevents infinite loops`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("counter", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("counter", typeof<int>)
         ctx.Memory.Set("counter", box 0)
 
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let counterVar = DsTag.Create("counter", DsDataType.TInt)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let counterVar = DsTag.Create("counter", typeof<int>)
 
         // Large loop that would execute many times
         let body = [
@@ -536,7 +536,7 @@ module LoopExecutionTests =
                 Binary(
                     DsOp.Add,
                     Terminal counterVar,
-                    Const(box 1, DsDataType.TInt)
+                    Const(box 1, typeof<int>)
                 )
             )
         ]
@@ -545,9 +545,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 999, DsDataType.TInt),  // 1000 iterations (within limit)
-                Some(Const(box 1, DsDataType.TInt)),
+                Const(box 0, typeof<int>),
+                Const(box 999, typeof<int>),  // 1000 iterations (within limit)
+                Some(Const(box 1, typeof<int>)),
                 body
             )
 
@@ -560,18 +560,18 @@ module LoopExecutionTests =
     [<Fact>]
     let ``Safety - zero step value handled gracefully`` () =
         let ctx = createTestContext()
-        ctx.Memory.DeclareLocal("i", DsDataType.TInt)
-        ctx.Memory.DeclareLocal("executed", DsDataType.TBool)
+        ctx.Memory.DeclareLocal("i", typeof<int>)
+        ctx.Memory.DeclareLocal("executed", typeof<bool>)
         ctx.Memory.Set("executed", box false)
 
-        let loopVar = DsTag.Create("i", DsDataType.TInt)
-        let executedVar = DsTag.Create("executed", DsDataType.TBool)
+        let loopVar = DsTag.Create("i", typeof<int>)
+        let executedVar = DsTag.Create("executed", typeof<bool>)
 
         let body = [
             Assign(
                 0,
                 executedVar,
-                Const(box true, DsDataType.TBool)
+                Const(box true, typeof<bool>)
             )
         ]
 
@@ -579,9 +579,9 @@ module LoopExecutionTests =
             For(
                 0,
                 loopVar,
-                Const(box 0, DsDataType.TInt),
-                Const(box 10, DsDataType.TInt),
-                Some(Const(box 0, DsDataType.TInt)),  // step = 0 would cause infinite loop
+                Const(box 0, typeof<int>),
+                Const(box 10, typeof<int>),
+                Some(Const(box 0, typeof<int>)),  // step = 0 would cause infinite loop
                 body
             )
 

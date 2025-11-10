@@ -17,9 +17,9 @@ module UserFBExamples =
 
     let example1_Pythagoras() =
         let builder = FCBuilder("Pythagoras")
-        builder.AddInput("a", DsDataType.TDouble)
-        builder.AddInput("b", DsDataType.TDouble)
-        builder.AddOutput("c", DsDataType.TDouble)
+        builder.AddInput("a", typeof<double>)
+        builder.AddInput("b", typeof<double>)
+        builder.AddOutput("c", typeof<double>)
 
         // c = sqrt(a^2 + b^2)
         let a = Terminal(DsTag.Double("a"))
@@ -40,10 +40,10 @@ module UserFBExamples =
 
     let example2_Average3() =
         let builder = FCBuilder("Average3")
-        builder.AddInput("value1", DsDataType.TDouble)
-        builder.AddInput("value2", DsDataType.TDouble)
-        builder.AddInput("value3", DsDataType.TDouble)
-        builder.AddOutput("average", DsDataType.TDouble)
+        builder.AddInput("value1", typeof<double>)
+        builder.AddInput("value2", typeof<double>)
+        builder.AddInput("value3", typeof<double>)
+        builder.AddOutput("average", typeof<double>)
 
         let v1 = Terminal(DsTag.Double("value1"))
         let v2 = Terminal(DsTag.Double("value2"))
@@ -64,10 +64,10 @@ module UserFBExamples =
 
     let example3_InRange() =
         let builder = FCBuilder("InRange")
-        builder.AddInput("value", DsDataType.TDouble)
-        builder.AddInput("min", DsDataType.TDouble)
-        builder.AddInput("max", DsDataType.TDouble)
-        builder.AddOutput("result", DsDataType.TBool)
+        builder.AddInput("value", typeof<double>)
+        builder.AddInput("min", typeof<double>)
+        builder.AddInput("max", typeof<double>)
+        builder.AddOutput("result", typeof<bool>)
 
         let value = Terminal(DsTag.Double("value"))
         let min = Terminal(DsTag.Double("min"))
@@ -88,14 +88,14 @@ module UserFBExamples =
     let example4_Counter() =
         let builder = FBBuilder("MyCounter")
 
-        builder.AddInput("countUp", DsDataType.TBool)
-        builder.AddInput("reset", DsDataType.TBool)
-        builder.AddInput("preset", DsDataType.TInt)
+        builder.AddInput("countUp", typeof<bool>)
+        builder.AddInput("reset", typeof<bool>)
+        builder.AddInput("preset", typeof<int>)
 
-        builder.AddOutput("count", DsDataType.TInt)
-        builder.AddOutput("done", DsDataType.TBool)
+        builder.AddOutput("count", typeof<int>)
+        builder.AddOutput("done", typeof<bool>)
 
-        builder.AddStaticWithInit("currentCount", DsDataType.TInt, box 0)
+        builder.AddStaticWithInit("currentCount", typeof<int>, box 0)
 
         // 리셋
         let reset = Terminal(DsTag.Bool("reset"))
@@ -113,8 +113,8 @@ module UserFBExamples =
         builder.AddStatement(incrementStmt)
 
         // 출력 설정
-        builder.AddStatement(assignAuto "count" DsDataType.TInt currentCount)
-        builder.AddStatement(assignAuto "done" DsDataType.TBool (ge currentCount preset))
+        builder.AddStatement(assignAuto "count" typeof<int> currentCount)
+        builder.AddStatement(assignAuto "done" typeof<bool> (ge currentCount preset))
 
         builder.SetDescription("상향 카운터 (리셋 기능 포함)")
         builder.Build()
@@ -126,14 +126,14 @@ module UserFBExamples =
     let example5_Blink() =
         let builder = FBBuilder("Blink")
 
-        builder.AddInput("enable", DsDataType.TBool)
-        builder.AddInput("onTime", DsDataType.TInt)     // ms
-        builder.AddInput("offTime", DsDataType.TInt)    // ms
+        builder.AddInput("enable", typeof<bool>)
+        builder.AddInput("onTime", typeof<int>)     // ms
+        builder.AddInput("offTime", typeof<int>)    // ms
 
-        builder.AddOutput("output", DsDataType.TBool)
+        builder.AddOutput("output", typeof<bool>)
 
-        builder.AddStaticWithInit("state", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("timer", DsDataType.TInt, box 0)
+        builder.AddStaticWithInit("state", typeof<bool>, box false)
+        builder.AddStaticWithInit("timer", typeof<int>, box 0)
 
         let enable = Terminal(DsTag.Bool("enable"))
         let state = Terminal(DsTag.Bool("state"))
@@ -177,7 +177,7 @@ module UserFBExamples =
                 (mov (intExpr 0) (DsTag.Int("timer"))))
 
         // 출력
-        builder.AddStatement(assignAuto "output" DsDataType.TBool state)
+        builder.AddStatement(assignAuto "output" typeof<bool> state)
 
         builder.SetDescription("점멸 타이머 (ON/OFF 시간 설정 가능)")
         builder.Build()
@@ -190,19 +190,19 @@ module UserFBExamples =
         let builder = FBBuilder("SimplePID")
 
         // 입력
-        builder.AddInput("enable", DsDataType.TBool)
-        builder.AddInput("setpoint", DsDataType.TDouble)      // 목표값
-        builder.AddInput("processValue", DsDataType.TDouble)  // 현재값
-        builder.AddInput("kp", DsDataType.TDouble)            // 비례 게인
-        builder.AddInput("ki", DsDataType.TDouble)            // 적분 게인
-        builder.AddInput("kd", DsDataType.TDouble)            // 미분 게인
+        builder.AddInput("enable", typeof<bool>)
+        builder.AddInput("setpoint", typeof<double>)      // 목표값
+        builder.AddInput("processValue", typeof<double>)  // 현재값
+        builder.AddInput("kp", typeof<double>)            // 비례 게인
+        builder.AddInput("ki", typeof<double>)            // 적분 게인
+        builder.AddInput("kd", typeof<double>)            // 미분 게인
 
         // 출력
-        builder.AddOutput("output", DsDataType.TDouble)       // 제어 출력
+        builder.AddOutput("output", typeof<double>)       // 제어 출력
 
         // 내부 상태
-        builder.AddStaticWithInit("integral", DsDataType.TDouble, box 0.0)
-        builder.AddStaticWithInit("lastError", DsDataType.TDouble, box 0.0)
+        builder.AddStaticWithInit("integral", typeof<double>, box 0.0)
+        builder.AddStaticWithInit("lastError", typeof<double>, box 0.0)
 
         let enable = Terminal(DsTag.Bool("enable"))
         let sp = Terminal(DsTag.Double("setpoint"))
@@ -212,19 +212,19 @@ module UserFBExamples =
         let kd = Terminal(DsTag.Double("kd"))
 
         // 임시 변수
-        builder.AddTemp("error", DsDataType.TDouble)
-        builder.AddTemp("pTerm", DsDataType.TDouble)
-        builder.AddTemp("iTerm", DsDataType.TDouble)
-        builder.AddTemp("dTerm", DsDataType.TDouble)
-        builder.AddTemp("result", DsDataType.TDouble)
+        builder.AddTemp("error", typeof<double>)
+        builder.AddTemp("pTerm", typeof<double>)
+        builder.AddTemp("iTerm", typeof<double>)
+        builder.AddTemp("dTerm", typeof<double>)
+        builder.AddTemp("result", typeof<double>)
 
         // 오차 계산
         let error = sub sp pv
-        builder.AddStatement(assignAuto "error" DsDataType.TDouble error)
+        builder.AddStatement(assignAuto "error" typeof<double> error)
 
         // P항
         let pTerm = mul (Terminal(DsTag.Double("error"))) kp
-        builder.AddStatement(assignAuto "pTerm" DsDataType.TDouble pTerm)
+        builder.AddStatement(assignAuto "pTerm" typeof<double> pTerm)
 
         // I항 (적분)
         let integral = Terminal(DsTag.Double("integral"))
@@ -232,13 +232,13 @@ module UserFBExamples =
         builder.AddStatement(when' enable (mov newIntegral (DsTag.Double("integral"))))
 
         let iTerm = mul integral ki
-        builder.AddStatement(assignAuto "iTerm" DsDataType.TDouble iTerm)
+        builder.AddStatement(assignAuto "iTerm" typeof<double> iTerm)
 
         // D항 (미분)
         let lastError = Terminal(DsTag.Double("lastError"))
         let derivative = sub (Terminal(DsTag.Double("error"))) lastError
         let dTerm = mul derivative kd
-        builder.AddStatement(assignAuto "dTerm" DsDataType.TDouble dTerm)
+        builder.AddStatement(assignAuto "dTerm" typeof<double> dTerm)
 
         // 이전 오차 저장
         builder.AddStatement(when' enable (mov (Terminal(DsTag.Double("error"))) (DsTag.Double("lastError"))))
@@ -246,11 +246,11 @@ module UserFBExamples =
         // 결과 = P + I + D
         let result = add (add (Terminal(DsTag.Double("pTerm"))) (Terminal(DsTag.Double("iTerm"))))
                          (Terminal(DsTag.Double("dTerm")))
-        builder.AddStatement(assignAuto "result" DsDataType.TDouble result)
+        builder.AddStatement(assignAuto "result" typeof<double> result)
 
         // 출력
         let finalOutput = Function("IF", [enable; Terminal(DsTag.Double("result")); doubleExpr 0.0])
-        builder.AddStatement(assignAuto "output" DsDataType.TDouble finalOutput)
+        builder.AddStatement(assignAuto "output" typeof<double> finalOutput)
 
         builder.SetDescription("간단한 PID 제어기")
         builder.Build()
@@ -263,22 +263,22 @@ module UserFBExamples =
         let builder = FBBuilder("ConveyorControl")
 
         // 입력
-        builder.AddInput("startButton", DsDataType.TBool)
-        builder.AddInput("stopButton", DsDataType.TBool)
-        builder.AddInput("emergency", DsDataType.TBool)
-        builder.AddInput("sensorStart", DsDataType.TBool)      // 시작 센서
-        builder.AddInput("sensorEnd", DsDataType.TBool)        // 끝 센서
-        builder.AddInput("overload", DsDataType.TBool)         // 과부하
+        builder.AddInput("startButton", typeof<bool>)
+        builder.AddInput("stopButton", typeof<bool>)
+        builder.AddInput("emergency", typeof<bool>)
+        builder.AddInput("sensorStart", typeof<bool>)      // 시작 센서
+        builder.AddInput("sensorEnd", typeof<bool>)        // 끝 센서
+        builder.AddInput("overload", typeof<bool>)         // 과부하
 
         // 출력
-        builder.AddOutput("motorRunning", DsDataType.TBool)
-        builder.AddOutput("alarmLight", DsDataType.TBool)
-        builder.AddOutput("productCount", DsDataType.TInt)
+        builder.AddOutput("motorRunning", typeof<bool>)
+        builder.AddOutput("alarmLight", typeof<bool>)
+        builder.AddOutput("productCount", typeof<int>)
 
         // 내부 상태
-        builder.AddStaticWithInit("running", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("alarm", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("count", DsDataType.TInt, box 0)
+        builder.AddStaticWithInit("running", typeof<bool>, box false)
+        builder.AddStaticWithInit("alarm", typeof<bool>, box false)
+        builder.AddStaticWithInit("count", typeof<int>, box 0)
 
         let start = Terminal(DsTag.Bool("startButton"))
         let stop = Terminal(DsTag.Bool("stopButton"))
@@ -316,9 +316,9 @@ module UserFBExamples =
         builder.AddStatement(incrementCount)
 
         // 출력 설정
-        builder.AddStatement(assignAuto "motorRunning" DsDataType.TBool (Terminal(DsTag.Bool("running"))))
-        builder.AddStatement(assignAuto "alarmLight" DsDataType.TBool alarm)
-        builder.AddStatement(assignAuto "productCount" DsDataType.TInt count)
+        builder.AddStatement(assignAuto "motorRunning" typeof<bool> (Terminal(DsTag.Bool("running"))))
+        builder.AddStatement(assignAuto "alarmLight" typeof<bool> alarm)
+        builder.AddStatement(assignAuto "productCount" typeof<int> count)
 
         builder.SetDescription("컨베이어 제어 (시작/정지/카운터)")
         builder.Build()
@@ -349,8 +349,8 @@ module UserFBExamples =
         let program = ProgramGen.ProgramBuilder("MainProgram")
 
         // FC 결과를 변수에 저장
-        program.AddLocal("hypotenuse", DsDataType.TDouble)
-        program.AddStatement(assignAuto "hypotenuse" DsDataType.TDouble resultExpr)
+        program.AddLocal("hypotenuse", typeof<double>)
+        program.AddStatement(assignAuto "hypotenuse" typeof<double> resultExpr)
 
         // FB 인스턴스 호출
         let motorCall =
@@ -376,21 +376,21 @@ module UserFBExamples =
         let builder = FBBuilder("ValveControl")
 
         // 입력
-        builder.AddInput("open", DsDataType.TBool)
-        builder.AddInput("close", DsDataType.TBool)
-        builder.AddInput("openTime", DsDataType.TInt)          // ms
-        builder.AddInput("closeTime", DsDataType.TInt)         // ms
+        builder.AddInput("open", typeof<bool>)
+        builder.AddInput("close", typeof<bool>)
+        builder.AddInput("openTime", typeof<int>)          // ms
+        builder.AddInput("closeTime", typeof<int>)         // ms
 
         // 출력
-        builder.AddOutput("valveOpen", DsDataType.TBool)
-        builder.AddOutput("valveClose", DsDataType.TBool)
-        builder.AddOutput("isOpening", DsDataType.TBool)
-        builder.AddOutput("isClosing", DsDataType.TBool)
-        builder.AddOutput("fullyOpen", DsDataType.TBool)
-        builder.AddOutput("fullyClosed", DsDataType.TBool)
+        builder.AddOutput("valveOpen", typeof<bool>)
+        builder.AddOutput("valveClose", typeof<bool>)
+        builder.AddOutput("isOpening", typeof<bool>)
+        builder.AddOutput("isClosing", typeof<bool>)
+        builder.AddOutput("fullyOpen", typeof<bool>)
+        builder.AddOutput("fullyClosed", typeof<bool>)
 
         // 내부 상태
-        builder.AddStaticWithInit("state", DsDataType.TInt, box 0)  // 0:closed, 1:opening, 2:open, 3:closing
+        builder.AddStaticWithInit("state", typeof<int>, box 0)  // 0:closed, 1:opening, 2:open, 3:closing
 
         let open' = Terminal(DsTag.Bool("open"))
         let close = Terminal(DsTag.Bool("close"))
@@ -421,16 +421,16 @@ module UserFBExamples =
             (mov (intExpr 0) (DsTag.Int("state"))))
 
         // 출력 설정
-        builder.AddStatement(assignAuto "valveOpen" DsDataType.TBool
+        builder.AddStatement(assignAuto "valveOpen" typeof<bool>
             (or' (eq state (intExpr 1)) (eq state (intExpr 2))))
 
-        builder.AddStatement(assignAuto "valveClose" DsDataType.TBool
+        builder.AddStatement(assignAuto "valveClose" typeof<bool>
             (or' (eq state (intExpr 0)) (eq state (intExpr 3))))
 
-        builder.AddStatement(assignAuto "isOpening" DsDataType.TBool (eq state (intExpr 1)))
-        builder.AddStatement(assignAuto "isClosing" DsDataType.TBool (eq state (intExpr 3)))
-        builder.AddStatement(assignAuto "fullyOpen" DsDataType.TBool (eq state (intExpr 2)))
-        builder.AddStatement(assignAuto "fullyClosed" DsDataType.TBool (eq state (intExpr 0)))
+        builder.AddStatement(assignAuto "isOpening" typeof<bool> (eq state (intExpr 1)))
+        builder.AddStatement(assignAuto "isClosing" typeof<bool> (eq state (intExpr 3)))
+        builder.AddStatement(assignAuto "fullyOpen" typeof<bool> (eq state (intExpr 2)))
+        builder.AddStatement(assignAuto "fullyClosed" typeof<bool> (eq state (intExpr 0)))
 
         builder.SetDescription("밸브 제어 (개폐 시간 포함)")
         builder.Build()

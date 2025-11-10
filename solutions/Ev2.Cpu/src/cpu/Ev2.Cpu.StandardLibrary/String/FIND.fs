@@ -25,11 +25,11 @@ module FIND =
         let builder = FCBuilder("FIND")
 
         // 입력
-        builder.AddInput("IN", DsDataType.TString)      // 검색 대상 문자열
-        builder.AddInput("IN2", DsDataType.TString)     // 찾을 부분 문자열
+        builder.AddInput("IN", typeof<string>)      // 검색 대상 문자열
+        builder.AddInput("IN2", typeof<string>)     // 찾을 부분 문자열
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TInt)       // 위치 (-1 = 찾지 못함)
+        builder.AddOutput("OUT", typeof<int>)       // 위치 (-1 = 찾지 못함)
 
         // 로직: OUT = FIND(IN, IN2)
         let inStr = Terminal(DsTag.String("IN"))

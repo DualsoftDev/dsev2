@@ -162,7 +162,7 @@ type FunctionParam = {
     /// 파라미터 이름
     Name: string
     /// 데이터 타입
-    DataType: DsDataType
+    DataType: Type
     /// 파라미터 방향
     Direction: ParamDirection
     /// 기본값 (옵션)
@@ -187,7 +187,7 @@ type FunctionParam = {
             Error (sprintf "Parameter name '%s' is a reserved keyword" this.Name)
         elif this.DefaultValue.IsSome then
             try
-                this.DataType.Validate(this.DefaultValue.Value) |> ignore
+                TypeHelpers.validateType this.DataType this.DefaultValue.Value |> ignore
                 Ok ()
             with ex ->
                 Error (sprintf "Default value type mismatch for parameter '%s': %s" this.Name ex.Message)
@@ -238,7 +238,7 @@ type UserFC = {
           Metadata = defaultArg metadata UserFCMetadata.Empty }
 
     /// 반환 타입 (첫 번째 출력 파라미터의 타입)
-    member this.ReturnType : DsDataType =
+    member this.ReturnType : Type =
         match this.Outputs with
         | { DataType = dataType } :: _ -> dataType
         | [] ->
@@ -289,9 +289,9 @@ type UserFB = {
     /// InOut 파라미터
     InOuts: FunctionParam list
     /// 내부 상태 변수 (Static)
-    Statics: (string * DsDataType * obj option) list
+    Statics: (string * Type * obj option) list
     /// 임시 변수 (Temp)
-    Temps: (string * DsDataType) list
+    Temps: (string * Type) list
     /// 블록 본문 (명령문 리스트)
     Body: DsStmt list
     /// 메타데이터
@@ -334,7 +334,7 @@ type UserFB = {
                             match initVal with
                             | Some v ->
                                 try
-                                    dt.Validate(v) |> ignore
+                                    TypeHelpers.validateType dt v |> ignore
                                     None
                                 with ex ->
                                     Some (Error (sprintf "Static variable '%s' initial value type mismatch: %s" name ex.Message))
@@ -386,11 +386,11 @@ type FBInstance = {
                 match initVal with
                 | Some v -> v
                 | None ->
-                    match dt with
-                    | DsDataType.TBool -> box false
-                    | DsDataType.TInt -> box 0
-                    | DsDataType.TDouble -> box 0.0
-                    | DsDataType.TString -> box ""
+                    if dt = typeof<bool> then box false
+                    elif dt = typeof<int> then box 0
+                    elif dt = typeof<double> then box 0.0
+                    elif dt = typeof<string> then box ""
+                    else box null
             (name, value))
         |> Map.ofList
 

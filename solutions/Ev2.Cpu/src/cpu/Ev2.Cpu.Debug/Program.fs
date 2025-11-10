@@ -478,9 +478,9 @@ let private runtimeUpdateUserFCTest (ctx: ExecutionContext) =
 
     // 초기 UserFC 등록
     let fc1 =
-        let input = FunctionParam.Create("X", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("Y", DsDataType.TInt, ParamDirection.Output)
-        let body = UParam("X", DsDataType.TInt)
+        let input = FunctionParam.Create("X", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("Y", typeof<int>, ParamDirection.Output)
+        let body = UParam("X", typeof<int>)
         UserFC.Create("AddOne", [input], [output], body)
 
     updateMgr.EnqueueUpdate(UpdateRequest.updateFC fc1)
@@ -490,9 +490,9 @@ let private runtimeUpdateUserFCTest (ctx: ExecutionContext) =
 
     // 런타임 중 UserFC 수정
     let fc2 =
-        let input = FunctionParam.Create("X", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("Y", DsDataType.TInt, ParamDirection.Output)
-        let body = UBinary(DsOp.Add, UParam("X", DsDataType.TInt), UConst(box 10, DsDataType.TInt))
+        let input = FunctionParam.Create("X", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("Y", typeof<int>, ParamDirection.Output)
+        let body = UBinary(DsOp.Add, UParam("X", typeof<int>), UConst(box 10, typeof<int>))
         UserFC.Create("AddOne", [input], [output], body)
 
     updateMgr.EnqueueUpdate(UpdateRequest.updateFC fc2)
@@ -522,12 +522,12 @@ let private runtimeUpdateUserFBTest (ctx: ExecutionContext) =
 
     // UserFB 생성
     let fb =
-        let input = FunctionParam.Create("Enable", DsDataType.TBool, ParamDirection.Input)
-        let output = FunctionParam.Create("Status", DsDataType.TBool, ParamDirection.Output)
-        let statics = [("Counter", DsDataType.TInt, None)]
+        let input = FunctionParam.Create("Enable", typeof<bool>, ParamDirection.Input)
+        let output = FunctionParam.Create("Status", typeof<bool>, ParamDirection.Output)
+        let statics = [("Counter", typeof<int>, None)]
         let temps = []
         let body = [
-            UAssign("Status", UParam("Enable", DsDataType.TBool))
+            UAssign("Status", UParam("Enable", typeof<bool>))
         ]
         UserFB.Create("SimpleController", [input], [output], [], statics, temps, body)
 
@@ -556,7 +556,7 @@ let private runtimeUpdateMemoryTest (ctx: ExecutionContext) =
     let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
 
     // 메모리 변수 선언 및 초기화
-    memory.DeclareLocal("RuntimeVar", DsDataType.TInt)
+    memory.DeclareLocal("RuntimeVar", typeof<int>)
     memory.Set("RuntimeVar", box 100)
 
     Thread.Sleep 100
@@ -591,15 +591,15 @@ let private runtimeBatchUpdateTest (ctx: ExecutionContext) =
 
     // 배치 업데이트: UserFC 2개 동시 등록
     let fc1 =
-        let input = FunctionParam.Create("A", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("B", DsDataType.TInt, ParamDirection.Output)
-        let body = UParam("A", DsDataType.TInt)
+        let input = FunctionParam.Create("A", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("B", typeof<int>, ParamDirection.Output)
+        let body = UParam("A", typeof<int>)
         UserFC.Create("BatchFC1", [input], [output], body)
 
     let fc2 =
-        let input = FunctionParam.Create("C", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("D", DsDataType.TInt, ParamDirection.Output)
-        let body = UParam("C", DsDataType.TInt)
+        let input = FunctionParam.Create("C", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("D", typeof<int>, ParamDirection.Output)
+        let body = UParam("C", typeof<int>)
         UserFC.Create("BatchFC2", [input], [output], body)
 
     let batchRequest = UpdateRequest.batch [
@@ -636,9 +636,9 @@ let private runtimeRollbackTest (ctx: ExecutionContext) =
 
     // 정상 UserFC 등록
     let validFC =
-        let input = FunctionParam.Create("X", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("Y", DsDataType.TInt, ParamDirection.Output)
-        let body = UParam("X", DsDataType.TInt)
+        let input = FunctionParam.Create("X", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("Y", typeof<int>, ParamDirection.Output)
+        let body = UParam("X", typeof<int>)
         UserFC.Create("ValidFC", [input], [output], body)
 
     updateMgr.EnqueueUpdate(UpdateRequest.updateFC validFC)
@@ -648,9 +648,9 @@ let private runtimeRollbackTest (ctx: ExecutionContext) =
 
     // 두 번째 정상 UserFC 등록 (이전에는 의도적으로 실패하는 FC였음)
     let secondFC =
-        let input = FunctionParam.Create("X", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("Y", DsDataType.TInt, ParamDirection.Output)
-        let body = UParam("X", DsDataType.TInt)
+        let input = FunctionParam.Create("X", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("Y", typeof<int>, ParamDirection.Output)
+        let body = UParam("X", typeof<int>)
         UserFC.Create("SecondFC", [input], [output], body)
 
     updateMgr.EnqueueUpdate(UpdateRequest.updateFC secondFC)
@@ -679,14 +679,14 @@ let private runtimeUpdateWithScanTest (ctx: ExecutionContext) =
 
     // 간단한 프로그램 생성
     let simpleProgram =
-        let inputs = [("TriggerUpdate", DsDataType.TBool)]
-        let outputs = [("UpdateApplied", DsDataType.TBool)]
+        let inputs = [("TriggerUpdate", typeof<bool>)]
+        let outputs = [("UpdateApplied", typeof<bool>)]
         let locals = []
         let body = [
             DsStmt.Assign(
                 0,
-                DsTag.Create("UpdateApplied", DsDataType.TBool),
-                DsExpr.Terminal(DsTag.Create("TriggerUpdate", DsDataType.TBool)))
+                DsTag.Create("UpdateApplied", typeof<bool>),
+                DsExpr.Terminal(DsTag.Create("TriggerUpdate", typeof<bool>)))
         ]
         { Statement.Program.Name = "UpdateTestProgram"
           Inputs = inputs
@@ -695,8 +695,8 @@ let private runtimeUpdateWithScanTest (ctx: ExecutionContext) =
           Body = body }
 
     // 메모리 초기화
-    memory.DeclareInput("TriggerUpdate", DsDataType.TBool)
-    memory.DeclareOutput("UpdateApplied", DsDataType.TBool)
+    memory.DeclareInput("TriggerUpdate", typeof<bool>)
+    memory.DeclareOutput("UpdateApplied", typeof<bool>)
     memory.SetInput("TriggerUpdate", box true)
 
     // 스캔 엔진 생성 (updateManager 연결)
@@ -714,9 +714,9 @@ let private runtimeUpdateWithScanTest (ctx: ExecutionContext) =
 
     // 런타임 중 UserFC 추가
     let fc =
-        let input = FunctionParam.Create("In", DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create("Out", DsDataType.TInt, ParamDirection.Output)
-        let body = UParam("In", DsDataType.TInt)
+        let input = FunctionParam.Create("In", typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create("Out", typeof<int>, ParamDirection.Output)
+        let body = UParam("In", typeof<int>)
         UserFC.Create("RuntimeFC", [input], [output], body)
 
     updateMgr.EnqueueUpdate(UpdateRequest.updateFC fc)
@@ -754,9 +754,9 @@ let private retainMemoryTest (ctx: ExecutionContext) =
     // Phase 1: 전원 ON - Retain 변수 선언 및 값 설정
     // ═══════════════════════════════════════════════════════════════
     let ctx1 = Context.create()
-    ctx1.Memory.DeclareLocal("RetainCounter", DsDataType.TInt, retain=true)
-    ctx1.Memory.DeclareLocal("RetainStatus", DsDataType.TBool, retain=true)
-    ctx1.Memory.DeclareLocal("TempValue", DsDataType.TInt, retain=false)
+    ctx1.Memory.DeclareLocal("RetainCounter", typeof<int>, retain=true)
+    ctx1.Memory.DeclareLocal("RetainStatus", typeof<bool>, retain=true)
+    ctx1.Memory.DeclareLocal("TempValue", typeof<int>, retain=false)
 
     ctx1.Memory.Set("RetainCounter", box 12345)
     ctx1.Memory.Set("RetainStatus", box true)
@@ -780,9 +780,9 @@ let private retainMemoryTest (ctx: ExecutionContext) =
     // Phase 3: 전원 ON - 새 컨텍스트 생성 및 복원
     // ═══════════════════════════════════════════════════════════════
     let ctx2 = Context.create()
-    ctx2.Memory.DeclareLocal("RetainCounter", DsDataType.TInt, retain=true)
-    ctx2.Memory.DeclareLocal("RetainStatus", DsDataType.TBool, retain=true)
-    ctx2.Memory.DeclareLocal("TempValue", DsDataType.TInt, retain=false)
+    ctx2.Memory.DeclareLocal("RetainCounter", typeof<int>, retain=true)
+    ctx2.Memory.DeclareLocal("RetainStatus", typeof<bool>, retain=true)
+    ctx2.Memory.DeclareLocal("TempValue", typeof<int>, retain=false)
 
     printfn "  Phase 3: Power ON - New context created"
 

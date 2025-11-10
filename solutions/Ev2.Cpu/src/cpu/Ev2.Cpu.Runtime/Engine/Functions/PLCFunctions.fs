@@ -29,15 +29,15 @@ module PLCFunctions =
             match args with
             | [ enable; (:? string as name); preset ] ->
                 // Always require explicit enable signal for proper rung control
-                let en = TypeConverter.toBool enable
+                let en = TypeHelpers.toBool enable
                 let p =
                     if en then
-                        TypeConverter.toInt preset
+                        TypeHelpers.toInt preset
                     else
                         // enable=false: preserve preset but don't parse if not needed
                         match preset with
                         | :? int as value -> value
-                        | _ -> TypeConverter.toInt preset
+                        | _ -> TypeHelpers.toInt preset
                 Context.updateTimerOn c name en p |> box
             | _ ->
                 Context.warning c "TON requires [enable, name, preset] - 2-arg form is deprecated"
@@ -49,11 +49,11 @@ module PLCFunctions =
         | Some c ->
             match args with
             | [ (:? string as name); preset ] ->
-                let p = TypeConverter.toInt preset
+                let p = TypeHelpers.toInt preset
                 Context.updateTimerOff c name true p |> box
             | [ enable; (:? string as name); preset ] ->
-                let en = TypeConverter.toBool enable
-                let p  = TypeConverter.toInt  preset
+                let en = TypeHelpers.toBool enable
+                let p  = TypeHelpers.toInt  preset
                 Context.updateTimerOff c name en p |> box
             | _ ->
                 Context.warning c "TOF received invalid arguments"
@@ -68,13 +68,13 @@ module PLCFunctions =
                 // 2-arg form: implicit trigger always true, use edge detection
                 let edgeName = name + "_tp_last_trigger"
                 let lastValue = c.Memory.Get(edgeName)
-                let lastTrigger = if isNull lastValue then false else TypeConverter.toBool lastValue
+                let lastTrigger = if isNull lastValue then false else TypeHelpers.toBool lastValue
                 let currentTrigger = true
                 // CRITICAL FIX (DEFECT-022-2): Must update edge flag AFTER reading it
                 // Previous code wrote true before reading, making lastTrigger always true after first scan
                 // Edge detection requires: read old → detect edge → write new
 
-                let p = TypeConverter.toInt preset
+                let p = TypeHelpers.toInt preset
                 // MAJOR FIX: Use ITimeProvider instead of Timebase for testability (GAP-007)
                 let now = c.TimeProvider.GetTimestamp()
                 let timer = c.Timers.GetOrAdd(name, fun _ -> TimerState.create p now)
@@ -111,15 +111,15 @@ module PLCFunctions =
                 ) |> box
             | [ trigger; (:? string as name); preset ] ->
                 // 3-arg form: explicit trigger with edge detection
-                let tr = TypeConverter.toBool trigger
+                let tr = TypeHelpers.toBool trigger
                 let edgeName = name + "_tp_last_trigger"
                 let lastValue = c.Memory.Get(edgeName)
-                let lastTrigger = if isNull lastValue then false else TypeConverter.toBool lastValue
+                let lastTrigger = if isNull lastValue then false else TypeHelpers.toBool lastValue
                 // CRITICAL FIX (DEFECT-022-3): Use SetForced for undeclared edge flags
                 // Previous code used Set(), raising VariableNotDeclared on first invocation
                 // SetForced auto-declares Internal variables (matching 2-arg form)
 
-                let p = TypeConverter.toInt preset
+                let p = TypeHelpers.toInt preset
                 // MAJOR FIX: Use ITimeProvider instead of Timebase for testability (GAP-007)
                 let now = c.TimeProvider.GetTimestamp()
                 let timer = c.Timers.GetOrAdd(name, fun _ -> TimerState.create p now)
@@ -167,7 +167,7 @@ module PLCFunctions =
                 // 2-arg form: each call is a count event (pulse the enable signal)
                 // Call with true to trigger count, then immediately set last state to false
                 // so next call will be a rising edge
-                let p = TypeConverter.toInt preset
+                let p = TypeHelpers.toInt preset
                 let result = Context.updateCounterUp c n true false p
                 // Reset the counter's LastCountInput to false so next call triggers another count
                 match c.Counters.TryGetValue(n) with
@@ -177,16 +177,16 @@ module PLCFunctions =
             | [ :? string as n; enable; preset ] ->
                 // CRITICAL FIX (DEFECT-021-7): This is the 3-arg legacy form - reset still hardcoded
                 // IEC 61131-3 requires 4-arg form: CTU(name, countUp, reset, preset)
-                let en = TypeConverter.toBool enable
-                let p = TypeConverter.toInt preset
+                let en = TypeHelpers.toBool enable
+                let p = TypeHelpers.toInt preset
                 Context.updateCounterUp c n en false p |> box
             | [ :? string as n; countUp; reset; preset ] ->
                 // CRITICAL FIX (DEFECT-021-7): Full IEC 61131-3 CTU signature
                 // CTU(CU, R, PV) → CTU(name, countUp, reset, preset)
                 // Previous code hardcoded reset to false, breaking state machines
-                let cu = TypeConverter.toBool countUp
-                let r = TypeConverter.toBool reset
-                let p = TypeConverter.toInt preset
+                let cu = TypeHelpers.toBool countUp
+                let r = TypeHelpers.toBool reset
+                let p = TypeHelpers.toInt preset
                 Context.updateCounterUp c n cu r p |> box
             | _ ->
                 Context.warning c "CTU requires [name; preset] or [name; countUp; reset; preset]"
@@ -200,7 +200,7 @@ module PLCFunctions =
             | [ :? string as n; preset ] ->
                 // 2-arg form: each call is a decrement event (pulse the down signal)
                 // Call with down=true to trigger decrement, then reset last state to false
-                let p = TypeConverter.toInt preset
+                let p = TypeHelpers.toInt preset
                 let result = Context.updateCounterDown c n true false p
                 // Reset the counter's LastCountInput to false so next call triggers another decrement
                 match c.Counters.TryGetValue(n) with
@@ -208,9 +208,9 @@ module PLCFunctions =
                 | false, _ -> ()
                 result |> box
             | [ :? string as n; down; load; preset ] ->
-                let downEdge = TypeConverter.toBool down
-                let loadSignal = TypeConverter.toBool load
-                let p = TypeConverter.toInt preset
+                let downEdge = TypeHelpers.toBool down
+                let loadSignal = TypeHelpers.toBool load
+                let p = TypeHelpers.toInt preset
                 Context.updateCounterDown c n downEdge loadSignal p |> box
             | _ ->
                 Context.warning c "CTD received invalid arguments"
@@ -224,10 +224,10 @@ module PLCFunctions =
         | Some c ->
             match args with
             | [ :? string as name; countUp; countDown; reset; preset ] ->
-                let cu = TypeConverter.toBool countUp
-                let cd = TypeConverter.toBool countDown
-                let r = TypeConverter.toBool reset
-                let p = TypeConverter.toInt preset
+                let cu = TypeHelpers.toBool countUp
+                let cd = TypeHelpers.toBool countDown
+                let r = TypeHelpers.toBool reset
+                let p = TypeHelpers.toInt preset
 
                 // Use unique naming for edge tracking: {name}_ctud_up and {name}_ctud_down
                 let upEdgeName = name + "_ctud_up"
@@ -246,8 +246,8 @@ module PLCFunctions =
                     // Get last edge states from memory
                     let lastUpValue = c.Memory.Get(upEdgeName)
                     let lastDownValue = c.Memory.Get(downEdgeName)
-                    let lastUp = if isNull lastUpValue then false else TypeConverter.toBool lastUpValue
-                    let lastDown = if isNull lastDownValue then false else TypeConverter.toBool lastDownValue
+                    let lastUp = if isNull lastUpValue then false else TypeHelpers.toBool lastUpValue
+                    let lastDown = if isNull lastDownValue then false else TypeHelpers.toBool lastDownValue
 
                     counter.Preset <- max 0 p
 

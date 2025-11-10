@@ -37,12 +37,12 @@
     <Compile Include="Call\CodeCall.fs" />
 
     <!-- ════════════════════════════════════════════════════════ -->
-    <!-- Loops: Loop Construction & Optimization                  -->
+    <!-- Loops: Loop Construction & Optimization (DISABLED - loops removed) -->
     <!-- ════════════════════════════════════════════════════════ -->
-    <Compile Include="Loops\LoopBuilder.fs" />
-    <Compile Include="Loops\LoopTransforms.fs" />
-    <Compile Include="Loops\ArrayPatterns.fs" />
-    <Compile Include="Loops\SequencePatterns.fs" />
+    <!-- <Compile Include="Loops\LoopBuilder.fs" /> -->
+    <!-- <Compile Include="Loops\LoopTransforms.fs" /> -->
+    <!-- <Compile Include="Loops\ArrayPatterns.fs" /> -->
+    <!-- <Compile Include="Loops\SequencePatterns.fs" /> -->
 
     <!-- ════════════════════════════════════════════════════════ -->
     <!-- Generation: Code Generation                              -->

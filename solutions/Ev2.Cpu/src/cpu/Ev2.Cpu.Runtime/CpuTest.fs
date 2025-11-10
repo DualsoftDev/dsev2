@@ -1,6 +1,5 @@
 namespace Ev2.Cpu.Runtime
 
-open type Ev2.Cpu.Core.DsDataType
 open System
 open System.Threading
 open System.Globalization
@@ -58,16 +57,16 @@ module ConveyorDemo =
         
         { Name = "Conveyor"
           Inputs =
-            [ "Start",     DsDataType.TBool
-              "Stop",      DsDataType.TBool
-              "EStop",     DsDataType.TBool
-              "Temp",      DsDataType.TDouble
-              "Threshold", DsDataType.TDouble
-              "Scale",     DsDataType.TDouble ]
+            [ "Start",     typeof<bool>
+              "Stop",      typeof<bool>
+              "EStop",     typeof<bool>
+              "Temp",      typeof<double>
+              "Threshold", typeof<double>
+              "Scale",     typeof<double> ]
           Outputs =
-            [ "Motor", DsDataType.TBool
-              "Alarm", DsDataType.TBool
-              "Speed", DsDataType.TDouble ]
+            [ "Motor", typeof<bool>
+              "Alarm", typeof<bool>
+              "Speed", typeof<double> ]
           Locals  = []
           Body =
             [ // 모터 래치 - 동일한 이름의 변수는 같은 객체 사용
@@ -96,16 +95,16 @@ module ConveyorDemo =
         let m = ctx.Memory
 
         // 초기값 설정 - 레지스트리에서 동일한 변수 사용
-        m.DeclareInput("Start", DsDataType.TBool);     m.SetInput("Start",     box false)
-        m.DeclareInput("Stop", DsDataType.TBool);      m.SetInput("Stop",      box false)
-        m.DeclareInput("EStop", DsDataType.TBool);     m.SetInput("EStop",     box false)
-        m.DeclareInput("Temp", DsDataType.TDouble);    m.SetInput("Temp",      box 25.0)
-        m.DeclareInput("Threshold", DsDataType.TDouble); m.SetInput("Threshold", box 60.0)
-        m.DeclareInput("Scale", DsDataType.TDouble);   m.SetInput("Scale",     box 0.1)
+        m.DeclareInput("Start", typeof<bool>);     m.SetInput("Start",     box false)
+        m.DeclareInput("Stop", typeof<bool>);      m.SetInput("Stop",      box false)
+        m.DeclareInput("EStop", typeof<bool>);     m.SetInput("EStop",     box false)
+        m.DeclareInput("Temp", typeof<double>);    m.SetInput("Temp",      box 25.0)
+        m.DeclareInput("Threshold", typeof<double>); m.SetInput("Threshold", box 60.0)
+        m.DeclareInput("Scale", typeof<double>);   m.SetInput("Scale",     box 0.1)
 
-        m.DeclareOutput("Motor", DsDataType.TBool);  m.Set("Motor", DsDataType.TBool.DefaultValue)
-        m.DeclareOutput("Alarm", DsDataType.TBool);  m.Set("Alarm", DsDataType.TBool.DefaultValue)
-        m.DeclareOutput("Speed", DsDataType.TDouble);m.Set("Speed", DsDataType.TDouble.DefaultValue)
+        m.DeclareOutput("Motor", typeof<bool>);  m.Set("Motor", TypeHelpers.getDefaultValue typeof<bool>)
+        m.DeclareOutput("Alarm", typeof<bool>);  m.Set("Alarm", TypeHelpers.getDefaultValue typeof<bool>)
+        m.DeclareOutput("Speed", typeof<double>);m.Set("Speed", TypeHelpers.getDefaultValue typeof<double>)
 
         use cts = new CancellationTokenSource()
         start(eng, cts.Token)
@@ -169,22 +168,22 @@ module TrafficLightDemo =
 
         { Name = "TrafficLight"
           Inputs =
-            [ "Start",    DsDataType.TBool
-              "EStop",    DsDataType.TBool
-              "T_RED",    DsDataType.TInt
-              "T_GREEN",  DsDataType.TInt
-              "T_YELLOW", DsDataType.TInt ]
+            [ "Start",    typeof<bool>
+              "EStop",    typeof<bool>
+              "T_RED",    typeof<int>
+              "T_GREEN",  typeof<int>
+              "T_YELLOW", typeof<int> ]
           Outputs =
-            [ "RED",    DsDataType.TBool
-              "YELLOW", DsDataType.TBool
-              "GREEN",  DsDataType.TBool ]
-          Locals  = [ "STATE", DsDataType.TInt ]
+            [ "RED",    typeof<bool>
+              "YELLOW", typeof<bool>
+              "GREEN",  typeof<bool> ]
+          Locals  = [ "STATE", typeof<int> ]
           Body =
               [
                 // 안전 우선: 비활성 시 모두 OFF
-                ((!!. active), Const(box false, DsDataType.TBool)) -~> "RED"
-                ((!!. active), Const(box false, DsDataType.TBool)) -~> "YELLOW"
-                ((!!. active), Const(box false, DsDataType.TBool)) -~> "GREEN"
+                ((!!. active), Const(box false, typeof<bool>)) -~> "RED"
+                ((!!. active), Const(box false, typeof<bool>)) -~> "YELLOW"
+                ((!!. active), Const(box false, typeof<bool>)) -~> "GREEN"
 
                 // 상태별 출력 - 이미 등록된 변수 재사용
                 redTag := (active &&. st 0)
@@ -194,13 +193,13 @@ module TrafficLightDemo =
                 // 상태 전이
                 // CRITICAL FIX (DEFECT-020-4): Updated TON to 3-arg form (enable, name, preset)
                 // Previous 2-arg form is deprecated and causes runtime errors
-                (active &&. st 0 &&. call "TON" [ Const(box true, DsDataType.TBool); str "TL_RED"    ; intVar "T_RED"    ])
+                (active &&. st 0 &&. call "TON" [ Const(box true, typeof<bool>); str "TL_RED"    ; intVar "T_RED"    ])
                   --> (call "MOV" [ num 1; strVar "STATE" ])
 
-                (active &&. st 1 &&. call "TON" [ Const(box true, DsDataType.TBool); str "TL_GREEN"  ; intVar "T_GREEN"  ])
+                (active &&. st 1 &&. call "TON" [ Const(box true, typeof<bool>); str "TL_GREEN"  ; intVar "T_GREEN"  ])
                   --> (call "MOV" [ num 2; strVar "STATE" ])
 
-                (active &&. st 2 &&. call "TON" [ Const(box true, DsDataType.TBool); str "TL_YELLOW" ; intVar "T_YELLOW" ])
+                (active &&. st 2 &&. call "TON" [ Const(box true, typeof<bool>); str "TL_YELLOW" ; intVar "T_YELLOW" ])
                   --> (call "MOV" [ num 0; strVar "STATE" ])
 
                 // EStop 시 즉시 상태 초기화
@@ -265,8 +264,8 @@ module TankLevelDemo =
         let alarmTag = DsTag.Bool "AlarmHi"
         
         { Name = "TankLevel"
-          Inputs  = [ "Enable", DsDataType.TBool; "Level", DsDataType.TDouble; "Set", DsDataType.TDouble ]
-          Outputs = [ "Valve", DsDataType.TBool;  "AlarmHi", DsDataType.TBool ]
+          Inputs  = [ "Enable", typeof<bool>; "Level", typeof<double>; "Set", typeof<double> ]
+          Outputs = [ "Valve", typeof<bool>;  "AlarmHi", typeof<bool> ]
           Locals  = []
           Body =
             [ valveTag   := (enableVar &&. (levelVar <<. setVar))
@@ -317,8 +316,8 @@ module FlasherDemo =
         let periodVar = intVar "Period"
         
         { Name="Flasher"
-          Inputs  = [ "BlinkEn", DsDataType.TBool; "Period", DsDataType.TInt ]
-          Outputs = [ "Lamp", DsDataType.TBool ]
+          Inputs  = [ "BlinkEn", typeof<bool>; "Period", typeof<int> ]
+          Outputs = [ "Lamp", typeof<bool> ]
           Locals  = []
           Body =
             [ // 주기 절반마다 true → Lamp := 해당 신호
@@ -370,9 +369,9 @@ module CounterDemo =
         let doneTag = DsTag.Bool "Done"
         
         { Name="Counter"
-          Inputs  = [ "Pulse", DsDataType.TBool; "Preset", DsDataType.TInt ]
-          Outputs = [ "Done", DsDataType.TBool ]
-          Locals  = [ "Count", DsDataType.TInt ]
+          Inputs  = [ "Pulse", typeof<bool>; "Preset", typeof<int> ]
+          Outputs = [ "Done", typeof<bool> ]
+          Locals  = [ "Count", typeof<int> ]
           Body =
             [ // 상승에지 카운트 - 3-인자 버전 사용 (counter_name, enable, preset)
               countTag := call "CTU" [ str "C1"; pulseVar; presetVar ]
@@ -457,28 +456,28 @@ module WorkflowSequenceDemo =
         
         { Name = "WorkflowSequence"
           Inputs =
-            [ "StartReset_Work1", DsDataType.TBool
-              "StartReset_W1", DsDataType.TBool
-              "Enable", DsDataType.TBool ]
+            [ "StartReset_Work1", typeof<bool>
+              "StartReset_W1", typeof<bool>
+              "Enable", typeof<bool> ]
           Outputs =
-            [ "Work1_Active", DsDataType.TBool
-              "W1_Active", DsDataType.TBool
-              "Device1_ADV", DsDataType.TBool
-              "Device1_RET", DsDataType.TBool
-              "Device2_ADV", DsDataType.TBool  
-              "Device2_RET", DsDataType.TBool ]
-          Locals  = 
-            [ "Work1_State", DsDataType.TInt
-              "W1_State", DsDataType.TInt
-              "Work1_Running", DsDataType.TBool
-              "W1_Running", DsDataType.TBool
-              "Work1_Complete", DsDataType.TBool
-              "W1_Complete", DsDataType.TBool ]
+            [ "Work1_Active", typeof<bool>
+              "W1_Active", typeof<bool>
+              "Device1_ADV", typeof<bool>
+              "Device1_RET", typeof<bool>
+              "Device2_ADV", typeof<bool>
+              "Device2_RET", typeof<bool> ]
+          Locals  =
+            [ "Work1_State", typeof<int>
+              "W1_State", typeof<int>
+              "Work1_Running", typeof<bool>
+              "W1_Running", typeof<bool>
+              "Work1_Complete", typeof<bool>
+              "W1_Complete", typeof<bool> ]
           Body =
             [
               // Work1 Running 플래그 제어
-              (startWork1Var &&. (work1StateVar ==. num 0) &&. (!!. (boolVar "Work1_Running"))) 
-                --> (call "MOV" [ Const(box true, DsDataType.TBool); strVar "Work1_Running" ])
+              (startWork1Var &&. (work1StateVar ==. num 0) &&. (!!. (boolVar "Work1_Running")))
+                --> (call "MOV" [ Const(box true, typeof<bool>); strVar "Work1_Running" ])
               
               (boolVar "Work1_Running" &&. (work1StateVar ==. num 0)) 
                 --> (call "MOV" [ num 1; strVar "Work1_State" ])
@@ -494,12 +493,12 @@ module WorkflowSequenceDemo =
                 --> (call "MOV" [ num 0; strVar "Work1_State" ])
               
               // Work1 완료 시 Running 플래그 해제
-              (boolVar "Work1_Running" &&. (work1StateVar ==. num 0) &&. call "TON" [ str "W1_COMPLETE_DELAY"; num 100 ]) 
-                --> (call "MOV" [ Const(box false, DsDataType.TBool); strVar "Work1_Running" ])
+              (boolVar "Work1_Running" &&. (work1StateVar ==. num 0) &&. call "TON" [ str "W1_COMPLETE_DELAY"; num 100 ])
+                --> (call "MOV" [ Const(box false, typeof<bool>); strVar "Work1_Running" ])
 
               // W1 Running 플래그 제어
-              (startW1Var &&. (w1StateVar ==. num 0) &&. (!!. (boolVar "W1_Running"))) 
-                --> (call "MOV" [ Const(box true, DsDataType.TBool); strVar "W1_Running" ])
+              (startW1Var &&. (w1StateVar ==. num 0) &&. (!!. (boolVar "W1_Running")))
+                --> (call "MOV" [ Const(box true, typeof<bool>); strVar "W1_Running" ])
               
               (boolVar "W1_Running" &&. (w1StateVar ==. num 0)) 
                 --> (call "MOV" [ num 1; strVar "W1_State" ])
@@ -517,8 +516,8 @@ module WorkflowSequenceDemo =
                 --> (call "MOV" [ num 0; strVar "W1_State" ])
               
               // W1 완료 시 Running 플래그 해제
-              (boolVar "W1_Running" &&. (w1StateVar ==. num 0) &&. call "TON" [ str "W1_W1_COMPLETE_DELAY"; num 100 ]) 
-                --> (call "MOV" [ Const(box false, DsDataType.TBool); strVar "W1_Running" ])
+              (boolVar "W1_Running" &&. (w1StateVar ==. num 0) &&. call "TON" [ str "W1_W1_COMPLETE_DELAY"; num 100 ])
+                --> (call "MOV" [ Const(box false, typeof<bool>); strVar "W1_Running" ])
 
               // 워크플로우 활성화 상태 - Running 플래그 기반
               work1ActiveTag := boolVar "Work1_Running"
@@ -529,8 +528,8 @@ module WorkflowSequenceDemo =
               w1CompleteTag := (boolVar "W1_Running" &&. (w1StateVar ==. num 5) &&. call "TON" [ str "W1_DEV2_RET_END"; num 1000 ])
 
               // 양방향 StartReset 제어
-              (boolVar "Work1_Complete") --> (call "MOV" [ Const(box true, DsDataType.TBool); strVar "StartReset_W1" ])
-              (boolVar "W1_Complete") --> (call "MOV" [ Const(box true, DsDataType.TBool); strVar "StartReset_Work1" ])
+              (boolVar "Work1_Complete") --> (call "MOV" [ Const(box true, typeof<bool>); strVar "StartReset_W1" ])
+              (boolVar "W1_Complete") --> (call "MOV" [ Const(box true, typeof<bool>); strVar "StartReset_Work1" ])
 
               // 디바이스 출력 매핑
               device1AdvTag := (boolVar "Work1_Running" &&. ((work1StateVar ==. num 1) ||. (work1StateVar ==. num 3)))

@@ -6,7 +6,7 @@ open Ev2.Cpu.Ast
 
 /// Options for parsing expressions
 type ParsingOptions = {
-    VariableResolver: (string -> DsDataType option) option
+    VariableResolver: (string -> Type option) option
     TreatAsTerminal: (string -> bool) option
     AllowMetadata: bool
 }
@@ -50,8 +50,8 @@ module Parser =
 
     let private resolveVariableType (options: ParsingOptions) (name: string) =
         match options.VariableResolver with
-        | Some resolver -> resolver name |> Option.defaultValue TString
-        | None -> TString
+        | Some resolver -> resolver name |> Option.defaultValue typeof<string>
+        | None -> typeof<string>
 
     let private isTerminal (options: ParsingOptions) (name: string) =
         match options.TreatAsTerminal with
@@ -100,19 +100,19 @@ module Parser =
         match cursor.Current.Type with
         | IntegerLiteral i ->
             cursor.Advance()
-            Ok (EConst(box i, TInt))
+            Ok (EConst(box i, typeof<int>))
 
         | DoubleLiteral d ->
             cursor.Advance()
-            Ok (EConst(box d, TDouble))
+            Ok (EConst(box d, typeof<double>))
 
         | StringLiteral s ->
             cursor.Advance()
-            Ok (EConst(box s, TString))
+            Ok (EConst(box s, typeof<string>))
 
         | BooleanLiteral b ->
             cursor.Advance()
-            Ok (EConst(box b, TBool))
+            Ok (EConst(box b, typeof<bool>))
 
         | Identifier name ->
             cursor.Advance()
@@ -188,7 +188,7 @@ module Parser =
                     Ok expr
 
     /// Parse expression with variable type table
-    let parseWithTypeTable (text: string) (typeTable: System.Collections.Generic.IDictionary<string, DsDataType>) : ParseResult<DsExpr> =
+    let parseWithTypeTable (text: string) (typeTable: System.Collections.Generic.IDictionary<string, Type>) : ParseResult<DsExpr> =
         let resolver name =
             match typeTable.TryGetValue name with
             | true, typ -> Some typ
@@ -205,14 +205,14 @@ module Parser =
 module ParsingHelpers =
 
     /// Create a type table from variable definitions
-    let createTypeTable (variables: (string * DsDataType) seq) =
-        let dict = System.Collections.Generic.Dictionary<string, DsDataType>()
+    let createTypeTable (variables: (string * Type) seq) =
+        let dict = System.Collections.Generic.Dictionary<string, Type>()
         for (name, typ) in variables do
             dict.[name] <- typ
         dict
 
     /// Parse and validate expression
-    let parseAndValidate (text: string) (typeTable: System.Collections.Generic.IDictionary<string, DsDataType>) : ParseResult<DsExpr> =
+    let parseAndValidate (text: string) (typeTable: System.Collections.Generic.IDictionary<string, Type>) : ParseResult<DsExpr> =
         match Parser.parseWithTypeTable text typeTable with
         | Error e -> Error e
         | Ok expr ->
@@ -230,7 +230,7 @@ module ParsingHelpers =
             Ok (expr, unknownVariables)
 
     /// Batch parse multiple expressions
-    let parseMultiple (expressions: string list) (typeTable: System.Collections.Generic.IDictionary<string, DsDataType>) : ParseResult<DsExpr list> =
+    let parseMultiple (expressions: string list) (typeTable: System.Collections.Generic.IDictionary<string, Type>) : ParseResult<DsExpr list> =
         let rec parseAll remaining acc =
             match remaining with
             | [] -> Ok (List.rev acc)

@@ -100,9 +100,9 @@ let ``ScopeManager - UserFC의 모든 변수에 스코프 적용`` () =
     let manager = ScopeManager()
 
     let builder = FCBuilder("MathFC")
-    builder.AddInput("scope_a", DsDataType.TInt)
-    builder.AddInput("scope_b", DsDataType.TInt)
-    builder.AddOutput("scope_result", DsDataType.TInt)
+    builder.AddInput("scope_a", typeof<int>)
+    builder.AddInput("scope_b", typeof<int>)
+    builder.AddOutput("scope_result", typeof<int>)
     builder.SetBody(add (Terminal(DsTag.Int("scope_a"))) (Terminal(DsTag.Int("scope_b"))))
 
     match builder.Build() with
@@ -124,9 +124,9 @@ let ``ScopeManager - UserFB 인스턴스의 모든 변수에 스코프 적용`` 
     let manager = ScopeManager()
 
     let builder = FBBuilder("MotorFB")
-    builder.AddInput("scope_start", DsDataType.TBool)
-    builder.AddOutput("scope_running", DsDataType.TBool)
-    builder.AddStaticWithInit("scope_state", DsDataType.TBool, box false)
+    builder.AddInput("scope_start", typeof<bool>)
+    builder.AddOutput("scope_running", typeof<bool>)
+    builder.AddStaticWithInit("scope_state", typeof<bool>, box false)
 
     let stmt = Assign(0, DsTag.Bool("scope_running"), Terminal(DsTag.Bool("scope_state")))
     builder.AddStatement(stmt)

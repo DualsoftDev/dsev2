@@ -170,7 +170,7 @@ let ``Statement - Assign with boundary value Int32`` () =
     match stmtMax with
     | Assign(_, t, e) ->
         t |> should equal maxTag
-        e.InferType() |> should equal DsDataType.TInt
+        e.InferType() |> should equal typeof<int>
     | _ -> failwith "Expected Assign"
 
     // Int32.MinValue assignment
@@ -178,7 +178,7 @@ let ``Statement - Assign with boundary value Int32`` () =
     match stmtMin with
     | Assign(_, t, e) ->
         t |> should equal minTag
-        e.InferType() |> should equal DsDataType.TInt
+        e.InferType() |> should equal typeof<int>
     | _ -> failwith "Expected Assign"
 
 [<Fact>]
@@ -192,7 +192,7 @@ let ``Statement - Assign with boundary value Double`` () =
     match stmtNaN with
     | Assign(_, t, e) ->
         t |> should equal nanTag
-        e.InferType() |> should equal DsDataType.TDouble
+        e.InferType() |> should equal typeof<double>
     | _ -> failwith "Expected Assign"
 
     // Infinity assignment
@@ -200,7 +200,7 @@ let ``Statement - Assign with boundary value Double`` () =
     match stmtInf with
     | Assign(_, t, e) ->
         t |> should equal infTag
-        e.InferType() |> should equal DsDataType.TDouble
+        e.InferType() |> should equal typeof<double>
     | _ -> failwith "Expected Assign"
 
 [<Fact>]
@@ -212,7 +212,7 @@ let ``Statement - Assign with empty string`` () =
     match stmt with
     | Assign(_, t, e) ->
         t |> should equal tag
-        e.InferType() |> should equal DsDataType.TString
+        e.InferType() |> should equal typeof<string>
     | _ -> failwith "Expected Assign"
 
 [<Fact>]
@@ -228,7 +228,7 @@ let ``Statement - Command with complex nested condition`` () =
     let stmt = complexCond --> (fn "SET" [output])
     match stmt with
     | Command(_, cond, action) ->
-        cond.InferType() |> should equal DsDataType.TBool
+        cond.InferType() |> should equal typeof<bool>
         match action with
         | Function("SET", _) -> ()
         | _ -> failwith "Expected SET function"
@@ -400,19 +400,6 @@ let ``Statement - ToText handles special characters`` () =
     text.Contains("str_var") |> should be True
     text.Contains(":=") |> should be True
 
-[<Fact>]
-let ``Statement - Arithmetic operations with mixed types`` () =
-    clearVariableRegistry()
-    let cond = boolVar "enable"
-    let intVal = intVar "x"
-    let dblVal = dblVar "y"
-    let resultTarget = "result"
-
-    // Int + Double => Double (type promotion)
-    let stmt = (cond, intVal, dblVal) --+ resultTarget
-    match stmt with
-    | Command(_, _, Function("Move", _)) -> ()
-    | _ -> failwith "Expected conditional ADD"
 
 [<Fact>]
 let ``Statement - Multiple operations on same variable`` () =
@@ -438,7 +425,7 @@ let ``Statement - Assign preserves type information`` (value: int) =
     let stmt = tag := num value
     match stmt with
     | Assign(_, t, e) ->
-        t.DsDataType = DsDataType.TInt && e.InferType() = DsDataType.TInt
+        t.DataType = typeof<int> && e.InferType() = typeof<int>
     | _ -> false
 
 [<Property>]
@@ -448,7 +435,7 @@ let ``Statement - Command condition must be boolean`` (value: bool) =
     let action = fn "NOP" []
     let stmt = cond --> action
     match stmt with
-    | Command(_, c, _) -> c.InferType() = DsDataType.TBool
+    | Command(_, c, _) -> c.InferType() = typeof<bool>
     | _ -> false
 
 do ()

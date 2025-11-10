@@ -21,7 +21,7 @@ type DsFormula = {
     /// <summary>실행할 스테이트먼트 목록</summary>
     Statements: DsStatement list
     /// <summary>변수 타입 정보 (변수 이름 -> 타입)</summary>
-    Variables: Map<string, DsDataType>
+    Variables: Map<string, Type>
     /// <summary>버전 번호 (수정 시 증가)</summary>
     Version: int
     /// <summary>생성 일시 (UTC)</summary>
@@ -40,8 +40,10 @@ with
     /// <param name="tags">태그 집합 (optional, 기본값: 빈 Set)</param>
     /// <returns>생성된 DsFormula</returns>
     /// <exception cref="System.ArgumentException">scopePath, key, statements가 유효하지 않은 경우</exception>
-    static member Create(scopePath: string, key: string, statements: DsStatement list, ?variables: Map<string, DsDataType>, ?tags: Set<string>) =
-        TypeValidator.validateScopePath scopePath
+    static member Create(scopePath: string, key: string, statements: DsStatement list, ?variables: Map<string, Type>, ?tags: Set<string>) =
+        // Validate scope path (simple validation)
+        if String.IsNullOrWhiteSpace scopePath then
+            invalidArg "scopePath" "ScopePath cannot be empty"
         
         if String.IsNullOrWhiteSpace key then
             invalidArg "key" "Key cannot be empty"
@@ -76,7 +78,7 @@ with
     /// <param name="typ">데이터 타입</param>
     /// <returns>변수가 추가/갱신된 새 DsFormula</returns>
     /// <exception cref="System.ArgumentException">name이 비어있는 경우</exception>
-    member this.WithVariable(name: string, typ: DsDataType) =
+    member this.WithVariable(name: string, typ: Type) =
         if String.IsNullOrWhiteSpace name then
             invalidArg "name" "Variable name cannot be empty"
         { this with Variables = Map.add name typ this.Variables }
@@ -84,7 +86,7 @@ with
     /// <summary>여러 변수 타입 정보 추가</summary>
     /// <param name="variables">변수 목록 (이름, 타입) 쌍</param>
     /// <returns>변수들이 추가/갱신된 새 DsFormula</returns>
-    member this.WithVariables(variables: (string * DsDataType) seq) =
+    member this.WithVariables(variables: (string * Type) seq) =
         let newVars = variables |> Map.ofSeq
         { this with Variables = Map.fold (fun acc k v -> Map.add k v acc) this.Variables newVars }
 
@@ -274,7 +276,7 @@ type InMemoryFormulaStore() =
 /// <example>
 /// <code>
 /// let builder = FormulaBuilder("System.PLC01", "MyFormula")
-/// builder.Assign("OUT1", TBool, EVar("IN1"))
+/// builder.Assign("OUT1", typeof<bool>, EVar("IN1"))
 /// builder.Tag("control")
 /// let formula = builder.Build()
 /// </code>
@@ -290,7 +292,7 @@ type FormulaBuilder(scopePath: string, key: string) =
     /// <param name="targetName">대상 변수 이름</param>
     /// <param name="targetType">대상 변수 타입</param>
     /// <param name="condition">할당할 표현식</param>
-    member _.Assign(targetName: string, targetType: DsDataType, condition: DsExpr) =
+    member _.Assign(targetName: string, targetType: Type, condition: DsExpr) =
         let stmt = StmtBuilder.assign targetName targetType condition
         statements <- stmt :: statements
 
@@ -300,7 +302,7 @@ type FormulaBuilder(scopePath: string, key: string) =
     /// <param name="coilName">코일 이름</param>
     /// <param name="coilType">코일 타입</param>
     /// <param name="selfHold">자기 유지(Self-hold) 여부</param>
-    member _.Coil(setCond: DsExpr, resetCond: DsExpr, coilName: string, coilType: DsDataType, selfHold: bool) =
+    member _.Coil(setCond: DsExpr, resetCond: DsExpr, coilName: string, coilType: Type, selfHold: bool) =
         let stmt = StmtBuilder.coil coilName coilType setCond resetCond selfHold
         statements <- stmt :: statements
 
@@ -332,12 +334,12 @@ type FormulaBuilder(scopePath: string, key: string) =
     /// <summary>변수 타입 정보 추가</summary>
     /// <param name="name">변수 이름</param>
     /// <param name="typ">데이터 타입</param>
-    member _.Variable(name: string, typ: DsDataType) =
+    member _.Variable(name: string, typ: Type) =
         variables <- Map.add name typ variables
 
     /// <summary>여러 변수 타입 정보 추가</summary>
     /// <param name="vars">변수 목록 (이름, 타입) 쌍</param>
-    member _.Variables(vars: (string * DsDataType) seq) =
+    member _.Variables(vars: (string * Type) seq) =
         variables <- vars |> Seq.fold (fun acc (name, typ) -> Map.add name typ acc) variables
 
     /// <summary>작성자 설정</summary>

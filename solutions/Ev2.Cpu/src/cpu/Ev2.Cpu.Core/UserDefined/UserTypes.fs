@@ -16,22 +16,22 @@ open Ev2.Cpu.Core
 type UserExpr =
     /// 상수 값
     /// 예: 123, 45.67, TRUE, "Hello"
-    | UConst of value:obj * dataType:DsDataType
+    | UConst of value:obj * dataType:Type
 
     /// 파라미터 참조 (Input/Output/InOut)
     /// FC/FB의 파라미터를 참조
-    /// 예: UParam("temperature", TDouble)
-    | UParam of name:string * dataType:DsDataType
+    /// 예: UParam("temperature", typeof<double>)
+    | UParam of name:string * dataType:Type
 
     /// Static 변수 참조 (FB only)
     /// FB의 상태 변수를 참조
-    /// 예: UStatic("counter", TInt)
-    | UStatic of name:string * dataType:DsDataType
+    /// 예: UStatic("counter", typeof<int>)
+    | UStatic of name:string * dataType:Type
 
     /// Temp 변수 참조 (FB only)
     /// FB의 임시 변수를 참조
-    /// 예: UTemp("tempResult", TDouble)
-    | UTemp of name:string * dataType:DsDataType
+    /// 예: UTemp("tempResult", typeof<double>)
+    | UTemp of name:string * dataType:Type
 
     /// 단항 연산
     /// 예: NOT start, -value
@@ -43,7 +43,7 @@ type UserExpr =
 
     /// Built-in 함수 호출
     /// 시스템 제공 함수 (ABS, MAX, TON 등)
-    /// 예: UCall("ABS", [UParam("value", TDouble)])
+    /// 예: UCall("ABS", [UParam("value", typeof<double>)])
     | UCall of funcName:string * args:UserExpr list
 
     /// 다른 UserFC 호출
@@ -57,7 +57,7 @@ type UserExpr =
 
     with
         /// 표현식의 타입 추론
-        member this.InferType() : DsDataType option =
+        member this.InferType() : Type option =
             match this with
             | UConst(_, dt) -> Some dt
             | UParam(_, dt) -> Some dt
@@ -66,7 +66,7 @@ type UserExpr =
 
             | UUnary(op, expr) ->
                 match op with
-                | DsOp.Not | DsOp.Rising | DsOp.Falling -> Some DsDataType.TBool
+                | DsOp.Not | DsOp.Rising | DsOp.Falling -> Some typeof<bool>
                 | _ -> expr.InferType()
 
             | UBinary(op, left, right) ->
@@ -74,23 +74,26 @@ type UserExpr =
                 let rightType = right.InferType()
                 match op with
                 // 논리 연산: BOOL
-                | DsOp.And | DsOp.Or | DsOp.Xor -> Some DsDataType.TBool
+                | DsOp.And | DsOp.Or | DsOp.Xor -> Some typeof<bool>
                 // 비교 연산: BOOL
-                | DsOp.Eq | DsOp.Ne | DsOp.Gt | DsOp.Ge | DsOp.Lt | DsOp.Le -> Some DsDataType.TBool
+                | DsOp.Eq | DsOp.Ne | DsOp.Gt | DsOp.Ge | DsOp.Lt | DsOp.Le -> Some typeof<bool>
                 // 산술 연산: 타입 승격
                 | DsOp.Add ->
                     // Add는 문자열 연결도 지원
                     match leftType, rightType with
-                    | Some DsDataType.TString, _ | _, Some DsDataType.TString -> Some DsDataType.TString
-                    | Some DsDataType.TDouble, _ | _, Some DsDataType.TDouble -> Some DsDataType.TDouble
-                    | Some DsDataType.TInt, Some DsDataType.TInt -> Some DsDataType.TInt
+                    | Some t, _ when t = typeof<string> -> Some typeof<string>
+                    | _, Some t when t = typeof<string> -> Some typeof<string>
+                    | Some t, _ when t = typeof<double> -> Some typeof<double>
+                    | _, Some t when t = typeof<double> -> Some typeof<double>
+                    | Some t1, Some t2 when t1 = typeof<int> && t2 = typeof<int> -> Some typeof<int>
                     | _ -> None
                 | DsOp.Sub | DsOp.Mul | DsOp.Div | DsOp.Pow ->
                     match leftType, rightType with
-                    | Some DsDataType.TDouble, _ | _, Some DsDataType.TDouble -> Some DsDataType.TDouble
-                    | Some DsDataType.TInt, Some DsDataType.TInt -> Some DsDataType.TInt
+                    | Some t, _ when t = typeof<double> -> Some typeof<double>
+                    | _, Some t when t = typeof<double> -> Some typeof<double>
+                    | Some t1, Some t2 when t1 = typeof<int> && t2 = typeof<int> -> Some typeof<int>
                     | _ -> None
-                | DsOp.Mod -> Some DsDataType.TInt
+                | DsOp.Mod -> Some typeof<int>
                 | _ -> None
 
             | UCall(name, _) ->
@@ -109,11 +112,16 @@ type UserExpr =
         member this.ToText() : string =
             match this with
             | UConst(v, dt) ->
-                match dt with
-                | DsDataType.TBool -> if (v :?> bool) then "TRUE" else "FALSE"
-                | DsDataType.TInt -> sprintf "%d" (v :?> int)
-                | DsDataType.TDouble -> sprintf "%f" (v :?> float)
-                | DsDataType.TString -> sprintf "\"%s\"" (v :?> string)
+                if dt = typeof<bool> then
+                    if (v :?> bool) then "TRUE" else "FALSE"
+                elif dt = typeof<int> then
+                    sprintf "%d" (v :?> int)
+                elif dt = typeof<double> then
+                    sprintf "%f" (v :?> float)
+                elif dt = typeof<string> then
+                    sprintf "\"%s\"" (v :?> string)
+                else
+                    string v
 
             | UParam(name, _) -> name
             | UStatic(name, _) -> name
@@ -164,7 +172,7 @@ type UserStmt =
 
     /// 조건부 실행
     /// condition이 TRUE일 때 action 실행
-    /// 예: UWhen(UParam("enable", TBool), UAssign("output", value))
+    /// 예: UWhen(UParam("enable", typeof<bool>), UAssign("output", value))
     | UWhen of condition:UserExpr * action:UserStmt
 
     /// 명령문 시퀀스
@@ -176,25 +184,6 @@ type UserStmt =
     /// 다른 FB의 인스턴스를 호출
     /// 예: UFBCall("Motor1", "MotorControl", inputs)
     | UFBCall of instanceName:string * fbName:string * inputs:Map<string, UserExpr>
-
-    /// FOR 반복문
-    /// loopVar: 루프 변수 (이름과 타입)
-    /// startExpr, endExpr, stepExpr: 시작/종료/증분 표현식
-    /// body: 루프 본문 명령문 리스트
-    /// 예: UFor(("i", TInt), UConst(0), UConst(9), Some(UConst(1)), [stmt1; stmt2])
-    | UFor of loopVar:(string * DsDataType) * startExpr:UserExpr * endExpr:UserExpr * stepExpr:UserExpr option * body:UserStmt list
-
-    /// WHILE 반복문
-    /// condition: 루프 조건 (BOOL)
-    /// body: 루프 본문 명령문 리스트
-    /// maxIterations: 최대 반복 횟수 (안전성)
-    /// 예: UWhile(UParam("running", TBool), [stmt1; stmt2], Some(1000))
-    | UWhile of condition:UserExpr * body:UserStmt list * maxIterations:int option
-
-    /// 반복문 탈출
-    /// 가장 가까운 FOR/WHILE 루프에서 탈출
-    /// 예: UBreak
-    | UBreak
 
     /// NOOP (아무 동작 안함)
     /// 플레이스홀더 또는 최적화로 제거된 명령문
@@ -217,27 +206,6 @@ type UserStmt =
                     |> Seq.map (fun (k, v) -> sprintf "%s := %s" k (v.ToText()))
                     |> String.concat ", "
                 sprintf "%s(%s);" inst inputsText
-            | UFor((loopVarName, _), startExpr, endExpr, stepExpr, body) ->
-                let stepText =
-                    match stepExpr with
-                    | Some step -> sprintf " BY %s" (step.ToText())
-                    | None -> ""
-                let bodyText =
-                    body
-                    |> List.map (fun s -> "  " + s.ToText())
-                    |> String.concat "\n"
-                sprintf "FOR %s := %s TO %s%s DO\n%s\nEND_FOR;" loopVarName (startExpr.ToText()) (endExpr.ToText()) stepText bodyText
-            | UWhile(condition, body, maxIterations) ->
-                let maxText =
-                    match maxIterations with
-                    | Some max -> sprintf " (max: %d)" max
-                    | None -> ""
-                let bodyText =
-                    body
-                    |> List.map (fun s -> "  " + s.ToText())
-                    |> String.concat "\n"
-                sprintf "WHILE %s%s DO\n%s\nEND_WHILE;" (condition.ToText()) maxText bodyText
-            | UBreak -> "BREAK;"
             | UNoop -> ""
 
         /// 명령문에 포함된 모든 변수 이름 추출
@@ -250,19 +218,6 @@ type UserStmt =
                 | UFBCall(inst, _, inputs) ->
                     let inputVars = inputs |> Map.toSeq |> Seq.map snd |> Seq.fold (fun s e -> Set.union s (e.GetVariables())) Set.empty
                     Set.add inst (Set.union acc inputVars)
-                | UFor((loopVarName, _), startExpr, endExpr, stepExpr, body) ->
-                    // Loop variable + variables in start/end/step expressions + body variables
-                    let startVars = startExpr.GetVariables()
-                    let endVars = endExpr.GetVariables()
-                    let stepVars = stepExpr |> Option.map (fun e -> e.GetVariables()) |> Option.defaultValue Set.empty
-                    let bodyVars = body |> List.fold collect Set.empty
-                    Set.unionMany [Set.singleton loopVarName; acc; startVars; endVars; stepVars; bodyVars]
-                | UWhile(condition, body, _) ->
-                    // Condition variables + body variables
-                    let condVars = condition.GetVariables()
-                    let bodyVars = body |> List.fold collect Set.empty
-                    Set.unionMany [acc; condVars; bodyVars]
-                | UBreak -> acc
                 | UNoop -> acc
             collect Set.empty this
 
@@ -274,12 +229,6 @@ type UserStmt =
                 | UWhen(cond, action) -> 1 + cond.Complexity() + count action
                 | USequence(stmts) -> 1 + (stmts |> List.sumBy count)
                 | UFBCall(_, _, inputs) -> 1 + (inputs |> Map.toSeq |> Seq.sumBy (snd >> (fun e -> e.Complexity())))
-                | UFor(_, startExpr, endExpr, stepExpr, body) ->
-                    let stepComplexity = stepExpr |> Option.map (fun e -> e.Complexity()) |> Option.defaultValue 0
-                    1 + startExpr.Complexity() + endExpr.Complexity() + stepComplexity + (body |> List.sumBy count)
-                | UWhile(condition, body, _) ->
-                    1 + condition.Complexity() + (body |> List.sumBy count)
-                | UBreak -> 1
                 | UNoop -> 0
             count this
 
@@ -288,10 +237,10 @@ module UserExprBuilder =
 
     /// 상수 생성
     let uconst value dataType = UConst(value, dataType)
-    let ubool b = UConst(box b, DsDataType.TBool)
-    let uint i = UConst(box i, DsDataType.TInt)
-    let udouble d = UConst(box d, DsDataType.TDouble)
-    let ustring s = UConst(box s, DsDataType.TString)
+    let ubool b = UConst(box b, typeof<bool>)
+    let uint i = UConst(box i, typeof<int>)
+    let udouble d = UConst(box d, typeof<double>)
+    let ustring s = UConst(box s, typeof<string>)
 
     /// 파라미터 참조
     let uparam name dataType = UParam(name, dataType)
@@ -345,16 +294,6 @@ module UserStmtBuilder =
 
     /// FB 호출
     let ufbcall instanceName fbName inputs = UFBCall(instanceName, fbName, inputs)
-
-    /// FOR 루프
-    let ufor loopVarName loopVarType startExpr endExpr stepExpr body =
-        UFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body)
-
-    /// WHILE 루프
-    let uwhile condition body maxIterations = UWhile(condition, body, maxIterations)
-
-    /// BREAK
-    let ubreak = UBreak
 
     /// NOOP
     let unoop = UNoop

@@ -15,12 +15,19 @@ module PLCCodeGen =
     // 데이터 타입 변환 (F# -> PLC ST)
     // ═════════════════════════════════════════════════════════════════════
 
-    let dataTypeToPLC (dt: DsDataType) : string =
-        match dt with
-        | DsDataType.TBool -> "BOOL"
-        | DsDataType.TInt -> "INT"
-        | DsDataType.TDouble -> "REAL"
-        | DsDataType.TString -> "STRING"
+    let dataTypeToPLC (dt: Type) : string =
+        if dt = typeof<bool> then "BOOL"
+        elif dt = typeof<sbyte> then "SINT"      // Signed INTeger, 8-bit
+        elif dt = typeof<byte> then "USINT"      // Unsigned Short INTeger, 8-bit
+        elif dt = typeof<int16> then "INT"       // 16-bit signed (PLC standard)
+        elif dt = typeof<uint16> then "UINT"     // 16-bit unsigned
+        elif dt = typeof<int> then "DINT"        // Double INTeger, 32-bit signed (BREAKING CHANGE: was INT)
+        elif dt = typeof<uint32> then "UDINT"    // Unsigned Double INTeger, 32-bit
+        elif dt = typeof<int64> then "LINT"      // Long INTeger, 64-bit signed
+        elif dt = typeof<uint64> then "ULINT"    // Unsigned Long INTeger, 64-bit
+        elif dt = typeof<double> then "LREAL"    // Long REAL, 64-bit (BREAKING CHANGE: was REAL)
+        elif dt = typeof<string> then "STRING"
+        else failwith $"Unsupported data type: {dt.Name}"
 
     // ═════════════════════════════════════════════════════════════════════
     // 값 포맷팅 헬퍼 (코드 중복 제거)
@@ -31,12 +38,31 @@ module PLCCodeGen =
         s.Replace("'", "''")
 
     /// 기본값/초기값을 PLC 문법으로 포맷팅
-    let private formatDefaultValue (dataType: DsDataType) (value: obj) : string =
-        match dataType with
-        | DsDataType.TBool -> if (value :?> bool) then " := TRUE" else " := FALSE"
-        | DsDataType.TInt -> sprintf " := %d" (value :?> int)
-        | DsDataType.TDouble -> sprintf " := %f" (value :?> float)
-        | DsDataType.TString -> sprintf " := '%s'" (escapeString (value :?> string))
+    let private formatDefaultValue (dataType: Type) (value: obj) : string =
+        if dataType = typeof<bool> then
+            if (value :?> bool) then " := TRUE" else " := FALSE"
+        elif dataType = typeof<sbyte> then
+            sprintf " := %d" (value :?> sbyte)
+        elif dataType = typeof<byte> then
+            sprintf " := %d" (value :?> byte)
+        elif dataType = typeof<int16> then
+            sprintf " := %d" (value :?> int16)
+        elif dataType = typeof<uint16> then
+            sprintf " := %d" (value :?> uint16)
+        elif dataType = typeof<int> then
+            sprintf " := %d" (value :?> int)
+        elif dataType = typeof<uint32> then
+            sprintf " := %d" (value :?> uint32)
+        elif dataType = typeof<int64> then
+            sprintf " := %d" (value :?> int64)
+        elif dataType = typeof<uint64> then
+            sprintf " := %d" (value :?> uint64)
+        elif dataType = typeof<double> then
+            sprintf " := %f" (value :?> float)
+        elif dataType = typeof<string> then
+            sprintf " := '%s'" (escapeString (value :?> string))
+        else
+            failwith $"Unsupported data type for default value: {dataType.Name}"
 
     /// VAR_INPUT 섹션 생성
     let private generateInputSection (sb: StringBuilder) (params': FunctionParam list) : unit =
@@ -70,7 +96,7 @@ module PLCCodeGen =
             sb.AppendLine() |> ignore
 
     /// VAR (Static) 섹션 생성
-    let private generateStaticSection (sb: StringBuilder) (statics: (string * DsDataType * obj option) list) : unit =
+    let private generateStaticSection (sb: StringBuilder) (statics: (string * Type * obj option) list) : unit =
         if not (List.isEmpty statics) then
             sb.AppendLine("VAR") |> ignore
             for (name, dt, initVal) in statics do
@@ -83,7 +109,7 @@ module PLCCodeGen =
             sb.AppendLine() |> ignore
 
     /// VAR_TEMP 섹션 생성
-    let private generateTempSection (sb: StringBuilder) (temps: (string * DsDataType) list) : unit =
+    let private generateTempSection (sb: StringBuilder) (temps: (string * Type) list) : unit =
         if not (List.isEmpty temps) then
             sb.AppendLine("VAR_TEMP") |> ignore
             for (name, dt) in temps do
@@ -98,11 +124,30 @@ module PLCCodeGen =
     let rec exprToST (expr: DsExpr) : string =
         match expr with
         | Const(value, dt) ->
-            match dt with
-            | DsDataType.TBool -> if (value :?> bool) then "TRUE" else "FALSE"
-            | DsDataType.TInt -> sprintf "%d" (value :?> int)
-            | DsDataType.TDouble -> sprintf "%f" (value :?> float)
-            | DsDataType.TString -> sprintf "'%s'" (escapeString (value :?> string))
+            if dt = typeof<bool> then
+                if (value :?> bool) then "TRUE" else "FALSE"
+            elif dt = typeof<sbyte> then
+                sprintf "%d" (value :?> sbyte)
+            elif dt = typeof<byte> then
+                sprintf "%d" (value :?> byte)
+            elif dt = typeof<int16> then
+                sprintf "%d" (value :?> int16)
+            elif dt = typeof<uint16> then
+                sprintf "%d" (value :?> uint16)
+            elif dt = typeof<int> then
+                sprintf "%d" (value :?> int)
+            elif dt = typeof<uint32> then
+                sprintf "%d" (value :?> uint32)
+            elif dt = typeof<int64> then
+                sprintf "%d" (value :?> int64)
+            elif dt = typeof<uint64> then
+                sprintf "%d" (value :?> uint64)
+            elif dt = typeof<double> then
+                sprintf "%f" (value :?> float)
+            elif dt = typeof<string> then
+                sprintf "'%s'" (escapeString (value :?> string))
+            else
+                failwith $"Unsupported constant type: {dt.Name}"
 
         | Terminal(tag) ->
             tag.Name
@@ -154,35 +199,6 @@ module PLCCodeGen =
             let condStr = exprToST condition
             let actionStr = exprToST action
             sprintf "IF %s THEN\n    %s;\nEND_IF;" condStr actionStr
-
-        | For(_, loopVar, startExpr, endExpr, stepExpr, body) ->
-            let varName = loopVar.Name
-            let startStr = exprToST startExpr
-            let endStr = exprToST endExpr
-            let stepStr =
-                match stepExpr with
-                | Some expr -> sprintf " BY %s" (exprToST expr)
-                | None -> ""
-            let bodyStr =
-                body
-                |> List.map stmtToST
-                |> String.concat "\n    "
-            sprintf "FOR %s := %s TO %s%s DO\n    %s\nEND_FOR;" varName startStr endStr stepStr bodyStr
-
-        | While(_, condition, body, maxIterations) ->
-            let condStr = exprToST condition
-            let bodyStr =
-                body
-                |> List.map stmtToST
-                |> String.concat "\n    "
-            let comment =
-                match maxIterations with
-                | Some max -> sprintf " (* max iterations: %d *)" max
-                | None -> ""
-            sprintf "WHILE %s DO%s\n    %s\nEND_WHILE;" condStr comment bodyStr
-
-        | Break(_) ->
-            "EXIT;"
 
     // ═════════════════════════════════════════════════════════════════════
     // FC (Function) 코드 생성

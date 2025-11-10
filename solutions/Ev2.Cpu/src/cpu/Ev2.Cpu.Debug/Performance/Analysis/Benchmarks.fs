@@ -408,7 +408,7 @@ type BenchmarkSuite() =
         try
             // 메모리에 변수 선언
             for i in 1..100 do
-                context.Memory.DeclareLocal($"TestVar_{i}", DsDataType.TBool)
+                context.Memory.DeclareLocal($"TestVar_{i}", typeof<bool>)
             
             // 메모리 액세스 벤치마크
             for i in 1..iterations do

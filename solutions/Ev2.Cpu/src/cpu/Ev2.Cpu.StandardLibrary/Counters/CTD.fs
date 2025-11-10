@@ -27,15 +27,15 @@ module CTD =
         let builder = FBBuilder("CTD")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("CD", DsDataType.TBool)      // Count down input
-        builder.AddInput("LD", DsDataType.TBool)      // Load input
-        builder.AddInput("PV", DsDataType.TInt)       // Preset value
-        builder.AddOutput("Q", DsDataType.TBool)      // Output (TRUE when CV <= 0)
-        builder.AddOutput("CV", DsDataType.TInt)      // Current value
+        builder.AddInput("CD", typeof<bool>)      // Count down input
+        builder.AddInput("LD", typeof<bool>)      // Load input
+        builder.AddInput("PV", typeof<int>)       // Preset value
+        builder.AddOutput("Q", typeof<bool>)      // Output (TRUE when CV <= 0)
+        builder.AddOutput("CV", typeof<int>)      // Current value
 
         // Static 변수
-        builder.AddStaticWithInit("Count", DsDataType.TInt, box 0)
-        builder.AddStaticWithInit("LastCD", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("Count", typeof<int>, box 0)
+        builder.AddStaticWithInit("LastCD", typeof<bool>, box false)
 
         let cd = Terminal(DsTag.Bool("CD"))
         let load = Terminal(DsTag.Bool("LD"))
@@ -71,20 +71,20 @@ module CTD =
                 afterDecrement
             ])
 
-        builder.AddStatement(assignAuto "Count" DsDataType.TInt newCount)
+        builder.AddStatement(assignAuto "Count" typeof<int> newCount)
 
         // LastCD 업데이트
         builder.AddStatement(
-            assignAuto "LastCD" DsDataType.TBool cd
+            assignAuto "LastCD" typeof<bool> cd
         )
 
         // 출력 설정
         // Q := (CV <= 0)
         builder.AddStatement(
-            assignAuto "Q" DsDataType.TBool (le count (intExpr 0))
+            assignAuto "Q" typeof<bool> (le count (intExpr 0))
         )
         builder.AddStatement(
-            assignAuto "CV" DsDataType.TInt count
+            assignAuto "CV" typeof<int> count
         )
 
         builder.SetDescription("Count Down counter - decrements on CD rising edge (IEC 61131-3)")

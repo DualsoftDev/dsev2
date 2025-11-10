@@ -26,10 +26,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="..\..\engine\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
+		<Content Include="..\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
-		<None Include="..\..\engine\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
+		<None Include="..\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
 	</ItemGroup>
 
 
@@ -42,8 +42,8 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
-		<ProjectReference Include="..\..\engine\Ev2.Aas.FS\Ev2.Aas.FS.fsproj" />
-		<ProjectReference Include="..\..\engine\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
+		<ProjectReference Include="..\Ev2.Aas.FS\Ev2.Aas.FS.fsproj" />
+		<ProjectReference Include="..\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
 		<ProjectReference Include="..\UnitTest.Core\UnitTest.Core.fsproj" />
 	</ItemGroup>
 

@@ -27,12 +27,12 @@ module LIMIT =
         let builder = FCBuilder("LIMIT")
 
         // 입력
-        builder.AddInput("IN", DsDataType.TDouble)      // 입력 값
-        builder.AddInput("MIN", DsDataType.TDouble)     // 최소값
-        builder.AddInput("MAX", DsDataType.TDouble)     // 최대값
+        builder.AddInput("IN", typeof<double>)      // 입력 값
+        builder.AddInput("MIN", typeof<double>)     // 최소값
+        builder.AddInput("MAX", typeof<double>)     // 최대값
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TDouble)    // 제한된 출력
+        builder.AddOutput("OUT", typeof<double>)    // 제한된 출력
 
         // 로직:
         // IF IN < MIN THEN OUT := MIN

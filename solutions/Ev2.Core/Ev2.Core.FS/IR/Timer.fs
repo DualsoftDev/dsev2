@@ -1,6 +1,7 @@
 namespace Ev2.Gen
 
 open System
+open Ev2.Core.FS.IR
 
 [<AutoOpen>]
 module TimerModule =

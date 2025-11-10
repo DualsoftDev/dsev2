@@ -16,7 +16,7 @@ type ConversionError =
     | UndefinedVariable of name:string
 
     /// 타입 불일치 (예: Bool 변수에 Int 값 할당)
-    | TypeMismatch of expected:Ev2.Cpu.Core.DsDataType * actual:Ev2.Cpu.Core.DsDataType
+    | TypeMismatch of expected:Type * actual:Type
 
     /// 런타임에서 지원하지 않는 기능 (예: EMeta)
     | UnsupportedFeature of feature:string * details:string
@@ -29,7 +29,7 @@ type ConversionError =
         | UndefinedVariable name ->
             sprintf "Undefined variable: '%s' not found in TagRegistry" name
         | TypeMismatch(expected, actual) ->
-            sprintf "Type mismatch: expected %A but got %A" expected actual
+            sprintf "Type mismatch: expected typeof<%s> but got typeof<%s>" (Ev2.Cpu.Core.TypeHelpers.getTypeName expected) (Ev2.Cpu.Core.TypeHelpers.getTypeName actual)
         | UnsupportedFeature(feature, details) ->
             sprintf "Unsupported feature '%s': %s" feature details
         | InvalidArgumentCount(funcName, expected, actual) ->
@@ -59,10 +59,10 @@ module AstConverter =
             match Ev2.Cpu.Core.DsTagRegistry.tryFind name with
             | Some tag ->
                 // 타입 일치 확인
-                if tag.DsDataType = declaredType then
+                if tag.StructType = declaredType then
                     Ok (Ev2.Cpu.Core.Expression.Terminal tag)
                 else
-                    Error (TypeMismatch(declaredType, tag.DsDataType))
+                    Error (TypeMismatch(declaredType, tag.StructType))
             | None ->
                 // TagRegistry에 없으면 자동 등록 (기본 동작)
                 let tag = Ev2.Cpu.Core.DsTag.Create(name, declaredType)
@@ -73,10 +73,10 @@ module AstConverter =
         | ETerminal(name, declaredType) ->
             match Ev2.Cpu.Core.DsTagRegistry.tryFind name with
             | Some tag ->
-                if tag.DsDataType = declaredType then
+                if tag.StructType = declaredType then
                     Ok (Ev2.Cpu.Core.Expression.Terminal tag)
                 else
-                    Error (TypeMismatch(declaredType, tag.DsDataType))
+                    Error (TypeMismatch(declaredType, tag.StructType))
             | None ->
                 // 터미널도 자동 등록
                 let tag = Ev2.Cpu.Core.DsTag.Create(name, declaredType)
@@ -156,7 +156,7 @@ module AstConverter =
         // 터미널: Tag에서 이름과 타입 추출하여 EVar로 변환
         // (EVar vs ETerminal 구분 불가능 - 둘 다 EVar로 변환)
         | Ev2.Cpu.Core.Expression.Terminal tag ->
-            EVar(tag.Name, tag.DsDataType)
+            EVar(tag.Name, tag.StructType)
 
         // 단항 연산: 재귀 변환
         | Ev2.Cpu.Core.Expression.Unary(op, expr) ->

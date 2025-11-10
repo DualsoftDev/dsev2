@@ -27,15 +27,15 @@ module HYSTERESIS =
         let builder = FBBuilder("HYSTERESIS")
 
         // 입력
-        builder.AddInput("IN", DsDataType.TDouble)      // 입력 값
-        builder.AddInput("HIGH", DsDataType.TDouble)    // 상한 (ON 임계값)
-        builder.AddInput("LOW", DsDataType.TDouble)     // 하한 (OFF 임계값)
+        builder.AddInput("IN", typeof<double>)      // 입력 값
+        builder.AddInput("HIGH", typeof<double>)    // 상한 (ON 임계값)
+        builder.AddInput("LOW", typeof<double>)     // 하한 (OFF 임계값)
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TBool)      // 출력 상태
+        builder.AddOutput("OUT", typeof<bool>)      // 출력 상태
 
         // Static 변수
-        builder.AddStaticWithInit("State", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("State", typeof<bool>, box false)
 
         let inVal = Terminal(DsTag.Double("IN"))
         let high = Terminal(DsTag.Double("HIGH"))
@@ -52,10 +52,10 @@ module HYSTERESIS =
                 state
             ])
         ])
-        builder.AddStatement(assignAuto "State" DsDataType.TBool newState)
+        builder.AddStatement(assignAuto "State" typeof<bool> newState)
 
         // 출력
-        builder.AddStatement(assignAuto "OUT" DsDataType.TBool state)
+        builder.AddStatement(assignAuto "OUT" typeof<bool> state)
 
         builder.SetDescription("Hysteresis control with HIGH/LOW thresholds")
         builder.Build()

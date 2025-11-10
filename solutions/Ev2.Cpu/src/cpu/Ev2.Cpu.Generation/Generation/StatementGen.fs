@@ -82,7 +82,7 @@ module StatementGen =
     /// 비교 연산 결과를 변수에 저장
     let compare step condition source1 source2 compareOp targetName =
         let compareExpr = Binary(compareOp, source1, source2)
-        assignAt step targetName DsDataType.TBool compareExpr
+        assignAt step targetName typeof<bool> compareExpr
 
     /// 조건부 점프 (상태 기계용)
     let jumpTo step condition targetState stateName =

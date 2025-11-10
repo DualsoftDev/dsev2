@@ -23,11 +23,11 @@ module F_TRIG =
         let builder = FBBuilder("F_TRIG")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("CLK", DsDataType.TBool)
-        builder.AddOutput("Q", DsDataType.TBool)
+        builder.AddInput("CLK", typeof<bool>)
+        builder.AddOutput("Q", typeof<bool>)
 
         // Static 변수: 이전 상태 저장
-        builder.AddStaticWithInit("M", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("M", typeof<bool>, box false)
 
         // 로직:
         // Q := NOT CLK AND M
@@ -38,10 +38,10 @@ module F_TRIG =
 
         // Q := NOT CLK AND M (하강 에지 감지)
         let fallingEdge = and' (not' clk) m
-        builder.AddStatement(assignAuto "Q" DsDataType.TBool fallingEdge)
+        builder.AddStatement(assignAuto "Q" typeof<bool> fallingEdge)
 
         // M := CLK (현재 상태 저장)
-        builder.AddStatement(assignAuto "M" DsDataType.TBool clk)
+        builder.AddStatement(assignAuto "M" typeof<bool> clk)
 
         builder.SetDescription("Falling edge detection - detects TRUE to FALSE transition")
         builder.Build()

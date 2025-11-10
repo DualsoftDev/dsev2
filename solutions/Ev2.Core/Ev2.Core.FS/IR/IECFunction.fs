@@ -1,8 +1,8 @@
 namespace Ev2.Gen
-open System.Linq
-open Dual.Common.Base
+
 open System
-open System.Collections.Generic
+open Ev2.Core.FS.IR
+
 
 [<AutoOpen>]
 module ProgramModule =
@@ -49,14 +49,6 @@ module IECFunctionFunctionBlockModule =
         inherit SubProgram(name, globalStorage, localStorage, rungs, subroutines)
         interface IFBProgram
 
-
-    [<AllowNullLiteral>]
-    type IStorages =
-        abstract GlobalStorage : IVariable[]
-        abstract LocalStorage : IVariable[]
-
-    type InputMapping = IDictionary<string, IExpression>
-    type OutputMapping = IDictionary<string, IVariable>
 
     /// IEC 함수 호출 메타데이터
     type FunctionCall(program: FunctionProgram, inputMapping: InputMapping, outputMapping: OutputMapping, ?en: IExpression<bool>, ?eno: IVariable<bool>) =

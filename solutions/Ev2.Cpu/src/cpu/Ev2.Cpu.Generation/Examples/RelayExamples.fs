@@ -269,41 +269,41 @@ module RelayExamples =
 
         // Input/Output/Local 변수 선언
         let inputs = [
-            "Sensor.ProductDetected", DsDataType.TBool
-            "Sensor.ProductArrived", DsDataType.TBool
-            "Gripper.Opened", DsDataType.TBool
-            "Gripper.Closed", DsDataType.TBool
-            "Gripper.HasProduct", DsDataType.TBool
-            "Gripper.Released", DsDataType.TBool
-            "Robot.AtTarget", DsDataType.TBool
+            "Sensor.ProductDetected", typeof<bool>
+            "Sensor.ProductArrived", typeof<bool>
+            "Gripper.Opened", typeof<bool>
+            "Gripper.Closed", typeof<bool>
+            "Gripper.HasProduct", typeof<bool>
+            "Gripper.Released", typeof<bool>
+            "Robot.AtTarget", typeof<bool>
         ]
 
         let outputs = [
-            "ConveyorWork.SW", DsDataType.TBool
-            "ConveyorWork.EW", DsDataType.TBool
-            "RobotWork.SW", DsDataType.TBool
-            "RobotWork.EW", DsDataType.TBool
+            "ConveyorWork.SW", typeof<bool>
+            "ConveyorWork.EW", typeof<bool>
+            "RobotWork.SW", typeof<bool>
+            "RobotWork.EW", typeof<bool>
         ]
 
         let locals = [
-            "ConveyorWork.Going", DsDataType.TBool
-            "ConveyorWork.Finish", DsDataType.TBool
-            "RobotWork.Going", DsDataType.TBool
-            "RobotWork.Finish", DsDataType.TBool
-            "DetectProduct.SC", DsDataType.TBool
-            "DetectProduct.EC", DsDataType.TBool
-            "RunConveyor.SC", DsDataType.TBool
-            "RunConveyor.EC", DsDataType.TBool
-            "ConfirmArrival.SC", DsDataType.TBool
-            "ConfirmArrival.EC", DsDataType.TBool
-            "OpenGripper.SC", DsDataType.TBool
-            "OpenGripper.EC", DsDataType.TBool
-            "PickupProduct.SC", DsDataType.TBool
-            "PickupProduct.EC", DsDataType.TBool
-            "MoveToTarget.SC", DsDataType.TBool
-            "MoveToTarget.EC", DsDataType.TBool
-            "PlaceProduct.SC", DsDataType.TBool
-            "PlaceProduct.EC", DsDataType.TBool
+            "ConveyorWork.Going", typeof<bool>
+            "ConveyorWork.Finish", typeof<bool>
+            "RobotWork.Going", typeof<bool>
+            "RobotWork.Finish", typeof<bool>
+            "DetectProduct.SC", typeof<bool>
+            "DetectProduct.EC", typeof<bool>
+            "RunConveyor.SC", typeof<bool>
+            "RunConveyor.EC", typeof<bool>
+            "ConfirmArrival.SC", typeof<bool>
+            "ConfirmArrival.EC", typeof<bool>
+            "OpenGripper.SC", typeof<bool>
+            "OpenGripper.EC", typeof<bool>
+            "PickupProduct.SC", typeof<bool>
+            "PickupProduct.EC", typeof<bool>
+            "MoveToTarget.SC", typeof<bool>
+            "MoveToTarget.EC", typeof<bool>
+            "PlaceProduct.SC", typeof<bool>
+            "PlaceProduct.EC", typeof<bool>
         ]
 
         { Name = "ConveyorRobotSystem"

@@ -16,10 +16,10 @@ module ExprHelpers =
     let strTag name = Terminal(DsTag.String(name))
     
     // 타입별 상수
-    let boolConst v = Const(box v, DsDataType.TBool)
-    let intConst v = Const(box v, DsDataType.TInt) 
-    let doubleConst v = Const(box v, DsDataType.TDouble)
-    let strConst v = Const(box v, DsDataType.TString)
+    let boolConst v = Const(box v, typeof<bool>)
+    let intConst v = Const(box v, typeof<int>)
+    let doubleConst v = Const(box v, typeof<double>)
+    let strConst v = Const(box v, typeof<string>)
     
     // Set/Reset 패턴
     let setWhen cond tag = Relay.Create(tag, cond, boolConst false)
@@ -109,10 +109,10 @@ module GenerationUtils =
         let timerExpr = fn "TON" [startExpr; strConst timerName; intConst timeMs]
         Relay.Create(tag, timerExpr, !!. startExpr)
     
-    let term (name:string) = Terminal(DsTag.Create(name, DsDataType.TBool))
-    let termInt (name:string) = Terminal(DsTag.Create(name, DsDataType.TInt))
-    let termDouble (name:string) = Terminal(DsTag.Create(name, DsDataType.TDouble))
-    let termString (name:string) = Terminal(DsTag.Create(name, DsDataType.TString))
+    let term (name:string) = Terminal(DsTag.Create(name, typeof<bool>))
+    let termInt (name:string) = Terminal(DsTag.Create(name, typeof<int>))
+    let termDouble (name:string) = Terminal(DsTag.Create(name, typeof<double>))
+    let termString (name:string) = Terminal(DsTag.Create(name, typeof<string>))
 
 /// 코드 생성 패턴
 module Generation =

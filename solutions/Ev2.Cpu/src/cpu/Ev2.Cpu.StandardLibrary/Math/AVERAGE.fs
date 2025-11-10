@@ -24,13 +24,13 @@ module AVERAGE =
         let builder = FCBuilder("AVERAGE")
 
         // 입력 (4개 값)
-        builder.AddInput("IN1", DsDataType.TDouble)
-        builder.AddInput("IN2", DsDataType.TDouble)
-        builder.AddInput("IN3", DsDataType.TDouble)
-        builder.AddInput("IN4", DsDataType.TDouble)
+        builder.AddInput("IN1", typeof<double>)
+        builder.AddInput("IN2", typeof<double>)
+        builder.AddInput("IN3", typeof<double>)
+        builder.AddInput("IN4", typeof<double>)
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TDouble)
+        builder.AddOutput("OUT", typeof<double>)
 
         // 로직: (IN1 + IN2 + IN3 + IN4) / 4
         let in1 = Terminal(DsTag.Double("IN1"))

@@ -5,10 +5,10 @@ module ExpressionBuilder =
     
     /// 상수 생성
     let constant value dtype = Constant(value, dtype)
-    let boolConst b = Constant(box b, DsDataType.TBool)
-    let intConst i = Constant(box i, DsDataType.TInt)
-    let doubleConst d = Constant(box d, DsDataType.TDouble)
-    let stringConst s = Constant(box s, DsDataType.TString)
+    let boolConst b = Constant(box b, typeof<bool>)
+    let intConst i = Constant(box i, typeof<int>)
+    let doubleConst d = Constant(box d, typeof<double>)
+    let stringConst s = Constant(box s, typeof<string>)
     
     /// 변수 참조 생성
     let variable tag = Variable(tag)

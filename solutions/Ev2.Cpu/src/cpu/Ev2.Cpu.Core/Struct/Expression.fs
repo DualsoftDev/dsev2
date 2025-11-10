@@ -21,22 +21,22 @@ module Expression =
     /// <example>
     /// <code>
     /// // 상수 표현식
-    /// let constant = Const(box 42, TInt)
+    /// let constant = Const(box 42, typeof<int>)
     ///
     /// // 변수 표현식
     /// let variable = Terminal(DsTag.Int("temperature"))
     ///
     /// // 산술 연산
-    /// let sum = Binary(Add, Const(box 10, TInt), Const(box 20, TInt))
+    /// let sum = Binary(Add, Const(box 10, typeof<int>), Const(box 20, typeof<int>))
     ///
     /// // 함수 호출
-    /// let abs = Function("ABS", [Const(box -5, TInt)])
+    /// let abs = Function("ABS", [Const(box -5, typeof<int>)])
     /// </code>
     /// </example>
     [<StructuralEquality; NoComparison>]
     type DsExpr =
         /// <summary>상수 - 컴파일 시점에 값이 결정된 리터럴</summary>
-        | Const     of obj * DsDataType
+        | Const     of obj * Type
         /// <summary>변수/IO - 런타임에 메모리에서 값을 읽는 태그</summary>
         | Terminal  of DsTag
         /// <summary>단항 연산 - NOT, Rising Edge, Falling Edge 등</summary>
@@ -53,80 +53,41 @@ module Expression =
     type DsExpr with
         
         /// 타입 추론
-        member e.InferType() : DsDataType =
+        member e.InferType() : Type =
             match e with
             | Const(_, t) -> t
             | Terminal(tag) -> tag.StructType
-            
+
             | Unary(op, x) ->
                 let xt = x.InferType()
-                match op with
-                | Not | Rising | Falling ->
-                    if xt = TBool then TBool
-                    else raise (ArgumentException($"{op} requires Bool, got {xt}"))
-                | _ ->
-                    raise (ArgumentException($"Invalid unary operator: {op}"))
-            
+                // 단항 연산자 타입 검증 - validateForTypes 사용
+                match DsOp.validateForTypes op (Some xt) None with
+                | Some resultType -> resultType
+                | None -> raise (ArgumentException($"{op} cannot operate on {xt}"))
+
             | Binary(op, l, r) ->
                 let lt = l.InferType()
                 let rt = r.InferType()
-                match op with
-                // 논리 연산
-                | And | Or | Xor ->
-                    if lt = TBool && rt = TBool then TBool
-                    else raise (ArgumentException($"{op} requires Bool operands, got {lt} and {rt}"))
 
-                // 비교 연산
-                | Eq | Ne ->
-                    // 같은 타입 또는 숫자 혼합만 허용
-                    if lt = rt || (lt.IsNumeric && rt.IsNumeric) then TBool
-                    else raise (ArgumentException($"type mismatch: {lt} vs {rt} for {op}"))
+                // 특수 케이스: Add는 문자열 연결도 지원
+                if op = Add && (lt = typeof<string> || rt = typeof<string>) then
+                    typeof<string>
+                else
+                    // 모든 다른 연산자는 validateForTypes로 타입 검증 및 결과 타입 추론
+                    match DsOp.validateForTypes op (Some lt) (Some rt) with
+                    | Some resultType -> resultType
+                    | None -> raise (ArgumentException($"{op} cannot operate on {lt} and {rt}"))
 
-                | Gt | Ge | Lt | Le ->
-                    if (lt.IsNumeric && rt.IsNumeric) || (lt = TString && rt = TString) then TBool
-                    else raise (ArgumentException($"{op} requires numeric or string operands, got {lt} and {rt}"))
-
-                // 산술 연산
-                | Add ->
-                    // 문자열 연결 또는 숫자 덧셈
-                    if lt = TString || rt = TString then TString
-                    elif lt = TDouble || rt = TDouble then TDouble
-                    elif lt = TInt && rt = TInt then TInt
-                    else raise (ArgumentException($"Cannot add {lt} and {rt}"))
-
-                | Sub | Mul | Div ->
-                    if lt.IsNumeric && rt.IsNumeric then
-                        if lt = TDouble || rt = TDouble then TDouble
-                        else TInt
-                    else raise (ArgumentException($"{op} requires numeric operands, got {lt} and {rt}"))
-
-                | Mod ->
-                    if lt = TInt && rt = TInt then TInt
-                    else raise (ArgumentException("MOD requires integer operands"))
-
-                | Pow ->
-                    if lt.IsNumeric && rt.IsNumeric then TDouble
-                    else raise (ArgumentException("POW requires numeric operands"))
-
-                | Move ->
-                    rt  // MOV는 우변의 타입을 따름
-
-                | Assign ->
-                    lt  // 좌변의 타입을 따름
-
-                | _ ->
-                    raise (ArgumentException($"Invalid binary operator: {op}"))
-            
             | Function(name, args) ->
                 // 각 인자 타입 수집
                 let argTypes = args |> List.map (fun e -> e.InferType())
-                // 규칙 기반 반환타입 추론 (예: DIV는 항상 TDouble 등)
+                // 규칙 기반 반환타입 추론 (예: DIV는 항상 typeof<double> 등)
                 Functions.inferReturn name argTypes
         
         member e.Type = e.InferType()
         
         /// 타입 추론 (안전하게 시도)
-        member e.TryInferType() : DsDataType option =
+        member e.TryInferType() : Type option =
             try
                 Some(e.InferType())
             with
@@ -171,12 +132,12 @@ module Expression =
             count e
     
     // === 표현식 빌더 ===
-    
+
     // 상수
-    let num (n: int) = Const(box n, TInt)
-    let dbl (d: double) = Const(box d, TDouble)
-    let str (s: string) = Const(box s, TString)
-    let bool (b: bool) = Const(box b, TBool)
+    let num (n: int) = Const(box n, typeof<int>)
+    let dbl (d: double) = Const(box d, typeof<double>)
+    let str (s: string) = Const(box s, typeof<string>)
+    let bool (b: bool) = Const(box b, typeof<bool>)
     
     // 변수 - 레지스트리를 통해 유일한 인스턴스 보장
     let var name typ = Terminal(DsTag.Create(name, typ))
@@ -184,11 +145,11 @@ module Expression =
     let dblVar name = Terminal(DsTag.Double(name))
     let strVar name =
         match DsTagRegistry.tryFind name with
-        | Some tag when tag.StructType = TString ->
+        | Some tag when tag.StructType = typeof<string> ->
             Terminal(tag)
         | Some _ ->
             // 이미 다른 타입으로 등록된 경우 문자열 상수로 취급
-            Const(box name, TString)
+            Const(box name, typeof<string>)
         | None ->
             Terminal(DsTag.String(name))
     let boolVar name = Terminal(DsTag.Bool(name))

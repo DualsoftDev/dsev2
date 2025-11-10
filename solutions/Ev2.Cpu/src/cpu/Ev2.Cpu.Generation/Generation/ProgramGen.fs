@@ -16,13 +16,13 @@ module ProgramGen =
         let mutable locals = []
         let mutable body = []
 
-        member _.AddInput(name: string, dataType: DsDataType) =
+        member _.AddInput(name: string, dataType: Type) =
             inputs <- (name, dataType) :: inputs
 
-        member _.AddOutput(name: string, dataType: DsDataType) =
+        member _.AddOutput(name: string, dataType: Type) =
             outputs <- (name, dataType) :: outputs
 
-        member _.AddLocal(name: string, dataType: DsDataType) =
+        member _.AddLocal(name: string, dataType: Type) =
             locals <- (name, dataType) :: locals
 
         member _.AddStatement(stmt: DsStmt) =
@@ -67,19 +67,19 @@ module ProgramGen =
         let builder = ProgramBuilder(name)
         
         // 상태 변수 추가
-        builder.AddLocal("State", DsDataType.TInt)
-        builder.AddLocal("NextState", DsDataType.TInt)
+        builder.AddLocal("State", typeof<int>)
+        builder.AddLocal("NextState", typeof<int>)
         
         // 상태별 로직 추가
         states |> List.iteri (fun i (stateName, logic) ->
-            builder.AddLocal($"{stateName}_Active", DsDataType.TBool)
+            builder.AddLocal($"{stateName}_Active", typeof<bool>)
             let stateCondition = eq (Terminal(DsTag.Int("State"))) (intExpr i)
-            builder.AddStatement(assignAuto $"{stateName}_Active" DsDataType.TBool stateCondition)
+            builder.AddStatement(assignAuto $"{stateName}_Active" typeof<bool> stateCondition)
             builder.AddStatements(logic)
         )
         
         // 상태 전환 로직
-        builder.AddStatement(assignAuto "State" DsDataType.TInt (Terminal(DsTag.Int("NextState"))))
+        builder.AddStatement(assignAuto "State" typeof<int> (Terminal(DsTag.Int("NextState"))))
         
         builder.Build()
 
@@ -87,11 +87,11 @@ module ProgramGen =
     let createTimerSequenceProgram name steps =
         let builder = ProgramBuilder(name)
         
-        builder.AddInput("Start", DsDataType.TBool)
-        builder.AddInput("Reset", DsDataType.TBool)
-        builder.AddOutput("Running", DsDataType.TBool)
-        builder.AddOutput("Complete", DsDataType.TBool)
-        builder.AddLocal("Step", DsDataType.TInt)
+        builder.AddInput("Start", typeof<bool>)
+        builder.AddInput("Reset", typeof<bool>)
+        builder.AddOutput("Running", typeof<bool>)
+        builder.AddOutput("Complete", typeof<bool>)
+        builder.AddLocal("Step", typeof<int>)
         
         steps |> List.iteri (fun i (stepName, duration, actions) ->
             let stepCondition = eq (Terminal(DsTag.Int("Step"))) (intExpr i)
@@ -99,8 +99,8 @@ module ProgramGen =
             let timerDone = Function("TON", [stepCondition; stringExpr timerName; intExpr duration])
             
             // 스텝 활성화 출력
-            builder.AddOutput($"{stepName}_Active", DsDataType.TBool)
-            builder.AddStatement(assignAuto $"{stepName}_Active" DsDataType.TBool stepCondition)
+            builder.AddOutput($"{stepName}_Active", typeof<bool>)
+            builder.AddStatement(assignAuto $"{stepName}_Active" typeof<bool> stepCondition)
             
             // 스텝별 액션
             actions |> List.iter builder.AddStatement
@@ -112,11 +112,11 @@ module ProgramGen =
         
         // 전역 제어 로직
         let running = not' (eq (Terminal(DsTag.Int("Step"))) (intExpr 0))
-        builder.AddStatement(assignAuto "Running" DsDataType.TBool running)
+        builder.AddStatement(assignAuto "Running" typeof<bool> running)
         
         let complete = and' (not' (Terminal(DsTag.Bool("Start")))) 
                            (eq (Terminal(DsTag.Int("Step"))) (intExpr 0))
-        builder.AddStatement(assignAuto "Complete" DsDataType.TBool complete)
+        builder.AddStatement(assignAuto "Complete" typeof<bool> complete)
         
         // 리셋 로직
         let resetCondition = Terminal(DsTag.Bool("Reset"))
@@ -132,7 +132,7 @@ module ProgramGen =
             builder.AddInput(inputName, dataType))
         
         outputs |> List.iter (fun (outputName, conditionExpr) ->
-            builder.AddOutput(outputName, DsDataType.TBool)
-            builder.AddStatement(assignAuto outputName DsDataType.TBool conditionExpr))
+            builder.AddOutput(outputName, typeof<bool>)
+            builder.AddStatement(assignAuto outputName typeof<bool> conditionExpr))
         
         builder.Build()

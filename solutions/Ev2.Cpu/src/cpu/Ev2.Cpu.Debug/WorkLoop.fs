@@ -6,7 +6,7 @@ open Ev2.Cpu.Core.Statement
 
 module WorkLoop =
 
-    let inline private boolConst (value: bool) = Const(box value, DsDataType.TBool)
+    let inline private boolConst (value: bool) = Const(box value, typeof<bool>)
 
     let inline private ton name preset enable =
         call "TON" [ enable; str name; num preset ]
@@ -74,38 +74,38 @@ module WorkLoop =
 
         { Name = "Stn1WorkLoop"
           Inputs =
-            [ "Start_Work1", DsDataType.TBool ]
+            [ "Start_Work1", typeof<bool> ]
           Outputs =
-            [ "Work1.Active", DsDataType.TBool
-              "Work2.Active", DsDataType.TBool
-              "Work1.StartReset", DsDataType.TBool
-              "Work2.StartReset", DsDataType.TBool
-              "Device1.ADV", DsDataType.TBool
-              "Device1.RET", DsDataType.TBool
-              "Device2.ADV", DsDataType.TBool
-              "Device2.RET", DsDataType.TBool
-              "CycleCountReached", DsDataType.TBool ]
+            [ "Work1.Active", typeof<bool>
+              "Work2.Active", typeof<bool>
+              "Work1.StartReset", typeof<bool>
+              "Work2.StartReset", typeof<bool>
+              "Device1.ADV", typeof<bool>
+              "Device1.RET", typeof<bool>
+              "Device2.ADV", typeof<bool>
+              "Device2.RET", typeof<bool>
+              "CycleCountReached", typeof<bool> ]
           Locals =
-            [ "Work1_State", DsDataType.TInt
-              "Work2_State", DsDataType.TInt
-              "Work1_Running", DsDataType.TBool
-              "Work2_Running", DsDataType.TBool
-              "Work1_StartRequest", DsDataType.TBool
-              "Work2_StartRequest", DsDataType.TBool
-              "Work1_Complete", DsDataType.TBool
-              "Work2_Complete", DsDataType.TBool
-              "Work1_StartEdge", DsDataType.TBool
-              "Work2_StartEdge", DsDataType.TBool
-              "Work1_FinishEdge", DsDataType.TBool
-              "Work2_FinishEdge", DsDataType.TBool
-              "Work1_FinishEdge_Prev", DsDataType.TBool
-              "Work2_FinishEdge_Prev", DsDataType.TBool
-              "WorkCycleCount", DsDataType.TInt
+            [ "Work1_State", typeof<int>
+              "Work2_State", typeof<int>
+              "Work1_Running", typeof<bool>
+              "Work2_Running", typeof<bool>
+              "Work1_StartRequest", typeof<bool>
+              "Work2_StartRequest", typeof<bool>
+              "Work1_Complete", typeof<bool>
+              "Work2_Complete", typeof<bool>
+              "Work1_StartEdge", typeof<bool>
+              "Work2_StartEdge", typeof<bool>
+              "Work1_FinishEdge", typeof<bool>
+              "Work2_FinishEdge", typeof<bool>
+              "Work1_FinishEdge_Prev", typeof<bool>
+              "Work2_FinishEdge_Prev", typeof<bool>
+              "WorkCycleCount", typeof<int>
               // 디버깅 변수들
-              "Debug_W1FinishCondition", DsDataType.TBool
-              "Debug_W1FinishTimer", DsDataType.TBool
-              "Debug_W2FinishCondition", DsDataType.TBool
-              "Debug_W2FinishTimer", DsDataType.TBool ]
+              "Debug_W1FinishCondition", typeof<bool>
+              "Debug_W1FinishTimer", typeof<bool>
+              "Debug_W2FinishCondition", typeof<bool>
+              "Debug_W2FinishTimer", typeof<bool> ]
           Body = [
               // ════════════════════════════════════════════════════════════════
               // 디버깅 변수들 (먼저 계산)

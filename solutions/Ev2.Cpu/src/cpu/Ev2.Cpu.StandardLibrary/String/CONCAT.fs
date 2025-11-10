@@ -24,11 +24,11 @@ module CONCAT =
         let builder = FCBuilder("CONCAT")
 
         // 입력
-        builder.AddInput("IN1", DsDataType.TString)
-        builder.AddInput("IN2", DsDataType.TString)
+        builder.AddInput("IN1", typeof<string>)
+        builder.AddInput("IN2", typeof<string>)
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TString)
+        builder.AddOutput("OUT", typeof<string>)
 
         // 로직: OUT = CONCAT(IN1, IN2)
         let in1 = Terminal(DsTag.String("IN1"))

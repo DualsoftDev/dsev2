@@ -26,7 +26,7 @@ type ScopedName = {
     OriginalName: string    // 원래 이름
     ScopedName: string      // 스코프가 적용된 이름
     Scope: ScopeType        // 스코프 타입
-    DataType: DsDataType    // 데이터 타입
+    DataType: Type          // 데이터 타입
 }
 
 /// 스코프 매니저

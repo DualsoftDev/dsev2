@@ -1,6 +1,7 @@
 namespace Ev2.Gen
 
 open System
+open Ev2.Core.FS.IR
 open Dual.Common.Base
 
 
@@ -104,21 +105,33 @@ module GenExtensionModule =
                     executeFunctionCall fcs
                 | :? FBCallStatement as fbcs ->
                     executeFBCall fbcs
-                | :? SetCoilStatement
-                | :? ResetCoilStatement
-                | :? TimerStatement
-                | :? CounterStatement
-                | :? BreakStatement
-                | :? SubroutineCallStatement
+
+                | :? ForLoopStatement as stmt ->
+                    let snippet = stmt.Snippet
+                    let f, t, s = snippet.From.TValue, snippet.To.TValue, snippet.Step.TValue
+                    let mutable n = 0
+                    for i in seq { f .. s .. t } do
+                        let stmt = snippet.Body[n]
+                        if stmt :? BreakStatement then
+                            ()
+                        else
+                            executeStatement stmt
+                        n <- n + 1
+                | :? SetCoilStatement        -> fail()
+                | :? ResetCoilStatement      -> fail()
+                | :? TimerStatement          -> fail()
+                | :? CounterStatement        -> fail()
+                | :? BreakStatement          -> fail()
+                | :? SubroutineCallStatement -> fail()
                 | _ ->
-                    ()
+                    fail()
 
         and runStatements (statements: Statement array) =
             statements |> iter executeStatement
 
         and executeFunctionCall (statement: FunctionCallStatement) =
             let call = statement.FunctionCall
-            let program = call.FunctionProgram :?> FunctionProgram
+            let program = call.FunctionProgram
             let locals = program.LocalStorage.Values |> toArray
 
             initialiseFunctionVariables call locals
@@ -152,7 +165,7 @@ module GenExtensionModule =
             let returnVar = Variable<'T>(name, varType=VarType.VarReturn)
             FunctionProgram.Create<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)
 
-    type Project with
+    type Ev2.Gen.POUModule.Project with
         member this.AddScanProgram(program:ScanProgram) =
             (program :> Program).Project <- this :> IProject
             this.ScanPrograms.Add( { Storage = program.LocalStorage; Program = program }:POU )

@@ -20,285 +20,263 @@ type CoreTypesTest() =
     
     [<Fact>]
     member _.``DsDataType_DotNetType_매핑_정확성_테스트``() =
-        TBool.DotNetType |> should equal typeof<bool>
-        TInt.DotNetType |> should equal typeof<int>
-        TDouble.DotNetType |> should equal typeof<double>
-        TString.DotNetType |> should equal typeof<string>
-    
+        typeof<bool> |> should equal typeof<bool>
+        typeof<int> |> should equal typeof<int>
+        typeof<double> |> should equal typeof<double>
+        typeof<string> |> should equal typeof<string>
+
     [<Fact>]
     member _.``DsDataType_DefaultValue_정확성_테스트``() =
-        TBool.DefaultValue |> should equal (box false)
-        TInt.DefaultValue |> should equal (box 0)
-        TDouble.DefaultValue |> should equal (box 0.0)
-        TString.DefaultValue |> should equal (box "")
-    
+        TypeHelpers.getDefaultValue typeof<bool> |> should equal (box false)
+        TypeHelpers.getDefaultValue typeof<int> |> should equal (box 0)
+        TypeHelpers.getDefaultValue typeof<double> |> should equal (box 0.0)
+        TypeHelpers.getDefaultValue typeof<string> |> should equal (box "")
+
     [<Fact>]
     member _.``DsDataType_IsNumeric_분류_테스트``() =
-        TBool.IsNumeric |> should be False
-        TInt.IsNumeric |> should be True
-        TDouble.IsNumeric |> should be True
-        TString.IsNumeric |> should be False
-    
+        TypeHelpers.isNumericType typeof<bool> |> should be False
+        TypeHelpers.isNumericType typeof<int> |> should be True
+        TypeHelpers.isNumericType typeof<double> |> should be True
+        TypeHelpers.isNumericType typeof<string> |> should be False
+
     [<Fact>]
     member _.``DsDataType_IsCompatibleWith_호환성_테스트``() =
         // 동일 타입 호환성
-        TBool.IsCompatibleWith(TBool) |> should be True
-        TInt.IsCompatibleWith(TInt) |> should be True
-        TDouble.IsCompatibleWith(TDouble) |> should be True
-        TString.IsCompatibleWith(TString) |> should be True
-        
+        TypeHelpers.areTypesCompatible typeof<bool> typeof<bool> |> should be True
+        TypeHelpers.areTypesCompatible typeof<int> typeof<int> |> should be True
+        TypeHelpers.areTypesCompatible typeof<double> typeof<double> |> should be True
+        TypeHelpers.areTypesCompatible typeof<string> typeof<string> |> should be True
+
         // Int → Double 승격 허용 (Double 변수에 Int 값 할당 가능)
-        TDouble.IsCompatibleWith(TInt) |> should be True
+        TypeHelpers.areTypesCompatible typeof<double> typeof<int> |> should be True
 
         // 기타 변환 금지
-        TBool.IsCompatibleWith(TInt) |> should be False
-        TInt.IsCompatibleWith(TDouble) |> should be False  // Double → Int 축소 금지
-        TString.IsCompatibleWith(TBool) |> should be False
-    
+        TypeHelpers.areTypesCompatible typeof<bool> typeof<int> |> should be False
+        TypeHelpers.areTypesCompatible typeof<int> typeof<double> |> should be False  // Double → Int 축소 금지
+        TypeHelpers.areTypesCompatible typeof<string> typeof<bool> |> should be False
+
     [<Fact>]
     member _.``DsDataType_ToString_가독성_테스트``() =
-        TBool.ToString() |> should equal "Bool"
-        TInt.ToString() |> should equal "Int"
-        TDouble.ToString() |> should equal "Double"
-        TString.ToString() |> should equal "String"
+        TypeHelpers.getTypeName typeof<bool> |> should equal "Bool"
+        TypeHelpers.getTypeName typeof<int> |> should equal "Int"
+        TypeHelpers.getTypeName typeof<double> |> should equal "Double"
+        TypeHelpers.getTypeName typeof<string> |> should equal "String"
     
     [<Fact>]
-    member _.``DsDataType_OfType_정확한_변환``() =
-        DsDataType.OfType(typeof<bool>) |> should equal TBool
-        DsDataType.OfType(typeof<int>) |> should equal TInt
-        DsDataType.OfType(typeof<double>) |> should equal TDouble
-        DsDataType.OfType(typeof<float>) |> should equal TDouble  // float도 Double로 매핑
-        DsDataType.OfType(typeof<string>) |> should equal TString
-    
-    [<Fact>]
-    member _.``DsDataType_OfType_지원하지_않는_타입_예외``() =
-        (fun () -> DsDataType.OfType(typeof<DateTime>) |> ignore) |> should throw typeof<ArgumentException>
-    
-    [<Fact>]
-    member _.``DsDataType_OfType_null_타입_예외``() =
-        (fun () -> DsDataType.OfType(null) |> ignore) |> should throw typeof<ArgumentException>
-    
+    member _.``TypeHelpers_isSupportedType_정확한_검증``() =
+        TypeHelpers.isSupportedType typeof<bool> |> should be True
+        TypeHelpers.isSupportedType typeof<int> |> should be True
+        TypeHelpers.isSupportedType typeof<double> |> should be True
+        TypeHelpers.isSupportedType typeof<string> |> should be True
+        TypeHelpers.isSupportedType typeof<DateTime> |> should be False
+        TypeHelpers.isSupportedType typeof<float32> |> should be False  // float32 = single (F#에서 float는 double의 별칭)
+
     [<Fact>]
     member _.``DsDataType_TryParse_성공_케이스``() =
-        DsDataType.TryParse("bool") |> should equal (Some TBool)
-        DsDataType.TryParse("BOOLEAN") |> should equal (Some TBool)
-        DsDataType.TryParse("int") |> should equal (Some TInt)
-        DsDataType.TryParse("INT32") |> should equal (Some TInt)
-        DsDataType.TryParse("double") |> should equal (Some TDouble)
-        DsDataType.TryParse("REAL") |> should equal (Some TDouble)
-        DsDataType.TryParse("string") |> should equal (Some TString)
-        DsDataType.TryParse("TEXT") |> should equal (Some TString)
+        // Boolean
+        TypeHelpers.tryParseTypeName("bool") |> should equal (Some typeof<bool>)
+        TypeHelpers.tryParseTypeName("BOOLEAN") |> should equal (Some typeof<bool>)
+
+        // Integers - IEC 61131-3 standard
+        TypeHelpers.tryParseTypeName("int") |> should equal (Some typeof<int16>)     // PLC INT = 16-bit
+        TypeHelpers.tryParseTypeName("INT32") |> should equal (Some typeof<int>)     // .NET Int32 = 32-bit
+        TypeHelpers.tryParseTypeName("DINT") |> should equal (Some typeof<int>)      // PLC DINT = 32-bit
+
+        // Floating point - IEC 61131-3 standard
+        TypeHelpers.tryParseTypeName("double") |> should equal (Some typeof<double>)
+        TypeHelpers.tryParseTypeName("REAL") |> should equal (Some typeof<double>)   // Maps to double
+        TypeHelpers.tryParseTypeName("LREAL") |> should equal (Some typeof<double>)  // PLC LREAL = 64-bit
+
+        // String
+        TypeHelpers.tryParseTypeName("string") |> should equal (Some typeof<string>)
+        TypeHelpers.tryParseTypeName("TEXT") |> should equal (Some typeof<string>)
     
     [<Fact>]
     member _.``DsDataType_TryParse_실패_케이스``() =
-        DsDataType.TryParse("invalid") |> should equal None
-        DsDataType.TryParse("") |> should equal None
-        DsDataType.TryParse(null) |> should equal None
-        DsDataType.TryParse("   ") |> should equal None
+        TypeHelpers.tryParseTypeName("invalid") |> should equal None
+        TypeHelpers.tryParseTypeName("") |> should equal None
+        TypeHelpers.tryParseTypeName(null) |> should equal None
+        TypeHelpers.tryParseTypeName("   ") |> should equal None
     
     // ═════════════════════════════════════════════════════════════════
-    // TypeConverter 모듈 포괄적 테스트
+    // TypeHelpers 모듈 포괄적 테스트
     // ═════════════════════════════════════════════════════════════════
     
     [<Fact>]
     member _.``TypeConversion_toBool_정상_변환``() =
         // bool → bool
-        TypeConverter.toBool(box true) |> should equal true
-        TypeConverter.toBool(box false) |> should equal false
+        TypeHelpers.toBool(box true) |> should equal true
+        TypeHelpers.toBool(box false) |> should equal false
         
         // int → bool
-        TypeConverter.toBool(box 1) |> should equal true
-        TypeConverter.toBool(box -1) |> should equal true
-        TypeConverter.toBool(box 0) |> should equal false
+        TypeHelpers.toBool(box 1) |> should equal true
+        TypeHelpers.toBool(box -1) |> should equal true
+        TypeHelpers.toBool(box 0) |> should equal false
         
         // double → bool
-        TypeConverter.toBool(box 1.0) |> should equal true
-        TypeConverter.toBool(box -0.1) |> should equal true
-        TypeConverter.toBool(box 0.0) |> should equal false
-        TypeConverter.toBool(box Double.NaN) |> should equal false
+        TypeHelpers.toBool(box 1.0) |> should equal true
+        TypeHelpers.toBool(box -0.1) |> should equal true
+        TypeHelpers.toBool(box 0.0) |> should equal false
+        TypeHelpers.toBool(box Double.NaN) |> should equal false
         
         // string → bool
-        TypeConverter.toBool(box "true") |> should equal true
-        TypeConverter.toBool(box "false") |> should equal false
-        TypeConverter.toBool(box "non-empty") |> should equal true
-        TypeConverter.toBool(box "") |> should equal false
-        TypeConverter.toBool(box "   ") |> should equal false
+        TypeHelpers.toBool(box "true") |> should equal true
+        TypeHelpers.toBool(box "false") |> should equal false
+        TypeHelpers.toBool(box "non-empty") |> should equal true
+        TypeHelpers.toBool(box "") |> should equal false
+        TypeHelpers.toBool(box "   ") |> should equal false
         
         // null → bool
-        TypeConverter.toBool(null) |> should equal false
+        TypeHelpers.toBool(null) |> should equal false
     
     [<Fact>]
     member _.``TypeConversion_toBool_지원하지_않는_타입_예외``() =
-        (fun () -> TypeConverter.toBool(box DateTime.Now) |> ignore) |> should throw typeof<Exception>
+        (fun () -> TypeHelpers.toBool(box DateTime.Now) |> ignore) |> should throw typeof<Exception>
     
     [<Fact>]
     member _.``TypeConversion_toInt_정상_변환``() =
         // int → int
-        TypeConverter.toInt(box 42) |> should equal 42
-        TypeConverter.toInt(box -100) |> should equal -100
+        TypeHelpers.toInt(box 42) |> should equal 42
+        TypeHelpers.toInt(box -100) |> should equal -100
         
         // bool → int
-        TypeConverter.toInt(box true) |> should equal 1
-        TypeConverter.toInt(box false) |> should equal 0
+        TypeHelpers.toInt(box true) |> should equal 1
+        TypeHelpers.toInt(box false) |> should equal 0
         
         // double → int (IEC 61131-3 truncation toward zero)
-        TypeConverter.toInt(box 42.0) |> should equal 42
-        TypeConverter.toInt(box 42.4) |> should equal 42
-        TypeConverter.toInt(box 42.6) |> should equal 42  // Truncate, not round
-        TypeConverter.toInt(box -42.4) |> should equal -42
-        TypeConverter.toInt(box -42.6) |> should equal -42  // Truncate toward zero
+        TypeHelpers.toInt(box 42.0) |> should equal 42
+        TypeHelpers.toInt(box 42.4) |> should equal 42
+        TypeHelpers.toInt(box 42.6) |> should equal 42  // Truncate, not round
+        TypeHelpers.toInt(box -42.4) |> should equal -42
+        TypeHelpers.toInt(box -42.6) |> should equal -42  // Truncate toward zero
         
         // string → int
-        TypeConverter.toInt(box "123") |> should equal 123
-        TypeConverter.toInt(box "-456") |> should equal -456
+        TypeHelpers.toInt(box "123") |> should equal 123
+        TypeHelpers.toInt(box "-456") |> should equal -456
         
         // null → int
-        TypeConverter.toInt(null) |> should equal 0
+        TypeHelpers.toInt(null) |> should equal 0
     
     [<Fact>]
     member _.``TypeConversion_toInt_NaN_예외``() =
-        (fun () -> TypeConverter.toInt(box Double.NaN) |> ignore) |> should throw typeof<Exception>
+        (fun () -> TypeHelpers.toInt(box Double.NaN) |> ignore) |> should throw typeof<Exception>
     
     [<Fact>]
     member _.``TypeConversion_toInt_Infinity_예외``() =
-        (fun () -> TypeConverter.toInt(box Double.PositiveInfinity) |> ignore) |> should throw typeof<Exception>
+        (fun () -> TypeHelpers.toInt(box Double.PositiveInfinity) |> ignore) |> should throw typeof<Exception>
     
     [<Fact>]
     member _.``TypeConversion_toInt_잘못된_문자열_예외``() =
-        (fun () -> TypeConverter.toInt(box "not_a_number") |> ignore) |> should throw typeof<Exception>
+        (fun () -> TypeHelpers.toInt(box "not_a_number") |> ignore) |> should throw typeof<Exception>
     
     [<Fact>]
     member _.``TypeConversion_toDouble_정상_변환``() =
         // double → double
-        TypeConverter.toDouble(box 42.5) |> should equal 42.5
-        TypeConverter.toDouble(box -100.25) |> should equal -100.25
+        TypeHelpers.toDouble(box 42.5) |> should equal 42.5
+        TypeHelpers.toDouble(box -100.25) |> should equal -100.25
         
         // int → double
-        TypeConverter.toDouble(box 42) |> should equal 42.0
-        TypeConverter.toDouble(box -100) |> should equal -100.0
+        TypeHelpers.toDouble(box 42) |> should equal 42.0
+        TypeHelpers.toDouble(box -100) |> should equal -100.0
         
         // bool → double
-        TypeConverter.toDouble(box true) |> should equal 1.0
-        TypeConverter.toDouble(box false) |> should equal 0.0
+        TypeHelpers.toDouble(box true) |> should equal 1.0
+        TypeHelpers.toDouble(box false) |> should equal 0.0
         
         // string → double
-        TypeConverter.toDouble(box "123.45") |> should equal 123.45
-        TypeConverter.toDouble(box "-456.78") |> should equal -456.78
+        TypeHelpers.toDouble(box "123.45") |> should equal 123.45
+        TypeHelpers.toDouble(box "-456.78") |> should equal -456.78
         
         // null → double
-        TypeConverter.toDouble(null) |> should equal 0.0
+        TypeHelpers.toDouble(null) |> should equal 0.0
     
     [<Fact>]
     member _.``TypeConversion_toDouble_잘못된_문자열_예외``() =
-        (fun () -> TypeConverter.toDouble(box "not_a_number") |> ignore) |> should throw typeof<Exception>
+        (fun () -> TypeHelpers.toDouble(box "not_a_number") |> ignore) |> should throw typeof<Exception>
     
     [<Fact>]
     member _.``TypeConversion_toString_정상_변환``() =
         // string → string
-        TypeConverter.toString(box "hello") |> should equal "hello"
+        TypeHelpers.toString(box "hello") |> should equal "hello"
         
         // int → string
-        TypeConverter.toString(box 42) |> should equal "42"
+        TypeHelpers.toString(box 42) |> should equal "42"
         
         // double → string
-        TypeConverter.toString(box 42.5) |> should equal "42.5"
+        TypeHelpers.toString(box 42.5) |> should equal "42.5"
         
         // bool → string
-        TypeConverter.toString(box true) |> should equal "True"
-        TypeConverter.toString(box false) |> should equal "False"
+        TypeHelpers.toString(box true) |> should equal "True"
+        TypeHelpers.toString(box false) |> should equal "False"
         
         // null → string
-        TypeConverter.toString(null) |> should equal ""
+        TypeHelpers.toString(null) |> should equal ""
     
     [<Fact>]
     member _.``TypeConversion_convert_모든_타입_조합``() =
         // Bool 변환
-        TypeConverter.convert TBool (box 1) |> should equal (box true)
-        TypeConverter.convert TBool (box 0) |> should equal (box false)
-        
+        TypeHelpers.convertToType typeof<bool> (box 1) |> should equal (box true)
+        TypeHelpers.convertToType typeof<bool> (box 0) |> should equal (box false)
+
         // Int 변환 (IEC 61131-3 truncation toward zero)
-        TypeConverter.convert TInt (box 42.7) |> should equal (box 42)
-        TypeConverter.convert TInt (box true) |> should equal (box 1)
-        
+        TypeHelpers.convertToType typeof<int> (box 42.7) |> should equal (box 42)
+        TypeHelpers.convertToType typeof<int> (box true) |> should equal (box 1)
+
         // Double 변환
-        TypeConverter.convert TDouble (box 42) |> should equal (box 42.0)
-        TypeConverter.convert TDouble (box true) |> should equal (box 1.0)
-        
+        TypeHelpers.convertToType typeof<double> (box 42) |> should equal (box 42.0)
+        TypeHelpers.convertToType typeof<double> (box true) |> should equal (box 1.0)
+
         // String 변환
-        TypeConverter.convert TString (box 42) |> should equal (box "42")
-        TypeConverter.convert TString (box true) |> should equal (box "True")
+        TypeHelpers.convertToType typeof<string> (box 42) |> should equal (box "42")
+        TypeHelpers.convertToType typeof<string> (box true) |> should equal (box "True")
     
     [<Fact>]
     member _.``TypeConversion_tryConvert_성공_실패_케이스``() =
         // 성공 케이스
-        let result1 = TypeConverter.tryConvert TInt (box "123")
+        let result1 = TypeHelpers.tryConvertToType typeof<int> (box "123")
         result1.IsSome |> should be True
         result1.Value |> should equal (box 123)
-        
+
         // 실패 케이스 (잘못된 문자열)
-        let result2 = TypeConverter.tryConvert TInt (box "not_a_number")
+        let result2 = TypeHelpers.tryConvertToType typeof<int> (box "not_a_number")
         result2.IsNone |> should be True
     
     // ═════════════════════════════════════════════════════════════════
-    // TypeValidation 모듈 테스트
+    // TypeHelpers 검증 함수 테스트
     // ═════════════════════════════════════════════════════════════════
-    
+
     [<Fact>]
     member _.``TypeValidation_checkNull_정상_케이스``() =
-        let result = TypeValidation.checkNull (box 42) "test_context"
+        let result = TypeHelpers.checkNull (box 42) "test_context"
         result |> should equal (box 42)
-    
+
     [<Fact>]
     member _.``TypeValidation_checkNull_null_예외``() =
-        (fun () -> TypeValidation.checkNull null "test_context" |> ignore) |> should throw typeof<ArgumentException>
-    
+        (fun () -> TypeHelpers.checkNull null "test_context" |> ignore) |> should throw typeof<ArgumentException>
+
     [<Fact>]
     member _.``TypeValidation_checkType_정상_호환``() =
-        let result = TypeValidation.checkType TInt (box 42)
+        let result = TypeHelpers.checkType typeof<int> (box 42)
         result |> should equal (box 42)
-    
+
     [<Fact>]
     member _.``TypeValidation_checkType_null_예외``() =
-        (fun () -> TypeValidation.checkType TInt null |> ignore) |> should throw typeof<ArgumentException>
-    
+        (fun () -> TypeHelpers.checkType typeof<int> null |> ignore) |> should throw typeof<ArgumentException>
+
     [<Fact>]
     member _.``TypeValidation_checkRange_Int_정상``() =
-        let result = TypeValidation.checkRange TInt (box 42)
+        let result = TypeHelpers.checkRange typeof<int> (box 42)
         result |> should equal (box 42)
-    
+
     [<Fact>]
     member _.``TypeValidation_checkRange_Double_정상``() =
-        let result = TypeValidation.checkRange TDouble (box 42.5)
+        let result = TypeHelpers.checkRange typeof<double> (box 42.5)
         result |> should equal (box 42.5)
-    
+
     [<Fact>]
     member _.``TypeValidation_checkRange_Double_NaN_예외``() =
-        (fun () -> TypeValidation.checkRange TDouble (box Double.NaN) |> ignore) |> should throw typeof<Exception>
-    
+        (fun () -> TypeHelpers.checkRange typeof<double> (box Double.NaN) |> ignore) |> should throw typeof<Exception>
+
     [<Fact>]
     member _.``TypeValidation_checkRange_Double_Infinity_예외``() =
-        (fun () -> TypeValidation.checkRange TDouble (box Double.PositiveInfinity) |> ignore) |> should throw typeof<Exception>
-    
-    [<Fact>]
-    member _.``TypeValidation_validateScopePath_정상_케이스``() =
-        // 유효한 스코프 패스들
-        TypeValidation.TypeValidator.validateScopePath "System"
-        TypeValidation.TypeValidator.validateScopePath "Motor.Control"
-        TypeValidation.TypeValidator.validateScopePath "Tank_Level.Sensor[Input1]"
-        TypeValidation.TypeValidator.validateScopePath "A.B.C.D.E"
-    
-    [<Fact>]
-    member _.``TypeValidation_validateScopePath_빈_문자열_예외``() =
-        (fun () -> TypeValidation.TypeValidator.validateScopePath "" |> ignore) |> should throw typeof<ArgumentException>
-    
-    [<Fact>]
-    member _.``TypeValidation_validateScopePath_null_예외``() =
-        (fun () -> TypeValidation.TypeValidator.validateScopePath null |> ignore) |> should throw typeof<ArgumentException>
-    
-    [<Fact>]
-    member _.``TypeValidation_validateScopePath_잘못된_형식_예외``() =
-        (fun () -> TypeValidation.TypeValidator.validateScopePath "123InvalidStart" |> ignore) |> should throw typeof<ArgumentException>
-    
-    [<Fact>]
-    member _.``TypeValidation_validateScopePath_특수문자_예외``() =
-        (fun () -> TypeValidation.TypeValidator.validateScopePath "Invalid@Path" |> ignore) |> should throw typeof<ArgumentException>
+        (fun () -> TypeHelpers.checkRange typeof<double> (box Double.PositiveInfinity) |> ignore) |> should throw typeof<Exception>

@@ -1,5 +1,6 @@
 namespace Ev2.Cpu.Ast
 
+open System
 open Ev2.Cpu.Core
 
 // ─────────────────────────────────────────────────────────────────────
@@ -11,7 +12,7 @@ open Ev2.Cpu.Core
 /// Validation error types
 type ValidationError =
     | UndefinedVariable of name:string * location:string
-    | TypeMismatch of expected:DsDataType * actual:DsDataType * location:string
+    | TypeMismatch of expected:Type * actual:Type * location:string
     | InvalidOperation of op:string * reason:string
     | DuplicateDefinition of name:string * locations:string list
     | UnusedVariable of name:string
@@ -34,7 +35,7 @@ type ValidationError =
 
 /// Validation context
 type ValidationContext = {
-    DefinedVariables: Map<string, DsDataType>
+    DefinedVariables: Map<string, Type>
     UsedVariables: Set<string>
     AllowImplicitTypes: bool
 }
@@ -45,7 +46,7 @@ with
         AllowImplicitTypes = true  // Allow function calls and expressions with implicit types
     }
 
-    member this.DefineVariable(name: string, typ: DsDataType) =
+    member this.DefineVariable(name: string, typ: Type) =
         { this with DefinedVariables = Map.add name typ this.DefinedVariables }
 
     member this.UseVariable(name: string) =
@@ -59,7 +60,7 @@ module AstValidation =
         match expr with
         | EConst(value, typ) ->
             try
-                typ.Validate(value) |> ignore
+                TypeHelpers.validateType typ value |> ignore
                 Ok ctx
             with
             | ex -> Error [InvalidOperation("Constant", ex.Message)]
@@ -119,7 +120,7 @@ module AstValidation =
             | Error errors -> Error errors
             | Ok ctx1 ->
                 match cond.InferType() with
-                | Some exprType when not (targetType.IsCompatibleWith exprType) ->
+                | Some exprType when not (TypeHelpers.areTypesCompatible targetType exprType) ->
                     Error [TypeMismatch(targetType, exprType, sprintf "Assignment to '%s'" targetName)]
                 | None when not ctx.AllowImplicitTypes ->
                     Error [InvalidOperation("Assignment", "Cannot infer expression type")]
@@ -146,11 +147,11 @@ module AstValidation =
                 | Ok ctx1 ->
                     // Define timer output variables
                     ctx1
-                    |> fun c -> c.DefineVariable(sprintf "%s.EN" name, TBool)
-                    |> fun c -> c.DefineVariable(sprintf "%s.TT" name, TBool)
-                    |> fun c -> c.DefineVariable(sprintf "%s.DN" name, TBool)
-                    |> fun c -> c.DefineVariable(sprintf "%s.ACC" name, TInt)
-                    |> fun c -> c.DefineVariable(sprintf "%s.PRE" name, TInt)
+                    |> fun c -> c.DefineVariable(sprintf "%s.EN" name, typeof<bool>)
+                    |> fun c -> c.DefineVariable(sprintf "%s.TT" name, typeof<bool>)
+                    |> fun c -> c.DefineVariable(sprintf "%s.DN" name, typeof<bool>)
+                    |> fun c -> c.DefineVariable(sprintf "%s.ACC" name, typeof<int>)
+                    |> fun c -> c.DefineVariable(sprintf "%s.PRE" name, typeof<int>)
                     |> Ok
                 | Error e -> Error e
 
@@ -173,9 +174,9 @@ module AstValidation =
                 match ctxResult with
                 | Ok ctx1 ->
                     ctx1
-                    |> fun c -> c.DefineVariable(sprintf "%s.DN" name, TBool)
-                    |> fun c -> c.DefineVariable(sprintf "%s.CV" name, TInt)
-                    |> fun c -> c.DefineVariable(sprintf "%s.PV" name, TInt)
+                    |> fun c -> c.DefineVariable(sprintf "%s.DN" name, typeof<bool>)
+                    |> fun c -> c.DefineVariable(sprintf "%s.CV" name, typeof<int>)
+                    |> fun c -> c.DefineVariable(sprintf "%s.PV" name, typeof<int>)
                     |> Ok
                 | Error e -> Error e
 
@@ -214,18 +215,6 @@ module AstValidation =
                         c.DefineVariable(sprintf "%s.%s" instanceName stateName, stateType)) ctx1
                 Ok ctxWithState
             | Error e -> Error e
-
-        | SBreak ->
-            // Break statement is a control flow instruction, no validation needed
-            Ok ctx
-
-        | SFor _ ->
-            // For loop validation not yet implemented
-            Ok ctx
-
-        | SWhile _ ->
-            // While loop validation not yet implemented
-            Ok ctx
 
     /// Validate program (list of statements)
     let validateProgram (statements: DsStatement list) : Result<unit, ValidationError list> =

@@ -181,28 +181,8 @@ module UserStmtConverter =
             let callExpr = Function(fbName, inputExprs)
             // FB 호출을 부울 상태 플래그로 저장 (호출 완료 표시용)
             // 인스턴스별로 고유한 Done 플래그 사용
-            let doneTag = DsTag.Create(sprintf "%s.Done" instanceName, DsDataType.TBool)
+            let doneTag = DsTag.Create(sprintf "%s.Done" instanceName, typeof<bool>)
             [Assign(nextStep(), doneTag, callExpr)]
-
-        | UFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body) ->
-            // FOR 루프는 Core.DsStmt의 For로 변환
-            let scopedVarName = UserExprConverter.scopeName scope loopVarName
-            let loopTag = DsTag.Create(scopedVarName, loopVarType)
-            let dsStart = userExprToDsExpr scope startExpr
-            let dsEnd = userExprToDsExpr scope endExpr
-            let dsStep = stepExpr |> Option.map (userExprToDsExpr scope)
-            let dsBody = body |> List.collect (userStmtToDsStmts scope)
-            [For(nextStep(), loopTag, dsStart, dsEnd, dsStep, dsBody)]
-
-        | UWhile(condition, body, maxIterations) ->
-            // WHILE 루프는 Core.DsStmt의 While로 변환
-            let dsCond = userExprToDsExpr scope condition
-            let dsBody = body |> List.collect (userStmtToDsStmts scope)
-            [While(nextStep(), dsCond, dsBody, maxIterations)]
-
-        | UBreak ->
-            // BREAK는 Core.DsStmt의 Break로 변환
-            [Break(nextStep())]
 
         | UNoop ->
             // NOOP은 빈 리스트
@@ -234,14 +214,10 @@ module UserStmtConverter =
                 // 단순화: Terminal이면 UAssign으로 간주
                 match act with
                 | UParam(name, _) ->
-                    Some (UWhen(cond, UAssign(name, UConst(box true, DsDataType.TBool))))
+                    Some (UWhen(cond, UAssign(name, UConst(box true, typeof<bool>))))
                 | _ ->
                     None
             | _ -> None
-
-        | Break _ | For _ | While _ ->
-            // Break/For/While statements cannot be converted to UserStmt
-            None
 
 /// 변환 유틸리티
 module ConversionUtils =
@@ -261,7 +237,7 @@ module ConversionUtils =
         DsTag.Create(scopedName, param.DataType)
 
     /// Static 변수를 DsTag로 변환 (스코핑 적용)
-    let staticToDsTag (scope: string) (name: string) (dataType: DsDataType) : DsTag =
+    let staticToDsTag (scope: string) (name: string) (dataType: Type) : DsTag =
         let scopedName = sprintf "%s_%s" scope name
         DsTag.Create(scopedName, dataType)
 
