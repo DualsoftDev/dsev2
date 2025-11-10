@@ -13,6 +13,7 @@ type Literal<'T>(value:'T) =
         member x.Value with get() = box x.Value and set(v:obj) = x.Value <- (v :?> 'T)
         member x.TValue = x.Value
 
+/// POU 단위 function / fB 의 로컬변수 영역에 사용될 변수 기본 클래스
 [<AbstractClass>]
 type VarBase<'T>(name:string, ?varType:VarType, ?initValue:'T) =
     member x.Name = name

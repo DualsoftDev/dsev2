@@ -17,12 +17,14 @@ type IWithValue =
 [<AllowNullLiteral>] type IFunctionProgram = inherit IProgram inherit IWithType
 [<AllowNullLiteral>] type IFBProgram      = inherit IProgram
 [<AllowNullLiteral>] type IScanProgram    = inherit IProgram
-[<AllowNullLiteral>] type IValue          = interface end
 [<AllowNullLiteral>] type ICommand        = interface end      // copy, move
 [<AllowNullLiteral>] type IStruct         = interface end
 [<AllowNullLiteral>] type IExpression     = inherit IWithType inherit IWithValue
 [<AllowNullLiteral>] type IFunctionCall   = interface end   //inherit IExpression
 [<AllowNullLiteral>] type IFBCall         = interface end
+[<AllowNullLiteral>] type IStatement      = interface end
+[<AllowNullLiteral>] type IFBInstance     = interface end
+
 
 type DimRange = int * int
 
@@ -85,7 +87,7 @@ type IExpression<'T> =
 [<AllowNullLiteral>] type IVariable<'T> = inherit IVariable inherit ITerminal<'T>
 [<AllowNullLiteral>] type ILiteral<'T> = inherit ILiteral inherit ITerminal<'T>
 
-[<AllowNullLiteral>] type IStorage = abstract IVariables : IVariable[]
+//[<AllowNullLiteral>] type IStorage = abstract IVariables : IVariable[]
 
 [<AllowNullLiteral>]
 type IStorages =
@@ -99,4 +101,20 @@ type OutputMapping = IDictionary<string, IVariable>
 
 
 
-[<AllowNullLiteral>] type IStatement = interface end
+
+//type PouType =
+//    | PouProgram
+//    | PouFunction
+//    | PouFB // Fuction Block
+
+///// Programming Language
+//type PouLanguage =
+//    | LD   // Ladder Diagram
+//    | ST   // Structured Text
+//    | IL   // Instruction List
+//    //| SFC  // Sequential Function Chart (확장용.  FB에서만 유효)
+
+
+[<AutoOpen>]
+module Common =
+    let internal nullString = null:string

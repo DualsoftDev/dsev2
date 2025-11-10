@@ -41,6 +41,17 @@
 		<Compile Include="Ev2CoreExtensionForCSharp.fs" />
 		<Compile Include="MiniSample.fs" />
 		<Compile Include="IR\Interfaces.fs" />
+		<Compile Include="IR\Var.fs" />
+		<Compile Include="IR\Operator.fs" />
+		<Compile Include="IR\ComplexTypes.fs" />
+		<Compile Include="IR\Timer.fs" />
+		<Compile Include="IR\Counter.fs" />
+		<Compile Include="IR\Statement.fs" />
+		<Compile Include="IR\IECFunction.fs" />
+		<Compile Include="IR\POU.fs" />
+		<Compile Include="IR\Extension.fs" />
+		<Compile Include="IR\Runtime.fs" />
+
 		<Compile Include="EntryPoint.fs" />
 	</ItemGroup>
 
