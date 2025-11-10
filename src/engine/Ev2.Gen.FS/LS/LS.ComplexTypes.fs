@@ -1,5 +1,6 @@
 namespace Ev2.Gen
 open Dual.Common.Base
+open Ev2.Core.FS.IR
 
 /// 구조체 변수.
 // - 산전 기준으로는 Struct 내에 Struct 는 허용하지 않음
@@ -20,7 +21,7 @@ type Struct(name:string, fields:IVariable[]) =
         member x.VarType = x.VarType
         member x.Value with get() = fail() and set v = fail()
 
-type Array<'T>(name:string, dimensions:Ev2.Gen.Range[]) =
+type Array<'T>(name:string, dimensions:DimRange[]) =
     new() = Array<'T>(nullString, [||])
     member x.Dimensions = dimensions
     member x.DataType = typeof<Array<'T>>

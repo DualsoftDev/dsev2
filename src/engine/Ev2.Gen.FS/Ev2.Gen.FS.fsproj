@@ -22,7 +22,6 @@
 	  <Compile Include="IR\IR.HMI.fs" />
 	  <Compile Include="IR\IR.Metadata.fs" />
 	  <Compile Include="IR\IR.Root.fs" />-->
-	  <Compile Include="ls\LS.Interface.fs" />
 	  <Compile Include="LS\LS.Var.fs" />
 	  <Compile Include="ls\LS.Operator.fs" />
 	  <Compile Include="ls\LS.ComplexTypes.fs" />

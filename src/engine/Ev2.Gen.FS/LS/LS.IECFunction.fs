@@ -1,8 +1,8 @@
 namespace Ev2.Gen
-open System.Linq
-open Dual.Common.Base
+
 open System
-open System.Collections.Generic
+open Ev2.Core.FS.IR
+
 
 [<AutoOpen>]
 module ProgramModule =

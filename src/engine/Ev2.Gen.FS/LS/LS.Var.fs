@@ -3,35 +3,7 @@ namespace Ev2.Gen
 open System
 open System.Collections.Generic
 open Dual.Common.Base
-
-
-//type DataType =
-//    | DtUndefined
-//    | DtBool        // of bool     option
-//    | DtInt8        // of int8     option
-//    | DtInt16       // of int16    option
-//    | DtInt32       // of int32    option
-//    | DtInt64       // of int64    option
-//    | DtUint8       // of uint8    option  // byte
-//    | DtUInt16      // of uint16   option
-//    | DtUInt32      // of uint32   option
-//    | DtUInt64      // of uint64   option
-//    | DtSingle      // of single   option
-//    | DtDouble      // of double   option
-//    | DtTime        // of TimeSpan option
-//    | DtDate        // of DateOnly option
-//    | DtTimeOfDay   // of TimeOnly option
-//    | DtDateAndTime // of DateTime option
-//    | DtString      // of string   option
-//    | DtArray       // of IArray // of DataType * ArraySizeSpec
-//    | DtFBInstance  // of IFBInstance  // e.g: TON, ..
-//    | DtStruct      // of IStruct
-
-//    //| DtSubroutine
-//    //| DtCustom // of string  // User-defined type
-
-//type ValuedDataType = DataType * obj
-
+open Ev2.Core.FS.IR
 
 type Literal<'T>(value:'T) =
     member x.DataType = typeof<'T>

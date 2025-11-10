@@ -1,4 +1,4 @@
-namespace Ev2.Gen
+namespace Ev2.Core.FS.IR
 
 open System
 open System.Collections.Generic
@@ -24,12 +24,12 @@ type IWithValue =
 [<AllowNullLiteral>] type IFunctionCall   = interface end   //inherit IExpression
 [<AllowNullLiteral>] type IFBCall         = interface end
 
-type Range = int * int
+type DimRange = int * int
 
 [<AllowNullLiteral>]
 type IArray =
     inherit IWithType
-    abstract Dimensions : Range[]
+    abstract Dimensions : DimRange[]
 
 [<AllowNullLiteral>]
 type ITerminal =
