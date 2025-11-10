@@ -26,14 +26,42 @@ module OperatorEvaluators =
     let inline private opaqueArgs (args:Arguments<'T>) = args.Cast<IExpression>().ToArray()
     let inline private valueArgs<'T> (args:Arguments) = args.Cast<IExpression<'T>>().Map _.TValue
 
-    let inline add<'T when 'T : (static member (+) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
-        Operator<'T>("+", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (+)) )
-    let inline sub<'T when 'T : (static member (-) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
-        Operator<'T>("-", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (-)) )
-    let inline mul<'T when 'T : (static member (*) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
-        Operator<'T>("*", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (*)) )
-    let inline div<'T when 'T : (static member (/) : 'T * 'T -> 'T)> (args:Arguments<'T>) =
-        Operator<'T>("/", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (/)) )
+    let inline add< ^T when ^T : (static member (+) : ^T * ^T -> ^T) > (args:Arguments< ^T >) =
+        Operator< ^T >("+", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (+)) )
+    let inline sub< ^T when ^T : (static member (-) : ^T * ^T -> ^T) > (args:Arguments< ^T >) =
+        Operator< ^T >("-", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (-)) )
+    let inline mul< ^T when ^T : (static member (*) : ^T * ^T -> ^T) > (args:Arguments< ^T >) =
+        Operator< ^T >("*", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (*)) )
+    let inline div< ^T when ^T : (static member (/) : ^T * ^T -> ^T) > (args:Arguments< ^T >) =
+        Operator< ^T >("/", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (/)) )
+    let inline modulo< ^T when ^T : (static member (%) : ^T * ^T -> ^T) > (args:Arguments< ^T >) =
+        Operator< ^T >("%", opaqueArgs args, Evaluator=(valueArgs >> Seq.reduce (%)) )
+    let inline pow< ^T
+        when ^T : (static member ( * ) : ^T * ^T -> ^T)
+        and  ^T : (static member One : ^T) >
+        (bse:IExpression< ^T >, pwr:IExpression<int>)
+      =
+        Operator< ^T >("power", [| bse; pwr |],
+            Evaluator = fun args ->
+                let baseValue = (args[0] :?> IExpression< ^T >).TValue
+                let powerValue = (args[1] :?> IExpression<int>).TValue
+                if powerValue < 0 then
+                    failwithf "power 연산은 음수 지수를 지원하지 않습니다. 값: %d" powerValue
+                let rec loop acc current exponent =
+                    if exponent = 0 then
+                        acc
+                    else
+                        let nextAcc = if (exponent &&& 1) = 1 then acc * current else acc
+                        loop nextAcc (current * current) (exponent >>> 1)
+                loop (LanguagePrimitives.GenericOne< ^T >) baseValue powerValue)
+
+    /// 형변환 연산자 구현
+    let inline cast<'T>(value:IExpression) =
+        Operator<'T>("CAST", [| value |],
+            Evaluator = fun args ->
+                let valueExpr = args[0]
+                Convert.ChangeType(valueExpr.Value, typeof<'T>) |> unbox<'T>)
+
 
 
     let inline private createComparisonOperator<'T when 'T: comparison> (name, operator:'T -> 'T -> bool) (a:IExpression<'T>, b:IExpression<'T>) =
@@ -234,3 +262,33 @@ module OperatorEvaluators =
             Evaluator = fun args ->
                 let valueExpr = args[0] :?> IExpression<bool>
                 not valueExpr.TValue)
+
+    // 액티브 패턴: single/double 분기
+    let (|F32|F64|Other|) (v: obj) =
+        match v with
+        | :? single as x -> F32 x
+        | :? double as x -> F64 x
+        | _              -> Other v
+
+    // 단항 실수 함수(Math.* : double->double)를 IExpression<'T>용으로 리프트
+    let inline private liftUnaryFloat (opName:string) (f: double -> double) (arg: IExpression<'T>) =
+        Operator<'T>(
+            opName,
+            [| arg |],
+            Evaluator = fun args ->
+                let a = args[0] :?> IExpression<'T>
+                match box a.TValue with
+                | F32 v -> f (float v) |> float32 |> unbox<'T>
+                | F64 v -> f v         |> unbox<'T>
+                | Other _ -> failwithf $"지원하지 않는 형식에 대한 {opName} 연산입니다: {a.DataType}"
+        )
+
+    let cos  (x: IExpression<'T>) = liftUnaryFloat "COS"  Math.Cos  x
+    let sin  (x: IExpression<'T>) = liftUnaryFloat "SIN"  Math.Sin  x
+    let tan  (x: IExpression<'T>) = liftUnaryFloat "TAN"  Math.Tan  x
+    let acos (x: IExpression<'T>) = liftUnaryFloat "ACOS" Math.Acos x
+    let asin (x: IExpression<'T>) = liftUnaryFloat "ASIN" Math.Asin x
+    let atan (x: IExpression<'T>) = liftUnaryFloat "ATAN" Math.Atan x
+    let exp  (x: IExpression<'T>) = liftUnaryFloat "EXP"  Math.Exp  x
+    let log  (x: IExpression<'T>) = liftUnaryFloat "LOG"  Math.Log  x
+    let sqrt (x: IExpression<'T>) = liftUnaryFloat "SQRT" Math.Sqrt x
