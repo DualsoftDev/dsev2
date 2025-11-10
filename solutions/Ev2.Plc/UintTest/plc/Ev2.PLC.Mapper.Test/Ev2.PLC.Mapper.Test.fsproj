@@ -1,27 +1,55 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <GenerateProgramFile>false</GenerateProgramFile>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);0988</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
+    <!-- Test Data and Helpers -->
+    <Compile Include="TestData.fs" />
+    <Compile Include="TestHelpers.fs" />
+
+    <!-- Parser Tests -->
+    <Compile Include="LSElectricParserTests.fs" />
+    <Compile Include="AllenBradleyParserTests.fs" />
+    <Compile Include="MitsubishiParserTests.fs" />
+    <Compile Include="SiemensParserTests.fs" />
+
+    <!-- Analyzer Tests -->
+    <Compile Include="VariableAnalyzerTests.fs" />
+    <Compile Include="NamingAnalyzerTests.fs" />
+    <Compile Include="LogicAnalyzerTests.fs" />
+
+    <!-- Mapper Tests -->
+    <Compile Include="MappingEngineTests.fs" />
+    <Compile Include="ConfigurationTests.fs" />
+    <Compile Include="MapperFactoryTests.fs" />
+
+    <!-- Integration Tests -->
+    <Compile Include="IntegrationTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="xunit" Version="2.9.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FsUnit.xUnit" Version="5.6.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="BasicMapperTests.fs" />
+    <ProjectReference Include="..\..\..\src\Ev2.PLC.Mapper\Ev2.PLC.Mapper.fsproj" />
+    <ProjectReference Include="..\Ev2.PLC.ProtocolTestHelper\Ev2.ProtocolTestHelper.fsproj" />
   </ItemGroup>
-
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\plc\Ev2.PLC.Server\Ev2.PLC.Server.fsproj" />
-    <ProjectReference Include="..\..\..\plc\Ev2.PLC.Common.FS\Ev2.PLC.Common.fsproj" />
+    <Content Include="TestFiles\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
-
 </Project>

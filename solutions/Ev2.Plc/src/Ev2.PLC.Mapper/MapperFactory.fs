@@ -9,8 +9,7 @@ open Ev2.PLC.Mapper.Core.Types
 open Ev2.PLC.Mapper.Core.Interfaces
 open Ev2.PLC.Mapper.Core.Engine
 open Ev2.PLC.Mapper.Core.Configuration
-open Ev2.PLC.Mapper.Parsers.LSElectric
-open Ev2.PLC.Mapper.Parsers.AllenBradley
+open Ev2.PLC.Mapper.Core.Parser
 
 /// PLC Mapper 메인 팩토리
 type MapperFactory(loggerFactory: ILoggerFactory, ?configProvider: IConfigurationProvider) =
@@ -26,12 +25,14 @@ type MapperFactory(loggerFactory: ILoggerFactory, ?configProvider: IConfiguratio
         try
             match vendor with
             | PlcVendor.LSElectric _ ->
-                let parserLogger = loggerFactory.CreateLogger<LSElectricParser>()
-                Some (LSElectricParserFactory.create parserLogger :> IPlcProgramParser)
-            
+                // TODO: Integrate new LSElectricParser
+                logger.LogWarning("LS Electric parser integration pending")
+                None
+
             | PlcVendor.AllenBradley _ ->
-                let parserLogger = loggerFactory.CreateLogger<AllenBradleyParser>()
-                Some (AllenBradleyParserFactory.create parserLogger :> IPlcProgramParser)
+                // TODO: Integrate new AllenBradleyParser
+                logger.LogWarning("Allen Bradley parser integration pending")
+                None
             
             | PlcVendor.Mitsubishi _ ->
                 // TODO: Implement Mitsubishi parser

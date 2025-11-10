@@ -1,219 +1,375 @@
-module Ev2.PLC.Mapper.Tests.LSElectricParserTests
+namespace Ev2.PLC.Mapper.Tests
 
 open System
 open System.IO
-open Xunit
-open FsUnit.Xunit
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Logging.Abstractions
-open Ev2.PLC.Common.Types
+open Xunit
+open FsUnit.Xunit
+open Ev2.PLC.Mapper.Core.Parser
 open Ev2.PLC.Mapper.Core.Types
 open Ev2.PLC.Mapper.Core.Interfaces
-open Ev2.PLC.Mapper.Parsers.LSElectric
 
-/// 테스트용 샘플 파일 경로
-let getSampleFilePath () =
-    let testDir = __SOURCE_DIRECTORY__
-    Path.Combine(testDir, "SampleData", "lsPLC.xml")
+module LSElectricParserTests =
 
-/// 파서 생성 헬퍼
-let createParser () =
-    let logger = NullLogger<LSElectricParser>.Instance
-    LSElectricParserFactory.create logger
+    /// Test logger
+    let private createLogger() =
+        (NullLoggerFactory.Instance :> ILoggerFactory).CreateLogger<LSElectricParser>()
 
-[<Fact>]
-let ``LSElectricParser should be created successfully`` () =
-    let parser = createParser()
+    /// Sample XML content for LS Electric
+    let private sampleXML = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project version="2.0">
+    <Program Name="MainProgram" Language="LD">
+        <Rung Number="0">
+            <Comment>Motor Start/Stop Control</Comment>
+            <Elements>
+                <Element Type="NO_CONTACT" Name="StartButton" />
+                <Element Type="NC_CONTACT" Name="StopButton" />
+                <Element Type="COIL" Name="Motor" />
+            </Elements>
+        </Rung>
+        <Rung Number="1">
+            <Comment>Timer Operation</Comment>
+            <Elements>
+                <Element Type="NO_CONTACT" Name="Motor" />
+                <Element Type="TON" Name="Timer1" Parameter="T#5s" />
+                <Element Type="COIL" Name="TimerDone" />
+            </Elements>
+        </Rung>
+        <Rung Number="2">
+            <Comment>Counter Logic</Comment>
+            <Elements>
+                <Element Type="NO_CONTACT" Name="CountPulse" />
+                <Element Type="CTU" Name="Counter1" Parameter="100" />
+                <Element Type="NO_CONTACT" Name="Counter1.Q" />
+                <Element Type="COIL" Name="CounterReached" />
+            </Elements>
+        </Rung>
+        <Rung Number="3">
+            <Comment>Safety Circuit</Comment>
+            <Elements>
+                <Element Type="NO_CONTACT" Name="EMERGENCY_STOP" />
+                <Element Type="NC_CONTACT" Name="SafetyGate" />
+                <Element Type="COIL" Name="SafetyRelay" />
+            </Elements>
+        </Rung>
+        <Rung Number="4">
+            <Comment>Math Operations</Comment>
+            <Elements>
+                <Element Type="ADD" Name="AddBlock" Input1="Value1" Input2="Value2" Output="Result" />
+                <Element Type="MUL" Name="MultiplyBlock" Input1="Result" Input2="Factor" Output="FinalValue" />
+            </Elements>
+        </Rung>
+    </Program>
+</XG5000Project>"""
 
-    parser |> should not' (be Null)
-    parser.SupportedVendor.Manufacturer |> should equal "LS Electric"
+    [<Fact>]
+    let ``LSElectricParser should parse XML file content`` () =
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-[<Fact>]
-let ``LSElectricParser should support LSElectric XML format`` () =
-    let parser = createParser()
-    let format = LSElectricXML "test.xml"
+        async {
+            let! result = parser.ParseContentAsync(sampleXML)
 
-    parser.CanParse(format) |> should equal true
+            result |> should not' (be Empty)
+            result.Length |> should equal 5
+        } |> Async.RunSynchronously
 
-[<Fact>]
-let ``LSElectricParser should not support other formats`` () =
-    let parser = createParser()
-    let format = SiemensXML "test.xml"
+    [<Fact>]
+    let ``LSElectricParser should extract rung numbers correctly`` () =
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-    parser.CanParse(format) |> should equal false
+        async {
+            let! result = parser.ParseContentAsync(sampleXML)
 
-[<Fact>]
-let ``LSElectricParser should validate existing XML file`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+            let rung0 = result |> List.find (fun r -> r.Number = 0)
+            rung0.Number |> should equal 0
+            rung0.Comment |> should equal (Some "Motor Start/Stop Control")
+        } |> Async.RunSynchronously
 
-    if File.Exists(sampleFile) then
-        let result = parser.ValidateFileAsync(sampleFile) |> Async.AwaitTask |> Async.RunSynchronously
+    [<Fact>]
+    let ``LSElectricParser should detect logic flow types`` () =
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        result.IsValid |> should equal true
-        result.Message |> should not' (be EmptyString)
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+        async {
+            let! result = parser.ParseContentAsync(sampleXML)
 
-[<Fact>]
-let ``LSElectricParser should detect non-existent file`` () =
-    let parser = createParser()
-    let nonExistentFile = "NonExistent.xml"
+            // Timer rung
+            let timerRung = result |> List.find (fun r -> r.Comment = Some "Timer Operation")
+            timerRung.Type |> should equal (Some LogicFlowType.Timer)
 
-    let result = parser.ValidateFileAsync(nonExistentFile) |> Async.AwaitTask |> Async.RunSynchronously
+            // Counter rung
+            let counterRung = result |> List.find (fun r -> r.Comment = Some "Counter Logic")
+            counterRung.Type |> should equal (Some LogicFlowType.Counter)
 
-    result.IsValid |> should equal false
-    result.Severity |> should equal ValidationSeverity.ValidationError
+            // Safety rung
+            let safetyRung = result |> List.find (fun r -> r.Comment = Some "Safety Circuit")
+            safetyRung.Type |> should equal (Some LogicFlowType.Safety)
 
-[<Fact>]
-let ``LSElectricParser should parse sample XML file successfully`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+            // Math rung
+            let mathRung = result |> List.find (fun r -> r.Comment = Some "Math Operations")
+            mathRung.Type |> should equal (Some LogicFlowType.Math)
+        } |> Async.RunSynchronously
 
-    if File.Exists(sampleFile) then
-        let result = parser.ParseAsync(sampleFile) |> Async.AwaitTask |> Async.RunSynchronously
+    [<Fact>]
+    let ``LSElectricParser should extract variables from rungs`` () =
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        // Verify project info
-        result.ProjectInfo |> should not' (be Null)
-        result.ProjectInfo.Name |> should not' (be EmptyString)
-        result.ProjectInfo.Vendor.Manufacturer |> should equal "LS Electric"
+        async {
+            let! result = parser.ParseContentAsync(sampleXML)
 
-        // Verify variables were parsed
-        result.Variables |> should not' (be Empty)
-        result.Variables.Length |> should be (greaterThan 0)
+            let rung0 = result |> List.find (fun r -> r.Number = 0)
+            rung0.Variables |> should contain "StartButton"
+            rung0.Variables |> should contain "StopButton"
+            rung0.Variables |> should contain "Motor"
+        } |> Async.RunSynchronously
 
-        printfn $"Parsed {result.Variables.Length} variables from LS PLC file"
-        printfn $"Parsed {result.Logic.Length} logic rungs from LS PLC file"
-        printfn $"Project name: {result.ProjectInfo.Name}"
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+    [<Fact>]
+    let ``LSElectricParser should handle structured text content`` () =
+        let stXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="STProgram" Language="ST">
+        <Code>
+            IF Temperature > 100 THEN
+                HeaterOn := FALSE;
+                CoolerOn := TRUE;
+            ELSE
+                HeaterOn := TRUE;
+                CoolerOn := FALSE;
+            END_IF;
+        </Code>
+    </Program>
+</XG5000Project>"""
 
-[<Fact>]
-let ``LSElectricParser should extract variables with correct structure`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-    if File.Exists(sampleFile) then
-        let result = parser.ParseAsync(sampleFile) |> Async.AwaitTask |> Async.RunSynchronously
+        async {
+            let! result = parser.ParseContentAsync(stXml)
 
-        // Check first variable
-        let firstVar = result.Variables |> List.tryHead
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.LogicType |> should equal LogicType.StructuredText
+        } |> Async.RunSynchronously
 
-        match firstVar with
-        | Some var ->
-            var.Name |> should not' (be EmptyString)
-            var.Address |> should not' (be EmptyString)
-            var.DataType |> should not' (be EmptyString)
+    [<Fact>]
+    let ``LSElectricParser should support XML extension`` () =
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-            printfn $"Sample variable: Name={var.Name}, Address={var.Address}, Type={var.DataType}"
-        | None ->
-            Assert.True(false, "No variables found in sample file")
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+        parser.SupportedFileExtensions |> should contain ".xml"
+        parser.SupportedFileExtensions |> should contain ".XML"
 
-[<Fact>]
-let ``LSElectricParser should parse specific variable types`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+    [<Fact>]
+    let ``LSElectricParser should check if it can parse file`` () =
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-    if File.Exists(sampleFile) then
-        let result = parser.ParseAsync(sampleFile) |> Async.AwaitTask |> Async.RunSynchronously
+        parser.CanParse("project.xml") |> should be True
+        parser.CanParse("project.XML") |> should be True
+        parser.CanParse("project.csv") |> should be False
+        parser.CanParse("project.txt") |> should be False
 
-        // Check for BOOL variables
-        let boolVars = result.Variables |> List.filter (fun v -> v.DataType = "BOOL")
-        boolVars |> should not' (be Empty)
+    [<Fact>]
+    let ``LSElectricParser should handle empty XML gracefully`` () =
+        let emptyXml = """<?xml version="1.0" encoding="UTF-8"?><XG5000Project></XG5000Project>"""
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        // Check for TIMER variables
-        let timerVars = result.Variables |> List.filter (fun v -> v.DataType = "TON")
-        timerVars |> should not' (be Empty)
+        async {
+            let! result = parser.ParseContentAsync(emptyXml)
 
-        // Check for STRING variables (may not exist in sample file)
-        let stringVars = result.Variables |> List.filter (fun v -> v.DataType = "STRING")
+            result |> should be Empty
+        } |> Async.RunSynchronously
 
-        // Count different types
-        let typeGroups = result.Variables |> List.groupBy (fun v -> v.DataType)
+    [<Fact>]
+    let ``LSElectricParser should handle malformed XML gracefully`` () =
+        let malformed = "<This is not valid XML"
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        printfn $"BOOL variables: {boolVars.Length}"
-        printfn $"TON (Timer) variables: {timerVars.Length}"
-        printfn $"STRING variables: {stringVars.Length}"
-        printfn $"Total variable types: {typeGroups.Length}"
-        for (dataType, vars) in typeGroups |> List.take (min 5 typeGroups.Length) do
-            printfn $"  {dataType}: {vars.Length} variables"
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+        async {
+            let! result = parser.ParseContentAsync(malformed)
 
-[<Fact>]
-let ``LSElectricParser should extract variables with addresses`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+            result |> should be Empty
+        } |> Async.RunSynchronously
 
-    if File.Exists(sampleFile) then
-        let result = parser.ParseAsync(sampleFile) |> Async.AwaitTask |> Async.RunSynchronously
+    [<Fact>]
+    let ``LSElectricParser should detect function block logic type`` () =
+        let fbXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="FBProgram" Language="FBD">
+        <FunctionBlock Number="0">
+            <Elements>
+                <Element Type="FB" Name="PID_Controller" />
+                <Element Type="FB" Name="Motor_Control" />
+            </Elements>
+        </FunctionBlock>
+    </Program>
+</XG5000Project>"""
 
-        // Find variables with M memory addresses
-        let mAddressVars = result.Variables
-                          |> List.filter (fun v -> v.Address.StartsWith("%MX") || v.Address.StartsWith("%MD"))
-                          |> List.truncate 5
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        mAddressVars |> should not' (be Empty)
+        async {
+            let! result = parser.ParseContentAsync(fbXml)
 
-        for var in mAddressVars do
-            printfn $"Variable: {var.Name} -> {var.Address} ({var.DataType})"
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.LogicType |> should equal LogicType.FunctionBlock
+        } |> Async.RunSynchronously
 
-[<Fact>]
-let ``LSElectricParser should extract project metadata`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+    [<Fact>]
+    let ``LSElectricParser should extract parameters from elements`` () =
+        let paramXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="ParamProgram">
+        <Rung Number="0">
+            <Elements>
+                <Element Type="TON" Name="Timer1" Parameter="T#10s" />
+                <Element Type="CTU" Name="Counter1" Parameter="50" Preset="100" />
+                <Element Type="MOV" Name="Move1" Source="D100" Destination="D200" />
+            </Elements>
+        </Rung>
+    </Program>
+</XG5000Project>"""
 
-    if File.Exists(sampleFile) then
-        let result = parser.ParseAsync(sampleFile) |> Async.AwaitTask |> Async.RunSynchronously
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        result.ProjectInfo.Name |> should not' (be EmptyString)
-        result.ProjectInfo.FilePath |> should equal sampleFile
-        result.ProjectInfo.FileSize |> should be (greaterThan 0L)
+        async {
+            let! result = parser.ParseContentAsync(paramXml)
 
-        match result.ProjectInfo.Format with
-        | LSElectricXML _ -> Assert.True(true)
-        | _ -> Assert.True(false, "Expected LSElectricXML format")
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.Variables |> should contain "Timer1"
+            logic.Variables |> should contain "Counter1"
+            logic.Variables |> should contain "Move1"
+        } |> Async.RunSynchronously
 
-        printfn $"Project: {result.ProjectInfo.Name}"
-        printfn $"Version: {result.ProjectInfo.Version}"
-        printfn $"File size: {result.ProjectInfo.FileSize} bytes"
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+    [<Fact>]
+    let ``LSElectricParser should detect sequential flow type`` () =
+        let seqXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="SeqProgram">
+        <Rung Number="0">
+            <Comment>Sequential Operation</Comment>
+            <Elements>
+                <Element Type="STEP" Name="Step1" />
+                <Element Type="TRANSITION" Name="Trans1" />
+                <Element Type="STEP" Name="Step2" />
+            </Elements>
+        </Rung>
+    </Program>
+</XG5000Project>"""
 
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
+        async {
+            let! result = parser.ParseContentAsync(seqXml)
 
-[<Fact>]
-let ``LSElectricParser should extract symbol table`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.Type |> should equal (Some LogicFlowType.Sequential)
+        } |> Async.RunSynchronously
 
-    if File.Exists(sampleFile) then
-        let xmlContent = File.ReadAllText(sampleFile)
-        let symbols = parser.ExtractSymbolTableAsync(xmlContent) |> Async.AwaitTask |> Async.RunSynchronously
+    [<Fact>]
+    let ``LSElectricParser should detect interrupt flow type`` () =
+        let intXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="IntProgram">
+        <Rung Number="0">
+            <Comment>Interrupt Handler</Comment>
+            <Elements>
+                <Element Type="INTERRUPT" Name="INT1" />
+                <Element Type="P_EDGE" Name="Edge1" />
+                <Element Type="N_EDGE" Name="Edge2" />
+                <Element Type="COIL" Name="Output" />
+            </Elements>
+        </Rung>
+    </Program>
+</XG5000Project>"""
 
-        symbols |> should not' (be Empty)
-        symbols.Length |> should be (greaterThan 0)
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        printfn $"Extracted {symbols.Length} symbols from symbol table"
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+        async {
+            let! result = parser.ParseContentAsync(intXml)
 
-[<Fact>]
-let ``LSElectricParser should extract project info from content`` () =
-    let parser = createParser()
-    let sampleFile = getSampleFilePath()
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.Type |> should equal (Some LogicFlowType.Interrupt)
+        } |> Async.RunSynchronously
 
-    if File.Exists(sampleFile) then
-        let xmlContent = File.ReadAllText(sampleFile)
-        let projectInfo = parser.ExtractProjectInfoAsync(xmlContent) |> Async.AwaitTask |> Async.RunSynchronously
+    [<Fact>]
+    let ``LSElectricParser should handle complex nested structures`` () =
+        let nestedXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="ComplexProgram">
+        <Rung Number="0">
+            <Comment>Complex Logic with Nesting</Comment>
+            <Elements>
+                <Branch Type="Parallel">
+                    <Elements>
+                        <Element Type="NO_CONTACT" Name="Input1" />
+                        <Element Type="NO_CONTACT" Name="Input2" />
+                    </Elements>
+                </Branch>
+                <Branch Type="Series">
+                    <Elements>
+                        <Element Type="NC_CONTACT" Name="Input3" />
+                        <Element Type="NO_CONTACT" Name="Input4" />
+                    </Elements>
+                </Branch>
+                <Element Type="COIL" Name="Output" />
+            </Elements>
+        </Rung>
+    </Program>
+</XG5000Project>"""
 
-        projectInfo.Name |> should not' (be EmptyString)
-        projectInfo.Vendor.Manufacturer |> should equal "LS Electric"
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
 
-        printfn $"Extracted project info: {projectInfo.Name} v{projectInfo.Version}"
-    else
-        Assert.True(true, $"Sample file not found: {sampleFile}")
+        async {
+            let! result = parser.ParseContentAsync(nestedXml)
+
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.Variables |> should contain "Input1"
+            logic.Variables |> should contain "Input2"
+            logic.Variables |> should contain "Input3"
+            logic.Variables |> should contain "Input4"
+            logic.Variables |> should contain "Output"
+        } |> Async.RunSynchronously
+
+    [<Fact>]
+    let ``LSElectricParser should detect safety flow type for alarm`` () =
+        let alarmXml = """<?xml version="1.0" encoding="UTF-8"?>
+<XG5000Project>
+    <Program Name="AlarmProgram">
+        <Rung Number="0">
+            <Comment>Alarm Handling</Comment>
+            <Elements>
+                <Element Type="NO_CONTACT" Name="ALARM_HIGH" />
+                <Element Type="NO_CONTACT" Name="ALARM_LOW" />
+                <Element Type="ALARM" Name="AlarmHandler" />
+                <Element Type="COIL" Name="AlarmActive" />
+            </Elements>
+        </Rung>
+    </Program>
+</XG5000Project>"""
+
+        let logger = createLogger()
+        let parser = LSElectricParser(logger) :> IPlcParser
+
+        async {
+            let! result = parser.ParseContentAsync(alarmXml)
+
+            result |> should not' (be Empty)
+            let logic = result.[0]
+            logic.Type |> should equal (Some LogicFlowType.Safety)
+        } |> Async.RunSynchronously

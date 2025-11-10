@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ev2.PLC.Server\Ev2.PLC.Server.fsproj" />
+    <ProjectReference Include="..\Ev2.PLC.Server\Ev2.PLC.Driver.fsproj" />
     <ProjectReference Include="..\Ev2.PLC.Common.FS\Ev2.PLC.Common.fsproj" />
   </ItemGroup>
 

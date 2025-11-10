@@ -5,8 +5,8 @@
 		<IsPackable>false</IsPackable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<LangVersion>preview</LangVersion>
-		<AssemblyName>DSPLCServer.FS</AssemblyName>
-		<RootNamespace>DSPLCServer</RootNamespace>
+		<AssemblyName>Ev2.PLC.Driver</AssemblyName>
+		<RootNamespace>Ev2.PLC.Driver</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -8,18 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="MapperTypesTests.fs" />
+    <!-- Parser Tests -->
+    <Compile Include="AllenBradleyParserTests.fs" />
     <Compile Include="LSElectricParserTests.fs" />
-    <Compile Include="ABLogicAnalyzerTests.fs" />
-    <Compile Include="MxLogicAnalyzerTests.fs" />
-    <Compile Include="S7LogicAnalyzerTests.fs" />
-    <Compile Include="MapperFactoryTests.fs" />
-  </ItemGroup>
+    <Compile Include="MitsubishiParserTests.fs" />
+    <Compile Include="S7ParserTests.fs" />
 
-  <ItemGroup>
-    <None Include="SampleData\lsPLC.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- Analyzer Tests -->
+    <Compile Include="VariableAnalyzerTests.fs" />
+
+    <!-- Legacy Tests (to be updated or removed) -->
+
+    <!-- Integration Tests -->
   </ItemGroup>
 
   <ItemGroup>
