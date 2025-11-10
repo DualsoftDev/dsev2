@@ -6,6 +6,7 @@ open Ev2.Core.FS
 open Newtonsoft.Json
 open Dual.Common.UnitTest.FS
 open Dual.Common.Base
+open Ev2.Core.FS.IR
 open Ev2.Gen
 
 [<AutoOpen>]
@@ -34,7 +35,7 @@ type StructTest() =
                     Variable<int>("Age", Value=16)
                     new Array<string>(
                         "Favorites",
-                        [| Ev2.Gen.Range(0, 10) |],
+                        [| DimRange(0, 10) |],
                         Value = [| "코딩"; "음악"; "여행" |]
                     )
                     new Struct(

@@ -1,7 +1,20 @@
 namespace Ev2.Gen
+
+open System
 open System.Linq
 open Dual.Common.Base
-open System
+open Ev2.Core.FS.IR
+
+
+
+[<AutoOpen>]
+module StatementHelperModule =
+    let trueValue  = Literal<bool>(true)
+    let falseValue = Literal<bool>(false)
+    let boolContact name  = Variable<bool>(name) :> IVariable<bool>
+    let coil<'T> name value  = Variable<'T>(name, Value=value) :> IVariable<'T>
+    let literal<'T> (value:'T) = Literal<'T>(value) :> ITerminal<'T>
+
 
 [<AutoOpen>]
 module ProgramBlockModule =
@@ -34,34 +47,49 @@ module ProgramBlockModule =
         inherit Statement(?comment=comment)
         member x.TimerCall = timerCall
 
-    type CounterStatement(counterCall:ICounterCall, ?comment:string) =
+    type CounterStatement(counterCall:ICounterInstance, ?comment:string) =
         inherit Statement(?comment=comment)
         member x.CounterCall = counterCall
 
 
-[<Obsolete("Non-IEC constructs are deprecated and will be removed in future versions.")>]
-[<AutoOpen>]
-module NonIECModule =
     type ISnippet = interface end
 
     [<AbstractClass>]
     type Snippet(body:Statement[]) =
         interface ISnippet
-        member x.Body = body
+        member val Body = body with get, set
 
-    type ForLoopSnippet(counter:IExpression<uint16>, body) =   // NEXT 로 종료
+    [<AbstractClass>]
+    type ForLoopSnippet(from:IExpression<uint16>, to_:IExpression<uint16>, step:IExpression<uint16>, body) =   // NEXT 로 종료, BREAK 지원
         inherit Snippet(body)
-        member x.Counter = counter
+        member x.From = from
+        member x.To = to_
+        member x.Step = step
+        member x.Counter = (to_.TValue - from.TValue ) % step.TValue
+
+    type SimpleForLoop(counter:IExpression<uint16>, body) =
+        inherit ForLoopSnippet(literal 0us, counter, literal 1us, body)
+
+    [<Obsolete("XGI/XGK only supports SimpleForLoop")>]
+    type FullForLoop(from:IExpression<uint16>, to_:IExpression<uint16>, step:IExpression<uint16>, body) =
+        inherit ForLoopSnippet(from, to_, step, body)
 
     /// Subroutine code snippet
-    type Subroutine(name:string, body) =    // RET 로 종료
-        inherit Snippet(body)
+    type Subroutine(name:string, ?body) =    // RET 로 종료
+        inherit Snippet(body |? [||])
         member x.Name = name
 
-    type BreakStatement(exp:IExpression<bool>, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.Exp = exp
-    type SubroutineCallStatement(exp:IExpression<bool>, subroutine:Subroutine, ?comment:string) =
-        inherit Statement(?comment=comment)
-        member x.Exp = exp
+    type BreakStatement(snippet:Snippet, cond:IExpression<bool>, ?comment:string) =
+        inherit Statement(cond, ?comment=comment)
+        member x.Snippet = snippet
+
+    type SubroutineCallStatement(cond:IExpression<bool>, subroutine:Subroutine, ?comment:string) =
+        inherit Statement(cond, ?comment=comment)
         member x.Subroutine = subroutine
+
+
+    type ForLoopStatement(cond:IExpression<bool>, snippet:ForLoopSnippet, ?comment:string) =
+        inherit Statement(cond, ?comment=comment)
+        member x.Snippet = snippet
+        //static member Create(cond, from, to_, step, body) = ForLoopStatement(cond, FullForLoop(from, to_, step, body))
+        static member Create(cond, counter, body) = ForLoopStatement(cond, SimpleForLoop(counter, body))

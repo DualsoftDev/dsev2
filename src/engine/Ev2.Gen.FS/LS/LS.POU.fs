@@ -3,6 +3,7 @@ namespace Ev2.Gen
 open System
 open System.Collections.Generic
 open Dual.Common.Base
+open Ev2.Core.FS.IR
 
 [<AutoOpen>]
 module POUModule =

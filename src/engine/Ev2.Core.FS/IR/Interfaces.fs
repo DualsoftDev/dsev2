@@ -1,6 +1,7 @@
-namespace Ev2.Gen
+namespace Ev2.Core.FS.IR
 
 open System
+open System.Collections.Generic
 
 [<AllowNullLiteral>]
 type IWithType =
@@ -23,12 +24,12 @@ type IWithValue =
 [<AllowNullLiteral>] type IFunctionCall   = interface end   //inherit IExpression
 [<AllowNullLiteral>] type IFBCall         = interface end
 
-type Range = int * int
+type DimRange = int * int
 
 [<AllowNullLiteral>]
 type IArray =
     inherit IWithType
-    abstract Dimensions : Range[]
+    abstract Dimensions : DimRange[]
 
 [<AllowNullLiteral>]
 type ITerminal =
@@ -85,6 +86,14 @@ type IExpression<'T> =
 [<AllowNullLiteral>] type ILiteral<'T> = inherit ILiteral inherit ITerminal<'T>
 
 [<AllowNullLiteral>] type IStorage = abstract IVariables : IVariable[]
+
+[<AllowNullLiteral>]
+type IStorages =
+    abstract GlobalStorage : IVariable[]
+    abstract LocalStorage : IVariable[]
+
+type InputMapping = IDictionary<string, IExpression>
+type OutputMapping = IDictionary<string, IVariable>
 
 
 

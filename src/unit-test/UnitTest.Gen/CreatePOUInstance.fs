@@ -2,6 +2,7 @@ namespace T
 
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
+open Ev2.Core.FS.IR
 open Ev2.Gen
 
 type PouInstanceTest() =
@@ -10,8 +11,8 @@ type PouInstanceTest() =
     [<Test>]
     member _.``ScanProgram 생성``() =
         let mainRung = SetCoilStatement(trueValue, boolContact "MainCoil", "메인 스캔")
-        let subroutineBody = [| BreakStatement(falseValue) :> Statement |]
-        let stopRoutine = Subroutine("StopRoutine", subroutineBody)
+        let stopRoutine = Subroutine("StopRoutine")
+        stopRoutine.Body <- [| BreakStatement(stopRoutine, falseValue) :> Statement |]
 
         let program = ScanProgram("MainProgram", globalStorage, localStorage, [| mainRung |], [| stopRoutine |])
         program.Comment <- "메인 프로그램"
@@ -27,8 +28,9 @@ type PouInstanceTest() =
     [<Test>]
     member _.``FunctionProgram 생성``() =
         let proj = IECProject()
+        let helperRoutine = Subroutine("Helper")
+        helperRoutine.Body <- [| BreakStatement(helperRoutine, trueValue) :> Statement |]
         let returnRung = AssignStatement(trueValue, boolContact "Return", comment="주석:반환 설정")
-        let helperRoutine = Subroutine("Helper", [| BreakStatement(trueValue) :> Statement |])
 
         let funcProgram = FunctionProgram.Create<int>("Calculate", proj.GlobalStorage, localStorage, [| returnRung |], [| helperRoutine |])
 
