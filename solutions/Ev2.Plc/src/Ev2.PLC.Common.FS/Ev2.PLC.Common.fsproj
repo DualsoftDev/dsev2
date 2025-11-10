@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <!-- Core data types - Foundation for all PLC operations -->
+    <Compile Include="Types\PlcVendorTypes.fs" />
     <Compile Include="Types\CoreDataTypes.fs" />
     <Compile Include="Types\QualityTypes.fs" />
     

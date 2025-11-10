@@ -125,9 +125,9 @@ let ``ScanScheduler should add and remove managers`` () =
         let scheduler = new ScanScheduler(serviceProvider, managerFactory, logger)
         
         let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
         // Override vendor to match our mock factory
-        let mockConfig = { config with Vendor = PlcVendor.Generic }
+        let mockConfig = { config with Vendor = PlcVendor.CreateCustom("Generic") }
         
         // This will fail because our mock factory only supports "Mock" vendor, not "Generic"
         let! addResult = scheduler.AddManager(mockConfig)
@@ -202,7 +202,7 @@ let ``PlcManagerFactory should handle vendor validation`` () =
     
     // Test configuration validation
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-    let validationResult = managerFactory.ValidateConfiguration(PlcVendor.Generic, connectionConfig)
+    let validationResult = managerFactory.ValidateConfiguration(PlcVendor.CreateCustom("Generic"), connectionConfig)
     
     match validationResult with
     | Ok () -> () // Our mock factory accepts any configuration

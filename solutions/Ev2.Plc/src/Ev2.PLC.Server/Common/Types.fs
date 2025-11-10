@@ -10,21 +10,8 @@ type IPlcDriver = Ev2.PLC.Common.Interfaces.IPlcDriver
 type IAdvancedPlcDriver = Ev2.PLC.Common.Interfaces.IAdvancedPlcDriver
 type IPlcDriverFactory = Ev2.PLC.Common.Interfaces.IPlcDriverFactory
 
-/// PLC Vendor enumeration for server configuration
-type PlcVendor =
-    | AllenBradley
-    | Siemens  
-    | Mitsubishi
-    | LSElectric
-    | Generic
-
-    override this.ToString() =
-        match this with
-        | AllenBradley -> "Allen-Bradley"
-        | Siemens -> "Siemens"
-        | Mitsubishi -> "Mitsubishi"
-        | LSElectric -> "LS Electric"
-        | Generic -> "Generic"
+/// PLC Vendor enumeration for server configuration (using common definition)
+type PlcVendor = Ev2.PLC.Common.Types.PlcVendor
 
 /// Server-specific PLC configuration
 type PlcServerConfig = {

@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--<TargetFramework>netcoreapp3.1</TargetFramework>-->
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <RootNamespace>PLC.Convert.Siemens</RootNamespace>
+		<LangVersion>8.0</LangVersion>
+		<SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
+		<OutputPath>$(SolutionDir)\bin\</OutputPath>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OtherFlags>--warnon:1182</OtherFlags>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<UseNugetProjectReference Condition="'$(UseNugetProjectReference)' == ''">false</UseNugetProjectReference>
+		<SignAssembly>True</SignAssembly>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="ConvertSiemens.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\..\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+      <ProjectReference Include="..\..\PLC.Convert.FS\PLC.Convert.FS.fsproj" />
+    </ItemGroup>
+	<ItemGroup>
+		<PackageReference Update="FSharp.Core" Version="8.0.400" />
+	</ItemGroup>
+
+
+
+</Project>

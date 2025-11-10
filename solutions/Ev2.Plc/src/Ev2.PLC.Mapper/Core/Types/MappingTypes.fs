@@ -102,7 +102,7 @@ type AddressRange = {
     DeviceType: string
     StartAddress: int
     EndAddress: int
-    DataTypes: PlcTagDataType list
+    DataTypes: PlcDataType list
     Description: string
     IsReserved: bool
 }

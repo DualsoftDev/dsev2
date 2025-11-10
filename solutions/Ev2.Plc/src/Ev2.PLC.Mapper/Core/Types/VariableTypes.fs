@@ -74,18 +74,18 @@ type ApiType =
 type ApiDefinition = {
     Name: string
     Type: ApiType
-    DataType: PlcTagDataType
+    DataType: PlcDataType
     Direction: IODirection
     Description: string
     Unit: string option
     MinValue: float option
     MaxValue: float option
-    DefaultValue: ScalarValue option
+    DefaultValue: PlcValue option
     PrecedingApis: string list
     InterlockApis: string list
     SafetyLevel: int
 } with
-    static member Create(name: string, apiType: ApiType, dataType: PlcTagDataType, direction: IODirection) = {
+    static member Create(name: string, apiType: ApiType, dataType: PlcDataType, direction: IODirection) = {
         Name = name
         Type = apiType
         DataType = dataType
@@ -104,15 +104,15 @@ type ApiDefinition = {
 type IOVariable = {
     LogicalName: string
     PhysicalAddress: PlcAddress
-    DataType: PlcTagDataType
+    DataType: PlcDataType
     Direction: IODirection
     Device: string
     Api: string option
     Comment: string option
-    InitialValue: ScalarValue option
+    InitialValue: PlcValue option
     Scaling: (float * float) option
 } with
-    static member Create(logicalName: string, physicalAddress: PlcAddress, dataType: PlcTagDataType, direction: IODirection) = {
+    static member Create(logicalName: string, physicalAddress: PlcAddress, dataType: PlcDataType, direction: IODirection) = {
         LogicalName = logicalName
         PhysicalAddress = physicalAddress
         DataType = dataType

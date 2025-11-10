@@ -184,7 +184,7 @@ type MockDriverFactory() =
 [<Fact>]
 let ``ServerPlcManager should initialize correctly`` () =
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
     let driver = new MockDriver("TEST_PLC", connectionConfig) :> IPlcDriver
     let logger = NullLogger<ServerPlcManager>.Instance
     
@@ -198,7 +198,7 @@ let ``ServerPlcManager should initialize correctly`` () =
 let ``ServerPlcManager should connect and disconnect`` () =
     task {
         let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
         let driver = new MockDriver("TEST_PLC", connectionConfig) :> IPlcDriver
         let logger = NullLogger<ServerPlcManager>.Instance
         
@@ -222,7 +222,7 @@ let ``ServerPlcManager should connect and disconnect`` () =
 let ``ServerPlcManager should read and write tags`` () =
     task {
         let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
         let mockDriver = new MockDriver("TEST_PLC", connectionConfig)
         let driver = mockDriver :> IPlcDriver
         let logger = NullLogger<ServerPlcManager>.Instance
@@ -254,7 +254,7 @@ let ``ServerPlcManager should read and write tags`` () =
 let ``ServerPlcManager should handle multiple tags`` () =
     task {
         let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
         let driver = new MockDriver("TEST_PLC", connectionConfig) :> IPlcDriver
         let logger = NullLogger<ServerPlcManager>.Instance
         
@@ -282,9 +282,9 @@ let ``PlcManagerFactory should create managers correctly`` () =
     let managerFactory = new PlcManagerFactory(factory, loggerFactory)
     
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
     // Update the vendor to "Mock" which is supported by our mock factory
-    let mockConfig = { config with Vendor = PlcVendor.Generic }
+    let mockConfig = { config with Vendor = PlcVendor.CreateCustom("Generic") }
     
     // Since our mock factory only supports "Mock" and "Test", we need to handle this
     // Let's just test the error case for unsupported vendor
@@ -304,7 +304,7 @@ let ``PlcManagerFactory should validate configurations`` () =
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
     
     // Test with supported vendor
-    let validationResult = managerFactory.ValidateConfiguration(PlcVendor.Generic, connectionConfig)
+    let validationResult = managerFactory.ValidateConfiguration(PlcVendor.CreateCustom("Generic"), connectionConfig)
     
     // Our mock factory supports validation for any vendor, so this should pass
     match validationResult with
@@ -314,7 +314,7 @@ let ``PlcManagerFactory should validate configurations`` () =
 [<Fact>]
 let ``ServerPlcManager should validate tags correctly`` () =
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
     let driver = new MockDriver("TEST_PLC", connectionConfig) :> IPlcDriver
     let logger = NullLogger<ServerPlcManager>.Instance
     
@@ -329,7 +329,7 @@ let ``ServerPlcManager should validate tags correctly`` () =
 [<Fact>]
 let ``ServerPlcManager should get supported data types`` () =
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+    let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
     let driver = new MockDriver("TEST_PLC", connectionConfig) :> IPlcDriver
     let logger = NullLogger<ServerPlcManager>.Instance
     

@@ -129,16 +129,16 @@ module Program =
                     
                     // Sample Allen-Bradley PLC
                     let abConfig = PlcServerConfig.Create(
-                        "PLC001", 
-                        PlcVendor.AllenBradley, 
-                        "AB PLC 1", 
+                        "PLC001",
+                        PlcVendor.CreateAllenBradley(),
+                        "AB PLC 1",
                         ConnectionConfig.ForTCP("192.168.1.100", 44818, 5000)
                     )
-                    
+
                     // Sample Siemens PLC
                     let siemensConfig = PlcServerConfig.Create(
                         "PLC002",
-                        PlcVendor.Siemens,
+                        PlcVendor.CreateSiemens(),
                         "Siemens PLC 1",
                         ConnectionConfig.ForTCP("192.168.1.101", 102, 5000)
                     )
