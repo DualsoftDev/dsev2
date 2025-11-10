@@ -21,7 +21,11 @@ type LSElectricParser(logger: ILogger<LSElectricParser>) =
     let parseSymbol (symbolElement: XElement) : RawVariable =
         let name = getAttributeValue symbolElement "Name" |> Option.defaultValue ""
         let address = getAttributeValue symbolElement "Address" |> Option.defaultValue ""
-        let dataType = getAttributeValue symbolElement "DataType" |> Option.defaultValue "BOOL"
+        // LS Electric uses 'Type' attribute for data type, not 'DataType'
+        let dataType =
+            match getAttributeValue symbolElement "Type" with
+            | Some t -> t
+            | None -> getAttributeValue symbolElement "DataType" |> Option.defaultValue "BOOL"
         let comment = getAttributeValue symbolElement "Comment"
         let initialValue = getAttributeValue symbolElement "InitialValue"
         let scope = getAttributeValue symbolElement "Scope"
