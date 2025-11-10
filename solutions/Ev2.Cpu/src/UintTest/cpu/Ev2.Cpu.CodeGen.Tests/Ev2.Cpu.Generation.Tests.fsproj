@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <NoWarn>988</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Basic Tests                                               -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="CodeGen.Test.fs" />
+    <Compile Include="Generation.Test.fs" />
+    <Compile Include="Builder.Test.fs" />
+    <Compile Include="Relay.Test.fs" />
+    <Compile Include="System.Test.fs" />
+    <Compile Include="Work.Test.fs" />
+    <Compile Include="Call.Test.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Advanced Tests (RuntimeSpec.md)                          -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="RelayAdvanced.Test.fs" />
+    <Compile Include="WorkCallRelay.Test.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- UserFC/FB Tests (User-defined Functions/Blocks)          -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="UserFC.Test.fs" />
+    <Compile Include="UserFB.Test.fs" />
+    <Compile Include="Scoping.Test.fs" />
+    <!-- <Compile Include="UserLibrary.Test.fs" /> -->
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.1.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="FsUnit.xUnit" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\cpu\Ev2.Cpu.Generation\Ev2.Cpu.Generation.fsproj" />
+  </ItemGroup>
+</Project>

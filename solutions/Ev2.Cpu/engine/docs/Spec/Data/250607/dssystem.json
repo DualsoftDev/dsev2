@@ -1,0 +1,183 @@
+{
+  "RuntimeType": "Project",
+  "Name": "MainProject",
+  "Guid": "1308daa8-fed3-42a9-8624-7d9ed93163f9",
+  "DateTime": "2025-06-07T17:02:31.3743287+09:00",
+  "Author": "dualk@KWAKPC",
+  "Version": "0.0",
+  "SystemPrototypes": [],
+  "ActiveSystems": [
+    {
+      "Case": "LocalDefinition",
+      "Fields": [
+        {
+          "RuntimeType": "System",
+          "Name": "MainSystem",
+          "Guid": "4395d2c6-556c-46d9-8b93-52bd4d2161b9",
+          "DateTime": "2025-06-07T17:02:31.387793+09:00",
+          "Prototype": false,
+          "IRI": "http://example.com/ev2/system/main",
+          "Author": "dualk",
+          "EngineVersion": "0.0",
+          "LangVersion": "0.0",
+          "Flows": [
+            {
+              "RuntimeType": "Flow",
+              "Name": "MainFlow",
+              "Guid": "a19c5b6a-01a3-49be-9113-9a068281cc69",
+              "DateTime": "2025-06-07T17:02:31.3898096+09:00"
+            }
+          ],
+          "Works": [
+            {
+              "RuntimeType": "Work",
+              "Name": "BoundedWork1",
+              "Guid": "87dff88a-6105-452f-bef6-ac9dffd7cb45",
+              "Parameter": "{\r\n  \"Company\": \"dualsoft\",\r\n  \"Name\": \"kwak\",\r\n  \"Room\": 510\r\n}",
+              "DateTime": "2025-06-07T17:02:31.3899182+09:00",
+              "FlowGuid": "a19c5b6a-01a3-49be-9113-9a068281cc69",
+              "Motion": "Fast my motion",
+              "IsFinished": false,
+              "NumRepeat": 0,
+              "Period": 0,
+              "Delay": 0,
+              "Calls": [
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call1a",
+                  "Guid": "9c131f62-5ece-4d5c-be8b-1bccffef98b0",
+                  "Parameter": "{\r\n  \"Count\": 3,\r\n  \"Pi\": 3.14,\r\n  \"Type\": \"call\"\r\n}",
+                  "DateTime": "2025-06-07T17:02:31.3899182+09:00",
+                  "CallType": "Parallel",
+                  "ApiCalls": [
+                    "295d8413-6223-4c89-bd2b-b6ee3f49e2d9"
+                  ],
+                  "AutoPre": "AutoPre 테스트 1",
+                  "Safety": "안전조건1",
+                  "Timeout": 30
+                },
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call1b",
+                  "Guid": "8ac4a484-ec00-4cef-a491-4bd298ec4b57",
+                  "DateTime": "2025-06-07T17:02:31.3899182+09:00",
+                  "CallType": "Repeat"
+                }
+              ],
+              "Arrows": [
+                {
+                  "RuntimeType": "Arrow",
+                  "Guid": "43d0f804-e6c3-429b-a0b4-6032908d469b",
+                  "DateTime": "2025-06-07T17:02:31.3898781+09:00",
+                  "Source": "9c131f62-5ece-4d5c-be8b-1bccffef98b0",
+                  "Target": "8ac4a484-ec00-4cef-a491-4bd298ec4b57",
+                  "Type": "Start"
+                }
+              ]
+            },
+            {
+              "RuntimeType": "Work",
+              "Name": "BoundedWork2",
+              "Guid": "627b047d-abf0-44c9-ab24-f211d78b65ac",
+              "DateTime": "2025-06-07T17:02:31.3899829+09:00",
+              "FlowGuid": "a19c5b6a-01a3-49be-9113-9a068281cc69",
+              "Script": "My script",
+              "IsFinished": false,
+              "NumRepeat": 0,
+              "Period": 0,
+              "Delay": 0,
+              "Calls": [
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call2a",
+                  "Guid": "e1692368-75cb-42a0-b427-e6555938af60",
+                  "DateTime": "2025-06-07T17:02:31.3899829+09:00"
+                },
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call2b",
+                  "Guid": "1a8d61f1-4d39-491b-aabf-fc558d1317f2",
+                  "DateTime": "2025-06-07T17:02:31.3899829+09:00"
+                }
+              ],
+              "Arrows": [
+                {
+                  "RuntimeType": "Arrow",
+                  "Guid": "3fe29472-cc1b-42fd-8d4b-12ebd57e3717",
+                  "DateTime": "2025-06-07T17:02:31.3899826+09:00",
+                  "Source": "e1692368-75cb-42a0-b427-e6555938af60",
+                  "Target": "1a8d61f1-4d39-491b-aabf-fc558d1317f2",
+                  "Type": "Reset"
+                }
+              ]
+            },
+            {
+              "RuntimeType": "Work",
+              "Name": "FreeWork1",
+              "Guid": "d974052d-0b58-49df-bad3-e8b82c7ae0b2",
+              "DateTime": "2025-06-07T17:02:31.387793+09:00",
+              "IsFinished": true,
+              "NumRepeat": 0,
+              "Period": 0,
+              "Delay": 0
+            }
+          ],
+          "Arrows": [
+            {
+              "RuntimeType": "Arrow",
+              "Name": "Work 간 연결 arrow",
+              "Guid": "b9f7014f-9d68-4ef1-bf29-773d99b13057",
+              "Parameter": "{\r\n  \"ArrowHead\": \"Diamond\",\r\n  \"ArrowTail\": \"Rectangle\",\r\n  \"ArrowWidth\": 2.1\r\n}",
+              "DateTime": "2025-06-07T17:02:31.3864646+09:00",
+              "Source": "87dff88a-6105-452f-bef6-ac9dffd7cb45",
+              "Target": "d974052d-0b58-49df-bad3-e8b82c7ae0b2",
+              "Type": "Start"
+            }
+          ],
+          "ApiDefs": [
+            {
+              "RuntimeType": "ApiDef",
+              "Name": "ApiDef1a",
+              "Guid": "09da357d-d9a0-4fa9-b9c2-756a2fd6cb4a",
+              "DateTime": "2025-06-07T17:02:31.387793+09:00",
+              "IsPush": true
+            },
+            {
+              "RuntimeType": "ApiDef",
+              "Name": "UnusedApi",
+              "Guid": "a25b7b28-a8ea-4262-a456-5e865e63f8aa",
+              "DateTime": "2025-06-07T17:02:31.387793+09:00",
+              "IsPush": true
+            }
+          ],
+          "ApiCalls": [
+            {
+              "RuntimeType": "ApiCall",
+              "Name": "ApiCall1a",
+              "Guid": "295d8413-6223-4c89-bd2b-b6ee3f49e2d9",
+              "DateTime": "2025-06-07T17:02:31.387793+09:00",
+              "ApiDef": "09da357d-d9a0-4fa9-b9c2-756a2fd6cb4a",
+              "InAddress": "InAddressX0",
+              "OutAddress": "OutAddress1",
+              "InSymbol": "XTag1",
+              "OutSymbol": "YTag2",
+              "ValueSpec": "{\r\n  \"valueType\": \"Double\",\r\n  \"value\": {\r\n    \"Case\": \"Ranges\",\r\n    \"Fields\": [\r\n      [\r\n        {\r\n          \"Lower\": null,\r\n          \"Upper\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 3.14,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          }\r\n        },\r\n        {\r\n          \"Lower\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 5.0,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          },\r\n          \"Upper\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 6.0,\r\n                \"Item2\": {\r\n                  \"Case\": \"Open\"\r\n                }\r\n              }\r\n            ]\r\n          }\r\n        },\r\n        {\r\n          \"Lower\": {\r\n            \"Case\": \"Some\",\r\n            \"Fields\": [\r\n              {\r\n                \"Item1\": 7.1,\r\n                \"Item2\": {\r\n                  \"Case\": \"Closed\"\r\n                }\r\n              }\r\n            ]\r\n          },\r\n          \"Upper\": null\r\n        }\r\n      ]\r\n    ]\r\n  }\r\n}"
+            },
+            {
+              "RuntimeType": "ApiCall",
+              "Name": "ApiCall1b",
+              "Guid": "fbea8af0-c6a8-4dcf-8cdf-2812c01cb90f",
+              "DateTime": "2025-06-07T17:02:31.387793+09:00",
+              "ApiDef": "a25b7b28-a8ea-4262-a456-5e865e63f8aa",
+              "InAddress": "X0",
+              "OutAddress": "Y1",
+              "InSymbol": "XTag2",
+              "OutSymbol": "YTag2"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "PassiveSystems": []
+}

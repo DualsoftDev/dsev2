@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OtherFlags>--strict-indentation-</OtherFlags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.Cpu.Core\Ev2.Cpu.Core.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Core: Relay Types & Helpers                              -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- UserLibrary removed - using Ev2.Cpu.Core.UserDefined.UserLibrary -->
+    <Compile Include="Core\CodeGenTypes.fs" />
+    <Compile Include="Core\Scoping.fs" />
+    <Compile Include="Core\CodeGenHelpers.fs" />
+    <Compile Include="Core\CodeGenBuilder.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- System: System Relays & Patterns                         -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="System\SystemTypes.fs" />
+    <Compile Include="System\SystemRelays.fs" />
+    <Compile Include="System\SystemPatterns.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Work: Work Relays & Patterns (RuntimeSpec.md)            -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Work\WorkRelays.fs" />
+    <Compile Include="Work\CodeWork.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Call: Call Relays & Patterns (RuntimeSpec.md)            -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Call\CallRelays.fs" />
+    <Compile Include="Call\CodeCall.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Loops: Loop Construction & Optimization                  -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Loops\LoopBuilder.fs" />
+    <Compile Include="Loops\LoopTransforms.fs" />
+    <Compile Include="Loops\ArrayPatterns.fs" />
+    <Compile Include="Loops\SequencePatterns.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Generation: Code Generation                              -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Generation\ExpressionGen.fs" />
+    <Compile Include="Generation\StatementGen.fs" />
+    <Compile Include="Generation\ProgramGen.fs" />
+    <Compile Include="Generation\UserFBGen.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Codegen: PLC Code Generation                             -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Codegen\PLCCodeGen.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Examples: Usage Examples (TEMPORARILY DISABLED - TODO)   -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Examples\RelayExamples.fs" />
+    <!-- <Compile Include="Examples\UserFBExamples.fs" /> -->
+    <!-- <Compile Include="Examples\PLCDeploymentExamples.fs" /> -->
+  </ItemGroup>
+</Project>

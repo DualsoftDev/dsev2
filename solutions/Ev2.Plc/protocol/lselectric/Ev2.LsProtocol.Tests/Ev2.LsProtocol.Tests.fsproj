@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="TestHelpers.fs" />
+    <Compile Include="BugFixValidationTests.fs" />
+    <Compile Include="XgiAddressTests.fs" />
+    <Compile Include="XgkAddressTests.fs" />
+    <Compile Include="HardwareValidationTest.fs" />
+    <Compile Include="ComprehensiveHardwareValidationTest.fs" />
+    <Compile Include="DebugConnectionTest.fs" />
+    <Compile Include="XgkDebugConnectionTest.fs" />
+    <Compile Include="XgtTypesTests.fs" />
+    <Compile Include="XgtResponseTests.fs" />
+    <Compile Include="XgtTagTests.fs" />
+    <Compile Include="Integration/IntegrationConnectionTests.fs" />
+    <Compile Include="Integration/IntegrationReadTests.fs" />
+    <Compile Include="Integration/IntegrationWriteTests.fs" />
+    <Compile Include="Integration/XgkIntegrationTests.fs" />
+    <Compile Include="Integration/PerformanceTests.fs" />
+    <Compile Include="Integration/EdgeTestAllType.fs" />
+    <Compile Include="Integration/ScanTimeTest.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+	  <ProjectReference Include="../Ev2.LsProtocol/Ev2.LsProtocol.fsproj" />
+    <ProjectReference Include="..\..\..\UintTest\plc\Ev2.PLC.ProtocolTestHelper\Ev2.ProtocolTestHelper.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+
+    <PackageReference Update="FSharp.Core" Version="8.0.400" />
+  </ItemGroup>
+</Project>

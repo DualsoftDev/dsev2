@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarnOn>3390;$(WarnOn)</WarnOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="HexDump.fs" />
+    <Compile Include="BufferAssert.fs" />
+    <Compile Include="Environment.fs" />
+    <Compile Include="Timing.fs" />
+    <Compile Include="TcpTestServer.fs" />
+    <Compile Include="TestLogger.fs" />
+    <Compile Include="PacketLogger.fs" />
+    <Compile Include="TestLogging.fs" />
+    <Compile Include="TestExecution.fs" />
+    <Compile Include="AssertionHelpers.fs" />
+    <Compile Include="ValueGenerators.fs" />
+    <Compile Include="RetryHelpers.fs" />
+    <Compile Include="ClientTestHelpers.fs" />
+    <Compile Include="IntegrationTestRunner.fs" />
+    <Compile Include="ProtocolClientHelpers.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="8.0.400" />
+  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<PackageReference Include="xunit" Version="2.9.0" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2"/>
+	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\protocol\lselectric\Ev2.LsProtocol\Ev2.LsProtocol.fsproj" />
+    <ProjectReference Include="..\..\..\protocol\mitsubishi\Ev2.MxProtocol\Ev2.MxProtocol.fsproj" />
+    <ProjectReference Include="..\..\..\protocol\siemens\Ev2.S7Protocol\Ev2.S7Protocol.fsproj" />
+    <ProjectReference Include="..\..\..\protocol\ab\Ev2.ABProtocol\Ev2.ABProtocol.fsproj" />
+  </ItemGroup>
+
+</Project>

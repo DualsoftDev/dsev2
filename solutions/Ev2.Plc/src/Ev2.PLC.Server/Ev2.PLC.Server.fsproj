@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<LangVersion>preview</LangVersion>
+		<AssemblyName>DSPLCServer.FS</AssemblyName>
+		<RootNamespace>DSPLCServer</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Dapper" Version="2.1.66" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+
+		<PackageReference Include="Serilog" Version="3.1.1" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+		<PackageReference Include="Npgsql" Version="8.0.3" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.7" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="FSharp.Core" Version="8.0.400" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Common Layer -->
+		<Compile Include="Common/Types.fs" />
+		
+		<!-- Database Layer -->
+		<Compile Include="Database/IDataRepository.fs" />
+		<Compile Include="Database/MockRepository.fs" />
+		<!-- <Compile Include="Database/SQLiteRepository.fs" />
+		<Compile Include="Database/PostgreSQLRepository.fs" />
+		<Compile Include="Database/DatabaseFactory.fs" /> -->
+		
+		<!-- PLC Layer -->
+		<Compile Include="PLC/PLCManagerBase.fs" />
+		<!-- <Compile Include="PLC/LSElectricManager.fs" />
+		<Compile Include="PLC/MitsubishiManager.fs" />
+		<Compile Include="PLC/AllenBradleyManager.fs" />
+		<Compile Include="PLC/PLCManagerFactory.fs" /> -->
+		
+		<!-- Core Layer -->
+		<Compile Include="Core/PlcMapper.fs" />
+		<Compile Include="Core/DataLogger.fs" />
+		<Compile Include="Core/ScanScheduler.fs" />
+		<!-- <Compile Include="Core/MonitoringService.fs" /> -->
+		
+		<!-- Console Layer -->
+		<!-- <Compile Include="Console/ConsoleInterface.fs" /> -->
+		
+		<!-- Main Program -->
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\protocol\ab\Ev2.AbProtocol\Ev2.AbProtocol.fsproj" />
+	  <ProjectReference Include="..\..\protocol\lselectric\Ev2.LsProtocol\Ev2.LsProtocol.fsproj" />
+	  <ProjectReference Include="..\..\protocol\mitsubishi\Ev2.MxProtocol\Ev2.MxProtocol.fsproj" />
+	  <ProjectReference Include="..\..\protocol\siemens\Ev2.S7Protocol\Ev2.S7Protocol.fsproj" />
+	  <ProjectReference Include="..\Ev2.PLC.Common.FS\Ev2.PLC.Common.fsproj" />
+	</ItemGroup>
+
+</Project>

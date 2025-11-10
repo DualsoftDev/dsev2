@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <NoWarn>FS0988</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="EdgeDetection.Tests.fs" />
+    <Compile Include="Bistable.Tests.fs" />
+    <Compile Include="Timers.Tests.fs" />
+    <Compile Include="Counters.Tests.fs" />
+    <Compile Include="Analog.Tests.fs" />
+    <Compile Include="Math.Tests.fs" />
+    <Compile Include="String.Tests.fs" />
+    <Compile Include="Registry.Tests.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.1.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="FsUnit.xUnit" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\cpu\Ev2.Cpu.Core\Ev2.Cpu.Core.fsproj" />
+    <ProjectReference Include="..\..\..\cpu\Ev2.Cpu.Generation\Ev2.Cpu.Generation.fsproj" />
+    <ProjectReference Include="..\..\..\cpu\Ev2.Cpu.Runtime\Ev2.Cpu.Runtime.fsproj" />
+    <ProjectReference Include="..\..\..\cpu\Ev2.Cpu.StandardLibrary\Ev2.Cpu.StandardLibrary.fsproj" />
+  </ItemGroup>
+</Project>

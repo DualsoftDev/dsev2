@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>Ev2.PLC.Mapper</AssemblyName>
+    <RootNamespace>Ev2.PLC.Mapper</RootNamespace>
+    <Version>2.0.0</Version>
+    <Description>Engine V2 PLC Mapper - PLC program parsing and variable mapping engine</Description>
+    <Authors>Dualsoft</Authors>
+    <Company>Dualsoft</Company>
+    <Product>DS PLC Engine V2</Product>
+    <OutputPath>$(SolutionDir)\bin\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Xml.XDocument" Version="4.3.0" />
+    <PackageReference Include="CsvHelper" Version="33.0.1" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="FSharp.Core" Version="8.0.400" />
+	</ItemGroup>
+
+	<ItemGroup>
+    <!-- Core Types -->
+    <Compile Include="Core\Types\ProjectTypes.fs" />
+    <Compile Include="Core\Types\VariableTypes.fs" />
+    <Compile Include="Core\Types\MappingTypes.fs" />
+    <Compile Include="Core\Types\LogicTypes.fs" />
+    <Compile Include="Core\Types\AnalysisTypes.fs" />
+    <Compile Include="Core\Types\ResultTypes.fs" />
+    <Compile Include="Core\Types\ValidationTypes.fs" />
+    
+    <!-- Core Configuration -->
+    <Compile Include="Core\Configuration\ConfigurationTypes.fs" />
+    <Compile Include="Core\Configuration\ConfigurationLoader.fs" />
+    
+    <!-- Core Interfaces -->
+    <Compile Include="Core\Interfaces\IPlcProgramParser.fs" />
+    <Compile Include="Core\Interfaces\IVariableAnalyzer.fs" />
+    
+    <!-- Core Engine -->
+    <Compile Include="Core\Engine\VariableAnalyzer.fs" />
+    
+    <!-- Parsers -->
+    <Compile Include="Parsers\LSElectric\LSElectricParser.fs" />
+    <Compile Include="Parsers\AllenBradley\AllenBradleyParser.fs" />
+    
+    <!-- Main Entry Point -->
+    <Compile Include="MapperFactory.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.PLC.Common.FS\Ev2.PLC.Common.fsproj" />
+  </ItemGroup>
+
+</Project>

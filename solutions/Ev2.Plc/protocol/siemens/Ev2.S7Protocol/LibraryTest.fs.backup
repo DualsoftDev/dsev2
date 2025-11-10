@@ -1,0 +1,237 @@
+open System
+open Ev2.SiemensProtocol.Core
+open Ev2.SiemensProtocol.Client
+
+/// PLC 설정 정보
+let plcConfigs = [
+    { Name = "Siemens CP"
+      IpAddress = "192.168.9.96"
+      CpuType = CpuType.S7300
+      Rack = 0
+      Slot = 2
+      Port = Constants.Network.DefaultPort
+      LocalTSAP = Constants.TSAP.DefaultLocalTSAP
+      RemoteTSAP = Constants.TSAP.getRemoteTSAP CpuType.S7300 0 2
+      Timeout = TimeSpan.FromSeconds(5.0)
+      MaxPDUSize = Constants.Network.DefaultPDUSize
+      Password = None }
+    
+    { Name = "Siemens S315"
+      IpAddress = "192.168.9.97"
+      CpuType = CpuType.S7300
+      Rack = 0
+      Slot = 2
+      Port = Constants.Network.DefaultPort
+      LocalTSAP = Constants.TSAP.DefaultLocalTSAP
+      RemoteTSAP = Constants.TSAP.getRemoteTSAP CpuType.S7300 0 2
+      Timeout = TimeSpan.FromSeconds(5.0)
+      MaxPDUSize = Constants.Network.DefaultPDUSize
+      Password = None }
+    
+    { Name = "Siemens S1500"
+      IpAddress = "192.168.9.99"
+      CpuType = CpuType.S71500
+      Rack = 0
+      Slot = 0
+      Port = Constants.Network.DefaultPort
+      LocalTSAP = Constants.TSAP.DefaultLocalTSAP
+      RemoteTSAP = Constants.TSAP.getRemoteTSAP CpuType.S71500 0 0
+      Timeout = TimeSpan.FromSeconds(5.0)
+      MaxPDUSize = Constants.Network.DefaultPDUSize
+      Password = None }
+]
+
+/// 단일 PLC 테스트
+let testPlc (config: S7Config) =
+    printfn "\n========================================="
+    printfn "Testing: %s" config.Name
+    printfn "========================================="
+    
+    use client = new S7Client(config)
+    
+    // 연결
+    match client.Connect() with
+    | Error err ->
+        printfn "❌ Connection failed: %A" err
+        false
+    | Ok _ ->
+        printfn "✅ Connected successfully"
+        
+        try
+            // 1. DB1 읽기 테스트 (10 바이트)
+            printfn "\n📖 Reading DB1.DBB0 (10 bytes)..."
+            match client.ReadDB(1, 0, 10) with
+            | Ok data ->
+                printfn "  Data: %s" (BitConverter.ToString(data))
+            | Error err ->
+                printfn "  ❌ Read failed: %A" err
+            
+            // 2. M 영역 읽기 테스트
+            printfn "\n📖 Reading M0.0 (10 bytes)..."
+            match client.ReadMerker(0, 10) with
+            | Ok data ->
+                printfn "  Data: %s" (BitConverter.ToString(data))
+            | Error err ->
+                printfn "  ❌ Read failed: %A" err
+            
+            // 3. DINT 읽기 테스트
+            printfn "\n📖 Reading DB1.DBD0 (DINT)..."
+            match client.ReadDInt(DataArea.DataBlock, 1, 0) with
+            | Ok value ->
+                printfn "  Value: %d" value
+            | Error err ->
+                printfn "  ❌ Read failed: %A" err
+            
+            // 4. REAL 읽기 테스트
+            printfn "\n📖 Reading DB1.DBD4 (REAL)..."
+            match client.ReadReal(DataArea.DataBlock, 1, 4) with
+            | Ok value ->
+                printfn "  Value: %.2f" value
+            | Error err ->
+                printfn "  ❌ Read failed: %A" err
+            
+            // 5. 비트 읽기 테스트
+            printfn "\n📖 Reading M0.0 (Bit)..."
+            match client.ReadBit(DataArea.Merker, 0, 0, 0) with
+            | Ok value ->
+                printfn "  Value: %b" value
+            | Error err ->
+                printfn "  ❌ Read failed: %A" err
+            
+            // 6. 쓰기 테스트 (선택적)
+            let testWrite = true  // 안전을 위해 기본값 false
+            if testWrite then
+                printfn "\n✍️ Writing test data..."
+                
+                // DINT 쓰기
+                match client.WriteDInt(DataArea.DataBlock, 1, 100, 12345) with
+                | Ok () ->
+                    printfn "  ✅ Write DINT successful"
+                | Error err ->
+                    printfn "  ❌ Write failed: %A" err
+                
+                // REAL 쓰기
+                match client.WriteReal(DataArea.DataBlock, 1, 104, 3.14159f) with
+                | Ok () ->
+                    printfn "  ✅ Write REAL successful"
+                | Error err ->
+                    printfn "  ❌ Write failed: %A" err
+            
+            // 7. 배치 읽기 테스트
+            printfn "\n📖 Batch reading..."
+            let requests = [|
+                { Area = DataArea.DataBlock; DBNumber = 1; StartByte = 0; BitOffset = 0; Amount = 4; DataType = DInt }
+                { Area = DataArea.DataBlock; DBNumber = 1; StartByte = 4; BitOffset = 0; Amount = 4; DataType = Real }
+                { Area = DataArea.Merker; DBNumber = 0; StartByte = 0; BitOffset = 0; Amount = 10; DataType = Byte }
+            |]
+            
+            match client.BatchRead(requests) with
+            | Ok results ->
+                printfn "  ✅ Batch read completed with %d results" results.Count
+                for KeyValue(key, result) in results do
+                    match result with
+                    | Ok data ->
+                        printfn "    %s: %s" key (BitConverter.ToString(data.[0..min 3 (data.Length-1)]))
+                    | Error err ->
+                        printfn "    %s: Error - %A" key err
+            | Error err ->
+                printfn "  ❌ Batch read failed: %A" err
+            
+            // 통계 출력
+            let stats = client.GetStatistics()
+            printfn "\n📊 Statistics:"
+            printfn "  Packets Sent: %d" stats.PacketsSent
+            printfn "  Packets Received: %d" stats.PacketsReceived
+            printfn "  Success Rate: %.1f%%" stats.SuccessRate
+            printfn "  Avg Response Time: %.2f ms" stats.AverageResponseTime
+            printfn "  Errors: %d" stats.ErrorCount
+            
+            true
+            
+        with ex ->
+            printfn "❌ Exception: %s" ex.Message
+            false
+
+/// 모든 PLC 테스트
+let testAllPlcs() =
+    printfn "\n═══════════════════════════════════════"
+    printfn " Siemens S7 Protocol Test Suite"
+    printfn "═══════════════════════════════════════"
+    printfn " Testing %d PLCs..." plcConfigs.Length
+    
+    let results = 
+        plcConfigs
+        |> List.map (fun config ->
+            let success = testPlc config
+            config.Name, success
+        )
+    
+    // 결과 요약
+    printfn "\n═══════════════════════════════════════"
+    printfn " Test Results Summary"
+    printfn "═══════════════════════════════════════"
+    
+    for name, success in results do
+        if success then
+            printfn " ✅ %s: SUCCESS" name
+        else
+            printfn " ❌ %s: FAILED" name
+    
+    let successCount = results |> List.filter snd |> List.length
+    let totalCount = results.Length
+    
+    printfn "\n Total: %d/%d tests passed" successCount totalCount
+    printfn "═══════════════════════════════════════\n"
+
+/// 개별 PLC 테스트 (인덱스로 선택)
+let testSinglePlc index =
+    if index >= 0 && index < plcConfigs.Length then
+        testPlc plcConfigs.[index] |> ignore
+    else
+        printfn "Invalid PLC index. Available: 0-%d" (plcConfigs.Length - 1)
+
+/// 커맨드라인 파싱
+let parseArgs (args: string[]) =
+    if args.Length = 0 then
+        None
+    else
+        match args.[0].ToLower() with
+        | "--all" | "-a" -> Some "all"
+        | "--cp" -> Some "0"
+        | "--s315" -> Some "1"
+        | "--s1500" -> Some "2"
+        | "--help" | "-h" -> Some "help"
+        | index when Int32.TryParse(index, ref 0) -> Some index
+        | _ -> None
+
+[<EntryPoint>]
+let main argv =
+    printfn "Siemens S7 Protocol Client v1.0"
+    printfn "================================\n"
+    
+    match parseArgs argv with
+    | Some "help" ->
+        printfn "Usage:"
+        printfn "  dotnet run           -- Test all PLCs"
+        printfn "  dotnet run -- --all  -- Test all PLCs"
+        printfn "  dotnet run -- --cp   -- Test Siemens CP (192.168.9.96)"
+        printfn "  dotnet run -- --s315 -- Test Siemens S315 (192.168.9.97)"
+        printfn "  dotnet run -- --s1500 -- Test Siemens S1500 (192.168.9.99)"
+        printfn "  dotnet run -- 0      -- Test PLC at index 0"
+        printfn "  dotnet run -- --help -- Show this help"
+        0
+    | Some "all" ->
+        testAllPlcs()
+        0
+    | Some index ->
+        match Int32.TryParse(index) with
+        | true, idx ->
+            testSinglePlc idx
+            0
+        | _ ->
+            printfn "Invalid argument. Use --help for usage."
+            1
+    | None ->
+        // 기본: 모든 PLC 테스트
+        testAllPlcs()
+        0

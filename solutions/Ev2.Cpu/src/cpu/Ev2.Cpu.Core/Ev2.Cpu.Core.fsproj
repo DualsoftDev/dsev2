@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Common infrastructure (must come first) -->
+    <Compile Include="Common\ErrorTypes.fs" />
+    <Compile Include="Common\RuntimeExceptions.fs" />
+    <Compile Include="Common\TypeHelpers.fs" />
+    <Compile Include="Common\ValidationBase.fs" />
+
+    <!-- DsRuntime core definitions -->
+    <Compile Include="Core\DataType.fs" />
+    <Compile Include="Core\DataTypeValidation.fs" />
+    <Compile Include="Core\Operators.Types.fs" />
+    <Compile Include="Core\Operators.Parsing.fs" />
+    <Compile Include="Core\Operators.Formatting.fs" />
+    <Compile Include="Core\Operators.Facade.fs" />
+
+    <!-- Ev2 legacy core types and operators -->
+    <Compile Include="Core\OperatorValidation.fs" />
+    <Compile Include="Core\Tags.fs" />
+    <Compile Include="Core\TagRegistry.fs" />
+
+    <!-- AST (통합 완료) -->
+    <Compile Include="Ast\Expression.fs" />
+    <Compile Include="Ast\Statement.fs" />
+    <Compile Include="Ast\AstValidation.fs" />
+    <Compile Include="Ast\FormulaProgram.fs" />
+    <Compile Include="Ast\RuntimeSpec.fs" />
+
+    <!-- Parsing -->
+    <Compile Include="Parsing\ParseError.fs" />
+    <Compile Include="Parsing\TokenTypes.fs" />
+    <Compile Include="Parsing\Lexer.fs" />
+    <Compile Include="Parsing\Parser.fs" />
+
+    <!-- Legacy struct-based layers -->
+    <Compile Include="Struct\Function.fs" />
+    <Compile Include="Struct\Expression.fs" />
+    <Compile Include="Struct\Statement.fs" />
+
+    <!-- AST Converter (needs to come after Struct/Expression.fs) -->
+    <Compile Include="Ast\AstConverter.fs" />
+
+    <!-- User-defined FC/FB shared contracts -->
+    <Compile Include="UserDefined\UserTypes.fs" />
+    <Compile Include="UserDefined\UserDefinitions.fs" />
+    <Compile Include="UserDefined\UserConverter.fs" />
+    <Compile Include="UserDefined\UserLibrary.fs" />
+    <Compile Include="UserDefined\Scoping.fs" />
+    <Compile Include="UserDefined\RuntimeUpdate.fs" />
+
+    <!-- Archived monolithic core -->
+  </ItemGroup>
+</Project>

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>FS0988</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Edge Detection -->
+    <Compile Include="EdgeDetection\R_TRIG.fs" />
+    <Compile Include="EdgeDetection\F_TRIG.fs" />
+
+    <!-- Bistable -->
+    <Compile Include="Bistable\SR.fs" />
+    <Compile Include="Bistable\RS.fs" />
+
+    <!-- Timers -->
+    <Compile Include="Timers\TON.fs" />
+    <Compile Include="Timers\TOF.fs" />
+    <Compile Include="Timers\TP.fs" />
+    <Compile Include="Timers\TONR.fs" />
+
+    <!-- Counters -->
+    <Compile Include="Counters\CTU.fs" />
+    <Compile Include="Counters\CTD.fs" />
+    <Compile Include="Counters\CTUD.fs" />
+
+    <!-- Analog Processing -->
+    <Compile Include="Analog\SCALE.fs" />
+    <Compile Include="Analog\LIMIT.fs" />
+    <Compile Include="Analog\HYSTERESIS.fs" />
+
+    <!-- Math Functions -->
+    <Compile Include="Math\AVERAGE.fs" />
+    <Compile Include="Math\MIN.fs" />
+    <Compile Include="Math\MAX.fs" />
+
+    <!-- String Manipulation -->
+    <Compile Include="String\CONCAT.fs" />
+    <Compile Include="String\LEFT.fs" />
+    <Compile Include="String\RIGHT.fs" />
+    <Compile Include="String\MID.fs" />
+    <Compile Include="String\FIND.fs" />
+
+    <!-- Registry -->
+    <Compile Include="StandardLibraryRegistry.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.Cpu.Core\Ev2.Cpu.Core.fsproj" />
+    <ProjectReference Include="..\Ev2.Cpu.Generation\Ev2.Cpu.Generation.fsproj" />
+  </ItemGroup>
+
+</Project>

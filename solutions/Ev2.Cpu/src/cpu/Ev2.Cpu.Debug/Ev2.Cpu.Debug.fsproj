@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <NoWarn>FS0988</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- WorkLoop                                                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <Compile Include="WorkLoop.fs" />
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Performance Monitoring & Analysis                           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <Compile Include="Performance\Core\PerfTypes.fs" />
+    <Compile Include="Performance\Core\Metrics.fs" />
+    <Compile Include="Performance\Core\MetricsCollector.fs" />
+    <Compile Include="Performance\Monitoring\CpuMonitor.fs" />
+    <Compile Include="Performance\Monitoring\MemoryMonitor.fs" />
+    <Compile Include="Performance\Monitoring\ScanMonitor.fs" />
+    <Compile Include="Performance\Analysis\PerfAnalyzer.fs" />
+    <Compile Include="Performance\Analysis\Benchmarks.fs" />
+    <Compile Include="Performance\Reporting\PerfReporter.fs" />
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Main Program                                                -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.Cpu.Runtime\Ev2.Cpu.Runtime.fsproj" />
+  </ItemGroup>
+</Project>

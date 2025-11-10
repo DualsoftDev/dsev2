@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Helper modules -->
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="TestHelpers.fs" />
+    <Compile Include="TagDefinitions.fs" />
+    <Compile Include="ValueGenerators.fs" />
+    <Compile Include="ClientHelpers.fs" />
+    <Compile Include="ClientHarness.fs" />
+    <Compile Include="TestAttributes.fs" />
+
+    <!-- Core unit tests -->
+    <Compile Include="CoreTypesTests.fs" />
+    <Compile Include="FrameTests.fs" />
+    <Compile Include="S7ProtocolTests.fs" />
+    <Compile Include="ProtocolValidationTests.fs" />
+
+    <!-- System behaviour tests -->
+    <Compile Include="SessionManagerTests.fs" />
+    <Compile Include="S7ClientTests.fs" />
+
+    <!-- Integration tests -->
+    <Compile Include="Integration\IntegrationConnectionTests.fs" />
+    <Compile Include="Integration\IntegrationReadTests.fs" />
+    <Compile Include="Integration\IntegrationWriteTests.fs" />
+    <Compile Include="Integration\IntegrationControlTests.fs" />
+    <Compile Include="Integration\DataIntegrityTests.fs" />
+    <Compile Include="Integration\ErrorHandlingTests.fs" />
+    <Compile Include="Integration\PerformanceTests.fs" />
+    <Compile Include="Integration\ComprehensiveTests.fs" />
+    <Compile Include="Integration\EdgeTestAllType.fs" />
+    <Compile Include="Integration\ScanTimeTest.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+	  <ProjectReference Include="../Ev2.S7Protocol/Ev2.S7Protocol.fsproj" />
+    <ProjectReference Include="..\..\..\UintTest\plc\Ev2.PLC.ProtocolTestHelper\Ev2.ProtocolTestHelper.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <PackageReference Include="FsUnit.xUnit" Version="5.6.1" />
+    <PackageReference Update="FSharp.Core" Version="8.0.400" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="AssemblyInfo.fs" />
+		<Compile Include="TestHelpers.fs" />
+		<Compile Include="TestAttributes.fs" />
+		<Compile Include="TagFixtures.fs" />
+		<Compile Include="ClientHarness.fs" />
+		<Compile Include="Integration\ReadScenarios.fs" />
+		<Compile Include="Integration\WriteScenarios.fs" />
+		<Compile Include="Integration\MonitoringScenarios.fs" />
+		<Compile Include="Integration\EdgeTestAllType.fs" />
+		<Compile Include="Integration\ScanTimeTest.fs" />
+	</ItemGroup>
+
+
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<ProjectReference Include="..\Ev2.AbProtocol\Ev2.AbProtocol.fsproj" />
+		<ProjectReference Include="..\..\..\UintTest\plc\Ev2.PLC.ProtocolTestHelper\Ev2.ProtocolTestHelper.fsproj" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,295 @@
+{
+  "RuntimeType": "Project",
+  "Name": "MainProject",
+  "Guid": "14f51911-e5e5-49dd-9594-cdbf85f19fef",
+  "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+  "Author": "dualk@KWAKPC",
+  "Version": "0.0",
+  "SystemPrototypes": [
+    {
+      "RuntimeType": "System",
+      "Name": "Cylinder",
+      "Guid": "e9bebce4-9ac1-4789-a48f-0d994c33ed4e",
+      "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+      "Prototype": false,
+      "Author": "dualk",
+      "EngineVersion": "0.0",
+      "LangVersion": "0.0",
+      "Flows": [
+        {
+          "RuntimeType": "Flow",
+          "Name": "CylFlow",
+          "Guid": "343ff219-0029-422c-96eb-83b1f88a2b5b",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00"
+        }
+      ],
+      "Works": [
+        {
+          "RuntimeType": "Work",
+          "Name": "BoundedWork1",
+          "Guid": "28e57cba-58f8-4e7e-8045-9558a47ad3c8",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "FlowGuid": "343ff219-0029-422c-96eb-83b1f88a2b5b",
+          "Calls": [
+            {
+              "RuntimeType": "Call",
+              "Name": "Call1a",
+              "Guid": "a17279cd-71ae-4a5d-823e-41a0bdff016a",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "CallType": "Parallel",
+              "ApiCalls": [
+                "7099b245-d0a2-44a8-9279-787727159839"
+              ],
+              "AutoPre": "AutoPre 테스트 1",
+              "Safety": "안전조건1",
+              "Timeout": 30
+            },
+            {
+              "RuntimeType": "Call",
+              "Name": "Call1bCyl",
+              "Guid": "e74fcbf9-56ee-4014-8f2f-1c2da160bee2",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "CallType": "Repeat"
+            }
+          ],
+          "Arrows": [
+            {
+              "RuntimeType": "Arrow",
+              "Guid": "067d0afe-adb6-43bc-8eeb-d0a3ae156526",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "Source": "a17279cd-71ae-4a5d-823e-41a0bdff016a",
+              "Target": "e74fcbf9-56ee-4014-8f2f-1c2da160bee2",
+              "Type": "Start"
+            }
+          ]
+        },
+        {
+          "RuntimeType": "Work",
+          "Name": "BoundedWork2",
+          "Guid": "61fe7242-4c19-4996-86bc-ea7966d869ff",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "FlowGuid": "343ff219-0029-422c-96eb-83b1f88a2b5b"
+        }
+      ],
+      "Arrows": [
+        {
+          "RuntimeType": "Arrow",
+          "Name": "Cyl Work 간 연결 arrow",
+          "Guid": "4fe8696c-7033-4806-959e-2563b99532c1",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "Source": "28e57cba-58f8-4e7e-8045-9558a47ad3c8",
+          "Target": "61fe7242-4c19-4996-86bc-ea7966d869ff",
+          "Type": "Reset"
+        }
+      ],
+      "ApiDefs": [
+        {
+          "RuntimeType": "ApiDef",
+          "Name": "ApiDef1Cyl",
+          "Guid": "1df785a4-d33e-4985-b1d7-64d6ece7cdfd",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "IsPush": false
+        },
+        {
+          "RuntimeType": "ApiDef",
+          "Name": "ApiDef1Cyl",
+          "Guid": "ad18758a-4c30-4254-881a-1183880ec110",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "IsPush": false
+        }
+      ],
+      "ApiCalls": [
+        {
+          "RuntimeType": "ApiCall",
+          "Name": "ApiCall1aCyl",
+          "Guid": "7099b245-d0a2-44a8-9279-787727159839",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "ApiDef": "1df785a4-d33e-4985-b1d7-64d6ece7cdfd",
+          "InAddress": "InAddressX0",
+          "OutAddress": "OutAddress1",
+          "InSymbol": "XTag1",
+          "OutSymbol": "YTag2",
+          "Value": "false",
+          "ValueType": "Bool"
+        }
+      ]
+    }
+  ],
+  "ActiveSystems": [
+    {
+      "Case": "LocalDefinition",
+      "Fields": [
+        {
+          "RuntimeType": "System",
+          "Name": "MainSystem",
+          "Guid": "d6143ebc-78dc-44f8-88aa-503bc9a3e91b",
+          "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+          "Prototype": false,
+          "Author": "dualk",
+          "EngineVersion": "0.0",
+          "LangVersion": "0.0",
+          "Flows": [
+            {
+              "RuntimeType": "Flow",
+              "Name": "MainFlow",
+              "Guid": "2c15d819-65cc-4dc6-8716-0fa61efa222d",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00"
+            }
+          ],
+          "Works": [
+            {
+              "RuntimeType": "Work",
+              "Name": "BoundedWork1",
+              "Guid": "8cf33d50-3257-4ae6-a063-ad45870cf05f",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "FlowGuid": "2c15d819-65cc-4dc6-8716-0fa61efa222d",
+              "Calls": [
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call1a",
+                  "Guid": "94c5eced-8c1d-4b7c-bb99-847920857f64",
+                  "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+                  "CallType": "Parallel",
+                  "ApiCalls": [
+                    "15daffef-a13d-4ce5-946a-3e7c31dfbdeb"
+                  ],
+                  "AutoPre": "AutoPre 테스트 1",
+                  "Safety": "안전조건1",
+                  "Timeout": 30
+                },
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call1b",
+                  "Guid": "5ca00a8c-e2e3-457e-8621-112056db03cd",
+                  "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+                  "CallType": "Repeat"
+                }
+              ],
+              "Arrows": [
+                {
+                  "RuntimeType": "Arrow",
+                  "Guid": "537d68c6-f479-4f4d-acbb-631c795885af",
+                  "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+                  "Source": "94c5eced-8c1d-4b7c-bb99-847920857f64",
+                  "Target": "5ca00a8c-e2e3-457e-8621-112056db03cd",
+                  "Type": "Start"
+                }
+              ]
+            },
+            {
+              "RuntimeType": "Work",
+              "Name": "BoundedWork2",
+              "Guid": "a597e29b-4ed2-46de-9972-0f2f5f0be28c",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "FlowGuid": "2c15d819-65cc-4dc6-8716-0fa61efa222d",
+              "Calls": [
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call2a",
+                  "Guid": "39e76aa4-8986-4e2c-980e-2b7c85fc5265",
+                  "DateTime": "2025-06-02T08:38:23.0763629+09:00"
+                },
+                {
+                  "RuntimeType": "Call",
+                  "Name": "Call2b",
+                  "Guid": "9bd8e5c4-1718-40d4-b0ba-e747d79a3bc9",
+                  "DateTime": "2025-06-02T08:38:23.0763629+09:00"
+                }
+              ],
+              "Arrows": [
+                {
+                  "RuntimeType": "Arrow",
+                  "Guid": "5bb511e0-8a26-45d6-9172-dae41916536b",
+                  "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+                  "Source": "39e76aa4-8986-4e2c-980e-2b7c85fc5265",
+                  "Target": "9bd8e5c4-1718-40d4-b0ba-e747d79a3bc9",
+                  "Type": "Reset"
+                }
+              ]
+            },
+            {
+              "RuntimeType": "Work",
+              "Name": "FreeWork1",
+              "Guid": "b4718850-276c-49a7-b64d-86ea4f111c85",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00"
+            }
+          ],
+          "Arrows": [
+            {
+              "RuntimeType": "Arrow",
+              "Name": "Work 간 연결 arrow",
+              "Guid": "7183e036-29a8-4fff-80ab-16113178e1ff",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "Source": "8cf33d50-3257-4ae6-a063-ad45870cf05f",
+              "Target": "b4718850-276c-49a7-b64d-86ea4f111c85",
+              "Type": "Start"
+            }
+          ],
+          "ApiDefs": [
+            {
+              "RuntimeType": "ApiDef",
+              "Name": "ApiDef1a",
+              "Guid": "b2acc3a5-98a3-4d22-b094-45942403d838",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "IsPush": false
+            },
+            {
+              "RuntimeType": "ApiDef",
+              "Name": "ApiDef1a",
+              "Guid": "6ef66920-b98c-4356-bc4c-5a950c92e83c",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "IsPush": false
+            }
+          ],
+          "ApiCalls": [
+            {
+              "RuntimeType": "ApiCall",
+              "Name": "ApiCall1a",
+              "Guid": "15daffef-a13d-4ce5-946a-3e7c31dfbdeb",
+              "DateTime": "2025-06-02T08:38:23.0763629+09:00",
+              "ApiDef": "b2acc3a5-98a3-4d22-b094-45942403d838",
+              "InAddress": "InAddressX0",
+              "OutAddress": "OutAddress1",
+              "InSymbol": "XTag1",
+              "OutSymbol": "YTag2",
+              "Value": "false",
+              "ValueType": "Bool"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Case": "Reference",
+      "Fields": [
+        {
+          "InstanceName": "실린더 instance3",
+          "PrototypeGuid": "e9bebce4-9ac1-4789-a48f-0d994c33ed4e",
+          "InstanceGuid": "8a7bea59-7b3d-4c31-97c9-87c9f2121fd7"
+        }
+      ]
+    }
+  ],
+  "PassiveSystems": [
+    {
+      "Case": "Reference",
+      "Fields": [
+        {
+          "InstanceName": "실린더 instance1",
+          "PrototypeGuid": "e9bebce4-9ac1-4789-a48f-0d994c33ed4e",
+          "InstanceGuid": "81f8ef32-1230-4787-a9d3-ea8f86aa9808"
+        }
+      ]
+    },
+    {
+      "Case": "Reference",
+      "Fields": [
+        {
+          "InstanceName": "실린더 instance2",
+          "PrototypeGuid": "e9bebce4-9ac1-4789-a48f-0d994c33ed4e",
+          "InstanceGuid": "ab8fe6ef-acf0-416a-af88-71f71cc0f1cd"
+        }
+      ]
+    }
+  ]
+}

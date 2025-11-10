@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.Cpu.Core\Ev2.Cpu.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Foundation: Time & State Types                            -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\Timebase.fs" />
+    <Compile Include="Engine\TimerTypes.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Runtime Configuration (must come before Memory.fs)        -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\RuntimeConfiguration.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Retain Memory System (must come before Memory.fs)         -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="RetainMemory.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Memory Management                                         -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\Memory.fs" />
+    <Compile Include="Engine\MemoryPool.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Performance & Profiling                                   -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\PerformanceProfiler.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Execution Context & Core                                  -->
+    <!-- ════════════════════════════════════════════════════════ -->
+
+    <Compile Include="Engine\RuntimeError.fs" />
+    <Compile Include="Engine\RelayTypes.fs" />
+    <Compile Include="Engine\RelayLifecycle.fs" />
+    <Compile Include="Engine\RuntimeEvent.fs" />
+    <Compile Include="Engine\RuntimeMetrics.fs" />
+    <Compile Include="Engine\ScanThresholds.fs" />
+    <Compile Include="Engine\RelayStateManager.fs" />
+    <Compile Include="Engine\LoopContext.fs" />
+    <Compile Include="Engine\Context.fs" />
+    <Compile Include="Engine\LoopEngine.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Runtime Update Management                                 -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\VersionManager.fs" />
+    <Compile Include="RuntimeUpdateManager.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Built-in Functions                                        -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\Functions\FunctionCommon.fs" />
+    <Compile Include="Engine\Functions\ComparisonFunctions.fs" />
+    <Compile Include="Engine\Functions\ArithmeticFunctions.fs" />
+    <Compile Include="Engine\Functions\MathFunctions.fs" />
+    <Compile Include="Engine\Functions\StringFunctions.fs" />
+    <Compile Include="Engine\Functions\PLCFunctions.fs" />
+    <Compile Include="Engine\Functions\SystemFunctions.fs" />
+    <Compile Include="Engine\Functions\BuiltinFunctionRegistry.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Expression & Statement Evaluation                         -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Engine\OperatorMapping.fs" />
+    <Compile Include="Engine\DependencyAnalyzer.fs" />
+    <Compile Include="Engine\ExprEvaluator.fs" />
+    <Compile Include="Engine\StmtEvaluator.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Top-Level Runtime                                         -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="CpuScan.fs" />
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- Examples & Tests                                          -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <Compile Include="Examples\RefactoredExample.fs" />
+    <Compile Include="CpuTest.fs" />
+  </ItemGroup>
+</Project>

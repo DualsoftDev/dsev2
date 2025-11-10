@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <NoWarn>FS0988</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Test Infrastructure (Phase 1) -->
+    <Compile Include="Infrastructure\TestHelpers.fs" />
+    <Compile Include="Infrastructure\DataGenerators.fs" />
+    <Compile Include="Infrastructure\CustomArbitraries.fs" />
+    <Compile Include="Infrastructure\AssertionHelpers.fs" />
+    <Compile Include="Infrastructure\PerformanceHelpers.fs" />
+
+    <!-- Existing Tests -->
+    <Compile Include="Ast.Expression.Test.fs" />
+    <Compile Include="AstConverter.Test.fs" />
+    <Compile Include="Integration.Pipeline.Test.fs" />
+    <Compile Include="Core.Types.Test.fs" />
+    <Compile Include="Core.Operators.Test.fs" />
+    <Compile Include="Expression.Test.fs" />
+    <Compile Include="Statement.Test.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.1.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="FsUnit.xUnit" Version="5.0.0" />
+    <PackageReference Include="FsCheck" Version="2.16.6" />
+    <PackageReference Include="FsCheck.Xunit" Version="2.16.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\cpu\Ev2.Cpu.Core\Ev2.Cpu.Core.fsproj" />
+  </ItemGroup>
+</Project>

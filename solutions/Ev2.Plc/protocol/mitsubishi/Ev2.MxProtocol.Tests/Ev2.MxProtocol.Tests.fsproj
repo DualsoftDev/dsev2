@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Helpers (compiled first) -->
+		<Compile Include="AssemblyInfo.fs" />
+		<Compile Include="TestHelpers.fs" />
+		<Compile Include="TestAttributes.fs" />
+		<Compile Include="TagDefinitions.fs" />
+		<Compile Include="ValueGenerators.fs" />
+		<Compile Include="ClientHelpers.fs" />
+
+		<!-- Unit Tests -->
+		<Compile Include="CoreTypesTests.fs" />
+		<Compile Include="FrameTests.fs" />
+		<Compile Include="PacketBuilderTests.fs" />
+		<Compile Include="PacketParserTests.fs" />
+
+		<!-- Hardware Validation Tests -->
+
+		<!-- Integration Tests -->
+		<Compile Include="Integration\IntegrationConnectionTests.fs" />
+		<Compile Include="Integration\IntegrationReadTests.fs" />
+		<Compile Include="Integration\IntegrationWriteTests.fs" />
+		<Compile Include="Integration\IntegrationControlTests.fs" />
+		<Compile Include="Integration\PerformanceTests.fs" />
+		<Compile Include="Integration\ComprehensiveTests.fs" />
+		<Compile Include="Integration\EdgeTestAllType.fs" />
+		<Compile Include="Integration\ScanTimeTest.fs" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<ProjectReference Include="..\Ev2.MxProtocol\Ev2.MxProtocol.fsproj" />
+		<ProjectReference Include="..\..\..\UintTest\plc\Ev2.PLC.ProtocolTestHelper\Ev2.ProtocolTestHelper.fsproj" />
+	</ItemGroup>
+</Project>
