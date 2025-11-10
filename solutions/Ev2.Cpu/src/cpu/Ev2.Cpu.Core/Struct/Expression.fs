@@ -60,62 +60,23 @@ module Expression =
 
             | Unary(op, x) ->
                 let xt = x.InferType()
-                match op with
-                | Not | Rising | Falling ->
-                    if xt = typeof<bool> then typeof<bool>
-                    else raise (ArgumentException($"{op} requires Bool, got {xt}"))
-                | _ ->
-                    raise (ArgumentException($"Invalid unary operator: {op}"))
+                // 단항 연산자 타입 검증 - validateForTypes 사용
+                match DsOp.validateForTypes op (Some xt) None with
+                | Some resultType -> resultType
+                | None -> raise (ArgumentException($"{op} cannot operate on {xt}"))
 
             | Binary(op, l, r) ->
                 let lt = l.InferType()
                 let rt = r.InferType()
-                match op with
-                // 논리 연산
-                | And | Or | Xor ->
-                    if lt = typeof<bool> && rt = typeof<bool> then typeof<bool>
-                    else raise (ArgumentException($"{op} requires Bool operands, got {lt} and {rt}"))
 
-                // 비교 연산
-                | Eq | Ne ->
-                    // 같은 타입 또는 숫자 혼합만 허용
-                    if lt = rt || (TypeHelpers.isNumericType lt && TypeHelpers.isNumericType rt) then typeof<bool>
-                    else raise (ArgumentException($"type mismatch: {lt} vs {rt} for {op}"))
-
-                | Gt | Ge | Lt | Le ->
-                    if (TypeHelpers.isNumericType lt && TypeHelpers.isNumericType rt) || (lt = typeof<string> && rt = typeof<string>) then typeof<bool>
-                    else raise (ArgumentException($"{op} requires numeric or string operands, got {lt} and {rt}"))
-
-                // 산술 연산
-                | Add ->
-                    // 문자열 연결 또는 숫자 덧셈
-                    if lt = typeof<string> || rt = typeof<string> then typeof<string>
-                    elif lt = typeof<double> || rt = typeof<double> then typeof<double>
-                    elif lt = typeof<int> && rt = typeof<int> then typeof<int>
-                    else raise (ArgumentException($"Cannot add {lt} and {rt}"))
-
-                | Sub | Mul | Div ->
-                    if TypeHelpers.isNumericType lt && TypeHelpers.isNumericType rt then
-                        if lt = typeof<double> || rt = typeof<double> then typeof<double>
-                        else typeof<int>
-                    else raise (ArgumentException($"{op} requires numeric operands, got {lt} and {rt}"))
-
-                | Mod ->
-                    if lt = typeof<int> && rt = typeof<int> then typeof<int>
-                    else raise (ArgumentException("MOD requires integer operands"))
-
-                | Pow ->
-                    if TypeHelpers.isNumericType lt && TypeHelpers.isNumericType rt then typeof<double>
-                    else raise (ArgumentException("POW requires numeric operands"))
-
-                | Move ->
-                    rt  // MOV는 우변의 타입을 따름
-
-                | Assign ->
-                    lt  // 좌변의 타입을 따름
-
-                | _ ->
-                    raise (ArgumentException($"Invalid binary operator: {op}"))
+                // 특수 케이스: Add는 문자열 연결도 지원
+                if op = Add && (lt = typeof<string> || rt = typeof<string>) then
+                    typeof<string>
+                else
+                    // 모든 다른 연산자는 validateForTypes로 타입 검증 및 결과 타입 추론
+                    match DsOp.validateForTypes op (Some lt) (Some rt) with
+                    | Some resultType -> resultType
+                    | None -> raise (ArgumentException($"{op} cannot operate on {lt} and {rt}"))
 
             | Function(name, args) ->
                 // 각 인자 타입 수집

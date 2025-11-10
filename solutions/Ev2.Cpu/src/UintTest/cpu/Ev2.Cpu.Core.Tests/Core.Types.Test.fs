@@ -73,12 +73,21 @@ type CoreTypesTest() =
 
     [<Fact>]
     member _.``DsDataType_TryParse_성공_케이스``() =
+        // Boolean
         TypeHelpers.tryParseTypeName("bool") |> should equal (Some typeof<bool>)
         TypeHelpers.tryParseTypeName("BOOLEAN") |> should equal (Some typeof<bool>)
-        TypeHelpers.tryParseTypeName("int") |> should equal (Some typeof<int>)
-        TypeHelpers.tryParseTypeName("INT32") |> should equal (Some typeof<int>)
+
+        // Integers - IEC 61131-3 standard
+        TypeHelpers.tryParseTypeName("int") |> should equal (Some typeof<int16>)     // PLC INT = 16-bit
+        TypeHelpers.tryParseTypeName("INT32") |> should equal (Some typeof<int>)     // .NET Int32 = 32-bit
+        TypeHelpers.tryParseTypeName("DINT") |> should equal (Some typeof<int>)      // PLC DINT = 32-bit
+
+        // Floating point - IEC 61131-3 standard
         TypeHelpers.tryParseTypeName("double") |> should equal (Some typeof<double>)
-        TypeHelpers.tryParseTypeName("REAL") |> should equal (Some typeof<double>)
+        TypeHelpers.tryParseTypeName("REAL") |> should equal (Some typeof<double>)   // Maps to double
+        TypeHelpers.tryParseTypeName("LREAL") |> should equal (Some typeof<double>)  // PLC LREAL = 64-bit
+
+        // String
         TypeHelpers.tryParseTypeName("string") |> should equal (Some typeof<string>)
         TypeHelpers.tryParseTypeName("TEXT") |> should equal (Some typeof<string>)
     

@@ -69,14 +69,28 @@ module internal TagRegistryHelpers =
 module TagBuilders =
     let create name (dtype: Type) = TagRegistryHelpers.getOrAdd name dtype
     let bool name = create name typeof<bool>
+    let sbyte name = create name typeof<sbyte>
+    let byte name = create name typeof<byte>
+    let short name = create name typeof<int16>
+    let ushort name = create name typeof<uint16>
     let int name = create name typeof<int>
+    let uint name = create name typeof<uint32>
+    let long name = create name typeof<int64>
+    let ulong name = create name typeof<uint64>
     let double name = create name typeof<double>
     let string name = create name typeof<string>
 
 type DsTag with
     static member Create(name, dtype: Type) = TagBuilders.create name dtype
     static member Bool(name) = TagBuilders.bool name
+    static member SByte(name) = TagBuilders.sbyte name
+    static member Byte(name) = TagBuilders.byte name
+    static member Short(name) = TagBuilders.short name
+    static member UShort(name) = TagBuilders.ushort name
     static member Int(name) = TagBuilders.int name
+    static member UInt(name) = TagBuilders.uint name
+    static member Long(name) = TagBuilders.long name
+    static member ULong(name) = TagBuilders.ulong name
     static member Double(name) = TagBuilders.double name
     static member String(name) = TagBuilders.string name
-    
+

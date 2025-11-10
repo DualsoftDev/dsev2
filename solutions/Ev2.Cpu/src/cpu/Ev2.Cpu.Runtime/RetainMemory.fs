@@ -253,7 +253,14 @@ module RetainValueSerializer =
             "null"
         else
             if dataType = typeof<bool> then JsonSerializer.Serialize(unbox<bool> value, jsonOptions)
+            elif dataType = typeof<sbyte> then JsonSerializer.Serialize(unbox<sbyte> value, jsonOptions)
+            elif dataType = typeof<byte> then JsonSerializer.Serialize(unbox<byte> value, jsonOptions)
+            elif dataType = typeof<int16> then JsonSerializer.Serialize(unbox<int16> value, jsonOptions)
+            elif dataType = typeof<uint16> then JsonSerializer.Serialize(unbox<uint16> value, jsonOptions)
             elif dataType = typeof<int> then JsonSerializer.Serialize(unbox<int> value, jsonOptions)
+            elif dataType = typeof<uint32> then JsonSerializer.Serialize(unbox<uint32> value, jsonOptions)
+            elif dataType = typeof<int64> then JsonSerializer.Serialize(unbox<int64> value, jsonOptions)
+            elif dataType = typeof<uint64> then JsonSerializer.Serialize(unbox<uint64> value, jsonOptions)
             elif dataType = typeof<double> then JsonSerializer.Serialize(unbox<double> value, jsonOptions)
             elif dataType = typeof<string> then JsonSerializer.Serialize(unbox<string> value, jsonOptions)
             else invalidArg "dataType" (sprintf "Unsupported type: %s" dataType.FullName)
@@ -265,7 +272,14 @@ module RetainValueSerializer =
         else
             try
                 if dataType = typeof<bool> then box (JsonSerializer.Deserialize<bool>(json, jsonOptions))
+                elif dataType = typeof<sbyte> then box (JsonSerializer.Deserialize<sbyte>(json, jsonOptions))
+                elif dataType = typeof<byte> then box (JsonSerializer.Deserialize<byte>(json, jsonOptions))
+                elif dataType = typeof<int16> then box (JsonSerializer.Deserialize<int16>(json, jsonOptions))
+                elif dataType = typeof<uint16> then box (JsonSerializer.Deserialize<uint16>(json, jsonOptions))
                 elif dataType = typeof<int> then box (JsonSerializer.Deserialize<int>(json, jsonOptions))
+                elif dataType = typeof<uint32> then box (JsonSerializer.Deserialize<uint32>(json, jsonOptions))
+                elif dataType = typeof<int64> then box (JsonSerializer.Deserialize<int64>(json, jsonOptions))
+                elif dataType = typeof<uint64> then box (JsonSerializer.Deserialize<uint64>(json, jsonOptions))
                 elif dataType = typeof<double> then box (JsonSerializer.Deserialize<double>(json, jsonOptions))
                 elif dataType = typeof<string> then box (JsonSerializer.Deserialize<string>(json, jsonOptions))
                 else invalidArg "dataType" (sprintf "Unsupported type: %s" dataType.FullName)

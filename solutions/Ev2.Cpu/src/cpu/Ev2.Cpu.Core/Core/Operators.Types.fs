@@ -294,26 +294,46 @@ type DsOp with
             | Some t1, Some t2 when t1 = typeof<bool> && t2 = typeof<bool> && (op = Gt || op = Ge || op = Lt || op = Le) -> None
             // 같은 타입끼리 비교
             | Some l, Some r when l = r -> Some typeof<bool>
-            // 숫자 타입 간 비교 (Int ↔ Double) - 양방향 호환
-            | Some t1, Some t2 when (t1 = typeof<int> && t2 = typeof<double>) || (t1 = typeof<double> && t2 = typeof<int>) -> Some typeof<bool>
+            // 숫자 타입 간 비교 - 양방향 호환 (모든 정수 타입 + double)
+            | Some t1, Some t2 when TypeHelpers.isNumericType t1 && TypeHelpers.isNumericType t2 -> Some typeof<bool>
             | _ -> None
 
         // 산술 연산자는 수치 타입에서만 동작, 타입 승격 지원
         | Add | Sub | Mul | Div | Mod | Pow ->
             match leftType, rightType with
-            | Some t1, Some t2 when t1 = typeof<int> && t2 = typeof<int> -> Some typeof<int>
-            | Some t1, Some t2 when t1 = typeof<double> && t2 = typeof<double> -> Some typeof<double>
-            | Some t1, Some t2 when (t1 = typeof<int> && t2 = typeof<double>) || (t1 = typeof<double> && t2 = typeof<int>) -> Some typeof<double>
+            | Some t1, Some t2 when TypeHelpers.isNumericType t1 && TypeHelpers.isNumericType t2 ->
+                // 결과 타입은 두 피연산자 중 더 큰 타입으로 승격
+                // double이 가장 크고, 그 다음은 크기 순서
+                if t1 = typeof<double> || t2 = typeof<double> then Some typeof<double>
+                elif t1 = typeof<uint64> || t2 = typeof<uint64> then Some typeof<uint64>
+                elif t1 = typeof<int64> || t2 = typeof<int64> then Some typeof<int64>
+                elif t1 = typeof<uint> || t2 = typeof<uint> then Some typeof<uint>
+                elif t1 = typeof<int> || t2 = typeof<int> then Some typeof<int>
+                elif t1 = typeof<uint16> || t2 = typeof<uint16> then Some typeof<uint16>
+                elif t1 = typeof<int16> || t2 = typeof<int16> then Some typeof<int16>
+                elif t1 = typeof<byte> || t2 = typeof<byte> then Some typeof<byte>
+                elif t1 = typeof<sbyte> || t2 = typeof<sbyte> then Some typeof<sbyte>
+                else None
             | _ -> None
 
         // 비트 연산자는 정수 타입에서만 동작
         | BitAnd | BitOr | BitXor | ShiftLeft | ShiftRight ->
             match leftType, rightType with
-            | Some t1, Some t2 when t1 = typeof<int> && t2 = typeof<int> -> Some typeof<int>
+            | Some t1, Some t2 when TypeHelpers.isIntegerType t1 && TypeHelpers.isIntegerType t2 ->
+                // 결과 타입은 두 피연산자 중 더 큰 타입으로 승격
+                if t1 = typeof<uint64> || t2 = typeof<uint64> then Some typeof<uint64>
+                elif t1 = typeof<int64> || t2 = typeof<int64> then Some typeof<int64>
+                elif t1 = typeof<uint> || t2 = typeof<uint> then Some typeof<uint>
+                elif t1 = typeof<int> || t2 = typeof<int> then Some typeof<int>
+                elif t1 = typeof<uint16> || t2 = typeof<uint16> then Some typeof<uint16>
+                elif t1 = typeof<int16> || t2 = typeof<int16> then Some typeof<int16>
+                elif t1 = typeof<byte> || t2 = typeof<byte> then Some typeof<byte>
+                elif t1 = typeof<sbyte> || t2 = typeof<sbyte> then Some typeof<sbyte>
+                else None
             | _ -> None
         | BitNot ->
             match leftType with
-            | Some t when t = typeof<int> -> Some typeof<int>
+            | Some t when TypeHelpers.isIntegerType t -> Some t  // 단항 연산자는 입력 타입 그대로 반환
             | _ -> None
 
         // 신호 연산자는 Bool 타입에서만 동작

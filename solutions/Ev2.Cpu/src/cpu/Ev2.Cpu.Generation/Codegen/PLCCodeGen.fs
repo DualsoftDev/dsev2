@@ -17,8 +17,15 @@ module PLCCodeGen =
 
     let dataTypeToPLC (dt: Type) : string =
         if dt = typeof<bool> then "BOOL"
-        elif dt = typeof<int> then "INT"
-        elif dt = typeof<double> then "REAL"
+        elif dt = typeof<sbyte> then "SINT"      // Signed INTeger, 8-bit
+        elif dt = typeof<byte> then "USINT"      // Unsigned Short INTeger, 8-bit
+        elif dt = typeof<int16> then "INT"       // 16-bit signed (PLC standard)
+        elif dt = typeof<uint16> then "UINT"     // 16-bit unsigned
+        elif dt = typeof<int> then "DINT"        // Double INTeger, 32-bit signed (BREAKING CHANGE: was INT)
+        elif dt = typeof<uint32> then "UDINT"    // Unsigned Double INTeger, 32-bit
+        elif dt = typeof<int64> then "LINT"      // Long INTeger, 64-bit signed
+        elif dt = typeof<uint64> then "ULINT"    // Unsigned Long INTeger, 64-bit
+        elif dt = typeof<double> then "LREAL"    // Long REAL, 64-bit (BREAKING CHANGE: was REAL)
         elif dt = typeof<string> then "STRING"
         else failwith $"Unsupported data type: {dt.Name}"
 
@@ -34,8 +41,22 @@ module PLCCodeGen =
     let private formatDefaultValue (dataType: Type) (value: obj) : string =
         if dataType = typeof<bool> then
             if (value :?> bool) then " := TRUE" else " := FALSE"
+        elif dataType = typeof<sbyte> then
+            sprintf " := %d" (value :?> sbyte)
+        elif dataType = typeof<byte> then
+            sprintf " := %d" (value :?> byte)
+        elif dataType = typeof<int16> then
+            sprintf " := %d" (value :?> int16)
+        elif dataType = typeof<uint16> then
+            sprintf " := %d" (value :?> uint16)
         elif dataType = typeof<int> then
             sprintf " := %d" (value :?> int)
+        elif dataType = typeof<uint32> then
+            sprintf " := %d" (value :?> uint32)
+        elif dataType = typeof<int64> then
+            sprintf " := %d" (value :?> int64)
+        elif dataType = typeof<uint64> then
+            sprintf " := %d" (value :?> uint64)
         elif dataType = typeof<double> then
             sprintf " := %f" (value :?> float)
         elif dataType = typeof<string> then
@@ -105,8 +126,22 @@ module PLCCodeGen =
         | Const(value, dt) ->
             if dt = typeof<bool> then
                 if (value :?> bool) then "TRUE" else "FALSE"
+            elif dt = typeof<sbyte> then
+                sprintf "%d" (value :?> sbyte)
+            elif dt = typeof<byte> then
+                sprintf "%d" (value :?> byte)
+            elif dt = typeof<int16> then
+                sprintf "%d" (value :?> int16)
+            elif dt = typeof<uint16> then
+                sprintf "%d" (value :?> uint16)
             elif dt = typeof<int> then
                 sprintf "%d" (value :?> int)
+            elif dt = typeof<uint32> then
+                sprintf "%d" (value :?> uint32)
+            elif dt = typeof<int64> then
+                sprintf "%d" (value :?> int64)
+            elif dt = typeof<uint64> then
+                sprintf "%d" (value :?> uint64)
             elif dt = typeof<double> then
                 sprintf "%f" (value :?> float)
             elif dt = typeof<string> then

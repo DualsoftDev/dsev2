@@ -786,13 +786,20 @@ type Memory() =
                 let area = snapshot.VariableAreas.TryFind(name) |> Option.defaultValue MemoryArea.Local
                 let isRetain = snapshot.VariableRetainFlags.TryFind(name) |> Option.defaultValue false
 
-                // Infer type from value (best effort for basic types)
+                // Infer type from value (best effort for all supported types)
                 let dataType =
                     if isNull value then typeof<int>  // Default for null
                     else
                         match value with
                         | :? bool -> typeof<bool>
+                        | :? sbyte -> typeof<sbyte>
+                        | :? byte -> typeof<byte>
+                        | :? int16 -> typeof<int16>
+                        | :? uint16 -> typeof<uint16>
                         | :? int -> typeof<int>
+                        | :? uint32 -> typeof<uint32>
+                        | :? int64 -> typeof<int64>
+                        | :? uint64 -> typeof<uint64>
                         | :? double -> typeof<double>
                         | :? string -> typeof<string>
                         | _ -> typeof<int>  // Default for unknown types

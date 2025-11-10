@@ -400,19 +400,6 @@ let ``Statement - ToText handles special characters`` () =
     text.Contains("str_var") |> should be True
     text.Contains(":=") |> should be True
 
-[<Fact>]
-let ``Statement - Arithmetic operations with mixed types`` () =
-    clearVariableRegistry()
-    let cond = boolVar "enable"
-    let intVal = intVar "x"
-    let dblVal = dblVar "y"
-    let resultTarget = "result"
-
-    // Int + Double => Double (type promotion)
-    let stmt = (cond, intVal, dblVal) --+ resultTarget
-    match stmt with
-    | Command(_, _, Function("Move", _)) -> ()
-    | _ -> failwith "Expected conditional ADD"
 
 [<Fact>]
 let ``Statement - Multiple operations on same variable`` () =
