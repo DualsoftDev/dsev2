@@ -27,47 +27,8 @@ type PlcProgramFormat =
         | SiemensXML _ -> PlcVendor.CreateSiemens()
         | CustomFormat (_, parserName) -> PlcVendor.CreateCustom(parserName)
 
-/// 로직 타입
-type LogicType =
-    | LadderRung
-    | StructuredText
-    | FunctionBlock
-    | InstructionList
-    | SequentialFunctionChart
-    | Custom of string
-
-/// 원본 변수 정보
-type RawVariable = {
-    Name: string
-    Address: string
-    DataType: string
-    Comment: string option
-    InitialValue: string option
-    Scope: string option
-    AccessLevel: string option
-    Properties: Map<string, string>
-} with
-    static member Create(name: string, address: string, dataType: string) = {
-        Name = name
-        Address = address
-        DataType = dataType
-        Comment = None
-        InitialValue = None
-        Scope = None
-        AccessLevel = None
-        Properties = Map.empty
-    }
-
-/// 원본 로직 정보
-type RawLogic = {
-    Id: string
-    Type: LogicType
-    Content: string
-    Variables: string list
-    Comments: string list
-    LineNumber: int option
-    Properties: Map<string, string>
-}
+// RawVariable is now defined in VariableTypes.fs
+// RawLogic type is now defined in LogicTypes.fs with more comprehensive fields
 
 /// 원본 주석 정보
 type RawComment = {

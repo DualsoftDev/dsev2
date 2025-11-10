@@ -1,0 +1,32 @@
+(*********************************************
+
+  Import-Export
+  Version   := RSLogix 5000 v30.02
+  Owner     := Windows User,
+  Exported  := Mon Aug  9 12:25:27 2021
+
+  Note:  File encoded in UTF-8.  Only edit file in a program
+         which supports UTF-8 (like Notepad, not Wordpad).
+
+**********************************************)
+
+IE_VER := 2.21;
+
+CONTROLLER TestController (ProcessorType := "1756-L72", Major := 30)
+    MODULE Local (Parent := "Local", Slot := 0) END_MODULE
+
+    TAG
+        I0401 OF Local:4:I.Data[1] (RADIX := Decimal);
+    END_TAG
+
+    PROGRAM MainProgram (MAIN := "MainRoutine")
+        ROUTINE MainRoutine END_ROUTINE
+    END_PROGRAM
+
+    TASK MainTask (Type := CONTINUOUS, Priority := 10)
+        MainProgram;
+    END_TASK
+
+    CONFIG CST (SystemTimeMasterID := 0) END_CONFIG
+END_CONTROLLER
+

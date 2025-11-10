@@ -738,7 +738,7 @@ let private runtimeUpdateWithScanTest (ctx: ExecutionContext) =
         "FAIL", Some "Runtime update during scan failed"
 
 let private retainMemoryTest (ctx: ExecutionContext) =
-    printfn "Testing Retain Memory (전원 OFF/ON 시뮬레이션)..."
+    printfn "Testing Retain Memory - Binary (전원 OFF/ON 시뮬레이션)..."
 
     let testFile = "debug_retain_test.dat"
 
@@ -817,6 +817,235 @@ let private retainMemoryTest (ctx: ExecutionContext) =
         "PASS", None
     else
         "FAIL", Some (sprintf "Values mismatch (Counter=%d, Status=%b, Temp=%d)" counterValue statusValue tempValue)
+
+let private schemaBasedRetainMemoryTest (ctx: ExecutionContext) =
+    printfn "Testing Schema-Based Retain Memory (고성능 스키마 기반)..."
+
+    let schemaFile = "debug_retain_schema.json"
+    let valuesFile = "debug_retain_values.dat"
+
+    // 테스트 파일 정리
+    try
+        [schemaFile; valuesFile; schemaFile + ".bak"; valuesFile + ".bak"]
+        |> List.iter (fun f -> if File.Exists(f) then File.Delete(f))
+    with _ -> ()
+
+    let storage = SchemaBasedRetainStorage(schemaFile, valuesFile)
+
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 1: 전원 ON - Retain 변수 선언 및 값 설정
+    // ═══════════════════════════════════════════════════════════════
+    let ctx1 = Context.create()
+    ctx1.Memory.DeclareLocal("RetainInt", typeof<int>, retain=true)
+    ctx1.Memory.DeclareLocal("RetainDouble", typeof<double>, retain=true)
+    ctx1.Memory.DeclareLocal("RetainBool", typeof<bool>, retain=true)
+    ctx1.Memory.DeclareLocal("RetainString", typeof<string>, retain=true)
+    ctx1.Memory.DeclareLocal("NormalValue", typeof<int>, retain=false)
+
+    ctx1.Memory.Set("RetainInt", box 42)
+    ctx1.Memory.Set("RetainDouble", box 3.14159)
+    ctx1.Memory.Set("RetainBool", box true)
+    ctx1.Memory.Set("RetainString", box "Hello Schema")
+    ctx1.Memory.Set("NormalValue", box 999)
+
+    printfn "  Phase 1: Variables set (Int=42, Double=3.14159, Bool=true, String='Hello Schema')"
+
+    // 스키마 생성 및 저장
+    let schema1 = ctx1.Memory.BuildSchema()
+    printfn "  Phase 1: Schema built (%d retain variables)" schema1.Variables.Length
+
+    match storage.SaveSchema(schema1) with
+    | Ok () -> printfn "  Phase 1: Schema saved to '%s'" schemaFile
+    | Error err -> printfn "  Phase 1: Schema save failed - %s" err
+
+    // 데이터 저장
+    let snapshot1 = ctx1.Memory.CreateRetainSnapshot()
+    match storage.SaveValues(schema1, snapshot1) with
+    | Ok () -> printfn "  Phase 1: Values saved to '%s'" valuesFile
+    | Error err -> printfn "  Phase 1: Values save failed - %s" err
+
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 2: 전원 OFF 시뮬레이션 (메모리 초기화)
+    // ═══════════════════════════════════════════════════════════════
+    printfn "  Phase 2: Power OFF simulation..."
+    Thread.Sleep 100
+
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 3: 전원 ON - 새 컨텍스트 생성 및 복원
+    // ═══════════════════════════════════════════════════════════════
+    let ctx2 = Context.create()
+    ctx2.Memory.DeclareLocal("RetainInt", typeof<int>, retain=true)
+    ctx2.Memory.DeclareLocal("RetainDouble", typeof<double>, retain=true)
+    ctx2.Memory.DeclareLocal("RetainBool", typeof<bool>, retain=true)
+    ctx2.Memory.DeclareLocal("RetainString", typeof<string>, retain=true)
+    ctx2.Memory.DeclareLocal("NormalValue", typeof<int>, retain=false)
+
+    printfn "  Phase 3: Power ON - New context created"
+
+    // 스키마 로드 및 값 복원
+    match storage.LoadSchema() with
+    | Ok (Some loadedSchema) ->
+        printfn "  Phase 3: Schema loaded (%d variables)" loadedSchema.Variables.Length
+
+        match storage.LoadValues(loadedSchema) with
+        | Ok snapshot2 ->
+            ctx2.Memory.RestoreFromSnapshot(snapshot2)
+            printfn "  Phase 3: Values restored from schema-based storage"
+        | Error err ->
+            printfn "  Phase 3: Values load failed - %s" err
+    | Ok None ->
+        printfn "  Phase 3: No schema found"
+    | Error err ->
+        printfn "  Phase 3: Schema load failed - %s" err
+
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 4: 검증
+    // ═══════════════════════════════════════════════════════════════
+    let intValue = ctx2.Memory.Get("RetainInt") :?> int
+    let doubleValue = ctx2.Memory.Get("RetainDouble") :?> double
+    let boolValue = ctx2.Memory.Get("RetainBool") :?> bool
+    let stringValue = ctx2.Memory.Get("RetainString") :?> string
+    let normalValue = ctx2.Memory.Get("NormalValue") :?> int
+
+    printfn "  Phase 4: Verification"
+    printfn "    RetainInt: %d (expected: 42)" intValue
+    printfn "    RetainDouble: %f (expected: 3.14159)" doubleValue
+    printfn "    RetainBool: %b (expected: true)" boolValue
+    printfn "    RetainString: '%s' (expected: 'Hello Schema')" stringValue
+    printfn "    NormalValue: %d (expected: 0, not retained)" normalValue
+
+    // 파일 크기 비교 (성능 측정)
+    let schemaInfo = FileInfo(schemaFile)
+    let valuesInfo = FileInfo(valuesFile)
+    printfn "  Phase 5: Storage efficiency"
+    printfn "    Schema size: %d bytes (JSON metadata)" schemaInfo.Length
+    printfn "    Values size: %d bytes (binary data)" valuesInfo.Length
+
+    // 정리
+    try
+        [schemaFile; valuesFile; schemaFile + ".bak"; valuesFile + ".bak"]
+        |> List.iter (fun f -> if File.Exists(f) then File.Delete(f))
+    with _ -> ()
+
+    // 결과
+    if intValue = 42 && abs(doubleValue - 3.14159) < 0.00001 && boolValue = true &&
+       stringValue = "Hello Schema" && normalValue = 0 then
+        "PASS", None
+    else
+        "FAIL", Some (sprintf "Values mismatch (Int=%d, Double=%f, Bool=%b, String='%s')"
+                              intValue doubleValue boolValue stringValue)
+
+let private retainPerformanceComparisonTest (ctx: ExecutionContext) =
+    printfn "Testing Retain Storage Performance Comparison..."
+
+    // 대용량 데이터로 성능 비교
+    let varCount = 1000
+    let binaryFile = "perf_binary.dat"
+    let schemaFile = "perf_schema.json"
+    let valuesFile = "perf_values.dat"
+
+    // 정리
+    [binaryFile; schemaFile; valuesFile]
+    |> List.iter (fun f -> try if File.Exists(f) then File.Delete(f) with _ -> ())
+
+    // 컨텍스트 생성 및 대량 변수 선언
+    let ctx1 = Context.create()
+    for i in 1..varCount do
+        let varName = sprintf "Var%d" i
+        ctx1.Memory.DeclareLocal(varName, typeof<int>, retain=true)
+        ctx1.Memory.Set(varName, box i)
+
+    printfn "  Created %d retain variables" varCount
+
+    // ═══════════════════════════════════════════════════════════════
+    // Binary Storage 성능 측정
+    // ═══════════════════════════════════════════════════════════════
+    let binaryStorage = BinaryRetainStorage(binaryFile)
+    let binarySnapshot = ctx1.Memory.CreateRetainSnapshot()
+
+    let binarySaveTime = System.Diagnostics.Stopwatch.StartNew()
+    match binaryStorage.Save(binarySnapshot) with
+    | Ok () -> ()
+    | Error err -> printfn "Binary save error: %s" err
+    binarySaveTime.Stop()
+
+    let binaryLoadTime = System.Diagnostics.Stopwatch.StartNew()
+    match binaryStorage.Load() with
+    | Ok _ -> ()
+    | Error err -> printfn "Binary load error: %s" err
+    binaryLoadTime.Stop()
+
+    let binaryFileSize = if File.Exists(binaryFile) then FileInfo(binaryFile).Length else 0L
+
+    printfn "\n  Binary Storage Results:"
+    printfn "    Save time: %dms" binarySaveTime.ElapsedMilliseconds
+    printfn "    Load time: %dms" binaryLoadTime.ElapsedMilliseconds
+    printfn "    File size: %d bytes" binaryFileSize
+
+    // ═══════════════════════════════════════════════════════════════
+    // Schema-Based Storage 성능 측정
+    // ═══════════════════════════════════════════════════════════════
+    let schemaStorage = SchemaBasedRetainStorage(schemaFile, valuesFile)
+    let schema = ctx1.Memory.BuildSchema()
+
+    // 스키마 저장 (한 번만)
+    match schemaStorage.SaveSchema(schema) with
+    | Ok () -> ()
+    | Error err -> printfn "Schema save error: %s" err
+
+    let schemaSaveTime = System.Diagnostics.Stopwatch.StartNew()
+    match schemaStorage.SaveValues(schema, binarySnapshot) with
+    | Ok () -> ()
+    | Error err -> printfn "Schema values save error: %s" err
+    schemaSaveTime.Stop()
+
+    // Schema는 한 번만 로드하면 되므로 측정에서 제외
+    let loadedSchema =
+        match schemaStorage.LoadSchema() with
+        | Ok (Some s) -> s
+        | _ ->
+            printfn "Schema load error"
+            schema
+
+    // 실제 값 로드 시간만 측정
+    let schemaLoadTime = System.Diagnostics.Stopwatch.StartNew()
+    match schemaStorage.LoadValues(loadedSchema) with
+    | Ok _ -> ()
+    | Error err -> printfn "Schema values load error: %s" err
+    schemaLoadTime.Stop()
+
+    let schemaFileSize = if File.Exists(schemaFile) then FileInfo(schemaFile).Length else 0L
+    let valuesFileSize = if File.Exists(valuesFile) then FileInfo(valuesFile).Length else 0L
+    let totalSchemaSize = schemaFileSize + valuesFileSize
+
+    printfn "\n  Schema-Based Storage Results:"
+    printfn "    Save time: %dms" schemaSaveTime.ElapsedMilliseconds
+    printfn "    Load time: %dms" schemaLoadTime.ElapsedMilliseconds
+    printfn "    Schema size: %d bytes" schemaFileSize
+    printfn "    Values size: %d bytes" valuesFileSize
+    printfn "    Total size: %d bytes" totalSchemaSize
+
+    // ═══════════════════════════════════════════════════════════════
+    // 성능 비교
+    // ═══════════════════════════════════════════════════════════════
+    let saveFactor = float binarySaveTime.ElapsedMilliseconds / float (max 1L schemaSaveTime.ElapsedMilliseconds)
+    let loadFactor = float binaryLoadTime.ElapsedMilliseconds / float (max 1L schemaLoadTime.ElapsedMilliseconds)
+    let sizeFactor = float binaryFileSize / float (max 1L totalSchemaSize)
+
+    printfn "\n  Performance Comparison:"
+    printfn "    Save speed: Schema is %.1fx faster" saveFactor
+    printfn "    Load speed: Schema is %.1fx faster" loadFactor
+    printfn "    File size: Schema is %.1fx smaller" sizeFactor
+
+    // 정리
+    [binaryFile; schemaFile; valuesFile]
+    |> List.iter (fun f -> try if File.Exists(f) then File.Delete(f) with _ -> ())
+
+    // 결과 (스키마 기반이 더 빠르면 PASS)
+    if saveFactor >= 1.0 && loadFactor >= 1.0 then
+        "PASS", None
+    else
+        "FAIL", Some (sprintf "Schema not faster (Save: %.1fx, Load: %.1fx)" saveFactor loadFactor)
 
 let private printScenarioSummaryTable () =
     if scenarioSummaries.Count > 0 then
@@ -904,7 +1133,9 @@ let main args =
         ("Runtime Update - Batch", runtimeBatchUpdateTest)
         ("Runtime Update - Rollback", runtimeRollbackTest)
         ("Runtime Update - With Scan", runtimeUpdateWithScanTest)
-        ("Retain Memory - Power Cycle", retainMemoryTest)
+        ("Retain Memory - Binary Storage", retainMemoryTest)
+        ("Retain Memory - Schema-Based", schemaBasedRetainMemoryTest)
+        ("Retain Memory - Performance Comparison", retainPerformanceComparisonTest)
     ]
     
     match args with

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <NoWarn>$(NoWarn);FS0988</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Parser Tests -->
+    <Compile Include="AllenBradleyParserTests.fs" />
+    <Compile Include="LSElectricParserTests.fs" />
+    <Compile Include="MitsubishiParserTests.fs" />
+    <Compile Include="S7ParserTests.fs" />
+
+    <!-- Analyzer Tests -->
+    <Compile Include="VariableAnalyzerTests.fs" />
+
+    <!-- Legacy Tests (to be updated or removed) -->
+
+    <!-- Integration Tests -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="FsUnit.xUnit" Version="5.6.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ev2.PLC.Mapper\Ev2.PLC.Mapper.fsproj" />
+  </ItemGroup>
+
+</Project>

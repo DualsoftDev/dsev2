@@ -3,6 +3,28 @@ namespace Ev2.PLC.Mapper.Core.Types
 open System
 open Ev2.PLC.Common.Types
 
+/// 원본 변수 정보
+type RawVariable = {
+    Name: string
+    Address: string
+    DataType: string
+    Comment: string option
+    InitialValue: string option
+    Scope: string option
+    AccessLevel: string option
+    Properties: Map<string, string>
+} with
+    static member Create(name: string, address: string, dataType: string) = {
+        Name = name
+        Address = address
+        DataType = dataType
+        Comment = None
+        InitialValue = None
+        Scope = None
+        AccessLevel = None
+        Properties = Map.empty
+    }
+
 /// I/O 방향
 type IODirection =
     | Input

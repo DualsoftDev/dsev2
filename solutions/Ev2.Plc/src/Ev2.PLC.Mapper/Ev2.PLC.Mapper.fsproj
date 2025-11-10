@@ -26,10 +26,11 @@
 
 	<ItemGroup>
     <!-- Core Types -->
-    <Compile Include="Core\Types\ProjectTypes.fs" />
     <Compile Include="Core\Types\VariableTypes.fs" />
     <Compile Include="Core\Types\MappingTypes.fs" />
     <Compile Include="Core\Types\LogicTypes.fs" />
+    <Compile Include="Core\Types\ProjectTypes.fs" />
+    <Compile Include="Core\Types\LSElectricTypes.fs" />
     <Compile Include="Core\Types\AnalysisTypes.fs" />
     <Compile Include="Core\Types\ResultTypes.fs" />
     <Compile Include="Core\Types\ValidationTypes.fs" />
@@ -41,13 +42,21 @@
     <!-- Core Interfaces -->
     <Compile Include="Core\Interfaces\IPlcProgramParser.fs" />
     <Compile Include="Core\Interfaces\IVariableAnalyzer.fs" />
-    
+    <Compile Include="Core\Interfaces\ILogicAnalyzer.fs" />
+    <Compile Include="Core\Interfaces\IPlcParser.fs" />
+
     <!-- Core Engine -->
     <Compile Include="Core\Engine\VariableAnalyzer.fs" />
-    
+    <Compile Include="Core\Engine\LSLogicAnalyzer.fs" />
+    <Compile Include="Core\Engine\ABLogicAnalyzer.fs" />
+    <Compile Include="Core\Engine\MxLogicAnalyzer.fs" />
+    <Compile Include="Core\Engine\S7LogicAnalyzer.fs" />
+
     <!-- Parsers -->
-    <Compile Include="Parsers\LSElectric\LSElectricParser.fs" />
-    <Compile Include="Parsers\AllenBradley\AllenBradleyParser.fs" />
+    <Compile Include="Core\Parser\AllenBradleyParser.fs" />
+    <Compile Include="Core\Parser\LSElectricParser.fs" />
+    <Compile Include="Core\Parser\MitsubishiParser.fs" />
+    <Compile Include="Core\Parser\S7Parser.fs" />
     
     <!-- Main Entry Point -->
     <Compile Include="MapperFactory.fs" />

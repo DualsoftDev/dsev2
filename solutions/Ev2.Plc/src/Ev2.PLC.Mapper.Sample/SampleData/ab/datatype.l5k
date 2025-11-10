@@ -1,0 +1,4 @@
+	DATATYPE Dyadic_input_data (FamilyType := NoFamily)
+		SINT ZZZZZZZZZZDyadic_dat0 (Hidden := 1);
+		INT Data[24];
+	END_DATATYPE
