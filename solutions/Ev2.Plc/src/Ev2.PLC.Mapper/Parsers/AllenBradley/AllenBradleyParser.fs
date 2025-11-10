@@ -80,13 +80,18 @@ type AllenBradleyParser(logger: ILogger<AllenBradleyParser>) =
             |> Seq.toList
         
         {
-            Id = routineName
-            Type = if content.Contains("RUNG") then LadderRung else StructuredText
+            Id = Some routineName
+            Name = Some routineName
+            Number = 0
             Content = content
+            RawContent = Some content
+            LogicType = if content.Contains("RUNG") then LogicType.LadderRung else LogicType.StructuredText
+            Type = Some (if content.Contains("RUNG") then LogicFlowType.Simple else LogicFlowType.Sequential)
             Variables = variables
             Comments = []
             LineNumber = None
             Properties = Map.empty
+            Comment = None
         }
     
     let extractProjectInfo (content: string) (filePath: string) : ProjectInfo =

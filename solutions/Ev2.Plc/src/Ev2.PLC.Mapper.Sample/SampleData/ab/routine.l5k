@@ -1,0 +1,4 @@
+ROUTINE Logic
+		N: XIC(Clear_Identity)[CLR(DLR_Node.Vendor_Code) CLR(DLR_Node.Product_Type) CLR(DLR_Node.Device_Code) ,FLL(0,DLR_Node.Cat_Number,1) CLR(DLR_Node.Revision_Major) CLR(DLR_Node.Revision_Minor) ,FLL(0,DLR_Node.Serial_Number,1) MOV(99,DLR_Node.HMI_Icon) CLR(DLR_Node.Not_Responding) ];
+		N: [CLR(DLR_Node.Supervisor_Mode) CLR(DLR_Node.Supervisor_Presedence) CLR(DLR_Node.Takeover_Order) ,CLR(DLR_Node.Ring_Faults) CLR(DLR_Node.Beacon_Interval) CLR(DLR_Node.Beacon_Timeout) ,CLR(DLR_Node.Supervisor_Enable) CLR(DLR_Node.DLR_VLAN) CLR(DLR_Node.Capabilities) ];
+END_ROUTINE

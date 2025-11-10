@@ -67,7 +67,7 @@ type NamingConvention = {
             DeviceTypeHints = Map.ofList [
                 ("MOTOR", Motor); ("CYL", Cylinder); ("SENSOR", Sensor)
                 ("VALVE", Valve); ("CONV", Conveyor); ("BTN", PushButton)
-                ("LAMP", Lamp); ("CNT", Counter); ("TMR", Timer)
+                ("LAMP", Lamp); ("CNT", DeviceType.Counter); ("TMR", DeviceType.Timer)
             ]
             ApiTypeHints = Map.ofList [
                 ("FWD", Command); ("BACK", Command); ("START", Command); ("STOP", Command)

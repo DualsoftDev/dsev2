@@ -10,6 +10,9 @@
   <ItemGroup>
     <Compile Include="MapperTypesTests.fs" />
     <Compile Include="LSElectricParserTests.fs" />
+    <Compile Include="ABLogicAnalyzerTests.fs" />
+    <Compile Include="MxLogicAnalyzerTests.fs" />
+    <Compile Include="S7LogicAnalyzerTests.fs" />
     <Compile Include="MapperFactoryTests.fs" />
   </ItemGroup>
 

@@ -58,13 +58,18 @@ type LSElectricParser(logger: ILogger<LSElectricParser>) =
             |> Seq.toList
         
         {
-            Id = id
-            Type = LadderRung
+            Id = Some id
+            Name = None
+            Number = lineNumber |> Option.defaultValue 0
             Content = content
+            RawContent = Some content
+            LogicType = LogicType.LadderRung
+            Type = Some LogicFlowType.Simple
             Variables = variables
             Comments = []
             LineNumber = lineNumber
             Properties = Map.empty
+            Comment = None
         }
     
     let extractProjectInfo (xmlDoc: XDocument) (filePath: string) : ProjectInfo =

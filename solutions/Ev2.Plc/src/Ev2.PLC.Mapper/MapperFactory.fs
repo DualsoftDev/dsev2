@@ -60,6 +60,34 @@ type MapperFactory(loggerFactory: ILoggerFactory, ?configProvider: IConfiguratio
     member this.CreateNamingAnalyzer() : INamingAnalyzer =
         let namingLogger = loggerFactory.CreateLogger<NamingAnalyzer>()
         VariableAnalyzerFactory.createNamingAnalyzer namingLogger
+
+    /// 로직 분석기 생성
+    member this.CreateLogicAnalyzer(vendor: PlcVendor) : ILogicAnalyzer option =
+        try
+            match vendor with
+            | PlcVendor.LSElectric _ ->
+                let analyzerLogger = loggerFactory.CreateLogger<LSLogicAnalyzer>()
+                Some (LSLogicAnalyzerFactory.create analyzerLogger :> ILogicAnalyzer)
+
+            | PlcVendor.AllenBradley _ ->
+                let analyzerLogger = loggerFactory.CreateLogger<ABLogicAnalyzer>()
+                Some (ABLogicAnalyzerFactory.create analyzerLogger :> ILogicAnalyzer)
+
+            | PlcVendor.Mitsubishi _ ->
+                let analyzerLogger = loggerFactory.CreateLogger<MxLogicAnalyzer>()
+                Some (MxLogicAnalyzerFactory.create analyzerLogger :> ILogicAnalyzer)
+
+            | PlcVendor.Siemens _ ->
+                let analyzerLogger = loggerFactory.CreateLogger<S7LogicAnalyzer>()
+                Some (S7LogicAnalyzerFactory.create analyzerLogger :> ILogicAnalyzer)
+
+            | PlcVendor.Custom _ ->
+                logger.LogWarning($"Custom logic analyzer not supported: {vendor}")
+                None
+        with
+        | ex ->
+            logger.LogError(ex, "Error creating logic analyzer for vendor: {Vendor}", vendor)
+            None
     
     /// 파일 경로에서 제조사 추론
     member this.InferVendorFromFile(filePath: string) : PlcVendor option =
@@ -111,7 +139,29 @@ type MapperFactory(loggerFactory: ILoggerFactory, ?configProvider: IConfiguratio
                     
                     // 5. API 정의 생성
                     let! apiDefinitions = variableAnalyzer.GenerateApiDefinitionsAsync(devices)
-                    
+
+                    // 5.5. 로직 흐름 분석 (옵션에 따라)
+                    let! logicFlow =
+                        if options.IsSome && options.Value.AnalyzeLogicFlow then
+                            match this.CreateLogicAnalyzer(vendor) with
+                            | Some logicAnalyzer ->
+                                task {
+                                    try
+                                        let! flows = logicAnalyzer.AnalyzeRungsBatchAsync(rawProgram.Logic)
+                                        logger.LogInformation("Logic flow analysis complete: {FlowCount} flows analyzed", flows.Length)
+                                        return flows
+                                    with
+                                    | ex ->
+                                        logger.LogWarning(ex, "Logic flow analysis failed, continuing without it")
+                                        return []
+                                }
+                            | None ->
+                                logger.LogDebug("No logic analyzer available for {Vendor}", vendor)
+                                Task.FromResult([])
+                        else
+                            logger.LogDebug("Logic flow analysis disabled")
+                            Task.FromResult([])
+
                     // 6. I/O 매핑 생성
                     let ioMapping =
                         analysisResults
@@ -154,7 +204,7 @@ type MapperFactory(loggerFactory: ILoggerFactory, ?configProvider: IConfiguratio
                         Devices = devices
                         ApiDefinitions = apiDefinitions
                         IOMapping = ioMapping
-                        LogicFlow = [] // TODO: Implement logic flow analysis
+                        LogicFlow = logicFlow
                         Statistics = statistics
                         Warnings = warnings
                         Errors = errors

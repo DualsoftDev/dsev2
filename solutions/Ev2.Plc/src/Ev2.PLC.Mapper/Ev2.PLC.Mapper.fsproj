@@ -26,10 +26,11 @@
 
 	<ItemGroup>
     <!-- Core Types -->
-    <Compile Include="Core\Types\ProjectTypes.fs" />
     <Compile Include="Core\Types\VariableTypes.fs" />
     <Compile Include="Core\Types\MappingTypes.fs" />
     <Compile Include="Core\Types\LogicTypes.fs" />
+    <Compile Include="Core\Types\ProjectTypes.fs" />
+    <Compile Include="Core\Types\LSElectricTypes.fs" />
     <Compile Include="Core\Types\AnalysisTypes.fs" />
     <Compile Include="Core\Types\ResultTypes.fs" />
     <Compile Include="Core\Types\ValidationTypes.fs" />
@@ -41,9 +42,15 @@
     <!-- Core Interfaces -->
     <Compile Include="Core\Interfaces\IPlcProgramParser.fs" />
     <Compile Include="Core\Interfaces\IVariableAnalyzer.fs" />
+    <Compile Include="Core\Interfaces\ILogicAnalyzer.fs" />
     
     <!-- Core Engine -->
     <Compile Include="Core\Engine\VariableAnalyzer.fs" />
+    <Compile Include="Core\Engine\LSLogicAnalyzer.fs" />
+    <Compile Include="Core\Engine\LSLogicAnalyzer.v2.fs" />
+    <Compile Include="Core\Engine\ABLogicAnalyzer.fs" />
+    <Compile Include="Core\Engine\MxLogicAnalyzer.fs" />
+    <Compile Include="Core\Engine\S7LogicAnalyzer.fs" />
     
     <!-- Parsers -->
     <Compile Include="Parsers\LSElectric\LSElectricParser.fs" />

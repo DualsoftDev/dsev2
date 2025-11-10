@@ -149,8 +149,8 @@ module ConfigurationConverter =
         | "Conveyor" -> Conveyor
         | "PushButton" -> PushButton
         | "Lamp" -> Lamp
-        | "Counter" -> Counter
-        | "Timer" -> Timer
+        | "Counter" -> DeviceType.Counter
+        | "Timer" -> DeviceType.Timer
         | "HMI" -> HMI
         | custom -> DeviceType.Custom custom
     

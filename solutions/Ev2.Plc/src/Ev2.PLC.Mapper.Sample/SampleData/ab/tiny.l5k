@@ -1,0 +1,50 @@
+(*********************************************
+
+  Import-Export
+  Version   := RSLogix 5000 v30.02
+  Owner     := Windows User,
+  Exported  := Mon Aug  9 12:25:27 2021
+
+  Note:  File encoded in UTF-8.  Only edit file in a program
+         which supports UTF-8 (like Notepad, not Wordpad).
+
+**********************************************)
+
+IE_VER := 2.21;
+
+CONTROLLER NO3_BC_LINE (ProcessorType := "1756-L72",
+                        Major := 30,
+                        TimeSlice := 20,
+                        ShareUnusedTimeSlice := 1,
+                        RedundancyEnabled := 0,
+                        KeepTestEditsOnSwitchOver := 0,
+                        DataTablePadPercentage := 50,
+                        SecurityCode := 0,
+                        ChangesToDetect := 16#ffff_ffff_ffff_ffff,
+                        SFCExecutionControl := "CurrentActive",
+                        SFCRestartPosition := "MostRecent",
+                        SFCLastScan := "DontScan",
+                        SerialNumber := 16#0000_0000,
+                        MatchProjectToController := No,
+                        CanUseRPIFromProducer := No,
+                        InhibitAutomaticFirmwareUpdate := 0,
+                        PassThroughConfiguration := EnabledWithAppend,
+                        DownloadProjectDocumentationAndExtendedProperties := Yes,
+                        ReportMinorOverflow := 0)
+    MODULE Local (Parent := "Local", Slot := 0) END_MODULE
+
+    TAG
+        I0401 OF Local:4:I.Data[1] (RADIX := Decimal);
+    END_TAG
+
+    PROGRAM MainProgram (MAIN := "MainRoutine")
+        ROUTINE MainRoutine END_ROUTINE
+    END_PROGRAM
+
+    TASK MainTask (Type := CONTINUOUS, Priority := 10)
+        MainProgram;
+    END_TASK
+
+    CONFIG CST (SystemTimeMasterID := 0) END_CONFIG
+END_CONTROLLER
+

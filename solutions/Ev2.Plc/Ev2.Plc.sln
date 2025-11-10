@@ -49,6 +49,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.PLC.Mapper", "src\Ev2.P
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.PLC.Mapper.Tests", "src\Ev2.PLC.Mapper.Tests\Ev2.PLC.Mapper.Tests.fsproj", "{560B1F20-DADD-401F-A089-B635B76C2EE1}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TotalMapperTest", "src\TotalMapperTest\TotalMapperTest.fsproj", "{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -239,6 +241,18 @@ Global
 		{560B1F20-DADD-401F-A089-B635B76C2EE1}.Release|x64.Build.0 = Release|Any CPU
 		{560B1F20-DADD-401F-A089-B635B76C2EE1}.Release|x86.ActiveCfg = Release|Any CPU
 		{560B1F20-DADD-401F-A089-B635B76C2EE1}.Release|x86.Build.0 = Release|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Debug|x64.Build.0 = Debug|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Debug|x86.Build.0 = Debug|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Release|x64.ActiveCfg = Release|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Release|x64.Build.0 = Release|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Release|x86.ActiveCfg = Release|Any CPU
+		{27AE88F4-F5E6-8E78-9EB4-00EB91E05E9F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
