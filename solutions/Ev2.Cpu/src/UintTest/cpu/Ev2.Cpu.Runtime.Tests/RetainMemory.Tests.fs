@@ -50,8 +50,8 @@ module RetainMemoryTests =
             RetainSnapshot.Timestamp = DateTime.Now
             Version = 1
             Variables = [
-                { RetainVariable.Name = "Counter"; Area = "L"; DataType = "Int"; ValueJson = "42" }
-                { RetainVariable.Name = "Status"; Area = "L"; DataType = "Bool"; ValueJson = "true" }
+                { RetainVariable.Name = "Counter"; Area = "L"; DataType = "Int32"; ValueBytes = RetainValueSerializer.serialize (box 42) typeof<int> }
+                { RetainVariable.Name = "Status"; Area = "L"; DataType = "Bool"; ValueBytes = RetainValueSerializer.serialize (box true) typeof<bool> }
             ]
             FBStaticData = []
             Checksum = ""
@@ -69,7 +69,8 @@ module RetainMemoryTests =
         | Ok (Some loaded) ->
             Assert.Equal(2, loaded.Variables.Length)
             Assert.Equal("Counter", loaded.Variables.[0].Name)
-            Assert.Equal("42", loaded.Variables.[0].ValueJson)
+            let counterValue = RetainValueSerializer.deserialize loaded.Variables.[0].ValueBytes typeof<int>
+            Assert.Equal(42, unbox<int> counterValue)
         | _ -> failwith "Expected loaded snapshot"
 
         cleanupTestFile testFile
@@ -166,8 +167,8 @@ module RetainMemoryTests =
             RetainSnapshot.Timestamp = DateTime.Now
             Version = 1
             Variables = [
-                { RetainVariable.Name = "Counter"; Area = "L"; DataType = "Int"; ValueJson = "999" }
-                { RetainVariable.Name = "Status"; Area = "L"; DataType = "Bool"; ValueJson = "true" }
+                { RetainVariable.Name = "Counter"; Area = "L"; DataType = "Int32"; ValueBytes = RetainValueSerializer.serialize (box 999) typeof<int> }
+                { RetainVariable.Name = "Status"; Area = "L"; DataType = "Bool"; ValueBytes = RetainValueSerializer.serialize (box true) typeof<bool> }
             ]
             FBStaticData = []
             Checksum = ""
@@ -196,7 +197,7 @@ module RetainMemoryTests =
             RetainSnapshot.Timestamp = DateTime.Now
             Version = 1
             Variables = [
-                { RetainVariable.Name = "NonRetainVar"; Area = "L"; DataType = "Int"; ValueJson = "999" }
+                { RetainVariable.Name = "NonRetainVar"; Area = "L"; DataType = "Int32"; ValueBytes = RetainValueSerializer.serialize (box 999) typeof<int> }
             ]
             FBStaticData = []
             Checksum = ""
@@ -238,7 +239,8 @@ module RetainMemoryTests =
         | Ok (Some snapshot) ->
             Assert.Equal(1, snapshot.Variables.Length)
             Assert.Equal("AutoSaveCounter", snapshot.Variables.[0].Name)
-            Assert.Equal("777", snapshot.Variables.[0].ValueJson)
+            let savedValue = RetainValueSerializer.deserialize snapshot.Variables.[0].ValueBytes typeof<int>
+            Assert.Equal(777, unbox<int> savedValue)
         | _ -> failwith "Expected saved snapshot"
 
         cleanupTestFile testFile
@@ -255,7 +257,7 @@ module RetainMemoryTests =
             RetainSnapshot.Timestamp = DateTime.Now
             Version = 1
             Variables = [
-                { RetainVariable.Name = "AutoLoadCounter"; Area = "L"; DataType = "Int"; ValueJson = "888" }
+                { RetainVariable.Name = "AutoLoadCounter"; Area = "L"; DataType = "Int32"; ValueBytes = RetainValueSerializer.serialize (box 888) typeof<int> }
             ]
             FBStaticData = []
             Checksum = ""
@@ -344,8 +346,8 @@ module RetainMemoryTests =
             for i in 1..1000 do
                 { RetainVariable.Name = sprintf "LargeVar%d" i
                   Area = "L"
-                  DataType = "Int"
-                  ValueJson = sprintf "%d" (i * 100) }
+                  DataType = "Int32"
+                  ValueBytes = RetainValueSerializer.serialize (box (i * 100)) typeof<int> }
         ]
 
         let snapshot = {
@@ -393,8 +395,11 @@ module RetainMemoryTests =
             for i in 1..10000 do
                 { RetainVariable.Name = sprintf "VeryLargeVar%d" i
                   Area = "L"
-                  DataType = if i % 2 = 0 then "Int" else "Double"
-                  ValueJson = if i % 2 = 0 then sprintf "%d" i else sprintf "%.2f" (float i * 3.14) }
+                  DataType = if i % 2 = 0 then "Int32" else "Double"  // Updated to match TypeHelpers change
+                  ValueBytes = if i % 2 = 0 then
+                                 RetainValueSerializer.serialize (box i) typeof<int>
+                               else
+                                 RetainValueSerializer.serialize (box (float i * 3.14)) typeof<double> }
         ]
 
         let snapshot = {
@@ -433,7 +438,7 @@ module RetainMemoryTests =
             Assert.Equal("VeryLargeVar10000", loaded.Variables.[9999].Name)
 
             // Verify data types are mixed
-            let intCount = loaded.Variables |> List.filter (fun v -> v.DataType = "Int") |> List.length
+            let intCount = loaded.Variables |> List.filter (fun v -> v.DataType = "Int32") |> List.length
             let doubleCount = loaded.Variables |> List.filter (fun v -> v.DataType = "Double") |> List.length
             Assert.Equal(5000, intCount)
             Assert.Equal(5000, doubleCount)
@@ -502,8 +507,8 @@ module RetainMemoryTests =
             Variables = [
                 { RetainVariable.Name = longName
                   Area = "L"
-                  DataType = "Int"
-                  ValueJson = "42" }
+                  DataType = "Int32"
+                  ValueBytes = RetainValueSerializer.serialize (box 42) typeof<int> }
             ]
             FBStaticData = []
             Checksum = ""
@@ -541,7 +546,7 @@ module RetainMemoryTests =
                 { RetainVariable.Name = "LongString"
                   Area = "L"
                   DataType = "String"
-                  ValueJson = sprintf "\"%s\"" longValue }
+                  ValueBytes = RetainValueSerializer.serialize (box longValue) typeof<string> }
             ]
             FBStaticData = []
             Checksum = ""
@@ -557,7 +562,8 @@ module RetainMemoryTests =
         match loadResult with
         | Ok (Some loaded) ->
             Assert.Equal(1, loaded.Variables.Length)
-            Assert.True(loaded.Variables.[0].ValueJson.Contains("ABC"))
+            let loadedValue = RetainValueSerializer.deserialize loaded.Variables.[0].ValueBytes typeof<string>
+            Assert.True((unbox<string> loadedValue).Contains("ABC"))
         | _ -> failwith "Expected loaded snapshot"
 
         cleanupTestFile testFile
@@ -602,8 +608,8 @@ module RetainMemoryTests =
                 for i in 1..5000 do
                     { RetainVariable.Name = sprintf "RestoreVar%d" i
                       Area = "L"
-                      DataType = "Int"
-                      ValueJson = sprintf "%d" (i * 10) }
+                      DataType = "Int32"  // Updated to match TypeHelpers change
+                      ValueBytes = RetainValueSerializer.serialize (box (i * 10)) typeof<int> }
             ]
 
             let snapshot = {
@@ -672,3 +678,207 @@ module RetainMemoryTests =
         Assert.Equal("Test String Value", stringVal)
 
         cleanupTestFile testFile
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // 스키마 기반 고성능 Retain 저장소 테스트
+    // ═════════════════════════════════════════════════════════════════════════════
+
+    [<Fact>]
+    let ``SchemaBasedRetainStorage - Basic schema and values save/load`` () =
+        let schemaFile = "test_schema.json"
+        let valuesFile = "test_values.dat"
+        cleanupTestFile schemaFile
+        cleanupTestFile valuesFile
+
+        let storage = SchemaBasedRetainStorage(schemaFile, valuesFile)
+
+        // 스키마 생성
+        let schema = {
+            RetainSchema.Version = 1
+            SchemaHash = ""
+            Timestamp = DateTime.Now
+            TotalSize = 265  // 4 (int32) + 1 (bool) + 256 (string) + 4 (double)
+            Variables = [
+                { VariableSchema.Name = "Counter"; Area = "L"; DataType = "Int32"; Offset = 0; Size = 4 }
+                { VariableSchema.Name = "Flag"; Area = "L"; DataType = "Bool"; Offset = 4; Size = 1 }
+                { VariableSchema.Name = "Message"; Area = "V"; DataType = "String"; Offset = 5; Size = 256 }
+            ]
+            FBStatic = []
+        }
+
+        // 스키마 해시 계산
+        let schemaWithHash = { schema with SchemaHash = SchemaHasher.computeSchemaHash schema }
+
+        // 스키마 저장
+        let saveSchemaResult = storage.SaveSchema(schemaWithHash)
+        Assert.True(saveSchemaResult.IsOk, "Schema save should succeed")
+
+        // 스냅샷 생성
+        let snapshot = {
+            RetainSnapshot.Timestamp = DateTime.Now
+            Version = 1
+            Variables = [
+                { RetainVariable.Name = "Counter"; Area = "L"; DataType = "Int32";
+                  ValueBytes = RetainValueSerializer.serialize (box 42) typeof<int> }
+                { RetainVariable.Name = "Flag"; Area = "L"; DataType = "Bool";
+                  ValueBytes = RetainValueSerializer.serialize (box true) typeof<bool> }
+                { RetainVariable.Name = "Message"; Area = "V"; DataType = "String";
+                  ValueBytes = RetainValueSerializer.serialize (box "Hello World") typeof<string> }
+            ]
+            FBStaticData = []
+            Checksum = ""
+        }
+
+        // 값 저장
+        let saveValuesResult = storage.SaveValues(schemaWithHash, snapshot)
+        Assert.True(saveValuesResult.IsOk, sprintf "Values save should succeed: %A" saveValuesResult)
+
+        // 스키마 로드
+        match storage.LoadSchema() with
+        | Ok (Some loadedSchema) ->
+            Assert.Equal(schemaWithHash.SchemaHash, loadedSchema.SchemaHash)
+            Assert.Equal(3, loadedSchema.Variables.Length)
+
+            // 값 로드
+            match storage.LoadValues(loadedSchema) with
+            | Ok loadedSnapshot ->
+                Assert.Equal(3, loadedSnapshot.Variables.Length)
+
+                // 값 확인
+                let counter = loadedSnapshot.Variables |> List.find (fun v -> v.Name = "Counter")
+                let counterValue = RetainValueSerializer.deserialize counter.ValueBytes typeof<int>
+                Assert.Equal(42, unbox<int> counterValue)
+
+                let flag = loadedSnapshot.Variables |> List.find (fun v -> v.Name = "Flag")
+                let flagValue = RetainValueSerializer.deserialize flag.ValueBytes typeof<bool>
+                Assert.True(unbox<bool> flagValue)
+
+                let message = loadedSnapshot.Variables |> List.find (fun v -> v.Name = "Message")
+                let messageValue = RetainValueSerializer.deserialize message.ValueBytes typeof<string>
+                Assert.Equal("Hello World", unbox<string> messageValue)
+            | Error err -> failwith (sprintf "Values load failed: %s" err)
+        | Ok None -> failwith "Schema file not found"
+        | Error err -> failwith (sprintf "Schema load failed: %s" err)
+
+        cleanupTestFile schemaFile
+        cleanupTestFile valuesFile
+
+    [<Fact>]
+    let ``Memory.BuildSchema - Creates correct schema from retain variables`` () =
+        let memory = Memory()
+
+        // Retain 변수 선언
+        memory.DeclareLocal("LocalCounter", typeof<int>, retain=true)
+        memory.DeclareLocal("LocalFlag", typeof<bool>, retain=true)
+        memory.DeclareInternal("InternalValue", typeof<double>, retain=true)
+
+        // 값 설정
+        memory.Set("LocalCounter", box 100)
+        memory.Set("LocalFlag", box false)
+        memory.Set("InternalValue", box 2.718)
+
+        // 스키마 빌드
+        let schema = memory.BuildSchema()
+
+        // 검증
+        Assert.Equal(3, schema.Variables.Length)
+        Assert.True(schema.TotalSize > 0, "TotalSize should be calculated")
+        Assert.False(String.IsNullOrEmpty(schema.SchemaHash), "SchemaHash should be computed")
+
+        // 변수 확인
+        let counterVar = schema.Variables |> List.tryFind (fun v -> v.Name = "LocalCounter")
+        Assert.True(counterVar.IsSome, "LocalCounter should be in schema")
+        Assert.Equal("L", counterVar.Value.Area)
+        Assert.Equal(4, counterVar.Value.Size)
+
+    [<Fact>]
+    let ``Memory.IsSchemaModified - Detects new retain variables`` () =
+        let memory = Memory()
+
+        // 초기 상태
+        Assert.False(memory.IsSchemaModified(), "Initial schema should not be modified")
+
+        // 일반 변수 선언 (retain=false)
+        memory.DeclareLocal("NormalVar", typeof<int>, retain=false)
+        Assert.False(memory.IsSchemaModified(), "Non-retain variable should not modify schema")
+
+        // Retain 변수 선언
+        memory.DeclareLocal("RetainVar", typeof<int>, retain=true)
+        Assert.True(memory.IsSchemaModified(), "Retain variable should modify schema")
+
+        // 플래그 리셋
+        memory.ResetSchemaModifiedFlag()
+        Assert.False(memory.IsSchemaModified(), "Schema modified flag should be reset")
+
+    [<Fact>]
+    let ``SchemaBasedRetainStorage - Performance test with 1000 variables`` () =
+        let schemaFile = "test_perf_schema.json"
+        let valuesFile = "test_perf_values.dat"
+        cleanupTestFile schemaFile
+        cleanupTestFile valuesFile
+
+        let storage = SchemaBasedRetainStorage(schemaFile, valuesFile)
+
+        // 1000개 변수 스키마 생성
+        let variables = [
+            for i in 1..1000 do
+                { VariableSchema.Name = sprintf "Var%d" i
+                  Area = "L"
+                  DataType = "Int32"
+                  Offset = (i-1) * 4
+                  Size = 4 }
+        ]
+
+        let schema = {
+            RetainSchema.Version = 1
+            SchemaHash = ""
+            Timestamp = DateTime.Now
+            TotalSize = 4000
+            Variables = variables
+            FBStatic = []
+        }
+
+        let schemaWithHash = { schema with SchemaHash = SchemaHasher.computeSchemaHash schema }
+        storage.SaveSchema(schemaWithHash) |> ignore
+
+        // 1000개 값 스냅샷 생성
+        let snapshotVars = [
+            for i in 1..1000 do
+                { RetainVariable.Name = sprintf "Var%d" i
+                  Area = "L"
+                  DataType = "Int32"
+                  ValueBytes = RetainValueSerializer.serialize (box i) typeof<int> }
+        ]
+
+        let snapshot = {
+            RetainSnapshot.Timestamp = DateTime.Now
+            Version = 1
+            Variables = snapshotVars
+            FBStaticData = []
+            Checksum = ""
+        }
+
+        // 성능 측정: 저장
+        let sw = System.Diagnostics.Stopwatch.StartNew()
+        let saveResult = storage.SaveValues(schemaWithHash, snapshot)
+        sw.Stop()
+
+        Assert.True(saveResult.IsOk, "Save should succeed")
+        printfn "[PERF] Schema-based save (1000 vars): %dms" sw.ElapsedMilliseconds
+
+        // 성능 측정: 로드
+        let sw2 = System.Diagnostics.Stopwatch.StartNew()
+        let loadResult = storage.LoadValues(schemaWithHash)
+        sw2.Stop()
+
+        Assert.True(loadResult.IsOk, sprintf "Load should succeed: %A" loadResult)
+        printfn "[PERF] Schema-based load (1000 vars): %dms" sw2.ElapsedMilliseconds
+
+        // 예상: < 50ms (기존 BinaryRetainStorage 대비 15-30배 빠름)
+        Assert.True(sw.ElapsedMilliseconds < 100L,
+                    sprintf "Save should be very fast: %dms (expected < 100ms)" sw.ElapsedMilliseconds)
+        Assert.True(sw2.ElapsedMilliseconds < 100L,
+                    sprintf "Load should be very fast: %dms (expected < 100ms)" sw2.ElapsedMilliseconds)
+
+        cleanupTestFile schemaFile
+        cleanupTestFile valuesFile

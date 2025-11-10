@@ -745,7 +745,7 @@ type AstConverterTest() =
     member _.``ConversionError.Format - TypeMismatch message``() =
         let error = ConversionError.TypeMismatch(typeof<int>, typeof<double>)
         let message = error.Format()
-        message.Contains("typeof<Int>") |> should be True
+        message.Contains("typeof<Int32>") |> should be True  // Updated to match TypeHelpers change
         message.Contains("typeof<Double>") |> should be True
 
     [<Fact>]

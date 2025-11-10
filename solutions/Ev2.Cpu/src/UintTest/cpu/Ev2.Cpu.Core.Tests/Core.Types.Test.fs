@@ -58,7 +58,7 @@ type CoreTypesTest() =
     [<Fact>]
     member _.``DsDataType_ToString_가독성_테스트``() =
         TypeHelpers.getTypeName typeof<bool> |> should equal "Bool"
-        TypeHelpers.getTypeName typeof<int> |> should equal "Int"
+        TypeHelpers.getTypeName typeof<int> |> should equal "Int32"  // Updated to match TypeHelpers change
         TypeHelpers.getTypeName typeof<double> |> should equal "Double"
         TypeHelpers.getTypeName typeof<string> |> should equal "String"
     

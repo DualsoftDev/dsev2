@@ -321,6 +321,10 @@ type Memory() =
     let lastValues  = Dictionary<string, obj>(StringComparer.Ordinal)
     let dependencyMap = Dictionary<string, Set<string>>(StringComparer.Ordinal)
 
+    // 스키마 추적 (고성능 retain 저장소용)
+    let mutable currentSchemaHash: string option = None
+    let mutable isSchemaModified = false
+
     let tryFindSlot name =
         match entries.TryGetValue(name) with
         | true, slot -> Some slot
@@ -552,7 +556,12 @@ type Memory() =
     /// <param name="retain">전원 유지 여부 (기본값: false)</param>
     member _.DeclareLocal(name: string, dtype: Type, ?retain: bool) =
         let isRetain = defaultArg retain false
-        ensureDeclared MemoryArea.Local name dtype isRetain |> ignore
+        // 스키마 변경 감지 (retain 변수가 새로 추가되는 경우)
+        let isNewRetainVar = isRetain && not (entries.ContainsKey(name))
+        let slot = ensureDeclared MemoryArea.Local name dtype isRetain
+        if isNewRetainVar then
+            isSchemaModified <- true
+        slot |> ignore
 
     /// <summary>입력 변수 선언 (Input 영역)</summary>
     /// <param name="name">변수 이름</param>
@@ -572,7 +581,12 @@ type Memory() =
     /// <param name="retain">전원 유지 여부 (기본값: false)</param>
     member _.DeclareInternal(name: string, dtype: Type, ?retain: bool) =
         let isRetain = defaultArg retain false
-        ensureDeclared MemoryArea.Internal name dtype isRetain |> ignore
+        // 스키마 변경 감지 (retain 변수가 새로 추가되는 경우)
+        let isNewRetainVar = isRetain && not (entries.ContainsKey(name))
+        let slot = ensureDeclared MemoryArea.Internal name dtype isRetain
+        if isNewRetainVar then
+            isSchemaModified <- true
+        slot |> ignore
 
     /// <summary>메모리 초기화 (Input 제외)</summary>
     /// <remarks>
@@ -851,8 +865,8 @@ type Memory() =
     member _.CreateRetainSnapshot() : RetainSnapshot =
         // 모든 retain 변수를 분류: 일반 변수 vs FB Static 변수
         let mutable regularVars = []
-        // MEDIUM FIX: Store FB static with type metadata (name, dataType, valueJson)
-        let fbStaticMap = System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string * string * string>>()
+        // Store FB static with type metadata (name, dataType, valueBytes)
+        let fbStaticMap = System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string * string * byte[]>>()
 
         for KeyValue(name, slot) in entries do
             if slot.IsRetain then
@@ -900,32 +914,32 @@ type Memory() =
                     // FB Static variable - store in both places
                     let fbInstance = name.Substring(0, underscoreIndex)
                     let staticVarName = name.Substring(underscoreIndex + 1)
-                    let valueJson = RetainValueSerializer.serialize slot.Value slot.DataType
+                    let valueBytes = RetainValueSerializer.serialize slot.Value slot.DataType
                     let dataType = TypeHelpers.getTypeName slot.DataType
 
                     if not (fbStaticMap.ContainsKey(fbInstance)) then
-                        fbStaticMap.[fbInstance] <- System.Collections.Generic.List<string * string * string>()
-                    fbStaticMap.[fbInstance].Add((staticVarName, dataType, valueJson))
+                        fbStaticMap.[fbInstance] <- System.Collections.Generic.List<string * string * byte[]>()
+                    fbStaticMap.[fbInstance].Add((staticVarName, dataType, valueBytes))
 
                 // Always store as regular variable (preserves all data)
                 regularVars <- {
                     RetainVariable.Name = name
                     Area = slot.Area.Prefix.TrimEnd(':')
                     DataType = TypeHelpers.getTypeName slot.DataType
-                    ValueJson = RetainValueSerializer.serialize slot.Value slot.DataType
+                    ValueBytes = RetainValueSerializer.serialize slot.Value slot.DataType
                 } :: regularVars
 
-        // FBStaticData 리스트 생성 (MEDIUM FIX: 타입 메타데이터 포함)
+        // FBStaticData 리스트 생성
         let fbStaticDataList =
             fbStaticMap
             |> Seq.map (fun (KeyValue(fbInstance, staticVars)) ->
                 let varsList =
                     staticVars
-                    |> Seq.map (fun (name, dataType, valueJson) ->
+                    |> Seq.map (fun (name, dataType, valueBytes) ->
                         {
                             FBStaticVariable.Name = name
                             DataType = dataType
-                            ValueJson = valueJson
+                            ValueBytes = valueBytes
                         })
                     |> Seq.toList
                 {
@@ -962,32 +976,128 @@ type Memory() =
             | Some slot when slot.IsRetain ->
                 // CRITICAL FIX (DEFECT-015-3): Area comparison was wrong - snapshot.Area has no colon
                 // slot.Area.Prefix = "I:", "O:", "L:", "V:" (with colon)
-                // retainVar.Area = "I", "O", "L", "V" (without colon - from CreateRetainSnapshot line 797)
+                // retainVar.Area = "I", "O", "L", "V" (without colon)
                 let slotArea = slot.Area.Prefix.TrimEnd(':')
                 if slotArea = retainVar.Area then
                     // 타입 확인
                     let expectedType = TypeHelpers.getTypeName slot.DataType
                     if expectedType = retainVar.DataType then
-                        let restoredValue = RetainValueSerializer.deserialize retainVar.ValueJson slot.DataType
+                        let restoredValue = RetainValueSerializer.deserialize retainVar.ValueBytes slot.DataType
                         // Record change and update history for proper tracking
                         if recordChange retainVar.Name restoredValue then
                             appendHistory retainVar.Name restoredValue
                         slot.Value <- restoredValue
             | _ -> ()  // 변수가 없거나, Retain이 아니면 무시
 
-        // FB Static 변수 복원 (MEDIUM FIX: 타입 메타데이터 활용)
+        // FB Static 변수 복원
         for fbStatic in snapshot.FBStaticData do
             for fbVar in fbStatic.Variables do
                 // "FBInstanceName_staticVarName" 형식으로 변수 이름 구성
                 let fullName = sprintf "%s_%s" fbStatic.InstanceName fbVar.Name
                 match tryFindSlot fullName with
                 | Some slot when slot.IsRetain ->
-                    // MEDIUM FIX: 타입 검증으로 버전 호환성 확인
+                    // 타입 검증으로 버전 호환성 확인
                     let expectedType = TypeHelpers.getTypeName slot.DataType
                     if expectedType = fbVar.DataType then
-                        let restoredValue = RetainValueSerializer.deserialize fbVar.ValueJson slot.DataType
+                        let restoredValue = RetainValueSerializer.deserialize fbVar.ValueBytes slot.DataType
                         if recordChange fullName restoredValue then
                             appendHistory fullName restoredValue
                         slot.Value <- restoredValue
                     // else: 타입 불일치 - 무시 (버전 변경 등)
                 | _ -> ()  // 변수가 없거나 Retain이 아니면 무시
+
+    // ─────────────────────────────────────────────
+    // 스키마 기반 고성능 Retain 지원
+    // ─────────────────────────────────────────────
+
+    /// <summary>현재 retain 변수 구조로부터 스키마 빌드</summary>
+    /// <returns>RetainSchema 객체</returns>
+    member _.BuildSchema() : RetainSchema =
+        let mutable offset = 0
+        let mutable variables = []
+        let mutable fbStatic = []
+
+        // 일반 retain 변수들 수집 (정렬된 순서)
+        let retainVars =
+            entries.Values
+            |> Seq.filter (fun slot -> slot.IsRetain)
+            |> Seq.sortBy (fun slot -> slot.Name)
+            |> Seq.toList
+
+        // 변수 스키마 생성
+        for slot in retainVars do
+            // FB Static 변수는 별도 처리 ("InstanceName_VarName" 형식)
+            if not (slot.Name.Contains("_")) then
+                let size = TypeSizes.getSize slot.DataType
+                let varSchema = {
+                    VariableSchema.Name = slot.Name
+                    Area = slot.Area.Prefix.TrimEnd(':')
+                    DataType = TypeHelpers.getTypeName slot.DataType
+                    Offset = offset
+                    Size = size
+                }
+                variables <- varSchema :: variables
+                offset <- offset + size
+
+        // FB Static 변수들 수집
+        let fbStaticVars =
+            entries.Values
+            |> Seq.filter (fun slot -> slot.IsRetain && slot.Name.Contains("_"))
+            |> Seq.sortBy (fun slot -> slot.Name)
+            |> Seq.toList
+
+        // FB 인스턴스별로 그룹화
+        let fbGroups =
+            fbStaticVars
+            |> List.groupBy (fun slot ->
+                let parts = slot.Name.Split('_')
+                if parts.Length >= 2 then parts.[0] else "Unknown")
+
+        for (instanceName, vars) in fbGroups do
+            let mutable fbVars = []
+            for slot in vars do
+                let varName = slot.Name.Substring(instanceName.Length + 1)
+                let size = TypeSizes.getSize slot.DataType
+                let fbVarSchema = {
+                    FBStaticVariableSchema.Name = varName
+                    DataType = TypeHelpers.getTypeName slot.DataType
+                    Offset = offset
+                    Size = size
+                }
+                fbVars <- fbVarSchema :: fbVars
+                offset <- offset + size
+
+            let fbSchema = {
+                FBStaticInstanceSchema.InstanceName = instanceName
+                Variables = List.rev fbVars
+            }
+            fbStatic <- fbSchema :: fbStatic
+
+        // 스키마 생성
+        let schema = {
+            RetainSchema.Version = RetainDefaults.CurrentVersion
+            SchemaHash = "" // 임시, 곧 계산됨
+            Timestamp = DateTime.Now
+            TotalSize = offset
+            Variables = List.rev variables
+            FBStatic = List.rev fbStatic
+        }
+
+        // 스키마 해시 계산
+        let schemaHash = SchemaHasher.computeSchemaHash schema
+        { schema with SchemaHash = schemaHash }
+
+    /// <summary>스키마 변경 여부 확인</summary>
+    /// <returns>true if schema was modified, false otherwise</returns>
+    member _.IsSchemaModified() = isSchemaModified
+
+    /// <summary>스키마 변경 플래그 리셋</summary>
+    member _.ResetSchemaModifiedFlag() = isSchemaModified <- false
+
+    /// <summary>현재 스키마 해시 설정</summary>
+    /// <param name="hash">스키마 해시</param>
+    member _.SetCurrentSchemaHash(hash: string) = currentSchemaHash <- Some hash
+
+    /// <summary>현재 스키마 해시 가져오기</summary>
+    /// <returns>현재 스키마 해시 (없으면 None)</returns>
+    member _.GetCurrentSchemaHash() = currentSchemaHash
