@@ -14,7 +14,7 @@ type IPlcDriver =
     abstract member PlcId: string
     
     /// Current connection status
-    abstract member ConnectionStatus: ConnectionStatus
+    abstract member PlcConnectionStatus: PlcConnectionStatus
     
     /// Connection configuration and metrics
     abstract member ConnectionInfo: ConnectionInfo
@@ -220,7 +220,7 @@ type IPlcDriverFactory =
 /// Connection management interface
 type IConnectionManager =
     /// Current connection status
-    abstract member Status: ConnectionStatus
+    abstract member Status: PlcConnectionStatus
     
     /// Connection configuration
     abstract member Configuration: ConnectionConfig

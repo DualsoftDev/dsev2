@@ -156,24 +156,38 @@ module AutomatedTestRunner =
         processInfo.UseShellExecute <- false
         processInfo.CreateNoWindow <- true
 
-        use proc = Process.Start(processInfo)
-        let output = proc.StandardOutput.ReadToEnd()
-        let error = proc.StandardError.ReadToEnd()
-        proc.WaitForExit()
+        match Process.Start(processInfo) with
+        | null ->
+            {
+                ProtocolName = protocolName
+                TestName = "Integration Tests"
+                Duration = TimeSpan.Zero
+                Status = Failed
+                StdOut = ""
+                ErrorMessage = Some "Failed to start process"
+                StackTrace = None
+                HexDumps = []
+                PerformanceMetrics = []
+            }
+        | proc ->
+            use _proc = proc
+            let output = proc.StandardOutput.ReadToEnd()
+            let error = proc.StandardError.ReadToEnd()
+            proc.WaitForExit()
 
-        let combinedOutput = output + "\n" + error
+            let combinedOutput = output + "\n" + error
 
-        {
-            ProtocolName = protocolName
-            TestName = "Integration Tests"
-            Duration = TestOutputParser.parseTestDuration combinedOutput
-            Status = if proc.ExitCode = 0 then Passed else Failed
-            StdOut = combinedOutput
-            ErrorMessage = if String.IsNullOrWhiteSpace(error) then None else Some error
-            StackTrace = None
-            HexDumps = TestOutputParser.extractHexDumps combinedOutput
-            PerformanceMetrics = TestOutputParser.extractPerformanceMetrics combinedOutput
-        }
+            {
+                ProtocolName = protocolName
+                TestName = "Integration Tests"
+                Duration = TestOutputParser.parseTestDuration combinedOutput
+                Status = if proc.ExitCode = 0 then Passed else Failed
+                StdOut = combinedOutput
+                ErrorMessage = if String.IsNullOrWhiteSpace(error) then None else Some error
+                StackTrace = None
+                HexDumps = TestOutputParser.extractHexDumps combinedOutput
+                PerformanceMetrics = TestOutputParser.extractPerformanceMetrics combinedOutput
+            }
 
     /// 실패 분석 및 해결책 제안
     let analyzeAndSuggestFix (protocolName: string) (pattern: FailurePattern) (result: TestExecutionResult) =

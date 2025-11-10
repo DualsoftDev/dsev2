@@ -89,17 +89,23 @@ module NamingValidation =
 /// 주소 검증
 module AddressValidation =
     let validateAddressRange (ranges: Map<string, AddressRange>) (address: PlcAddress) : ValidationResult =
-        match ranges.TryFind(address.DeviceType) with
-        | None ->
-            ValidationResult.Warning(
-                $"No address range defined for device type '{address.DeviceType}'",
-                suggestion = "Define address ranges in configuration")
-        | Some range ->
-            if address.Index < range.StartAddress || address.Index > range.EndAddress then
-                ValidationResult.Error(
-                    $"Address {address.FullAddress} is outside valid range {range.StartAddress}-{range.EndAddress}")
-            else
-                ValidationResult.Success
+        match address.DeviceArea with
+        | None -> ValidationResult.Warning("Address has no device area specified")
+        | Some deviceArea ->
+            match ranges.TryFind(deviceArea) with
+            | None ->
+                ValidationResult.Warning(
+                    $"No address range defined for device type '{deviceArea}'",
+                    suggestion = "Define address ranges in configuration")
+            | Some range ->
+                match address.Index with
+                | None -> ValidationResult.Warning("Address has no index specified")
+                | Some index ->
+                    if index < range.StartAddress || index > range.EndAddress then
+                        ValidationResult.Error(
+                            $"Address {address.FullAddress} is outside valid range {range.StartAddress}-{range.EndAddress}")
+                    else
+                        ValidationResult.Success
 
     let validateAddressConflict (variables: IOVariable list) : ValidationResult list =
         variables
@@ -115,13 +121,13 @@ module AddressValidation =
 
 /// 데이터 타입 검증
 module DataTypeValidation =
-    let validateDataTypeCompatibility (address: PlcAddress) (dataType: PlcTagDataType) (vendor: PlcVendor) : ValidationResult =
-        match vendor, address.DeviceType, dataType with
-        | LSElectric _, "M", t when t <> Bool ->
+    let validateDataTypeCompatibility (address: PlcAddress) (dataType: PlcDataType) (vendor: PlcVendor) : ValidationResult =
+        match vendor, address.DeviceArea, dataType with
+        | LSElectric _, Some "M", t when t <> Bool ->
             ValidationResult.Error("LS Electric M devices only support BOOL data type")
-        | LSElectric _, "D", Bool ->
+        | LSElectric _, Some "D", Bool ->
             ValidationResult.Warning("Using BOOL with D register wastes memory", suggestion = "Consider using M register for BOOL")
-        | Mitsubishi _, "X", t when t <> Bool ->
+        | Mitsubishi _, Some "X", t when t <> Bool ->
             ValidationResult.Error("Mitsubishi X devices only support BOOL data type")
         | AllenBradley _, _, String _ ->
             ValidationResult.Warning("String handling may require special consideration in Allen-Bradley PLCs")
@@ -169,23 +175,26 @@ module LogicValidation =
 /// 성능 검증
 module PerformanceValidation =
     let validateAddressOptimization (variables: IOVariable list) : ValidationResult list =
-        let groupedByType = variables |> List.groupBy (fun v -> v.PhysicalAddress.DeviceType)
+        let groupedByType = variables |> List.groupBy (fun v -> v.PhysicalAddress.DeviceArea)
 
         groupedByType
-        |> List.collect (fun (deviceType, vars) ->
-            let addresses = vars |> List.map (fun v -> v.PhysicalAddress.Index) |> List.sort
-            let gaps =
-                addresses
-                |> List.pairwise
-                |> List.filter (fun (a, b) -> b - a > 1)
-                |> List.length
-
-            if gaps > addresses.Length / 2 then
-                [ValidationResult.Warning(
-                    $"Address allocation for {deviceType} has many gaps ({gaps} gaps for {addresses.Length} addresses)",
-                    suggestion = "Consider compacting address allocation for better performance")]
+        |> List.collect (fun (deviceArea, vars) ->
+            let addresses = vars |> List.choose (fun v -> v.PhysicalAddress.Index) |> List.sort
+            if addresses.IsEmpty then
+                []
             else
-                [])
+                let gaps =
+                    addresses
+                    |> List.pairwise
+                    |> List.filter (fun (a, b) -> b - a > 1)
+                    |> List.length
+
+                if gaps > addresses.Length / 2 then
+                    [ValidationResult.Warning(
+                        $"Address allocation for {deviceArea} has many gaps ({gaps} gaps for {addresses.Length} addresses)",
+                        suggestion = "Consider compacting address allocation for better performance")]
+                else
+                    [])
 
 /// 검증 엔진 설정
 type ValidationConfiguration = {

@@ -7,20 +7,21 @@ open DSPLCServer.Common
 open Ev2.PLC.Common.Types
 
 [<Fact>]
-let ``PlcVendor ToString should return correct names`` () =
-    PlcVendor.AllenBradley.ToString() |> should equal "Allen-Bradley"
-    PlcVendor.Siemens.ToString() |> should equal "Siemens"
-    PlcVendor.Mitsubishi.ToString() |> should equal "Mitsubishi"
-    PlcVendor.LSElectric.ToString() |> should equal "LS Electric"
-    PlcVendor.Generic.ToString() |> should equal "Generic"
+let ``PlcVendor DisplayName should return correct names`` () =
+    PlcVendor.CreateAllenBradley().DisplayName |> should haveSubstring "Allen-Bradley"
+    PlcVendor.CreateSiemens().DisplayName |> should haveSubstring "Siemens"
+    PlcVendor.CreateMitsubishi().DisplayName |> should haveSubstring "Mitsubishi"
+    PlcVendor.CreateLSElectric().DisplayName |> should haveSubstring "LS Electric"
+    PlcVendor.CreateCustom("Generic").DisplayName |> should haveSubstring "Generic"
 
 [<Fact>]
 let ``PlcServerConfig.Create should set correct defaults`` () =
     let connectionConfig = ConnectionConfig.ForTCP("192.168.1.100", 44818)
-    let config = PlcServerConfig.Create("PLC001", PlcVendor.Siemens, "Test PLC", connectionConfig)
-    
+    let vendor = PlcVendor.CreateSiemens()
+    let config = PlcServerConfig.Create("PLC001", vendor, "Test PLC", connectionConfig)
+
     config.PlcId |> should equal "PLC001"
-    config.Vendor |> should equal PlcVendor.Siemens
+    config.Vendor.Manufacturer |> should equal "Siemens"
     config.Name |> should equal "Test PLC"
     config.Description |> should equal None
     config.ConnectionConfig |> should equal connectionConfig

@@ -4,11 +4,13 @@ open System
 open Xunit
 open Ev2.S7Protocol.Core
 open Ev2.S7Protocol.Tests.TestAttributes
+
 module CH = Ev2.S7Protocol.Tests.ClientHarness
 module TH = Ev2.S7Protocol.Tests.TestHelpers
 
 /// Test reading PLC scan time from Siemens S7 PLC
 /// Scan time is available through system data blocks (SDB) or OB1 information
+[<AutoOpen>]
 module ScanTimeTest =
     
     [<RequiresS7PLC>]

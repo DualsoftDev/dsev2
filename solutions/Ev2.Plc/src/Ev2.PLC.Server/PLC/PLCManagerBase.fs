@@ -15,7 +15,7 @@ type ServerPlcManager(config: PlcServerConfig, driver: IPlcDriver, logger: ILogg
     let serverStartTime = DateTime.UtcNow
     
     // Events
-    let connectionStateChangedEvent = Event<string * ConnectionStatus>()
+    let connectionStateChangedEvent = Event<string * PlcConnectionStatus>()
     let scanCompletedEvent = Event<string * ServerScanStatistics>()
     let errorOccurredEvent = Event<string * string>()
     
@@ -43,7 +43,7 @@ type ServerPlcManager(config: PlcServerConfig, driver: IPlcDriver, logger: ILogg
     member this.Driver = driver
     
     /// Current connection status
-    member this.ConnectionStatus = driver.ConnectionStatus
+    member this.PlcConnectionStatus = driver.PlcConnectionStatus
     
     /// Current connection info
     member this.ConnectionInfo = driver.ConnectionInfo
@@ -270,7 +270,7 @@ type ServerPlcManager(config: PlcServerConfig, driver: IPlcDriver, logger: ILogg
                 isDisposed <- true
                 try
                     // Disconnect if connected
-                    if driver.ConnectionStatus.IsOperational then
+                    if driver.PlcConnectionStatus.IsOperational then
                         driver.DisconnectAsync() |> ignore
                     
                     // Dispose driver if it implements IDisposable

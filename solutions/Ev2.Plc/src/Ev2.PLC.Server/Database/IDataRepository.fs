@@ -3,6 +3,7 @@ namespace DSPLCServer.Database
 open System
 open System.Threading.Tasks
 open DSPLCServer.Common
+open Ev2.PLC.Common.Types
 
 /// Data repository interface for PLC server operations
 type IDataRepository =
@@ -180,13 +181,13 @@ type IDataRepository =
     // ===== Connection Monitoring =====
     
     /// Log connection state change
-    abstract member LogConnectionStateChangeAsync: plcId: string * oldState: ConnectionStatus * newState: ConnectionStatus * timestamp: DateTime -> Task<unit>
+    abstract member LogConnectionStateChangeAsync: plcId: string * oldState: PlcConnectionStatus * newState: PlcConnectionStatus * timestamp: DateTime -> Task<unit>
     
     /// Get connection history for a PLC
-    abstract member GetConnectionHistoryAsync: plcId: string * startTime: DateTime * endTime: DateTime -> Task<(DateTime * ConnectionStatus) list>
+    abstract member GetConnectionHistoryAsync: plcId: string * startTime: DateTime * endTime: DateTime -> Task<(DateTime * PlcConnectionStatus) list>
     
     /// Get current connection states for all PLCs
-    abstract member GetCurrentConnectionStatesAsync: unit -> Task<Map<string, ConnectionStatus>>
+    abstract member GetCurrentConnectionStatesAsync: unit -> Task<Map<string, PlcConnectionStatus>>
     
     // ===== Data Quality Monitoring =====
     

@@ -50,7 +50,7 @@ type IAddressAnalyzer =
     abstract member ParseAddressAsync: address: string * vendor: PlcVendor -> Task<PlcAddress option>
     
     /// 주소 유효성 검증
-    abstract member ValidateAddressAsync: address: PlcAddress * dataType: PlcTagDataType * vendor: PlcVendor -> Task<ValidationResult>
+    abstract member ValidateAddressAsync: address: PlcAddress * dataType: PlcDataType * vendor: PlcVendor -> Task<ValidationResult>
     
     /// 최적 주소 할당
     abstract member OptimizeAddressAllocationAsync: variables: IOVariable list * vendor: PlcVendor -> Task<IOVariable list>

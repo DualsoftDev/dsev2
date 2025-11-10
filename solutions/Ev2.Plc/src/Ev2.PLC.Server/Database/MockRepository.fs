@@ -3,6 +3,7 @@ namespace DSPLCServer.Database
 open System
 open System.Threading.Tasks
 open DSPLCServer.Common
+open Ev2.PLC.Common.Types
 
 /// Mock repository implementation for build testing
 type MockRepository() =
@@ -80,9 +81,9 @@ type MockRepository() =
         member this.GetPerformanceMetricsHistoryAsync(plcId: string, startTime: DateTime, endTime: DateTime) = Task.FromResult([] : (DateTime * PerformanceMetrics) list)
         
         // ===== Connection Monitoring =====
-        member this.LogConnectionStateChangeAsync(plcId: string, oldState: ConnectionStatus, newState: ConnectionStatus, timestamp: DateTime) = Task.FromResult(())
-        member this.GetConnectionHistoryAsync(plcId: string, startTime: DateTime, endTime: DateTime) = Task.FromResult([] : (DateTime * ConnectionStatus) list)
-        member this.GetCurrentConnectionStatesAsync() = Task.FromResult(Map.empty<string, ConnectionStatus>)
+        member this.LogConnectionStateChangeAsync(plcId: string, oldState: PlcConnectionStatus, newState: PlcConnectionStatus, timestamp: DateTime) = Task.FromResult(())
+        member this.GetConnectionHistoryAsync(plcId: string, startTime: DateTime, endTime: DateTime) = Task.FromResult([] : (DateTime * PlcConnectionStatus) list)
+        member this.GetCurrentConnectionStatesAsync() = Task.FromResult(Map.empty<string, PlcConnectionStatus>)
         
         // ===== Data Quality Monitoring =====
         member this.GetDataQualityStatsAsync(plcId: string option, startTime: DateTime, endTime: DateTime) = Task.FromResult(Map.empty<string, obj>)

@@ -358,7 +358,7 @@ type PlcMapperFactory(loggerFactory: ILoggerFactory) =
     /// Create default vendor address format
     member this.CreateDefaultAddressFormat(vendor: PlcVendor) =
         match vendor with
-        | PlcVendor.Siemens -> 
+        | PlcVendor.Siemens _ ->
             {
                 Vendor = vendor
                 AddressPatterns = Map [
@@ -376,7 +376,7 @@ type PlcMapperFactory(loggerFactory: ILoggerFactory) =
                 ]
                 DefaultPattern = "MW{0}"
             }
-        | PlcVendor.Mitsubishi -> 
+        | PlcVendor.Mitsubishi _ ->
             {
                 Vendor = vendor
                 AddressPatterns = Map [
@@ -394,7 +394,7 @@ type PlcMapperFactory(loggerFactory: ILoggerFactory) =
                 ]
                 DefaultPattern = "D{0}"
             }
-        | PlcVendor.AllenBradley -> 
+        | PlcVendor.AllenBradley _ ->
             {
                 Vendor = vendor
                 AddressPatterns = Map [
@@ -407,7 +407,7 @@ type PlcMapperFactory(loggerFactory: ILoggerFactory) =
                 ValidationRules = Map.empty
                 DefaultPattern = "Program:MainProgram.{0}"
             }
-        | PlcVendor.LSElectric -> 
+        | PlcVendor.LSElectric _ ->
             {
                 Vendor = vendor
                 AddressPatterns = Map [

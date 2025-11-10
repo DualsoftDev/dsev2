@@ -113,12 +113,12 @@ type MapperFactory(loggerFactory: ILoggerFactory, ?configProvider: IConfiguratio
                     let! apiDefinitions = variableAnalyzer.GenerateApiDefinitionsAsync(devices)
                     
                     // 6. I/O 매핑 생성
-                    let ioMapping = 
+                    let ioMapping =
                         analysisResults
                         |> List.choose (fun result ->
                             match result.Device, result.Api with
                             | Some device, Some api ->
-                                let address = PlcAddress.Create("D", 100) // TODO: Implement proper address allocation
+                                let address = PlcAddress.Create("D100", deviceArea = "D", index = 100) // TODO: Implement proper address allocation
                                 let ioVar = IOVariable.Create(result.Variable.Name, address, Bool, Input)
                                 Some ioVar
                             | _ -> None)

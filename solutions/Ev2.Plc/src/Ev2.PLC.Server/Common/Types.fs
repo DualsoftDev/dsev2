@@ -3,46 +3,15 @@ namespace DSPLCServer.Common
 open System
 open Ev2.PLC.Common.Types
 
-// Re-export common types from the universal library for convenience
-type PlcDataType = Ev2.PLC.Common.Types.PlcDataType
-type PlcValue = Ev2.PLC.Common.Types.PlcValue
-type DataQuality = Ev2.PLC.Common.Types.DataQuality
-type DataStatus = Ev2.PLC.Common.Types.DataStatus
-type ConnectionStatus = Ev2.PLC.Common.Types.ConnectionStatus
-type ConnectionConfig = Ev2.PLC.Common.Types.ConnectionConfig
-type ConnectionInfo = Ev2.PLC.Common.Types.ConnectionInfo
-type TagConfiguration = Ev2.PLC.Common.Types.TagConfiguration
-type TagAccessRights = Ev2.PLC.Common.Types.TagAccessRights
-type TagUpdateMode = Ev2.PLC.Common.Types.TagUpdateMode
-type ScanResult = Ev2.PLC.Common.Types.ScanResult
-type ScanBatch = Ev2.PLC.Common.Types.ScanBatch
-type ScanRequest = Ev2.PLC.Common.Types.ScanRequest
-type ScanOperation = Ev2.PLC.Common.Types.ScanOperation
-type ScanPriority = Ev2.PLC.Common.Types.ScanPriority
-type PlcDiagnostics = Ev2.PLC.Common.Types.PlcDiagnostics
-type PerformanceMetrics = Ev2.PLC.Common.Types.PerformanceMetrics
-type DriverCapabilities = Ev2.PLC.Common.Types.DriverCapabilities
+
 
 // Universal driver interfaces
 type IPlcDriver = Ev2.PLC.Common.Interfaces.IPlcDriver
 type IAdvancedPlcDriver = Ev2.PLC.Common.Interfaces.IAdvancedPlcDriver
 type IPlcDriverFactory = Ev2.PLC.Common.Interfaces.IPlcDriverFactory
 
-/// PLC Vendor enumeration for server configuration
-type PlcVendor =
-    | AllenBradley
-    | Siemens  
-    | Mitsubishi
-    | LSElectric
-    | Generic
-
-    override this.ToString() =
-        match this with
-        | AllenBradley -> "Allen-Bradley"
-        | Siemens -> "Siemens"
-        | Mitsubishi -> "Mitsubishi"
-        | LSElectric -> "LS Electric"
-        | Generic -> "Generic"
+/// PLC Vendor enumeration for server configuration (using common definition)
+type PlcVendor = Ev2.PLC.Common.Types.PlcVendor
 
 /// Server-specific PLC configuration
 type PlcServerConfig = {

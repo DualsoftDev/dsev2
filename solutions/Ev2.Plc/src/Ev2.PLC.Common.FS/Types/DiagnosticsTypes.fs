@@ -527,7 +527,7 @@ module Diagnostics =
         CriticalIssues = diagnostics.CriticalMessages.Length
         WarningIssues = diagnostics.WarningMessages.Length
         LastUpdate = diagnostics.LastDiagnosticTime
-        ConnectionStatus = diagnostics.Connection.Status
+        PlcConnectionStatus = diagnostics.Connection.Status
         PerformanceScore = diagnostics.Performance.GetOverallScore() * 100.0
         IsOperational = diagnostics.Connection.IsOperational && not diagnostics.HasCriticalIssues
     |}

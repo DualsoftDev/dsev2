@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<UseWindowsForms>true</UseWindowsForms>
+		<OutputPath>$(SolutionDir)\bin\</OutputPath>
+		<AssemblyVertion>0.0.1</AssemblyVertion>
+	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="System.Reactive" Version="6.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\PLC.Convert.LSCore\PLC.Convert.LSCore.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="FormMain.cs">
+	    <SubType>Form</SubType>
+	  </Compile>
+	</ItemGroup>
+</Project>

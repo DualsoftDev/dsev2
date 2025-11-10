@@ -9,6 +9,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open DSPLCServer.Common
 open DSPLCServer.Database
+open Ev2.PLC.Common.Types
 
 
 /// Data logging statistics
@@ -256,12 +257,12 @@ type DataLogger(repository: IDataRepository, logger: ILogger<DataLogger>) =
                     | None -> repository.GetDataPointsAsync(startTime, endTime, [])
                 
                 logger.LogInformation("Exported {Count} data points", dataPoints.Length)
-                return Ok dataPoints
+                return Microsoft.FSharp.Core.Ok dataPoints
             with
             | ex ->
                 Interlocked.Increment(&errorCount) |> ignore
                 logger.LogError(ex, "Data export failed")
-                return Error ex.Message
+                return Microsoft.FSharp.Core.Error ex.Message
         }
     
     /// Start the data logger

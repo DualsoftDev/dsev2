@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="PLC.Convert.LSCore.ProgramInfo">
+    <Position X="6" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAFAAEAgACABAAAAIEAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ProgramInfo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="맑은 고딕" Size="9" />
+</ClassDiagram>

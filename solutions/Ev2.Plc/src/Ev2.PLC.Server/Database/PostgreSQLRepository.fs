@@ -8,19 +8,22 @@ open DSPLCServer.Common
 
 module private PostgreSqlHelpers =
     let vendorToString = function
-        | PlcVendor.LSElectric -> "LSElectric"
-        | PlcVendor.Mitsubishi -> "Mitsubishi"
-        | PlcVendor.AllenBradley -> "AllenBradley"
+        | PlcVendor.LSElectric _ -> "LSElectric"
+        | PlcVendor.Mitsubishi _ -> "Mitsubishi"
+        | PlcVendor.Siemens _ -> "Siemens"
+        | PlcVendor.AllenBradley _ -> "AllenBradley"
+        | PlcVendor.Custom (name, _, _) -> name
 
     let vendorFromString (value: string) =
         match value with
-        | null | "" -> PlcVendor.LSElectric
+        | null | "" -> PlcVendor.CreateLSElectric()
         | _ ->
             match value.ToLowerInvariant() with
-            | "lselectric" -> PlcVendor.LSElectric
-            | "mitsubishi" -> PlcVendor.Mitsubishi
-            | "allenbradley" | "allen-bradley" -> PlcVendor.AllenBradley
-            | _ -> PlcVendor.LSElectric
+            | "lselectric" -> PlcVendor.CreateLSElectric()
+            | "mitsubishi" -> PlcVendor.CreateMitsubishi()
+            | "siemens" -> PlcVendor.CreateSiemens()
+            | "allenbradley" | "allen-bradley" -> PlcVendor.CreateAllenBradley()
+            | _ -> PlcVendor.CreateLSElectric()
 
     let tagDataTypeToString = function
         | TagDataType.Bool -> "Bool"

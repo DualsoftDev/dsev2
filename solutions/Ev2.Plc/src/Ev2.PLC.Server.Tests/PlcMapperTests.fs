@@ -49,9 +49,10 @@ let ``AddressMapping should support pattern matching`` () =
 [<Fact>]
 let ``VendorAddressFormat should contain patterns for all data types`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let siemensFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Siemens)
-    
-    siemensFormat.Vendor |> should equal PlcVendor.Siemens
+    let siemensVendor = PlcVendor.CreateSiemens()
+    let siemensFormat = mapperFactory.CreateDefaultAddressFormat(siemensVendor)
+
+    siemensFormat.Vendor.Manufacturer |> should equal "Siemens"
     siemensFormat.DefaultPattern |> should equal "MW{0}"
     siemensFormat.AddressPatterns.ContainsKey(PlcDataType.Bool) |> should equal true
     siemensFormat.AddressPatterns.ContainsKey(PlcDataType.Int16) |> should equal true
@@ -61,28 +62,34 @@ let ``VendorAddressFormat should contain patterns for all data types`` () =
 [<Fact>]
 let ``PlcMapperFactory should create mappers for different vendors`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    
-    let siemensFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Siemens)
-    let mitsubishiFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
-    let allenBradleyFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.AllenBradley)
-    let lsElectricFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.LSElectric)
-    
-    siemensFormat.Vendor |> should equal PlcVendor.Siemens
-    mitsubishiFormat.Vendor |> should equal PlcVendor.Mitsubishi
-    allenBradleyFormat.Vendor |> should equal PlcVendor.AllenBradley
-    lsElectricFormat.Vendor |> should equal PlcVendor.LSElectric
+
+    let siemensVendor = PlcVendor.CreateSiemens()
+    let mitsubishiVendor = PlcVendor.CreateMitsubishi()
+    let allenBradleyVendor = PlcVendor.CreateAllenBradley()
+    let lsElectricVendor = PlcVendor.CreateLSElectric()
+
+    let siemensFormat = mapperFactory.CreateDefaultAddressFormat(siemensVendor)
+    let mitsubishiFormat = mapperFactory.CreateDefaultAddressFormat(mitsubishiVendor)
+    let allenBradleyFormat = mapperFactory.CreateDefaultAddressFormat(allenBradleyVendor)
+    let lsElectricFormat = mapperFactory.CreateDefaultAddressFormat(lsElectricVendor)
+
+    siemensFormat.Vendor.Manufacturer |> should equal "Siemens"
+    mitsubishiFormat.Vendor.Manufacturer |> should equal "Mitsubishi Electric"
+    allenBradleyFormat.Vendor.Manufacturer |> should equal "Allen-Bradley"
+    lsElectricFormat.Vendor.Manufacturer |> should equal "LS Electric"
     
     // Check vendor-specific patterns
     siemensFormat.AddressPatterns.[PlcDataType.Bool] |> should equal "M{0}"
     mitsubishiFormat.AddressPatterns.[PlcDataType.Int16] |> should equal "D{0}"
-    allenBradleyFormat.AddressPatterns.[PlcDataType.Int32] |> should startWith "Program:MainProgram"
+    allenBradleyFormat.AddressPatterns.[PlcDataType.Int32] |> should haveSubstring "Program:MainProgram"
     lsElectricFormat.AddressPatterns.[PlcDataType.Float32] |> should equal "D{0}"
 
 [<Fact>]
 let ``PlcMapper should perform explicit tag mapping`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
-    
+    let mitsubishiVendor = PlcVendor.CreateMitsubishi()
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(mitsubishiVendor)
+
     let physicalAddress = PlcAddress.Create("D200")
     let tagMapping = {
         LogicalTagId = "MOTOR_SPEED"
@@ -94,10 +101,10 @@ let ``PlcMapper should perform explicit tag mapping`` () =
         IsReadOnly = false
         Group = Some "Motors"
     }
-    
+
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Mitsubishi
+        Vendor = mitsubishiVendor
         TagMappings = [tagMapping]
         AddressMappings = []
         AddressFormat = addressFormat
@@ -122,7 +129,7 @@ let ``PlcMapper should perform explicit tag mapping`` () =
 [<Fact>]
 let ``PlcMapper should perform automatic mapping with patterns`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateMitsubishi())
     
     let addressMapping = {
         LogicalPattern = "SENSOR_*"
@@ -135,7 +142,7 @@ let ``PlcMapper should perform automatic mapping with patterns`` () =
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Mitsubishi
+        Vendor = PlcVendor.CreateMitsubishi()
         TagMappings = []
         AddressMappings = [addressMapping]
         AddressFormat = addressFormat
@@ -159,11 +166,11 @@ let ``PlcMapper should perform automatic mapping with patterns`` () =
 [<Fact>]
 let ``PlcMapper should handle direct mapping when no rules match`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateMitsubishi())
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Mitsubishi
+        Vendor = PlcVendor.CreateMitsubishi()
         TagMappings = []
         AddressMappings = []
         AddressFormat = addressFormat
@@ -188,11 +195,11 @@ let ``PlcMapper should handle direct mapping when no rules match`` () =
 [<Fact>]
 let ``PlcMapper should convert values with scaling for read operations`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateMitsubishi())
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Mitsubishi
+        Vendor = PlcVendor.CreateMitsubishi()
         TagMappings = []
         AddressMappings = []
         AddressFormat = addressFormat
@@ -228,11 +235,11 @@ let ``PlcMapper should convert values with scaling for read operations`` () =
 [<Fact>]
 let ``PlcMapper should convert values with scaling for write operations`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateMitsubishi())
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Mitsubishi
+        Vendor = PlcVendor.CreateMitsubishi()
         TagMappings = []
         AddressMappings = []
         AddressFormat = addressFormat
@@ -268,11 +275,11 @@ let ``PlcMapper should convert values with scaling for write operations`` () =
 [<Fact>]
 let ``PlcMapper should handle Float32 scaling correctly`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Siemens)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateSiemens())
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Siemens
+        Vendor = PlcVendor.CreateSiemens()
         TagMappings = []
         AddressMappings = []
         AddressFormat = addressFormat
@@ -303,11 +310,11 @@ let ``PlcMapper should handle Float32 scaling correctly`` () =
 [<Fact>]
 let ``PlcMapper should handle values without scaling`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.AllenBradley)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateAllenBradley())
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.AllenBradley
+        Vendor = PlcVendor.CreateAllenBradley()
         TagMappings = []
         AddressMappings = []
         AddressFormat = addressFormat
@@ -336,7 +343,7 @@ let ``PlcMapper should handle values without scaling`` () =
 [<Fact>]
 let ``PlcMapper should cache mapping results`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.LSElectric)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateLSElectric())
     
     let tagMapping = {
         LogicalTagId = "CACHE_TEST"
@@ -351,7 +358,7 @@ let ``PlcMapper should cache mapping results`` () =
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.LSElectric
+        Vendor = PlcVendor.CreateLSElectric()
         TagMappings = [tagMapping]
         AddressMappings = []
         AddressFormat = addressFormat
@@ -379,7 +386,7 @@ let ``PlcMapper should cache mapping results`` () =
 [<Fact>]
 let ``PlcMapper should get tag mapping by ID`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Mitsubishi)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateMitsubishi())
     
     let tagMapping = {
         LogicalTagId = "LOOKUP_TEST"
@@ -394,7 +401,7 @@ let ``PlcMapper should get tag mapping by ID`` () =
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Mitsubishi
+        Vendor = PlcVendor.CreateMitsubishi()
         TagMappings = [tagMapping]
         AddressMappings = []
         AddressFormat = addressFormat
@@ -420,11 +427,11 @@ let ``PlcMapper should get tag mapping by ID`` () =
 [<Fact>]
 let ``PlcMapper should fail when auto-mapping is disabled and no mapping exists`` () =
     let mapperFactory = PlcMapperFactory(NullLoggerFactory.Instance)
-    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.Siemens)
+    let addressFormat = mapperFactory.CreateDefaultAddressFormat(PlcVendor.CreateSiemens())
     
     let config = {
         PlcId = "PLC001"
-        Vendor = PlcVendor.Siemens
+        Vendor = PlcVendor.CreateSiemens()
         TagMappings = []
         AddressMappings = []
         AddressFormat = addressFormat

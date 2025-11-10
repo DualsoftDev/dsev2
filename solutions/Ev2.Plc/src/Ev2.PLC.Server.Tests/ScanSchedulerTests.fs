@@ -15,7 +15,7 @@ open Ev2.PLC.Common.Interfaces
 
 // Reuse the mock driver from PlcManagerTests
 type MockDriver(plcId: string, connectionConfig: ConnectionConfig) =
-    let mutable connectionStatus = ConnectionStatus.Disconnected
+    let mutable connectionStatus = PlcConnectionStatus.Disconnected
     let connectionStateChangedEvent = Event<ConnectionStateChangedEvent>()
     let tagValueChangedEvent = Event<ScanResult>()
     let scanCompletedEvent = Event<ScanBatch>()
@@ -24,20 +24,20 @@ type MockDriver(plcId: string, connectionConfig: ConnectionConfig) =
     
     interface IPlcDriver with
         member this.PlcId = plcId
-        member this.ConnectionStatus = connectionStatus
+        member this.PlcConnectionStatus = connectionStatus
         member this.ConnectionInfo = ConnectionInfo.Create(plcId, connectionConfig)
         member this.Diagnostics = PlcDiagnostics.Create(plcId)
         member this.Capabilities = DriverCapabilities.Default
         
         member this.ConnectAsync() =
             task {
-                connectionStatus <- ConnectionStatus.Connected
+                connectionStatus <- PlcConnectionStatus.Connected
                 return Ok ()
             }
         
         member this.DisconnectAsync() =
             task {
-                connectionStatus <- ConnectionStatus.Disconnected
+                connectionStatus <- PlcConnectionStatus.Disconnected
             }
         
         member this.HealthCheckAsync() = Task.FromResult(true)
@@ -125,9 +125,9 @@ let ``ScanScheduler should add and remove managers`` () =
         let scheduler = new ScanScheduler(serviceProvider, managerFactory, logger)
         
         let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.Generic, "Test PLC", connectionConfig)
+        let config = PlcServerConfig.Create("TEST_PLC", PlcVendor.CreateCustom("Generic"), "Test PLC", connectionConfig)
         // Override vendor to match our mock factory
-        let mockConfig = { config with Vendor = PlcVendor.Generic }
+        let mockConfig = { config with Vendor = PlcVendor.CreateCustom("Generic") }
         
         // This will fail because our mock factory only supports "Mock" vendor, not "Generic"
         let! addResult = scheduler.AddManager(mockConfig)
@@ -202,7 +202,7 @@ let ``PlcManagerFactory should handle vendor validation`` () =
     
     // Test configuration validation
     let connectionConfig = ConnectionConfig.ForTCP("localhost", 502)
-    let validationResult = managerFactory.ValidateConfiguration(PlcVendor.Generic, connectionConfig)
+    let validationResult = managerFactory.ValidateConfiguration(PlcVendor.CreateCustom("Generic"), connectionConfig)
     
     match validationResult with
     | Ok () -> () // Our mock factory accepts any configuration

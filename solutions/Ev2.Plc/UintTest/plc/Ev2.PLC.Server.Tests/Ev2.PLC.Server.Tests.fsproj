@@ -16,6 +16,7 @@
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\plc\Ev2.PLC.Server\Ev2.PLC.Server.fsproj" />
+    <ProjectReference Include="..\..\..\src\Ev2.PLC.Common.FS\Ev2.PLC.Common.fsproj" />
+    <ProjectReference Include="..\..\..\src\Ev2.PLC.Server\Ev2.PLC.Server.fsproj" />
   </ItemGroup>
 </Project>
