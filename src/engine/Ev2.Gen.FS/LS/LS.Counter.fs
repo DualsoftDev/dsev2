@@ -72,29 +72,11 @@ module CounterModule =
                     outputDict[kvp.Key] <- kvp.Value
             | _ -> ()
 
-        let exposedVariables : IVariable[] =
-            [| acc :> IVariable
-               pre :> IVariable
-               dn :> IVariable
-               dnDown :> IVariable
-               ov :> IVariable
-               un :> IVariable
-               cu :> IVariable
-               cd :> IVariable
-               ld :> IVariable
-               res :> IVariable |]
-
-        let containerStruct =
-            let s = Struct(name, exposedVariables)
-            s.VarType <- VarType.VarGlobal
-            s
+        let exposedVariables : IVariable[] = [| acc; pre; dn; dnDown; ov; un; cu; cd; ld; res |]
+        let containerStruct = Struct(name, exposedVariables, VarType=VarType.VarGlobal)
 
         do
-            match globalStorage.TryGetValue name with
-            | true, existing when not (obj.ReferenceEquals(existing, containerStruct :> IVariable)) ->
-                invalidOp ($"Global storage already contains '{name}' with a different reference")
-            | true, _ -> ()
-            | false, _ -> globalStorage.Add(name, containerStruct :> IVariable)
+            globalStorage.Add(name, containerStruct)
 
         let mutable accumulator = initialAcc
         let mutable doneUp = false
