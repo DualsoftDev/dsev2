@@ -11,13 +11,14 @@ type Arguments<'T> = IExpression<'T>[]
 type Operator(name:string, arguments:Arguments) =
     member x.Name = name
     member x.Arguments = arguments
+    abstract member ReturnType: Type
 
 
 type Operator<'T>(name:string, arguments:Arguments) =
     inherit Operator(name, arguments)
 
     new() = Operator<'T>(nullString, [||])
-    member x.ReturnType = typeof<'T>
+    override x.ReturnType = typeof<'T>
     member val Evaluator: (Arguments -> 'T) = fun _ -> failwithMessage "Should be re-implemented" with get, set
     member x.TValue = x.Evaluator(x.Arguments)
     interface IExpression<'T> with
@@ -214,29 +215,31 @@ module OperatorEvaluators =
         UInt64 = (fun x -> ~~~x)
     }
 
-    /// Bitwise AND 연산자 (&&&) 구현
-    let band<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
-        Operator<'T>("AND", [| lhs; rhs |],
+    let inline private liftIntegralBinary opName opsName ops (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
+        Operator<'T>(opName, [| lhs; rhs |],
             Evaluator = fun args ->
                 let leftExpr  = args[0] :?> IExpression<'T>
                 let rightExpr = args[1] :?> IExpression<'T>
-                applyIntegralBinary "Bitwise AND" bitwiseAndOps leftExpr rightExpr)
+                applyIntegralBinary opsName ops leftExpr rightExpr)
+
+    let inline private liftLogicalBinary name op (lhs:IExpression<bool>) (rhs:IExpression<bool>) =
+        Operator<bool>(name, [| lhs; rhs |],
+            Evaluator = fun args ->
+                let leftExpr  = args[0] :?> IExpression<bool>
+                let rightExpr = args[1] :?> IExpression<bool>
+                op leftExpr.TValue rightExpr.TValue)
+
+    /// Bitwise AND 연산자 (&&&) 구현
+    let band<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
+        liftIntegralBinary "AND" "Bitwise AND" bitwiseAndOps lhs rhs
 
     /// Bitwise OR 연산자 (|||) 구현
     let bor<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
-        Operator<'T>("OR", [| lhs; rhs |],
-            Evaluator = fun args ->
-                let leftExpr  = args[0] :?> IExpression<'T>
-                let rightExpr = args[1] :?> IExpression<'T>
-                applyIntegralBinary "Bitwise OR" bitwiseOrOps leftExpr rightExpr)
+        liftIntegralBinary "OR" "Bitwise OR" bitwiseOrOps lhs rhs
 
     /// Bitwise XOR 연산자 (^^^) 구현
     let bxor<'T> (lhs:IExpression<'T>) (rhs:IExpression<'T>) =
-        Operator<'T>("XOR", [| lhs; rhs |],
-            Evaluator = fun args ->
-                let leftExpr  = args[0] :?> IExpression<'T>
-                let rightExpr = args[1] :?> IExpression<'T>
-                applyIntegralBinary "Bitwise XOR" bitwiseXorOps leftExpr rightExpr)
+        liftIntegralBinary "XOR" "Bitwise XOR" bitwiseXorOps lhs rhs
 
     /// Bitwise NOT 연산자 (~~~) 구현
     let bnot<'T> (value:IExpression<'T>) =
@@ -247,19 +250,11 @@ module OperatorEvaluators =
 
     /// Bool Logical AND
     let logicalAnd (lhs:IExpression<bool>) (rhs:IExpression<bool>) =
-        Operator<bool>("LAND", [| lhs; rhs |],
-            Evaluator = fun args ->
-                let leftExpr  = args[0] :?> IExpression<bool>
-                let rightExpr = args[1] :?> IExpression<bool>
-                leftExpr.TValue && rightExpr.TValue)
+        liftLogicalBinary "LAND" (&&) lhs rhs
 
     /// Bool Logical OR
     let logicalOr (lhs:IExpression<bool>) (rhs:IExpression<bool>) =
-        Operator<bool>("LOR", [| lhs; rhs |],
-            Evaluator = fun args ->
-                let leftExpr  = args[0] :?> IExpression<bool>
-                let rightExpr = args[1] :?> IExpression<bool>
-                leftExpr.TValue || rightExpr.TValue)
+        liftLogicalBinary "LOR" (||) lhs rhs
 
     /// Bool Logical NOT
     let logicalNot (value:IExpression<bool>) =

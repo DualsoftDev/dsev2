@@ -25,6 +25,7 @@ type IWithValue =
 [<AllowNullLiteral>] type IStatement      = interface end
 [<AllowNullLiteral>] type IFBInstance     = interface end
 
+type Any = | Any of Type
 
 type DimRange = int * int
 
