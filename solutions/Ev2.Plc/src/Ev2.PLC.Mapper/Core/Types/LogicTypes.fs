@@ -10,13 +10,20 @@ type LogicFlowType =
     | Loop
     | Interrupt
     | Safety
+    | Timer
+    | Counter
+    | Simple
+    | Math
+    | Sequence
     | Custom of string
 
 /// 조건 연산자
 type ConditionOperator =
     | Equal
     | NotEqual
+    | Greater
     | GreaterThan
+    | Less
     | LessThan
     | GreaterOrEqual
     | LessOrEqual
@@ -30,8 +37,8 @@ type ConditionOperator =
         match this with
         | Equal -> "="
         | NotEqual -> "<>"
-        | GreaterThan -> ">"
-        | LessThan -> "<"
+        | Greater | GreaterThan -> ">"
+        | Less | LessThan -> "<"
         | GreaterOrEqual -> ">="
         | LessOrEqual -> "<="
         | And -> "AND"
@@ -134,6 +141,11 @@ type LogicFlow = {
 type ApiDependency = {
     Api: string
     Device: string
+    SourceDevice: string  // 추가
+    TargetApi: string     // 추가
+    DependencyType: string // 추가
+    Parameters: string list // 추가
+    IsRequired: bool      // 추가
     PrecedingApis: string list
     InterlockApis: string list
     SafetyInterlocks: string list
@@ -143,6 +155,11 @@ type ApiDependency = {
     static member Create(api: string, device: string) = {
         Api = api
         Device = device
+        SourceDevice = ""
+        TargetApi = ""
+        DependencyType = ""
+        Parameters = []
+        IsRequired = false
         PrecedingApis = []
         InterlockApis = []
         SafetyInterlocks = []
@@ -150,8 +167,73 @@ type ApiDependency = {
         Description = ""
     }
 
+/// 로직 타입
+type LogicType =
+    | LadderRung
+    | Ladder
+    | StructuredText
+    | ST
+    | FunctionBlock
+    | FBD
+    | InstructionList
+    | IL
+    | SequentialFunctionChart
+    | SCL
+    | STL
+    | Custom of string
+
+/// 원본 로직 정보
+type RawLogic = {
+    Id: string option
+    Name: string option
+    Number: int
+    Content: string
+    RawContent: string option
+    LogicType: LogicType
+    Type: LogicFlowType option
+    Variables: string list
+    Comments: string list
+    LineNumber: int option
+    Properties: Map<string, string>
+    Comment: string option
+}
+
 /// 시퀀스 통계
 type SequenceStatistics = {
+    TotalRungs: int
+    TotalConditions: int
+    TotalActions: int
+    AverageConditionsPerRung: float
+    AverageActionsPerRung: float
+    CyclomaticComplexity: int
+} with
+    static member Empty = {
+        TotalRungs = 0
+        TotalConditions = 0
+        TotalActions = 0
+        AverageConditionsPerRung = 0.0
+        AverageActionsPerRung = 0.0
+        CyclomaticComplexity = 0
+    }
+
+/// 시퀀스 분석 결과
+type SequenceAnalysis = {
+    LogicFlows: LogicFlow list
+    ExecutionOrder: string list
+    Dependencies: Map<string, string list>
+    ParallelGroups: string list list
+    Statistics: SequenceStatistics
+} with
+    static member Empty = {
+        LogicFlows = []
+        ExecutionOrder = []
+        Dependencies = Map.empty
+        ParallelGroups = []
+        Statistics = SequenceStatistics.Empty
+    }
+
+/// 디바이스 시퀀스 통계
+type DeviceSequenceStatistics = {
     TotalSequences: int
     ComplexSequences: int
     SafetySequences: int
@@ -186,8 +268,8 @@ type DeviceSequence = {
         EstimatedCycleTime = None
     }
 
-/// 시퀀스 분석 결과
-type SequenceAnalysis = {
+/// 고급 시퀀스 분석 결과
+type AdvancedSequenceAnalysis = {
     DeviceSequences: DeviceSequence list
     GlobalSequence: LogicFlow list
     CriticalPaths: LogicFlow list list

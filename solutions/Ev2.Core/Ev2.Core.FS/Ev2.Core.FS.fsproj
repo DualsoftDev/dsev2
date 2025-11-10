@@ -1,0 +1,86 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
+		<LangVersion>9.0</LangVersion>
+		<OutputType>Library</OutputType>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="Extension\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="ValueSpec.fs" />
+		<Compile Include="PlcTag.fs" />
+		<None Include="devdoc\**\*.md" />
+		<Compile Include="AppSettings.fs" />
+		<Compile Include="ConstEnums.fs" />
+		<Compile Include="Interfaces.fs" />
+		<Compile Include="Unique.fs" />
+		<!-- Extension System (새로 추가) -->
+		<!-- TypeFactory는 Extension 모듈 이후에 위치 -->
+		<Compile Include="TypeFactory.fs" />
+		<Compile Include="AbstractBaseClasses.fs" />
+		<Compile Include="AbstractClasses.fs" />
+		<Compile Include="GuidedValueSpec.fs" />
+		<Compile Include="DsObjectUtils.fs" />
+		<Compile Include="database\Database.Schema.fs" />
+		<Compile Include="database\Database.ORM.fs" />
+		<Compile Include="database\AppDbApi.fs" />
+		<Compile Include="TypeConversion,Serialization\NewtonsoftJsonDsObjects.fs" />
+		<Compile Include="TypeConversion,Serialization\DsCopy.Object.fs" />
+		<Compile Include="TypeConversion,Serialization\DsCopy.Properties.fs" />
+		<Compile Include="TypeConversion,Serialization\DsCompare.Objects.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Select.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Insert.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.Update.fs" />
+		<Compile Include="TypeConversion,Serialization\DB.API.fs" />
+		<Compile Include="Ev2CoreExtensionForCSharp.fs" />
+		<Compile Include="MiniSample.fs" />
+		<Compile Include="IR\Interfaces.fs" />
+		<Compile Include="IR\Var.fs" />
+		<Compile Include="IR\Operator.fs" />
+		<Compile Include="IR\ComplexTypes.fs" />
+		<Compile Include="IR\Timer.fs" />
+		<Compile Include="IR\Counter.fs" />
+		<Compile Include="IR\Statement.fs" />
+		<Compile Include="IR\IECFunction.fs" />
+		<Compile Include="IR\POU.fs" />
+		<Compile Include="IR\Extension.fs" />
+		<Compile Include="IR\Runtime.fs" />
+
+		<Compile Include="EntryPoint.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="appSettings.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="appSettings.json.template" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
+		<PackageReference Include="System.Reactive" Version="6.0.1" />
+		<PackageReference Include="log4net" Version="2.0.17" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Dapper" Version="2.1.35" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<Compile Include="AssemblyInfo.fs" />
+	</ItemGroup>
+
+</Project>

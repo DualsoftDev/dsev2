@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+
+		<IsPackable>false</IsPackable>
+		<GenerateProgramFile>false</GenerateProgramFile>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="CommonTest\**" />
+	  <EmbeddedResource Remove="Expression\**" />
+	  <EmbeddedResource Remove="Json\**" />
+	  <EmbeddedResource Remove="Parser\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="..\Ev2.Core.FS\appSettings.json" Link="appSettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<None Include="..\Ev2.Core.FS\appSettings.json.template" Link="appSettings.json.template" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="TestHelpers.fs" />
+		<Compile Include="newtonsoft.json\FSharpOption.Test.fs" />
+		<Compile Include="model\CreateSample.fs" />
+		<Compile Include="model\CreateSample.WithCylinders.fs" />
+		<Compile Include="model\CreateSample.HelloDS.fs" />
+		<Compile Include="model\TestHelloDS.fs" />
+		<Compile Include="database\Schema.Test.fs" />
+		<Compile Include="database\SystemImportExport.Test.fs" />
+		<Compile Include="Duplicate.Test.fs" />
+		<Compile Include="ValueSpec.Test.fs" />
+		<Compile Include="GuidedValueSpec.Test.fs" />
+		<Compile Include="EscapeTest.fs" />
+		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+		<PackageReference Include="FsUnit" Version="6.0.0" />
+		<PackageReference Include="FsUnit.xUnit" Version="6.0.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\solutions\Ev2.Core\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj" />
+		<ProjectReference Include="..\..\..\submodules\nuget\Common\Dual.Common.UnitTest.FS\Dual.Common.UnitTest.FS.fsproj" />
+	</ItemGroup>
+
+</Project>
