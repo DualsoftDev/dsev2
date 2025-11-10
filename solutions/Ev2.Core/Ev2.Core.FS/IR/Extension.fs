@@ -1,4 +1,4 @@
-namespace Ev2.Gen
+namespace Ev2.Core.FS.IR
 
 open System
 open Ev2.Core.FS.IR
@@ -165,7 +165,7 @@ module GenExtensionModule =
             let returnVar = Variable<'T>(name, varType=VarType.VarReturn)
             FunctionProgram.Create<'T>(name, globalStorage, localStorage, returnVar, rungs, subroutines)
 
-    type Ev2.Gen.POUModule.Project with
+    type POUModule.Project with
         member this.AddScanProgram(program:ScanProgram) =
             (program :> Program).Project <- this :> IProject
             this.ScanPrograms.Add( { Storage = program.LocalStorage; Program = program }:POU )

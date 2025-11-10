@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11201.2 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C0000000-1111-4444-8888-000000000001}"
 EndProject
@@ -35,6 +35,8 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Core.FS", "..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj", "{89B6D110-5775-924B-1378-441297ECC4DF}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Db.FS", "..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj", "{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Ev2.Core.FS", "..\Ev2.Core\Ev2.Core.FS\Ev2.Core.FS.fsproj", "{2D985100-64FF-5C7C-3563-0564C793C8C8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,6 +92,10 @@ Global
 		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D985100-64FF-5C7C-3563-0564C793C8C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D985100-64FF-5C7C-3563-0564C793C8C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D985100-64FF-5C7C-3563-0564C793C8C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D985100-64FF-5C7C-3563-0564C793C8C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -106,6 +112,7 @@ Global
 		{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8} = {001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}
 		{89B6D110-5775-924B-1378-441297ECC4DF} = {001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}
 		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325} = {001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}
+		{2D985100-64FF-5C7C-3563-0564C793C8C8} = {C0000000-1111-4444-8888-000000000001}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {290D2A3B-C467-414A-8B2A-097B1D5A2D22}

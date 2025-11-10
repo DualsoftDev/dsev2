@@ -2,6 +2,7 @@ namespace Ev2.Cpu.Runtime
 
 open System
 open Ev2.Cpu.Core
+open Ev2.Core.FS.IR
 
 // ═════════════════════════════════════════════════════════════════════
 // 메모리 제네릭 확장 (Generic Memory Extensions)

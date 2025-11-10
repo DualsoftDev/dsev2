@@ -12,8 +12,6 @@
     <Compile Include="Common\ValidationBase.fs" />
 
     <!-- Generic type system (from Ev2.Gen.FS) -->
-    <Compile Include="Core\TypeInterfaces.fs" />
-    <Compile Include="Core\Variables.fs" />
 
     <!-- DsRuntime core definitions -->
     <Compile Include="Core\Operators.Types.fs" />
@@ -60,5 +58,8 @@
     <!-- <Compile Include="Examples\GenericTypeSystemExample.fs" /> -->
 
     <!-- Archived monolithic core -->
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Ev2.Core\Ev2.Core.FS\Ev2.Core.FS.fsproj" />
   </ItemGroup>
 </Project>

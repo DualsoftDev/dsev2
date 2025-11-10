@@ -1,4 +1,4 @@
-namespace Ev2.Gen
+namespace Ev2.Core.FS.IR
 
 open System
 open System.Collections.Generic
