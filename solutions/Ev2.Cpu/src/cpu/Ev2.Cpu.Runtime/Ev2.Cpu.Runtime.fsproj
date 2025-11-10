@@ -30,6 +30,7 @@
     <!-- Memory Management                                         -->
     <!-- ════════════════════════════════════════════════════════ -->
     <Compile Include="Engine\Memory.fs" />
+    <Compile Include="Engine\MemoryExtensions.fs" />
     <Compile Include="Engine\MemoryPool.fs" />
 
     <!-- ════════════════════════════════════════════════════════ -->

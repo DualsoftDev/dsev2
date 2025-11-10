@@ -120,7 +120,7 @@ let ``Relay - 타이머 Relay`` () =
 
     // Set은 TON 함수 호출
     match relay.Set with
-    | Function("TON", [s; _; Const(d, DsDataType.TInt)]) ->
+    | Function("TON", [s; _; Const(d, t)]) when t = typeof<int> ->
         s |> should equal start
         unbox d |> should equal delay
     | _ -> failwith "Expected TON function for set"

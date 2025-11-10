@@ -14,12 +14,12 @@ open Ev2.Cpu.Generation.Make.ProgramGen
 let ``ExpressionGen - 상수와 연산 생성`` () =
     let boolValue = boolExpr true
     match boolValue with
-    | Const(v, DsDataType.TBool) -> unbox<bool> v |> should equal true
+    | Const(v, t) when t = typeof<bool> -> unbox<bool> v |> should equal true
     | _ -> failwith "Expected boolean constant"
 
     let addExpr = add (intExpr 1) (intExpr 2)
     match addExpr with
-    | Binary(DsOp.Add, Const(l, DsDataType.TInt), Const(r, DsDataType.TInt)) ->
+    | Binary(DsOp.Add, Const(l, t1), Const(r, t2)) when t1 = typeof<int> && t2 = typeof<int> ->
         unbox<int> l |> should equal 1
         unbox<int> r |> should equal 2
     | _ -> failwith "Expected integer addition"
@@ -29,10 +29,10 @@ let ``ExpressionGen - 상수와 연산 생성`` () =
     | Function("TON", [enable; name; preset]) ->
         enable |> should equal (boolVar "start")
         match name with
-        | Const(v, DsDataType.TString) -> unbox<string> v |> should equal "Timer1"
+        | Const(v, t) when t = typeof<string> -> unbox<string> v |> should equal "Timer1"
         | _ -> failwith "Expected string timer name"
         match preset with
-        | Const(v, DsDataType.TInt) -> unbox<int> v |> should equal 500
+        | Const(v, t) when t = typeof<int> -> unbox<int> v |> should equal 500
         | _ -> failwith "Expected integer preset"
     | _ -> failwith "Expected TON function call"
 
@@ -59,7 +59,7 @@ let ``StatementGen - 래치와 시퀀스 스텝`` () =
     | _ -> failwith "Expected Assign statement"
 
     let actions = [
-        assignAt 0 "StepFlag" DsDataType.TBool (boolExpr true)
+        assignAt 0 "StepFlag" typeof<bool> (boolExpr true)
         whenAt 5 (boolVar "condition") (Function("NOP", []))
     ]
     let result = sequenceStep 1 (boolVar "advance") 2 "State" actions
@@ -67,10 +67,10 @@ let ``StatementGen - 래치와 시퀀스 스텝`` () =
     result.Length |> should equal (actions.Length + 1)
     let advanceCommand = List.last result
     match advanceCommand with
-    | Command(0, Binary(DsOp.And, guard, cond), Function("MOV", [Const(next, DsDataType.TInt); Terminal(target)])) ->
+    | Command(0, Binary(DsOp.And, guard, cond), Function("MOV", [Const(next, t1); Terminal(target)])) when t1 = typeof<int> ->
         cond |> should equal (boolVar "advance")
         match guard with
-        | Binary(DsOp.Eq, Terminal(stateVar), Const(step, DsDataType.TInt)) ->
+        | Binary(DsOp.Eq, Terminal(stateVar), Const(step, t2)) when t2 = typeof<int> ->
             stateVar |> should equal (DsTag.Int "State")
             unbox<int> step |> should equal 1
         | _ -> failwith "Expected guard expression"
@@ -81,14 +81,14 @@ let ``StatementGen - 래치와 시퀀스 스텝`` () =
 [<Fact>]
 let ``ProgramGen - ProgramBuilder 구성`` () =
     let builder = ProgramBuilder("Unit")
-    builder.AddInput("Start", DsDataType.TBool)
-    builder.AddOutput("Ready", DsDataType.TBool)
-    builder.AddLocal("Counter", DsDataType.TInt)
+    builder.AddInput("Start", typeof<bool>)
+    builder.AddOutput("Ready", typeof<bool>)
+    builder.AddLocal("Counter", typeof<int>)
 
     let stmt1 = assign 5 (DsTag.Bool "Ready") (boolExpr true)
     builder.AddStatement(stmt1)
 
-    let stmt2 = assignAt 0 "InterlockOk" DsDataType.TBool (boolExpr false)
+    let stmt2 = assignAt 0 "InterlockOk" typeof<bool> (boolExpr false)
     let stmt3 = whenAt 3 (boolVar "Start") (Function("NOP", []))
     builder.AddStatements([stmt2; stmt3])
 
@@ -97,9 +97,9 @@ let ``ProgramGen - ProgramBuilder 구성`` () =
 
     let program = builder.Build()
     program.Name |> should equal "Unit"
-    program.Inputs |> should equal [ "Start", DsDataType.TBool ]
-    program.Outputs |> should equal [ "Ready", DsDataType.TBool ]
-    program.Locals |> should equal [ "Counter", DsDataType.TInt ]
+    program.Inputs |> should equal [ "Start", typeof<bool> ]
+    program.Outputs |> should equal [ "Ready", typeof<bool> ]
+    program.Locals |> should equal [ "Counter", typeof<int> ]
 
     program.Body.Length |> should equal 4
 
@@ -110,7 +110,7 @@ let ``ProgramGen - ProgramBuilder 구성`` () =
     | Assign(_, tag, expr) ->
         tag |> should equal (DsTag.Bool "Lamp")
         match expr with
-        | Binary(DsOp.And, Terminal(source), Unary(DsOp.Not, Const(resetVal, DsDataType.TBool))) ->
+        | Binary(DsOp.And, Terminal(source), Unary(DsOp.Not, Const(resetVal, t))) when t = typeof<bool> ->
             source |> should equal (DsTag.Bool "Start")
             unbox<bool> resetVal |> should equal false
         | _ -> failwith "Expected relay expression"
@@ -119,30 +119,30 @@ let ``ProgramGen - ProgramBuilder 구성`` () =
 [<Fact>]
 let ``ProgramGen - 상태 기계 프로그램`` () =
     let states = [
-        "Idle", [ assignAuto "IdleOutput" DsDataType.TBool (boolExpr true) ]
-        "Run",  [ assignAuto "RunOutput" DsDataType.TBool (boolExpr false) ]
+        "Idle", [ assignAuto "IdleOutput" typeof<bool> (boolExpr true) ]
+        "Run",  [ assignAuto "RunOutput" typeof<bool> (boolExpr false) ]
     ]
 
     let program = createStateMachineProgram "Machine" states
 
     program.Locals |> should equal [
-        "State", DsDataType.TInt
-        "NextState", DsDataType.TInt
-        "Idle_Active", DsDataType.TBool
-        "Run_Active", DsDataType.TBool
+        "State", typeof<int>
+        "NextState", typeof<int>
+        "Idle_Active", typeof<bool>
+        "Run_Active", typeof<bool>
     ]
 
     program.Body.Length |> should equal 5
 
     match program.Body.Head with
-    | Assign(0, tag, Binary(DsOp.Eq, Terminal(stateVar), Const(idx, DsDataType.TInt))) ->
+    | Assign(0, tag, Binary(DsOp.Eq, Terminal(stateVar), Const(idx, t))) when t = typeof<int> ->
         tag |> should equal (DsTag.Bool "Idle_Active")
         stateVar |> should equal (DsTag.Int "State")
         unbox<int> idx |> should equal 0
     | _ -> failwith "Expected Idle state activation"
 
     match List.item 2 program.Body with
-    | Assign(0, tag, Binary(DsOp.Eq, Terminal(stateVar), Const(idx, DsDataType.TInt))) ->
+    | Assign(0, tag, Binary(DsOp.Eq, Terminal(stateVar), Const(idx, t))) when t = typeof<int> ->
         tag |> should equal (DsTag.Bool "Run_Active")
         stateVar |> should equal (DsTag.Int "State")
         unbox<int> idx |> should equal 1

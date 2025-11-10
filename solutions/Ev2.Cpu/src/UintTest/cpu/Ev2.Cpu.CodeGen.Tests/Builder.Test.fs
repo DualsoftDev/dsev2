@@ -37,7 +37,7 @@ let ``Generation - CounterDown 및 Latch 변환`` () =
     relay.Tag |> should equal tag
 
     match relay.Set with
-    | Binary(DsOp.And, cond, Function("CTD", [Const(name, DsDataType.TString); downArg; loadArg; presetArg])) ->
+    | Binary(DsOp.And, cond, Function("CTD", [Const(name, t); downArg; loadArg; presetArg])) when t = typeof<string> ->
         cond |> should equal down
         // CTD now has 4-arg form: [name; down; load; preset]
         downArg |> should equal down
@@ -66,7 +66,7 @@ let ``CodeBuilder - 자동 스텝 배치`` () =
     let builder = CodeBuilder()
 
     let mkAssign name value =
-        Assign(0, DsTag.Bool name, Const(box value, DsDataType.TBool))
+        Assign(0, DsTag.Bool name, Const(box value, typeof<bool>))
 
     builder.Add(mkAssign "Step1" true)
     builder.AddRange([mkAssign "Step2" false; mkAssign "Step3" true])

@@ -10,17 +10,17 @@ open Ev2.Cpu.Generation.Core
 module ExpressionGen =
 
     /// 기본 표현식 생성자들
-    let boolExpr value = Const(box value, DsDataType.TBool)
-    let intExpr value = Const(box value, DsDataType.TInt)
-    let doubleExpr value = Const(box value, DsDataType.TDouble)
-    let stringExpr value = Const(box value, DsDataType.TString)
+    let boolExpr value = Const(box value, typeof<bool>)
+    let intExpr value = Const(box value, typeof<int>)
+    let doubleExpr value = Const(box value, typeof<double>)
+    let stringExpr value = Const(box value, typeof<string>)
 
     /// 변수 참조 생성
     let varRef name dataType = Terminal(DsTag.Create(name, dataType))
-    let boolVar name = varRef name DsDataType.TBool
-    let intVar name = varRef name DsDataType.TInt
-    let doubleVar name = varRef name DsDataType.TDouble
-    let stringVar name = varRef name DsDataType.TString
+    let boolVar name = varRef name typeof<bool>
+    let intVar name = varRef name typeof<int>
+    let doubleVar name = varRef name typeof<double>
+    let stringVar name = varRef name typeof<string>
 
     /// 이진 연산자
     let add left right = Binary(DsOp.Add, left, right)

@@ -58,7 +58,7 @@ type ExprExt =
                 sprintf "Const(%A:%A)" value dtype
             
             | Variable(tag) ->
-                sprintf "Var(%s:%A)" tag.Name tag.DsDataType
+                sprintf "Var(%s:%A)" tag.Name tag.StructType
             
             | UnaryOp(op, operand) ->
                 sprintf "UnaryOp(%A, %s)" op (toDebugRec operand)

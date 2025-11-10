@@ -52,7 +52,7 @@ module LoopEngine =
             | :? float as f ->
                 if f > float Int32.MaxValue || f < float Int32.MinValue then
                     raise (ArgumentException($"FOR loop start value {f} exceeds Int32 range"))
-                TypeConverter.toInt (box f)  // IEC 61131-3 truncation toward zero
+                TypeHelpers.toInt (box f)  // IEC 61131-3 truncation toward zero
             | v -> raise (ArgumentException($"FOR loop start value must be numeric, got {v.GetType().Name}"))
 
         let endValue =
@@ -61,7 +61,7 @@ module LoopEngine =
             | :? float as f ->
                 if f > float Int32.MaxValue || f < float Int32.MinValue then
                     raise (ArgumentException($"FOR loop end value {f} exceeds Int32 range"))
-                TypeConverter.toInt (box f)  // IEC 61131-3 truncation toward zero
+                TypeHelpers.toInt (box f)  // IEC 61131-3 truncation toward zero
             | v -> raise (ArgumentException($"FOR loop end value must be numeric, got {v.GetType().Name}"))
 
         let stepValue =
@@ -72,7 +72,7 @@ module LoopEngine =
                 | :? float as f ->
                     if f > float Int32.MaxValue || f < float Int32.MinValue then
                         raise (ArgumentException($"FOR loop step value {f} exceeds Int32 range"))
-                    TypeConverter.toInt (box f)  // IEC 61131-3 truncation toward zero
+                    TypeHelpers.toInt (box f)  // IEC 61131-3 truncation toward zero
                 | v -> raise (ArgumentException($"FOR loop step value must be numeric, got {v.GetType().Name}"))
             | None -> 1
 

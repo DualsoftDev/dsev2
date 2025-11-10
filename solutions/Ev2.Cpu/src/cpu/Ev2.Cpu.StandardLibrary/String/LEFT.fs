@@ -24,11 +24,11 @@ module LEFT =
         let builder = FCBuilder("LEFT")
 
         // 입력
-        builder.AddInput("IN", DsDataType.TString)      // 입력 문자열
-        builder.AddInput("L", DsDataType.TInt)          // 추출 길이
+        builder.AddInput("IN", typeof<string>)      // 입력 문자열
+        builder.AddInput("L", typeof<int>)          // 추출 길이
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TString)
+        builder.AddOutput("OUT", typeof<string>)
 
         // 로직: OUT = LEFT(IN, L)
         let inStr = Terminal(DsTag.String("IN"))

@@ -27,7 +27,7 @@ module UserFBGen =
     /// 입력 파라미터 생성
     /// </summary>
     /// <param name="name">파라미터 이름</param>
-    /// <param name="dataType">데이터 타입 (TBool, TInt, TDouble, TString)</param>
+    /// <param name="dataType">데이터 타입 (typeof<bool>, typeof<int>, typeof<double>, typeof<string>)</param>
     /// <returns>입력 방향의 함수 파라미터</returns>
     let inputParam name dataType =
         { Name = name
@@ -80,8 +80,8 @@ module UserFBGen =
     /// <code>
     /// // 온도 변환 함수 (섭씨 → 화씨)
     /// let builder = FCBuilder("CelsiusToFahrenheit")
-    /// builder.AddInput("celsius", DsDataType.TDouble)
-    /// builder.AddOutput("fahrenheit", DsDataType.TDouble)
+    /// builder.AddInput("celsius", typeof<double>)
+    /// builder.AddOutput("fahrenheit", typeof<double>)
     ///
     /// // 본문: fahrenheit = celsius * 1.8 + 32
     /// let body =
@@ -98,7 +98,7 @@ module UserFBGen =
     type FCBuilder(name: string) =
         let mutable inputs = []
         let mutable outputs = []
-        let mutable body = Ev2.Cpu.Core.Expression.Const(box 0, DsDataType.TInt) // 기본값
+        let mutable body = Ev2.Cpu.Core.Expression.Const(box 0, typeof<int>) // 기본값
         let mutable description = None
 
         let toCoreDirection = function
@@ -107,15 +107,15 @@ module UserFBGen =
             | ParamDirection.InOut -> Ev2.Cpu.Core.UserDefined.ParamDirection.InOut
 
         /// 입력 파라미터 추가
-        member _.AddInput(name: string, dataType: DsDataType) =
+        member _.AddInput(name: string, dataType: Type) =
             inputs <- inputParam name dataType :: inputs
 
         /// 입력 파라미터 추가 (기본값 포함)
-        member _.AddInputWithDefault(name: string, dataType: DsDataType, defaultValue: obj) =
+        member _.AddInputWithDefault(name: string, dataType: Type, defaultValue: obj) =
             inputs <- inputParamWithDefault name dataType defaultValue :: inputs
 
         /// 출력 추가
-        member _.AddOutput(name: string, dataType: DsDataType) =
+        member _.AddOutput(name: string, dataType: Type) =
             outputs <- outputParam name dataType :: outputs
 
         /// 본문 설정 (수식)
@@ -195,31 +195,31 @@ module UserFBGen =
         let mutable description = None
 
         /// 입력 파라미터 추가
-        member _.AddInput(name: string, dataType: DsDataType) =
+        member _.AddInput(name: string, dataType: Type) =
             inputs <- inputParam name dataType :: inputs
 
         /// 입력 파라미터 추가 (기본값 포함)
-        member _.AddInputWithDefault(name: string, dataType: DsDataType, defaultValue: obj) =
+        member _.AddInputWithDefault(name: string, dataType: Type, defaultValue: obj) =
             inputs <- inputParamWithDefault name dataType defaultValue :: inputs
 
         /// 출력 파라미터 추가
-        member _.AddOutput(name: string, dataType: DsDataType) =
+        member _.AddOutput(name: string, dataType: Type) =
             outputs <- outputParam name dataType :: outputs
 
         /// InOut 파라미터 추가
-        member _.AddInOut(name: string, dataType: DsDataType) =
+        member _.AddInOut(name: string, dataType: Type) =
             inouts <- inoutParam name dataType :: inouts
 
         /// Static 변수 추가 (상태 저장)
-        member _.AddStatic(name: string, dataType: DsDataType) =
+        member _.AddStatic(name: string, dataType: Type) =
             statics <- (name, dataType, None) :: statics
 
         /// Static 변수 추가 (초기값 포함)
-        member _.AddStaticWithInit(name: string, dataType: DsDataType, initValue: obj) =
+        member _.AddStaticWithInit(name: string, dataType: Type, initValue: obj) =
             statics <- (name, dataType, Some initValue) :: statics
 
         /// Temp 변수 추가 (임시)
-        member _.AddTemp(name: string, dataType: DsDataType) =
+        member _.AddTemp(name: string, dataType: Type) =
             temps <- (name, dataType) :: temps
 
         /// 명령문 추가
@@ -396,8 +396,8 @@ module UserFBGen =
     /// 온도 변환 FC (섭씨 -> 화씨)
     let createCelsiusToFahrenheitFC() =
         let builder = FCBuilder("CelsiusToFahrenheit")
-        builder.AddInput("celsius", DsDataType.TDouble)
-        builder.AddOutput("fahrenheit", DsDataType.TDouble)
+        builder.AddInput("celsius", typeof<double>)
+        builder.AddOutput("fahrenheit", typeof<double>)
 
         // F = C * 1.8 + 32
         let celsius = Terminal(DsTag.Double("celsius"))
@@ -410,10 +410,10 @@ module UserFBGen =
     /// 선형 스케일링 FC (0-100% -> Min-Max)
     let createLinearScaleFC() =
         let builder = FCBuilder("LinearScale")
-        builder.AddInput("input", DsDataType.TDouble)    // 0-100
-        builder.AddInput("minOut", DsDataType.TDouble)   // 출력 최소값
-        builder.AddInput("maxOut", DsDataType.TDouble)   // 출력 최대값
-        builder.AddOutput("output", DsDataType.TDouble)
+        builder.AddInput("input", typeof<double>)    // 0-100
+        builder.AddInput("minOut", typeof<double>)   // 출력 최소값
+        builder.AddInput("maxOut", typeof<double>)   // 출력 최대값
+        builder.AddOutput("output", typeof<double>)
 
         // output = minOut + (input / 100.0) * (maxOut - minOut)
         let input = Terminal(DsTag.Double("input"))
@@ -433,15 +433,15 @@ module UserFBGen =
         let builder = FBBuilder("Hysteresis")
 
         // 입력
-        builder.AddInput("input", DsDataType.TDouble)       // 입력값
-        builder.AddInput("highLimit", DsDataType.TDouble)   // 상한
-        builder.AddInput("lowLimit", DsDataType.TDouble)    // 하한
+        builder.AddInput("input", typeof<double>)       // 입력값
+        builder.AddInput("highLimit", typeof<double>)   // 상한
+        builder.AddInput("lowLimit", typeof<double>)    // 하한
 
         // 출력
-        builder.AddOutput("output", DsDataType.TBool)       // ON/OFF
+        builder.AddOutput("output", typeof<bool>)       // ON/OFF
 
         // 내부 상태
-        builder.AddStaticWithInit("state", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("state", typeof<bool>, box false)
 
         // 로직: input > highLimit이면 OFF, input < lowLimit이면 ON
         let input = Terminal(DsTag.Double("input"))
@@ -460,7 +460,7 @@ module UserFBGen =
         builder.AddRelay(relay)
 
         // 출력에 상태 복사
-        builder.AddStatement(assignAuto "output" DsDataType.TBool state)
+        builder.AddStatement(assignAuto "output" typeof<bool> state)
 
         builder.SetDescription("히스테리시스 제어 (상한/하한)")
         builder.Build()
@@ -470,20 +470,20 @@ module UserFBGen =
         let builder = FBBuilder("MotorControl")
 
         // 입력
-        builder.AddInput("start", DsDataType.TBool)          // 시작 명령
-        builder.AddInput("stop", DsDataType.TBool)           // 정지 명령
-        builder.AddInput("emergency", DsDataType.TBool)      // 비상정지
-        builder.AddInput("overload", DsDataType.TBool)       // 과부하
+        builder.AddInput("start", typeof<bool>)          // 시작 명령
+        builder.AddInput("stop", typeof<bool>)           // 정지 명령
+        builder.AddInput("emergency", typeof<bool>)      // 비상정지
+        builder.AddInput("overload", typeof<bool>)       // 과부하
 
         // 출력
-        builder.AddOutput("running", DsDataType.TBool)       // 운전 중
-        builder.AddOutput("fault", DsDataType.TBool)         // 고장
-        builder.AddOutput("runTime", DsDataType.TInt)        // 운전 시간 (ms)
+        builder.AddOutput("running", typeof<bool>)       // 운전 중
+        builder.AddOutput("fault", typeof<bool>)         // 고장
+        builder.AddOutput("runTime", typeof<int>)        // 운전 시간 (ms)
 
         // 내부 상태
-        builder.AddStaticWithInit("motorState", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("faultState", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("timer", DsDataType.TInt, box 0)
+        builder.AddStaticWithInit("motorState", typeof<bool>, box false)
+        builder.AddStaticWithInit("faultState", typeof<bool>, box false)
+        builder.AddStaticWithInit("timer", typeof<int>, box 0)
 
         // 안전 조건 체크
         let emergency = Terminal(DsTag.Bool("emergency"))
@@ -522,9 +522,9 @@ module UserFBGen =
         builder.AddStatement(timerIncrement)
 
         // 출력 설정
-        builder.AddStatement(assignAuto "running" DsDataType.TBool motorState)
-        builder.AddStatement(assignAuto "fault" DsDataType.TBool faultState)
-        builder.AddStatement(assignAuto "runTime" DsDataType.TInt (Terminal(DsTag.Int("timer"))))
+        builder.AddStatement(assignAuto "running" typeof<bool> motorState)
+        builder.AddStatement(assignAuto "fault" typeof<bool> faultState)
+        builder.AddStatement(assignAuto "runTime" typeof<int> (Terminal(DsTag.Int("timer"))))
 
         builder.SetDescription("모터 제어 (시작/정지/인터록)")
         builder.Build()
@@ -534,20 +534,20 @@ module UserFBGen =
         let builder = FBBuilder("Sequence3Step")
 
         // 입력
-        builder.AddInput("start", DsDataType.TBool)
-        builder.AddInput("reset", DsDataType.TBool)
-        builder.AddInput("step1Done", DsDataType.TBool)
-        builder.AddInput("step2Done", DsDataType.TBool)
-        builder.AddInput("step3Done", DsDataType.TBool)
+        builder.AddInput("start", typeof<bool>)
+        builder.AddInput("reset", typeof<bool>)
+        builder.AddInput("step1Done", typeof<bool>)
+        builder.AddInput("step2Done", typeof<bool>)
+        builder.AddInput("step3Done", typeof<bool>)
 
         // 출력
-        builder.AddOutput("step1Active", DsDataType.TBool)
-        builder.AddOutput("step2Active", DsDataType.TBool)
-        builder.AddOutput("step3Active", DsDataType.TBool)
-        builder.AddOutput("complete", DsDataType.TBool)
+        builder.AddOutput("step1Active", typeof<bool>)
+        builder.AddOutput("step2Active", typeof<bool>)
+        builder.AddOutput("step3Active", typeof<bool>)
+        builder.AddOutput("complete", typeof<bool>)
 
         // 내부 상태
-        builder.AddStaticWithInit("currentStep", DsDataType.TInt, box 0)
+        builder.AddStaticWithInit("currentStep", typeof<int>, box 0)
 
         let step = Terminal(DsTag.Int("currentStep"))
         let start = Terminal(DsTag.Bool("start"))
@@ -577,10 +577,10 @@ module UserFBGen =
             (mov (intExpr 0) (DsTag.Int("currentStep"))))
 
         // 출력 설정
-        builder.AddStatement(assignAuto "step1Active" DsDataType.TBool (eq step (intExpr 1)))
-        builder.AddStatement(assignAuto "step2Active" DsDataType.TBool (eq step (intExpr 2)))
-        builder.AddStatement(assignAuto "step3Active" DsDataType.TBool (eq step (intExpr 3)))
-        builder.AddStatement(assignAuto "complete" DsDataType.TBool
+        builder.AddStatement(assignAuto "step1Active" typeof<bool> (eq step (intExpr 1)))
+        builder.AddStatement(assignAuto "step2Active" typeof<bool> (eq step (intExpr 2)))
+        builder.AddStatement(assignAuto "step3Active" typeof<bool> (eq step (intExpr 3)))
+        builder.AddStatement(assignAuto "complete" typeof<bool>
             (and' (eq step (intExpr 0)) (not' start)))
 
         builder.SetDescription("3단계 시퀀스 제어")

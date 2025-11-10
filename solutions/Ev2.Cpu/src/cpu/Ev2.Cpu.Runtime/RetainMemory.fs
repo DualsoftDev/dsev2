@@ -52,7 +52,7 @@ type RetainVariable = {
     Name: string
     /// 메모리 영역 (Local, Internal, etc.)
     Area: string
-    /// 데이터 타입 (TInt, TBool, etc.)
+    /// 데이터 타입 (typeof<int>, typeof<bool>, etc.)
     DataType: string
     /// 직렬화된 값 (JSON 문자열)
     ValueJson: string
@@ -63,7 +63,7 @@ type RetainVariable = {
 type FBStaticVariable = {
     /// 변수 이름
     Name: string
-    /// 데이터 타입 (TInt, TBool, etc.)
+    /// 데이터 타입 (typeof<int>, typeof<bool>, etc.)
     DataType: string
     /// 직렬화된 값 (JSON 문자열)
     ValueJson: string
@@ -248,33 +248,33 @@ module RetainValueSerializer =
         opts
 
     /// 객체를 JSON 문자열로 직렬화
-    let serialize (value: obj) (dataType: DsDataType) : string =
+    let serialize (value: obj) (dataType: Type) : string =
         if isNull value then
             "null"
         else
-            match dataType with
-            | DsDataType.TBool -> JsonSerializer.Serialize(unbox<bool> value, jsonOptions)
-            | DsDataType.TInt -> JsonSerializer.Serialize(unbox<int> value, jsonOptions)
-            | DsDataType.TDouble -> JsonSerializer.Serialize(unbox<double> value, jsonOptions)
-            | DsDataType.TString -> JsonSerializer.Serialize(unbox<string> value, jsonOptions)
+            if dataType = typeof<bool> then JsonSerializer.Serialize(unbox<bool> value, jsonOptions)
+            elif dataType = typeof<int> then JsonSerializer.Serialize(unbox<int> value, jsonOptions)
+            elif dataType = typeof<double> then JsonSerializer.Serialize(unbox<double> value, jsonOptions)
+            elif dataType = typeof<string> then JsonSerializer.Serialize(unbox<string> value, jsonOptions)
+            else invalidArg "dataType" (sprintf "Unsupported type: %s" dataType.FullName)
 
     /// JSON 문자열을 객체로 역직렬화
-    let deserialize (json: string) (dataType: DsDataType) : obj =
+    let deserialize (json: string) (dataType: Type) : obj =
         if json = "null" then
             null
         else
             try
-                match dataType with
-                | DsDataType.TBool -> box (JsonSerializer.Deserialize<bool>(json, jsonOptions))
-                | DsDataType.TInt -> box (JsonSerializer.Deserialize<int>(json, jsonOptions))
-                | DsDataType.TDouble -> box (JsonSerializer.Deserialize<double>(json, jsonOptions))
-                | DsDataType.TString -> box (JsonSerializer.Deserialize<string>(json, jsonOptions))
+                if dataType = typeof<bool> then box (JsonSerializer.Deserialize<bool>(json, jsonOptions))
+                elif dataType = typeof<int> then box (JsonSerializer.Deserialize<int>(json, jsonOptions))
+                elif dataType = typeof<double> then box (JsonSerializer.Deserialize<double>(json, jsonOptions))
+                elif dataType = typeof<string> then box (JsonSerializer.Deserialize<string>(json, jsonOptions))
+                else invalidArg "dataType" (sprintf "Unsupported type: %s" dataType.FullName)
             with
             | ex ->
                 // 역직렬화 실패 시 경고 로깅 후 기본값 반환
-                eprintfn "WARNING: Failed to deserialize retain value (type=%A, json='%s'): %s. Using default value."
-                    dataType json ex.Message
-                dataType.DefaultValue
+                eprintfn "WARNING: Failed to deserialize retain value (type=%s, json='%s'): %s. Using default value."
+                    dataType.FullName json ex.Message
+                TypeHelpers.getDefaultValue dataType
 
 /// 기본 리테인 저장소 경로
 module RetainDefaults =

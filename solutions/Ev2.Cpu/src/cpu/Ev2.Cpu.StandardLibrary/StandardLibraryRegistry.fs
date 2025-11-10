@@ -404,7 +404,7 @@ module StandardLibraryRegistry =
 let builder = FBBuilder("MyProgram")
 let rtrig = R_TRIG.create() |> Result.get
 
-builder.AddInput("Sensor", DsDataType.TBool)
+builder.AddInput("Sensor", typeof<bool>)
 // Use R_TRIG to detect sensor activation
 """
         | "TON" -> Some """
@@ -413,8 +413,8 @@ let builder = FBBuilder("DelayControl")
 let ton = TON.create() |> Result.get
 
 // Start motor after 3 second delay
-builder.AddInput("StartButton", DsDataType.TBool)
-builder.AddOutput("MotorOn", DsDataType.TBool)
+builder.AddInput("StartButton", typeof<bool>)
+builder.AddOutput("MotorOn", typeof<bool>)
 // TON with PT=3000 (3 seconds)
 """
         | "CTU" -> Some """
@@ -423,7 +423,7 @@ let builder = FBBuilder("ProductCounter")
 let ctu = CTU.create() |> Result.get
 
 // Count products up to 100
-builder.AddInput("ProductSensor", DsDataType.TBool)
+builder.AddInput("ProductSensor", typeof<bool>)
 // CTU with PV=100
 """
         | _ -> None

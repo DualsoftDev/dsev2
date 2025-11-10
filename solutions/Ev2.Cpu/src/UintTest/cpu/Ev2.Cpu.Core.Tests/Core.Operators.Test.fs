@@ -212,47 +212,47 @@ type CoreOperatorsTest() =
     [<Fact>]
     member _.``Operators_validateForTypes_논리_연산자_Bool_타입``() =
         // Bool 타입에 대한 논리 연산자 검증
-        DsOp.validateForTypes And (Some TBool) (Some TBool) |> should equal (Some TBool)
-        DsOp.validateForTypes Or (Some TBool) (Some TBool) |> should equal (Some TBool)
+        DsOp.validateForTypes And (Some typeof<bool>) (Some typeof<bool>) |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Or (Some typeof<bool>) (Some typeof<bool>) |> should equal (Some typeof<bool>)
         
         // 단항 논리 연산자
-        DsOp.validateForTypes Not (Some TBool) None |> should equal (Some TBool)
+        DsOp.validateForTypes Not (Some typeof<bool>) None |> should equal (Some typeof<bool>)
     
     [<Fact>]
     member _.``Operators_validateForTypes_논리_연산자_타입_오류``() =
         // Bool이 아닌 타입에 논리 연산자 적용시 None
-        DsOp.validateForTypes And (Some TInt) (Some TInt) |> should equal None
-        DsOp.validateForTypes Or (Some TDouble) (Some TDouble) |> should equal None
-        DsOp.validateForTypes Not (Some TString) None |> should equal None
+        DsOp.validateForTypes And (Some typeof<int>) (Some typeof<int>) |> should equal None
+        DsOp.validateForTypes Or (Some typeof<double>) (Some typeof<double>) |> should equal None
+        DsOp.validateForTypes Not (Some typeof<string>) None |> should equal None
     
     [<Fact>]
     member _.``Operators_validateForTypes_비교_연산자_결과_Bool``() =
         // 모든 비교 연산자는 Bool 반환
-        DsOp.validateForTypes Eq (Some TInt) (Some TInt) |> should equal (Some TBool)
-        DsOp.validateForTypes Ne (Some TDouble) (Some TDouble) |> should equal (Some TBool)
-        DsOp.validateForTypes Gt (Some TInt) (Some TDouble) |> should equal (Some TBool)
-        DsOp.validateForTypes Ge (Some TString) (Some TString) |> should equal (Some TBool)
-        DsOp.validateForTypes Lt (Some TBool) (Some TBool) |> should equal None
-        DsOp.validateForTypes Le (Some TInt) (Some TInt) |> should equal (Some TBool)
+        DsOp.validateForTypes Eq (Some typeof<int>) (Some typeof<int>) |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Ne (Some typeof<double>) (Some typeof<double>) |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Gt (Some typeof<int>) (Some typeof<double>) |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Ge (Some typeof<string>) (Some typeof<string>) |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Lt (Some typeof<bool>) (Some typeof<bool>) |> should equal None
+        DsOp.validateForTypes Le (Some typeof<int>) (Some typeof<int>) |> should equal (Some typeof<bool>)
     
     [<Fact>]
     member _.``Operators_validateForTypes_산술_연산자_수치_타입``() =
         // Int + Int -> Int
-        DsOp.validateForTypes Add (Some TInt) (Some TInt) |> should equal (Some TInt)
+        DsOp.validateForTypes Add (Some typeof<int>) (Some typeof<int>) |> should equal (Some typeof<int>)
         
         // Double + Double -> Double
-        DsOp.validateForTypes Mul (Some TDouble) (Some TDouble) |> should equal (Some TDouble)
+        DsOp.validateForTypes Mul (Some typeof<double>) (Some typeof<double>) |> should equal (Some typeof<double>)
         
         // Int + Double -> Double (타입 승격)
-        DsOp.validateForTypes Add (Some TInt) (Some TDouble) |> should equal (Some TDouble)
-        DsOp.validateForTypes Sub (Some TDouble) (Some TInt) |> should equal (Some TDouble)
+        DsOp.validateForTypes Add (Some typeof<int>) (Some typeof<double>) |> should equal (Some typeof<double>)
+        DsOp.validateForTypes Sub (Some typeof<double>) (Some typeof<int>) |> should equal (Some typeof<double>)
         
         // 모든 산술 연산자 테스트
         let arithmeticOps = [Add; Sub; Mul; Div; Mod]
         arithmeticOps |> List.iter (fun op ->
-            DsOp.validateForTypes op (Some TInt) (Some TInt) |> should equal (Some TInt)
-            DsOp.validateForTypes op (Some TDouble) (Some TDouble) |> should equal (Some TDouble)
-            DsOp.validateForTypes op (Some TInt) (Some TDouble) |> should equal (Some TDouble)
+            DsOp.validateForTypes op (Some typeof<int>) (Some typeof<int>) |> should equal (Some typeof<int>)
+            DsOp.validateForTypes op (Some typeof<double>) (Some typeof<double>) |> should equal (Some typeof<double>)
+            DsOp.validateForTypes op (Some typeof<int>) (Some typeof<double>) |> should equal (Some typeof<double>)
         )
     
     [<Fact>]
@@ -260,38 +260,38 @@ type CoreOperatorsTest() =
         // Bool, String에는 산술 연산 불가
         let arithmeticOps = [Add; Sub; Mul; Div; Mod]
         arithmeticOps |> List.iter (fun op ->
-            DsOp.validateForTypes op (Some TBool) (Some TBool) |> should equal None
-            DsOp.validateForTypes op (Some TString) (Some TString) |> should equal None
-            DsOp.validateForTypes op (Some TInt) (Some TString) |> should equal None
+            DsOp.validateForTypes op (Some typeof<bool>) (Some typeof<bool>) |> should equal None
+            DsOp.validateForTypes op (Some typeof<string>) (Some typeof<string>) |> should equal None
+            DsOp.validateForTypes op (Some typeof<int>) (Some typeof<string>) |> should equal None
         )
     
     [<Fact>]
     member _.``Operators_validateForTypes_에지_연산자_Bool_타입``() =
         // 에지 연산자는 Bool 타입에만 적용 가능하고 Bool 반환
-        DsOp.validateForTypes Rising (Some TBool) None |> should equal (Some TBool)
-        DsOp.validateForTypes Falling (Some TBool) None |> should equal (Some TBool)
+        DsOp.validateForTypes Rising (Some typeof<bool>) None |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Falling (Some typeof<bool>) None |> should equal (Some typeof<bool>)
         
         // Bool이 아닌 타입에는 적용 불가
-        DsOp.validateForTypes Rising (Some TInt) None |> should equal None
-        DsOp.validateForTypes Falling (Some TDouble) None |> should equal None
+        DsOp.validateForTypes Rising (Some typeof<int>) None |> should equal None
+        DsOp.validateForTypes Falling (Some typeof<double>) None |> should equal None
     
     [<Fact>]
     member _.``Operators_validateForTypes_이동_연산자``() =
         // 이동 연산자는 모든 타입에 적용 가능하며 우변의 타입을 반환
-        DsOp.validateForTypes Move (Some TInt) (Some TInt) |> should equal (Some TInt)
-        DsOp.validateForTypes Move (Some TBool) (Some TBool) |> should equal (Some TBool)
-        DsOp.validateForTypes Move (Some TDouble) (Some TDouble) |> should equal (Some TDouble)
-        DsOp.validateForTypes Move (Some TString) (Some TString) |> should equal (Some TString)
+        DsOp.validateForTypes Move (Some typeof<int>) (Some typeof<int>) |> should equal (Some typeof<int>)
+        DsOp.validateForTypes Move (Some typeof<bool>) (Some typeof<bool>) |> should equal (Some typeof<bool>)
+        DsOp.validateForTypes Move (Some typeof<double>) (Some typeof<double>) |> should equal (Some typeof<double>)
+        DsOp.validateForTypes Move (Some typeof<string>) (Some typeof<string>) |> should equal (Some typeof<string>)
         
         // 타입 변환도 허용 (우변 타입으로 결정)
-        DsOp.validateForTypes Move (Some TInt) (Some TDouble) |> should equal (Some TDouble)
-        DsOp.validateForTypes Move (Some TDouble) (Some TInt) |> should equal None
+        DsOp.validateForTypes Move (Some typeof<int>) (Some typeof<double>) |> should equal (Some typeof<double>)
+        DsOp.validateForTypes Move (Some typeof<double>) (Some typeof<int>) |> should equal None
     
     [<Fact>]
     member _.``Operators_validateForTypes_None_타입_처리``() =
         // 하나라도 타입이 None이면 결과도 None
-        DsOp.validateForTypes Add None (Some TInt) |> should equal None
-        DsOp.validateForTypes Add (Some TInt) None |> should equal None
+        DsOp.validateForTypes Add None (Some typeof<int>) |> should equal None
+        DsOp.validateForTypes Add (Some typeof<int>) None |> should equal None
         DsOp.validateForTypes Add None None |> should equal None
         
         // 단항 연산자의 경우
@@ -346,7 +346,7 @@ type CoreOperatorsTest() =
     [<Fact>]
     member _.``Operators_통합_시나리오_타입_검증_완전성``() =
         // 수치 타입 조합 테스트
-        let numericTypes = [TInt; TDouble]
+        let numericTypes = [typeof<int>; typeof<double>]
         let arithmeticOps = [Add; Sub; Mul; Div; Mod]
         
         // 모든 수치 타입 조합에 대해 산술 연산 검증
@@ -358,13 +358,13 @@ type CoreOperatorsTest() =
                     
                     // 결과 타입은 더 넓은 타입이어야 함
                     match leftType, rightType with
-                    | TInt, TInt -> result |> should equal (Some TInt)
-                    | TDouble, TDouble -> result |> should equal (Some TDouble)
-                    | TInt, TDouble | TDouble, TInt -> result |> should equal (Some TDouble)
+                    | t1, t2 when t1 = typeof<int> && t2 = typeof<int> -> result |> should equal (Some typeof<int>)
+                    | t1, t2 when t1 = typeof<double> && t2 = typeof<double> -> result |> should equal (Some typeof<double>)
+                    | t1, t2 when (t1 = typeof<int> && t2 = typeof<double>) || (t1 = typeof<double> && t2 = typeof<int>) -> result |> should equal (Some typeof<double>)
                     | _ -> ()
         
         // 모든 타입에 대해 비교 연산 검증
-        let allTypes = [TBool; TInt; TDouble; TString]
+        let allTypes = [typeof<bool>; typeof<int>; typeof<double>; typeof<string>]
         let comparisonOps = [Eq; Ne; Gt; Ge; Lt; Le]
     
         for leftType in allTypes do
@@ -372,17 +372,17 @@ type CoreOperatorsTest() =
                 for op in comparisonOps do
                     let result = DsOp.validateForTypes op (Some leftType) (Some rightType)
                 
-                    let expectedResult = 
+                    let expectedResult =
                         match op, leftType, rightType with
                         // Boolean 순서 비교는 불가 (Gt, Ge, Lt, Le)
-                        | (Gt | Ge | Lt | Le), TBool, TBool -> None
-                    
+                        | (Gt | Ge | Lt | Le), t1, t2 when t1 = typeof<bool> && t2 = typeof<bool> -> None
+
                         // 같은 타입끼리 비교
-                        | _, t1, t2 when t1 = t2 -> Some TBool
-                    
+                        | _, t1, t2 when t1 = t2 -> Some typeof<bool>
+
                         // 숫자 타입 간 비교 (Int ↔ Double)
-                        | _, TInt, TDouble | _, TDouble, TInt -> Some TBool
-                    
+                        | _, t1, t2 when (t1 = typeof<int> && t2 = typeof<double>) || (t1 = typeof<double> && t2 = typeof<int>) -> Some typeof<bool>
+
                         // 다른 타입 간 비교는 불가
                         | _ -> None
                 
@@ -465,10 +465,10 @@ type CoreOperatorsTest() =
     [<Fact>]
     member _.``DsOp_ValidateForTypes_Null_handling``() =
         // Validate with null types should return None
-        let result1 = DsOp.validateForTypes Add None (Some TInt)
+        let result1 = DsOp.validateForTypes Add None (Some typeof<int>)
         result1 |> should equal None
 
-        let result2 = DsOp.validateForTypes Add (Some TInt) None
+        let result2 = DsOp.validateForTypes Add (Some typeof<int>) None
         result2 |> should equal None
 
         let result3 = DsOp.validateForTypes Add None None
@@ -477,92 +477,92 @@ type CoreOperatorsTest() =
     [<Fact>]
     member _.``DsOp_ValidateForTypes_String_operations_limited``() =
         // String cannot be used with arithmetic operations
-        let result1 = DsOp.validateForTypes Add (Some TString) (Some TString)
+        let result1 = DsOp.validateForTypes Add (Some typeof<string>) (Some typeof<string>)
         result1 |> should equal None
 
-        let result2 = DsOp.validateForTypes Mul (Some TString) (Some TString)
+        let result2 = DsOp.validateForTypes Mul (Some typeof<string>) (Some typeof<string>)
         result2 |> should equal None
 
-        let result3 = DsOp.validateForTypes Div (Some TString) (Some TString)
+        let result3 = DsOp.validateForTypes Div (Some typeof<string>) (Some typeof<string>)
         result3 |> should equal None
 
         // All comparison operators work with strings (same type comparisons allowed)
-        let result4 = DsOp.validateForTypes Eq (Some TString) (Some TString)
-        result4 |> should equal (Some TBool)
+        let result4 = DsOp.validateForTypes Eq (Some typeof<string>) (Some typeof<string>)
+        result4 |> should equal (Some typeof<bool>)
 
-        let result5 = DsOp.validateForTypes Ne (Some TString) (Some TString)
-        result5 |> should equal (Some TBool)
+        let result5 = DsOp.validateForTypes Ne (Some typeof<string>) (Some typeof<string>)
+        result5 |> should equal (Some typeof<bool>)
 
-        let result6 = DsOp.validateForTypes Gt (Some TString) (Some TString)
-        result6 |> should equal (Some TBool)
+        let result6 = DsOp.validateForTypes Gt (Some typeof<string>) (Some typeof<string>)
+        result6 |> should equal (Some typeof<bool>)
 
     [<Fact>]
     member _.``DsOp_ValidateForTypes_Bool_arithmetic_forbidden``() =
         // Boolean cannot be used in arithmetic operations
-        let result1 = DsOp.validateForTypes Add (Some TBool) (Some TBool)
+        let result1 = DsOp.validateForTypes Add (Some typeof<bool>) (Some typeof<bool>)
         result1 |> should equal None
 
-        let result2 = DsOp.validateForTypes Sub (Some TBool) (Some TBool)
+        let result2 = DsOp.validateForTypes Sub (Some typeof<bool>) (Some typeof<bool>)
         result2 |> should equal None
 
-        let result3 = DsOp.validateForTypes Mul (Some TBool) (Some TBool)
+        let result3 = DsOp.validateForTypes Mul (Some typeof<bool>) (Some typeof<bool>)
         result3 |> should equal None
 
     [<Fact>]
     member _.``DsOp_ValidateForTypes_Bool_order_comparison_forbidden``() =
         // Boolean can use Eq/Ne but not Gt/Ge/Lt/Le
-        let result1 = DsOp.validateForTypes Eq (Some TBool) (Some TBool)
-        result1 |> should equal (Some TBool)
+        let result1 = DsOp.validateForTypes Eq (Some typeof<bool>) (Some typeof<bool>)
+        result1 |> should equal (Some typeof<bool>)
 
-        let result2 = DsOp.validateForTypes Ne (Some TBool) (Some TBool)
-        result2 |> should equal (Some TBool)
+        let result2 = DsOp.validateForTypes Ne (Some typeof<bool>) (Some typeof<bool>)
+        result2 |> should equal (Some typeof<bool>)
 
-        let result3 = DsOp.validateForTypes Gt (Some TBool) (Some TBool)
+        let result3 = DsOp.validateForTypes Gt (Some typeof<bool>) (Some typeof<bool>)
         result3 |> should equal None
 
-        let result4 = DsOp.validateForTypes Ge (Some TBool) (Some TBool)
+        let result4 = DsOp.validateForTypes Ge (Some typeof<bool>) (Some typeof<bool>)
         result4 |> should equal None
 
-        let result5 = DsOp.validateForTypes Lt (Some TBool) (Some TBool)
+        let result5 = DsOp.validateForTypes Lt (Some typeof<bool>) (Some typeof<bool>)
         result5 |> should equal None
 
-        let result6 = DsOp.validateForTypes Le (Some TBool) (Some TBool)
+        let result6 = DsOp.validateForTypes Le (Some typeof<bool>) (Some typeof<bool>)
         result6 |> should equal None
 
     [<Fact>]
     member _.``DsOp_ValidateForTypes_Cross_type_validation``() =
         // Int and Double can interoperate
-        let result1 = DsOp.validateForTypes Add (Some TInt) (Some TDouble)
-        result1 |> should equal (Some TDouble)
+        let result1 = DsOp.validateForTypes Add (Some typeof<int>) (Some typeof<double>)
+        result1 |> should equal (Some typeof<double>)
 
-        let result2 = DsOp.validateForTypes Mul (Some TDouble) (Some TInt)
-        result2 |> should equal (Some TDouble)
+        let result2 = DsOp.validateForTypes Mul (Some typeof<double>) (Some typeof<int>)
+        result2 |> should equal (Some typeof<double>)
 
         // Bool and Int cannot interoperate
-        let result3 = DsOp.validateForTypes Add (Some TBool) (Some TInt)
+        let result3 = DsOp.validateForTypes Add (Some typeof<bool>) (Some typeof<int>)
         result3 |> should equal None
 
         // String and Int cannot interoperate
-        let result4 = DsOp.validateForTypes Add (Some TString) (Some TInt)
+        let result4 = DsOp.validateForTypes Add (Some typeof<string>) (Some typeof<int>)
         result4 |> should equal None
 
     [<Fact>]
     member _.``DsOp_ValidateForTypes_Type_promotion_rules``() =
         // Int + Int = Int (no promotion)
-        let result1 = DsOp.validateForTypes Add (Some TInt) (Some TInt)
-        result1 |> should equal (Some TInt)
+        let result1 = DsOp.validateForTypes Add (Some typeof<int>) (Some typeof<int>)
+        result1 |> should equal (Some typeof<int>)
 
         // Double + Double = Double
-        let result2 = DsOp.validateForTypes Add (Some TDouble) (Some TDouble)
-        result2 |> should equal (Some TDouble)
+        let result2 = DsOp.validateForTypes Add (Some typeof<double>) (Some typeof<double>)
+        result2 |> should equal (Some typeof<double>)
 
         // Int + Double = Double (promotion to wider type)
-        let result3 = DsOp.validateForTypes Add (Some TInt) (Some TDouble)
-        result3 |> should equal (Some TDouble)
+        let result3 = DsOp.validateForTypes Add (Some typeof<int>) (Some typeof<double>)
+        result3 |> should equal (Some typeof<double>)
 
         // Double + Int = Double (promotion to wider type)
-        let result4 = DsOp.validateForTypes Add (Some TDouble) (Some TInt)
-        result4 |> should equal (Some TDouble)
+        let result4 = DsOp.validateForTypes Add (Some typeof<double>) (Some typeof<int>)
+        result4 |> should equal (Some typeof<double>)
 
     [<Fact>]
     member _.``DsOp_ValidateForTypes_All_comparison_operators_same_behavior``() =
@@ -570,11 +570,11 @@ type CoreOperatorsTest() =
 
         // All comparisons return Bool for numeric types
         for op in [Eq; Ne; Gt; Ge; Lt; Le] do
-            let result = DsOp.validateForTypes op (Some TInt) (Some TInt)
+            let result = DsOp.validateForTypes op (Some typeof<int>) (Some typeof<int>)
             if op = Eq || op = Ne then
-                result |> should equal (Some TBool)
+                result |> should equal (Some typeof<bool>)
             else
-                result |> should equal (Some TBool)
+                result |> should equal (Some typeof<bool>)
 
     [<Fact>]
     member _.``DsOp_Operators_Parse_RoundTrip``() =
@@ -603,35 +603,35 @@ type CoreOperatorsTest() =
     [<Fact>]
     member _.``DsOp_Edge_operators_only_work_with_Bool``() =
         // Rising and Falling should only work with Bool type
-        let result1 = DsOp.validateForTypes Rising (Some TBool) None
+        let result1 = DsOp.validateForTypes Rising (Some typeof<bool>) None
         result1 |> should not' (equal None)
 
-        let result2 = DsOp.validateForTypes Falling (Some TBool) None
+        let result2 = DsOp.validateForTypes Falling (Some typeof<bool>) None
         result2 |> should not' (equal None)
 
         // Should not work with non-Bool types
-        let result3 = DsOp.validateForTypes Rising (Some TInt) None
+        let result3 = DsOp.validateForTypes Rising (Some typeof<int>) None
         result3 |> should equal None
 
-        let result4 = DsOp.validateForTypes Falling (Some TDouble) None
+        let result4 = DsOp.validateForTypes Falling (Some typeof<double>) None
         result4 |> should equal None
 
     [<Fact>]
     member _.``DsOp_Logical_operators_only_work_with_Bool``() =
         // And, Or, Not should only work with Bool
-        let result1 = DsOp.validateForTypes And (Some TBool) (Some TBool)
-        result1 |> should equal (Some TBool)
+        let result1 = DsOp.validateForTypes And (Some typeof<bool>) (Some typeof<bool>)
+        result1 |> should equal (Some typeof<bool>)
 
-        let result2 = DsOp.validateForTypes Or (Some TBool) (Some TBool)
-        result2 |> should equal (Some TBool)
+        let result2 = DsOp.validateForTypes Or (Some typeof<bool>) (Some typeof<bool>)
+        result2 |> should equal (Some typeof<bool>)
 
-        let result3 = DsOp.validateForTypes Not (Some TBool) None
-        result3 |> should equal (Some TBool)
+        let result3 = DsOp.validateForTypes Not (Some typeof<bool>) None
+        result3 |> should equal (Some typeof<bool>)
 
         // Should not work with non-Bool types
-        let result4 = DsOp.validateForTypes And (Some TInt) (Some TInt)
+        let result4 = DsOp.validateForTypes And (Some typeof<int>) (Some typeof<int>)
         result4 |> should equal None
 
-        let result5 = DsOp.validateForTypes Or (Some TString) (Some TString)
+        let result5 = DsOp.validateForTypes Or (Some typeof<string>) (Some typeof<string>)
         result5 |> should equal None
                 

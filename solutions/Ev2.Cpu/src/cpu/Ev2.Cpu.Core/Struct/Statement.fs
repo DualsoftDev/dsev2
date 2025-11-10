@@ -172,9 +172,9 @@ module Statement =
 
     type Program = {
         Name: string
-        Inputs: (string * DsDataType) list
-        Outputs: (string * DsDataType) list
-        Locals: (string * DsDataType) list
+        Inputs: (string * Type) list
+        Outputs: (string * Type) list
+        Locals: (string * Type) list
         Body: DsStmt list
     }
 

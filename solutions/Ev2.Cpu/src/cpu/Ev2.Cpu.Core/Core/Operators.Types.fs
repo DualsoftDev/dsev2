@@ -1,5 +1,7 @@
 namespace Ev2.Cpu.Core
 
+open System
+
 // ─────────────────────────────────────────────────────────────────────
 // 연산자 타입 정의 (Operator Types)
 // ─────────────────────────────────────────────────────────────────────
@@ -270,7 +272,7 @@ type DsOp with
 
 
     /// 타입 검증 (타입 추론에서 사용)
-    static member validateForTypes (op: DsOp) (leftType: DsDataType option) (rightType: DsDataType option) : DsDataType option =
+    static member validateForTypes (op: DsOp) (leftType: Type option) (rightType: Type option) : Type option =
         match op with
         // None 타입이 있으면 결과도 None
         | _ when leftType.IsNone || (op.IsBinary && rightType.IsNone) -> None
@@ -278,54 +280,51 @@ type DsOp with
         // 논리 연산자는 Bool 타입에서만 동작
         | And | Or | Xor | Nand | Nor ->
             match leftType, rightType with
-            | Some DsDataType.TBool, Some DsDataType.TBool -> Some DsDataType.TBool
+            | Some t1, Some t2 when t1 = typeof<bool> && t2 = typeof<bool> -> Some typeof<bool>
             | _ -> None
         | Not ->
             match leftType with
-            | Some DsDataType.TBool -> Some DsDataType.TBool
+            | Some t when t = typeof<bool> -> Some typeof<bool>
             | _ -> None
 
         // 비교 연산자는 호환 타입 비교시 Bool 반환
         | Eq | Ne | Gt | Ge | Lt | Le ->
             match leftType, rightType with
             // Boolean은 순서 비교 불가 (Gt, Ge, Lt, Le)
-            | Some DsDataType.TBool, Some DsDataType.TBool when (op = Gt || op = Ge || op = Lt || op = Le) -> None
+            | Some t1, Some t2 when t1 = typeof<bool> && t2 = typeof<bool> && (op = Gt || op = Ge || op = Lt || op = Le) -> None
             // 같은 타입끼리 비교
-            | Some l, Some r when l = r -> Some DsDataType.TBool
-            // 숫자 타입 간 비교 (Int ↔ Double)
-            | Some DsDataType.TInt, Some DsDataType.TDouble -> Some DsDataType.TBool
-            | Some DsDataType.TDouble, Some DsDataType.TInt -> Some DsDataType.TBool
+            | Some l, Some r when l = r -> Some typeof<bool>
+            // 숫자 타입 간 비교 (Int ↔ Double) - 양방향 호환
+            | Some t1, Some t2 when (t1 = typeof<int> && t2 = typeof<double>) || (t1 = typeof<double> && t2 = typeof<int>) -> Some typeof<bool>
             | _ -> None
 
         // 산술 연산자는 수치 타입에서만 동작, 타입 승격 지원
         | Add | Sub | Mul | Div | Mod | Pow ->
             match leftType, rightType with
-            | Some DsDataType.TInt, Some DsDataType.TInt -> Some DsDataType.TInt
-            | Some DsDataType.TDouble, Some DsDataType.TDouble -> Some DsDataType.TDouble
-            | Some DsDataType.TInt, Some DsDataType.TDouble -> Some DsDataType.TDouble
-            | Some DsDataType.TDouble, Some DsDataType.TInt -> Some DsDataType.TDouble
+            | Some t1, Some t2 when t1 = typeof<int> && t2 = typeof<int> -> Some typeof<int>
+            | Some t1, Some t2 when t1 = typeof<double> && t2 = typeof<double> -> Some typeof<double>
+            | Some t1, Some t2 when (t1 = typeof<int> && t2 = typeof<double>) || (t1 = typeof<double> && t2 = typeof<int>) -> Some typeof<double>
             | _ -> None
 
         // 비트 연산자는 정수 타입에서만 동작
         | BitAnd | BitOr | BitXor | ShiftLeft | ShiftRight ->
             match leftType, rightType with
-            | Some DsDataType.TInt, Some DsDataType.TInt -> Some DsDataType.TInt
+            | Some t1, Some t2 when t1 = typeof<int> && t2 = typeof<int> -> Some typeof<int>
             | _ -> None
         | BitNot ->
             match leftType with
-            | Some DsDataType.TInt -> Some DsDataType.TInt
+            | Some t when t = typeof<int> -> Some typeof<int>
             | _ -> None
 
         // 신호 연산자는 Bool 타입에서만 동작
         | Rising | Falling | Edge ->
             match leftType with
-            | Some DsDataType.TBool -> Some DsDataType.TBool
+            | Some t when t = typeof<bool> -> Some typeof<bool>
             | _ -> None
 
         // 특수 연산자
         | Assign | Move ->
             match leftType, rightType with
-            | Some l, Some r when l = r -> rightType
-            | Some DsDataType.TInt, Some DsDataType.TDouble -> rightType  // Int를 Double로 변환 허용
+            | Some l, Some r when TypeHelpers.areTypesCompatible r l -> rightType
             | _ -> None
         | Coalesce -> leftType

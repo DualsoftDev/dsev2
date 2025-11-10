@@ -17,7 +17,7 @@ let ``WorkAuto - startWork 래치`` () =
     match pattern with
     | Some relay ->
         relay.Tag.Name |> should equal "startWork"
-        relay.Tag.DsDataType |> should equal DsDataType.TBool
+        relay.Tag.DataType |> should equal typeof<bool>
 
         match relay.Set with
         | Binary(DsOp.Or, Terminal(req), Terminal(self)) ->
@@ -64,7 +64,7 @@ let ``WorkInterlock - 조건별 fault 태그 생성`` () =
     match stmts.Head with
     | Assign(_, tag, expr) ->
         tag.Name |> should equal "machine_interlock_ok"
-        expr.InferType() |> should equal DsDataType.TBool
+        expr.InferType() |> should equal typeof<bool>
     | _ -> failwith "Expected interlock assignment"
 
     stmts.Tail |> List.iter (function

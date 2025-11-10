@@ -123,17 +123,17 @@ type PooledMemory() =
     let mutable historyHead = 0
     let mutable historyCount = 0
     
-    member _.DeclareVariable(name: string, dataType: DsDataType, area: MemoryArea) =
+    member _.DeclareVariable(name: string, dataType: Type, area: MemoryArea) =
         if nextIndex >= slots.Length then
             RuntimeExceptions.raiseMemoryLimit slots.Length
         let index = nextIndex
         nextIndex <- nextIndex + 1
         varIndex.[name] <- index
         slots.[index] <- {
-            Value = dataType.DefaultValue
+            Value = TypeHelpers.getDefaultValue dataType
             LastValue = null
             Changed = false
-            DsDataType = dataType
+            DataType = dataType
             Area = area
         }
         index

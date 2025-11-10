@@ -30,23 +30,23 @@ type DsExpr =
     /// 상수값 (Constant)
     /// 프로그램에 하드코딩된 값 - 실행 시 변경되지 않음
     /// 예: 123, 45.67, TRUE, "Hello"
-    | EConst of value:obj * typ:DsDataType
-    
+    | EConst of value:obj * typ:Type
+
     /// 메모리 변수 (Variable)
     /// PLC 메모리에 저장된 값 - 런타임에 읽기/쓰기 가능
     /// 예: Motor_Speed, Tank_Level, Alarm_Active
-    | EVar of name:string * typ:DsDataType
-    
+    | EVar of name:string * typ:Type
+
     /// 단항 연산 (Unary Operation)
     /// 하나의 피연산자에 적용되는 연산 - NOT, 에지 검출 등
     /// 예: NOT Start_Button, ↑ Enable_Signal
     | EUnary of op:DsOp * expr:DsExpr
-    
+
     /// 이항 연산 (Binary Operation)
     /// 두 개의 피연산자에 적용되는 연산 - 산술, 논리, 비교
     /// 예: Speed + 10, Pressure > 5.0, Enable AND Ready
     | EBinary of op:DsOp * left:DsExpr * right:DsExpr
-    
+
     /// 함수 호출 (Function Call)
     /// 내장 함수 호출
     /// 예: ABS(-5), MAX(A, B, C), PID(SP, PV, Kp, Ki, Kd)
@@ -55,13 +55,13 @@ type DsExpr =
     /// 사용자 정의 함수 호출 (User-Defined Function Call)
     /// UserFC 호출 - 이름, 인자, 반환 타입, 시그니처 포함
     /// 예: LinearScale(input, 0.0, 100.0) → 반환타입: DOUBLE
-    | EUserFC of fcName:string * args:DsExpr list * returnType:DsDataType option * signature:string
+    | EUserFC of fcName:string * args:DsExpr list * returnType:Type option * signature:string
 
     /// I/O 터미널 (Terminal)
     /// 물리적 입출력 점에 연결된 신호
     /// 예: %I0.0 (디지털 입력), %AW100 (아날로그 출력)
-    | ETerminal of termName:string * typ:DsDataType
-    
+    | ETerminal of termName:string * typ:Type
+
     /// 메타데이터 (Metadata)
     /// 디버깅, 문서화, 시뮬레이션을 위한 추가 정보
     /// 예: /*comment:설명*/, /*unit:℃*/, /*range:0..100*/
@@ -78,14 +78,14 @@ type DsExpr =
         /// - EUserFC: 저장된 반환 타입 반환
         /// - EMeta: 타입 없음 (None)
         /// </remarks>
-        member this.InferType() : DsDataType option =
+        member this.InferType() : Type option =
             match this with
             | EConst(_, t) | EVar(_, t) | ETerminal(_, t) -> Some t
 
             | EUnary(op, expr) ->
                 let exprType = expr.InferType()
                 match op with
-                | Not | Rising | Falling -> Some TBool
+                | Not | Rising | Falling -> Some typeof<bool>
                 | BitNot -> exprType  // Bitwise NOT preserves numeric type
                 | _ -> None
 
@@ -192,7 +192,7 @@ type DsExpr =
                 match expr with
                 | EConst(value, typ) ->
                     try
-                        typ.Validate(value) |> ignore
+                        TypeHelpers.validateType typ value |> ignore
                         Ok ()
                     with
                     | ex -> Error (sprintf "Invalid constant: %s" ex.Message)
@@ -254,13 +254,13 @@ type DsExpr =
 module ExprBuilder =
 
     /// <summary>상수 표현식 생성</summary>
-    let constant (value: obj) (typ: DsDataType) = EConst(value, typ)
+    let constant (value: obj) (typ: Type) = EConst(value, typ)
 
     /// <summary>변수 표현식 생성</summary>
-    let variable (name: string) (typ: DsDataType) = EVar(name, typ)
+    let variable (name: string) (typ: Type) = EVar(name, typ)
 
     /// <summary>터미널 표현식 생성</summary>
-    let terminal (name: string) (typ: DsDataType) = ETerminal(name, typ)
+    let terminal (name: string) (typ: Type) = ETerminal(name, typ)
 
     /// <summary>단항 연산 표현식 생성</summary>
     let unary (op: DsOp) (expr: DsExpr) = EUnary(op, expr)
@@ -272,7 +272,7 @@ module ExprBuilder =
     let call (name: string) (args: DsExpr list) = ECall(name, args)
 
     /// <summary>UserFC 호출 표현식 생성</summary>
-    let userFCCall (name: string) (args: DsExpr list) (returnType: DsDataType option) (signature: string) =
+    let userFCCall (name: string) (args: DsExpr list) (returnType: Type option) (signature: string) =
         EUserFC(name, args, returnType, signature)
 
     /// <summary>메타데이터 표현식 생성</summary>
@@ -283,10 +283,10 @@ module ExprBuilder =
     let falling expr = unary Falling expr
 
     // Type-safe constant builders
-    let boolConst (b: bool) = constant (box b) TBool
-    let intConst (i: int) = constant (box i) TInt
-    let doubleConst (d: double) = constant (box d) TDouble
-    let stringConst (s: string) = constant (box s) TString
+    let boolConst (b: bool) = constant (box b) typeof<bool>
+    let intConst (i: int) = constant (box i) typeof<int>
+    let doubleConst (d: double) = constant (box d) typeof<double>
+    let stringConst (s: string) = constant (box s) typeof<string>
 
 /// <summary>표현식 분석 유틸리티 모듈</summary>
 /// <remarks>

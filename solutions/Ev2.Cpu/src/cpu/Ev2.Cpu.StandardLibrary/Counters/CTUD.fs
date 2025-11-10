@@ -30,19 +30,19 @@ module CTUD =
         let builder = FBBuilder("CTUD")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("CU", DsDataType.TBool)      // Count up input
-        builder.AddInput("CD", DsDataType.TBool)      // Count down input
-        builder.AddInput("R", DsDataType.TBool)       // Reset input
-        builder.AddInput("LD", DsDataType.TBool)      // Load input
-        builder.AddInput("PV", DsDataType.TInt)       // Preset value
-        builder.AddOutput("QU", DsDataType.TBool)     // Count up done (CV >= PV)
-        builder.AddOutput("QD", DsDataType.TBool)     // Count down done (CV <= 0)
-        builder.AddOutput("CV", DsDataType.TInt)      // Current value
+        builder.AddInput("CU", typeof<bool>)      // Count up input
+        builder.AddInput("CD", typeof<bool>)      // Count down input
+        builder.AddInput("R", typeof<bool>)       // Reset input
+        builder.AddInput("LD", typeof<bool>)      // Load input
+        builder.AddInput("PV", typeof<int>)       // Preset value
+        builder.AddOutput("QU", typeof<bool>)     // Count up done (CV >= PV)
+        builder.AddOutput("QD", typeof<bool>)     // Count down done (CV <= 0)
+        builder.AddOutput("CV", typeof<int>)      // Current value
 
         // Static 변수
-        builder.AddStaticWithInit("Count", DsDataType.TInt, box 0)
-        builder.AddStaticWithInit("LastCU", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("LastCD", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("Count", typeof<int>, box 0)
+        builder.AddStaticWithInit("LastCU", typeof<bool>, box false)
+        builder.AddStaticWithInit("LastCD", typeof<bool>, box false)
 
         let cu = Terminal(DsTag.Bool("CU"))
         let cd = Terminal(DsTag.Bool("CD"))
@@ -88,27 +88,27 @@ module CTUD =
                 ])
             ])
 
-        builder.AddStatement(assignAuto "Count" DsDataType.TInt newCount)
+        builder.AddStatement(assignAuto "Count" typeof<int> newCount)
 
         // LastCU, LastCD 업데이트
         builder.AddStatement(
-            assignAuto "LastCU" DsDataType.TBool cu
+            assignAuto "LastCU" typeof<bool> cu
         )
         builder.AddStatement(
-            assignAuto "LastCD" DsDataType.TBool cd
+            assignAuto "LastCD" typeof<bool> cd
         )
 
         // 출력 설정
         // QU := (CV >= PV)
         builder.AddStatement(
-            assignAuto "QU" DsDataType.TBool (ge count pv)
+            assignAuto "QU" typeof<bool> (ge count pv)
         )
         // QD := (CV <= 0)
         builder.AddStatement(
-            assignAuto "QD" DsDataType.TBool (le count (intExpr 0))
+            assignAuto "QD" typeof<bool> (le count (intExpr 0))
         )
         builder.AddStatement(
-            assignAuto "CV" DsDataType.TInt count
+            assignAuto "CV" typeof<int> count
         )
 
         builder.SetDescription("Count Up/Down counter - bidirectional counter (IEC 61131-3)")

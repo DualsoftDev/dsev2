@@ -18,7 +18,7 @@ let ``System - 기본 패턴 생성`` () =
     match initPattern with
     | Some relay ->
         relay.Tag.Name |> should equal "_INIT"
-        relay.Tag.DsDataType |> should equal DsDataType.TBool
+        relay.Tag.DataType |> should equal typeof<bool>
     | None -> failwith "Expected relay"
 
 [<Fact>]
@@ -94,7 +94,7 @@ let ``System - Pulse 생성`` () =
 
     // 리셋 (MOV 사용)
     pulse |> List.exists (function
-        | Command(_, _, Function("MOV", [Const(v, DsDataType.TInt); _])) when unbox v = 0 -> true
+        | Command(_, _, Function("MOV", [Const(v, t); _])) when t = typeof<int> && unbox v = 0 -> true
         | _ -> false) |> should equal true
 
 [<Fact>]
@@ -111,18 +111,18 @@ let ``System - 모든 펄스 생성`` () =
 let ``System - 타입별 태그`` () =
     // Bool 타입
     let boolTag = SystemKind.toTag SystemKind._ON
-    boolTag.DsDataType |> should equal DsDataType.TBool
+    boolTag.DataType |> should equal typeof<bool>
     
     // Int 타입 (날짜/시간)
     let intTag1 = SystemKind.toTag SystemKind.datetime_yy
-    intTag1.DsDataType |> should equal DsDataType.TInt
+    intTag1.DataType |> should equal typeof<int>
     
     let intTag2 = SystemKind.toTag SystemKind.cpuLoad
-    intTag2.DsDataType |> should equal DsDataType.TInt
+    intTag2.DataType |> should equal typeof<int>
     
     // Double 타입
     let doubleTag = SystemKind.toTag SystemKind.tempData
-    doubleTag.DsDataType |> should equal DsDataType.TDouble
+    doubleTag.DataType |> should equal typeof<double>
 
 [<Fact>]
 let ``System - 코드 생성`` () =

@@ -119,8 +119,8 @@ module RetainMemoryTests =
     let ``Memory - DeclareLocal with retain=true`` () =
         let memory = Memory()
 
-        memory.DeclareLocal("RetainVar", DsDataType.TInt, retain=true)
-        memory.DeclareLocal("NormalVar", DsDataType.TInt, retain=false)
+        memory.DeclareLocal("RetainVar", typeof<int>, retain=true)
+        memory.DeclareLocal("NormalVar", typeof<int>, retain=false)
 
         memory.Set("RetainVar", box 100)
         memory.Set("NormalVar", box 200)
@@ -135,9 +135,9 @@ module RetainMemoryTests =
     let ``Memory - CreateRetainSnapshot only includes retain variables`` () =
         let memory = Memory()
 
-        memory.DeclareLocal("Counter", DsDataType.TInt, retain=true)
-        memory.DeclareLocal("TempVar", DsDataType.TInt)
-        memory.DeclareInternal("InternalRetain", DsDataType.TDouble, retain=true)
+        memory.DeclareLocal("Counter", typeof<int>, retain=true)
+        memory.DeclareLocal("TempVar", typeof<int>)
+        memory.DeclareInternal("InternalRetain", typeof<double>, retain=true)
 
         memory.Set("Counter", box 42)
         memory.Set("TempVar", box 99)
@@ -158,8 +158,8 @@ module RetainMemoryTests =
         let memory = Memory()
 
         // Retain 변수 선언
-        memory.DeclareLocal("Counter", DsDataType.TInt, retain=true)
-        memory.DeclareLocal("Status", DsDataType.TBool, retain=true)
+        memory.DeclareLocal("Counter", typeof<int>, retain=true)
+        memory.DeclareLocal("Status", typeof<bool>, retain=true)
 
         // 스냅샷 생성
         let snapshot = {
@@ -188,7 +188,7 @@ module RetainMemoryTests =
         let memory = Memory()
 
         // Non-retain 변수 선언
-        memory.DeclareLocal("NonRetainVar", DsDataType.TInt, retain=false)
+        memory.DeclareLocal("NonRetainVar", typeof<int>, retain=false)
         memory.Set("NonRetainVar", box 100)
 
         // 스냅샷에는 값이 있지만 복원되지 않아야 함
@@ -222,7 +222,7 @@ module RetainMemoryTests =
         let storage = BinaryRetainStorage(testFile)
 
         // Retain 변수 선언 및 값 설정
-        ctx.Memory.DeclareLocal("AutoSaveCounter", DsDataType.TInt, retain=true)
+        ctx.Memory.DeclareLocal("AutoSaveCounter", typeof<int>, retain=true)
         ctx.Memory.Set("AutoSaveCounter", box 777)
 
         let engine = CpuScanEngine(program, ctx, None, None, Some storage)
@@ -265,7 +265,7 @@ module RetainMemoryTests =
         // 새로운 엔진 시작 (자동 로드)
         let program = createTestProgram()
         let ctx = Context.create()
-        ctx.Memory.DeclareLocal("AutoLoadCounter", DsDataType.TInt, retain=true)
+        ctx.Memory.DeclareLocal("AutoLoadCounter", typeof<int>, retain=true)
 
         let engine = CpuScanEngine(program, ctx, None, None, Some storage)
 
@@ -291,9 +291,9 @@ module RetainMemoryTests =
         // Phase 1: 전원 ON, 작업 수행
         // ══════════════════════════════════════════════════════════════════
         let ctx1 = Context.create()
-        ctx1.Memory.DeclareLocal("WorkCounter", DsDataType.TInt, retain=true)
-        ctx1.Memory.DeclareLocal("TempValue", DsDataType.TInt, retain=false)
-        ctx1.Memory.DeclareLocal("Status", DsDataType.TBool, retain=true)
+        ctx1.Memory.DeclareLocal("WorkCounter", typeof<int>, retain=true)
+        ctx1.Memory.DeclareLocal("TempValue", typeof<int>, retain=false)
+        ctx1.Memory.DeclareLocal("Status", typeof<bool>, retain=true)
 
         ctx1.Memory.Set("WorkCounter", box 500)
         ctx1.Memory.Set("TempValue", box 123)
@@ -309,9 +309,9 @@ module RetainMemoryTests =
         // Phase 2: 전원 다시 ON, 리테인 변수 복원 확인
         // ══════════════════════════════════════════════════════════════════
         let ctx2 = Context.create()
-        ctx2.Memory.DeclareLocal("WorkCounter", DsDataType.TInt, retain=true)
-        ctx2.Memory.DeclareLocal("TempValue", DsDataType.TInt, retain=false)
-        ctx2.Memory.DeclareLocal("Status", DsDataType.TBool, retain=true)
+        ctx2.Memory.DeclareLocal("WorkCounter", typeof<int>, retain=true)
+        ctx2.Memory.DeclareLocal("TempValue", typeof<int>, retain=false)
+        ctx2.Memory.DeclareLocal("Status", typeof<bool>, retain=true)
 
         // 엔진 시작 (자동 복원)
         let engine2 = CpuScanEngine(program, ctx2, None, None, Some storage)
@@ -572,7 +572,7 @@ module RetainMemoryTests =
 
             // Declare 5000 retain variables
             for i in 1..5000 do
-                memory.DeclareLocal(sprintf "PerfVar%d" i, DsDataType.TInt, retain=true)
+                memory.DeclareLocal(sprintf "PerfVar%d" i, typeof<int>, retain=true)
                 memory.Set(sprintf "PerfVar%d" i, box i)
 
             // Measure snapshot creation time
@@ -595,7 +595,7 @@ module RetainMemoryTests =
 
             // Declare 5000 retain variables
             for i in 1..5000 do
-                memory.DeclareLocal(sprintf "RestoreVar%d" i, DsDataType.TInt, retain=true)
+                memory.DeclareLocal(sprintf "RestoreVar%d" i, typeof<int>, retain=true)
 
             // Create snapshot with 5000 variables
             let variables = [
@@ -639,10 +639,10 @@ module RetainMemoryTests =
 
         // Phase 1: Save mixed types
         let ctx1 = Context.create()
-        ctx1.Memory.DeclareLocal("IntVar", DsDataType.TInt, retain=true)
-        ctx1.Memory.DeclareLocal("DoubleVar", DsDataType.TDouble, retain=true)
-        ctx1.Memory.DeclareLocal("BoolVar", DsDataType.TBool, retain=true)
-        ctx1.Memory.DeclareLocal("StringVar", DsDataType.TString, retain=true)
+        ctx1.Memory.DeclareLocal("IntVar", typeof<int>, retain=true)
+        ctx1.Memory.DeclareLocal("DoubleVar", typeof<double>, retain=true)
+        ctx1.Memory.DeclareLocal("BoolVar", typeof<bool>, retain=true)
+        ctx1.Memory.DeclareLocal("StringVar", typeof<string>, retain=true)
 
         ctx1.Memory.Set("IntVar", box 12345)
         ctx1.Memory.Set("DoubleVar", box 3.14159)
@@ -654,10 +654,10 @@ module RetainMemoryTests =
 
         // Phase 2: Restore and verify
         let ctx2 = Context.create()
-        ctx2.Memory.DeclareLocal("IntVar", DsDataType.TInt, retain=true)
-        ctx2.Memory.DeclareLocal("DoubleVar", DsDataType.TDouble, retain=true)
-        ctx2.Memory.DeclareLocal("BoolVar", DsDataType.TBool, retain=true)
-        ctx2.Memory.DeclareLocal("StringVar", DsDataType.TString, retain=true)
+        ctx2.Memory.DeclareLocal("IntVar", typeof<int>, retain=true)
+        ctx2.Memory.DeclareLocal("DoubleVar", typeof<double>, retain=true)
+        ctx2.Memory.DeclareLocal("BoolVar", typeof<bool>, retain=true)
+        ctx2.Memory.DeclareLocal("StringVar", typeof<string>, retain=true)
 
         let engine2 = CpuScanEngine(program, ctx2, None, None, Some storage)
 

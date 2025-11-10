@@ -88,7 +88,7 @@ let ``WorkRelays - TimeoutError 타이머 기반`` () =
 
     // SET 조건에 TON 함수 포함 확인
     match relay.Set with
-    | Function("TON", [_; _; Const(ms, DsDataType.TInt)]) ->
+    | Function("TON", [_; _; Const(ms, t)]) when t = typeof<int> ->
         unbox ms |> should equal 60000
     | _ -> failwith "Expected TON function"
 
@@ -123,7 +123,7 @@ let ``WorkState - stateTag 생성`` () =
 let ``WorkState - isState 체크`` () =
     let expr = WorkState.isState "Work1" WorkState.State.Going
     match expr with
-    | Binary(DsOp.Eq, Terminal(tag), Const(value, DsDataType.TInt)) ->
+    | Binary(DsOp.Eq, Terminal(tag), Const(value, t)) when t = typeof<int> ->
         tag |> should equal (DsTag.Int "Work1_State")
         unbox value |> should equal (int WorkState.State.Going)
     | _ -> failwith "Expected state check expression"
@@ -132,7 +132,7 @@ let ``WorkState - isState 체크`` () =
 let ``WorkState - setState Statement`` () =
     let stmt = WorkState.setState "Work1" WorkState.State.Finish
     match stmt with
-    | Assign(_, tag, Const(value, DsDataType.TInt)) ->
+    | Assign(_, tag, Const(value, t)) when t = typeof<int> ->
         tag |> should equal (DsTag.Int "Work1_State")
         unbox value |> should equal (int WorkState.State.Finish)
     | _ -> failwith "Expected state assignment"

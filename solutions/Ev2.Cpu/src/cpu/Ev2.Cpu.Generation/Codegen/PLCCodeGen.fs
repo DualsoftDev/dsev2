@@ -15,12 +15,12 @@ module PLCCodeGen =
     // 데이터 타입 변환 (F# -> PLC ST)
     // ═════════════════════════════════════════════════════════════════════
 
-    let dataTypeToPLC (dt: DsDataType) : string =
-        match dt with
-        | DsDataType.TBool -> "BOOL"
-        | DsDataType.TInt -> "INT"
-        | DsDataType.TDouble -> "REAL"
-        | DsDataType.TString -> "STRING"
+    let dataTypeToPLC (dt: Type) : string =
+        if dt = typeof<bool> then "BOOL"
+        elif dt = typeof<int> then "INT"
+        elif dt = typeof<double> then "REAL"
+        elif dt = typeof<string> then "STRING"
+        else failwith $"Unsupported data type: {dt.Name}"
 
     // ═════════════════════════════════════════════════════════════════════
     // 값 포맷팅 헬퍼 (코드 중복 제거)
@@ -31,12 +31,17 @@ module PLCCodeGen =
         s.Replace("'", "''")
 
     /// 기본값/초기값을 PLC 문법으로 포맷팅
-    let private formatDefaultValue (dataType: DsDataType) (value: obj) : string =
-        match dataType with
-        | DsDataType.TBool -> if (value :?> bool) then " := TRUE" else " := FALSE"
-        | DsDataType.TInt -> sprintf " := %d" (value :?> int)
-        | DsDataType.TDouble -> sprintf " := %f" (value :?> float)
-        | DsDataType.TString -> sprintf " := '%s'" (escapeString (value :?> string))
+    let private formatDefaultValue (dataType: Type) (value: obj) : string =
+        if dataType = typeof<bool> then
+            if (value :?> bool) then " := TRUE" else " := FALSE"
+        elif dataType = typeof<int> then
+            sprintf " := %d" (value :?> int)
+        elif dataType = typeof<double> then
+            sprintf " := %f" (value :?> float)
+        elif dataType = typeof<string> then
+            sprintf " := '%s'" (escapeString (value :?> string))
+        else
+            failwith $"Unsupported data type for default value: {dataType.Name}"
 
     /// VAR_INPUT 섹션 생성
     let private generateInputSection (sb: StringBuilder) (params': FunctionParam list) : unit =
@@ -70,7 +75,7 @@ module PLCCodeGen =
             sb.AppendLine() |> ignore
 
     /// VAR (Static) 섹션 생성
-    let private generateStaticSection (sb: StringBuilder) (statics: (string * DsDataType * obj option) list) : unit =
+    let private generateStaticSection (sb: StringBuilder) (statics: (string * Type * obj option) list) : unit =
         if not (List.isEmpty statics) then
             sb.AppendLine("VAR") |> ignore
             for (name, dt, initVal) in statics do
@@ -83,7 +88,7 @@ module PLCCodeGen =
             sb.AppendLine() |> ignore
 
     /// VAR_TEMP 섹션 생성
-    let private generateTempSection (sb: StringBuilder) (temps: (string * DsDataType) list) : unit =
+    let private generateTempSection (sb: StringBuilder) (temps: (string * Type) list) : unit =
         if not (List.isEmpty temps) then
             sb.AppendLine("VAR_TEMP") |> ignore
             for (name, dt) in temps do
@@ -98,11 +103,16 @@ module PLCCodeGen =
     let rec exprToST (expr: DsExpr) : string =
         match expr with
         | Const(value, dt) ->
-            match dt with
-            | DsDataType.TBool -> if (value :?> bool) then "TRUE" else "FALSE"
-            | DsDataType.TInt -> sprintf "%d" (value :?> int)
-            | DsDataType.TDouble -> sprintf "%f" (value :?> float)
-            | DsDataType.TString -> sprintf "'%s'" (escapeString (value :?> string))
+            if dt = typeof<bool> then
+                if (value :?> bool) then "TRUE" else "FALSE"
+            elif dt = typeof<int> then
+                sprintf "%d" (value :?> int)
+            elif dt = typeof<double> then
+                sprintf "%f" (value :?> float)
+            elif dt = typeof<string> then
+                sprintf "'%s'" (escapeString (value :?> string))
+            else
+                failwith $"Unsupported constant type: {dt.Name}"
 
         | Terminal(tag) ->
             tag.Name

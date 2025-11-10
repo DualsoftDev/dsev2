@@ -27,15 +27,15 @@ module CTU =
         let builder = FBBuilder("CTU")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("CU", DsDataType.TBool)      // Count up input
-        builder.AddInput("R", DsDataType.TBool)       // Reset input
-        builder.AddInput("PV", DsDataType.TInt)       // Preset value
-        builder.AddOutput("Q", DsDataType.TBool)      // Output (TRUE when CV >= PV)
-        builder.AddOutput("CV", DsDataType.TInt)      // Current value
+        builder.AddInput("CU", typeof<bool>)      // Count up input
+        builder.AddInput("R", typeof<bool>)       // Reset input
+        builder.AddInput("PV", typeof<int>)       // Preset value
+        builder.AddOutput("Q", typeof<bool>)      // Output (TRUE when CV >= PV)
+        builder.AddOutput("CV", typeof<int>)      // Current value
 
         // Static 변수
-        builder.AddStaticWithInit("Count", DsDataType.TInt, box 0)
-        builder.AddStaticWithInit("LastCU", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("Count", typeof<int>, box 0)
+        builder.AddStaticWithInit("LastCU", typeof<bool>, box false)
 
         let cu = Terminal(DsTag.Bool("CU"))
         let reset = Terminal(DsTag.Bool("R"))
@@ -72,20 +72,20 @@ module CTU =
                 ])
             ])
 
-        builder.AddStatement(assignAuto "Count" DsDataType.TInt newCount)
+        builder.AddStatement(assignAuto "Count" typeof<int> newCount)
 
         // LastCU 업데이트
         builder.AddStatement(
-            assignAuto "LastCU" DsDataType.TBool cu
+            assignAuto "LastCU" typeof<bool> cu
         )
 
         // 출력 설정
         // Q := (CV >= PV)
         builder.AddStatement(
-            assignAuto "Q" DsDataType.TBool (ge count pv)
+            assignAuto "Q" typeof<bool> (ge count pv)
         )
         builder.AddStatement(
-            assignAuto "CV" DsDataType.TInt count
+            assignAuto "CV" typeof<int> count
         )
 
         builder.SetDescription("Count Up counter - increments on CU rising edge (IEC 61131-3)")

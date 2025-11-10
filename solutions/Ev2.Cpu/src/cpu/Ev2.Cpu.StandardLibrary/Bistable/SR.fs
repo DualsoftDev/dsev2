@@ -25,12 +25,12 @@ module SR =
         let builder = FBBuilder("SR")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("S1", DsDataType.TBool)     // Set input
-        builder.AddInput("R", DsDataType.TBool)      // Reset input
-        builder.AddOutput("Q1", DsDataType.TBool)    // Output
+        builder.AddInput("S1", typeof<bool>)     // Set input
+        builder.AddInput("R", typeof<bool>)      // Reset input
+        builder.AddOutput("Q1", typeof<bool>)    // Output
 
         // Static 변수: 상태 저장
-        builder.AddStaticWithInit("STATE", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("STATE", typeof<bool>, box false)
 
         // 로직 (Set priority):
         // STATE := IF S1 THEN TRUE ELSIF R THEN FALSE ELSE STATE
@@ -52,8 +52,8 @@ module SR =
                 ])
             ])
 
-        builder.AddStatement(assignAuto "STATE" DsDataType.TBool newState)
-        builder.AddStatement(assignAuto "Q1" DsDataType.TBool state)
+        builder.AddStatement(assignAuto "STATE" typeof<bool> newState)
+        builder.AddStatement(assignAuto "Q1" typeof<bool> state)
 
         builder.SetDescription("Set-Reset bistable with Set priority (IEC 61131-3)")
         builder.Build()

@@ -25,13 +25,13 @@ module StmtEvaluator =
 
     // 조건식 평가 → bool
     let private evalCond (ctx: ExecutionContext) (cond: DsExpr) : bool =
-        ExprEvaluator.eval ctx cond |> TypeConverter.toBool
+        ExprEvaluator.eval ctx cond |> TypeHelpers.toBool
 
     // 감시 변수에 기록 + 트레이스
     let private setVar (ctx: ExecutionContext) (dsTag: DsTag) (value: obj) =
         ctx.Memory.Set(dsTag.Name, value)
         if ctx.Watchlist.ContainsKey(dsTag.Name) then
-            Context.trace ctx $"Watch: {dsTag.Name} = {TypeConverter.toString value}"
+            Context.trace ctx $"Watch: {dsTag.Name} = {TypeHelpers.toString value}"
 
     // Action 본체 처리 (MOV/Function/Terminal/임의식)
     let private runAction (ctx: ExecutionContext) (actionExpr: DsExpr) : unit =

@@ -194,36 +194,36 @@ module DataGenerators =
         String('x', totalChars)
 
     // ───────────────────────────────────────────────────────────────────
-    // DsDataType Specific Generators
+    // Type Specific Generators
     // ───────────────────────────────────────────────────────────────────
 
-    /// <summary>All DsDataType values</summary>
-    let allDsDataTypes = [
-        DsDataType.TInt
-        DsDataType.TDouble
-        DsDataType.TBool
-        DsDataType.TString
+    /// <summary>All Type values</summary>
+    let allTypes = [
+        typeof<int>
+        typeof<double>
+        typeof<bool>
+        typeof<string>
     ]
 
-    /// <summary>Generate boundary values for given DsDataType</summary>
-    let boundaryValuesForType (dtype: DsDataType) =
-        match dtype with
-        | DsDataType.TInt -> intBoundaryValues |> List.map box
-        | DsDataType.TDouble -> doubleBoundaryValues |> List.map box
-        | DsDataType.TBool -> boolValues |> List.map box
-        | DsDataType.TString -> stringBoundaryValues |> List.map box
+    /// <summary>Generate boundary values for given Type</summary>
+    let boundaryValuesForType (dtype: Type) =
+        if dtype = typeof<int> then intBoundaryValues |> List.map box
+        elif dtype = typeof<double> then doubleBoundaryValues |> List.map box
+        elif dtype = typeof<bool> then boolValues |> List.map box
+        elif dtype = typeof<string> then stringBoundaryValues |> List.map box
+        else []
 
-    /// <summary>Generate default value for DsDataType</summary>
-    let defaultValueForType (dtype: DsDataType) =
-        dtype.DefaultValue
+    /// <summary>Generate default value for Type</summary>
+    let defaultValueForType (dtype: Type) =
+        TypeHelpers.getDefaultValue dtype
 
-    /// <summary>Generate random value for DsDataType</summary>
-    let randomValueForType (dtype: DsDataType) =
-        match dtype with
-        | DsDataType.TInt -> box (randomInt Int32.MinValue Int32.MaxValue)
-        | DsDataType.TDouble -> box (randomDouble -1.0e100 1.0e100)
-        | DsDataType.TBool -> box (randomBool())
-        | DsDataType.TString -> box (randomString 20)
+    /// <summary>Generate random value for Type</summary>
+    let randomValueForType (dtype: Type) =
+        if dtype = typeof<int> then box (randomInt Int32.MinValue Int32.MaxValue)
+        elif dtype = typeof<double> then box (randomDouble -1.0e100 1.0e100)
+        elif dtype = typeof<bool> then box (randomBool())
+        elif dtype = typeof<string> then box (randomString 20)
+        else box null
 
     // ───────────────────────────────────────────────────────────────────
     // Tag Name Generators

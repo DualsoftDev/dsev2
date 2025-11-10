@@ -37,7 +37,7 @@ module FunctionCommon =
                 | true, struct(cachedObj, cachedStr) when Object.Equals(cachedObj, value) ->
                     cachedStr
                 | _ ->
-                    let str = TypeConverter.toString value
+                    let str = TypeHelpers.toString value
                     if stringCache.Count >= RuntimeLimits.Current.StringCacheSize then  // NEW-DEFECT-002 fix: configurable
                         stringCache.Clear()
                     stringCache.[hash] <- struct(value, str)

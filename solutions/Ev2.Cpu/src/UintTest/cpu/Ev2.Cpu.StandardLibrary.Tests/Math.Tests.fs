@@ -56,7 +56,7 @@ module MathTests =
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
             // Should return numeric type (Int or Double)
-            let isNumeric = fc.ReturnType = DsDataType.TInt || fc.ReturnType = DsDataType.TDouble
+            let isNumeric = fc.ReturnType = typeof<int> || fc.ReturnType = typeof<double>
             isNumeric |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -69,7 +69,7 @@ module MathTests =
             fc.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            let isNumeric = fc.ReturnType = DsDataType.TInt || fc.ReturnType = DsDataType.TDouble
+            let isNumeric = fc.ReturnType = typeof<int> || fc.ReturnType = typeof<double>
             isNumeric |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -82,7 +82,7 @@ module MathTests =
             fc.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            let isNumeric = fc.ReturnType = DsDataType.TInt || fc.ReturnType = DsDataType.TDouble
+            let isNumeric = fc.ReturnType = typeof<int> || fc.ReturnType = typeof<double>
             isNumeric |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -128,7 +128,7 @@ module MathTests =
         | Ok fc ->
             // Should accept Int parameters
             let hasIntParam = fc.Inputs |> List.exists (fun p ->
-                p.DataType = DsDataType.TInt || p.DataType = DsDataType.TDouble)
+                p.DataType = typeof<int> || p.DataType = typeof<double>)
             hasIntParam |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -139,7 +139,7 @@ module MathTests =
         match MIN.create() with
         | Ok fc ->
             let hasIntParam = fc.Inputs |> List.exists (fun p ->
-                p.DataType = DsDataType.TInt || p.DataType = DsDataType.TDouble)
+                p.DataType = typeof<int> || p.DataType = typeof<double>)
             hasIntParam |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -150,7 +150,7 @@ module MathTests =
         match MAX.create() with
         | Ok fc ->
             let hasIntParam = fc.Inputs |> List.exists (fun p ->
-                p.DataType = DsDataType.TInt || p.DataType = DsDataType.TDouble)
+                p.DataType = typeof<int> || p.DataType = typeof<double>)
             hasIntParam |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"

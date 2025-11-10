@@ -23,11 +23,11 @@ module R_TRIG =
         let builder = FBBuilder("R_TRIG")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("CLK", DsDataType.TBool)
-        builder.AddOutput("Q", DsDataType.TBool)
+        builder.AddInput("CLK", typeof<bool>)
+        builder.AddOutput("Q", typeof<bool>)
 
         // Static 변수: 이전 상태 저장
-        builder.AddStaticWithInit("M", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("M", typeof<bool>, box false)
 
         // 로직:
         // Q := CLK AND NOT M
@@ -38,10 +38,10 @@ module R_TRIG =
 
         // Q := CLK AND NOT M (상승 에지 감지)
         let risingEdge = and' clk (not' m)
-        builder.AddStatement(assignAuto "Q" DsDataType.TBool risingEdge)
+        builder.AddStatement(assignAuto "Q" typeof<bool> risingEdge)
 
         // M := CLK (현재 상태 저장)
-        builder.AddStatement(assignAuto "M" DsDataType.TBool clk)
+        builder.AddStatement(assignAuto "M" typeof<bool> clk)
 
         builder.SetDescription("Rising edge detection - detects FALSE to TRUE transition")
         builder.Build()

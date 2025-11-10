@@ -69,10 +69,10 @@ module BuiltinFunctions =
             // ═══════════════════════════════════════════════════════════════════
             // 논리 연산 (Logical Operations)
             // ═══════════════════════════════════════════════════════════════════
-            "AND", variadic (fun args _ -> box (args |> List.forall TypeConverter.toBool))
-            "OR",  variadic (fun args _ -> box (args |> List.exists TypeConverter.toBool))
-            "NOT", exact1 (fun v _ -> box (not (TypeConverter.toBool v)))
-            "XOR", exact2 (fun a b _ -> box (TypeConverter.toBool a <> TypeConverter.toBool b))
+            "AND", variadic (fun args _ -> box (args |> List.forall TypeHelpers.toBool))
+            "OR",  variadic (fun args _ -> box (args |> List.exists TypeHelpers.toBool))
+            "NOT", exact1 (fun v _ -> box (not (TypeHelpers.toBool v)))
+            "XOR", exact2 (fun a b _ -> box (TypeHelpers.toBool a <> TypeHelpers.toBool b))
 
             // ═══════════════════════════════════════════════════════════════════
             // 비교 연산 (Comparison Operations)
@@ -103,15 +103,15 @@ module BuiltinFunctions =
             // ═══════════════════════════════════════════════════════════════════
             // 타입 변환 (Type Conversion)
             // ═══════════════════════════════════════════════════════════════════
-            "TOINT",    exact1 (fun v _ -> box (TypeConverter.toInt v))
-            "TODOUBLE", exact1 (fun v _ -> box (TypeConverter.toDouble v))
+            "TOINT",    exact1 (fun v _ -> box (TypeHelpers.toInt v))
+            "TODOUBLE", exact1 (fun v _ -> box (TypeHelpers.toDouble v))
             "TOSTRING", exact1 (fun v _ -> box (cachedToString v))
-            "TOBOOL",   exact1 (fun v _ -> box (TypeConverter.toBool v))
+            "TOBOOL",   exact1 (fun v _ -> box (TypeHelpers.toBool v))
 
             // ═══════════════════════════════════════════════════════════════════
             // 조건부/널 처리 (Conditional/Null Handling)
             // ═══════════════════════════════════════════════════════════════════
-            "IF",       exact3 (fun c t e _ -> if TypeConverter.toBool c then t else e)
+            "IF",       exact3 (fun c t e _ -> if TypeHelpers.toBool c then t else e)
             "COALESCE", variadic (fun args _ -> args |> List.tryFind (fun v -> not (isNull v)) |> Option.defaultValue null)
             "ISNULL",   exact1 (fun v _ -> box (isNull v))
 

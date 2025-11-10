@@ -81,7 +81,7 @@ module rec ExprEvaluator =
                 match args with
                 | [condition; trueExpr; falseExpr] ->
                     let condValue = eval ctx condition
-                    if TypeConverter.toBool condValue then
+                    if TypeHelpers.toBool condValue then
                         eval ctx trueExpr
                     else
                         eval ctx falseExpr
@@ -160,15 +160,15 @@ module rec ExprEvaluator =
 /// 표현식 최적화 (obj 런타임)
 module ExprOptimizer =
 
-    // ── 보조: obj → DsDataType 추론 ──────────────────────────────────────────
-    let private tryInferType (v: obj) : DsDataType option =
+    // ── 보조: obj → Type 추론 ──────────────────────────────────────────
+    let private tryInferType (v: obj) : Type option =
         if isNull v then None
         else
             match v with
-            | :? bool   -> Some DsDataType.TBool
-            | :? int    -> Some DsDataType.TInt
-            | :? float  -> Some DsDataType.TDouble
-            | :? string -> Some DsDataType.TString
+            | :? bool   -> Some typeof<bool>
+            | :? int    -> Some typeof<int>
+            | :? float  -> Some typeof<double>
+            | :? string -> Some typeof<string>
             | _         -> None
 
     // ── 순수 함수 판단(컨텍스트 의존/부작용 함수 제외) ─────────────────────
@@ -225,13 +225,20 @@ module ExprOptimizer =
             | _ ->
                 // 간단한 불리언 항등식
                 match op, l', r' with
-                | o, Const (v, DsDataType.TBool), e
-                | o, e, Const (v, DsDataType.TBool) ->
+                | o, Const (v, t), e when t = typeof<bool> ->
                     let vb = unbox<bool> v
                     match OperatorMapping.opName o, vb with
                     | "AND", true  -> e
-                    | "AND", false -> Const(false :> obj, DsDataType.TBool)
-                    | "OR" , true  -> Const(true  :> obj, DsDataType.TBool)
+                    | "AND", false -> Const(false :> obj, typeof<bool>)
+                    | "OR" , true  -> Const(true  :> obj, typeof<bool>)
+                    | "OR" , false -> e
+                    | _ -> Binary(op, l', r')
+                | o, e, Const (v, t) when t = typeof<bool> ->
+                    let vb = unbox<bool> v
+                    match OperatorMapping.opName o, vb with
+                    | "AND", true  -> e
+                    | "AND", false -> Const(false :> obj, typeof<bool>)
+                    | "OR" , true  -> Const(true  :> obj, typeof<bool>)
                     | "OR" , false -> e
                     | _ -> Binary(op, l', r')
                 | _ -> Binary(op, l', r')
@@ -262,8 +269,8 @@ module ExprOptimizer =
         // x = x => true,  x <> x => false
         | Binary (op, l, r) when obj.ReferenceEquals(l, r) ->
             match OperatorMapping.opName op with
-            | "EQ" -> Const(true  :> obj, DsDataType.TBool)
-            | "NE" -> Const(false :> obj, DsDataType.TBool)
+            | "EQ" -> Const(true  :> obj, typeof<bool>)
+            | "NE" -> Const(false :> obj, typeof<bool>)
             | _    -> Binary(op, algebraicSimplify l, algebraicSimplify r)
 
         // 재귀

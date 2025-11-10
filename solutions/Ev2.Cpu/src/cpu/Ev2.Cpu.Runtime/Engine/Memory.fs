@@ -62,7 +62,7 @@ type MemoryArea =
 /// - Value: 현재 값
 /// - LastValue: 이전 값 (변경 감지용)
 /// - Changed: 변경 플래그
-/// - DsDataType: 데이터 타입
+/// - DataType: 데이터 타입
 /// - Area: 메모리 영역
 /// 배열 인덱싱 방식으로 빠른 접근 제공
 /// </remarks>
@@ -75,7 +75,7 @@ type OptimizedSlot = {
     /// 값 변경 플래그
     mutable Changed: bool
     /// 데이터 타입
-    DsDataType: DsDataType
+    DataType: Type
     /// 메모리 영역
     Area: MemoryArea
 }
@@ -85,7 +85,7 @@ type OptimizedSlot = {
 /// 변수 하나를 저장하는 슬롯입니다.
 /// - Name: 변수 이름
 /// - Area: 메모리 영역 (Input/Output/Local/Internal)
-/// - DsDataType: 데이터 타입
+/// - DataType: 데이터 타입
 /// - Value: 현재 값
 /// - IsRetain: 전원 유지 변수 여부
 /// </remarks>
@@ -95,7 +95,7 @@ type MemorySlot =
       /// 메모리 영역 (mutable)
       mutable Area: MemoryArea
       /// 데이터 타입
-      DsDataType: DsDataType
+      DataType: Type
       /// 현재 값 (mutable)
       mutable Value: obj
       /// 전원 유지 변수 여부
@@ -103,7 +103,7 @@ type MemorySlot =
 
     /// <summary>값을 기본값으로 리셋</summary>
     member slot.ResetDefault() =
-        slot.Value <- slot.DsDataType.DefaultValue
+        slot.Value <- TypeHelpers.getDefaultValue slot.DataType
 
 /// <summary>최적화된 메모리 저장소 (배열 기반 인덱싱)</summary>
 /// <remarks>
@@ -135,7 +135,7 @@ type OptimizedMemory() =
     /// <param name="area">메모리 영역</param>
     /// <returns>할당된 인덱스</returns>
     /// <exception cref="System.Exception">최대 변수 개수 초과 시</exception>
-    member this.DeclareVariable(name: string, dataType: DsDataType, area: MemoryArea) =
+    member this.DeclareVariable(name: string, dataType: Type, area: MemoryArea) =
         // Per spec: reject re-declaration instead of silently mutating Area
         if varIndex.ContainsKey(name) then
             let existingIndex = varIndex.[name]
@@ -147,10 +147,10 @@ type OptimizedMemory() =
         nextIndex <- nextIndex + 1
         varIndex.[name] <- index
         slots.[index] <- {
-            Value = dataType.DefaultValue
+            Value = TypeHelpers.getDefaultValue dataType
             LastValue = null
             Changed = false
-            DsDataType = dataType
+            DataType = dataType
             Area = area
         }
         index
@@ -186,7 +186,7 @@ type OptimizedMemory() =
     /// <remarks>
     /// CRITICAL FIX (DEFECT-021-2/3): Auto-declare Internal variables for edge flags
     /// Previous SetForced required pre-declaration, causing TP/CTUD to crash on first use
-    /// Now auto-declares TBool Internal variables when not found (non-retain by default)
+    /// Now auto-declares typeof<bool> Internal variables when not found (non-retain by default)
     /// MAJOR FIX: Runtime updates need to drive input variables for simulation/diagnostics
     /// This bypasses the writability check to allow setting I: (input) domain variables
     /// Only use for runtime updates/edge flags - normal program logic should respect writability
@@ -211,14 +211,14 @@ type OptimizedMemory() =
             // Auto-declare as Internal (non-retain) for edge tracking flags
             if nextIndex >= maxVariables then
                 RuntimeExceptions.raiseMemoryLimit maxVariables
-            let dtype = if isNull value then DsDataType.TBool else DsDataType.OfType(value.GetType())
+            let dtype = if isNull value then typeof<bool> else value.GetType()
             varIndex.[name] <- nextIndex
             // OptimizedSlot doesn't store Name/IsRetain - those are tracked via varIndex and Area
             slots.[nextIndex] <- {
                 Value = value
                 LastValue = null
                 Changed = true
-                DsDataType = dtype
+                DataType = dtype
                 Area = MemoryArea.Internal
             }
             nextIndex <- nextIndex + 1
@@ -312,7 +312,7 @@ type MemorySnapshot = {
 type Memory() =
 
     let entries = Dictionary<string, MemorySlot>(StringComparer.Ordinal)
-    let types   = Dictionary<string, DsDataType>(StringComparer.Ordinal)
+    let types   = Dictionary<string, Type>(StringComparer.Ordinal)
 
     let history = ResizeArray<string * obj * DateTime>()
     let mutable scanCounter = 0L
@@ -327,8 +327,8 @@ type Memory() =
         | _ -> None
 
     let inferDataType (value: obj) =
-        if isNull value then DsDataType.TString
-        else DsDataType.OfType(value.GetType())
+        if isNull value then typeof<string>
+        else value.GetType()
 
     let appendHistory name value =
         if history.Count >= RuntimeLimits.Current.MaxHistorySize then history.RemoveAt(0)
@@ -356,11 +356,11 @@ type Memory() =
             markDependents name
         changed
 
-    let ensureDeclared area (name: string) (dtype: DsDataType) (isRetain: bool) =
+    let ensureDeclared area (name: string) (dtype: Type) (isRetain: bool) =
         if String.IsNullOrWhiteSpace name then invalidArg "name" "Name cannot be empty"
         match tryFindSlot name with
-        | Some slot when slot.DsDataType <> dtype ->
-            RuntimeExceptions.raiseVariableAlreadyDeclared name (string slot.DsDataType) (string dtype)
+        | Some slot when slot.DataType <> dtype ->
+            RuntimeExceptions.raiseVariableAlreadyDeclared name (TypeHelpers.getTypeName slot.DataType) (TypeHelpers.getTypeName dtype)
         | Some slot when slot.IsRetain <> isRetain ->
             // IsRetain flag changed - reject if Area also changed
             if slot.Area <> area then
@@ -369,7 +369,7 @@ type Memory() =
             let newSlot =
                 { Name = name
                   Area = area
-                  DsDataType = dtype
+                  DataType = dtype
                   Value = slot.Value  // Preserve current value
                   IsRetain = isRetain }
             entries.[name] <- newSlot
@@ -391,8 +391,8 @@ type Memory() =
             let slot =
                 { Name = name
                   Area = area
-                  DsDataType = dtype
-                  Value = dtype.DefaultValue
+                  DataType = dtype
+                  Value = TypeHelpers.getDefaultValue dtype
                   IsRetain = isRetain }
             entries.Add(name, slot)
             types.[name] <- dtype
@@ -406,15 +406,15 @@ type Memory() =
             let slot =
                 { Name = name
                   Area = MemoryArea.Internal
-                  DsDataType = dtype
-                  Value = dtype.DefaultValue
+                  DataType = dtype
+                  Value = TypeHelpers.getDefaultValue dtype
                   IsRetain = false }
             entries.Add(name, slot)
             slot
 
     let coerceValue (slot: MemorySlot) (value: obj) =
-        if isNull value then slot.DsDataType.DefaultValue
-        else slot.DsDataType.Validate value
+        if isNull value then TypeHelpers.getDefaultValue slot.DataType
+        else TypeHelpers.validateType slot.DataType value
 
     let removeByArea predicate =
         entries
@@ -467,7 +467,7 @@ type Memory() =
     /// <remarks>
     /// CRITICAL FIX (DEFECT-022-1): Auto-declare Internal variables for edge flags
     /// Previous SetForced threw VariableNotDeclared, breaking TP/CTUD on first use
-    /// Now auto-declares TBool Internal variables when not found (non-retain by default)
+    /// Now auto-declares typeof<bool> Internal variables when not found (non-retain by default)
     /// MAJOR FIX: Runtime updates need to drive input variables for simulation/diagnostics
     /// This bypasses the writability check to allow setting I: (input) domain variables
     /// Only use for runtime updates/edge flags - normal program logic should respect writability
@@ -483,10 +483,10 @@ type Memory() =
             // CRITICAL FIX (DEFECT-022-1): Auto-declare Internal variables for edge flags
             // Previous SetForced threw VariableNotDeclared, breaking TP/CTUD on first use
             // Auto-declare as Internal (non-retain) for edge tracking flags
-            let dtype = if isNull value then DsDataType.TBool else DsDataType.OfType(value.GetType())
+            let dtype = if isNull value then typeof<bool> else value.GetType()
             let area = MemoryArea.Internal
             types.[name] <- dtype
-            let slot = { Name = name; Value = value; IsRetain = false; Area = area; DsDataType = dtype }
+            let slot = { Name = name; Value = value; IsRetain = false; Area = area; DataType = dtype }
             entries.[name] <- slot
             let changed = recordChange name value
             if changed then appendHistory name value
@@ -511,8 +511,8 @@ type Memory() =
         let slot =
             match tryFindSlot name with
             | Some slot ->
-                if slot.DsDataType <> declaredType then
-                    RuntimeExceptions.raiseVariableAlreadyDeclared name (string slot.DsDataType) (string declaredType)
+                if slot.DataType <> declaredType then
+                    RuntimeExceptions.raiseVariableAlreadyDeclared name (TypeHelpers.getTypeName slot.DataType) (TypeHelpers.getTypeName declaredType)
                 // MAJOR FIX: Don't mutate area - if slot exists, it should already be Input
                 // Changing area breaks runtime's ability to drive Local/Output variables
                 // MEDIUM FIX (DEFECT-018-9): Use domain-specific exception instead of failwith
@@ -524,8 +524,8 @@ type Memory() =
                 let slot =
                     { Name = name
                       Area = MemoryArea.Input
-                      DsDataType = declaredType
-                      Value = declaredType.DefaultValue
+                      DataType = declaredType
+                      Value = TypeHelpers.getDefaultValue declaredType
                       IsRetain = false }
                 entries.Add(name, slot)
                 slot
@@ -550,27 +550,27 @@ type Memory() =
     /// <param name="name">변수 이름</param>
     /// <param name="dtype">데이터 타입</param>
     /// <param name="retain">전원 유지 여부 (기본값: false)</param>
-    member _.DeclareLocal(name: string, dtype: DsDataType, ?retain: bool) =
+    member _.DeclareLocal(name: string, dtype: Type, ?retain: bool) =
         let isRetain = defaultArg retain false
         ensureDeclared MemoryArea.Local name dtype isRetain |> ignore
 
     /// <summary>입력 변수 선언 (Input 영역)</summary>
     /// <param name="name">변수 이름</param>
     /// <param name="dtype">데이터 타입</param>
-    member _.DeclareInput(name: string, dtype: DsDataType) =
+    member _.DeclareInput(name: string, dtype: Type) =
         ensureDeclared MemoryArea.Input name dtype false |> ignore
 
     /// <summary>출력 변수 선언 (Output 영역)</summary>
     /// <param name="name">변수 이름</param>
     /// <param name="dtype">데이터 타입</param>
-    member _.DeclareOutput(name: string, dtype: DsDataType) =
+    member _.DeclareOutput(name: string, dtype: Type) =
         ensureDeclared MemoryArea.Output name dtype false |> ignore
 
     /// <summary>내부 변수 선언 (Internal 영역)</summary>
     /// <param name="name">변수 이름</param>
     /// <param name="dtype">데이터 타입</param>
     /// <param name="retain">전원 유지 여부 (기본값: false)</param>
-    member _.DeclareInternal(name: string, dtype: DsDataType, ?retain: bool) =
+    member _.DeclareInternal(name: string, dtype: Type, ?retain: bool) =
         let isRetain = defaultArg retain false
         ensureDeclared MemoryArea.Internal name dtype isRetain |> ignore
 
@@ -654,13 +654,13 @@ type Memory() =
 
     /// <summary>변수 타입 조회</summary>
     /// <param name="name">변수 이름</param>
-    /// <returns>Some DsDataType (존재하면) 또는 None</returns>
-    member _.GetType(name: string) : DsDataType option =
+    /// <returns>Some Type (존재하면) 또는 None</returns>
+    member _.GetType(name: string) : Type option =
         match types.TryGetValue(name) with
         | true, dtype -> Some dtype
         | _ ->
             match tryFindSlot name with
-            | Some slot -> Some slot.DsDataType
+            | Some slot -> Some slot.DataType
             | None -> None
 
     /// <summary>메모리 통계 정보 조회</summary>
@@ -788,17 +788,17 @@ type Memory() =
 
                 // Infer type from value (best effort for basic types)
                 let dataType =
-                    if isNull value then DsDataType.TInt  // Default for null
+                    if isNull value then typeof<int>  // Default for null
                     else
                         match value with
-                        | :? bool -> DsDataType.TBool
-                        | :? int -> DsDataType.TInt
-                        | :? float -> DsDataType.TDouble
-                        | :? string -> DsDataType.TString
-                        | _ -> DsDataType.TInt  // Default for unknown types
+                        | :? bool -> typeof<bool>
+                        | :? int -> typeof<int>
+                        | :? double -> typeof<double>
+                        | :? string -> typeof<string>
+                        | _ -> typeof<int>  // Default for unknown types
 
                 // Recreate slot with correct Area/IsRetain from snapshot
-                let slot = { Name = name; Area = area; DsDataType = dataType; Value = value; IsRetain = isRetain }
+                let slot = { Name = name; Area = area; DataType = dataType; Value = value; IsRetain = isRetain }
                 entries.[name] <- slot
                 types.[name] <- dataType
 
@@ -893,8 +893,8 @@ type Memory() =
                     // FB Static variable - store in both places
                     let fbInstance = name.Substring(0, underscoreIndex)
                     let staticVarName = name.Substring(underscoreIndex + 1)
-                    let valueJson = RetainValueSerializer.serialize slot.Value slot.DsDataType
-                    let dataType = slot.DsDataType.ToString()
+                    let valueJson = RetainValueSerializer.serialize slot.Value slot.DataType
+                    let dataType = TypeHelpers.getTypeName slot.DataType
 
                     if not (fbStaticMap.ContainsKey(fbInstance)) then
                         fbStaticMap.[fbInstance] <- System.Collections.Generic.List<string * string * string>()
@@ -904,8 +904,8 @@ type Memory() =
                 regularVars <- {
                     RetainVariable.Name = name
                     Area = slot.Area.Prefix.TrimEnd(':')
-                    DataType = slot.DsDataType.ToString()
-                    ValueJson = RetainValueSerializer.serialize slot.Value slot.DsDataType
+                    DataType = TypeHelpers.getTypeName slot.DataType
+                    ValueJson = RetainValueSerializer.serialize slot.Value slot.DataType
                 } :: regularVars
 
         // FBStaticData 리스트 생성 (MEDIUM FIX: 타입 메타데이터 포함)
@@ -959,9 +959,9 @@ type Memory() =
                 let slotArea = slot.Area.Prefix.TrimEnd(':')
                 if slotArea = retainVar.Area then
                     // 타입 확인
-                    let expectedType = slot.DsDataType.ToString()
+                    let expectedType = TypeHelpers.getTypeName slot.DataType
                     if expectedType = retainVar.DataType then
-                        let restoredValue = RetainValueSerializer.deserialize retainVar.ValueJson slot.DsDataType
+                        let restoredValue = RetainValueSerializer.deserialize retainVar.ValueJson slot.DataType
                         // Record change and update history for proper tracking
                         if recordChange retainVar.Name restoredValue then
                             appendHistory retainVar.Name restoredValue
@@ -976,9 +976,9 @@ type Memory() =
                 match tryFindSlot fullName with
                 | Some slot when slot.IsRetain ->
                     // MEDIUM FIX: 타입 검증으로 버전 호환성 확인
-                    let expectedType = slot.DsDataType.ToString()
+                    let expectedType = TypeHelpers.getTypeName slot.DataType
                     if expectedType = fbVar.DataType then
-                        let restoredValue = RetainValueSerializer.deserialize fbVar.ValueJson slot.DsDataType
+                        let restoredValue = RetainValueSerializer.deserialize fbVar.ValueJson slot.DataType
                         if recordChange fullName restoredValue then
                             appendHistory fullName restoredValue
                         slot.Value <- restoredValue

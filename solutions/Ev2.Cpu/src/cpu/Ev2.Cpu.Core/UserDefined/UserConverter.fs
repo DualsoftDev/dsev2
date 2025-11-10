@@ -181,7 +181,7 @@ module UserStmtConverter =
             let callExpr = Function(fbName, inputExprs)
             // FB 호출을 부울 상태 플래그로 저장 (호출 완료 표시용)
             // 인스턴스별로 고유한 Done 플래그 사용
-            let doneTag = DsTag.Create(sprintf "%s.Done" instanceName, DsDataType.TBool)
+            let doneTag = DsTag.Create(sprintf "%s.Done" instanceName, typeof<bool>)
             [Assign(nextStep(), doneTag, callExpr)]
 
         | UFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body) ->
@@ -234,7 +234,7 @@ module UserStmtConverter =
                 // 단순화: Terminal이면 UAssign으로 간주
                 match act with
                 | UParam(name, _) ->
-                    Some (UWhen(cond, UAssign(name, UConst(box true, DsDataType.TBool))))
+                    Some (UWhen(cond, UAssign(name, UConst(box true, typeof<bool>))))
                 | _ ->
                     None
             | _ -> None
@@ -261,7 +261,7 @@ module ConversionUtils =
         DsTag.Create(scopedName, param.DataType)
 
     /// Static 변수를 DsTag로 변환 (스코핑 적용)
-    let staticToDsTag (scope: string) (name: string) (dataType: DsDataType) : DsTag =
+    let staticToDsTag (scope: string) (name: string) (dataType: Type) : DsTag =
         let scopedName = sprintf "%s_%s" scope name
         DsTag.Create(scopedName, dataType)
 

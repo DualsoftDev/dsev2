@@ -120,7 +120,7 @@ type FunctionParam = {
     /// <summary>파라미터 이름</summary>
     Name: string
     /// <summary>파라미터 데이터 타입</summary>
-    DataType: DsDataType
+    DataType: Type
     /// <summary>파라미터 방향 (Input/Output/InOut)</summary>
     Direction: ParamDirection
     /// <summary>기본값 (optional)</summary>
@@ -161,12 +161,12 @@ type FunctionParam = {
             | None -> Ok ()
             | Some value ->
                 try
-                    this.DataType.Validate(value) |> ignore
+                    TypeHelpers.validateType this.DataType value |> ignore
                     Ok ()
                 with ex ->
                     let message =
-                        sprintf "Default value for parameter '%s' must be of type %O: %s"
-                            paramName this.DataType ex.Message
+                        sprintf "Default value for parameter '%s' must be of type %s: %s"
+                            paramName (TypeHelpers.getTypeName this.DataType) ex.Message
                     Error (UserDefinitionError.create "Param.DefaultTypeMismatch" message (basePath @ ["default"]))
 
         IdentifierValidation.validate "Param" this.Name
@@ -242,7 +242,7 @@ type UserFC = {
     /// <summary>함수의 반환 타입</summary>
     /// <returns>첫 번째 출력 파라미터의 데이터 타입</returns>
     /// <exception cref="System.InvalidOperationException">출력 파라미터가 없는 경우</exception>
-    member this.ReturnType : DsDataType =
+    member this.ReturnType : Type =
         match this.Outputs with
         | { DataType = dataType } :: _ -> dataType
         | [] ->
@@ -349,10 +349,10 @@ type UserFB = {
     InOuts: FunctionParam list
     /// <summary>정적 변수 목록 (이름, 타입, 초기값)</summary>
     /// <remarks>호출 간 상태 유지</remarks>
-    Statics: (string * DsDataType * obj option) list
+    Statics: (string * Type * obj option) list
     /// <summary>임시 변수 목록 (이름, 타입)</summary>
     /// <remarks>실행 중에만 사용되는 지역 변수</remarks>
-    Temps: (string * DsDataType) list
+    Temps: (string * Type) list
     /// <summary>함수 블록 본문 (문장 목록)</summary>
     Body: UserStmt list
     /// <summary>메타데이터 (작성자, 버전 등)</summary>
@@ -403,12 +403,12 @@ type UserFB = {
             else
                 try
                     match initValue with
-                    | Some v -> dataType.Validate(v) |> ignore; None
+                    | Some v -> TypeHelpers.validateType dataType v |> ignore; None
                     | None -> None
                 with ex ->
                     let message =
-                        sprintf "Static '%s' initial value must be of type %O: %s"
-                            name dataType ex.Message
+                        sprintf "Static '%s' initial value must be of type %s: %s"
+                            name (TypeHelpers.getTypeName dataType) ex.Message
                     UserDefinitionError.create "FB.Static.InitTypeMismatch"
                         message ["statics"; staticName]
                     |> Some)
@@ -515,12 +515,7 @@ type FBInstance = {
             let value =
                 match initValue with
                 | Some v -> v
-                | None ->
-                    match dataType with
-                    | DsDataType.TBool -> box false
-                    | DsDataType.TInt -> box 0
-                    | DsDataType.TDouble -> box 0.0
-                    | DsDataType.TString -> box ""
+                | None -> TypeHelpers.getDefaultValue dataType
             (name, value))
         |> Map.ofList
 

@@ -7,12 +7,12 @@ open System.Collections.Concurrent
 [<StructuralEquality; NoComparison>]
 type TagDescriptor =
     { Name: string
-      DsDataType: DsDataType
+      DataType: Type
       Description: string option
       Category: string option }
-    static member Create(name, dsDataType, ?description, ?category) =
+    static member Create(name, dataType: Type, ?description, ?category) =
         { Name = name
-          DsDataType = dsDataType
+          DataType = dataType
           Description = description
           Category = category }
 
@@ -20,9 +20,9 @@ type TagDescriptor =
 [<StructuralEquality; NoComparison>]
 type DsTag =
     { Name: string
-      StructType: DsDataType }
-    member this.DsDataType = this.StructType
-    override this.ToString() = sprintf "%s:%s" this.Name (this.StructType.ToString())
+      StructType: Type }
+    member this.DataType = this.StructType
+    override this.ToString() = sprintf "%s:%s" this.Name (TypeHelpers.getTypeName this.StructType)
 
 module internal TagRegistryStore =
     let registry =
@@ -34,11 +34,11 @@ module internal TagRegistryHelpers =
             invalidArg "name" "Tag name cannot be null or whitespace"
         name.Trim()
 
-    let ensureTypeConsistency name dtype (existing: DsTag) =
+    let ensureTypeConsistency name (dtype: Type) (existing: DsTag) =
         if existing.StructType <> dtype then
             raise (InvalidOperationException($"Tag '{name}' already registered as {existing.StructType} but requested {dtype}"))
         existing
-    let getOrAdd (name: string) (dtype: DsDataType) =
+    let getOrAdd (name: string) (dtype: Type) =
         let key = normalizeName name
         TagRegistryStore.registry.AddOrUpdate(
             key,
@@ -52,7 +52,7 @@ module internal TagRegistryHelpers =
 
     let registerDescriptor (descriptor: TagDescriptor) =
         if isNull (box descriptor) then invalidArg "descriptor" "Descriptor cannot be null"
-        getOrAdd descriptor.Name descriptor.DsDataType
+        getOrAdd descriptor.Name descriptor.DataType
 
     let tryFind name =
         let key = normalizeName name
@@ -67,14 +67,14 @@ module internal TagRegistryHelpers =
 
 
 module TagBuilders =
-    let create name dtype = TagRegistryHelpers.getOrAdd name dtype
-    let bool name = create name TBool
-    let int name = create name TInt
-    let double name = create name TDouble
-    let string name = create name TString
+    let create name (dtype: Type) = TagRegistryHelpers.getOrAdd name dtype
+    let bool name = create name typeof<bool>
+    let int name = create name typeof<int>
+    let double name = create name typeof<double>
+    let string name = create name typeof<string>
 
 type DsTag with
-    static member Create(name, dtype: DsDataType) = TagBuilders.create name dtype
+    static member Create(name, dtype: Type) = TagBuilders.create name dtype
     static member Bool(name) = TagBuilders.bool name
     static member Int(name) = TagBuilders.int name
     static member Double(name) = TagBuilders.double name

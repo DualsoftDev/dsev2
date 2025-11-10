@@ -29,21 +29,21 @@ module TONR =
         let builder = FBBuilder("TONR")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("IN", DsDataType.TBool)
-        builder.AddInput("R", DsDataType.TBool)       // Reset input
-        builder.AddInput("PT", DsDataType.TInt)       // Preset time (ms)
-        builder.AddOutput("Q", DsDataType.TBool)
-        builder.AddOutput("ET", DsDataType.TInt)      // Elapsed time (ms)
+        builder.AddInput("IN", typeof<bool>)
+        builder.AddInput("R", typeof<bool>)       // Reset input
+        builder.AddInput("PT", typeof<int>)       // Preset time (ms)
+        builder.AddOutput("Q", typeof<bool>)
+        builder.AddOutput("ET", typeof<int>)      // Elapsed time (ms)
 
         // Static 변수 (Retentive - 상태 유지)
-        builder.AddStaticWithInit("Running", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("LastIN", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("StartTime", DsDataType.TDouble, box 0.0)
-        builder.AddStaticWithInit("ElapsedTime", DsDataType.TDouble, box 0.0)  // 누적 시간 (유지됨)
-        builder.AddStaticWithInit("LastStopTime", DsDataType.TDouble, box 0.0)
+        builder.AddStaticWithInit("Running", typeof<bool>, box false)
+        builder.AddStaticWithInit("LastIN", typeof<bool>, box false)
+        builder.AddStaticWithInit("StartTime", typeof<double>, box 0.0)
+        builder.AddStaticWithInit("ElapsedTime", typeof<double>, box 0.0)  // 누적 시간 (유지됨)
+        builder.AddStaticWithInit("LastStopTime", typeof<double>, box 0.0)
 
         // Temp 변수
-        builder.AddTemp("CurrentTime", DsDataType.TDouble)
+        builder.AddTemp("CurrentTime", typeof<double>)
 
         let inSig = Terminal(DsTag.Bool("IN"))
         let reset = Terminal(DsTag.Bool("R"))
@@ -64,7 +64,7 @@ module TONR =
         // CRITICAL FIX: NOW() returns int64, use TODOUBLE (not DOUBLE) to convert
         let currentTime = Function("TODOUBLE", [Function("NOW", [])])
         builder.AddStatement(
-            assignAuto "CurrentTime" DsDataType.TDouble currentTime
+            assignAuto "CurrentTime" typeof<double> currentTime
         )
 
         // Running := IF reset THEN FALSE ELSIF (risingEdge AND NOT reset) THEN TRUE ELSIF fallingEdge THEN FALSE ELSE Running
@@ -81,7 +81,7 @@ module TONR =
                 ])
             ])
         ])
-        builder.AddStatement(assignAuto "Running" DsDataType.TBool newRunning)
+        builder.AddStatement(assignAuto "Running" typeof<bool> newRunning)
 
         // StartTime := IF reset THEN 0.0 ELSIF (risingEdge AND NOT reset) THEN NOW() ELSE StartTime
         let newStartTime = Function("IF", [
@@ -93,7 +93,7 @@ module TONR =
                 startTime
             ])
         ])
-        builder.AddStatement(assignAuto "StartTime" DsDataType.TDouble newStartTime)
+        builder.AddStatement(assignAuto "StartTime" typeof<double> newStartTime)
 
         // LastStopTime := IF fallingEdge THEN NOW() ELSE LastStopTime
         let newLastStopTime = Function("IF", [
@@ -101,7 +101,7 @@ module TONR =
             currentTime
             lastStopTime
         ])
-        builder.AddStatement(assignAuto "LastStopTime" DsDataType.TDouble newLastStopTime)
+        builder.AddStatement(assignAuto "LastStopTime" typeof<double> newLastStopTime)
 
         // 실행 중일 때: 이전 누적 시간 + 현재 실행 시간
         let currentRunTime = sub (Terminal(DsTag.Double("CurrentTime"))) startTime
@@ -128,21 +128,21 @@ module TONR =
                 ])
             ])
         ])
-        builder.AddStatement(assignAuto "ElapsedTime" DsDataType.TDouble newElapsed)
+        builder.AddStatement(assignAuto "ElapsedTime" typeof<double> newElapsed)
 
         // LastIN 업데이트
         builder.AddStatement(
-            assignAuto "LastIN" DsDataType.TBool inSig
+            assignAuto "LastIN" typeof<bool> inSig
         )
 
         // 출력 설정
         // Q := (ET >= PT)
         builder.AddStatement(
-            assignAuto "Q" DsDataType.TBool (ge elapsed pt)
+            assignAuto "Q" typeof<bool> (ge elapsed pt)
         )
-        // ET는 TInt 출력이므로 elapsed(TDouble)를 변환
+        // ET는 typeof<int> 출력이므로 elapsed(typeof<double>)를 변환
         builder.AddStatement(
-            assignAuto "ET" DsDataType.TInt (Function("TOINT", [elapsed]))
+            assignAuto "ET" typeof<int> (Function("TOINT", [elapsed]))
         )
 
         builder.SetDescription("Retentive On-Delay Timer - Accumulates time, reset only by R input (IEC 61131-3)")

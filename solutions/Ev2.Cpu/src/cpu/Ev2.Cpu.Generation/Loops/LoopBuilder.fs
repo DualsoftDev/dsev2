@@ -13,7 +13,7 @@ open Ev2.Cpu.Core
 // ═════════════════════════════════════════════════════════════════════════════
 
 /// FOR 루프 빌더
-type ForLoopBuilder(loopVarName: string, loopVarType: DsDataType) =
+type ForLoopBuilder(loopVarName: string, loopVarType: Type) =
     let mutable startExpr: DsExpr option = None
     let mutable endExpr: DsExpr option = None
     let mutable stepExpr: DsExpr option = None
@@ -22,7 +22,7 @@ type ForLoopBuilder(loopVarName: string, loopVarType: DsDataType) =
 
     /// 시작값 설정
     member this.From(start: int) =
-        startExpr <- Some (Const(box start, DsDataType.TInt))
+        startExpr <- Some (Const(box start, typeof<int>))
         this
 
     /// 시작값 설정 (표현식)
@@ -32,7 +32,7 @@ type ForLoopBuilder(loopVarName: string, loopVarType: DsDataType) =
 
     /// 종료값 설정
     member this.To(endVal: int) =
-        endExpr <- Some (Const(box endVal, DsDataType.TInt))
+        endExpr <- Some (Const(box endVal, typeof<int>))
         this
 
     /// 종료값 설정 (표현식)
@@ -42,7 +42,7 @@ type ForLoopBuilder(loopVarName: string, loopVarType: DsDataType) =
 
     /// 증분값 설정
     member this.Step(step: int) =
-        stepExpr <- Some (Const(box step, DsDataType.TInt))
+        stepExpr <- Some (Const(box step, typeof<int>))
         this
 
     /// 증분값 설정 (표현식)
@@ -115,26 +115,26 @@ module LoopBuilder =
 
     /// FOR 루프 빌더 생성 (정수 루프 변수)
     let forLoop (loopVarName: string) =
-        ForLoopBuilder(loopVarName, DsDataType.TInt)
+        ForLoopBuilder(loopVarName, typeof<int>)
 
     /// FOR 루프 빌더 생성 (타입 지정)
-    let forLoopWithType (loopVarName: string) (varType: DsDataType) =
+    let forLoopWithType (loopVarName: string) (varType: Type) =
         ForLoopBuilder(loopVarName, varType)
 
     /// FOR 루프 간편 생성 (0부터 count-1까지)
     let forRange (loopVarName: string) (count: int) (body: DsStmt list) : DsStmt =
-        let loopTag = DsTag.Create(loopVarName, DsDataType.TInt)
-        For(0, loopTag, Const(box 0, DsDataType.TInt), Const(box (count - 1), DsDataType.TInt), Some(Const(box 1, DsDataType.TInt)), body)
+        let loopTag = DsTag.Create(loopVarName, typeof<int>)
+        For(0, loopTag, Const(box 0, typeof<int>), Const(box (count - 1), typeof<int>), Some(Const(box 1, typeof<int>)), body)
 
     /// FOR 루프 간편 생성 (start부터 end까지, step=1)
     let forFromTo (loopVarName: string) (start: int) (endVal: int) (body: DsStmt list) : DsStmt =
-        let loopTag = DsTag.Create(loopVarName, DsDataType.TInt)
-        For(0, loopTag, Const(box start, DsDataType.TInt), Const(box endVal, DsDataType.TInt), Some(Const(box 1, DsDataType.TInt)), body)
+        let loopTag = DsTag.Create(loopVarName, typeof<int>)
+        For(0, loopTag, Const(box start, typeof<int>), Const(box endVal, typeof<int>), Some(Const(box 1, typeof<int>)), body)
 
     /// FOR 루프 간편 생성 (start부터 end까지, step 지정)
     let forFromToStep (loopVarName: string) (start: int) (endVal: int) (step: int) (body: DsStmt list) : DsStmt =
-        let loopTag = DsTag.Create(loopVarName, DsDataType.TInt)
-        For(0, loopTag, Const(box start, DsDataType.TInt), Const(box endVal, DsDataType.TInt), Some(Const(box step, DsDataType.TInt)), body)
+        let loopTag = DsTag.Create(loopVarName, typeof<int>)
+        For(0, loopTag, Const(box start, typeof<int>), Const(box endVal, typeof<int>), Some(Const(box step, typeof<int>)), body)
 
     // ─────────────────────────────────────────────────────────────────
     // WHILE 루프 빌더
@@ -172,8 +172,8 @@ module LoopBuilder =
 
     /// 카운트다운 루프 (start부터 0까지, step=-1)
     let forCountdown (loopVarName: string) (start: int) (body: DsStmt list) : DsStmt =
-        let loopTag = DsTag.Create(loopVarName, DsDataType.TInt)
-        For(0, loopTag, Const(box start, DsDataType.TInt), Const(box 0, DsDataType.TInt), Some(Const(box -1, DsDataType.TInt)), body)
+        let loopTag = DsTag.Create(loopVarName, typeof<int>)
+        For(0, loopTag, Const(box start, typeof<int>), Const(box 0, typeof<int>), Some(Const(box -1, typeof<int>)), body)
 
     /// N번 반복 실행 (루프 변수 사용 안 함)
     let repeat (count: int) (body: DsStmt list) : DsStmt =
@@ -196,7 +196,7 @@ module LoopTransformations =
 
             let initAssign = Assign(step, loopVar, startExpr)
 
-            let stepVal = stepExpr |> Option.defaultValue (Const(box 1, DsDataType.TInt))
+            let stepVal = stepExpr |> Option.defaultValue (Const(box 1, typeof<int>))
             let comparison =
                 // step > 0이면 i <= end, step < 0이면 i >= end
                 Binary(DsOp.Le, Terminal loopVar, endExpr)  // 간단히 <= 사용
@@ -213,7 +213,7 @@ module LoopTransformations =
     /// WHILE 루프 펼치기 (상수 반복 횟수인 경우)
     let unfoldWhile (whileStmt: DsStmt) (maxUnfold: int) : DsStmt list option =
         match whileStmt with
-        | While(_, Const(value, DsDataType.TBool), body, _) ->
+        | While(_, Const(value, typ), body, _) when typ = typeof<bool> ->
             // 상수 조건: true이면 무한 루프 (펼칠 수 없음), false이면 실행 안 함
             match value with
             | :? bool as b ->

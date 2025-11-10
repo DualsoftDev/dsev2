@@ -23,29 +23,29 @@ module RuntimeUpdateTests =
         | _ -> false
 
     let createSimpleFC name inputName outputName =
-        let input = FunctionParam.Create(inputName, DsDataType.TInt, ParamDirection.Input)
-        let output = FunctionParam.Create(outputName, DsDataType.TInt, ParamDirection.Output)
-        let body = UParam(inputName, DsDataType.TInt) // 간단히 입력을 출력으로
+        let input = FunctionParam.Create(inputName, typeof<int>, ParamDirection.Input)
+        let output = FunctionParam.Create(outputName, typeof<int>, ParamDirection.Output)
+        let body = UParam(inputName, typeof<int>) // 간단히 입력을 출력으로
         UserFC.Create(name, [input], [output], body)
 
     let createSimpleFB name =
-        let input = FunctionParam.Create("In", DsDataType.TBool, ParamDirection.Input)
-        let output = FunctionParam.Create("Out", DsDataType.TBool, ParamDirection.Output)
-        let statics = [("Counter", DsDataType.TInt, None)]
+        let input = FunctionParam.Create("In", typeof<bool>, ParamDirection.Input)
+        let output = FunctionParam.Create("Out", typeof<bool>, ParamDirection.Output)
+        let statics = [("Counter", typeof<int>, None)]
         let temps = []
         // Need at least one statement for validation
-        let body = [UAssign("Out", UParam("In", DsDataType.TBool))]
+        let body = [UAssign("Out", UParam("In", typeof<bool>))]
         UserFB.Create(name, [input], [output], [], statics, temps, body)
 
     let createTestProgram() =
-        let inputs = [("Start", DsDataType.TBool)]
-        let outputs = [("Motor", DsDataType.TBool)]
+        let inputs = [("Start", typeof<bool>)]
+        let outputs = [("Motor", typeof<bool>)]
         let locals = []
         let body = [
             DsStmt.Assign(
                 0,
-                DsTag.Create("Motor", DsDataType.TBool),
-                DsExpr.Terminal(DsTag.Create("Start", DsDataType.TBool)))
+                DsTag.Create("Motor", typeof<bool>),
+                DsExpr.Terminal(DsTag.Create("Start", typeof<bool>)))
         ]
         { Statement.Program.Name = "TestProgram"
           Inputs = inputs
@@ -196,7 +196,7 @@ module RuntimeUpdateTests =
         let userLib = UserLibrary()
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
 
-        ctx.Memory.DeclareLocal("TestVar", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("TestVar", typeof<int>)
         ctx.Memory.Set("TestVar", box 10)
 
         updateMgr.EnqueueUpdate(UpdateRequest.updateMemory "TestVar" (box 20))
@@ -235,8 +235,8 @@ module RuntimeUpdateTests =
         let userLib = UserLibrary()
 
         // 메모리 초기화
-        ctx.Memory.DeclareInput("Start", DsDataType.TBool)
-        ctx.Memory.DeclareOutput("Motor", DsDataType.TBool)
+        ctx.Memory.DeclareInput("Start", typeof<bool>)
+        ctx.Memory.DeclareOutput("Motor", typeof<bool>)
 
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
         let engine = CpuScanEngine(program, ctx, None, Some updateMgr, None)
@@ -265,8 +265,8 @@ module RuntimeUpdateTests =
         let ctx = Context.create()
         let userLib = UserLibrary()
 
-        ctx.Memory.DeclareInput("Start", DsDataType.TBool)
-        ctx.Memory.DeclareOutput("Motor", DsDataType.TBool)
+        ctx.Memory.DeclareInput("Start", typeof<bool>)
+        ctx.Memory.DeclareOutput("Motor", typeof<bool>)
 
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
         let engine = CpuScanEngine(program, ctx, None, Some updateMgr, None)
@@ -278,12 +278,12 @@ module RuntimeUpdateTests =
         let newBody = [
             DsStmt.Assign(
                 0,
-                DsTag.Create("Motor", DsDataType.TBool),
-                DsExpr.Const(box true, DsDataType.TBool))
+                DsTag.Create("Motor", typeof<bool>),
+                DsExpr.Const(box true, typeof<bool>))
             DsStmt.Assign(
                 1,
-                DsTag.Create("Start", DsDataType.TBool),
-                DsExpr.Const(box false, DsDataType.TBool))
+                DsTag.Create("Start", typeof<bool>),
+                DsExpr.Const(box false, typeof<bool>))
         ]
 
         updateMgr.EnqueueUpdate(UpdateRequest.updateBody newBody)
@@ -312,8 +312,8 @@ module RuntimeUpdateTests =
         let ctx = Context.create()
         let userLib = UserLibrary()
 
-        ctx.Memory.DeclareInput("Start", DsDataType.TBool)
-        ctx.Memory.DeclareOutput("Motor", DsDataType.TBool)
+        ctx.Memory.DeclareInput("Start", typeof<bool>)
+        ctx.Memory.DeclareOutput("Motor", typeof<bool>)
 
         let config = Some { UpdateConfig.Default with AutoRollback = true }
         let updateMgr = RuntimeUpdateManager(ctx, userLib, config)
@@ -433,7 +433,7 @@ module RuntimeUpdateTests =
 
         // 10개 변수 선언
         for i in 1..10 do
-            ctx.Memory.DeclareLocal(sprintf "Var%d" i, DsDataType.TInt)
+            ctx.Memory.DeclareLocal(sprintf "Var%d" i, typeof<int>)
             ctx.Memory.Set(sprintf "Var%d" i, box 0)
 
         // 여러 스레드에서 다른 변수를 동시에 업데이트
@@ -463,7 +463,7 @@ module RuntimeUpdateTests =
         let userLib = UserLibrary()
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
 
-        ctx.Memory.DeclareLocal("SharedVar", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("SharedVar", typeof<int>)
         ctx.Memory.Set("SharedVar", box 0)
 
         // 여러 스레드에서 동일한 변수를 동시에 업데이트
@@ -492,7 +492,7 @@ module RuntimeUpdateTests =
         let userLib = UserLibrary()
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
 
-        ctx.Memory.DeclareLocal("Counter", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("Counter", typeof<int>)
         ctx.Memory.Set("Counter", box 0)
 
         let mutable readValues = []
@@ -531,7 +531,7 @@ module RuntimeUpdateTests =
 
         // 1000개 변수 선언
         for i in 1..1000 do
-            ctx.Memory.DeclareLocal(sprintf "PerfVar%d" i, DsDataType.TInt)
+            ctx.Memory.DeclareLocal(sprintf "PerfVar%d" i, typeof<int>)
             ctx.Memory.Set(sprintf "PerfVar%d" i, box 0)
 
         // 1000개 업데이트 요청 생성
@@ -562,7 +562,7 @@ module RuntimeUpdateTests =
         let userLib = UserLibrary()
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
 
-        ctx.Memory.DeclareLocal("HighFreqVar", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("HighFreqVar", typeof<int>)
         ctx.Memory.Set("HighFreqVar", box 0)
 
         // 10,000개 업데이트 요청
@@ -592,7 +592,7 @@ module RuntimeUpdateTests =
         let updateMgr = RuntimeUpdateManager(ctx, userLib, None)
 
         // 동시에 FC 업데이트 및 메모리 업데이트
-        ctx.Memory.DeclareLocal("TestVar", DsDataType.TInt)
+        ctx.Memory.DeclareLocal("TestVar", typeof<int>)
         ctx.Memory.Set("TestVar", box 0)
 
         let fcTasks =
@@ -670,7 +670,7 @@ module RuntimeUpdateTests =
 
         // 500개 변수 선언
         for i in 1..500 do
-            ctx.Memory.DeclareLocal(sprintf "LoadVar%d" i, DsDataType.TInt)
+            ctx.Memory.DeclareLocal(sprintf "LoadVar%d" i, typeof<int>)
             ctx.Memory.Set(sprintf "LoadVar%d" i, box 0)
 
         // 고부하 상황 시뮬레이션: 여러 스레드에서 동시에 업데이트
@@ -703,7 +703,7 @@ module RuntimeUpdateTests =
 
         // 성공할 업데이트 50개 (pre-declared)
         for i in 1..50 do
-            ctx.Memory.DeclareLocal(sprintf "StatVar%d" i, DsDataType.TInt)
+            ctx.Memory.DeclareLocal(sprintf "StatVar%d" i, typeof<int>)
 
         // CRITICAL FIX (DEFECT-022-1): SetForced now auto-declares missing variables
         // Previous behavior: 10 updates to non-existent variables would fail

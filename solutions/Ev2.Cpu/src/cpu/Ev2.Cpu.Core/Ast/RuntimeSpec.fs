@@ -60,7 +60,7 @@ module private Builders =
         {
             Group = group
             Key = key
-            Tag = DsTag.Create(tag, DsDataType.TBool)
+            Tag = DsTag.Create(tag, typeof<bool>)
             Primitive = primitive
             Description = description
             DefaultValue = box false

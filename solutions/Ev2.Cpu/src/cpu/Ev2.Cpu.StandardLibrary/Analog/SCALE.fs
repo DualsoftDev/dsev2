@@ -25,14 +25,14 @@ module SCALE =
         let builder = FCBuilder("SCALE")
 
         // 입력
-        builder.AddInput("IN", DsDataType.TDouble)          // 입력 값
-        builder.AddInput("IN_MIN", DsDataType.TDouble)      // 입력 최소값
-        builder.AddInput("IN_MAX", DsDataType.TDouble)      // 입력 최대값
-        builder.AddInput("OUT_MIN", DsDataType.TDouble)     // 출력 최소값
-        builder.AddInput("OUT_MAX", DsDataType.TDouble)     // 출력 최대값
+        builder.AddInput("IN", typeof<double>)          // 입력 값
+        builder.AddInput("IN_MIN", typeof<double>)      // 입력 최소값
+        builder.AddInput("IN_MAX", typeof<double>)      // 입력 최대값
+        builder.AddInput("OUT_MIN", typeof<double>)     // 출력 최소값
+        builder.AddInput("OUT_MAX", typeof<double>)     // 출력 최대값
 
         // 출력
-        builder.AddOutput("OUT", DsDataType.TDouble)        // 스케일된 출력
+        builder.AddOutput("OUT", typeof<double>)        // 스케일된 출력
 
         // 로직:
         // range_in = IN_MAX - IN_MIN

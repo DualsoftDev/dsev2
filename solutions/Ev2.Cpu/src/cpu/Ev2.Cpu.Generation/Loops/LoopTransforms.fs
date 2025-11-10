@@ -152,14 +152,14 @@ module Unrolling =
             //      ...
             //    END_FOR
 
-            let originalStep = stepOpt |> Option.defaultValue (Const(box 1, DsDataType.TInt))
+            let originalStep = stepOpt |> Option.defaultValue (Const(box 1, typeof<int>))
             let newStep =
                 match originalStep with
                 | Const(stepVal, dt) ->
                     let s = stepVal :?> int
                     Const(box (s * factor), dt)
                 | _ ->
-                    Binary(DsOp.Mul, originalStep, Const(box factor, DsDataType.TInt))
+                    Binary(DsOp.Mul, originalStep, Const(box factor, typeof<int>))
 
             // 본문을 factor번 복제 (각각 다른 인덱스)
             // MAJOR FIX (DEFECT-017-6): Substitute loop variable with (i + f*step) in each copy
@@ -178,7 +178,7 @@ module Unrolling =
                                 let s = stepVal :?> int
                                 Const(box (s * f), dt)
                             | _ ->
-                                Binary(DsOp.Mul, originalStep, Const(box f, DsDataType.TInt))
+                                Binary(DsOp.Mul, originalStep, Const(box f, typeof<int>))
 
                         let replacement = Binary(DsOp.Add, Terminal(loopVar), offset)
                         body |> List.map (VariableSubstitution.substituteStmt loopVar.Name replacement)
@@ -275,7 +275,7 @@ module ConditionSimplification =
     /// WHILE 루프의 상수 조건 평가
     let simplifyConstantCondition (stmt: DsStmt) : DsStmt option =
         match stmt with
-        | While(step, Const(value, DsDataType.TBool), body, maxIter) ->
+        | While(step, Const(value, t), body, maxIter) when t = typeof<bool> ->
             match value with
             | :? bool as b ->
                 if b then
@@ -293,14 +293,14 @@ module ConditionSimplification =
     let simplifyAlwaysTrueFalse (expr: DsExpr) : DsExpr option =
         match expr with
         | Binary(DsOp.Eq, Const(v1, _), Const(v2, _)) ->
-            Some (Const(box (v1 = v2), DsDataType.TBool))
+            Some (Const(box (v1 = v2), typeof<bool>))
         | Binary(DsOp.Ne, Const(v1, _), Const(v2, _)) ->
-            Some (Const(box (v1 <> v2), DsDataType.TBool))
+            Some (Const(box (v1 <> v2), typeof<bool>))
         | Binary(DsOp.Lt, Const(v1, _), Const(v2, _)) ->
             try
                 let n1 = v1 :?> int
                 let n2 = v2 :?> int
-                Some (Const(box (n1 < n2), DsDataType.TBool))
+                Some (Const(box (n1 < n2), typeof<bool>))
             with _ -> None
         | _ -> None
 
@@ -409,7 +409,7 @@ module Transformations =
                     let limit = limitVal :?> int
                     let step = stepVal :?> int
                     let forBody = body |> List.rev |> List.tail |> List.rev  // 마지막 증가문 제거
-                    Some (For(step, counterVar, Const(box 0, DsDataType.TInt), Const(box (limit - 1), DsDataType.TInt), Some(Const(box step, DsDataType.TInt)), forBody))
+                    Some (For(step, counterVar, Const(box 0, typeof<int>), Const(box (limit - 1), typeof<int>), Some(Const(box step, typeof<int>)), forBody))
                 with _ -> None
             | _ -> None
         | _ -> None

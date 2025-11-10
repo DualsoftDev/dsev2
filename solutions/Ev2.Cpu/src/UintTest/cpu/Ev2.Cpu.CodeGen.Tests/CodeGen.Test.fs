@@ -31,7 +31,7 @@ let ``Generation - Timer 생성`` () =
     let relay = Generation.timer start ms tag
     
     match relay.Set with
-    | Function("TON", [s; Const(name, DsDataType.TString); Const(time, DsDataType.TInt)]) ->
+    | Function("TON", [s; Const(name, t1); Const(time, t2)]) when t1 = typeof<string> && t2 = typeof<int> ->
         s |> should equal start
         unbox time |> should equal ms
     | _ -> failwith "Expected TON function"
@@ -49,7 +49,7 @@ let ``Generation - Counter 생성`` () =
     let relay = Generation.counterUp up  reset tag
     
     // Reset 조건에 reset 포함 확인
-    relay.Reset.InferType() |> should equal DsDataType.TBool
+    relay.Reset.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Generation - State 전환`` () =
@@ -86,10 +86,10 @@ let ``Generation - Interlock 생성`` () =
     let relay = Generation.interlock conditions tag
     
     // Set: 모든 조건 AND
-    relay.Set.InferType() |> should equal DsDataType.TBool
+    relay.Set.InferType() |> should equal typeof<bool>
     
     // Reset: 하나라도 false (any NOT)
-    relay.Reset.InferType() |> should equal DsDataType.TBool
+    relay.Reset.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Generation - Statement 변환`` () =
@@ -159,7 +159,7 @@ let ``CodeBuilder - 사용 예제`` () =
 let ``Inline Stmt helpers - assign and command`` () =
     let assignStmt = assignBool "lamp" (boolConst true)
     match assignStmt with
-    | Assign(0, tag, Const(value, DsDataType.TBool)) ->
+    | Assign(0, tag, Const(value, t)) when t = typeof<bool> ->
         tag.Name |> should equal "lamp"
         unbox<bool> value |> should equal true
     | _ -> failwith "Expected boolean assignment"
@@ -178,7 +178,7 @@ let ``Inline Stmt helpers - assign and command`` () =
 
     let constStmt = setIntConst "counter" 5
     match constStmt with
-    | Assign(0, tag, Const(value, DsDataType.TInt)) ->
+    | Assign(0, tag, Const(value, t)) when t = typeof<int> ->
         tag.Name |> should equal "counter"
         unbox<int> value |> should equal 5
     | _ -> failwith "Expected integer const assignment"
@@ -196,7 +196,7 @@ let ``Generation - Timer with 0ms (immediate)`` () =
     let relay = Generation.timer start ms tag
 
     match relay.Set with
-    | Function("TON", [s; Const(name, DsDataType.TString); Const(time, DsDataType.TInt)]) ->
+    | Function("TON", [s; Const(name, t1); Const(time, t2)]) when t1 = typeof<string> && t2 = typeof<int> ->
         s |> should equal start
         unbox time |> should equal 0
     | _ -> failwith "Expected TON with 0ms"
@@ -210,7 +210,7 @@ let ``Generation - Timer with 1ms (minimum practical)`` () =
     let relay = Generation.timer start ms tag
 
     match relay.Set with
-    | Function("TON", [s; Const(name, DsDataType.TString); Const(time, DsDataType.TInt)]) ->
+    | Function("TON", [s; Const(name, t1); Const(time, t2)]) when t1 = typeof<string> && t2 = typeof<int> ->
         s |> should equal start
         unbox time |> should equal 1
     | _ -> failwith "Expected TON with 1ms"
@@ -224,7 +224,7 @@ let ``Generation - Timer with Int32.MaxValue`` () =
     let relay = Generation.timer start ms tag
 
     match relay.Set with
-    | Function("TON", [s; Const(name, DsDataType.TString); Const(time, DsDataType.TInt)]) ->
+    | Function("TON", [s; Const(name, t1); Const(time, t2)]) when t1 = typeof<string> && t2 = typeof<int> ->
         s |> should equal start
         unbox time |> should equal System.Int32.MaxValue
     | _ -> failwith "Expected TON with Int32.MaxValue"
@@ -238,7 +238,7 @@ let ``Generation - Timer with very large value (1 hour)`` () =
     let relay = Generation.timer start ms tag
 
     match relay.Set with
-    | Function("TON", [s; Const(name, DsDataType.TString); Const(time, DsDataType.TInt)]) ->
+    | Function("TON", [s; Const(name, t1); Const(time, t2)]) when t1 = typeof<string> && t2 = typeof<int> ->
         s |> should equal start
         unbox time |> should equal 3600000
     | _ -> failwith "Expected TON with 1 hour"
@@ -250,8 +250,8 @@ let ``Generation - Interlock with single condition`` () =
 
     let relay = Generation.interlock conditions tag
 
-    relay.Set.InferType() |> should equal DsDataType.TBool
-    relay.Reset.InferType() |> should equal DsDataType.TBool
+    relay.Set.InferType() |> should equal typeof<bool>
+    relay.Reset.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Generation - Interlock with many conditions (100)`` () =
@@ -260,8 +260,8 @@ let ``Generation - Interlock with many conditions (100)`` () =
 
     let relay = Generation.interlock conditions tag
 
-    relay.Set.InferType() |> should equal DsDataType.TBool
-    relay.Reset.InferType() |> should equal DsDataType.TBool
+    relay.Set.InferType() |> should equal typeof<bool>
+    relay.Reset.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Generation - Tag with very long name (500 chars)`` () =
@@ -330,12 +330,12 @@ let ``Generation - State transition with Int32 boundary values`` () =
 
     // Test with extreme state values
     let relayMin = Generation.state currentState targetStateMin condition
-    relayMin.Set.InferType() |> should equal DsDataType.TBool
-    relayMin.Reset.InferType() |> should equal DsDataType.TBool
+    relayMin.Set.InferType() |> should equal typeof<bool>
+    relayMin.Reset.InferType() |> should equal typeof<bool>
 
     let relayMax = Generation.state currentState targetStateMax condition
-    relayMax.Set.InferType() |> should equal DsDataType.TBool
-    relayMax.Reset.InferType() |> should equal DsDataType.TBool
+    relayMax.Set.InferType() |> should equal typeof<bool>
+    relayMax.Reset.InferType() |> should equal typeof<bool>
 
 [<Fact>]
 let ``Generation - Step assignments with Int32.MaxValue`` () =

@@ -105,7 +105,7 @@ type Stmt with
         let rec toDebugRec stmt =
             match stmt with
             | Assignment(tag, expr) ->
-                sprintf "Assign(%s:%A, %s)" tag.Name tag.DsDataType (expr.ToDebugText())
+                sprintf "Assign(%s:%A, %s)" tag.Name tag.StructType (expr.ToDebugText())
             
             | Conditional(cond, thenStmts, elseStmts) ->
                 let thenText = thenStmts |> List.map toDebugRec |> String.concat "; "

@@ -14,7 +14,7 @@ open Ev2.Cpu.Runtime.ExprEvaluator
 [<Fact>]
 let ``StmtEvaluator assigns output`` () =
     let ctx = Context.create()
-    ctx.Memory.DeclareOutput("Q1", DsDataType.TBool)
+    ctx.Memory.DeclareOutput("Q1", typeof<bool>)
 
     let stmt = DsTag.Bool "Q1" := bool true
     exec ctx stmt
@@ -24,7 +24,7 @@ let ``StmtEvaluator assigns output`` () =
 [<Fact>]
 let ``ExprEvaluator reads declared input`` () =
     let ctx = Context.create()
-    ctx.Memory.DeclareInput("Start", DsDataType.TBool)
+    ctx.Memory.DeclareInput("Start", typeof<bool>)
     ctx.Memory.SetInput("Start", box true)
 
     let expr = Terminal(DsTag.Bool "Start")
@@ -36,22 +36,22 @@ let ``Assembly line cycle uses timer counter and pulses`` () =
     ctx.State <- ExecutionState.Running
 
     // Inputs coming from the line PLC
-    ctx.Memory.DeclareInput("StartCycle", DsDataType.TBool)
-    ctx.Memory.DeclareInput("EStopOk", DsDataType.TBool)
-    ctx.Memory.DeclareInput("GateClosed", DsDataType.TBool)
-    ctx.Memory.DeclareInput("ConveyorJam", DsDataType.TBool)
-    ctx.Memory.DeclareInput("PartSensor", DsDataType.TBool)
-    ctx.Memory.DeclareInput("TorqueAlarm", DsDataType.TBool)
+    ctx.Memory.DeclareInput("StartCycle", typeof<bool>)
+    ctx.Memory.DeclareInput("EStopOk", typeof<bool>)
+    ctx.Memory.DeclareInput("GateClosed", typeof<bool>)
+    ctx.Memory.DeclareInput("ConveyorJam", typeof<bool>)
+    ctx.Memory.DeclareInput("PartSensor", typeof<bool>)
+    ctx.Memory.DeclareInput("TorqueAlarm", typeof<bool>)
 
     // Outputs and locals driven by the program
-    ctx.Memory.DeclareOutput("ConveyorRun", DsDataType.TBool)
-    ctx.Memory.DeclareOutput("ClampReady", DsDataType.TBool)
-    ctx.Memory.DeclareOutput("ScrewStart", DsDataType.TBool)
-    ctx.Memory.DeclareOutput("CycleComplete", DsDataType.TBool)
+    ctx.Memory.DeclareOutput("ConveyorRun", typeof<bool>)
+    ctx.Memory.DeclareOutput("ClampReady", typeof<bool>)
+    ctx.Memory.DeclareOutput("ScrewStart", typeof<bool>)
+    ctx.Memory.DeclareOutput("CycleComplete", typeof<bool>)
 
-    ctx.Memory.DeclareLocal("ScrewPulse", DsDataType.TBool)
-    ctx.Memory.DeclareLocal("PartCount", DsDataType.TInt)
-    ctx.Memory.DeclareLocal("PrevPartCount", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("ScrewPulse", typeof<bool>)
+    ctx.Memory.DeclareLocal("PartCount", typeof<int>)
+    ctx.Memory.DeclareLocal("PrevPartCount", typeof<int>)
 
     let partCountTag = DsTag.Int "PartCount"
     let prevPartCountTag = DsTag.Int "PrevPartCount"
@@ -161,14 +161,14 @@ let ``STN1 sequential devices advance and retract in order`` () =
     ctx.State <- ExecutionState.Running
 
     // Inputs
-    ctx.Memory.DeclareInput("Device1.AdvCmd", DsDataType.TBool)
-    ctx.Memory.DeclareInput("Work2.StartReset.Cmd", DsDataType.TBool)
+    ctx.Memory.DeclareInput("Device1.AdvCmd", typeof<bool>)
+    ctx.Memory.DeclareInput("Work2.StartReset.Cmd", typeof<bool>)
 
     // Outputs
     [ "Device1.ADV"; "Device2.ADV"; "Device3.ADV"; "Device4.ADV"
       "Device1.RET"; "Device2.RET"; "Device3.RET"; "Device4.RET"
       "Work1.StartReset"; "Work2.StartReset" ]
-    |> List.iter (fun name -> ctx.Memory.DeclareOutput(name, DsDataType.TBool))
+    |> List.iter (fun name -> ctx.Memory.DeclareOutput(name, typeof<bool>))
 
     let program = [
         DsTag.Bool "Device1.ADV" := boolVar "Device1.AdvCmd"
@@ -205,14 +205,14 @@ let ``STN2 welding station coordinates robots jigs and pins`` () =
     ctx.State <- ExecutionState.Running
 
     // Inputs
-    ctx.Memory.DeclareInput("CV.GO", DsDataType.TBool)
+    ctx.Memory.DeclareInput("CV.GO", typeof<bool>)
 
     // Outputs
     [ "RBT1.LOAD"; "RBT1.HOME"; "RBT2.WELD"; "RBT2.HOME"
       "PIN.DN"; "PIN.UP"
       "JIG1.ADV"; "JIG2.ADV"; "JIG3.ADV"; "JIG4.ADV"
       "JIG1.RET"; "JIG2.RET"; "JIG3.RET"; "JIG4.RET" ]
-    |> List.iter (fun name -> ctx.Memory.DeclareOutput(name, DsDataType.TBool))
+    |> List.iter (fun name -> ctx.Memory.DeclareOutput(name, typeof<bool>))
 
     let andAll exprs =
         match exprs with
@@ -257,7 +257,7 @@ let ``KIT conveyor workcells cascade start resets`` () =
     ctx.State <- ExecutionState.Running
 
     // Inputs
-    ctx.Memory.DeclareInput("CycleStart", DsDataType.TBool)
+    ctx.Memory.DeclareInput("CycleStart", typeof<bool>)
 
     // Outputs (conveyors, cylinders, start/reset flags, completion flags)
     [ "Conveyor1.MOVE"; "Conveyor1.REMOVE"; "1IN_CYL.ADV"; "1IN_CYL.RET"; "KIT.Work1.StartReset"; "KIT.Work1.Complete"
@@ -266,7 +266,7 @@ let ``KIT conveyor workcells cascade start resets`` () =
       "Conveyor4.MOVE"; "Conveyor3.REMOVE"; "3rd_usb.ADV"; "3rd_usb.RET"; "3rd_stp.ADV"; "3rd_stp.RET"; "KIT.Work4.StartReset"; "KIT.Work4.Complete"
       "Conveyor4.REMOVE"; "Conveyor5.MOVE"; "4th_usb.ADV"; "4th_usb.RET"; "4th_stp.ADV"; "4th_stp.RET"; "KIT.Work5.StartReset"; "KIT.Work5.Complete"
       "Conveyor5.REMOVE"; "Conveyor6.MOVE"; "Conveyor6.REMOVE"; "1OUT_CYL.ADV"; "1OUT_CYL.RET"; "KIT.Work6.StartReset"; "KIT.Work6.Complete" ]
-    |> List.iter (fun name -> ctx.Memory.DeclareOutput(name, DsDataType.TBool))
+    |> List.iter (fun name -> ctx.Memory.DeclareOutput(name, typeof<bool>))
 
     let program = [
         // Work1
@@ -377,9 +377,9 @@ let ``Debug work loop toggles between stations`` () =
 [<Fact>]
 let ``CpuScan - Multiple concurrent scans on different engines`` () =
     let createEngine name =
-        let prog = { Statement.Program.Name = name; Inputs = []; Outputs = [("Output", DsDataType.TBool)]; Locals = []; Body = [] }
+        let prog = { Statement.Program.Name = name; Inputs = []; Outputs = [("Output", typeof<bool>)]; Locals = []; Body = [] }
         let ctx = Context.create()
-        ctx.Memory.DeclareOutput("Output", DsDataType.TBool)
+        ctx.Memory.DeclareOutput("Output", typeof<bool>)
         (CpuScan.create (prog, Some ctx, None, None, None), ctx)
 
     let (engine1, ctx1) = createEngine "Prog1"
@@ -416,9 +416,9 @@ let ``CpuScan - Multiple concurrent scans on different engines`` () =
 
 [<Fact>]
 let ``CpuScan - Stop while scan is in progress (race condition test)`` () =
-    let prog = { Statement.Program.Name = "RaceTest"; Inputs = []; Outputs = [("Counter", DsDataType.TInt)]; Locals = []; Body = [] }
+    let prog = { Statement.Program.Name = "RaceTest"; Inputs = []; Outputs = [("Counter", typeof<int>)]; Locals = []; Body = [] }
     let ctx = Context.create()
-    ctx.Memory.DeclareOutput("Counter", DsDataType.TInt)
+    ctx.Memory.DeclareOutput("Counter", typeof<int>)
 
     let engine = CpuScan.create (prog, Some ctx, Some { ScanConfig.Default with CycleTimeMs = Some 10 }, None, None)
 
@@ -455,14 +455,14 @@ let ``CpuScan - Rapid start/stop cycles`` () =
 [<Fact>]
 let ``CpuScan - Memory updates during concurrent scans`` () =
     let prog = { Statement.Program.Name = "MemTest";
-                 Inputs = [("Input", DsDataType.TInt)];
-                 Outputs = [("Output", DsDataType.TInt)];
+                 Inputs = [("Input", typeof<int>)];
+                 Outputs = [("Output", typeof<int>)];
                  Locals = [];
                  Body = [DsTag.Int "Output" := Terminal (DsTag.Int "Input")] }
 
     let ctx = Context.create()
-    ctx.Memory.DeclareInput("Input", DsDataType.TInt)
-    ctx.Memory.DeclareOutput("Output", DsDataType.TInt)
+    ctx.Memory.DeclareInput("Input", typeof<int>)
+    ctx.Memory.DeclareOutput("Output", typeof<int>)
 
     let engine = CpuScan.create (prog, Some ctx, Some { ScanConfig.Default with CycleTimeMs = Some 20 }, None, None)
 
@@ -491,14 +491,14 @@ let ``CpuScan - Concurrent ScanOnce calls`` () =
     let prog = { Statement.Program.Name = "ScanOnceTest";
                  Inputs = [];
                  Outputs = [];
-                 Locals = [("Counter", DsDataType.TInt)];
+                 Locals = [("Counter", typeof<int>)];
                  Body = [
                      DsTag.Int "Counter" := (Terminal counterTag .+. num 1)
                  ] }
 
     let ctx = Context.create()
     ctx.State <- ExecutionState.Running
-    ctx.Memory.DeclareLocal("Counter", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("Counter", typeof<int>)
     ctx.Memory.Set("Counter", box 0)
 
     let engine = CpuScan.create (prog, Some ctx, None, None, None)
@@ -521,16 +521,16 @@ let ``CpuScan - Performance benchmark 1000 scans`` () =
     clearVariableRegistry()
 
     let prog = { Statement.Program.Name = "PerfTest";
-                 Inputs = [("X", DsDataType.TInt); ("Y", DsDataType.TInt)];
+                 Inputs = [("X", typeof<int>); ("Y", typeof<int>)];
                  Outputs = [];
-                 Locals = [("Result", DsDataType.TInt)];
+                 Locals = [("Result", typeof<int>)];
                  Body = [DsTag.Int "Result" := (Terminal (DsTag.Int "X") .+. Terminal (DsTag.Int "Y"))] }
 
     let ctx = Context.create()
     ctx.State <- ExecutionState.Running
-    ctx.Memory.DeclareInput("X", DsDataType.TInt)
-    ctx.Memory.DeclareInput("Y", DsDataType.TInt)
-    ctx.Memory.DeclareLocal("Result", DsDataType.TInt)
+    ctx.Memory.DeclareInput("X", typeof<int>)
+    ctx.Memory.DeclareInput("Y", typeof<int>)
+    ctx.Memory.DeclareLocal("Result", typeof<int>)
     ctx.Memory.SetInput("X", box 5)
     ctx.Memory.SetInput("Y", box 3)
 
@@ -555,12 +555,12 @@ let ``CpuScan - State remains consistent across many scans`` () =
     let prog = { Statement.Program.Name = "StateTest";
                  Inputs = [];
                  Outputs = [];
-                 Locals = [("Counter", DsDataType.TInt)];
+                 Locals = [("Counter", typeof<int>)];
                  Body = [DsTag.Int "Counter" := (Terminal counterTag .+. num 1)] }
 
     let ctx = Context.create()
     ctx.State <- ExecutionState.Running
-    ctx.Memory.DeclareLocal("Counter", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("Counter", typeof<int>)
     ctx.Memory.Set("Counter", box 0)
 
     let engine = CpuScan.create (prog, Some ctx, None, None, None)
@@ -599,13 +599,13 @@ let ``CpuScan - Multiple engines with shared memory (not recommended but should 
     let sharedTag = DsTag.Int "SharedVar"
     let ctx = Context.create()
     ctx.State <- ExecutionState.Running
-    ctx.Memory.DeclareLocal("SharedVar", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("SharedVar", typeof<int>)
     ctx.Memory.Set("SharedVar", box 0)
 
     let prog1 = { Statement.Program.Name = "Writer";
                   Inputs = [];
                   Outputs = [];
-                  Locals = [("SharedVar", DsDataType.TInt)];
+                  Locals = [("SharedVar", typeof<int>)];
                   Body = [DsTag.Int "SharedVar" := (Terminal sharedTag .+. num 1)] }
 
     let prog2 = { Statement.Program.Name = "Reader";
@@ -631,11 +631,11 @@ let ``CpuScan - Execution with zero cycle time (continuous scanning)`` () =
     let prog = { Statement.Program.Name = "ContinuousTest";
                  Inputs = [];
                  Outputs = [];
-                 Locals = [("ScanCounter", DsDataType.TInt)];
+                 Locals = [("ScanCounter", typeof<int>)];
                  Body = [DsTag.Int "ScanCounter" := (Terminal scanCounterTag .+. num 1)] }
 
     let ctx = Context.create()
-    ctx.Memory.DeclareLocal("ScanCounter", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("ScanCounter", typeof<int>)
     ctx.Memory.Set("ScanCounter", box 0)
 
     // CycleTimeMs = None means continuous scanning (no delay)
@@ -659,11 +659,11 @@ let ``CpuScan - Execution with very high cycle time`` () =
     let prog = { Statement.Program.Name = "SlowScanTest";
                  Inputs = [];
                  Outputs = [];
-                 Locals = [("Counter", DsDataType.TInt)];
+                 Locals = [("Counter", typeof<int>)];
                  Body = [DsTag.Int "Counter" := (intVar "Counter" .+. num 1)] }
 
     let ctx = Context.create()
-    ctx.Memory.DeclareLocal("Counter", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("Counter", typeof<int>)
     ctx.Memory.Set("Counter", box 0)
 
     // Very high cycle time (1 second per scan)
@@ -687,11 +687,11 @@ let ``CpuScan - Stop after specific number of scans`` () =
     let prog = { Statement.Program.Name = "CountedScanTest";
                  Inputs = [];
                  Outputs = [];
-                 Locals = [("Counter", DsDataType.TInt)];
+                 Locals = [("Counter", typeof<int>)];
                  Body = [DsTag.Int "Counter" := (intVar "Counter" .+. num 1)] }
 
     let ctx = Context.create()
-    ctx.Memory.DeclareLocal("Counter", DsDataType.TInt)
+    ctx.Memory.DeclareLocal("Counter", typeof<int>)
     ctx.Memory.Set("Counter", box 0)
 
     let engine = CpuScan.create (prog, Some ctx, Some { ScanConfig.Default with CycleTimeMs = Some 10 }, None, None)

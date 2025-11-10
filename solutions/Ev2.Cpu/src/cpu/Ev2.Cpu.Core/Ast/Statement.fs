@@ -30,7 +30,7 @@ type DsStatement =
     /// 변수 할당 명령 (Assignment)
     /// 조건식의 결과값을 지정된 변수에 저장
     /// 예: "Motor_Speed := Setpoint * 0.8"
-    | SAssign of condition:DsExpr * target:(string * DsDataType)
+    | SAssign of condition:DsExpr * target:(string * Type)
 
     /// 타이머 명령 (Timer ON-delay)
     /// PLC 표준 TON 타이머 구현 - 입력 신호 지연 후 출력
@@ -45,17 +45,17 @@ type DsStatement =
     /// 코일/래치 명령 (SET/RESET Coil)
     /// 비트 상태를 유지하는 래치 기능 - 모터 시동/정지 등에 사용
     /// 예: "COIL Motor_Run SET(Start_Button) RESET(Stop_Button) (Self-Hold)"
-    | SCoil of setCond:DsExpr * resetCond:DsExpr * coil:(string * DsDataType) * selfHold:bool
+    | SCoil of setCond:DsExpr * resetCond:DsExpr * coil:(string * Type) * selfHold:bool
 
     /// 사용자 정의 Function Block 호출 (UserFB Invocation)
     /// FB 인스턴스 실행 - 입력 매핑, 출력 수집, 상태 유지
     /// 예: "Motor1(Start := Start_Button, Stop := Stop_Button) → Running, Fault"
-    | SUserFB of instanceName:string * fbName:string * inputs:Map<string,DsExpr> * outputs:Set<string> * stateLayout:(string*DsDataType) list
+    | SUserFB of instanceName:string * fbName:string * inputs:Map<string,DsExpr> * outputs:Set<string> * stateLayout:(string*Type) list
 
     /// FOR 반복문 (Counter-based fixed iteration loop)
     /// 루프 변수를 시작값부터 종료값까지 증가시키며 본문 실행
     /// 예: "FOR i := 0 TO 9 STEP 1 DO ... END_FOR"
-    | SFor of loopVar:(string * DsDataType) * startExpr:DsExpr * endExpr:DsExpr * stepExpr:DsExpr option * body:DsStatement list
+    | SFor of loopVar:(string * Type) * startExpr:DsExpr * endExpr:DsExpr * stepExpr:DsExpr option * body:DsStatement list
 
     /// WHILE 반복문 (Condition-based iteration loop)
     /// 조건이 참인 동안 본문 반복 실행 (최대 반복 횟수 제한 가능)
@@ -156,8 +156,8 @@ type DsStatement =
                     Error "Assignment target name cannot be empty"
                 else
                     match cond.InferType() with
-                    | Some exprType when not (targetType.IsCompatibleWith exprType) ->
-                        Error (sprintf "Type mismatch in assignment: target is %O but expression is %O" targetType exprType)
+                    | Some exprType when not (TypeHelpers.areTypesCompatible exprType targetType) ->
+                        Error (sprintf "Type mismatch in assignment: target is %s but expression is %s" (TypeHelpers.getTypeName targetType) (TypeHelpers.getTypeName exprType))
                     | None -> Error "Cannot infer expression type for assignment"
                     | _ -> Ok ()
 
@@ -200,26 +200,26 @@ type DsStatement =
             | SFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body) ->
                 if String.IsNullOrWhiteSpace loopVarName then
                     Error "FOR loop variable name cannot be empty"
-                elif not loopVarType.IsNumeric then
-                    Error (sprintf "FOR loop variable must be numeric type, got %O" loopVarType)
+                elif not (TypeHelpers.isNumericType loopVarType) then
+                    Error (sprintf "FOR loop variable must be numeric type, got %s" (TypeHelpers.getTypeName loopVarType))
                 else
                     // Validate start, end, step expressions
                     match startExpr.InferType() with
-                    | Some t when not t.IsNumeric ->
-                        Error (sprintf "FOR loop start expression must be numeric, got %O" t)
+                    | Some t when not (TypeHelpers.isNumericType t) ->
+                        Error (sprintf "FOR loop start expression must be numeric, got %s" (TypeHelpers.getTypeName t))
                     | None -> Error "Cannot infer type for FOR loop start expression"
                     | _ ->
                         match endExpr.InferType() with
-                        | Some t when not t.IsNumeric ->
-                            Error (sprintf "FOR loop end expression must be numeric, got %O" t)
+                        | Some t when not (TypeHelpers.isNumericType t) ->
+                            Error (sprintf "FOR loop end expression must be numeric, got %s" (TypeHelpers.getTypeName t))
                         | None -> Error "Cannot infer type for FOR loop end expression"
                         | _ ->
                             // Validate step if present
                             match stepExpr with
                             | Some step ->
                                 match step.InferType() with
-                                | Some t when not t.IsNumeric ->
-                                    Error (sprintf "FOR loop step expression must be numeric, got %O" t)
+                                | Some t when not (TypeHelpers.isNumericType t) ->
+                                    Error (sprintf "FOR loop step expression must be numeric, got %s" (TypeHelpers.getTypeName t))
                                 | None -> Error "Cannot infer type for FOR loop step expression"
                                 | _ ->
                                     // Validate body statements
@@ -241,7 +241,7 @@ type DsStatement =
             | SWhile(condition, body, maxIterations) ->
                 // Validate condition is boolean
                 match condition.InferType() with
-                | Some TBool ->
+                | Some t when t = typeof<bool> ->
                     // Validate max iterations if present
                     match maxIterations with
                     | Some max when max <= 0 ->
@@ -255,7 +255,7 @@ type DsStatement =
                             | Ok () -> None)
                         |> Option.defaultValue (Ok ())
                 | Some t ->
-                    Error (sprintf "WHILE loop condition must be boolean, got %O" t)
+                    Error (sprintf "WHILE loop condition must be boolean, got %s" (TypeHelpers.getTypeName t))
                 | None ->
                     Error "Cannot infer type for WHILE loop condition"
 
@@ -331,7 +331,7 @@ type DsStatement =
 module StmtBuilder =
 
     /// <summary>할당 스테이트먼트 생성</summary>
-    let assign (target: string) (targetType: DsDataType) (condition: DsExpr) =
+    let assign (target: string) (targetType: Type) (condition: DsExpr) =
         SAssign(condition, (target, targetType))
 
     /// <summary>타이머 스테이트먼트 생성</summary>
@@ -343,15 +343,15 @@ module StmtBuilder =
         SCounter(up, down, reset, name, preset)
 
     /// <summary>코일 스테이트먼트 생성</summary>
-    let coil (name: string) (coilType: DsDataType) (setCond: DsExpr) (resetCond: DsExpr) (selfHold: bool) =
+    let coil (name: string) (coilType: Type) (setCond: DsExpr) (resetCond: DsExpr) (selfHold: bool) =
         SCoil(setCond, resetCond, (name, coilType), selfHold)
 
     /// <summary>UserFB 호출 스테이트먼트 생성</summary>
-    let userFB (instanceName: string) (fbName: string) (inputs: Map<string, DsExpr>) (outputs: Set<string>) (stateLayout: (string * DsDataType) list) =
+    let userFB (instanceName: string) (fbName: string) (inputs: Map<string, DsExpr>) (outputs: Set<string>) (stateLayout: (string * Type) list) =
         SUserFB(instanceName, fbName, inputs, outputs, stateLayout)
 
     /// <summary>FOR 루프 스테이트먼트 생성</summary>
-    let forLoop (loopVarName: string) (loopVarType: DsDataType) (startExpr: DsExpr) (endExpr: DsExpr) (stepExpr: DsExpr option) (body: DsStatement list) =
+    let forLoop (loopVarName: string) (loopVarType: Type) (startExpr: DsExpr) (endExpr: DsExpr) (stepExpr: DsExpr option) (body: DsStatement list) =
         SFor((loopVarName, loopVarType), startExpr, endExpr, stepExpr, body)
 
     /// <summary>WHILE 루프 스테이트먼트 생성</summary>

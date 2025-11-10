@@ -27,19 +27,19 @@ module TOF =
         let builder = FBBuilder("TOF")
 
         // IEC 61131-3 표준 시그니처
-        builder.AddInput("IN", DsDataType.TBool)
-        builder.AddInput("PT", DsDataType.TInt)       // Preset time (ms)
-        builder.AddOutput("Q", DsDataType.TBool)
-        builder.AddOutput("ET", DsDataType.TInt)      // Elapsed time (ms)
+        builder.AddInput("IN", typeof<bool>)
+        builder.AddInput("PT", typeof<int>)       // Preset time (ms)
+        builder.AddOutput("Q", typeof<bool>)
+        builder.AddOutput("ET", typeof<int>)      // Elapsed time (ms)
 
         // Static 변수
-        builder.AddStaticWithInit("Running", DsDataType.TBool, box false)
-        builder.AddStaticWithInit("StartTime", DsDataType.TDouble, box 0.0)
-        builder.AddStaticWithInit("ElapsedTime", DsDataType.TDouble, box 0.0)
-        builder.AddStaticWithInit("OutputState", DsDataType.TBool, box false)
+        builder.AddStaticWithInit("Running", typeof<bool>, box false)
+        builder.AddStaticWithInit("StartTime", typeof<double>, box 0.0)
+        builder.AddStaticWithInit("ElapsedTime", typeof<double>, box 0.0)
+        builder.AddStaticWithInit("OutputState", typeof<bool>, box false)
 
         // Temp 변수
-        builder.AddTemp("CurrentTime", DsDataType.TDouble)
+        builder.AddTemp("CurrentTime", typeof<double>)
 
         let inSig = Terminal(DsTag.Bool("IN"))
         let pt = Terminal(DsTag.Int("PT"))
@@ -55,7 +55,7 @@ module TOF =
         // CRITICAL FIX: NOW() returns int64, use TODOUBLE (not DOUBLE) to convert
         let currentTime = Function("TODOUBLE", [Function("NOW", [])])
         builder.AddStatement(
-            assignAuto "CurrentTime" DsDataType.TDouble currentTime
+            assignAuto "CurrentTime" typeof<double> currentTime
         )
 
         let timeoutCondition = and' running (ge elapsed pt)
@@ -70,7 +70,7 @@ module TOF =
                 outputState
             ])
         ])
-        builder.AddStatement(assignAuto "OutputState" DsDataType.TBool newOutputState)
+        builder.AddStatement(assignAuto "OutputState" typeof<bool> newOutputState)
 
         // Running := IF IN THEN FALSE ELSIF fallingEdge THEN TRUE ELSIF (Running AND ET >= PT) THEN FALSE ELSE Running
         let newRunning = Function("IF", [
@@ -86,7 +86,7 @@ module TOF =
                 ])
             ])
         ])
-        builder.AddStatement(assignAuto "Running" DsDataType.TBool newRunning)
+        builder.AddStatement(assignAuto "Running" typeof<bool> newRunning)
 
         // StartTime := IF fallingEdge THEN NOW() ELSE StartTime
         let newStartTime = Function("IF", [
@@ -94,7 +94,7 @@ module TOF =
             currentTime
             startTime
         ])
-        builder.AddStatement(assignAuto "StartTime" DsDataType.TDouble newStartTime)
+        builder.AddStatement(assignAuto "StartTime" typeof<double> newStartTime)
 
         // Calculate elapsed time
         let timeCalc = sub (Terminal(DsTag.Double("CurrentTime"))) startTime
@@ -110,12 +110,12 @@ module TOF =
                 elapsed
             ])
         ])
-        builder.AddStatement(assignAuto "ElapsedTime" DsDataType.TDouble newElapsed)
+        builder.AddStatement(assignAuto "ElapsedTime" typeof<double> newElapsed)
 
         // 출력 설정
-        builder.AddStatement(assignAuto "Q" DsDataType.TBool outputState)
-        // ET는 TInt 출력이므로 elapsed(TDouble)를 변환
-        builder.AddStatement(assignAuto "ET" DsDataType.TInt (Function("TOINT", [elapsed])))
+        builder.AddStatement(assignAuto "Q" typeof<bool> outputState)
+        // ET는 typeof<int> 출력이므로 elapsed(typeof<double>)를 변환
+        builder.AddStatement(assignAuto "ET" typeof<int> (Function("TOINT", [elapsed])))
 
         builder.SetDescription("Off-Delay Timer - Output turns OFF after preset time (IEC 61131-3)")
         builder.Build()

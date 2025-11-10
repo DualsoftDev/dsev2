@@ -48,30 +48,30 @@ module CustomArbitraries =
         |> Gen.filter (fun s -> not (String.IsNullOrWhiteSpace(s)))
 
     // ───────────────────────────────────────────────────────────────────
-    // DsDataType Generators
+    // Type Generators
     // ───────────────────────────────────────────────────────────────────
 
-    /// <summary>Generator for DsDataType</summary>
-    let dsDataTypeGen =
+    /// <summary>Generator for Type</summary>
+    let typeGen =
         Gen.elements [
-            DsDataType.TInt
-            DsDataType.TDouble
-            DsDataType.TBool
-            DsDataType.TString
+            typeof<int>
+            typeof<double>
+            typeof<bool>
+            typeof<string>
         ]
 
-    /// <summary>Arbitrary for DsDataType</summary>
-    type ArbitraryDsDataType =
-        static member DsDataType() =
-            Arb.fromGen dsDataTypeGen
+    /// <summary>Arbitrary for Type</summary>
+    type ArbitraryType =
+        static member Type() =
+            Arb.fromGen typeGen
 
-    /// <summary>Generator for values matching a DsDataType</summary>
-    let valueForTypeGen (dtype: DsDataType) =
-        match dtype with
-        | DsDataType.TInt -> safeIntGen |> Gen.map box
-        | DsDataType.TDouble -> safeDoubleGen |> Gen.map box
-        | DsDataType.TBool -> Arb.generate<bool> |> Gen.map box
-        | DsDataType.TString -> nonEmptyStringGen |> Gen.map box
+    /// <summary>Generator for values matching a Type</summary>
+    let valueForTypeGen (dtype: Type) =
+        if dtype = typeof<int> then safeIntGen |> Gen.map box
+        elif dtype = typeof<double> then safeDoubleGen |> Gen.map box
+        elif dtype = typeof<bool> then Arb.generate<bool> |> Gen.map box
+        elif dtype = typeof<string> then nonEmptyStringGen |> Gen.map box
+        else Gen.constant (box null)
 
     // ───────────────────────────────────────────────────────────────────
     // DsTag Generators
@@ -81,7 +81,7 @@ module CustomArbitraries =
     let dsTagGen =
         gen {
             let! name = validNameGen
-            let! dtype = dsDataTypeGen
+            let! dtype = typeGen
             return DsTag.Create(name, dtype)
         }
 
@@ -114,10 +114,10 @@ module CustomArbitraries =
     let simpleExprGen =
         Gen.oneof [
             // Constant expressions
-            safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, DsDataType.TInt))
-            safeDoubleGen |> Gen.map (fun d -> DsExpr.Const(box d, DsDataType.TDouble))
-            Arb.generate<bool> |> Gen.map (fun b -> DsExpr.Const(box b, DsDataType.TBool))
-            nonEmptyStringGen |> Gen.map (fun s -> DsExpr.Const(box s, DsDataType.TString))
+            safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, typeof<int>))
+            safeDoubleGen |> Gen.map (fun d -> DsExpr.Const(box d, typeof<double>))
+            Arb.generate<bool> |> Gen.map (fun b -> DsExpr.Const(box b, typeof<bool>))
+            nonEmptyStringGen |> Gen.map (fun s -> DsExpr.Const(box s, typeof<string>))
 
             // Terminal expressions
             intTagGen |> Gen.map DsExpr.Terminal
@@ -210,8 +210,8 @@ module CustomArbitraries =
                 gen {
                     let! step = stepGen
                     let! loopVar = intTagGen
-                    let! startExpr = safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, DsDataType.TInt))
-                    let! endExpr = safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, DsDataType.TInt))
+                    let! startExpr = safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, typeof<int>))
+                    let! endExpr = safeIntGen |> Gen.map (fun i -> DsExpr.Const(box i, typeof<int>))
                     let! bodySize = Gen.choose(0, 5)
                     let! body = Gen.listOfLength bodySize subStmtGen
                     return DsStmt.For(step, loopVar, startExpr, endExpr, None, body)
@@ -311,7 +311,7 @@ module CustomArbitraries =
     type CustomArbitrariesConfig =
         static member Arbitrary =
             [
-                typeof<ArbitraryDsDataType>
+                typeof<ArbitraryType>
                 typeof<ArbitraryDsTag>
                 typeof<ArbitraryDsExpr>
                 typeof<ArbitraryDsStmt>

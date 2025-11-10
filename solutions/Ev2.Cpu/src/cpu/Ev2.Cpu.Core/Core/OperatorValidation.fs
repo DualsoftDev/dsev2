@@ -7,81 +7,86 @@ open Ev2.Cpu.Core
 module OperatorValidation =
     
     /// 단항 연산자 유효성 검증
-    let validateUnary (op: DsOp) (operandType: DsDataType) : DsDataType =
+    let validateUnary (op: DsOp) (operandType: Type) : Type =
         match op with
         | Not ->
-            if operandType = TBool then TBool
+            if operandType = typeof<bool> then typeof<bool>
             else raise (ArgumentException($"NOT operator requires boolean operand, got {operandType}"))
 
         | BitNot ->
-            if operandType = TInt then TInt
+            if operandType = typeof<int> then typeof<int>
             else raise (ArgumentException($"Bitwise NOT operator requires integer operand, got {operandType}"))
 
         | Rising | Falling | Edge ->
-            if operandType = TBool then TBool
+            if operandType = typeof<bool> then typeof<bool>
             else raise (ArgumentException($"Edge detection operator '{op.ToString()}' requires boolean operand, got {operandType}"))
 
         | _ ->
             raise (ArgumentException($"'{op.ToString()}' is not a unary operator"))
     
     /// 이항 연산자 유효성 검증
-    let validateBinary (op: DsOp) (leftType: DsDataType) (rightType: DsDataType) : DsDataType =
+    let validateBinary (op: DsOp) (leftType: Type) (rightType: Type) : Type =
         match op with
         // 논리 연산자
         | And | Or | Xor | Nand | Nor ->
-            if leftType = TBool && rightType = TBool then
-                TBool
+            if leftType = typeof<bool> && rightType = typeof<bool> then
+                typeof<bool>
             else
                 raise (ArgumentException($"Logical operator '{op.ToString()}' requires boolean operands, got {leftType} and {rightType}"))
-        
+
         // 비교 연산자
         | Eq | Ne ->
             // 모든 타입 간 비교 가능
-            TBool
-        
+            typeof<bool>
+
         | Gt | Ge | Lt | Le ->
             // 숫자 또는 문자열 비교
-            if (leftType.IsNumeric && rightType.IsNumeric) ||
-               (leftType = TString && rightType = TString) then
-                TBool
+            if (TypeHelpers.isNumericType leftType && TypeHelpers.isNumericType rightType) ||
+               (leftType = typeof<string> && rightType = typeof<string>) then
+                typeof<bool>
             else
                 raise (ArgumentException($"Comparison operator '{op.ToString()}' requires numeric or string operands of same type, got {leftType} and {rightType}"))
-        
+
         // 산술 연산자
         | Add ->
-            match leftType, rightType with
-            | TString, _ | _, TString -> TString  // 문자열 결합
-            | TDouble, _ | _, TDouble -> TDouble  // 실수 승격
-            | TInt, TInt -> TInt
-            | _ -> raise (ArgumentException($"ADD operator cannot be applied to operands of type {leftType} and {rightType}"))
-        
+            if leftType = typeof<string> || rightType = typeof<string> then
+                typeof<string>  // 문자열 결합
+            elif leftType = typeof<double> || rightType = typeof<double> then
+                typeof<double>  // 실수 승격
+            elif leftType = typeof<int> && rightType = typeof<int> then
+                typeof<int>
+            else
+                raise (ArgumentException($"ADD operator cannot be applied to operands of type {leftType} and {rightType}"))
+
         | Sub | Mul | Div | Pow ->
-            if leftType.IsNumeric && rightType.IsNumeric then
-                match leftType, rightType with
-                | TDouble, _ | _, TDouble -> TDouble
-                | _ -> TInt
+            if TypeHelpers.isNumericType leftType && TypeHelpers.isNumericType rightType then
+                if leftType = typeof<double> || rightType = typeof<double> then
+                    typeof<double>
+                else
+                    typeof<int>
             else
                 raise (ArgumentException($"Arithmetic operator '{op.ToString()}' requires numeric operands, got {leftType} and {rightType}"))
 
         | Mod ->
-            if leftType = TInt && rightType = TInt then
-                TInt
+            if leftType = typeof<int> && rightType = typeof<int> then
+                typeof<int>
             else
                 raise (ArgumentException($"MOD operator requires integer operands, got {leftType} and {rightType}"))
-        
+
         // 비트 연산자
         | BitAnd | BitOr | BitXor | ShiftLeft | ShiftRight ->
-            if leftType = TInt && rightType = TInt then
-                TInt
+            if leftType = typeof<int> && rightType = typeof<int> then
+                typeof<int>
             else
                 raise (ArgumentException($"Bitwise operator '{op.ToString()}' requires integer operands, got {leftType} and {rightType}"))
 
         // 특수 연산자
         | Assign | Move ->
-            match leftType, rightType with
-            | l, r when l = r -> r
-            | TInt, TDouble -> TDouble
-            | _ ->
+            if leftType = rightType then
+                rightType
+            elif leftType = typeof<int> && rightType = typeof<double> then
+                typeof<double>
+            else
                 raise (ArgumentException($"Assignment operator '{op.ToString()}' requires compatible operands, got {leftType} and {rightType}"))
 
         | Coalesce ->
@@ -91,7 +96,7 @@ module OperatorValidation =
             raise (ArgumentException($"'{op.ToString()}' is not a binary operator"))
 
     /// 피연산자 개수에 따라 자동 분기
-    let validate (op: DsOp) (operands: DsDataType list) : DsDataType =
+    let validate (op: DsOp) (operands: Type list) : Type =
         match op.IsUnary, operands with
         | true, [ operand ] -> validateUnary op operand
         | false, [ left; right ] -> validateBinary op left right

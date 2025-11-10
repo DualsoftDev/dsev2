@@ -1,17 +1,13 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C0000000-1111-4444-8888-000000000001}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C0000000-2222-4444-8888-000000000002}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{C0000000-3333-4444-8888-000000000003}"
 EndProject
-
-# Source Projects
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.Core", "src\cpu\Ev2.Cpu.Core\Ev2.Cpu.Core.fsproj", "{C1000000-1111-4444-8888-000000000001}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.Runtime", "src\cpu\Ev2.Cpu.Runtime\Ev2.Cpu.Runtime.fsproj", "{C1000000-1111-4444-8888-000000000002}"
@@ -22,8 +18,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.StandardLibrary", "
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.Debug", "src\cpu\Ev2.Cpu.Debug\Ev2.Cpu.Debug.fsproj", "{C1000000-1111-4444-8888-000000000005}"
 EndProject
-
-# Test Projects
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.Core.Tests", "src\UintTest\cpu\Ev2.Cpu.Core.Tests\Ev2.Cpu.Core.Tests.fsproj", "{C2000000-2222-4444-8888-000000000001}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.Runtime.Tests", "src\UintTest\cpu\Ev2.Cpu.Runtime.Tests\Ev2.Cpu.Runtime.Tests.fsproj", "{C2000000-2222-4444-8888-000000000002}"
@@ -32,7 +26,16 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.Generation.Tests", 
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ev2.Cpu.StandardLibrary.Tests", "src\UintTest\cpu\Ev2.Cpu.StandardLibrary.Tests\Ev2.Cpu.StandardLibrary.Tests.fsproj", "{C2000000-2222-4444-8888-000000000004}"
 EndProject
-
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "externSolution", "externSolution", "{C8D5274F-AC00-46C7-1F8D-E88E81087A52}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget", "nuget", "{001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Base.FS", "..\..\submodules\nuget\Common\Dual.Common.Base.FS\Dual.Common.Base.FS.fsproj", "{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Core.FS", "..\..\submodules\nuget\Common\Dual.Common.Core.FS\Dual.Common.Core.FS.fsproj", "{89B6D110-5775-924B-1378-441297ECC4DF}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dual.Common.Db.FS", "..\..\submodules\nuget\Common\Dual.Common.Db.FS\Dual.Common.Db.FS.fsproj", "{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +78,21 @@ Global
 		{C2000000-2222-4444-8888-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2000000-2222-4444-8888-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2000000-2222-4444-8888-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89B6D110-5775-924B-1378-441297ECC4DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89B6D110-5775-924B-1378-441297ECC4DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89B6D110-5775-924B-1378-441297ECC4DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89B6D110-5775-924B-1378-441297ECC4DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C1000000-1111-4444-8888-000000000001} = {C0000000-1111-4444-8888-000000000001}
@@ -86,5 +104,11 @@ Global
 		{C2000000-2222-4444-8888-000000000002} = {C0000000-2222-4444-8888-000000000002}
 		{C2000000-2222-4444-8888-000000000003} = {C0000000-2222-4444-8888-000000000002}
 		{C2000000-2222-4444-8888-000000000004} = {C0000000-2222-4444-8888-000000000002}
+		{A49A18C7-84A1-B8FA-CA4B-C93A7697A0F8} = {001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}
+		{89B6D110-5775-924B-1378-441297ECC4DF} = {001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}
+		{1E34CC6E-A698-D4D1-7E68-AB5D1CD4C325} = {001530F2-3FBD-4A68-91BE-D3EA8A4EA5B7}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {290D2A3B-C467-414A-8B2A-097B1D5A2D22}
 	EndGlobalSection
 EndGlobal

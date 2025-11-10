@@ -21,43 +21,43 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_EConst_상수_표현식_생성``() =
-        let boolConst = EConst(box true, TBool)
-        let intConst = EConst(box 42, TInt)
-        let doubleConst = EConst(box 3.14, TDouble)
-        let stringConst = EConst(box "Hello", TString)
+        let boolConst = EConst(box true, typeof<bool>)
+        let intConst = EConst(box 42, typeof<int>)
+        let doubleConst = EConst(box 3.14, typeof<double>)
+        let stringConst = EConst(box "Hello", typeof<string>)
         
         match boolConst with
         | EConst(value, typ) ->
             value |> should equal (box true)
-            typ |> should equal TBool
+            typ |> should equal typeof<bool>
         | _ -> failwith "Expected EConst"
     
     [<Fact>]
     member _.``DsExpr_EVar_변수_표현식_생성``() =
-        let motorSpeed = EVar("Motor_Speed", TInt)
-        let tankLevel = EVar("Tank_Level", TDouble)
+        let motorSpeed = EVar("Motor_Speed", typeof<int>)
+        let tankLevel = EVar("Tank_Level", typeof<double>)
         
         match motorSpeed with
         | EVar(name, typ) ->
             name |> should equal "Motor_Speed"
-            typ |> should equal TInt
+            typ |> should equal typeof<int>
         | _ -> failwith "Expected EVar"
     
     [<Fact>]
     member _.``DsExpr_ETerminal_터미널_표현식_생성``() =
-        let digitalInput = ETerminal("%I0.0", TBool)
-        let analogOutput = ETerminal("%AW100", TInt)
+        let digitalInput = ETerminal("%I0.0", typeof<bool>)
+        let analogOutput = ETerminal("%AW100", typeof<int>)
         
         match digitalInput with
         | ETerminal(name, typ) ->
             name |> should equal "%I0.0"
-            typ |> should equal TBool
+            typ |> should equal typeof<bool>
         | _ -> failwith "Expected ETerminal"
     
     [<Fact>]
     member _.``DsExpr_EUnary_단항_연산_표현식_생성``() =
-        let notExpr = EUnary(Not, EVar("Enable", TBool))
-        let risingExpr = EUnary(Rising, ETerminal("%I0.1", TBool))
+        let notExpr = EUnary(Not, EVar("Enable", typeof<bool>))
+        let risingExpr = EUnary(Rising, ETerminal("%I0.1", typeof<bool>))
         
         match notExpr with
         | EUnary(op, expr) ->
@@ -69,21 +69,21 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_EBinary_이항_연산_표현식_생성``() =
-        let addExpr = EBinary(Add, EVar("Speed", TInt), EConst(box 10, TInt))
-        let compareExpr = EBinary(Gt, EVar("Pressure", TDouble), EConst(box 5.0, TDouble))
+        let addExpr = EBinary(Add, EVar("Speed", typeof<int>), EConst(box 10, typeof<int>))
+        let compareExpr = EBinary(Gt, EVar("Pressure", typeof<double>), EConst(box 5.0, typeof<double>))
         
         match addExpr with
         | EBinary(op, left, right) ->
             op |> should equal Add
             match left, right with
-            | EVar("Speed", TInt), EConst(value, TInt) -> value |> should equal (box 10)
+            | EVar("Speed", t1), EConst(value, t2) when t1 = typeof<int> && t2 = typeof<int> -> value |> should equal (box 10)
             | _ -> failwith "Expected correct binary operands"
         | _ -> failwith "Expected EBinary"
     
     [<Fact>]
     member _.``DsExpr_ECall_함수_호출_표현식_생성``() =
-        let absCall = ECall("ABS", [EConst(box -5, TInt)])
-        let maxCall = ECall("MAX", [EVar("A", TInt); EVar("B", TInt); EConst(box 100, TInt)])
+        let absCall = ECall("ABS", [EConst(box -5, typeof<int>)])
+        let maxCall = ECall("MAX", [EVar("A", typeof<int>); EVar("B", typeof<int>); EConst(box 100, typeof<int>)])
         
         match absCall with
         | ECall(name, args) ->
@@ -116,28 +116,28 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_InferType_상수_변수_터미널_타입_추론``() =
-        let boolConst = EConst(box true, TBool)
-        let intVar = EVar("Counter", TInt)
-        let doubleTerminal = ETerminal("%AW100", TDouble)
+        let boolConst = EConst(box true, typeof<bool>)
+        let intVar = EVar("Counter", typeof<int>)
+        let doubleTerminal = ETerminal("%AW100", typeof<double>)
         
-        boolConst.InferType() |> should equal (Some TBool)
-        intVar.InferType() |> should equal (Some TInt)
-        doubleTerminal.InferType() |> should equal (Some TDouble)
+        boolConst.InferType() |> should equal (Some typeof<bool>)
+        intVar.InferType() |> should equal (Some typeof<int>)
+        doubleTerminal.InferType() |> should equal (Some typeof<double>)
     
     [<Fact>]
     member _.``DsExpr_InferType_단항_연산_타입_추론``() =
-        let notExpr = EUnary(Not, EVar("Flag", TBool))
-        let risingExpr = EUnary(Rising, ETerminal("%I0.0", TBool))
-        let fallingExpr = EUnary(Falling, EVar("Signal", TBool))
+        let notExpr = EUnary(Not, EVar("Flag", typeof<bool>))
+        let risingExpr = EUnary(Rising, ETerminal("%I0.0", typeof<bool>))
+        let fallingExpr = EUnary(Falling, EVar("Signal", typeof<bool>))
         
         // 논리 단항 연산자는 항상 Bool 타입 반환
-        notExpr.InferType() |> should equal (Some TBool)
-        risingExpr.InferType() |> should equal (Some TBool)
-        fallingExpr.InferType() |> should equal (Some TBool)
+        notExpr.InferType() |> should equal (Some typeof<bool>)
+        risingExpr.InferType() |> should equal (Some typeof<bool>)
+        fallingExpr.InferType() |> should equal (Some typeof<bool>)
     
     [<Fact>]
     member _.``DsExpr_InferType_함수_호출_메타_null_반환``() =
-        let funcCall = ECall("ABS", [EConst(box -5, TInt)])
+        let funcCall = ECall("ABS", [EConst(box -5, typeof<int>)])
         let metadata = EMeta("comment", Map.empty)
         
         // 함수 호출과 메타데이터는 외부 타입 해석 필요
@@ -150,9 +150,9 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_GetVariables_단순_변수_추출``() =
-        let var1 = EVar("Motor_Speed", TInt)
-        let terminal1 = ETerminal("%I0.0", TBool)
-        let const1 = EConst(box 42, TInt)
+        let var1 = EVar("Motor_Speed", typeof<int>)
+        let terminal1 = ETerminal("%I0.0", typeof<bool>)
+        let const1 = EConst(box 42, typeof<int>)
         
         let vars1 = var1.GetVariables()
         let vars2 = terminal1.GetVariables()
@@ -171,8 +171,8 @@ type AstExpressionTest() =
         // (Motor_Speed + 10) > Tank_Level
         let complexExpr = 
             EBinary(Gt, 
-                EBinary(Add, EVar("Motor_Speed", TInt), EConst(box 10, TInt)),
-                EVar("Tank_Level", TDouble))
+                EBinary(Add, EVar("Motor_Speed", typeof<int>), EConst(box 10, typeof<int>)),
+                EVar("Tank_Level", typeof<double>))
         
         let variables = complexExpr.GetVariables()
         
@@ -184,9 +184,9 @@ type AstExpressionTest() =
     member _.``DsExpr_GetVariables_함수_호출_내부_변수_추출``() =
         // MAX(Speed, %AW100, Counter)
         let funcExpr = ECall("MAX", [
-            EVar("Speed", TInt)
-            ETerminal("%AW100", TInt)
-            EVar("Counter", TInt)
+            EVar("Speed", typeof<int>)
+            ETerminal("%AW100", typeof<int>)
+            EVar("Counter", typeof<int>)
         ])
         
         let variables = funcExpr.GetVariables()
@@ -202,8 +202,8 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_GetFunctionCalls_단순_함수_추출``() =
-        let absCall = ECall("ABS", [EConst(box -5, TInt)])
-        let varExpr = EVar("Speed", TInt)
+        let absCall = ECall("ABS", [EConst(box -5, typeof<int>)])
+        let varExpr = EVar("Speed", typeof<int>)
         
         let funcs1 = absCall.GetFunctionCalls()
         let funcs2 = varExpr.GetFunctionCalls()
@@ -217,8 +217,8 @@ type AstExpressionTest() =
     member _.``DsExpr_GetFunctionCalls_중첩_함수_호출_추출``() =
         // MAX(ABS(-5), MIN(A, B))
         let nestedExpr = ECall("MAX", [
-            ECall("ABS", [EConst(box -5, TInt)])
-            ECall("MIN", [EVar("A", TInt); EVar("B", TInt)])
+            ECall("ABS", [EConst(box -5, typeof<int>)])
+            ECall("MIN", [EVar("A", typeof<int>); EVar("B", typeof<int>)])
         ])
         
         let functions = nestedExpr.GetFunctionCalls()
@@ -232,8 +232,8 @@ type AstExpressionTest() =
     member _.``DsExpr_GetFunctionCalls_이항_연산_내부_함수_추출``() =
         // ABS(X) + SQRT(Y)
         let binaryWithFuncs = EBinary(Add,
-            ECall("ABS", [EVar("X", TInt)]),
-            ECall("SQRT", [EVar("Y", TDouble)]))
+            ECall("ABS", [EVar("X", typeof<int>)]),
+            ECall("SQRT", [EVar("Y", typeof<double>)]))
         
         let functions = binaryWithFuncs.GetFunctionCalls()
         
@@ -247,11 +247,11 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_ToText_상수_표현식_텍스트``() =
-        let boolTrue = EConst(box true, TBool)
-        let boolFalse = EConst(box false, TBool)
-        let intConst = EConst(box 42, TInt)
-        let doubleConst = EConst(box 3.14, TDouble)
-        let stringConst = EConst(box "Hello World", TString)
+        let boolTrue = EConst(box true, typeof<bool>)
+        let boolFalse = EConst(box false, typeof<bool>)
+        let intConst = EConst(box 42, typeof<int>)
+        let doubleConst = EConst(box 3.14, typeof<double>)
+        let stringConst = EConst(box "Hello World", typeof<string>)
         
         boolTrue.ToText() |> should equal "TRUE"
         boolFalse.ToText() |> should equal "FALSE"
@@ -261,16 +261,16 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_ToText_변수_터미널_텍스트``() =
-        let variable = EVar("Motor_Speed", TInt)
-        let terminal = ETerminal("%I0.0", TBool)
+        let variable = EVar("Motor_Speed", typeof<int>)
+        let terminal = ETerminal("%I0.0", typeof<bool>)
         
         variable.ToText() |> should equal "Motor_Speed"
         terminal.ToText() |> should equal "%I0.0"
     
     [<Fact>]
     member _.``DsExpr_ToText_단항_연산_텍스트``() =
-        let notExpr = EUnary(Not, EVar("Enable", TBool))
-        let risingExpr = EUnary(Rising, ETerminal("%I0.1", TBool))
+        let notExpr = EUnary(Not, EVar("Enable", typeof<bool>))
+        let risingExpr = EUnary(Rising, ETerminal("%I0.1", typeof<bool>))
         
         notExpr.ToText() |> should equal "NOT Enable"
         risingExpr.ToText() |> should equal "↑ %I0.1"
@@ -279,21 +279,21 @@ type AstExpressionTest() =
     member _.``DsExpr_ToText_이항_연산_텍스트_우선순위``() =
         // A + B * C 는 A + (B * C) 로 출력되어야 함
         let expr1 = EBinary(Add, 
-            EVar("A", TInt),
-            EBinary(Mul, EVar("B", TInt), EVar("C", TInt)))
+            EVar("A", typeof<int>),
+            EBinary(Mul, EVar("B", typeof<int>), EVar("C", typeof<int>)))
         
         // (A + B) * C 는 괄호가 필요함
         let expr2 = EBinary(Mul,
-            EBinary(Add, EVar("A", TInt), EVar("B", TInt)),
-            EVar("C", TInt))
+            EBinary(Add, EVar("A", typeof<int>), EVar("B", typeof<int>)),
+            EVar("C", typeof<int>))
         
         expr1.ToText() |> should equal "A + B * C"
         expr2.ToText() |> should equal "(A + B) * C"
     
     [<Fact>]
     member _.``DsExpr_ToText_함수_호출_텍스트``() =
-        let absCall = ECall("ABS", [EConst(box -5, TInt)])
-        let maxCall = ECall("MAX", [EVar("A", TInt); EVar("B", TInt); EConst(box 100, TInt)])
+        let absCall = ECall("ABS", [EConst(box -5, typeof<int>)])
+        let maxCall = ECall("MAX", [EVar("A", typeof<int>); EVar("B", typeof<int>); EConst(box 100, typeof<int>)])
         let noArgsCall = ECall("NOW", [])
         
         absCall.ToText() |> should equal "ABS(-5)"
@@ -317,7 +317,7 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_Validate_정상_상수_검증``() =
-        let validConst = EConst(box 42, TInt)
+        let validConst = EConst(box 42, typeof<int>)
         let result = validConst.Validate()
         
         match result with
@@ -326,7 +326,7 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_Validate_타입_불일치_상수_오류``() =
-        let invalidConst = EConst(box "string_value", TInt)  // String value with Int type
+        let invalidConst = EConst(box "string_value", typeof<int>)  // String value with Int type
         let result = invalidConst.Validate()
         
         match result with
@@ -337,8 +337,8 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_Validate_빈_변수명_오류``() =
-        let emptyVar = EVar("", TInt)
-        let whitespaceVar = EVar("   ", TDouble)
+        let emptyVar = EVar("", typeof<int>)
+        let whitespaceVar = EVar("   ", typeof<double>)
         
         match emptyVar.Validate() with
         | Ok () -> failwith "Expected validation error for empty variable name"
@@ -351,7 +351,7 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_Validate_잘못된_단항_연산자_오류``() =
         // Add는 이항 연산자인데 단항으로 사용
-        let invalidUnary = EUnary(Add, EVar("X", TInt))
+        let invalidUnary = EUnary(Add, EVar("X", typeof<int>))
         
         match invalidUnary.Validate() with
         | Ok () -> failwith "Expected validation error for non-unary operator"
@@ -360,7 +360,7 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_Validate_잘못된_이항_연산자_오류``() =
         // Not은 단항 연산자인데 이항으로 사용
-        let invalidBinary = EBinary(Not, EVar("A", TBool), EVar("B", TBool))
+        let invalidBinary = EBinary(Not, EVar("A", typeof<bool>), EVar("B", typeof<bool>))
         
         match invalidBinary.Validate() with
         | Ok () -> failwith "Expected validation error for non-binary operator"
@@ -368,7 +368,7 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``DsExpr_Validate_빈_함수명_오류``() =
-        let emptyFunc = ECall("", [EVar("X", TInt)])
+        let emptyFunc = ECall("", [EVar("X", typeof<int>)])
         let whitespaceFunc = ECall("   ", [])
         
         match emptyFunc.Validate() with
@@ -382,8 +382,8 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_Validate_함수_인수_재귀_검증``() =
         // 함수 인수 중 하나가 유효하지 않음
-        let invalidArg = EVar("", TInt)  // 빈 변수명
-        let funcWithInvalidArg = ECall("MAX", [EVar("A", TInt); invalidArg; EVar("C", TInt)])
+        let invalidArg = EVar("", typeof<int>)  // 빈 변수명
+        let funcWithInvalidArg = ECall("MAX", [EVar("A", typeof<int>); invalidArg; EVar("C", typeof<int>)])
         
         match funcWithInvalidArg.Validate() with
         | Ok () -> failwith "Expected validation error for invalid function argument"
@@ -408,33 +408,33 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``ExprBuilder_기본_생성자_함수``() =
-        let const42 = ExprBuilder.constant (box 42) TInt
-        let speedVar = ExprBuilder.variable "Speed" TInt
-        let inputTerm = ExprBuilder.terminal "%I0.0" TBool
+        let const42 = ExprBuilder.constant (box 42) typeof<int>
+        let speedVar = ExprBuilder.variable "Speed" typeof<int>
+        let inputTerm = ExprBuilder.terminal "%I0.0" typeof<bool>
         
-        const42 |> should equal (EConst(box 42, TInt))
-        speedVar |> should equal (EVar("Speed", TInt))
-        inputTerm |> should equal (ETerminal("%I0.0", TBool))
+        const42 |> should equal (EConst(box 42, typeof<int>))
+        speedVar |> should equal (EVar("Speed", typeof<int>))
+        inputTerm |> should equal (ETerminal("%I0.0", typeof<bool>))
     
     [<Fact>]
     member _.``ExprBuilder_연산자_생성자_함수``() =
-        let var1 = ExprBuilder.variable "A" TBool
-        let var2 = ExprBuilder.variable "B" TBool
+        let var1 = ExprBuilder.variable "A" typeof<bool>
+        let var2 = ExprBuilder.variable "B" typeof<bool>
         
         let notExpr = ExprBuilder.unary Not var1
         let andExpr = ExprBuilder.binary And var1 var2
-        let funcExpr = ExprBuilder.call "ABS" [ExprBuilder.constant (box -5) TInt]
+        let funcExpr = ExprBuilder.call "ABS" [ExprBuilder.constant (box -5) typeof<int>]
         
         notExpr |> should equal (EUnary(Not, var1))
         andExpr |> should equal (EBinary(And, var1, var2))
-        funcExpr |> should equal (ECall("ABS", [EConst(box -5, TInt)]))
+        funcExpr |> should equal (ECall("ABS", [EConst(box -5, typeof<int>)]))
     
     [<Fact>]
     member _.``ExprBuilder_편의_연산자_테스트``() =
-        let a = ExprBuilder.variable "A" TInt
-        let b = ExprBuilder.variable "B" TInt
-        let flag1 = ExprBuilder.variable "Flag1" TBool
-        let flag2 = ExprBuilder.variable "Flag2" TBool
+        let a = ExprBuilder.variable "A" typeof<int>
+        let b = ExprBuilder.variable "B" typeof<int>
+        let flag1 = ExprBuilder.variable "Flag1" typeof<bool>
+        let flag2 = ExprBuilder.variable "Flag2" typeof<bool>
         
         // 산술 연산자 (binary 함수 사용)
         let addExpr = ExprBuilder.binary Add a b
@@ -487,10 +487,10 @@ type AstExpressionTest() =
         let doubleConst = ExprBuilder.doubleConst 3.14
         let stringConst = ExprBuilder.stringConst "Hello"
         
-        boolConst |> should equal (EConst(box true, TBool))
-        intConst |> should equal (EConst(box 42, TInt))
-        doubleConst |> should equal (EConst(box 3.14, TDouble))
-        stringConst |> should equal (EConst(box "Hello", TString))
+        boolConst |> should equal (EConst(box true, typeof<bool>))
+        intConst |> should equal (EConst(box 42, typeof<int>))
+        doubleConst |> should equal (EConst(box 3.14, typeof<double>))
+        stringConst |> should equal (EConst(box "Hello", typeof<string>))
     
     // ═════════════════════════════════════════════════════════════════
     // ExprAnalysis 모듈 테스트 (표현식 분석)
@@ -498,10 +498,10 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``ExprAnalysis_complexity_노드_카운트``() =
-        let simple = EConst(box 42, TInt)                    // 1 노드
-        let unaryExpr = EUnary(Not, EVar("Flag", TBool))     // 2 노드
-        let binaryExpr = EBinary(Add, EVar("A", TInt), EVar("B", TInt))  // 3 노드
-        let funcExpr = ECall("MAX", [EVar("X", TInt); EVar("Y", TInt)])  // 3 노드 (1 + 2 args)
+        let simple = EConst(box 42, typeof<int>)                    // 1 노드
+        let unaryExpr = EUnary(Not, EVar("Flag", typeof<bool>))     // 2 노드
+        let binaryExpr = EBinary(Add, EVar("A", typeof<int>), EVar("B", typeof<int>))  // 3 노드
+        let funcExpr = ECall("MAX", [EVar("X", typeof<int>); EVar("Y", typeof<int>)])  // 3 노드 (1 + 2 args)
         
         ExprAnalysis.complexity simple |> should equal 1
         ExprAnalysis.complexity unaryExpr |> should equal 2
@@ -512,21 +512,21 @@ type AstExpressionTest() =
     member _.``ExprAnalysis_complexity_복합_표현식``() =
         // (A + B) * (C - D) = 7 노드
         let complexExpr = EBinary(Mul,
-            EBinary(Add, EVar("A", TInt), EVar("B", TInt)),     // 3 노드
-            EBinary(Sub, EVar("C", TInt), EVar("D", TInt)))     // 3 노드
+            EBinary(Add, EVar("A", typeof<int>), EVar("B", typeof<int>)),     // 3 노드
+            EBinary(Sub, EVar("C", typeof<int>), EVar("D", typeof<int>)))     // 3 노드
             // 총 1 + 3 + 3 = 7 노드
         
         ExprAnalysis.complexity complexExpr |> should equal 7
     
     [<Fact>]
     member _.``ExprAnalysis_depth_트리_깊이_계산``() =
-        let simple = EConst(box 42, TInt)                       // 깊이 1
-        let unaryExpr = EUnary(Not, EVar("Flag", TBool))        // 깊이 2
-        let binaryExpr = EBinary(Add, EVar("A", TInt), EVar("B", TInt))  // 깊이 2
+        let simple = EConst(box 42, typeof<int>)                       // 깊이 1
+        let unaryExpr = EUnary(Not, EVar("Flag", typeof<bool>))        // 깊이 2
+        let binaryExpr = EBinary(Add, EVar("A", typeof<int>), EVar("B", typeof<int>))  // 깊이 2
         
         // 중첩된 표현식: NOT(A + B) = 깊이 3
         let nestedExpr = EUnary(Not,
-            EBinary(Add, EVar("A", TInt), EVar("B", TInt)))
+            EBinary(Add, EVar("A", typeof<int>), EVar("B", typeof<int>)))
         
         ExprAnalysis.depth simple |> should equal 1
         ExprAnalysis.depth unaryExpr |> should equal 2
@@ -535,13 +535,13 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``ExprAnalysis_depth_함수_호출_깊이``() =
-        let simpleFunc = ECall("ABS", [EVar("X", TInt)])        // 깊이 2
+        let simpleFunc = ECall("ABS", [EVar("X", typeof<int>)])        // 깊이 2
         let emptyFunc = ECall("NOW", [])                        // 깊이 1
         
         // 중첩 함수: MAX(ABS(A), B) = 깊이 3
         let nestedFunc = ECall("MAX", [
-            ECall("ABS", [EVar("A", TInt)])     // 깊이 2
-            EVar("B", TInt)                     // 깊이 1
+            ECall("ABS", [EVar("A", typeof<int>)])     // 깊이 2
+            EVar("B", typeof<int>)                     // 깊이 1
         ])  // 전체 깊이: 1 + max(2, 1) = 3
         
         ExprAnalysis.depth simpleFunc |> should equal 2
@@ -550,17 +550,17 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``ExprAnalysis_isConstant_상수_표현식_판정``() =
-        let constant = EConst(box 42, TInt)
-        let variable = EVar("Speed", TInt)
-        let terminal = ETerminal("%I0.0", TBool)
-        let funcCall = ECall("ABS", [EConst(box -5, TInt)])
+        let constant = EConst(box 42, typeof<int>)
+        let variable = EVar("Speed", typeof<int>)
+        let terminal = ETerminal("%I0.0", typeof<bool>)
+        let funcCall = ECall("ABS", [EConst(box -5, typeof<int>)])
         let metadata = EMeta("comment", Map.empty)
         
         // 상수 연산: 10 + 20
-        let constExpr = EBinary(Add, EConst(box 10, TInt), EConst(box 20, TInt))
+        let constExpr = EBinary(Add, EConst(box 10, typeof<int>), EConst(box 20, typeof<int>))
         
         // 변수 포함: X + 10
-        let varExpr = EBinary(Add, EVar("X", TInt), EConst(box 10, TInt))
+        let varExpr = EBinary(Add, EVar("X", typeof<int>), EConst(box 10, typeof<int>))
         
         ExprAnalysis.isConstant constant |> should be True
         ExprAnalysis.isConstant variable |> should be False
@@ -572,19 +572,19 @@ type AstExpressionTest() =
     
     [<Fact>]
     member _.``ExprAnalysis_hasEdgeOperators_에지_연산자_감지``() =
-        let normalExpr = EBinary(Add, EVar("A", TInt), EVar("B", TInt))
-        let risingExpr = EUnary(Rising, EVar("Signal", TBool))
-        let fallingExpr = EUnary(Falling, ETerminal("%I0.0", TBool))
+        let normalExpr = EBinary(Add, EVar("A", typeof<int>), EVar("B", typeof<int>))
+        let risingExpr = EUnary(Rising, EVar("Signal", typeof<bool>))
+        let fallingExpr = EUnary(Falling, ETerminal("%I0.0", typeof<bool>))
         
         // 중첩된 에지 연산자: (↑Signal) AND Enable
         let nestedEdge = EBinary(And,
-            EUnary(Rising, EVar("Signal", TBool)),
-            EVar("Enable", TBool))
+            EUnary(Rising, EVar("Signal", typeof<bool>)),
+            EVar("Enable", typeof<bool>))
         
         // 함수 내부 에지 연산자: DELAY(↑Signal, 100)
         let funcWithEdge = ECall("DELAY", [
-            EUnary(Rising, EVar("Signal", TBool))
-            EConst(box 100, TInt)
+            EUnary(Rising, EVar("Signal", typeof<bool>))
+            EConst(box 100, typeof<int>)
         ])
         
         ExprAnalysis.hasEdgeOperators normalExpr |> should be False
@@ -603,12 +603,12 @@ type AstExpressionTest() =
         let plcExpression = 
             EBinary(And,
                 EBinary(And,
-                    EBinary(Gt, EVar("Motor_Speed", TInt), EConst(box 100, TInt)),
-                    EUnary(Not, EUnary(Rising, ETerminal("%I0.15", TBool)))),
-                EBinary(Lt, EVar("Tank_Level", TDouble), EConst(box 80.5, TDouble)))
+                    EBinary(Gt, EVar("Motor_Speed", typeof<int>), EConst(box 100, typeof<int>)),
+                    EUnary(Not, EUnary(Rising, ETerminal("%I0.15", typeof<bool>)))),
+                EBinary(Lt, EVar("Tank_Level", typeof<double>), EConst(box 80.5, typeof<double>)))
         
         // 타입 추론 테스트
-        plcExpression.InferType() |> should equal (Some TBool)
+        plcExpression.InferType() |> should equal (Some typeof<bool>)
         
         // 변수 추출 테스트
         let variables = plcExpression.GetVariables()
@@ -639,15 +639,15 @@ type AstExpressionTest() =
         let pidExpression = 
             EBinary(Gt,
                 ECall("PID", [
-                    EVar("SetPoint", TDouble)
-                    EVar("ProcessValue", TDouble)
-                    EConst(box 1.5, TDouble)  // Kp
-                    EConst(box 0.1, TDouble)  // Ki
-                    EConst(box 0.05, TDouble) // Kd
+                    EVar("SetPoint", typeof<double>)
+                    EVar("ProcessValue", typeof<double>)
+                    EConst(box 1.5, typeof<double>)  // Kp
+                    EConst(box 0.1, typeof<double>)  // Ki
+                    EConst(box 0.05, typeof<double>) // Kd
                 ]),
                 ECall("MIN", [
-                    EVar("SafetyLimit", TDouble)
-                    EVar("OperatorLimit", TDouble)
+                    EVar("SafetyLimit", typeof<double>)
+                    EVar("OperatorLimit", typeof<double>)
                 ]))
         
         // 함수 호출 추출
@@ -680,51 +680,51 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_EConst_Boundary_Int32_MinMax``() =
         // Int32 boundary values
-        let minInt = EConst(box System.Int32.MinValue, TInt)
-        let maxInt = EConst(box System.Int32.MaxValue, TInt)
+        let minInt = EConst(box System.Int32.MinValue, typeof<int>)
+        let maxInt = EConst(box System.Int32.MaxValue, typeof<int>)
 
         match minInt with
-        | EConst(value, TInt) -> unbox<int> value |> should equal System.Int32.MinValue
+        | EConst(value, t) when t = typeof<int> -> unbox<int> value |> should equal System.Int32.MinValue
         | _ -> failwith "Expected EConst with Int32.MinValue"
 
         match maxInt with
-        | EConst(value, TInt) -> unbox<int> value |> should equal System.Int32.MaxValue
+        | EConst(value, t) when t = typeof<int> -> unbox<int> value |> should equal System.Int32.MaxValue
         | _ -> failwith "Expected EConst with Int32.MaxValue"
 
     [<Fact>]
     member _.``DsExpr_EConst_Boundary_Double_SpecialValues``() =
         // Double special values
-        let nan = EConst(box System.Double.NaN, TDouble)
-        let posInf = EConst(box System.Double.PositiveInfinity, TDouble)
-        let negInf = EConst(box System.Double.NegativeInfinity, TDouble)
-        let zero = EConst(box 0.0, TDouble)
-        let negZero = EConst(box -0.0, TDouble)
+        let nan = EConst(box System.Double.NaN, typeof<double>)
+        let posInf = EConst(box System.Double.PositiveInfinity, typeof<double>)
+        let negInf = EConst(box System.Double.NegativeInfinity, typeof<double>)
+        let zero = EConst(box 0.0, typeof<double>)
+        let negZero = EConst(box -0.0, typeof<double>)
 
         match nan with
-        | EConst(value, TDouble) -> System.Double.IsNaN(unbox<float> value) |> should be True
+        | EConst(value, t) when t = typeof<double> -> System.Double.IsNaN(unbox<float> value) |> should be True
         | _ -> failwith "Expected NaN"
 
         match posInf with
-        | EConst(value, TDouble) -> unbox<float> value |> should equal System.Double.PositiveInfinity
+        | EConst(value, t) when t = typeof<double> -> unbox<float> value |> should equal System.Double.PositiveInfinity
         | _ -> failwith "Expected +Infinity"
 
         match negInf with
-        | EConst(value, TDouble) -> unbox<float> value |> should equal System.Double.NegativeInfinity
+        | EConst(value, t) when t = typeof<double> -> unbox<float> value |> should equal System.Double.NegativeInfinity
         | _ -> failwith "Expected -Infinity"
 
     [<Fact>]
     member _.``DsExpr_EConst_String_EmptyAndLong``() =
         // Empty string
-        let emptyStr = EConst(box "", TString)
+        let emptyStr = EConst(box "", typeof<string>)
         match emptyStr with
-        | EConst(value, TString) -> unbox<string> value |> should equal ""
+        | EConst(value, t) when t = typeof<string> -> unbox<string> value |> should equal ""
         | _ -> failwith "Expected empty string"
 
         // Very long string (10,000 chars)
         let longStr = System.String('X', 10000)
-        let longExpr = EConst(box longStr, TString)
+        let longExpr = EConst(box longStr, typeof<string>)
         match longExpr with
-        | EConst(value, TString) ->
+        | EConst(value, t) when t = typeof<string> ->
             let s = unbox<string> value
             s.Length |> should equal 10000
         | _ -> failwith "Expected long string"
@@ -732,22 +732,22 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_EVar_EmptyName``() =
         // Variable with empty name (edge case)
-        let emptyVar = EVar("", TBool)
+        let emptyVar = EVar("", typeof<bool>)
         match emptyVar with
         | EVar(name, typ) ->
             name |> should equal ""
-            typ |> should equal TBool
+            typ |> should equal typeof<bool>
         | _ -> failwith "Expected EVar with empty name"
 
     [<Fact>]
     member _.``DsExpr_EVar_VeryLongName``() =
         // Variable with very long name (1000 chars)
         let longName = System.String('A', 1000)
-        let longVar = EVar(longName, TInt)
+        let longVar = EVar(longName, typeof<int>)
         match longVar with
         | EVar(name, typ) ->
             name.Length |> should equal 1000
-            typ |> should equal TInt
+            typ |> should equal typeof<int>
         | _ -> failwith "Expected EVar with long name"
 
     [<Fact>]
@@ -755,9 +755,9 @@ type AstExpressionTest() =
         // Deeply nested binary expressions (10 levels)
         let rec createNestedAdd depth =
             if depth = 0 then
-                EConst(box 1, TInt)
+                EConst(box 1, typeof<int>)
             else
-                EBinary(Add, createNestedAdd (depth - 1), EConst(box 1, TInt))
+                EBinary(Add, createNestedAdd (depth - 1), EConst(box 1, typeof<int>))
 
         let deepExpr = createNestedAdd 10
         let depth = ExprAnalysis.depth deepExpr
@@ -766,8 +766,8 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_EBinary_AllArithmeticOperators``() =
         // Test all arithmetic operators
-        let x = EVar("x", TInt)
-        let y = EVar("y", TInt)
+        let x = EVar("x", typeof<int>)
+        let y = EVar("y", typeof<int>)
 
         let addExpr = EBinary(Add, x, y)
         let subExpr = EBinary(Sub, x, y)
@@ -785,8 +785,8 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_EBinary_AllComparisonOperators``() =
         // Test all comparison operators
-        let x = EVar("x", TInt)
-        let y = EVar("y", TInt)
+        let x = EVar("x", typeof<int>)
+        let y = EVar("y", typeof<int>)
 
         let eqExpr = EBinary(Eq, x, y)
         let neExpr = EBinary(Ne, x, y)
@@ -806,8 +806,8 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_EBinary_AllLogicalOperators``() =
         // Test all logical operators
-        let a = EVar("a", TBool)
-        let b = EVar("b", TBool)
+        let a = EVar("a", typeof<bool>)
+        let b = EVar("b", typeof<bool>)
 
         let andExpr = EBinary(And, a, b)
         let orExpr = EBinary(Or, a, b)
@@ -821,7 +821,7 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_EUnary_AllUnaryOperators``() =
         // Test all unary operators
-        let boolVar = EVar("flag", TBool)
+        let boolVar = EVar("flag", typeof<bool>)
 
         let notExpr = EUnary(Not, boolVar)
         let risingExpr = EUnary(Rising, boolVar)
@@ -845,7 +845,7 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_ECall_ManyArguments``() =
         // Function call with many arguments (20)
-        let manyArgs = [for i in 1..20 -> EConst(box i, TInt)]
+        let manyArgs = [for i in 1..20 -> EConst(box i, typeof<int>)]
         let call = ECall("ManyParams", manyArgs)
         match call with
         | ECall(name, args) ->
@@ -856,14 +856,14 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_GetVariables_NoVariables``() =
         // Expression with only constants (no variables)
-        let constExpr = EBinary(Add, EConst(box 1, TInt), EConst(box 2, TInt))
+        let constExpr = EBinary(Add, EConst(box 1, typeof<int>), EConst(box 2, typeof<int>))
         let vars = constExpr.GetVariables()
         vars.Count |> should equal 0
 
     [<Fact>]
     member _.``DsExpr_GetVariables_DuplicateVariables``() =
         // Expression with same variable used multiple times
-        let x = EVar("x", TInt)
+        let x = EVar("x", typeof<int>)
         let expr = EBinary(Add, EBinary(Mul, x, x), x)
         let vars = expr.GetVariables()
         // Should only count "x" once (using HashSet)
@@ -873,15 +873,15 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_GetFunctionCalls_NoCalls``() =
         // Expression with no function calls
-        let expr = EBinary(Add, EVar("a", TInt), EConst(box 5, TInt))
+        let expr = EBinary(Add, EVar("a", typeof<int>), EConst(box 5, typeof<int>))
         let calls = expr.GetFunctionCalls()
         calls.Count |> should equal 0
 
     [<Fact>]
     member _.``DsExpr_GetFunctionCalls_DuplicateCalls``() =
         // Expression with same function called multiple times
-        let abs1 = ECall("ABS", [EVar("x", TInt)])
-        let abs2 = ECall("ABS", [EVar("y", TInt)])
+        let abs1 = ECall("ABS", [EVar("x", typeof<int>)])
+        let abs2 = ECall("ABS", [EVar("y", typeof<int>)])
         let expr = EBinary(Add, abs1, abs2)
         let calls = expr.GetFunctionCalls()
         // Should only count "ABS" once (using HashSet)
@@ -891,31 +891,31 @@ type AstExpressionTest() =
     [<Fact>]
     member _.``DsExpr_InferType_MixedTypes_IntDouble``() =
         // Int + Double => should return None (or Double with promotion)
-        let intVar = EVar("x", TInt)
-        let dblVar = EVar("y", TDouble)
+        let intVar = EVar("x", typeof<int>)
+        let dblVar = EVar("y", typeof<double>)
         let mixedExpr = EBinary(Add, intVar, dblVar)
         // Type inference may return None for mixed types in AST
         // (Core.Expression handles promotion, AST might not)
         let inferredType = mixedExpr.InferType()
-        // Accept either None or TDouble
-        (inferredType = None || inferredType = Some TDouble) |> should be True
+        // Accept either None or typeof<double>
+        (inferredType = None || inferredType = Some typeof<double>) |> should be True
 
     [<Fact>]
     member _.``ExprAnalysis_isConstant_ConstantExpression``() =
         // Pure constant expression
-        let constExpr = EBinary(Add, EConst(box 1, TInt), EConst(box 2, TInt))
+        let constExpr = EBinary(Add, EConst(box 1, typeof<int>), EConst(box 2, typeof<int>))
         ExprAnalysis.isConstant constExpr |> should be True
 
     [<Fact>]
     member _.``ExprAnalysis_isConstant_WithVariable``() =
         // Expression with variable
-        let varExpr = EBinary(Add, EVar("x", TInt), EConst(box 2, TInt))
+        let varExpr = EBinary(Add, EVar("x", typeof<int>), EConst(box 2, typeof<int>))
         ExprAnalysis.isConstant varExpr |> should be False
 
     [<Fact>]
     member _.``ExprAnalysis_complexity_SimpleExpression``() =
         // Simple constant
-        let simple = EConst(box 42, TInt)
+        let simple = EConst(box 42, typeof<int>)
         let complexity = ExprAnalysis.complexity simple
         complexity |> should equal 1
 
@@ -924,15 +924,15 @@ type AstExpressionTest() =
         // Complex nested expression
         let complex =
             EBinary(Add,
-                EBinary(Mul, EVar("a", TInt), EVar("b", TInt)),
-                EBinary(Div, EVar("c", TInt), EConst(box 2, TInt)))
+                EBinary(Mul, EVar("a", typeof<int>), EVar("b", typeof<int>)),
+                EBinary(Div, EVar("c", typeof<int>), EConst(box 2, typeof<int>)))
         let complexity = ExprAnalysis.complexity complex
         complexity |> should be (greaterThan 5)
 
     [<Fact>]
     member _.``ExprAnalysis_depth_FlatExpression``() =
         // Flat expression (no nesting)
-        let flat = EConst(box 42, TInt)
+        let flat = EConst(box 42, typeof<int>)
         let depth = ExprAnalysis.depth flat
         depth |> should equal 1
 
@@ -943,29 +943,29 @@ type AstExpressionTest() =
             EBinary(Add,
                 EBinary(Mul,
                     EBinary(Sub,
-                        EBinary(Div, EVar("a", TInt), EConst(box 2, TInt)),
-                        EVar("b", TInt)),
-                    EVar("c", TInt)),
-                EVar("d", TInt))
+                        EBinary(Div, EVar("a", typeof<int>), EConst(box 2, typeof<int>)),
+                        EVar("b", typeof<int>)),
+                    EVar("c", typeof<int>)),
+                EVar("d", typeof<int>))
         let depth = ExprAnalysis.depth nested
         depth |> should be (greaterThanOrEqualTo 4)
 
     [<Fact>]
     member _.``ExprAnalysis_hasEdgeOperators_NoEdge``() =
         // Expression without edge operators
-        let noEdge = EBinary(And, EVar("a", TBool), EVar("b", TBool))
+        let noEdge = EBinary(And, EVar("a", typeof<bool>), EVar("b", typeof<bool>))
         ExprAnalysis.hasEdgeOperators noEdge |> should be False
 
     [<Fact>]
     member _.``ExprAnalysis_hasEdgeOperators_WithRising``() =
         // Expression with Rising edge
-        let withRising = EUnary(Rising, EVar("trigger", TBool))
+        let withRising = EUnary(Rising, EVar("trigger", typeof<bool>))
         ExprAnalysis.hasEdgeOperators withRising |> should be True
 
     [<Fact>]
     member _.``ExprAnalysis_hasEdgeOperators_WithFalling``() =
         // Expression with Falling edge
-        let withFalling = EUnary(Falling, EVar("reset", TBool))
+        let withFalling = EUnary(Falling, EVar("reset", typeof<bool>))
         ExprAnalysis.hasEdgeOperators withFalling |> should be True
 
     [<Fact>]
@@ -973,10 +973,10 @@ type AstExpressionTest() =
         // Edge operator deeply nested in expression
         let deepEdge =
             EBinary(And,
-                EVar("enable", TBool),
+                EVar("enable", typeof<bool>),
                 EBinary(Or,
-                    EUnary(Rising, EVar("start", TBool)),
-                    EVar("running", TBool)))
+                    EUnary(Rising, EVar("start", typeof<bool>)),
+                    EVar("running", typeof<bool>)))
         ExprAnalysis.hasEdgeOperators deepEdge |> should be True
 
     [<Fact>]
@@ -985,9 +985,9 @@ type AstExpressionTest() =
         let complexMath =
             EBinary(Div,
                 EBinary(Mul,
-                    EBinary(Add, EVar("a", TDouble), EVar("b", TDouble)),
-                    EVar("c", TDouble)),
-                EBinary(Sub, EVar("d", TDouble), EVar("e", TDouble)))
+                    EBinary(Add, EVar("a", typeof<double>), EVar("b", typeof<double>)),
+                    EVar("c", typeof<double>)),
+                EBinary(Sub, EVar("d", typeof<double>), EVar("e", typeof<double>)))
 
         // Variable extraction
         let vars = complexMath.GetVariables()
@@ -1006,10 +1006,10 @@ type AstExpressionTest() =
         // Complex boolean: (a AND b) OR (NOT c AND (d OR e))
         let complexLogic =
             EBinary(Or,
-                EBinary(And, EVar("a", TBool), EVar("b", TBool)),
+                EBinary(And, EVar("a", typeof<bool>), EVar("b", typeof<bool>)),
                 EBinary(And,
-                    EUnary(Not, EVar("c", TBool)),
-                    EBinary(Or, EVar("d", TBool), EVar("e", TBool))))
+                    EUnary(Not, EVar("c", typeof<bool>)),
+                    EBinary(Or, EVar("d", typeof<bool>), EVar("e", typeof<bool>))))
 
         // Variable extraction
         let vars = complexLogic.GetVariables()

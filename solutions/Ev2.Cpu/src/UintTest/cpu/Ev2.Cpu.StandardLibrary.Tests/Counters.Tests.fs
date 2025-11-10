@@ -56,11 +56,11 @@ module CountersTests =
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)  // At least Q
 
             // Verify CU (Count Up) parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "CU" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "CU" && p.DataType = typeof<bool>)
                       |> should equal true
 
             // Verify R (Reset) parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "R" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "R" && p.DataType = typeof<bool>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -74,11 +74,11 @@ module CountersTests =
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)  // At least Q
 
             // Verify CD (Count Down) parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "CD" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "CD" && p.DataType = typeof<bool>)
                       |> should equal true
 
             // Verify LD (Load) parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "LD" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "LD" && p.DataType = typeof<bool>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -92,15 +92,15 @@ module CountersTests =
             fb.Outputs.Length |> should be (greaterThanOrEqualTo 1)  // At least QU or QD
 
             // Verify CU parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "CU" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "CU" && p.DataType = typeof<bool>)
                       |> should equal true
 
             // Verify CD parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "CD" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "CD" && p.DataType = typeof<bool>)
                       |> should equal true
 
             // Verify R parameter exists
-            fb.Inputs |> List.exists (fun p -> p.Name = "R" && p.DataType = DsDataType.TBool)
+            fb.Inputs |> List.exists (fun p -> p.Name = "R" && p.DataType = typeof<bool>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -166,7 +166,7 @@ module CountersTests =
         match CTU.create() with
         | Ok fb ->
             // PV should be an Int parameter
-            fb.Inputs |> List.exists (fun p -> p.Name = "PV" && p.DataType = DsDataType.TInt)
+            fb.Inputs |> List.exists (fun p -> p.Name = "PV" && p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"
@@ -176,7 +176,7 @@ module CountersTests =
         DsTagRegistry.clear()
         match CTD.create() with
         | Ok fb ->
-            fb.Inputs |> List.exists (fun p -> p.Name = "PV" && p.DataType = DsDataType.TInt)
+            fb.Inputs |> List.exists (fun p -> p.Name = "PV" && p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FB creation failed: {msg}"

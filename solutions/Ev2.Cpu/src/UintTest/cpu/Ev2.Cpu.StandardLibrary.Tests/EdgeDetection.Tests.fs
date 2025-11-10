@@ -25,7 +25,7 @@ module EdgeDetectionTests =
         match R_TRIG.create() with
         | Ok fb ->
             let clkInput = fb.Inputs |> List.find (fun p -> p.Name = "CLK")
-            clkInput.DataType |> should equal DsDataType.TBool
+            clkInput.DataType |> should equal typeof<bool>
         | Error msg ->
             failwith $"FB creation failed: {msg}"
 
@@ -35,7 +35,7 @@ module EdgeDetectionTests =
         match R_TRIG.create() with
         | Ok fb ->
             let qOutput = fb.Outputs |> List.find (fun p -> p.Name = "Q")
-            qOutput.DataType |> should equal DsDataType.TBool
+            qOutput.DataType |> should equal typeof<bool>
         | Error msg ->
             failwith $"FB creation failed: {msg}"
 
@@ -57,7 +57,7 @@ module EdgeDetectionTests =
         match F_TRIG.create() with
         | Ok fb ->
             let clkInput = fb.Inputs |> List.find (fun p -> p.Name = "CLK")
-            clkInput.DataType |> should equal DsDataType.TBool
+            clkInput.DataType |> should equal typeof<bool>
         | Error msg ->
             failwith $"FB creation failed: {msg}"
 
@@ -67,7 +67,7 @@ module EdgeDetectionTests =
         match F_TRIG.create() with
         | Ok fb ->
             let qOutput = fb.Outputs |> List.find (fun p -> p.Name = "Q")
-            qOutput.DataType |> should equal DsDataType.TBool
+            qOutput.DataType |> should equal typeof<bool>
         | Error msg ->
             failwith $"FB creation failed: {msg}"
 

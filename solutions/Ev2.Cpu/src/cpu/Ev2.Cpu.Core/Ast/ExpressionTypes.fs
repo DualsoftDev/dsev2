@@ -5,18 +5,18 @@ open System
 /// 표현식 AST
 [<StructuralEquality; NoComparison>]
 type Expr =
-    | Constant of obj * DsDataType              // 상수 값
+    | Constant of obj * Type              // 상수 값
     | Variable of DsTag                     // 변수/IO 참조
     | UnaryOp of DsOp * Expr          // 단항 연산
     | BinaryOp of DsOp * Expr * Expr  // 이항 연산
     | FunctionCall of string * Expr list    // 함수 호출
     | Conditional of Expr * Expr * Expr     // 조건 표현식 (if-then-else)
-    
+
     /// 표현식 타입 추론
-    member this.InferType() : DsDataType =
+    member this.InferType() : Type =
         match this with
         | Constant(_, t) -> t
-        | Variable(tag) -> tag.DsDataType
+        | Variable(tag) -> tag.StructType
         
         | UnaryOp(op, expr) ->
             let operandType = expr.InferType()
@@ -30,11 +30,11 @@ type Expr =
         | FunctionCall(_name, args) ->
             let argTypes = args |> List.map (fun e -> e.InferType())
             // 함수 시그니처 검증은 별도 모듈에서 처리
-            DsDataType.TBool // 임시로 기본 타입 반환
-        
+            typeof<bool> // 임시로 기본 타입 반환
+
         | Conditional(cond, thenExpr, elseExpr) ->
             let condType = cond.InferType()
-            if condType <> DsDataType.TBool then
+            if condType <> typeof<bool> then
                 raise (InvalidOperationException("Condition must be boolean"))
             let thenType = thenExpr.InferType()
             let elseType = elseExpr.InferType()

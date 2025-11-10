@@ -80,10 +80,10 @@ module StringTests =
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
             // Should return String type
-            fc.ReturnType |> should equal DsDataType.TString
+            fc.ReturnType |> should equal typeof<string>
 
             // Should have String inputs
-            fc.Inputs |> List.exists (fun p -> p.DataType = DsDataType.TString)
+            fc.Inputs |> List.exists (fun p -> p.DataType = typeof<string>)
                       |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -96,12 +96,12 @@ module StringTests =
             fc.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            fc.ReturnType |> should equal DsDataType.TString
+            fc.ReturnType |> should equal typeof<string>
 
             // Should have String input and Int length parameter
-            fc.Inputs |> List.exists (fun p -> p.DataType = DsDataType.TString)
+            fc.Inputs |> List.exists (fun p -> p.DataType = typeof<string>)
                       |> should equal true
-            fc.Inputs |> List.exists (fun p -> p.DataType = DsDataType.TInt)
+            fc.Inputs |> List.exists (fun p -> p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -114,11 +114,11 @@ module StringTests =
             fc.Inputs.Length |> should be (greaterThanOrEqualTo 2)
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            fc.ReturnType |> should equal DsDataType.TString
+            fc.ReturnType |> should equal typeof<string>
 
-            fc.Inputs |> List.exists (fun p -> p.DataType = DsDataType.TString)
+            fc.Inputs |> List.exists (fun p -> p.DataType = typeof<string>)
                       |> should equal true
-            fc.Inputs |> List.exists (fun p -> p.DataType = DsDataType.TInt)
+            fc.Inputs |> List.exists (fun p -> p.DataType = typeof<int>)
                       |> should equal true
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -131,12 +131,12 @@ module StringTests =
             fc.Inputs.Length |> should be (greaterThanOrEqualTo 3)
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
-            fc.ReturnType |> should equal DsDataType.TString
+            fc.ReturnType |> should equal typeof<string>
 
             // Should have String input, Int start position, Int length
-            fc.Inputs |> List.exists (fun p -> p.DataType = DsDataType.TString)
+            fc.Inputs |> List.exists (fun p -> p.DataType = typeof<string>)
                       |> should equal true
-            fc.Inputs |> List.filter (fun p -> p.DataType = DsDataType.TInt)
+            fc.Inputs |> List.filter (fun p -> p.DataType = typeof<int>)
                       |> List.length |> should be (greaterThanOrEqualTo 2)
         | Error msg ->
             failwith $"FC creation failed: {msg}"
@@ -150,10 +150,10 @@ module StringTests =
             fc.Outputs.Length |> should be (greaterThanOrEqualTo 1)
 
             // FIND returns Int (position)
-            fc.ReturnType |> should equal DsDataType.TInt
+            fc.ReturnType |> should equal typeof<int>
 
             // Should have String inputs (source and search string)
-            fc.Inputs |> List.filter (fun p -> p.DataType = DsDataType.TString)
+            fc.Inputs |> List.filter (fun p -> p.DataType = typeof<string>)
                       |> List.length |> should be (greaterThanOrEqualTo 2)
         | Error msg ->
             failwith $"FC creation failed: {msg}"
