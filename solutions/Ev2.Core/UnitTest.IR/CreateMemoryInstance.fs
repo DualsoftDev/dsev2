@@ -1,13 +1,8 @@
 namespace T
 
 open NUnit.Framework
-open System
-open Ev2.Core.FS
-open Newtonsoft.Json
 open Dual.Common.UnitTest.FS
-open Dual.Common.Base
 open Ev2.Core.FS.IR
-open Ev2.Gen
 
 [<AutoOpen>]
 module InstanceCreationTestModule =
@@ -33,7 +28,7 @@ type StructTest() =
                 [|
                     Variable<string>("Name", Value="Kim") :> IVariable
                     Variable<int>("Age", Value=16)
-                    new Array<string>(
+                    new IRArray<string>(
                         "Favorites",
                         [| DimRange(0, 10) |],
                         Value = [| "코딩"; "음악"; "여행" |]
@@ -57,8 +52,8 @@ type StructTest() =
         age.Value === 16
 
         let fav = person.GetField("Favorites")
-        fav.DataType === typeof<Array<string>>
-        let favArray = fav :?> Array<string>
+        fav.DataType === typeof<IRArray<string>>
+        let favArray = fav :?> IRArray<string>
         favArray.ElementDataType === typeof<string>
         match favArray.Value with
         | null ->

@@ -34,6 +34,11 @@ type IArray =
     abstract Dimensions : DimRange[]
 
 [<AllowNullLiteral>]
+type IArray<'T> =
+    inherit IArray
+    abstract ElementType : Type
+
+[<AllowNullLiteral>]
 type ITerminal =
     inherit IExpression
     //abstract Value    : obj

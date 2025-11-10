@@ -4,7 +4,7 @@ namespace T
 //open System.Collections.Generic
 //open NUnit.Framework
 //open Dual.Common.UnitTest.FS
-//open Ev2.Gen
+//open Ev2.Core.FS.IR
 
 //module private RuntimeTestHelpers =
 //    let mkDictionary (pairs: seq<string * ITerminal>) : IDictionary<string, ITerminal> =

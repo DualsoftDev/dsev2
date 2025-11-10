@@ -4,7 +4,7 @@ open System
 open NUnit.Framework
 open Dual.Common.UnitTest.FS
 open Ev2.Core.FS.IR
-open Ev2.Gen
+open Ev2.Core.FS.IR
 
 [<AutoOpen>]
 module private CounterTestHelpers =

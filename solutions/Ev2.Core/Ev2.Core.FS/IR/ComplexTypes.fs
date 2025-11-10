@@ -21,17 +21,17 @@ type Struct(name:string, fields:IVariable[]) =
         member x.VarType = x.VarType
         member x.Value with get() = fail() and set v = fail()
 
-type Array<'T>(name:string, dimensions:DimRange[]) =
-    new() = Array<'T>(nullString, [||])
+type IRArray<'T>(name:string, dimensions:DimRange[]) =
+    new() = IRArray<'T>(nullString, [||])
     member x.Dimensions = dimensions
-    member x.DataType = typeof<Array<'T>>
+    member x.DataType = typeof<IRArray<'T>>
     member val VarType = VarType.VarUndefined with get, set
     member x.ElementDataType = typeof<'T>
     member val Value: obj = null with get, set   // 'T[], 'T[,] or 'T[,,] ...
 
-    interface IArray with
+    interface IArray<'T> with
         member x.Dimensions = x.Dimensions
-        //member x.DataType = x.ElementDataType
+        member x.ElementType = x.ElementDataType
     interface IVariable with
         member x.Name = name
         member x.VarType = x.VarType
