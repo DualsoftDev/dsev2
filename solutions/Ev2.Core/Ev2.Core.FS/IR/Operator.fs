@@ -7,17 +7,22 @@ open Ev2.Core.FS.IR
 type Arguments = IExpression[]
 type Arguments<'T> = IExpression<'T>[]
 
-type Operator<'T>(name:string, arguments:Arguments) =
-    new() = Operator<'T>(nullString, [||])
+[<AbstractClass>]
+type Operator(name:string, arguments:Arguments) =
     member x.Name = name
     member x.Arguments = arguments
+
+
+type Operator<'T>(name:string, arguments:Arguments) =
+    inherit Operator(name, arguments)
+
+    new() = Operator<'T>(nullString, [||])
     member x.ReturnType = typeof<'T>
-    member val Evaluator: (Arguments -> 'T) = fun _ -> fail() with get, set
+    member val Evaluator: (Arguments -> 'T) = fun _ -> failwithMessage "Should be re-implemented" with get, set
     member x.TValue = x.Evaluator(x.Arguments)
     interface IExpression<'T> with
         member x.DataType = x.ReturnType
-        //member x.Value = x.TValue
-        member x.Value with get() = box x.TValue and set v = fail()
+        member x.Value with get() = box x.TValue and set v = failwithMessage "Unsupported operation"
         member x.TValue = x.TValue
 
 
@@ -263,13 +268,6 @@ module OperatorEvaluators =
                 let valueExpr = args[0] :?> IExpression<bool>
                 not valueExpr.TValue)
 
-    // 액티브 패턴: single/double 분기
-    let (|F32|F64|Other|) (v: obj) =
-        match v with
-        | :? single as x -> F32 x
-        | :? double as x -> F64 x
-        | _              -> Other v
-
     // 단항 실수 함수(Math.* : double->double)를 IExpression<'T>용으로 리프트
     let inline private liftUnaryFloat (opName:string) (f: double -> double) (arg: IExpression<'T>) =
         Operator<'T>(
@@ -278,9 +276,9 @@ module OperatorEvaluators =
             Evaluator = fun args ->
                 let a = args[0] :?> IExpression<'T>
                 match box a.TValue with
-                | F32 v -> f (float v) |> float32 |> unbox<'T>
-                | F64 v -> f v         |> unbox<'T>
-                | Other _ -> failwithf $"지원하지 않는 형식에 대한 {opName} 연산입니다: {a.DataType}"
+                | :? single as v -> f (float v) |> float32 |> unbox<'T>
+                | :? double as v -> f v         |> unbox<'T>
+                | _ -> failwithf $"지원하지 않는 형식에 대한 {opName} 연산입니다: {a.DataType}"
         )
 
     let cos  (x: IExpression<'T>) = liftUnaryFloat "COS"  Math.Cos  x
