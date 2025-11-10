@@ -2,6 +2,7 @@ namespace Ev2.Gen
 
 open System
 open System.Collections.Generic
+open Dual.Common.Base
 
 [<AutoOpen>]
 module CounterModule =
@@ -41,36 +42,30 @@ module CounterModule =
             | _ -> 0u
         let acc = Variable<'T>("ACC", Value = ofUInt initialAcc)
 
-        let inputDict = Dictionary<string, IExpression>(StringComparer.OrdinalIgnoreCase)
-        let inputs : InputMapping = upcast inputDict
-        let outputDict = Dictionary<string, IVariable>(StringComparer.OrdinalIgnoreCase)
-        let outputs : OutputMapping = upcast outputDict
-
-        let initInput key (expr:IExpression) = inputDict[key] <- expr
-        let initOutput key (variable:IVariable) = outputDict[key] <- variable
+        let inputs = Dictionary<string, IExpression>(StringComparer.OrdinalIgnoreCase)
+        let outputs = Dictionary<string, IVariable>(StringComparer.OrdinalIgnoreCase)
 
         do
-            initInput "CU" (cu :> IExpression)
-            initInput "CD" (cd :> IExpression)
-            initInput "LD" (ld :> IExpression)
-            initInput "RES" (res :> IExpression)
-            initInput "PRE" (pre :> IExpression)
-            initInput "ACC" (acc :> IExpression)
-            initOutput "ACC" (acc :> IVariable)
-            initOutput "DN" (dn :> IVariable)
-            initOutput "DNDown" (dnDown :> IVariable)
-            initOutput "OV" (ov :> IVariable)
-            initOutput "UN" (un :> IVariable)
-            match inputMapping with
-            | Some overrides when not (isNull (overrides :> obj)) ->
-                for kvp in overrides do
-                    inputDict[kvp.Key] <- kvp.Value
-            | _ -> ()
-            match outputMapping with
-            | Some overrides when not (isNull (overrides :> obj)) ->
-                for kvp in overrides do
-                    outputDict[kvp.Key] <- kvp.Value
-            | _ -> ()
+            inputs["CU"]    <-  cu
+            inputs["CD"]    <-  cd
+            inputs["LD"]    <-  ld
+            inputs["RES"]   <- res
+            inputs["PRE"]   <- pre
+            inputs["ACC"]   <- acc
+            outputs["ACC"]  <- acc
+            outputs["DN"]   <- dn
+            outputs["DNDown"] <- dnDown
+            outputs["OV"]   <- ov
+            outputs["UN"]   <- un
+
+            inputMapping |> iter (fun dic ->
+                for kvp in dic do
+                    inputs[kvp.Key] <- kvp.Value )
+
+            outputMapping |> iter (fun dic ->
+                for kvp in dic do
+                    outputs[kvp.Key] <- kvp.Value )
+
 
         let exposedVariables : IVariable[] = [| acc; pre; dn; dnDown; ov; un; cu; cd; ld; res |]
         let containerStruct = Struct(name, exposedVariables, VarType=VarType.VarGlobal)
@@ -87,7 +82,7 @@ module CounterModule =
         let mutable prevCountDown = false
 
         let tryGetBoolInput key =
-            match inputDict.TryGetValue key with
+            match inputs.TryGetValue key with
             | true, expr when not (isNull expr) ->
                 match expr with
                 | :? IExpression<bool> as typed -> Some typed.TValue
@@ -97,7 +92,7 @@ module CounterModule =
             | _ -> None
 
         let tryGetTypedInput key =
-            match inputDict.TryGetValue key with
+            match inputs.TryGetValue key with
             | true, expr when not (isNull expr) ->
                 match expr with
                 | :? IExpression<'T> as typed -> Some typed.TValue
@@ -109,7 +104,7 @@ module CounterModule =
         let propagateBoolOutput key (defaultVar:IVariable<bool>) (value:bool) =
             let boxed = box value
             defaultVar.Value <- boxed
-            match outputDict.TryGetValue key with
+            match outputs.TryGetValue key with
             | true, (:? IVariable<bool> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
                 mapped.Value <- boxed
             | _ -> ()
@@ -117,7 +112,7 @@ module CounterModule =
         let propagateTypedOutput key (defaultVar:IVariable<'T>) (value:'T) =
             let boxed = box value
             defaultVar.Value <- boxed
-            match outputDict.TryGetValue key with
+            match outputs.TryGetValue key with
             | true, (:? IVariable<'T> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
                 mapped.Value <- boxed
             | _ -> ()

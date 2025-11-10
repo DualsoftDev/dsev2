@@ -160,4 +160,4 @@ type CounterTest() =
         let manualStruct = storage.["ManualCounter"] :?> Struct
         obj.ReferenceEquals(manualStruct.GetField("DN"), manual.DN) === true
 
-        Assert.Throws<InvalidOperationException>(fun () -> createCTU "ManualCounter" 3u storage |> ignore) |> ignore
+        Assert.Throws<ArgumentException>(fun () -> createCTU "ManualCounter" 3u storage |> ignore) |> ignore
