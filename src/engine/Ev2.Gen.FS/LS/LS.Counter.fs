@@ -81,84 +81,56 @@ module CounterModule =
         let mutable prevCountUp = false
         let mutable prevCountDown = false
 
-        let tryGetBoolInput key =
-            match inputs.TryGetValue key with
-            | true, expr when not (isNull expr) ->
-                match expr with
-                | :? IExpression<bool> as typed -> Some typed.TValue
-                | _ ->
-                    let raw = expr.Value
-                    if isNull raw then None else Some(Convert.ToBoolean raw)
-            | _ -> None
-
-        let tryGetTypedInput key =
-            match inputs.TryGetValue key with
-            | true, expr when not (isNull expr) ->
-                match expr with
-                | :? IExpression<'T> as typed -> Some typed.TValue
-                | _ ->
-                    let raw = expr.Value
-                    if isNull raw then None else Some(Convert.ChangeType(raw, typeof<'T>) :?> 'T)
-            | _ -> None
-
-        let propagateBoolOutput key (defaultVar:IVariable<bool>) (value:bool) =
-            let boxed = box value
-            defaultVar.Value <- boxed
-            match outputs.TryGetValue key with
-            | true, (:? IVariable<bool> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
-                mapped.Value <- boxed
-            | _ -> ()
-
-        let propagateTypedOutput key (defaultVar:IVariable<'T>) (value:'T) =
-            let boxed = box value
-            defaultVar.Value <- boxed
-            match outputs.TryGetValue key with
-            | true, (:? IVariable<'T> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
-                mapped.Value <- boxed
-            | _ -> ()
-
-        let resolveBoolInput key (fallbackVar:IVariable<bool>) =
+        let resolveInput key (fallbackVar:IVariable<'U>) =
             let value =
-                match tryGetBoolInput key with
-                | Some v -> v
-                | None -> fallbackVar.TValue
+                match inputs.TryGetValue key with
+                | true, expr when not (isNull expr) ->
+                    match expr with
+                    | :? IExpression<'U> as typed -> typed.TValue
+                    | _ ->
+                        let raw = expr.Value
+                        if isNull raw then fallbackVar.TValue else Convert.ChangeType(raw, typeof<'U>) :?> 'U
+                | _ -> fallbackVar.TValue
             fallbackVar.Value <- box value
             value
 
-        let resolveTypedInput key (fallbackVar:IVariable<'T>) =
-            let value =
-                match tryGetTypedInput key with
-                | Some v -> v
-                | None -> fallbackVar.TValue
-            fallbackVar.Value <- box value
-            value
+        let propagateOutput key (defaultVar:IVariable<'U>) (value:'U) =
+            let boxed = box value
+            defaultVar.Value <- boxed
+            match outputs.TryGetValue key with
+            | true, (:? IVariable<'U> as mapped) when not (obj.ReferenceEquals(mapped, defaultVar)) ->
+                mapped.Value <- boxed
+            | _ -> ()
+
+        let applyFlags doneUpVal doneDownVal overflowVal underflowUpdate =
+            doneUp <- doneUpVal
+            doneDown <- doneDownVal
+            overflowFlag <- overflowVal
+            underflowUpdate |> Option.iter (fun v -> underflowFlag <- v)
 
         let rec updateFlags () =
             let presetVal = toUInt pre.Value
             match counterType with
             | CTU ->
-                doneUp <- (presetVal = 0u && accumulator > 0u) || (presetVal <> 0u && accumulator >= presetVal)
-                doneDown <- false
-                overflowFlag <- presetVal <> 0u && accumulator > presetVal
-                underflowFlag <- false
+                let doneUpVal = (presetVal = 0u && accumulator > 0u) || (presetVal <> 0u && accumulator >= presetVal)
+                let overflowVal = presetVal <> 0u && accumulator > presetVal
+                applyFlags doneUpVal false overflowVal (Some false)
             | CTD ->
-                doneUp <- accumulator = 0u
-                doneDown <- doneUp
-                overflowFlag <- false
+                let doneUpVal = accumulator = 0u
+                applyFlags doneUpVal doneUpVal false None
             | CTUD ->
-                doneUp <- presetVal <> 0u && accumulator >= presetVal
-                doneDown <- accumulator = 0u
-                overflowFlag <- presetVal <> 0u && accumulator > presetVal
+                let doneUpVal = presetVal <> 0u && accumulator >= presetVal
+                let doneDownVal = accumulator = 0u
+                let overflowVal = presetVal <> 0u && accumulator > presetVal
+                applyFlags doneUpVal doneDownVal overflowVal None
             | CTR
             | Undefined ->
-                doneUp <- false
-                doneDown <- false
-                overflowFlag <- false
-            propagateBoolOutput "DN" dn doneUp
-            propagateBoolOutput "DNDown" dnDown doneDown
-            propagateBoolOutput "OV" ov overflowFlag
-            propagateBoolOutput "UN" un underflowFlag
-            propagateTypedOutput "ACC" acc (ofUInt accumulator)
+                applyFlags false false false None
+            propagateOutput "DN" dn doneUp
+            propagateOutput "DNDown" dnDown doneDown
+            propagateOutput "OV" ov overflowFlag
+            propagateOutput "UN" un underflowFlag
+            propagateOutput "ACC" acc (ofUInt accumulator)
 
         let risingEdge prev current = current && not prev
 
@@ -195,11 +167,11 @@ module CounterModule =
         member _.Container = containerStruct
 
         member _.Evaluate() =
-            let countUpSignal = resolveBoolInput "CU" cu
-            let countDownSignal = resolveBoolInput "CD" cd
-            let resetSignal = resolveBoolInput "RES" res
-            let loadSignal = resolveBoolInput "LD" ld
-            let requestedPreset = resolveTypedInput "PRE" pre
+            let countUpSignal = resolveInput "CU" cu
+            let countDownSignal = resolveInput "CD" cd
+            let resetSignal = resolveInput "RES" res
+            let loadSignal = resolveInput "LD" ld
+            let requestedPreset = resolveInput "PRE" pre
             let requestedLoadValue = toUInt requestedPreset
 
             if resetSignal then
