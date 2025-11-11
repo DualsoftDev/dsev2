@@ -21,7 +21,7 @@ type Operator<'T>(name:string, arguments:Arguments) =
     override x.ReturnType = typeof<'T>
     member val Evaluator: (Arguments -> 'T) = fun _ -> failwithMessage "Should be re-implemented" with get, set
     member x.TValue = x.Evaluator(x.Arguments)
-    interface IExpression<'T> with
+    interface IOperator<'T> with
         member x.DataType = x.ReturnType
         member x.Value with get() = box x.TValue and set v = failwithMessage "Unsupported operation"
         member x.TValue = x.TValue
@@ -285,3 +285,26 @@ module OperatorEvaluators =
     let exp  (x: IExpression<'T>) = liftUnaryFloat "EXP"  Math.Exp  x
     let log  (x: IExpression<'T>) = liftUnaryFloat "LOG"  Math.Log  x
     let sqrt (x: IExpression<'T>) = liftUnaryFloat "SQRT" Math.Sqrt x
+
+
+
+    [<Obsolete("Experimental: Any 형식에 대한 덧셈 연산자 구현")>]
+    let addAny(a:IExpression<Any>) (b:IExpression<Any>) =
+        Operator<Any>("ADD_ANY", [| a; b |],
+            Evaluator = fun args ->
+                let leftExpr  = args[0] :?> IExpression<Any>
+                let rightExpr = args[1] :?> IExpression<Any>
+                match leftExpr.TValue.Value, box rightExpr.TValue.Value with
+                | (:? int8   as l), (:? int8   as r) -> Any(typeof<int8>, l + r)
+                | (:? int16  as l), (:? int16  as r) -> Any(typeof<int16>, l + r)
+                | (:? int32  as l), (:? int32  as r) -> Any(typeof<int32>, l + r)
+                | (:? int64  as l), (:? int64  as r) -> Any(typeof<int64>, l + r)
+                | (:? uint8  as l), (:? uint8  as r) -> Any(typeof<uint8>, l + r)
+                | (:? uint16 as l), (:? uint16 as r) -> Any(typeof<uint16>, l + r)
+                | (:? uint32 as l), (:? uint32 as r) -> Any(typeof<uint32>, l + r)
+                | (:? uint64 as l), (:? uint64 as r) -> Any(typeof<uint64>, l + r)
+                | (:? single as l), (:? single as r) -> Any(typeof<single>, l + r)
+                | (:? double as l), (:? double as r) -> Any(typeof<double>, l + r)
+                | (:? string as l), (:? string as r) -> Any(typeof<string>, l + r)
+                | _ -> failwithf "지원하지 않는 형식에 대한 ADD_ANY 연산입니다: %s , %s" (leftExpr.DataType.FullName) (rightExpr.DataType.FullName)
+        )

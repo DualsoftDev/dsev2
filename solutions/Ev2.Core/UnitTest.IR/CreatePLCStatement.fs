@@ -34,6 +34,23 @@ type PlcStatementTest() =
         stmt.Do()
         targetVar.Value === -999
 
+    [<Test>]
+    member _.``SetCoil 문``() =
+        let cond = Variable<bool>("Condition", Value=true) :> IVariable<bool>
+        let coil = Variable<bool>("MainCoil", Value=false) :> IVariable<bool>
+        coil.TValue === false
+        let setStmt = SetCoilStatement(cond, coil, comment="메인 라인")
+        setStmt.Do()
+        coil.TValue === true
+
+        let rstStmt = ResetCoilStatement(cond, coil, comment="메인 라인")
+        rstStmt.Do()
+        coil.TValue === false
+
+        // 조건이 false 인 경우, SetCoil 수행해도 값 변경 없음
+        cond.Value <- false
+        setStmt.Do()
+        coil.TValue === false
 
     [<Test>]
     member _.``StTimer 생성``() =

@@ -4,6 +4,7 @@ open System
 open System.Linq
 open Dual.Common.Base
 open Ev2.Core.FS.IR
+open Ev2.Core.FS
 
 
 
@@ -36,11 +37,21 @@ module ProgramBlockModule =
         member x.TSource = src
         member val TTarget = tgt with get, set
 
+    type CommandStatement(command:Command, ?cond:IExpression<bool>, ?comment:string) =
+        inherit Statement(?cond=cond, ?comment=comment)
+        member x.Command = command
+
     type SetCoilStatement(cond:IExpression<bool>, coil: IVariable<bool>, ?comment:string) =
-        inherit Statement(cond, ?comment=comment)
+        inherit CommandStatement(
+            Command("SetCoil", [|cond; coil|], executor=
+                fun args -> if cond.TValue then coil.Value <- true),
+            cond, ?comment=comment)
         member x.Coil = coil
     type ResetCoilStatement(cond:IExpression<bool>, coil: IVariable<bool>, ?comment:string) =
-        inherit Statement(cond, ?comment=comment)
+        inherit CommandStatement(
+            Command("ResetCoil", [|cond; coil|], executor=
+                fun args -> if cond.TValue then coil.Value <- false),
+            cond, ?comment=comment)
         member x.Coil = coil
 
     type TimerStatement(timerCall:TimerCall, ?comment:string) =
@@ -50,7 +61,6 @@ module ProgramBlockModule =
     type CounterStatement(counterCall:ICounterInstance, ?comment:string) =
         inherit Statement(?comment=comment)
         member x.CounterCall = counterCall
-
 
     type ISnippet = interface end
 

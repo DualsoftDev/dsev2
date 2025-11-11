@@ -117,8 +117,10 @@ module GenExtensionModule =
                         else
                             executeStatement stmt
                         n <- n + 1
-                | :? SetCoilStatement        -> fail()
-                | :? ResetCoilStatement      -> fail()
+
+                // SetCoilStatement, ResetCoilStatement, ... etc
+                | :? CommandStatement as stmt -> stmt.Command.Do()
+
                 | :? TimerStatement          -> fail()
                 | :? CounterStatement        -> fail()
                 | :? BreakStatement          -> fail()

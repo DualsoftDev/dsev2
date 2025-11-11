@@ -22,10 +22,14 @@ type IWithValue =
 [<AllowNullLiteral>] type IExpression     = inherit IWithType inherit IWithValue
 [<AllowNullLiteral>] type IFunctionCall   = interface end   //inherit IExpression
 [<AllowNullLiteral>] type IFBCall         = interface end
-[<AllowNullLiteral>] type IStatement      = interface end
+[<AllowNullLiteral>] type IStatement      = inherit ICommand
 [<AllowNullLiteral>] type IFBInstance     = interface end
+[<AllowNullLiteral>] type IOperator       = inherit IExpression
 
-type Any = | Any of Type
+///[<Obsolete("Experimental")>]
+type Any(typ:Type, value:obj) =
+    member x.DataType = typ
+    member val Value = value with get, set
 
 type DimRange = int * int
 
@@ -91,7 +95,8 @@ type IExpression<'T> =
 
 [<AllowNullLiteral>] type ITerminal<'T> = inherit ITerminal inherit IExpression<'T>
 [<AllowNullLiteral>] type IVariable<'T> = inherit IVariable inherit ITerminal<'T>
-[<AllowNullLiteral>] type ILiteral<'T> = inherit ILiteral inherit ITerminal<'T>
+[<AllowNullLiteral>] type ILiteral<'T>  = inherit ILiteral inherit ITerminal<'T>
+[<AllowNullLiteral>] type IOperator<'T> = inherit IOperator inherit IExpression<'T>
 
 //[<AllowNullLiteral>] type IStorage = abstract IVariables : IVariable[]
 

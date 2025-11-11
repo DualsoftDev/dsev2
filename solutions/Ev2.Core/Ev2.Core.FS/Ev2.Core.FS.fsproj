@@ -43,6 +43,7 @@
 		<Compile Include="IR\Interfaces.fs" />
 		<Compile Include="IR\Var.fs" />
 		<Compile Include="IR\Operator.fs" />
+		<Compile Include="ir\Command.fs" />
 		<Compile Include="IR\ComplexTypes.fs" />
 		<Compile Include="IR\Timer.fs" />
 		<Compile Include="IR\Counter.fs" />

@@ -63,3 +63,13 @@ type ArithmaticTest() =
         ge<int32> (literal 3) (literal 4) |> _.TValue === false
         ge<int32> (literal 4) (literal 3) |> _.TValue === true
         ()
+
+    [<Test>]
+    member _.``Any type``() =
+        let any3 = Literal(Any(typeof<int32>, 3)) :> IExpression<Any>
+        let any5 = Literal(Any(typeof<int32>, 5)):> IExpression<Any>
+        let anyResult = addAny any3 any5
+        anyResult.ReturnType === typeof<Any>
+        anyResult.TValue.GetType() === typeof<Any>
+        anyResult.TValue.Value.GetType() === typeof<int32>
+        anyResult.TValue.Value === 8
